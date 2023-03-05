@@ -1,0 +1,211 @@
+<template>
+  <q-page
+    ref="page"
+    class="full-width row justify-center content-center"
+  >
+    <q-resize-observer @resize="onResize" />
+
+    <div v-if="loading">
+      <q-spinner
+        color="primary"
+        size="100px"
+      />
+    </div>
+
+    <div v-else-if="error !== null">
+      <!-- TODO Style error -->
+      {{ error }}
+    </div>
+
+    <ResultTable
+      v-else
+      ref="table"
+      :questions="columns"
+      :results="results"
+      :style="style"
+      :templates="templates.data.value ?? []"
+    />
+  </q-page>
+</template>
+
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
+import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { storeToRefs } from 'pinia';
+import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
+import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
+import { QTableColumn } from 'src/types/quasar/QTableColum';
+import ResultTable from 'components/results/table/ResultTable.vue';
+import { useResultTemplateStore } from 'stores/result-template-store';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { Registration } from 'src/types/Registration';
+
+// FIXME Can this be done with pure css?
+const style = ref({ width: '100%', height: '100%' });
+
+function onResize(size: { width: number; height: number }): void {
+  // Smaller does not work
+  // style.value.width = size.width + 'px';
+  style.value.height = size.height + 'px';
+}
+
+const campDetailStore = useCampDetailsStore();
+const campRegistrationsStore = useCampRegistrationsStore();
+const resultTemplateStore = useResultTemplateStore();
+const { to } = useObjectTranslation();
+
+const camp = storeToRefs(campDetailStore);
+const registrations = storeToRefs(campRegistrationsStore);
+const templates = storeToRefs(resultTemplateStore);
+
+const loading = computed<boolean>(() => {
+  return (
+    registrations.isLoading.value ||
+    camp.isLoading.value ||
+    templates.isLoading.value
+  );
+});
+
+const error = computed<string | null>(() => {
+  return camp.error.value ?? registrations.error.value ?? templates.error.value;
+});
+
+const columns = computed<QTableColumn[]>(() => {
+  const data = camp.data.value;
+
+  const columns: QTableColumn[] = [];
+
+  if (!isSurveyJSData(data?.form)) {
+    return [];
+  }
+
+  data?.form.pages.forEach((data) => {
+    data.elements.forEach((data) => {
+      if (data.type === 'expression') {
+        return;
+      }
+
+      const label = to(data.title);
+      const field = data.name;
+      columns.push({
+        name: data.name,
+        label: label,
+        field: field,
+        align: 'left',
+        sortable: true,
+      });
+    });
+  });
+
+  return columns;
+});
+
+function isSurveyJSData(data: unknown): data is SurveyJSCampData {
+  // TODO
+  return true;
+}
+
+const results = computed<Registration[]>(() => {
+  const results = registrations.data.value;
+
+  if (!results) {
+    return [];
+  }
+
+  DataProviderRegistry.INSTANCE.providers.forEach((provider) => {
+    results.forEach((registration) => {
+      if (provider.isFit(registration)) {
+        registration[provider.name] = provider.generate(registration);
+      }
+    });
+  });
+
+  return results;
+});
+
+// Data Providers
+DataProviderRegistry.INSTANCE.register({
+  title: 'Full Name',
+  name: 'full_name',
+  isFit(data: unknown): boolean {
+    return hasFullName(data);
+  },
+  generate(data: unknown): string {
+    if (!hasFullName(data)) return '';
+
+    return `${data.first_name} ${data.last_name}`;
+  },
+});
+
+function hasFullName(
+  data: unknown
+): data is { first_name?: string; last_name?: string } {
+  if (data === null || typeof data !== 'object') return false;
+  return (
+    'first_name' in data &&
+    typeof data.first_name === 'string' &&
+    'last_name' in data &&
+    typeof data.last_name === 'string'
+  );
+}
+
+DataProviderRegistry.INSTANCE.register({
+  title: 'Address',
+  name: 'full_address',
+  isFit(data: unknown): boolean {
+    return hasAddressRows(data);
+  },
+  generate(data: unknown): string | number {
+    if (!hasAddressRows(data)) return '';
+
+    return data.address + ', ' + data.zip_code + ' ' + data.city;
+  },
+});
+
+function hasAddressRows(
+  data: unknown
+): data is { address: string; zip_code: string; city: string } {
+  if (data === null) return false;
+  if (typeof data !== 'object') return false;
+
+  return (
+    'address' in data &&
+    typeof data.address === 'string' &&
+    'zip_code' in data &&
+    typeof data.zip_code === 'number' &&
+    'city' in data &&
+    typeof data.city === 'string'
+  );
+}
+
+DataProviderRegistry.INSTANCE.register({
+  title: 'Age',
+  name: 'age',
+  isFit(data: unknown): boolean {
+    if (!hasAgeRows(data)) return false;
+
+    const date = data.date_of_birth;
+
+    return new Date(date).toString() !== 'Invalid Date';
+  },
+  generate(data: unknown): string | number {
+    if (!hasAgeRows(data)) return '';
+    return calculateAge(data.date_of_birth);
+  },
+});
+
+function hasAgeRows(data: unknown): data is { date_of_birth: string } {
+  if (data === null) return false;
+  if (typeof data !== 'object') return false;
+
+  return 'date_of_birth' in data && typeof data.date_of_birth === 'string';
+}
+
+function calculateAge(date: string): number {
+  const months = Date.now() - new Date(date).getTime();
+  const years = new Date(months);
+
+  return Math.abs(years.getUTCFullYear() - 1970);
+}
+</script>

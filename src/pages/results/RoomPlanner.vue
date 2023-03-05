@@ -1,0 +1,68 @@
+<template>
+  <q-page padding>
+    <!-- content -->
+
+    <p class="text-h4">
+      {{ t('title') }}
+    </p>
+
+    <div class="row items-start">
+      <room-list
+        v-for="(room, index) in rooms"
+        :key="room.name"
+        v-model="rooms[index]"
+        :name="room.name"
+        :people="availablePeople"
+        :room-mates="room.roomMates"
+        class="q-ma-sm"
+        style="max-width: 500px; min-width: 300px"
+      />
+    </div>
+  </q-page>
+</template>
+
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
+import RoomList from 'components/results/roomPlanner/RoomList.vue';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+
+interface Room {
+  name: string;
+  roomMates: unknown[];
+}
+
+const { t } = useI18n();
+const campRegistrationsStore = useCampRegistrationsStore();
+const registrations = storeToRefs(campRegistrationsStore);
+
+const rooms = ref<Room[]>([
+  {
+    name: 'Room 1',
+    roomMates: [null, null, null, null],
+  },
+  {
+    name: 'Room 2',
+    roomMates: [null, null, null, null, null],
+  },
+  {
+    name: 'Room 3',
+    roomMates: [null, null, null, null],
+  },
+  {
+    name: 'Room 4',
+    roomMates: [null, null],
+  },
+]);
+
+const availablePeople = computed<unknown[]>(() => {
+  const results: unknown[] = registrations.data.value as unknown[];
+
+  return results.filter((person) => {
+    return !rooms.value.some((room) => {
+      return room.roomMates.includes(person);
+    });
+  });
+});
+</script>

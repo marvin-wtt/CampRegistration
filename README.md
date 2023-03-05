@@ -2,41 +2,26 @@
 
 A frontent for camp registrations
 
-## Install the dependencies
-
-```bash
-yarn
-# or
-npm install
-```
-
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
-
-```bash
-quasar dev
-```
-
-### Lint the files
-
-```bash
-yarn lint
-# or
-npm run lint
-```
-
-### Format the files
-
-```bash
-yarn format
-# or
-npm run format
-```
-
 ### Build the app for production
 
 ```bash
 quasar build
 ```
+
+## Features
+
+- Manage camp registrations
+- Create timetable to plan the weeks activities
+- Create room planner to fill all participants
+- Create budget planner for FAYO budgets
+- Create tools to fill pdfs automatically
+- Create mailing tool
+
+## TODOs / Ideas
+
+- Translate texts with deepl API
+- Analyze for duplicate registrations
+- Show diff when editing user data
 
 ### Customize the configuration
 
