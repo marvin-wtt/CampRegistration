@@ -1,8 +1,5 @@
 <template>
-  <q-page
-    ref="page"
-    class="full-width row justify-center content-center"
-  >
+  <q-page :style-fn="styleTable">
     <q-resize-observer @resize="onResize" />
 
     <div v-if="loading">
@@ -41,7 +38,18 @@ import { useResultTemplateStore } from 'stores/result-template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
 
-// FIXME Can this be done with pure css?
+function styleTable(offset: number) {
+  // "offset" is a Number (pixels) that refers to the total
+  // height of header + footer that occupies on screen,
+  // based on the QLayout "view" prop configuration
+
+  // this is actually what the default style-fn does in Quasar
+  return {
+    minHeight: offset ? `calc(100vh - ${offset}px)` : '100vh',
+    maxHeight: offset ? `calc(100vh - ${offset}px)` : '100vh',
+  };
+}
+
 const style = ref({ width: '100%', height: '100%' });
 
 function onResize(size: { width: number; height: number }): void {
