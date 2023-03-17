@@ -9,7 +9,12 @@
 
         <q-space />
 
-        <language-switch />
+        <language-switch
+          borderless
+          class="q-px-md"
+          dense
+          rounded
+        />
       </q-toolbar>
     </q-header>
 

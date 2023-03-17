@@ -16,7 +16,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const name = computed<string>(() => {
-  const language = props.locale.split('_')[0].toLowerCase();
+  const language = props.locale.split('-')[0].toLowerCase();
   return `img:flags/${language}.svg`;
 });
 </script>

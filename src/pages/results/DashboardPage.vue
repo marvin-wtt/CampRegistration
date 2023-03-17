@@ -90,6 +90,11 @@
 // FIXME TEMPORARY, REMOVE
 import registrations from 'src/lib/example/registrations.json';
 import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
+// -----------------------------------------------------------------------------
+import { ref } from 'vue';
+
+import ParticipantsByCountryChart from 'components/results/charts/ParticipantsByCountryChart.vue';
+import ParticipantsByAgeAndCountry from 'components/results/charts/ParticipantsByAgeAndCountry.vue';
 
 DataProviderRegistry.INSTANCE.register({
   title: 'Age',
@@ -144,15 +149,7 @@ function isResultData(data: unknown): data is ResultData[] {
   return true;
 }
 
-interface ResultData {
-  [key: string]: unknown;
-}
-
-// -----------------------------------------------------------------------------
-import { ref } from 'vue';
-
-import ParticipantsByCountryChart from 'components/results/charts/ParticipantsByCountryChart.vue';
-import ParticipantsByAgeAndCountry from 'components/results/charts/ParticipantsByAgeAndCountry.vue';
+type ResultData = Record<string, unknown>;
 
 // Participants by country
 const participants = ref(createResultData(registrations));

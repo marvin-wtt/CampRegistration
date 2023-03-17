@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { useRoute, useRouter } from 'vue-router';
 
 import camp from 'src/lib/example/camp.json';
@@ -63,12 +62,13 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     const campId = id ?? (route.params.camp as string);
     if (campId === undefined) {
       error.value = '404';
+      isLoading.value = false;
       return;
     }
 
     // TODO Remove
     if (campId === camp.id) {
-      data.value = camp;
+      data.value = camp as Camp;
       isLoading.value = false;
       return;
     }

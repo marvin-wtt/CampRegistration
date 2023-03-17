@@ -1,17 +1,14 @@
 <template>
   <q-select
     v-model="locale"
-    :options="locales"
-    borderless
-    class="q-px-md"
-    dense
+    :options="langOptions"
+    v-bind="$attrs"
     emit-value
     map-options
-    rounded
   >
     <template v-slot:selected-item="scope">
       <country-icon
-        :locale="scope.opt.country"
+        :locale="scope.opt.value"
         size="sm"
       />
     </template>
@@ -19,7 +16,7 @@
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps">
         <q-item-section avatar>
-          <country-icon :locale="scope.opt.country" />
+          <country-icon :locale="scope.opt.value" />
         </q-item-section>
         <q-item-section>
           <q-item-label>
@@ -38,9 +35,9 @@ import CountryIcon from 'components/localization/CountryIcon.vue';
 
 const { locale } = useI18n({ useScope: 'global' });
 
-const locales = computed(() => [
-  { label: 'Deutsch', value: 'de-DE', country: 'de' },
-  { label: 'Français', value: 'fr-FR', country: 'fr' },
-  { label: 'English', value: 'en-US', country: 'us' },
+const langOptions = computed(() => [
+  { label: 'Deutsch', value: 'de-DE', country: 'de', isoName: 'de' },
+  { label: 'Français', value: 'fr-FR', country: 'fr', isoName: 'fr' },
+  { label: 'English (US)', value: 'en-US', country: 'us', isoName: 'en-US' },
 ]);
 </script>

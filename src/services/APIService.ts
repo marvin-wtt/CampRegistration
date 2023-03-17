@@ -4,7 +4,7 @@ import { TableTemplate } from 'src/types/TableTemplate';
 import { Registration } from 'src/types/Registration';
 
 export function useAPIService() {
-  const API_SERVER = 'https://camps.ballaeron.de';
+  const API_SERVER = process.env.API_SERVER;
 
   async function fetchCamps(): Promise<Camp[]> {
     const response = await axios.get(`${API_SERVER}/camps/`);

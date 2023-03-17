@@ -1,32 +1,20 @@
 <template>
-  <q-page :style-fn="styleTable">
-    <q-resize-observer @resize="onResize" />
-
-    <div v-if="loading">
-      <q-spinner
-        color="primary"
-        size="100px"
-      />
-    </div>
-
-    <div v-else-if="error !== null">
-      <!-- TODO Style error -->
-      {{ error }}
-    </div>
-
+  <page-state-handler
+    :error="error"
+    :loading="loading"
+  >
     <ResultTable
-      v-else
+      class="absolute fit"
       ref="table"
       :questions="columns"
       :results="results"
-      :style="style"
       :templates="templates.data.value ?? []"
     />
-  </q-page>
+  </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
@@ -37,26 +25,7 @@ import ResultTable from 'components/results/table/ResultTable.vue';
 import { useResultTemplateStore } from 'stores/result-template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
-
-function styleTable(offset: number) {
-  // "offset" is a Number (pixels) that refers to the total
-  // height of header + footer that occupies on screen,
-  // based on the QLayout "view" prop configuration
-
-  // this is actually what the default style-fn does in Quasar
-  return {
-    minHeight: offset ? `calc(100vh - ${offset}px)` : '100vh',
-    maxHeight: offset ? `calc(100vh - ${offset}px)` : '100vh',
-  };
-}
-
-const style = ref({ width: '100%', height: '100%' });
-
-function onResize(size: { width: number; height: number }): void {
-  // Smaller does not work
-  // style.value.width = size.width + 'px';
-  style.value.height = size.height + 'px';
-}
+import PageStateHandler from 'components/PageStateHandler.vue';
 
 const campDetailStore = useCampDetailsStore();
 const campRegistrationsStore = useCampRegistrationsStore();

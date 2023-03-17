@@ -18,7 +18,6 @@
     <template v-slot:top-right>
       <div class="fit row no-wrap justify-end">
         <!-- Filter -->
-        <!-- TODO Filter alternative for small devices -->
         <q-select
           v-if="!printing && !quasar.screen.xs"
           v-model="countryFilter"
@@ -154,7 +153,7 @@
 import { ComponentRegistry } from 'components/results/table/ComponentRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { TableCellRenderer } from 'components/results/table/TableCellRenderer';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { TableTemplate } from 'src/types/TableTemplate';
 import { useQuasar } from 'quasar';
@@ -183,9 +182,19 @@ const route = useRoute();
 const router = useRouter();
 const { to } = useObjectTranslation();
 
-const pagination = ref({
+interface Pagination {
+  rowsPerPage?: number;
+  sortBy?: string;
+  descending?: boolean;
+}
+
+const pagination = ref<Pagination>({
   rowsPerPage: 0,
+  sortBy: undefined,
+  descending: undefined,
 });
+
+// TODO Set according to preset update
 
 const rows = computed<Registration[]>(() => {
   let rows = props.results;
@@ -235,9 +244,14 @@ const templates = computed<TableTemplate[]>(() => {
 
   return templates.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 });
-const template = ref<TableTemplate>(defaultTemplateId());
+const template = ref<TableTemplate>(defaultTemplate());
 
-function defaultTemplateId(): TableTemplate {
+watch(template, (newValue) => {
+  pagination.value.sortBy = newValue.sortBy;
+  pagination.value.descending = newValue.sortDirection === 'desc';
+});
+
+function defaultTemplate(): TableTemplate {
   if (route.hash.length > 1) {
     const id = route.hash.substring(1);
     const result = templates.value.find((value) => value.id == id);
@@ -256,17 +270,39 @@ function onTemplateChange() {
 }
 
 const columns = computed<TableColumnTemplate[]>(() => {
-  return template.value.columns;
+  const columns = [...template.value.columns];
+
+  // Add index column as first column
+  if (template.value.indexed) {
+    columns.unshift({
+      name: '_index',
+      field: '',
+      label: '',
+      align: 'center',
+      renderAs: 'index',
+      shrink: true,
+    });
+  }
+
+  // Add actions column at the end
+  if (template.value.actions) {
+    columns.push({
+      name: '_action',
+      align: 'center',
+      label: '',
+      field: '',
+      renderAs: 'action',
+      shrink: true,
+    });
+  }
+
+  return columns;
 });
 
 const renderers = computed<Map<string, TableCellRenderer>>(() => {
   const rendererMap = new Map<string, TableCellRenderer>();
 
-  if (!template.value) {
-    return rendererMap;
-  }
-
-  template.value.columns.forEach((column) => {
+  columns.value.forEach((column) => {
     // Always use a custom renderer to use renderer options
     column.renderAs ??= 'default';
 

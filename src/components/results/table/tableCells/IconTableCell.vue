@@ -1,5 +1,6 @@
 <template>
   <q-icon
+    v-if="visible"
     :color="color"
     :name="name"
     :size="size"
@@ -15,6 +16,10 @@ interface Props {
   options?: object;
   printing: boolean;
 }
+
+const visible = computed<boolean>(() => {
+  return typeof props.props.value === 'boolean' ? props.props.value : true;
+});
 
 const color = computed<string>(() => {
   if (

@@ -38,7 +38,12 @@
           vertical
         />
 
-        <language-switch />
+        <language-switch
+          borderless
+          class="q-px-md"
+          dense
+          rounded
+        />
 
         <q-separator
           dark
@@ -196,7 +201,19 @@
           </q-item-section>
         </q-item>
 
-        <q-space />
+        <q-item
+          v-ripple
+          :to="{ name: 'edit-camp' }"
+          clickable
+        >
+          <q-item-section avatar>
+            <q-icon name="edit" />
+          </q-item-section>
+
+          <q-item-section>
+            {{ t('edit') }}
+          </q-item-section>
+        </q-item>
 
         <q-item
           v-ripple
@@ -255,8 +272,7 @@ const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
 const showDrawer = computed<boolean>(() => {
-  console.log(route.name);
-  return route.name !== 'results-index';
+  return route.meta.hideDrawer !== true;
 });
 </script>
 
@@ -264,6 +280,7 @@ const showDrawer = computed<boolean>(() => {
 camps: 'Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
+edit: 'Edit'
 participants: 'Participants'
 room_planner: 'Room Planner'
 settings: 'Settings'
@@ -276,6 +293,7 @@ tools: 'Tools'
 camps: 'Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
+edit: 'Bearbeiten'
 participants: 'Teilnehmende'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
@@ -288,6 +306,7 @@ tools: 'Tools'
 camps: 'Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
+edit: 'Modifier'
 participants: 'Participants'
 room_planner: 'Aménageur'
 settings: 'Paramètres'

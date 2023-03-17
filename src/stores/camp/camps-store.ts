@@ -4,8 +4,11 @@ import { ref } from 'vue';
 import camp from 'src/lib/example/camp.json';
 import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
+import { useQuasar } from 'quasar';
+import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 
 export const useCampsStore = defineStore('camps', () => {
+  const quasar = useQuasar();
   const apiService = useAPIService();
 
   const data = ref<Camp[]>();
@@ -17,7 +20,7 @@ export const useCampsStore = defineStore('camps', () => {
     error.value = null;
 
     // TODO remove
-    data.value = [camp];
+    data.value = [camp] as Camp[];
     isLoading.value = false;
     return;
 
@@ -35,22 +38,73 @@ export const useCampsStore = defineStore('camps', () => {
     // }
   }
 
-  async function deleteEntry(id: string) {
+  async function createEntry(data: Camp): Promise<void> {
+    // TODO Translate errors
     try {
-      await apiService.deleteCamp(id);
+      await apiService.createCamp(data);
+      quasar.notify({
+        type: 'positive',
+        position: 'top',
+        message: 'Camp created',
+      });
     } catch (e: unknown) {
-      // TODO Error handling
+      quasar.notify({
+        type: 'negative',
+        position: 'top',
+        message: 'Some error',
+      });
     }
+    // Update data after create
     await fetchData();
   }
 
   async function updateEntry(id: string, data: Partial<Camp>) {
+    // TODO Translate errors
     try {
       await apiService.updateCamp(id, data);
+      quasar.notify({
+        type: 'positive',
+        position: 'top',
+        message: 'Camp created',
+      });
     } catch (e: unknown) {
-      // TODO Error handling
+      quasar.notify({
+        type: 'negative',
+        position: 'top',
+        message: 'Some error',
+      });
+    }
+    // Update camps
+    await fetchData();
+    // Update camp details store
+    const campStore = useCampDetailsStore();
+    if (campStore.data?.id === id) {
+      await campStore.fetchData();
+    }
+  }
+
+  async function deleteEntry(id: string) {
+    // TODO Translate errors
+    try {
+      await apiService.deleteCamp(id);
+      quasar.notify({
+        type: 'positive',
+        position: 'top',
+        message: 'Camp created',
+      });
+    } catch (e: unknown) {
+      quasar.notify({
+        type: 'negative',
+        position: 'top',
+        message: 'Some error',
+      });
     }
     await fetchData();
+    // Update camp details store
+    const campStore = useCampDetailsStore();
+    if (campStore.data?.id === id) {
+      await campStore.$reset();
+    }
   }
 
   return {
@@ -58,7 +112,8 @@ export const useCampsStore = defineStore('camps', () => {
     isLoading,
     error,
     fetchData,
-    deleteEntry,
+    createEntry,
     updateEntry,
+    deleteEntry,
   };
 });

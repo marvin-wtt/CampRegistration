@@ -1,5 +1,4 @@
 import { QTableColumn } from 'src/types/quasar/QTableColum';
-import { SimpleTranslation } from 'src/composables/objectTranslation';
 
 export interface TableColumnTemplate extends Omit<QTableColumn, 'label'> {
   renderAs?: string;
@@ -8,5 +7,5 @@ export interface TableColumnTemplate extends Omit<QTableColumn, 'label'> {
   shrink?: boolean;
   hideIf?: string;
   showIf?: string;
-  label: string | SimpleTranslation;
+  label: string | Record<string, string>;
 }

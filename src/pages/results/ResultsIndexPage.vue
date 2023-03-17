@@ -4,10 +4,10 @@
     <div class="column">
       <div class="row justify-center">
         <q-btn-toggle
-          v-model="active"
+          v-model="menu"
           :options="[
-            { label: t('menu.public'), value: true },
-            { label: t('menu.private'), value: false },
+            { label: t('menu.public'), value: 'public' },
+            { label: t('menu.private'), value: 'private' },
           ]"
           class="my-custom-toggle"
           no-caps
@@ -68,7 +68,7 @@
             <q-item-section side>
               <div class="q-gutter-xs">
                 <q-btn
-                  v-if="active"
+                  v-if="showPublic"
                   :label="t('action.share')"
                   class="gt-xs"
                   dense
@@ -79,7 +79,7 @@
                 />
 
                 <q-btn
-                  v-if="!active"
+                  v-if="!showPublic"
                   :label="t('action.publish')"
                   class="gt-sm"
                   color="warning"
@@ -111,7 +111,7 @@
                 />
 
                 <q-btn
-                  v-if="active"
+                  v-if="showPublic"
                   :label="t('action.unpublish')"
                   class="gt-sm"
                   color="warning"
@@ -123,7 +123,7 @@
                 />
 
                 <q-btn
-                  v-if="!active"
+                  v-if="!showPublic"
                   :label="t('action.delete')"
                   class="gt-sm"
                   color="negative"
@@ -144,7 +144,7 @@
                   <q-menu>
                     <q-list style="min-width: 100px">
                       <q-item
-                        v-if="active"
+                        v-if="showPublic"
                         v-close-popup
                         clickable
                         @click="shareAction(camp.id)"
@@ -194,7 +194,7 @@
                       </q-item>
 
                       <q-item
-                        v-if="active"
+                        v-if="showPublic"
                         v-close-popup
                         v-ripple
                         class="text-warning"
@@ -212,7 +212,7 @@
                       </q-item>
 
                       <q-item
-                        v-if="!active"
+                        v-if="!showPublic"
                         v-close-popup
                         v-ripple
                         class="text-warning"
@@ -273,7 +273,11 @@ const router = useRouter();
 const quasar = useQuasar();
 const capsStore = useCampsStore();
 
-const active = ref(true);
+const showPublic = computed<boolean>(() => {
+  return menu.value === 'public';
+});
+
+const menu = ref<'public' | 'private'>('public');
 
 function resultsAction(campId: string) {
   router.push({
@@ -306,13 +310,13 @@ function shareAction(campId: string) {
 
 function addAction() {
   router.push({
-    name: 'results-create',
+    name: 'create-c',
   });
 }
 
 function editAction(campId: string) {
   router.push({
-    name: 'results-edit',
+    name: 'edit-camp',
     params: {
       camp: campId,
     },
@@ -367,7 +371,7 @@ const camps = computed<Camp[]>(() => {
   ];
 
   return camps.filter((value) =>
-    active.value ? value.public === true : value.public !== true
+    showPublic.value ? value.public === true : value.public !== true
   );
 });
 </script>

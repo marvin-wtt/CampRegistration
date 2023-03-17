@@ -141,6 +141,7 @@ export const useCampRegistrationsStore = defineStore(
       const campId = id ?? (route.params.camp as string);
       if (campId === undefined) {
         error.value = '404';
+        isLoading.value = false;
         return;
       }
 

@@ -1,20 +1,18 @@
-import { SimpleTranslation } from 'src/composables/objectTranslation';
-
 export interface SurveyJSCampData {
-  title: string | SimpleTranslation;
-  description: string | SimpleTranslation;
+  title: string | Record<string, string>;
+  description: string | Record<string, string>;
   locale?: string;
   pages: {
     name: string;
-    title?: string | SimpleTranslation;
+    title?: string | Record<string, string>;
     elements: {
       name: string;
       type: string;
-      title: string | SimpleTranslation;
-      description?: string | SimpleTranslation;
+      title: string | Record<string, string>;
+      description?: string | Record<string, string>;
       isRequired?: boolean;
       choices?: {
-        text: string | SimpleTranslation;
+        text: string | Record<string, string>;
         value: unknown;
       }[];
     }[];

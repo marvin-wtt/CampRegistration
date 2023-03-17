@@ -1,14 +1,10 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 
-export interface SimpleTranslation {
-  [key: string]: string;
-}
-
 export function useObjectTranslation() {
   const { locale, fallbackLocale } = useI18n();
 
-  function to(value: string | SimpleTranslation): string {
+  function to(value: string | Record<string, string>): string {
     if (typeof value !== 'object') {
       return value;
     }

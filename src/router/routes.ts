@@ -14,12 +14,18 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'results-index',
+        meta: {
+          hideDrawer: true,
+        },
         component: () => import('pages/results/ResultsIndexPage.vue'),
       },
       {
-        path: '',
-        name: 'results-create',
-        component: () => null,
+        path: 'create',
+        name: 'create-camp',
+        meta: {
+          hideDrawer: true,
+        },
+        component: () => import('pages/results/CreateCampPage.vue'),
       },
       {
         path: ':camp',
@@ -27,6 +33,11 @@ const routes: RouteRecordRaw[] = [
           name: 'results-dashboard',
         },
         children: [
+          {
+            path: 'edit',
+            name: 'edit-camp',
+            component: () => import('pages/results/EditCampPage.vue'),
+          },
           {
             path: 'dashboard',
             name: 'results-dashboard',
@@ -46,6 +57,11 @@ const routes: RouteRecordRaw[] = [
             path: 'room-planner',
             name: 'room-planner',
             component: () => import('pages/results/RoomPlanner.vue'),
+          },
+          {
+            path: 'expenses',
+            name: 'expenses',
+            component: () => import('pages/results/ExpensesPage.vue'),
           },
         ],
       },
