@@ -59,6 +59,11 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/results/RoomPlanner.vue'),
           },
           {
+            path: 'tools',
+            name: 'tools',
+            component: () => import('pages/results/ToolsPage.vue'),
+          },
+          {
             path: 'expenses',
             name: 'expenses',
             component: () => import('pages/results/ExpensesPage.vue'),
@@ -82,6 +87,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/camps/CampPage.vue'),
       },
     ],
+  },
+  {
+    name: 'login',
+    path: '/login',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
   },
 
   // Always leave this as last one,

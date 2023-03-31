@@ -10,12 +10,31 @@
           v-close-popup
           clickable
         >
+          <q-item-section avatar>
+            <q-icon name="account_circle" />
+          </q-item-section>
           <q-item-section>
             {{ t('profile') }}
           </q-item-section>
         </q-item>
 
+        <q-item
+          v-close-popup
+          clickable
+          @click="toggleDarkMode"
+        >
+          <q-item-section avatar>
+            <q-icon name="dark_mode" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('dark_mode') }}
+          </q-item-section>
+        </q-item>
+
         <q-item clickable>
+          <q-item-section avatar>
+            <q-icon name="language" />
+          </q-item-section>
           <q-item-section>
             {{ t('language') }}
           </q-item-section>
@@ -51,6 +70,9 @@
           v-close-popup
           clickable
         >
+          <q-item-section avatar>
+            <q-icon name="logout" />
+          </q-item-section>
           <q-item-section>
             {{ t('logout') }}
           </q-item-section>
@@ -64,8 +86,11 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import CountryIcon from 'components/localization/CountryIcon.vue';
+import { useQuasar } from 'quasar';
 
-const { t, locale } = useI18n({
+const quasar = useQuasar();
+const { t } = useI18n();
+const { locale } = useI18n({
   useScope: 'global',
 });
 
@@ -78,6 +103,10 @@ const locales = computed(() => [
 function updateLocale(value: string) {
   locale.value = value;
 }
+
+function toggleDarkMode() {
+  quasar.dark.toggle();
+}
 </script>
 
 <style scoped></style>
@@ -86,6 +115,7 @@ function updateLocale(value: string) {
 logout: 'Logout'
 profile: 'Profile'
 language: 'Language'
+dark_mode: 'Dark Mode'
 </i18n>
 
 <!-- TODO Add translations -->

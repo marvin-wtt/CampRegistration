@@ -357,8 +357,7 @@ async function unpublishAction(id: string) {
 }
 
 const camps = computed<Camp[]>(() => {
-  // TODO Filter
-
+  // TODO Fetch from store
   const camps: Camp[] = [
     {
       name: 'DFJW Sommercamp 2023',

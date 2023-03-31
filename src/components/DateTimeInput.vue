@@ -3,7 +3,6 @@
   <q-input
     v-model="modelValue"
     hide-bottom-space
-    mask="date"
     outlined
     rounded
     v-bind="$attrs"
@@ -19,7 +18,10 @@
           transition-hide="scale"
           transition-show="scale"
         >
-          <q-date v-model="modelValue">
+          <q-date
+            v-model="modelValue"
+            mask="YYYY-MM-DD HH:mm"
+          >
             <div class="row items-center justify-end">
               <q-btn
                 v-close-popup
@@ -29,6 +31,33 @@
               />
             </div>
           </q-date>
+        </q-popup-proxy>
+      </q-icon>
+
+      <q-icon
+        class="cursor-pointer"
+        name="schedule"
+      >
+        <q-popup-proxy
+          ref="popup"
+          cover
+          transition-hide="scale"
+          transition-show="scale"
+        >
+          <q-time
+            v-model="modelValue"
+            mask="YYYY-MM-DD HH:mm"
+            format24h
+          >
+            <div class="row items-center justify-end">
+              <q-btn
+                v-close-popup
+                color="primary"
+                flat
+                :label="t('actions.ok')"
+              />
+            </div>
+          </q-time>
         </q-popup-proxy>
       </q-icon>
     </template>
@@ -49,6 +78,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface Props {
   modelValue?: string | number | Record<string, string | number>;
@@ -67,3 +99,18 @@ const modelValue = computed({
 </script>
 
 <style scoped></style>
+
+<i18n lang="yaml" locale="en">
+actions:
+  ok: Ok
+</i18n>
+
+<i18n lang="yaml" locale="en">
+actions:
+  ok: Ok
+</i18n>
+
+<i18n lang="yaml" locale="en">
+actions:
+  ok: Ok
+</i18n>

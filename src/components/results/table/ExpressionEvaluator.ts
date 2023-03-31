@@ -1,6 +1,7 @@
 import jsep from 'jsep';
 
 export class ExpressionEvaluator {
+  public readonly IDENTIFIERS = ['$', '_'];
   private _data?: object;
   private readonly _node: jsep.Expression;
 

@@ -52,12 +52,18 @@ export const useResultTemplateStore = defineStore('resultTemplate', () => {
     // TODO Remove
     if (campId === 'd81301ae-9f57-419d-a5a7-f9b2f0c6') {
       data.value = templates as TableTemplate[];
+      data.value.sort((a, b) => {
+        return a.order - b.order;
+      });
       isLoading.value = false;
       return;
     }
 
     try {
       data.value = await apiService.fetchResultTemplates(campId);
+      data.value.sort((a, b) => {
+        return a.order - b.order;
+      });
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'error';
 

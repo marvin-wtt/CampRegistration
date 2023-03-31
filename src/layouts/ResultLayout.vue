@@ -38,7 +38,7 @@
           vertical
         />
 
-        <language-switch
+        <locale-switch
           borderless
           class="q-px-md"
           dense
@@ -164,19 +164,13 @@
         <q-item
           v-ripple
           clickable
-          disable
+          :to="{ name: 'room-planner' }"
         >
           <q-item-section avatar>
             <q-icon name="single_bed" />
           </q-item-section>
 
           <q-item-section>
-            <q-badge
-              align="top"
-              floating
-              rounded
-              >Coming soon!
-            </q-badge>
             {{ t('room_planner') }}
           </q-item-section>
         </q-item>
@@ -184,19 +178,13 @@
         <q-item
           v-ripple
           clickable
-          disable
+          :to="{ name: 'tools' }"
         >
           <q-item-section avatar>
             <q-icon name="menu" />
           </q-item-section>
 
           <q-item-section>
-            <q-badge
-              align="top"
-              floating
-              rounded
-              >Coming soon!
-            </q-badge>
             {{ t('tools') }}
           </q-item-section>
         </q-item>
@@ -247,7 +235,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import LanguageSwitch from 'components/localization/LanguageSwitch.vue';
+import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
 import ProfileMenuButton from 'components/results/ProfileMenuButton.vue';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';

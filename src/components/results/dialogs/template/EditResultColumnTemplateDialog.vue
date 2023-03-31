@@ -1,0 +1,266 @@
+<template>
+  <q-dialog
+    ref="dialogRef"
+    @hide="onDialogHide"
+  >
+    <q-card class="q-dialog-plugin">
+      <q-card-section>
+        <div class="text-h6">
+          {{ t('title') }}
+        </div>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none q-gutter-y-sm column">
+        <q-input
+          v-model="column.name"
+          :label="t('fields.name.label')"
+          :hint="t('fields.name.hint')"
+          outlined
+          rounded
+        />
+
+        <translated-input
+          v-model="column.label"
+          :label="t('fields.label.label')"
+          :locales="props.camp.countries"
+          outlined
+          rounded
+        />
+        <q-input
+          v-model="column.field"
+          :label="t('fields.field.label')"
+          :hint="t('fields.field.hint')"
+          outlined
+          rounded
+        />
+
+        <!-- TODO Translate options -->
+        <q-select
+          v-model="column.align"
+          :options="['left', 'right', 'center']"
+          :label="t('fields.align.label')"
+          :hint="t('fields.hideIf.hint')"
+          outlined
+          rounded
+        />
+
+        <q-input
+          v-model="column.renderAs"
+          :label="t('fields.renderAs.label')"
+          :hint="t('fields.renderAs.hint')"
+          clearable
+          outlined
+          rounded
+        />
+
+        <!-- TODO render options -->
+
+        <q-toggle
+          v-model="column.sortable"
+          :label="t('fields.sortable.label')"
+          :hint="t('fields.sortable.hint')"
+        />
+
+        <q-toggle
+          v-model="column.headerVertical"
+          :label="t('fields.headerVertical.label')"
+          :hint="t('fields.headerVertical.hint')"
+        />
+
+        <q-toggle
+          v-model="column.shrink"
+          :label="t('fields.shrink.label')"
+          :hint="t('fields.shrink.hint')"
+        />
+
+        <q-input
+          v-model="column.hideIf"
+          :label="t('fields.hideIf.label')"
+          :hint="t('fields.hideIf.hint')"
+          clearable
+          outlined
+          rounded
+        />
+
+        <q-input
+          v-model="column.showIf"
+          :label="t('fields.showIf.label')"
+          :hint="t('fields.showIf.hint')"
+          clearable
+          outlined
+          rounded
+        />
+      </q-card-section>
+
+      <!-- buttons example -->
+      <q-card-actions align="right">
+        <q-btn
+          color="primary"
+          :label="t('actions.cancel')"
+          outline
+          rounded
+          @click="onDialogCancel"
+        />
+        <q-btn
+          color="primary"
+          :label="t('actions.ok')"
+          rounded
+          @click="onOKClick"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script lang="ts" setup>
+import { useDialogPluginComponent } from 'quasar';
+import { useI18n } from 'vue-i18n';
+import { reactive } from 'vue';
+import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
+import TranslatedInput from 'components/TranslatedInput.vue';
+import { Camp } from 'src/types/Camp';
+
+interface Props {
+  column: TableColumnTemplate;
+  camp: Camp;
+}
+
+const props = defineProps<Props>();
+
+defineEmits([...useDialogPluginComponent.emits]);
+
+const { t } = useI18n();
+
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
+  useDialogPluginComponent();
+// dialogRef      - Vue ref to be applied to QDialog
+// onDialogHide   - Function to be used as handler for @hide on QDialog
+// onDialogOK     - Function to call to settle dialog with "ok" outcome
+//                    example: onDialogOK() - no payload
+//                    example: onDialogOK({ /*...*/ }) - with payload
+// onDialogCancel - Function to call to settle dialog with "cancel" outcome
+
+const column = reactive<TableColumnTemplate>(props.column);
+
+function onOKClick(): void {
+  onDialogOK(column);
+}
+</script>
+
+<style scoped></style>
+
+<i18n lang="yaml" locale="en">
+title: 'Edit Template Column'
+
+actions:
+  ok: 'Ok'
+  cancel: 'Cancel'
+
+fields:
+  name:
+    label: 'Name'
+    hint: 'A unique name to identify the column (some_name)'
+  label:
+    label: 'Label'
+    hint: ''
+  field:
+    label: 'Field'
+    hint: 'Name of corresponding form field'
+  align:
+    label: 'Align'
+    hint: 'Direction to align content of cell'
+  renderAs:
+    label: 'Render As'
+    hint: 'Name of a custom display type'
+  sortable:
+    label: 'Sortable'
+    hint: ''
+  headerVertical:
+    label: 'Vertical Header'
+    hint: ''
+  shrink:
+    label: 'Shrink size'
+    hint: ''
+  hideIf:
+    label: 'Hide if'
+    hint: 'Expression when not to show the cell'
+  showIf:
+    label: 'Show if'
+    hint: 'Expression when to show the cell'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Template-Spalte bearbeiten'
+actions:
+  ok: 'Ok'
+  cancel: 'Abbrechen'
+fields:
+  name:
+    label: 'Name'
+    hint: 'Ein eindeutiger Name zur Identifizierung (some_name)'
+  label:
+    label: 'Label'
+    hint: ''
+  field:
+    label: 'Feld'
+    hint: 'Name des entsprechenden Formularfelds'
+  align:
+    label: 'Ausrichten'
+    hint: 'Richtung zur Ausrichtung des Zellinhalts'
+  renderAs:
+    label: 'Darstellen als'
+    hint: 'Name eines benutzerdefinierten Anzeigetyps'
+  sortable:
+    label: 'Sortierbar'
+    hint: ''
+  headerVertical:
+    label: 'Vertikale Kopfzeile'
+    hint: ''
+  shrink:
+    label: 'Verkleinern'
+    hint: ''
+  hideIf:
+    label: 'Verbergen wenn'
+    hint: 'Ausdruck, wenn die Zelle nicht angezeigt werden soll'
+  showIf:
+    label: 'Anzeigen wenn'
+    hint: 'Ausdruck, wenn die Zelle angezeigt werden soll'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Modifier la colonne de modèle'
+actions:
+  ok: 'Ok'
+  cancel: 'Annuler'
+fields:
+  name:
+    label: 'Nom'
+    hint: 'Un nom unique pour identifier la colonne (some_name)'
+  label:
+    label: 'Libellé'
+    hint: ''
+  field:
+    label: 'Champ'
+    hint: 'Nom du champ de formulaire correspondant'
+  align:
+    label: 'Alignement'
+    hint: 'Direction pour aligner le contenu de la cellule'
+  renderAs:
+    label: 'Rendre comme'
+    hint: "Nom d'un type d'affichage personnalisé"
+  sortable:
+    label: 'Triable'
+    hint: ''
+  headerVertical:
+    label: 'En-tête vertical'
+    hint: ''
+  shrink:
+    label: 'Réduire la taille'
+    hint: ''
+  hideIf:
+    label: 'Masquer si'
+    hint: "Expression lorsqu'il ne faut pas afficher la cellule"
+  showIf:
+    label: 'Afficher si'
+    hint: "Expression lorsqu'il faut"
+</i18n>

@@ -4,7 +4,7 @@ import { Identifiable } from 'src/types/Identifiable';
 export interface TableTemplate extends Identifiable {
   title: string | Record<string, string>;
   columns: TableColumnTemplate[];
-  order: number | undefined;
+  order: number;
   filter?: string;
   printOptions?: {
     orientation?: 'portrait' | 'landscape';

@@ -9,6 +9,7 @@
       :questions="columns"
       :results="results"
       :templates="templates.data.value ?? []"
+      :camp="camp.data.value"
     />
   </page-state-handler>
 </template>

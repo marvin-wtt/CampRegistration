@@ -69,7 +69,9 @@ interface Props {
   always?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  always: false,
+});
 const emit = defineEmits<{
   (e: 'update:modelValue', value: unknown): void;
 }>();

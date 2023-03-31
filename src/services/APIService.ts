@@ -124,6 +124,24 @@ export function useAPIService() {
     );
   }
 
+  async function fetchCampManagers(campId: string): Promise<void> {
+    await axios.get(`${API_SERVER}/camps/${campId}/managers/`);
+  }
+
+  async function addCampManager(campId: string, userId: string): Promise<void> {
+    const data = {
+      userId: userId,
+    };
+    await axios.post(`${API_SERVER}/camps/${campId}/managers/`, data);
+  }
+
+  async function deleteCampManager(
+    campId: string,
+    userId: string
+  ): Promise<void> {
+    await axios.delete(`${API_SERVER}/camps/${campId}/managers/${userId}/`);
+  }
+
   return {
     fetchCamps,
     fetchCamp,
@@ -140,5 +158,8 @@ export function useAPIService() {
     createResultTemplate,
     updateResultTemplate,
     deleteResultTemplate,
+    fetchCampManagers,
+    addCampManager,
+    deleteCampManager,
   };
 }

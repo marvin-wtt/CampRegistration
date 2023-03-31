@@ -1,5 +1,6 @@
 <template>
   <q-page padding>
+    <!-- TODO Show if camp is public -->
     <div class="q-pa-md fit column items-start">
       <!-- Header --->
       <q-card class="col full-width q-ma-md">

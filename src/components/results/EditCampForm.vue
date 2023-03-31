@@ -11,23 +11,24 @@
     </a>
 
     <!-- Countries -->
-    <q-select
+    <country-switch
       v-model="data.countries"
       :disable="loading"
       :label="t('field.countries')"
-      :options="['de', 'fr', 'pl']"
+      :countries="['de', 'fr', 'pl']"
       :rules="[
         (val) => (val && val.length > 0) || t('validation.countries.empty'),
       ]"
       hide-bottom-space
-      multiple
       outlined
       rounded
+      multiple
+      emit-country
     >
       <template v-slot:before>
         <q-icon name="language" />
       </template>
-    </q-select>
+    </country-switch>
 
     <!-- name -->
     <translated-input
@@ -65,7 +66,7 @@
 
     <!-- dates -->
     <!-- startDate -->
-    <date-input
+    <date-time-input
       v-model="data.startDate"
       :disable="loading"
       :label="t('field.startDate')"
@@ -77,10 +78,10 @@
       <template v-slot:before>
         <q-icon name="event" />
       </template>
-    </date-input>
+    </date-time-input>
 
     <!-- endDate -->
-    <date-input
+    <date-time-input
       v-model="data.endDate"
       :disable="loading"
       :label="t('field.endDate')"
@@ -95,7 +96,7 @@
       <template v-slot:before>
         <q-icon name="event" />
       </template>
-    </date-input>
+    </date-time-input>
 
     <!-- age -->
     <!-- minAge -->
@@ -194,8 +195,9 @@ import { computed, ref, toRaw } from 'vue';
 import { Camp } from 'src/types/Camp';
 
 import TranslatedInput from 'components/TranslatedInput.vue';
-import DateInput from 'components/DateInput.vue';
+import DateTimeInput from 'components/DateTimeInput.vue';
 import { useI18n } from 'vue-i18n';
+import CountrySwitch from 'components/CountrySwitch.vue';
 
 const { t } = useI18n();
 
