@@ -180,7 +180,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
@@ -329,11 +329,12 @@ const printing = ref<boolean>(false);
 const printDimensions = ref<Dimension>();
 const style = computed<string>(() => {
   return printing.value
-    ? `min-width: ${printDimensions.value?.width}px; max-width: ${printDimensions.value?.width}px`
+    ? `min-width: ${printDimensions.value?.width}px; max-width: ${printDimensions.value?.width}px; left: 0`
     : '';
 });
 
 async function exportPDF() {
+  // Remove unwanted elements
   printing.value = true;
   const element = document.querySelector('#print-table') as HTMLElement;
   const table = element.querySelector('table') as HTMLElement;
@@ -349,7 +350,10 @@ async function exportPDF() {
   table.style.width = 'auto';
   const minWidth = table.clientWidth;
   table.style.width = '100%';
+  // Optimize width for ISO 216 pages
+  // Ration: 1 / sqrt(2)
   const maxWidth = (height / 2) * Math.sqrt(2);
+  // Use maximum with of both to maximise size but still fit everything in
   const width = Math.max(minWidth, maxWidth);
 
   const pageOrientation = template.value?.printOptions?.orientation;
@@ -359,15 +363,21 @@ async function exportPDF() {
     height: height,
   };
 
-  // TODO Can we use vue ref instead?
-  // const element = resultTable.value;
-
   const date = new Date();
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
-  // TODO Extract title
   const templateTitle = to(template.value.title);
+
+  const dateTimeString = date.toLocaleString(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  });
 
   quasar.loading.show();
   quasar.dark.set(false);
@@ -379,9 +389,7 @@ async function exportPDF() {
       scale: 3,
       page: {
         orientation: pageOrientation,
-        footer: `${t(
-          'title'
-        )} (${templateTitle}) @ ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+        footer: `${t('title')} (${templateTitle}) @ ${dateTimeString}`,
         name: `${year}_${month}_${day}_${t('title')}_${templateTitle}`,
       },
     });
