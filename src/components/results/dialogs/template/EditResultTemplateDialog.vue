@@ -77,8 +77,8 @@
           bordered
           separator
           dense
-          @on-edit="(item) => editColumn(item)"
-          @on-add="addColumn"
+          @edit="(item) => editColumn(item)"
+          @add="addColumn"
           v-slot="slotProps"
         >
           <q-item-section>

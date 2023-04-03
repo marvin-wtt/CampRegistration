@@ -1,10 +1,24 @@
 <template>
-  <q-page padding>
+  <q-page
+    padding
+    class="column"
+  >
     <!-- content -->
 
-    <p class="text-h4">
-      {{ t('title') }}
-    </p>
+    <div class="row justify-between">
+      <p class="col text-h4">
+        {{ t('title') }}
+      </p>
+
+      <div class="col-shrink">
+        <q-btn
+          color="primary"
+          rounded
+          label="add"
+          icon="add"
+        />
+      </div>
+    </div>
 
     <div class="row items-start">
       <room-list
@@ -27,11 +41,7 @@ import RoomList from 'components/results/roomPlanner/RoomList.vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
-
-interface Room {
-  name: string;
-  roomMates: unknown[];
-}
+import { Room } from 'src/types/Room';
 
 const { t } = useI18n();
 const campRegistrationsStore = useCampRegistrationsStore();
@@ -57,12 +67,23 @@ const rooms = ref<Room[]>([
 ]);
 
 const availablePeople = computed<unknown[]>(() => {
-  const results: unknown[] = registrations.data.value as unknown[];
+  let results: unknown[] = registrations.data.value as unknown[];
 
-  return results.filter((person) => {
+  results = results.filter((person) => {
     return !rooms.value.some((room) => {
       return room.roomMates.includes(person);
     });
+  });
+
+  // Format names
+  return results.map((value) => {
+    return typeof value !== 'string'
+      ? value
+      : value
+          .toLowerCase()
+          .replace(/(^|\s|-)(\w)/g, (match: string, p1: string, p2: string) => {
+            return p1 + p2.toUpperCase();
+          });
   });
 });
 </script>

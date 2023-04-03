@@ -15,6 +15,10 @@
           v-model="column.name"
           :label="t('fields.name.label')"
           :hint="t('fields.name.hint')"
+          :rules="[
+            (val) => !!val || t('fields.name.rules.required'),
+            (val) => !/\s/.test(val) || t('fields.name.rules.no_spaces'),
+          ]"
           outlined
           rounded
         />
@@ -34,12 +38,13 @@
           rounded
         />
 
-        <!-- TODO Translate options -->
         <q-select
           v-model="column.align"
-          :options="['left', 'right', 'center']"
           :label="t('fields.align.label')"
           :hint="t('fields.hideIf.hint')"
+          :options="alignOptions"
+          emit-value
+          map-options
           outlined
           rounded
         />
@@ -54,7 +59,6 @@
         />
 
         <!-- TODO render options -->
-
         <q-toggle
           v-model="column.sortable"
           :label="t('fields.sortable.label')"
@@ -115,7 +119,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import TranslatedInput from 'components/TranslatedInput.vue';
 import { Camp } from 'src/types/Camp';
@@ -145,6 +149,23 @@ const column = reactive<TableColumnTemplate>(props.column);
 function onOKClick(): void {
   onDialogOK(column);
 }
+
+const alignOptions = computed(() => {
+  return [
+    {
+      label: t('fields.align.options.left'),
+      value: 'left',
+    },
+    {
+      label: t('fields.align.options.right'),
+      value: 'right',
+    },
+    {
+      label: t('fields.align.options.center'),
+      value: 'center',
+    },
+  ];
+});
 </script>
 
 <style scoped></style>
@@ -160,6 +181,9 @@ fields:
   name:
     label: 'Name'
     hint: 'A unique name to identify the column (some_name)'
+    rules:
+      required: 'Name must not be empty'
+      no_spaces: 'Use underscores instead of spaces'
   label:
     label: 'Label'
     hint: ''
@@ -169,6 +193,10 @@ fields:
   align:
     label: 'Align'
     hint: 'Direction to align content of cell'
+    options:
+      left: 'Left'
+      right: 'Right'
+      center: 'Center'
   renderAs:
     label: 'Render As'
     hint: 'Name of a custom display type'
@@ -179,7 +207,7 @@ fields:
     label: 'Vertical Header'
     hint: ''
   shrink:
-    label: 'Shrink size'
+    label: 'Shrink column size'
     hint: ''
   hideIf:
     label: 'Hide if'
@@ -198,6 +226,9 @@ fields:
   name:
     label: 'Name'
     hint: 'Ein eindeutiger Name zur Identifizierung (some_name)'
+    rules:
+      required: 'Name darf nicht leer sein'
+      no_spaces: 'Unterstriche statt Leerzeichen verwenden'
   label:
     label: 'Label'
     hint: ''
@@ -205,8 +236,12 @@ fields:
     label: 'Feld'
     hint: 'Name des entsprechenden Formularfelds'
   align:
-    label: 'Ausrichten'
+    label: 'Ausrichtung'
     hint: 'Richtung zur Ausrichtung des Zellinhalts'
+    options:
+      left: 'Links'
+      right: 'Rechnts'
+      center: 'Mitte'
   renderAs:
     label: 'Darstellen als'
     hint: 'Name eines benutzerdefinierten Anzeigetyps'
@@ -217,7 +252,7 @@ fields:
     label: 'Vertikale Kopfzeile'
     hint: ''
   shrink:
-    label: 'Verkleinern'
+    label: 'Spalte verkleinern'
     hint: ''
   hideIf:
     label: 'Verbergen wenn'
@@ -236,6 +271,9 @@ fields:
   name:
     label: 'Nom'
     hint: 'Un nom unique pour identifier la colonne (some_name)'
+    rules:
+      required: 'Le nom ne doit pas être vide'
+      no_spaces: "Utiliser des traits de soulignement au lieu d'espaces"
   label:
     label: 'Libellé'
     hint: ''
@@ -243,8 +281,12 @@ fields:
     label: 'Champ'
     hint: 'Nom du champ de formulaire correspondant'
   align:
-    label: 'Alignement'
+    label: 'Orientation'
     hint: 'Direction pour aligner le contenu de la cellule'
+    options:
+      left: 'Gauche'
+      right: 'Droite'
+      center: 'Centre'
   renderAs:
     label: 'Rendre comme'
     hint: "Nom d'un type d'affichage personnalisé"
@@ -255,7 +297,7 @@ fields:
     label: 'En-tête vertical'
     hint: ''
   shrink:
-    label: 'Réduire la taille'
+    label: 'Réduire la taille de la colonne'
     hint: ''
   hideIf:
     label: 'Masquer si'

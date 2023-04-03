@@ -60,6 +60,7 @@ const columns = computed<QTableColumn[]>(() => {
 
   data?.form.pages.forEach((data) => {
     data.elements.forEach((data) => {
+      // Filter text-only elements
       if (data.type === 'expression') {
         return;
       }

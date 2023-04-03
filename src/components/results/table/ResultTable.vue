@@ -403,13 +403,17 @@ async function exportPDF() {
 }
 
 function editTemplates() {
-  quasar.dialog({
-    component: EditResultTemplatesDialog,
-    componentProps: {
-      templates: templates.value,
-      camp: props.camp,
-    },
-  });
+  quasar
+    .dialog({
+      component: EditResultTemplatesDialog,
+      componentProps: {
+        templates: templates.value,
+        camp: props.camp,
+      },
+    })
+    .onOk((payload: TableTemplate[]) => {
+      // TODO Update store
+    });
 }
 </script>
 

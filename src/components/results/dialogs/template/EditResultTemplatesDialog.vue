@@ -18,7 +18,8 @@
           deletable
           bordered
           separator
-          @on-edit="(item) => editTemplate(item)"
+          @add="addTemplate()"
+          @edit="(item) => editTemplate(item)"
           v-slot="slotProps"
         >
           <q-item-section>
@@ -54,7 +55,7 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';
 import EditResultTemplateDialog from 'components/results/dialogs/template/EditResultTemplateDialog.vue';
 import SortableList from 'components/SortableList.vue';
-import { reactive } from 'vue';
+import { reactive, toRaw } from 'vue';
 import { Camp } from 'src/types/Camp';
 
 interface Props {
@@ -79,7 +80,35 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const templates = reactive<TableTemplate[]>(props.templates);
+const templates = reactive<TableTemplate[]>(propTemplates());
+
+function propTemplates(): TableTemplate[] {
+  const templates = props.templates.map((value) => {
+    return toRaw(value);
+  });
+  return structuredClone(templates);
+}
+
+function addTemplate() {
+  const template: TableTemplate = {
+    id: 'filled-by-server',
+    title: t('defaults.title'),
+    order: templates.length,
+    columns: [],
+  };
+  quasar
+    .dialog({
+      component: EditResultTemplateDialog,
+      componentProps: {
+        template: template,
+        camp: props.camp,
+      },
+      persistent: true,
+    })
+    .onOk((payload) => {
+      // TODO
+    });
+}
 
 function editTemplate(template: TableTemplate) {
   quasar
@@ -110,6 +139,9 @@ title: 'Edit Templated'
 actions:
   ok: 'Ok'
   cancel: 'Cancel'
+
+defaults:
+  title: 'New template'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -118,11 +150,18 @@ title: 'Vorlagen bearbeiten'
 actions:
   ok: 'Ok'
   cancel: 'Cancel'
+
+defaults:
+  title: 'Neue Vorlage'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Modifier le modèle'
+
 actions:
   ok: 'Ok'
   cancel: 'Annuler'
+
+defaults:
+  title: 'Nouveau modèle'
 </i18n>

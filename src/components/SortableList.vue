@@ -5,11 +5,10 @@
     :dense="props.dense"
     :padding="props.padding"
   >
-    <!-- TODO Fix animation -->
     <TransitionGroup name="list">
       <q-item
-        v-for="(item, index) in modelValue"
-        :key="item[keyName] ?? index"
+        v-for="item in modelValue"
+        :key="item[props.keyName] ?? item"
       >
         <slot :item="item" />
         <!-- Sorting arrows -->
@@ -65,8 +64,9 @@
       v-ripple
       @click="addItem"
     >
-      <!-- TODO Create new -->
-      <q-item-section class="text-center">+</q-item-section>
+      <q-item-section class="column content-center">
+        <q-icon name="add" />
+      </q-item-section>
     </q-item>
   </q-list>
 </template>
@@ -96,13 +96,14 @@ const props = withDefaults(defineProps<Props>(), {
   addable: false,
   editable: false,
   deletable: false,
+  keyName: 'id',
 });
 
 const emit = defineEmits<{
   (e: 'update:modelValue', modelValue: Element[]): void;
-  (e: 'onAdd'): void;
-  (e: 'onEdit', object: Element): void;
-  (e: 'onDelete', object: Element): void;
+  (e: 'add'): void;
+  (e: 'edit', object: Element): void;
+  (e: 'delete', object: Element): void;
 }>();
 
 const modelValue = computed<Element[]>({
@@ -111,15 +112,15 @@ const modelValue = computed<Element[]>({
 });
 
 function addItem() {
-  emit('onAdd');
+  emit('add');
 }
 
 function editItem(item: Element) {
-  emit('onEdit', item);
+  emit('edit', item);
 }
 
 function deleteItem(item: Element) {
-  emit('onDelete', item);
+  emit('delete', item);
   if (!modelValue.value) {
     return;
   }
@@ -170,7 +171,7 @@ function orderDownwards(template: TableTemplate) {
 </script>
 
 <style scoped>
-.list-move, /* apply transition to moving elements */
+.list-move,
 .list-enter-active,
 .list-leave-active {
   transition: all 0.5s ease;
@@ -182,8 +183,6 @@ function orderDownwards(template: TableTemplate) {
   transform: translateX(30px);
 }
 
-/* ensure leaving items are taken out of layout flow so that moving
-   animations can be calculated correctly. */
 .list-leave-active {
   position: absolute;
 }
