@@ -37,12 +37,12 @@
 import { useQuasar } from 'quasar';
 import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { useI18n } from 'vue-i18n';
-import EditResultComponent from 'components/results/dialogs/EditResultComponent.vue';
+import EditResultComponent from 'components/results/table/dialogs/EditResultComponent.vue';
 
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
-import ConfirmDeleteDialog from 'components/results/dialogs/ConfirmDeleteRegistrationDialog.vue';
+import ConfirmDeleteDialog from 'components/results/table/dialogs/ConfirmDeleteRegistrationDialog.vue';
 
 interface Props {
   props: QTableBodyCellProps;

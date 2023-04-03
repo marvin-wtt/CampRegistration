@@ -2,6 +2,7 @@
   <q-dialog
     ref="dialogRef"
     @hide="onDialogHide"
+    persistent
   >
     <q-card class="q-dialog-plugin">
       <q-card-section>

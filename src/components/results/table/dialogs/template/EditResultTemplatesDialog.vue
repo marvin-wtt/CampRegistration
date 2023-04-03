@@ -2,6 +2,7 @@
   <q-dialog
     ref="dialogRef"
     @hide="onDialogHide"
+    persistent
   >
     <q-card class="q-dialog-plugin q-pb-none">
       <q-card-section>
@@ -53,7 +54,7 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';
-import EditResultTemplateDialog from 'components/results/dialogs/template/EditResultTemplateDialog.vue';
+import EditResultTemplateDialog from 'components/results/table/dialogs/template/EditResultTemplateDialog.vue';
 import SortableList from 'components/SortableList.vue';
 import { reactive, toRaw } from 'vue';
 import { Camp } from 'src/types/Camp';
@@ -103,10 +104,9 @@ function addTemplate() {
         template: template,
         camp: props.camp,
       },
-      persistent: true,
     })
     .onOk((payload) => {
-      // TODO
+      templates.push(payload);
     });
 }
 
@@ -149,7 +149,7 @@ title: 'Vorlagen bearbeiten'
 
 actions:
   ok: 'Ok'
-  cancel: 'Cancel'
+  cancel: 'Abbrechen'
 
 defaults:
   title: 'Neue Vorlage'

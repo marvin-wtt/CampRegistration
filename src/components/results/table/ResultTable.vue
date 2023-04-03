@@ -168,7 +168,7 @@ import { ExpressionEvaluator } from 'components/results/table/ExpressionEvaluato
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
-import EditResultTemplatesDialog from 'components/results/dialogs/template/EditResultTemplatesDialog.vue';
+import EditResultTemplatesDialog from 'components/results/table/dialogs/template/EditResultTemplatesDialog.vue';
 import { Camp } from 'src/types/Camp';
 
 interface Props {

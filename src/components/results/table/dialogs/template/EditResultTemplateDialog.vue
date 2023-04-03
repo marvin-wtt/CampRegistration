@@ -2,6 +2,7 @@
   <q-dialog
     ref="dialogRef"
     @hide="onDialogHide"
+    persistent
   >
     <q-card
       class="q-dialog-plugin q-pb-none"
@@ -121,7 +122,7 @@ import TranslatedInput from 'components/TranslatedInput.vue';
 import { computed, reactive } from 'vue';
 import SortableList from 'components/SortableList.vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
-import EditResultColumnTemplateDialog from 'components/results/dialogs/template/EditResultColumnTemplateDialog.vue';
+import EditResultColumnTemplateDialog from 'components/results/table/dialogs/template/EditResultColumnTemplateDialog.vue';
 import { Camp } from 'src/types/Camp';
 
 interface Props {
@@ -170,7 +171,6 @@ function addColumn(): void {
         column: column,
         camp: props.camp,
       },
-      persistent: true,
     })
     .onOk((payload: TableColumnTemplate) => {
       template.columns.push(payload);
