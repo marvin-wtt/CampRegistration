@@ -4,41 +4,51 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin q-pb-none">
-      <q-card-section>
-        <div class="text-h6">
-          {{ t(`title.${props.mode}`) }}
-        </div>
-      </q-card-section>
+      <q-form>
+        <q-card-section>
+          <div class="text-h6">
+            {{ t(`title.${props.mode}`) }}
+          </div>
+        </q-card-section>
 
-      <q-card-section class="q-pt-none q-gutter-y-sm column">
-        <q-input
-          v-model="room.name"
-          :label="t('fields.name')"
-        />
+        <q-card-section class="q-pt-none q-gutter-y-sm column">
+          <q-input
+            v-model="room.name"
+            :label="t('fields.name.label')"
+            :rules="[(val) => !!val || t('fields.name.rules.required')]"
+            outlined
+            rounded
+          />
 
-        <q-input
-          v-model.number="capacity"
-          :label="t('fields.capacity')"
-          type="number"
-        />
-      </q-card-section>
+          <q-input
+            v-model.number="capacity"
+            type="number"
+            :label="t('fields.capacity.label')"
+            :rules="[(val) => !!val || t('fields.capacity.rules.required')]"
+            outlined
+            rounded
+          />
+        </q-card-section>
 
-      <!-- action buttons -->
-      <q-card-actions align="right">
-        <q-btn
-          outline
-          rounded
-          color="primary"
-          :label="t('actions.cancel')"
-          @click="onDialogCancel"
-        />
-        <q-btn
-          rounded
-          color="primary"
-          :label="t('actions.save')"
-          @click="onOKClick"
-        />
-      </q-card-actions>
+        <!-- action buttons -->
+        <q-card-actions align="right">
+          <q-btn
+            type="reset"
+            outline
+            rounded
+            color="primary"
+            :label="t('actions.cancel')"
+            @click="onDialogCancel"
+          />
+          <q-btn
+            type="submit"
+            rounded
+            color="primary"
+            :label="t('actions.save')"
+            @click="onOKClick"
+          />
+        </q-card-actions>
+      </q-form>
     </q-card>
   </q-dialog>
 </template>
@@ -103,8 +113,14 @@ title:
   edit: 'Edit room'
 
 fields:
-  name: 'Name'
-  capacity: 'Number of beds'
+  name:
+    label: 'Name'
+    rules:
+      required: ''
+  capacity:
+    label: 'Number of beds'
+    rules:
+      required: ''
 
 actions:
   save: 'Save'
@@ -116,8 +132,14 @@ title:
   create: 'Zimmer erstellen'
   edit: 'Zimmer bearbeiten'
 fields:
-  name: 'Name'
-  capacity: 'Anzahl der Betten'
+  name:
+    label: 'Name'
+    rules:
+      required: ''
+  capacity:
+    label: 'Anzahl der Betten'
+    rules:
+      required: ''
 
 actions:
   save: 'Speichern'
@@ -129,10 +151,25 @@ title:
   create: 'Créer une chambre'
   edit: 'Modifier la chambre'
 fields:
-  name: 'Nom'
-  capacity: 'Nombre de lits'
+  name:
+    label: 'Nom'
+    rules:
+      required: ''
+  capacity:
+    label: 'Nombre de lits'
+    rules:
+      required: ''
 
 actions:
   save: 'Enregistrer'
   cancel: 'Annuler'
 </i18n>
+
+<!-- TODO -->
+<style lang="scss">
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>

@@ -361,7 +361,7 @@ const camps = computed<Camp[]>(() => {
   const camps: Camp[] = [
     {
       name: 'DFJW Sommercamp 2023',
-      id: 'd81301ae-9f57-419d-a5a7-f9b2f0c6',
+      id: '98daa32a-f6dd-41bd-b723-af10071459ad',
       public: true,
     },
     { name: 'test 2', id: '2', public: true },

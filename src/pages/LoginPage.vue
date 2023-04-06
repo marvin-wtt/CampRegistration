@@ -6,7 +6,9 @@
     <!-- content -->
     <q-card class="q-pa-md">
       <q-card-section>
-        <a class="text-h4"> Login </a>
+        <a class="text-h4">
+          {{ t('title') }}
+        </a>
       </q-card-section>
       <q-form>
         <q-card-section class="q-gutter-md">
@@ -36,6 +38,15 @@
             </template>
           </q-input>
         </q-card-section>
+
+        <q-card-section class="text-center">
+          <a class="text-grey-6">
+            <router-link to="/register">
+              {{ t('forgot_password') }}
+            </router-link>
+          </a>
+        </q-card-section>
+
         <q-card-actions>
           <q-btn
             :loading="loading"
@@ -47,15 +58,7 @@
           />
         </q-card-actions>
 
-        <q-card-section class="text-center">
-          <a class="text-grey-6">
-            <router-link to="/register">
-              {{ t('forgot_password') }}
-            </router-link>
-          </a>
-        </q-card-section>
-
-        <q-separator />
+        <q-separator spaced />
 
         <q-card-section class="text-center">
           <q-btn
@@ -84,6 +87,8 @@ const loading = ref<boolean>(false);
 </script>
 
 <i18n lang="yaml" locale="en">
+title: 'Login'
+
 email: 'Email'
 password: 'Password'
 login: 'Login'

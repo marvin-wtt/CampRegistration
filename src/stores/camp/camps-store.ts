@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-
-import camp from 'src/lib/example/camp.json';
 import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
 import { useQuasar } from 'quasar';
@@ -9,7 +7,7 @@ import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 
 export const useCampsStore = defineStore('camps', () => {
   const quasar = useQuasar();
-  const apiService = useAPIService();
+  const api = useAPIService();
 
   const data = ref<Camp[]>();
   const isLoading = ref<boolean>(false);
@@ -19,29 +17,20 @@ export const useCampsStore = defineStore('camps', () => {
     isLoading.value = true;
     error.value = null;
 
-    // TODO remove
-    data.value = [camp] as Camp[];
-    isLoading.value = false;
-    return;
-
-    // try {
-    //   const response = await axios.get(`${API_SERVER}/camps/`);
-    //   data.value = await response.data;
-    // } catch (e: unknown) {
-    //   error.value = e instanceof Error
-    //     ? e.message
-    //     : typeof e === 'string'
-    //       ? e
-    //       : 'error';
-    // } finally {
-    //   isLoading.value = false;
-    // }
+    try {
+      data.value = await api.fetchCamps();
+    } catch (e: unknown) {
+      error.value =
+        e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   async function createEntry(data: Camp): Promise<void> {
     // TODO Translate errors
     try {
-      await apiService.createCamp(data);
+      await api.createCamp(data);
       quasar.notify({
         type: 'positive',
         position: 'top',
@@ -61,7 +50,7 @@ export const useCampsStore = defineStore('camps', () => {
   async function updateEntry(id: string, data: Partial<Camp>) {
     // TODO Translate errors
     try {
-      await apiService.updateCamp(id, data);
+      await api.updateCamp(id, data);
       quasar.notify({
         type: 'positive',
         position: 'top',
@@ -86,7 +75,7 @@ export const useCampsStore = defineStore('camps', () => {
   async function deleteEntry(id: string) {
     // TODO Translate errors
     try {
-      await apiService.deleteCamp(id);
+      await api.deleteCamp(id);
       quasar.notify({
         type: 'positive',
         position: 'top',

@@ -145,15 +145,6 @@ export const useCampRegistrationsStore = defineStore(
         return;
       }
 
-      // TODO Remove
-      if (campId === 'd81301ae-9f57-419d-a5a7-f9b2f0c6') {
-        // Replace deprecated values of fields
-        await loadSampleData();
-
-        isLoading.value = false;
-        return;
-      }
-
       try {
         data.value = await apiService.fetchRegistrations(campId);
       } catch (e: unknown) {

@@ -46,7 +46,7 @@ const loading = computed<boolean>(() => {
 });
 
 const error = computed<string | null>(() => {
-  return camp.error.value ?? registrations.error.value ?? templates.error.value;
+  return camp.error.value ?? registrations.error.value;
 });
 
 const columns = computed<QTableColumn[]>(() => {
@@ -58,7 +58,15 @@ const columns = computed<QTableColumn[]>(() => {
     return [];
   }
 
-  data?.form.pages.forEach((data) => {
+  if (!data?.form || !('pages' in data.form)) {
+    return [];
+  }
+
+  data.form.pages.forEach((data) => {
+    if (!('elements' in data)) {
+      return;
+    }
+
     data.elements.forEach((data) => {
       // Filter text-only elements
       if (data.type === 'expression') {

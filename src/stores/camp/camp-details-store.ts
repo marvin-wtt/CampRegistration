@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import camp from 'src/lib/example/camp.json';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { Camp } from 'src/types/Camp';
@@ -36,7 +35,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       },
     },
   });
-  const apiService = useAPIService();
+  const api = useAPIService();
 
   const data = ref<Camp>();
   const isLoading = ref<boolean>(false);
@@ -66,15 +65,15 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       return;
     }
 
-    // TODO Remove
-    if (campId === camp.id) {
-      data.value = camp as Camp;
-      isLoading.value = false;
-      return;
-    }
+    // // TODO Remove
+    // if (campId === camp.id) {
+    //   data.value = camp as Camp;
+    //   isLoading.value = false;
+    //   return;
+    // }
 
     try {
-      data.value = await apiService.fetchCamp(campId);
+      data.value = await api.fetchCamp(campId);
     } catch (e: unknown) {
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';
@@ -94,7 +93,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       newData.id ?? data.value?.id ?? (route.params.camp as string);
 
     try {
-      await apiService.updateCamp(campId, newData);
+      await api.updateCamp(campId, newData);
 
       quasar.notify({
         type: 'positive',
@@ -119,7 +118,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
     error.value = null;
     try {
-      await apiService.deleteCamp(campId);
+      await api.deleteCamp(campId);
       data.value = undefined;
       quasar.notify({
         type: 'positive',
