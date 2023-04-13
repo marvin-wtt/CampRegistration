@@ -1,6 +1,6 @@
 import { Component } from 'vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
-import { ExpressionEvaluator } from 'components/results/table/ExpressionEvaluator';
+import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 
 export class TableCellRenderer {
   private readonly _component: Component;

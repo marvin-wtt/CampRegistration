@@ -310,7 +310,7 @@ function shareAction(campId: string) {
 
 function addAction() {
   router.push({
-    name: 'create-c',
+    name: 'create-camp',
   });
 }
 

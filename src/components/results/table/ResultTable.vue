@@ -164,7 +164,7 @@ import {
 } from 'components/results/table/export/tableToPdf';
 
 import { useRoute, useRouter } from 'vue-router';
-import { ExpressionEvaluator } from 'components/results/table/ExpressionEvaluator';
+import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';

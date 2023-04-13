@@ -1,12 +1,27 @@
 import jsep from 'jsep';
+import { data } from 'autoprefixer';
 
 export class ExpressionEvaluator {
   public readonly IDENTIFIERS = ['$', '_'];
   private _data?: object;
   private readonly _node: jsep.Expression;
+  private callables: Record<
+    string,
+    (...args: jsep.baseTypes[]) => jsep.baseTypes
+  > = {};
 
   constructor(expression: string) {
+    // Replace surveyJS style variables
+    expression = expression.replace(/{(.*?)}/g, '_$1');
+    jsep.addBinaryOp('=', 0);
     this._node = jsep(expression);
+  }
+
+  addFunction(
+    name: string,
+    callable: (...args: jsep.baseTypes[]) => jsep.baseTypes
+  ): void {
+    this.callables[name] = callable;
   }
 
   evaluate(data: object): jsep.baseTypes {
@@ -37,8 +52,6 @@ export class ExpressionEvaluator {
         return this.evaluateUnaryExpression(expression as jsep.UnaryExpression);
     }
 
-    console.log(expression);
-
     throw `Unsupported expression type: ${expression.type}`;
   }
 
@@ -51,7 +64,22 @@ export class ExpressionEvaluator {
   private evaluateCallExpression(
     expression: jsep.CallExpression
   ): jsep.baseTypes {
-    throw `Unsupported expression call: ${expression.callee}`;
+    if (expression.callee.type !== 'Identifier') {
+      throw `Unsupported callee type: ${expression.callee.type}`;
+    }
+
+    const funcName = (expression.callee as jsep.Identifier).name;
+    const func = this.callables[funcName];
+
+    if (func === undefined) {
+      throw `Unsupported function name: ${funcName}`;
+    }
+
+    const args = expression.arguments.map((value) => {
+      return this.evaluateAny(value);
+    });
+
+    return func(...args);
   }
 
   private evaluateConditionalExpression(
@@ -67,24 +95,51 @@ export class ExpressionEvaluator {
   private evaluateBinaryExpression(
     expression: jsep.BinaryExpression
   ): boolean | string | number {
-    const left = this.evaluateAny(expression.left);
-    const right = this.evaluateAny(expression.right);
+    let left = this.evaluateAny(expression.left);
+    let right = this.evaluateAny(expression.right);
 
     switch (expression.operator) {
+      case '=':
       case '==':
         return left === right;
       case '!=':
         return left !== right;
       case '<':
+        if (isDate(left) && isDate(right)) {
+          left = Date.parse(left);
+          right = Date.parse(right);
+        }
         if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
           throw `Unsupported expression values of operator: ${expression.operator}`;
         }
         return left < right;
       case '>':
+        if (isDate(left) && isDate(right)) {
+          left = Date.parse(left);
+          right = Date.parse(right);
+        }
         if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
           throw `Unsupported expression values of operator: ${expression.operator}`;
         }
         return left > right;
+      case '<=':
+        if (isDate(left) && isDate(right)) {
+          left = Date.parse(left);
+          right = Date.parse(right);
+        }
+        if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
+          throw `Unsupported expression values of operator: ${expression.operator}`;
+        }
+        return left <= right;
+      case '>=':
+        if (isDate(left) && isDate(right)) {
+          left = Date.parse(left);
+          right = Date.parse(right);
+        }
+        if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
+          throw `Unsupported expression values of operator: ${expression.operator}`;
+        }
+        return left >= right;
       case '&&':
         if (!isBoolean(left) || !isBoolean(right)) {
           throw `Unsupported expression values of operator: ${expression.operator}`;
@@ -112,6 +167,21 @@ export class ExpressionEvaluator {
           throw `Unsupported expression values of operator: ${expression.operator}`;
         }
         return left + right;
+      case '*':
+        if (!isNumber(left) || !isNumber(right)) {
+          throw `Unsupported expression values of operator: ${expression.operator}`;
+        }
+        return left * right;
+      case '/':
+        if (!isNumber(left) || !isNumber(right) || right === 0) {
+          throw `Unsupported expression values of operator: ${expression.operator}`;
+        }
+        return left / right;
+      case '%':
+        if (!isNumber(left) || !isNumber(right)) {
+          throw `Unsupported expression values of operator: ${expression.operator}`;
+        }
+        return left % right;
     }
 
     throw `Unsupported expression operator: ${expression.operator}`;
@@ -174,4 +244,8 @@ function isNumber(value: jsep.baseTypes): value is number {
 
 function isString(value: jsep.baseTypes): value is string {
   return typeof value === 'string';
+}
+
+function isDate(value: jsep.baseTypes): value is string {
+  return isString(value) && !isNaN(Date.parse(value));
 }
