@@ -77,6 +77,15 @@
             />
           </template>
         </q-select>
+
+        <q-input
+          v-model="template.filter"
+          :label="t('fields.filter.label')"
+          :hint="t('fields.filter.hint')"
+          clearable
+          outlined
+          rounded
+        />
       </q-card-section>
       <q-separator spaced />
       <q-card-section>
@@ -242,6 +251,9 @@ fields:
   sortBy:
     label: 'Sort by column'
     hint: ''
+  filter:
+    label: 'Filter row by'
+    hint: 'Expression when to show a row'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -267,6 +279,9 @@ fields:
   sortBy:
     label: 'Nach Spalte sortieren'
     hint: ''
+  filter:
+    label: 'Filter-Zeile nach'
+    hint: 'Ausdruck, wann eine Zeile angezeigt werden soll'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -292,4 +307,7 @@ fields:
   sortBy:
     label: 'Trier par colonne'
     hint: ''
+  filter:
+    label: 'Filtrer la ligne par'
+    hint: 'Expression pour afficher une ligne'
 </i18n>
