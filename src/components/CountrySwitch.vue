@@ -13,10 +13,15 @@
       v-slot:selected-item="scope"
     >
       <country-icon
+        v-if="'country' in scope.opt"
         class="q-px-xs"
         :locale="scope.opt.country"
         size="sm"
       />
+
+      <a v-else>
+        {{ scope.opt }}
+      </a>
     </template>
 
     <template v-slot:option="scope">
@@ -71,13 +76,36 @@ const emit = defineEmits<{
 }>();
 
 const modelValue = computed({
-  get: () => props.modelValue,
+  get: () => validModelValue.value,
   set: (value) => emit('update:modelValue', value),
+});
+
+const validModelValue = computed(() => {
+  // Map locale to short locale if defined locale does not exist
+  if (optionValue.value !== 'locale') {
+    return props.modelValue;
+  }
+
+  const locale = props.modelValue;
+  if (typeof locale !== 'string') {
+    return props.modelValue;
+  }
+
+  if (langOptions.value.some((value) => value.locale === locale)) {
+    return locale;
+  }
+
+  const shortLocale = locale.split(/[-_]/)[0];
+  return langOptions.value.some((value) => value.locale === shortLocale)
+    ? shortLocale
+    : props.modelValue;
 });
 
 const { t } = useI18n();
 
-const optionValue = computed<string>(() => {
+type Options = 'country' | 'isoName' | 'locale';
+
+const optionValue = computed<Options>(() => {
   return props.emitCountry
     ? 'country'
     : props.emitIsoName
@@ -96,31 +124,32 @@ const options = computed(() => {
   });
 });
 
+// Always use short locale if no other is defined for that language
 const langOptions = computed(() => [
   {
     label: props.nativeNames ? 'Deutsch' : t('countries.de'),
-    locale: 'de-DE',
+    locale: 'de', // 'de-DE'
     country: 'de',
     isoName: 'de',
   },
   {
     label: props.nativeNames ? 'Français' : t('countries.fr'),
-    locale: 'fr-FR',
+    locale: 'fr', // 'fr-FR'
     country: 'fr',
     isoName: 'fr',
   },
   {
     label: props.nativeNames ? 'English (US)' : t('countries.us'),
-    locale: 'en-US',
+    locale: 'en', // 'en-US'
     country: 'us',
     isoName: 'en-US',
   },
-  {
-    label: props.nativeNames ? 'Polski' : t('countries.pl'),
-    locale: 'pl-PL',
-    country: 'pl',
-    isoName: 'pl',
-  },
+  // {
+  //   label: props.nativeNames ? 'Polski' : t('countries.pl'),
+  //   locale: 'pl', // 'pl-PL'
+  //   country: 'pl',
+  //   isoName: 'pl',
+  // },
 ]);
 </script>
 

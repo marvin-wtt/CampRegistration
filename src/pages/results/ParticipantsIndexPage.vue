@@ -9,7 +9,7 @@
       :questions="columns"
       :results="results"
       :templates="templates.data.value ?? []"
-      :camp="camp.data.value"
+      :camp="camp.data.value as Camp"
     />
   </page-state-handler>
 </template>
@@ -27,6 +27,7 @@ import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
 import PageStateHandler from 'components/PageStateHandler.vue';
+import { Camp } from 'src/types/Camp';
 
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useCampRegistrationsStore();
