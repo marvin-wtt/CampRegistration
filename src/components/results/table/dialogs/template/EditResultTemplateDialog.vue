@@ -40,10 +40,20 @@
           :label="t('fields.sortBy.label')"
           :hint="t('fields.sortBy.hint')"
           :options="sortByOptions"
+          emit-value
           hide-bottom-space
           outlined
           rounded
         >
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps">
+              <q-item-section>
+                <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
+                <q-item-label caption>{{ scope.opt.value }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+
           <template v-slot:append>
             <q-icon
               v-if="template.sortBy"
@@ -58,8 +68,8 @@
               v-if="template.sortBy"
               :icon="
                 template.sortDirection === 'asc'
-                  ? 'arrow_downward'
-                  : 'arrow_upward'
+                  ? 'arrow_upward'
+                  : 'arrow_downward'
               "
               round
               outline
@@ -70,6 +80,9 @@
       </q-card-section>
       <q-separator spaced />
       <q-card-section>
+        <a class="text-h6 q-pb-lg">
+          {{ t('sections.columns') }}
+        </a>
         <sortable-list
           v-model="template.columns"
           addable
@@ -78,7 +91,7 @@
           bordered
           separator
           dense
-          @edit="(item) => editColumn(item)"
+          @edit="(item) => editColumn(item as TableColumnTemplate)"
           @add="addColumn"
           v-slot="slotProps"
         >
@@ -119,7 +132,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';
 import TranslatedInput from 'components/TranslatedInput.vue';
-import { computed, reactive } from 'vue';
+import { computed, reactive, toRaw } from 'vue';
 import SortableList from 'components/SortableList.vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import EditResultColumnTemplateDialog from 'components/results/table/dialogs/template/EditResultColumnTemplateDialog.vue';
@@ -147,10 +160,17 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const template = reactive<TableTemplate>(props.template);
+const template = reactive<TableTemplate>(
+  structuredClone(toRaw(props.template))
+);
 
-const sortByOptions = computed<string[]>(() => {
-  return template.columns.map((value) => value.name);
+const sortByOptions = computed(() => {
+  return template.columns.map((value) => {
+    return {
+      value: value.name,
+      label: value.label,
+    };
+  });
 });
 
 function swapSortDirection(): void {
@@ -202,6 +222,9 @@ function onOKClick(): void {
 <i18n lang="yaml" locale="en">
 title: 'Edit Template'
 
+sections:
+  columns: 'Columns'
+
 actions:
   ok: 'Ok'
   cancel: 'Cancel'
@@ -223,9 +246,14 @@ fields:
 
 <i18n lang="yaml" locale="de">
 title: 'Vorlage bearbeiten'
+
+sections:
+  columns: 'Spalten'
+
 actions:
   ok: 'Ok'
   cancel: 'Abbrechen'
+
 fields:
   title:
     label: 'Titel'
@@ -243,9 +271,14 @@ fields:
 
 <i18n lang="yaml" locale="fr">
 title: 'Modifier le modèle'
+
+sections:
+  columns: 'Colonnes'
+
 actions:
   ok: 'Ok'
   cancel: 'Annuler'
+
 fields:
   title:
     label: 'Titre'

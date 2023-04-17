@@ -5,27 +5,25 @@ export function useTemplateService() {
   async function fetchResultTemplates(
     campId: string
   ): Promise<TableTemplate[]> {
-    const response = await api.get(`camps/${campId}/resultTemplates/`);
+    const response = await api.get(`camps/${campId}/templates/`);
 
-    return response.data;
+    return response.data.data;
   }
 
   async function fetchResultTemplate(
     campId: string,
     templateId: string
   ): Promise<TableTemplate[]> {
-    const response = await api.get(
-      `camps/${campId}/resultTemplates/${templateId}/`
-    );
+    const response = await api.get(`camps/${campId}/templates/${templateId}/`);
 
-    return response.data;
+    return response.data.data;
   }
 
   async function createResultTemplate(
     campId: string,
     data: TableTemplate
   ): Promise<void> {
-    await api.post(`camps/${campId}/resultTemplates/`, data);
+    await api.post(`camps/${campId}/templates/`, data);
   }
 
   async function updateResultTemplate(
@@ -33,14 +31,14 @@ export function useTemplateService() {
     templateId: string,
     data: Partial<TableTemplate>
   ): Promise<void> {
-    await api.patch(`camps/${campId}/resultTemplates/${templateId}/`, data);
+    await api.patch(`camps/${campId}/templates/${templateId}/`, data);
   }
 
   async function deleteResultTemplate(
     campId: string,
     templateId: string
   ): Promise<void> {
-    await api.delete(`camps/${campId}/resultTemplates/${templateId}/`);
+    await api.delete(`camps/${campId}/templates/${templateId}/`);
   }
 
   return {

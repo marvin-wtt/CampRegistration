@@ -88,14 +88,18 @@
 </template>
 
 <script lang="ts" setup>
-// FIXME TEMPORARY, REMOVE
-import registrations from 'src/lib/example/registrations.json';
 import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
 // -----------------------------------------------------------------------------
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import ParticipantsByCountryChart from 'components/results/charts/ParticipantsByCountryChart.vue';
 import ParticipantsByAgeAndCountry from 'components/results/charts/ParticipantsByAgeAndCountry.vue';
+import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { storeToRefs } from 'pinia';
+
+const registrationStore = useCampRegistrationsStore();
+
+const registrations = storeToRefs(registrationStore);
 
 DataProviderRegistry.INSTANCE.register({
   title: 'Age',
@@ -153,7 +157,10 @@ function isResultData(data: unknown): data is ResultData[] {
 type ResultData = Record<string, unknown>;
 
 // Participants by country
-const participants = ref(createResultData(registrations));
+const participants = computed(() => {
+  return registrations.data.value ?? [];
+});
+
 const maxParticipants = ref(30);
 const countries = ref(['de', 'fr']);
 

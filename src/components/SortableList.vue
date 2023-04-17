@@ -19,7 +19,7 @@
             flat
             icon="arrow_upward"
             size="xs"
-            @click.stop="orderUpwards(item)"
+            @click.stop="orderUpwards(item as TableTemplate)"
           />
           <q-btn
             dense
@@ -27,7 +27,7 @@
             flat
             icon="arrow_downward"
             size="xs"
-            @click.stop="orderDownwards(item)"
+            @click.stop="orderDownwards(item as TableTemplate)"
           />
         </q-item-section>
         <!-- Edit -->
@@ -75,7 +75,7 @@
 import { TableTemplate } from 'src/types/TableTemplate';
 import { computed } from 'vue';
 
-interface Element {
+export interface Element {
   order: number;
 }
 

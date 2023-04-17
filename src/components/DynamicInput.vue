@@ -109,7 +109,7 @@
       :hint="to(element.description)"
       :disable="readOnly"
       :option-label="(option) => to(option.text)"
-      :options="element.choices"
+      :options="(element as SelectionElement).choices"
       emit-value
       map-options
       :rules="[(val) => checkRequired(val)]"
@@ -152,12 +152,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  ExpressionElement,
-  FileElement,
-  SelectionElement,
-  TextElement,
-} from 'src/types/SurveyJSCampData';
+import { AnyElement, SelectionElement } from 'src/types/SurveyJSCampData';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import showdown from 'showdown';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
@@ -174,7 +169,7 @@ interface Props {
     | string[]
     | Record<string, string | number>;
   data: object;
-  element: TextElement | SelectionElement | FileElement | ExpressionElement;
+  element: AnyElement;
   readonly?: boolean;
   required?: boolean;
 }

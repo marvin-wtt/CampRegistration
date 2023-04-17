@@ -23,95 +23,14 @@
         >
           <q-card>
             <q-card-section>
-              <div
+              <!-- TODO required, visible, readonly -->
+              <dynamic-input
                 v-for="element in page.elements"
                 :key="element.name"
-                class="q-gutter-y-md column"
-              >
-                <q-input
-                  v-if="element.type === 'text'"
-                  v-model="data[element.name]"
-                  :hint="to(element.description)"
-                  :label="to(element.title)"
-                  hide-bottom-space
-                />
-
-                <q-input
-                  v-else-if="element.type === 'comment'"
-                  v-model="data[element.name]"
-                  :hint="to(element.description)"
-                  :label="to(element.title)"
-                  type="textarea"
-                />
-
-                <q-checkbox
-                  v-else-if="element.type === 'checkbox'"
-                  v-model="data[element.name]"
-                  :false-value="data[element.name] == null ? null : false"
-                  :hint="to(element.description)"
-                  :label="to(element.title)"
-                />
-
-                <!-- TODO hint -->
-                <q-toggle
-                  v-else-if="element.type === 'boolean'"
-                  v-model="data[element.name]"
-                  :label="to(element.title)"
-                />
-
-                <div
-                  v-else-if="element.type === 'radiogroup'"
-                  class="q-py-md"
-                >
-                  <p>
-                    {{ to(element.title) }}
-                  </p>
-
-                  <q-radio
-                    v-for="choice in element.choices"
-                    :key="choice.value"
-                    v-model="data[element.name]"
-                    :label="to(choice.text)"
-                    :val="choice.value"
-                    color="primary"
-                    inline
-                  />
-
-                  <p class="text-caption">
-                    {{ to(element.description) }}
-                  </p>
-                </div>
-
-                <q-select
-                  v-else-if="element.type === 'dropdown'"
-                  v-model="data[element.name]"
-                  :hint="to(element.description)"
-                  :label="to(element.title)"
-                  :option-label="(option) => to(option.text)"
-                  :options="element.choices"
-                  emit-value
-                  map-options
-                />
-
-                <!-- TODO Ajust size -->
-                <div v-else-if="element.type === 'expression'">
-                  <b>
-                    {{ to(element.title) }}
-                  </b>
-                  <p class="text-caption">
-                    {{ to(element.description) }}
-                  </p>
-                </div>
-
-                <!-- TODO add uploader -->
-
-                <p
-                  v-else
-                  class="text-negative"
-                >
-                  Unknown element: {{ element.type }}
-                </p>
-              </div>
+                v-model="data[element.name]"
+                :element="element"
+                :data="data"
+              />
             </q-card-section>
           </q-card>
           <q-separator />
@@ -143,6 +62,7 @@ import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import DynamicInput from 'components/DynamicInput.vue';
 
 interface Props {
   questions: SurveyJSCampData;

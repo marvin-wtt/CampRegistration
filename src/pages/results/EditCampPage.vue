@@ -1,10 +1,10 @@
 <template>
   <page-state-handler
-    :error="campDetails.error.value"
-    :loading="campDetails.isLoading.value"
+    :error="error"
+    :loading="isLoading"
   >
     <edit-camp-form
-      v-model="data"
+      v-model="camp"
       :loading="loading"
       mode="edit"
       @submit="onSubmit"
@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useRouter } from 'vue-router';
 import EditCampForm from 'components/results/EditCampForm.vue';
@@ -25,18 +25,26 @@ const router = useRouter();
 
 const loading = ref<boolean>(false);
 const campsStore = useCampDetailsStore();
-const campDetails = storeToRefs(campsStore);
+const { data, error, isLoading } = storeToRefs(campsStore);
 
-const data = ref<Camp | undefined>(campDetails.data.value);
+const camp = ref<Camp | undefined>(data.value);
+
+watch(data, (value) => {
+  if (camp.value === undefined && value) {
+    camp.value = data.value;
+  }
+});
 
 async function onSubmit() {
   loading.value = true;
 
-  if (data.value === undefined) {
+  const value = camp.value;
+
+  if (value === undefined) {
     return;
   }
 
-  await campsStore.updateData(data.value);
+  await campsStore.updateData(value);
 
   return router.push({
     name: 'results-dashboard',

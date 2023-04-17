@@ -38,14 +38,14 @@
         <q-btn
           type="submit"
           color="primary"
-          label="Continue"
+          :label="t('actions.continue')"
         />
         <q-btn
           v-if="!first"
           type="reset"
           flat
           color="primary"
-          label="Back"
+          :label="t('actions.back')"
           class="q-ml-sm"
         />
       </q-stepper-navigation>
@@ -123,3 +123,5 @@ const visible = computed<boolean>(() => {
 </script>
 
 <style scoped></style>
+
+<!-- TODO Add i18n translations -->

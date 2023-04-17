@@ -2,20 +2,19 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { TableTemplate } from 'src/types/TableTemplate';
 
-import templates from 'src/lib/example/resultTableTemplates.json';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 
-export const useResultTemplateStore = defineStore('resultTemplate', () => {
+export const useTemplateStore = defineStore('resultTemplate', () => {
   const route = useRoute();
   const router = useRouter();
   const quasar = useQuasar();
   const { t } = useI18n();
   const apiService = useAPIService();
 
-  const data = ref<TableTemplate[] | null>(null);
+  const data = ref<TableTemplate[] | undefined>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
@@ -49,16 +48,6 @@ export const useResultTemplateStore = defineStore('resultTemplate', () => {
       return;
     }
 
-    // TODO Remove
-    if (campId === '98daa32a-f6dd-41bd-b723-af10071459ad') {
-      data.value = templates as TableTemplate[];
-      data.value.sort((a, b) => {
-        return a.order - b.order;
-      });
-      isLoading.value = false;
-      return;
-    }
-
     try {
       data.value = await apiService.fetchResultTemplates(campId);
       data.value.sort((a, b) => {
@@ -81,6 +70,6 @@ export const useResultTemplateStore = defineStore('resultTemplate', () => {
     data,
     isLoading,
     error,
-    fetchTemplates: fetchData,
+    fetchData,
   };
 });

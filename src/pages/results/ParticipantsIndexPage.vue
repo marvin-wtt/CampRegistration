@@ -23,19 +23,19 @@ import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry'
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import ResultTable from 'components/results/table/ResultTable.vue';
-import { useResultTemplateStore } from 'stores/result-template-store';
+import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
 import PageStateHandler from 'components/PageStateHandler.vue';
 
 const campDetailStore = useCampDetailsStore();
-const campRegistrationsStore = useCampRegistrationsStore();
-const resultTemplateStore = useResultTemplateStore();
+const registrationStore = useCampRegistrationsStore();
+const templateStore = useTemplateStore();
 const { to } = useObjectTranslation();
 
 const camp = storeToRefs(campDetailStore);
-const registrations = storeToRefs(campRegistrationsStore);
-const templates = storeToRefs(resultTemplateStore);
+const registrations = storeToRefs(registrationStore);
+const templates = storeToRefs(templateStore);
 
 const loading = computed<boolean>(() => {
   return (

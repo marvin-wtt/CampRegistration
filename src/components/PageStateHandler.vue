@@ -1,7 +1,7 @@
 <template>
   <q-page class="row full-width justify-center">
     <div
-      v-if="loading"
+      v-if="props.loading"
       class="self-center"
     >
       <q-spinner
@@ -11,7 +11,7 @@
     </div>
 
     <div
-      v-else-if="error !== null"
+      v-else-if="error"
       class="text-center self-center"
     >
       <q-icon
@@ -20,7 +20,7 @@
       />
 
       <p class="text-h4">
-        {{ error }}
+        {{ props.error || 'Error' }}
       </p>
     </div>
 
@@ -29,12 +29,25 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, onErrorCaptured, ref } from 'vue';
+
 interface Props {
   error?: unknown;
   loading?: boolean;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+const localError = ref(false);
+
+onErrorCaptured((err, instance) => {
+  // TODO Handle gracefully
+  localError.value = true;
+});
+
+// TODO Not working...
+const error = computed<boolean>(() => {
+  return props.error != null || localError.value;
+});
 </script>
 
 <style scoped></style>

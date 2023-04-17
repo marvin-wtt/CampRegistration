@@ -216,8 +216,8 @@ const rows = computed<Registration[]>(() => {
       return (
         'country' in value &&
         typeof value.country === 'string' &&
-        countryFilter.value &&
-        countryFilter.value.includes(value.country)
+        countryFilter.value !== undefined &&
+        countryFilter.value?.includes(value.country)
       );
     });
   }
@@ -244,6 +244,7 @@ const templates = computed<TableTemplate[]>(() => {
     title: 'Original (Plain)',
     columns: props.questions,
     order: 99,
+    generated: true,
   });
 
   return templates.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));

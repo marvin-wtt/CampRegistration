@@ -5,7 +5,6 @@ import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { messages } from 'stores/camp/camp-registration-translations';
 
-import registrations from 'src/lib/example/registrations.json';
 import { useAPIService } from 'src/services/APIService';
 import { Registration } from 'src/types/Registration';
 
@@ -35,104 +34,6 @@ export const useCampRegistrationsStore = defineStore(
         return;
       }
     });
-
-    async function loadSampleData() {
-      data.value = registrations.map((registration: Registration) => {
-        if (
-          'legal_guardian_permission_leave' in registration &&
-          typeof registration.legal_guardian_permission_leave === 'string'
-        ) {
-          registration.legal_guardian_permission_leave = Number(
-            registration.legal_guardian_permission_leave
-          );
-        }
-
-        if (
-          'agreement_privacy' in registration &&
-          typeof registration.agreement_privacy !== 'boolean'
-        ) {
-          registration.agreement_privacy =
-            Array.isArray(registration.agreement_privacy) &&
-            registration.agreement_privacy.length === 1 &&
-            registration.agreement_privacy[0] === '1';
-        }
-
-        if (
-          'agreement_rules' in registration &&
-          typeof registration.agreement_rules !== 'boolean'
-        ) {
-          registration.agreement_rules =
-            Array.isArray(registration.agreement_rules) &&
-            registration.agreement_rules.length === 1 &&
-            registration.agreement_rules[0] === '1';
-        }
-
-        if (
-          'agreement_forward_list_participants' in registration &&
-          typeof registration.agreement_forward_list_participants !== 'boolean'
-        ) {
-          registration.agreement_forward_list_participants =
-            Array.isArray(registration.agreement_forward_list_participants) &&
-            registration.agreement_forward_list_participants.length === 1 &&
-            registration.agreement_forward_list_participants[0] === '1';
-        }
-
-        if (
-          'agreement_general_terms_and_conditions' in registration &&
-          typeof registration.agreement_general_terms_and_conditions !==
-            'boolean'
-        ) {
-          registration.agreement_general_terms_and_conditions =
-            Array.isArray(
-              registration.agreement_general_terms_and_conditions
-            ) &&
-            registration.agreement_general_terms_and_conditions.length === 1 &&
-            registration.agreement_general_terms_and_conditions[0] === '1';
-        }
-
-        if (
-          'language_skills' in registration &&
-          typeof registration.language_skills === 'object' &&
-          registration.language_skills !== null
-        ) {
-          if (
-            'de' in registration.language_skills &&
-            typeof registration.language_skills.de === 'object'
-          ) {
-            const level =
-              registration.language_skills.de !== null &&
-              'Column 1' in registration.language_skills.de
-                ? Number(registration.language_skills.de['Column 1'])
-                : 0;
-            registration.language_skills.de = (level / 3) * 100;
-          }
-          if (
-            'en' in registration.language_skills &&
-            typeof registration.language_skills.en === 'object'
-          ) {
-            const level =
-              registration.language_skills.en !== null &&
-              'Column 1' in registration.language_skills.en
-                ? Number(registration.language_skills.en['Column 1'])
-                : 0;
-            registration.language_skills.en = (level / 3) * 100;
-          }
-          if (
-            'fr' in registration.language_skills &&
-            typeof registration.language_skills.fr === 'object'
-          ) {
-            const level =
-              registration.language_skills.fr !== null &&
-              'Column 1' in registration.language_skills.fr
-                ? Number(registration.language_skills.fr['Column 1'])
-                : 0;
-            registration.language_skills.fr = (level / 3) * 100;
-          }
-        }
-
-        return registration;
-      });
-    }
 
     async function fetchData(id?: string) {
       isLoading.value = true;
@@ -202,7 +103,7 @@ export const useCampRegistrationsStore = defineStore(
       }
     }
 
-    async function deleteData(registrationId: string | undefined) {
+    async function deleteData(registrationId?: string) {
       const campId = route.params.camp as string;
 
       if (campId === undefined || registrationId === undefined) {

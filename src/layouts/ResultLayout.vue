@@ -239,7 +239,7 @@ import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
 import ProfileMenuButton from 'components/results/ProfileMenuButton.vue';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
-import { useResultTemplateStore } from 'stores/result-template-store';
+import { useTemplateStore } from 'stores/template-store';
 import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 
@@ -248,19 +248,19 @@ const route = useRoute();
 const { t } = useI18n();
 
 const campDetailStore = useCampDetailsStore();
-const campRegistrationsStore = useCampRegistrationsStore();
-const resultTemplateStore = useResultTemplateStore();
+const templateStore = useTemplateStore();
+const registrationsStore = useCampRegistrationsStore();
 
 // TODO Dont do for index page
 campDetailStore.fetchData();
-campRegistrationsStore.fetchData();
-resultTemplateStore.fetchTemplates();
+templateStore.fetchData();
+registrationsStore.fetchData();
 
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
 const showDrawer = computed<boolean>(() => {
-  return route.meta.hideDrawer !== true;
+  return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
 });
 </script>
 
@@ -304,19 +304,29 @@ tools: 'Tools'
 </i18n>
 
 <style>
-::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-  background-color: #f5f5f5;
-}
-
+/* width */
 ::-webkit-scrollbar {
-  height: 0.5rem;
   width: 0.5rem;
-  background-color: #f5f5f5;
+  height: 0.5rem;
 }
 
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 0.125rem grey;
+  border-radius: 0.25rem;
+}
+
+/* Handle */
 ::-webkit-scrollbar-thumb {
-  cursor: all-scroll;
-  background-color: #646464;
+  background: #656565;
+  border-radius: 0.25rem;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #4b4b4b;
+}
+
+::-webkit-scrollbar-corner {
 }
 </style>

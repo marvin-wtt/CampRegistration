@@ -65,13 +65,6 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       return;
     }
 
-    // // TODO Remove
-    // if (campId === camp.id) {
-    //   data.value = camp as Camp;
-    //   isLoading.value = false;
-    //   return;
-    // }
-
     try {
       data.value = await api.fetchCamp(campId);
     } catch (e: unknown) {
@@ -83,9 +76,9 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
         message: t('fetch.error'),
         position: 'top',
       });
-    } finally {
-      isLoading.value = false;
     }
+
+    isLoading.value = false;
   }
 
   async function updateData(newData: Camp) {

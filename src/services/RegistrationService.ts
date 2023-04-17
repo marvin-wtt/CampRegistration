@@ -1,9 +1,26 @@
 import { Registration } from 'src/types/Registration';
 import { api } from 'boot/axios';
+import { AxiosRequestConfig } from 'axios';
 
 export function useRegistrationService() {
+  function withoutMiddlewareConfig(): AxiosRequestConfig {
+    const transformResponse = Array.isArray(api.defaults.transformResponse)
+      ? api.defaults.transformResponse[0]
+      : [];
+
+    const transformRequest = Array.isArray(api.defaults.transformRequest)
+      ? api.defaults.transformRequest[0]
+      : [];
+
+    return {
+      transformRequest: transformRequest,
+      transformResponse: transformResponse,
+    };
+  }
+
   async function fetchRegistrations(campId: string): Promise<Registration[]> {
-    const response = await api.get(`camps/${campId}/registrations/`);
+    const config = withoutMiddlewareConfig();
+    const response = await api.get(`camps/${campId}/registrations/`, config);
 
     return response.data.data;
   }
@@ -12,8 +29,10 @@ export function useRegistrationService() {
     campId: string,
     registrationId: string
   ): Promise<Registration> {
+    const config = withoutMiddlewareConfig();
     const response = await api.get(
-      `camps/${campId}/registrations/${registrationId}/`
+      `camps/${campId}/registrations/${registrationId}/`,
+      config
     );
 
     return response.data.data;
@@ -23,7 +42,8 @@ export function useRegistrationService() {
     campId: string,
     data: Registration
   ): Promise<void> {
-    await api.post(`camps/${campId}/registrations/`, data);
+    const config = withoutMiddlewareConfig();
+    await api.post(`camps/${campId}/registrations/`, data, config);
   }
 
   async function updateRegistration(
@@ -31,14 +51,23 @@ export function useRegistrationService() {
     registrationId: string,
     data: Partial<Registration>
   ): Promise<void> {
-    await api.put(`camps/${campId}/registrations/${registrationId}/`, data);
+    const config = withoutMiddlewareConfig();
+    await api.put(
+      `camps/${campId}/registrations/${registrationId}/`,
+      data,
+      config
+    );
   }
 
   async function deleteRegistration(
     campId: string,
     registrationId: string
   ): Promise<void> {
-    await api.delete(`camps/${campId}/registrations/${registrationId}/`);
+    const config = withoutMiddlewareConfig();
+    await api.delete(
+      `camps/${campId}/registrations/${registrationId}/`,
+      config
+    );
   }
 
   return {

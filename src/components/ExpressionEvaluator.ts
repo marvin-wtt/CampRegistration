@@ -1,5 +1,4 @@
 import jsep from 'jsep';
-import { data } from 'autoprefixer';
 
 export class ExpressionEvaluator {
   public readonly IDENTIFIERS = ['$', '_'];

@@ -31,13 +31,38 @@
           outlined
           rounded
         />
-        <q-input
+
+        <q-select
           v-model="column.field"
           :label="t('fields.field.label')"
           :hint="t('fields.field.hint')"
+          :options="fieldFilterOptions"
+          emit-value
+          use-input
+          hide-bottom-space
           outlined
           rounded
-        />
+          @new-value="createField"
+          @filter="fieldFilterFn"
+        >
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps">
+              <q-item-section>
+                <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
+                <q-item-label caption>{{ scope.opt.value }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+
+          <template v-slot:append>
+            <q-icon
+              v-if="column.field"
+              name="close"
+              class="cursor-pointer"
+              @click.stop.prevent="column.field = ''"
+            />
+          </template>
+        </q-select>
 
         <q-select
           v-model="column.align"
@@ -120,10 +145,12 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref, toRaw } from 'vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import TranslatedInput from 'components/TranslatedInput.vue';
 import { Camp } from 'src/types/Camp';
+import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 interface Props {
   column: TableColumnTemplate;
@@ -135,6 +162,7 @@ const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -145,7 +173,9 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const column = reactive<TableColumnTemplate>(props.column);
+const column = reactive<TableColumnTemplate>(
+  structuredClone(toRaw(props.column))
+);
 
 function onOKClick(): void {
   onDialogOK(column);
@@ -167,6 +197,46 @@ const alignOptions = computed(() => {
     },
   ];
 });
+
+const fieldOptions = computed(() => {
+  const form = props.camp.form as SurveyJSCampData;
+
+  return form.pages.flatMap((page) => {
+    return page.elements
+      .filter((element) => {
+        return element.type !== 'expression';
+      })
+      .map((element) => {
+        return {
+          label: element.title,
+          value: element.name,
+        };
+      });
+  });
+});
+
+const fieldFilterOptions = ref(fieldOptions.value);
+
+function createField(val: string, done) {
+  val = val.trim();
+  if (val.length === 0 && /\s/g.test(val)) {
+    return;
+  }
+  done(val);
+}
+
+function fieldFilterFn(val: string, update) {
+  update(() => {
+    if (val === '') {
+      fieldFilterOptions.value = fieldOptions.value;
+    } else {
+      const needle = val.toLowerCase();
+      fieldFilterOptions.value = fieldOptions.value.filter(
+        (v) => v.value.toLowerCase().indexOf(needle) > -1
+      );
+    }
+  });
+}
 </script>
 
 <style scoped></style>

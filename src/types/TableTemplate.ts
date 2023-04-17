@@ -13,4 +13,5 @@ export interface TableTemplate extends Identifiable {
   actions?: boolean;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+  generated?: boolean;
 }

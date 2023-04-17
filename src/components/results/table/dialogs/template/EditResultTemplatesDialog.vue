@@ -20,7 +20,7 @@
           bordered
           separator
           @add="addTemplate()"
-          @edit="(item) => editTemplate(item)"
+          @edit="(item) => editTemplate(item as TableTemplate)"
           v-slot="slotProps"
         >
           <q-item-section>
@@ -84,10 +84,15 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const templates = reactive<TableTemplate[]>(propTemplates());
 
 function propTemplates(): TableTemplate[] {
-  const templates = props.templates.map((value) => {
-    return toRaw(value);
-  });
-  return structuredClone(templates);
+  // Filter generated templates as they cannot be edited and remove vue proxies
+  const templates = props.templates
+    .filter((template) => {
+      return template.generated !== true;
+    })
+    .map((template) => {
+      return toRaw(template);
+    });
+  return structuredClone(templates) as TableTemplate[];
 }
 
 function addTemplate() {
@@ -121,13 +126,18 @@ function editTemplate(template: TableTemplate) {
       persistent: true,
     })
     .onOk((payload) => {
-      // TODO
+      const index = templates.indexOf(template);
+
+      if (index < 0) {
+        return;
+      }
+
+      templates[index] = payload;
     });
 }
 
 function onOKClick() {
-  // TODO
-  onDialogOK();
+  onDialogOK(templates);
 }
 </script>
 

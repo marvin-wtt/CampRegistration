@@ -4,7 +4,11 @@ import { computed } from 'vue';
 export function useObjectTranslation() {
   const { locale, fallbackLocale } = useI18n();
 
-  function to(value: string | Record<string, string>): string {
+  function to(value: string | Record<string, string> | undefined): string {
+    if (value === undefined) {
+      return '';
+    }
+
     if (typeof value !== 'object') {
       return value;
     }

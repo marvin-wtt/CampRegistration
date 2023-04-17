@@ -48,17 +48,17 @@ export interface Element {
 
 export interface TextElement extends Element {
   type: 'text';
-  inputType?:
-    | 'text'
-    | 'date'
-    | 'time'
-    | 'datetime'
+  // TODO Maybe covert these types? Or ignore them
+  inputType?: // | 'color'
+  | 'date'
+    // | 'datetime'
     | 'email'
     | 'number'
-    | 'range'
     | 'password'
-    | 'url'
-    | 'color';
+    // | 'range'
+    | 'text'
+    // | 'time'
+    | 'url';
 
   min?: number | string;
   max?: number | string;
