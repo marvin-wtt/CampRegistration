@@ -25,7 +25,7 @@
       multiple
       emit-country
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="language" />
       </template>
     </country-switch>
@@ -41,7 +41,7 @@
       outlined
       rounded
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="title" />
       </template>
     </translated-input>
@@ -59,7 +59,7 @@
       rounded
       type="number"
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="group" />
       </template>
     </translated-input>
@@ -75,7 +75,7 @@
       outlined
       rounded
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="event" />
       </template>
     </date-time-input>
@@ -93,7 +93,7 @@
       outlined
       rounded
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="event" />
       </template>
     </date-time-input>
@@ -110,7 +110,7 @@
       rounded
       type="number"
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="remove" />
       </template>
     </q-input>
@@ -126,7 +126,7 @@
       rounded
       type="number"
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="add" />
       </template>
     </q-input>
@@ -142,7 +142,7 @@
       outlined
       rounded
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="map" />
       </template>
     </translated-input>
@@ -160,7 +160,7 @@
       suffix="€"
       type="number"
     >
-      <template v-slot:before>
+      <template #before>
         <q-icon name="euro" />
       </template>
     </q-input>

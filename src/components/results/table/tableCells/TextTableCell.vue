@@ -1,24 +1,18 @@
 <template>
   {{ truncatedText }}
 
-  <q-btn
-    v-if="isTruncated"
-    :size="size"
-    class="q-mx-sm q-px-sm"
-    dense
-    label="..."
-    outline
-    stretch
-  >
-    <q-popup-proxy>
-      <q-banner
-        dense
-        style="max-width: 500px"
-      >
-        {{ props.props.value }}
-      </q-banner>
-    </q-popup-proxy>
-  </q-btn>
+  <template v-if="extraWords > 0">
+    {{ `(+${extraWords})` }}
+  </template>
+
+  <q-tooltip v-if="extraWords > 0">
+    <q-banner
+      dense
+      style="max-width: 500px"
+    >
+      {{ props.props.value }}
+    </q-banner>
+  </q-tooltip>
 </template>
 
 <script lang="ts" setup>
@@ -34,10 +28,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const limit = 25;
-
-const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
-});
 
 const isTruncated = computed<boolean>(() => {
   const value = props.props.value;
@@ -62,6 +52,22 @@ const truncatedText = computed<string | unknown>(() => {
   }
 
   return value;
+});
+
+const extraWords = computed<number>(() => {
+  const value = props.props.value;
+
+  if (typeof value !== 'string') {
+    return 0;
+  }
+
+  const total = value.length;
+  const lastSpaceIndex = value.substring(0, limit).lastIndexOf(' ');
+  if (lastSpaceIndex < 0) {
+    return 0;
+  }
+
+  return total - lastSpaceIndex;
 });
 </script>
 

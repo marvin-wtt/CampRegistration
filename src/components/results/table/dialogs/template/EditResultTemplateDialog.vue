@@ -1,8 +1,8 @@
 <template>
   <q-dialog
     ref="dialogRef"
-    @hide="onDialogHide"
     persistent
+    @hide="onDialogHide"
   >
     <q-card
       class="q-dialog-plugin q-pb-none"
@@ -45,7 +45,7 @@
           outlined
           rounded
         >
-          <template v-slot:option="scope">
+          <template #option="scope">
             <q-item v-bind="scope.itemProps">
               <q-item-section>
                 <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
@@ -54,7 +54,7 @@
             </q-item>
           </template>
 
-          <template v-slot:append>
+          <template #append>
             <q-icon
               v-if="template.sortBy"
               name="close"
@@ -63,7 +63,7 @@
             />
           </template>
 
-          <template v-slot:after>
+          <template #after>
             <q-btn
               v-if="template.sortBy"
               :icon="
@@ -93,6 +93,7 @@
           {{ t('sections.columns') }}
         </a>
         <sortable-list
+          v-slot="slotProps"
           v-model="template.columns"
           addable
           editable
@@ -102,7 +103,6 @@
           dense
           @edit="(item) => editColumn(item as TableColumnTemplate)"
           @add="addColumn"
-          v-slot="slotProps"
         >
           <q-item-section>
             <q-item-label>

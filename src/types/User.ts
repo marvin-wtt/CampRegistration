@@ -1,4 +1,7 @@
+import { Camp } from 'src/types/Camp';
+
 export interface User {
-  // TODO
   email: string;
+  name: string;
+  camps: Camp[];
 }

@@ -60,8 +60,8 @@
     </TransitionGroup>
     <q-item
       v-if="addable"
-      clickable
       v-ripple
+      clickable
       @click="addItem"
     >
       <q-item-section class="column content-center">

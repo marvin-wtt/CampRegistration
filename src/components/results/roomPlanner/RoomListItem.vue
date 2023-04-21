@@ -11,18 +11,18 @@
         outlined
         rounded
       >
-        <template v-slot:prepend>
+        <template #prepend>
           <country-icon
             v-if="person"
             :locale="person.country"
           />
         </template>
 
-        <template v-slot:selected>
+        <template #selected>
           {{ selected }}
         </template>
 
-        <template v-slot:option="scope">
+        <template #option="scope">
           <q-item v-bind="scope.itemProps">
             <q-item-section avatar>
               <country-icon :locale="scope.opt.country" />

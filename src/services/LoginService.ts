@@ -1,19 +1,27 @@
-import { api } from 'boot/axios';
+import { api, apiUrl } from 'boot/axios';
+import { User } from 'src/types/User';
 
 export function useLoginService() {
-  async function login(email: string, password: string): Promise<void> {
-    await api.get('/sanctum/csrf-cookie');
+  async function login(
+    email: string,
+    password: string,
+    remember = false
+  ): Promise<void> {
+    await api.get('/sanctum/csrf-cookie', {
+      baseURL: apiUrl,
+    });
 
-    const response = await api.post('login', {
+    const response = await api.post('/login', {
       email: email,
       password: password,
+      remember: remember,
     });
 
     return response.data;
   }
 
   async function logout(): Promise<void> {
-    const response = await api.post('login');
+    const response = await api.post('logout');
 
     return response.data;
   }
@@ -49,11 +57,18 @@ export function useLoginService() {
     return response.data;
   }
 
+  async function fetchAuthUser(): Promise<User> {
+    const response = await api.get('user');
+
+    return response.data.data;
+  }
+
   return {
     login,
     logout,
     register,
     forgotPassword,
     resetPassword,
+    fetchAuthUser,
   };
 }

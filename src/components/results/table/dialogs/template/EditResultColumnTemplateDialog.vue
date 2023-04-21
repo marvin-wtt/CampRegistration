@@ -1,8 +1,8 @@
 <template>
   <q-dialog
     ref="dialogRef"
-    @hide="onDialogHide"
     persistent
+    @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin">
       <q-card-section>
@@ -45,7 +45,7 @@
           @new-value="createField"
           @filter="fieldFilterFn"
         >
-          <template v-slot:option="scope">
+          <template #option="scope">
             <q-item v-bind="scope.itemProps">
               <q-item-section>
                 <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
@@ -54,7 +54,7 @@
             </q-item>
           </template>
 
-          <template v-slot:append>
+          <template #append>
             <q-icon
               v-if="column.field"
               name="close"

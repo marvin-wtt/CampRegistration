@@ -15,7 +15,7 @@
     row-key="name"
     virtual-scroll
   >
-    <template v-slot:top-right>
+    <template #top-right>
       <div class="fit row no-wrap justify-end">
         <!-- Filter -->
         <q-select
@@ -29,7 +29,7 @@
           multiple
           style="min-width: 100px"
         >
-          <template v-slot:prepend>
+          <template #prepend>
             <q-avatar icon="filter_list" />
           </template>
         </q-select>
@@ -47,10 +47,10 @@
           style="min-width: 150px"
           @update:model-value="onTemplateChange()"
         >
-          <template v-slot:selected-item="scope">
+          <template #selected-item="scope">
             {{ to(scope.opt.title) }}
           </template>
-          <template v-slot:option="scope">
+          <template #option="scope">
             <!-- Custom separator for plain option -->
             <q-separator v-if="scope.opt.id === -1" />
 
@@ -113,11 +113,11 @@
     <template
       v-for="column in columns"
       :key="column.name"
-      v-slot:[`header-cell-${column.name}`]="props"
+      #[`header-cell-${column.name}`]="columnProps"
     >
       <q-th
         :auto-width="column.shrink"
-        :props="props"
+        :props="columnProps"
         style="vertical-align: bottom"
       >
         <a
@@ -127,7 +127,7 @@
               : ''
           "
         >
-          {{ to(props.col.label) }}
+          {{ to(columnProps.col.label) }}
         </a>
       </q-th>
     </template>
@@ -135,15 +135,15 @@
     <template
       v-for="[key, renderer] in renderers"
       :key="key"
-      v-slot:[`body-cell-${key}`]="props"
+      #[`body-cell-${key}`]="rendererProps"
     >
-      <q-td :props="props">
+      <q-td :props="rendererProps">
         <component
           :is="renderer.component"
-          v-if="renderer.isVisible(props.row)"
+          v-if="renderer.isVisible(rendererProps.row)"
           :options="renderer.options"
           :printing="printing"
-          :props="props"
+          :props="rendererProps"
         />
       </q-td>
     </template>
@@ -347,6 +347,7 @@ async function exportPDF() {
   const marginHeight = 100;
   const height = contentHeight + headerHeight + marginHeight;
 
+  // TODO Take orientation into account
   // Calculate required width.
   table.style.width = 'auto';
   const minWidth = table.clientWidth;

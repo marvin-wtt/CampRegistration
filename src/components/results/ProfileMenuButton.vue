@@ -6,6 +6,22 @@
   >
     <q-menu>
       <q-list style="min-width: 100px">
+        <q-item>
+          <q-item-section>
+            <q-item-label>
+              {{ t('username') }}
+            </q-item-label>
+            <q-item-label caption>
+              {{ data?.name }}
+            </q-item-label>
+            <q-item-label caption>
+              {{ data?.email }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-separator />
+
         <q-item
           v-close-popup
           clickable
@@ -46,17 +62,17 @@
           >
             <q-list>
               <q-item
-                v-for="locale in locales"
-                :key="locale.value"
+                v-for="localeOption in locales"
+                :key="localeOption.value"
                 clickable
-                @click="updateLocale(locale.value)"
+                @click="updateLocale(localeOption.value)"
               >
                 <q-item-section avatar>
-                  <country-icon :locale="locale.country" />
+                  <country-icon :locale="localeOption.country" />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    {{ locale.label }}
+                    {{ localeOption.label }}
                   </q-item-label>
                 </q-item-section>
               </q-item>
@@ -69,6 +85,7 @@
         <q-item
           v-close-popup
           clickable
+          @click="logout"
         >
           <q-item-section avatar>
             <q-icon name="logout" />
@@ -87,12 +104,17 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import CountryIcon from 'components/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
+import { useAuthStore } from 'stores/auth-store';
+import { storeToRefs } from 'pinia';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 const { locale } = useI18n({
   useScope: 'global',
 });
+
+const authStore = useAuthStore();
+const { data } = storeToRefs(authStore);
 
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE', country: 'de' },
@@ -107,13 +129,18 @@ function updateLocale(value: string) {
 function toggleDarkMode() {
   quasar.dark.toggle();
 }
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-logout: 'Logout'
-profile: 'Profile'
+username: 'Signed in as'
+logout: 'Sing out'
+profile: 'profile'
 language: 'Language'
 dark_mode: 'Dark Mode'
 </i18n>

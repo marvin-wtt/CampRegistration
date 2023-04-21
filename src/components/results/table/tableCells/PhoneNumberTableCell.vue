@@ -35,12 +35,13 @@ const formattedPhoneNumber = computed<string | unknown>(() => {
 
 function formatPhoneNumber(phoneNumber: string): string {
   if (
-    !phoneNumber.match(/^([+0])\d[\d\-\s]+$/g) ||
+    !phoneNumber.match(/^([+0])\d[\d\-\/\s]+$/g) ||
     (!phoneNumber.startsWith('+') && !phoneNumber.startsWith('0'))
   ) {
     return phoneNumber;
   }
 
+  // Replace all special characters
   phoneNumber = phoneNumber.replace(/\s|-|\//g, '');
 
   if (phoneNumber.startsWith('+')) {

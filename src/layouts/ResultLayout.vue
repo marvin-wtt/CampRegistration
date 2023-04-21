@@ -127,26 +127,6 @@
           disable
         >
           <q-item-section avatar>
-            <q-icon name="show_chart" />
-          </q-item-section>
-
-          <q-item-section>
-            <q-badge
-              align="top"
-              floating
-              rounded
-              >Coming soon!
-            </q-badge>
-            {{ t('statistics') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-ripple
-          clickable
-          disable
-        >
-          <q-item-section avatar>
             <q-icon name="email" />
           </q-item-section>
 
@@ -227,7 +207,11 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="fade">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </q-page-container>
   </q-layout>
 </template>
@@ -242,15 +226,18 @@ import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { useTemplateStore } from 'stores/template-store';
 import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
+import { useAuthStore } from 'stores/auth-store';
 
 const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 
+const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
 const templateStore = useTemplateStore();
 const registrationsStore = useCampRegistrationsStore();
 
+authStore.fetchData();
 // TODO Dont do for index page
 campDetailStore.fetchData();
 templateStore.fetchData();
@@ -310,6 +297,17 @@ tools: 'Tools'
   height: 0.5rem;
 }
 
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.1s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Scrollbar */
 /* Track */
 ::-webkit-scrollbar-track {
   box-shadow: inset 0 0 0.125rem grey;

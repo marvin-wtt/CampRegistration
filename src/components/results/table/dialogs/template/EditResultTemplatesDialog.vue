@@ -1,8 +1,8 @@
 <template>
   <q-dialog
     ref="dialogRef"
-    @hide="onDialogHide"
     persistent
+    @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin q-pb-none">
       <q-card-section>
@@ -13,15 +13,15 @@
 
       <q-card-section class="q-pt-none">
         <sortable-list
+          v-slot="slotProps"
           v-model="templates"
           addable
           editable
           deletable
           bordered
           separator
-          @add="addTemplate()"
+          @add="addTemplate"
           @edit="(item) => editTemplate(item as TableTemplate)"
-          v-slot="slotProps"
         >
           <q-item-section>
             {{ to(slotProps.item.title) }}

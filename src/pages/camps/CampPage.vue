@@ -4,8 +4,8 @@
     padding
   >
     <q-stepper
-      v-model="step"
       ref="stepper"
+      v-model="step"
       class="col-12 col-xl-4 col-lg-6 col-md-8 col-sm-10"
       color="primary"
       animated
@@ -17,8 +17,8 @@
       <c-step
         v-for="(page, index) in pages"
         :key="page.name"
-        :page="page"
         v-model="data"
+        :page="page"
         :name="index"
         :vertical="vertical"
         :first="index === 0"
@@ -29,9 +29,9 @@
         @prev="step = index - 1"
       />
 
-      <!--!<template
-        v-slot:navigation
+      <template
         v-if="!vertical"
+        #navigation
       >
         <q-stepper-navigation v-if="!vertical">
           <q-btn
@@ -48,7 +48,7 @@
             @click="$refs.stepper.previous()"
           />
         </q-stepper-navigation>
-      </template>-->
+      </template>
     </q-stepper>
   </q-page>
 </template>

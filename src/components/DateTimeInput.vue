@@ -7,7 +7,7 @@
     rounded
     v-bind="$attrs"
   >
-    <template v-slot:append>
+    <template #append>
       <q-icon
         class="cursor-pointer"
         name="event"
@@ -66,7 +66,7 @@
     <template
       v-for="(data, name, index) in $slots"
       :key="index"
-      v-slot:[name]
+      #[name]
     >
       <slot
         :name="name"

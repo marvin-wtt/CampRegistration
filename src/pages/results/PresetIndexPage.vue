@@ -14,8 +14,8 @@
       </q-item-label>
 
       <q-item
-        v-for="preset in presets"
-        :key="preset.id"
+        v-for="presetItem in presets"
+        :key="presetItem.id"
         tag="label"
       >
         <q-item-section avatar>
@@ -23,19 +23,19 @@
             color="primary"
             text-color="white"
           >
-            {{ preset.order }}
+            {{ presetItem.order }}
           </q-avatar>
         </q-item-section>
 
         <q-item-section>
           <q-item-label>
-            {{ preset.title }}
+            {{ presetItem.title }}
           </q-item-label>
           <q-item-label
             caption
             lines="1"
           >
-            {{ preset.columns.length }} {{ t('columns') }}
+            {{ presetItem.columns.length }} {{ t('columns') }}
           </q-item-label>
         </q-item-section>
         <q-item-section side>
@@ -43,7 +43,7 @@
             icon="edit"
             outline
             rounded
-            @click="showEditPreset(preset)"
+            @click="showEditPreset(presetItem)"
           />
         </q-item-section>
         <q-item-section side>

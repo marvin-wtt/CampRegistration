@@ -4,6 +4,7 @@ import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { useAuthStore } from 'stores/auth-store';
 
 export const useCampsStore = defineStore('camps', () => {
   const quasar = useQuasar();
@@ -70,6 +71,7 @@ export const useCampsStore = defineStore('camps', () => {
     if (campStore.data?.id === id) {
       await campStore.fetchData();
     }
+    await useAuthStore().fetchData();
   }
 
   async function deleteEntry(id: string) {

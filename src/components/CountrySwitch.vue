@@ -10,7 +10,7 @@
   >
     <template
       v-if="!multiple"
-      v-slot:selected-item="scope"
+      #selected-item="scope"
     >
       <country-icon
         v-if="'country' in scope.opt"
@@ -24,7 +24,7 @@
       </a>
     </template>
 
-    <template v-slot:option="scope">
+    <template #option="scope">
       <q-item v-bind="scope.itemProps">
         <q-item-section avatar>
           <country-icon :locale="scope.opt.locale" />
@@ -41,7 +41,7 @@
     <template
       v-for="(data, name, index) in $slots"
       :key="index"
-      v-slot:[name]
+      #[name]
     >
       <slot
         :name="name"
@@ -57,7 +57,7 @@ import CountryIcon from 'components/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
-  modelValue?: string | number | Record<string, string | number>;
+  modelValue: undefined | string | number | Record<string, string | number>;
   countries?: string[];
   nativeNames?: boolean;
   emitCountry?: boolean;
@@ -66,6 +66,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  countries: undefined, // TODO Why cant it be an empty array?
   nativeNames: false,
   emitCountry: false,
   emitIsoName: false,

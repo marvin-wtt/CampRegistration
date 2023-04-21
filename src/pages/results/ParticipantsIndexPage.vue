@@ -4,8 +4,8 @@
     :loading="loading"
   >
     <ResultTable
-      class="absolute fit"
       ref="table"
+      class="absolute fit"
       :questions="columns"
       :results="results"
       :templates="templates.data.value ?? []"

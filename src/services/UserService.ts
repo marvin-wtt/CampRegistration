@@ -8,7 +8,7 @@ export function useUserService() {
     return response.data.data;
   }
 
-  async function fetchUser(id: string): Promise<User> {
+  async function fetchUser(id?: string): Promise<User> {
     const response = await api.get(`users/${id}/`);
 
     return response.data.data;

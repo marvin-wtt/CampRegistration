@@ -61,13 +61,6 @@ export const useCampRegistrationsStore = defineStore(
       }
     }
 
-    // TODO on logout
-    function clearData() {
-      data.value = undefined;
-      isLoading.value = false;
-      error.value = null;
-    }
-
     async function updateData(
       registrationId: string | undefined,
       data: Partial<Registration>

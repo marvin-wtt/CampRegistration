@@ -1,55 +1,67 @@
 <template>
   <div class="row">
-    <div class="col">
-      <!-- Single input -->
-      <q-input
-        v-if="!useTranslations || !enabled"
-        class="col"
-        v-model="value"
-        :label="label"
-        :modelModifiers="props.modelModifiers"
-        v-bind="$attrs"
-      >
-        <template
-          v-for="(data, name, index) in $slots"
-          :key="index"
-          v-slot:[name]
+    <div
+      class="col"
+      style="display: grid"
+    >
+      <transition name="bounce">
+        <!-- Single input -->
+        <div
+          v-if="!useTranslations || !enabled"
+          class="layer1"
         >
-          <slot
-            :name="name"
-            v-bind="data"
-          />
-        </template>
-      </q-input>
+          <q-input
+            v-model="value"
+            :label="label"
+            :model-modifiers="props.modelModifiers"
+            v-bind="$attrs"
+          >
+            <template
+              v-for="(data, name, index) in $slots"
+              :key="index"
+              #[name]
+            >
+              <slot
+                :name="name"
+                v-bind="data"
+              />
+            </template>
+          </q-input>
+        </div>
 
-      <!-- Translated input -->
-      <q-input
-        v-else
-        v-for="(locale, index) in props.locales"
-        :key="index"
-        v-model="translations[locale]"
-        :label="`${label} (${locale})`"
-        :modelModifiers="props.modelModifiers"
-        clearable
-        v-bind="$attrs"
-        @clear="clearTranslation(locale)"
-      >
-        <template v-slot:prepend>
-          <country-icon :locale="locale" />
-        </template>
-
-        <!-- Parent slots -->
-        <template
-          v-for="(data, name, index) in $slots"
-          :key="index"
-          v-slot:[name]
+        <!-- Translated input -->
+        <div
+          v-else
+          class="layer2"
         >
-          <slot
-            :name="name"
-            v-bind="data"
-          />
-        </template>
-      </q-input>
+          <q-input
+            v-for="(locale, index) in props.locales"
+            :key="index"
+            v-model="translations[locale]"
+            :label="`${label} (${locale})`"
+            :model-modifiers="props.modelModifiers"
+            clearable
+            v-bind="$attrs"
+            @clear="clearTranslation(locale)"
+          >
+            <template #prepend>
+              <country-icon :locale="locale" />
+            </template>
+
+            <!-- Parent slots -->
+            <template
+              v-for="(data, name, slotIndex) in $slots"
+              :key="slotIndex"
+              #[name]
+            >
+              <slot
+                :name="name"
+                v-bind="data"
+              />
+            </template>
+          </q-input>
+        </div>
+      </transition>
     </div>
 
     <!-- Actions -->
@@ -81,7 +93,7 @@ type Translations = Record<string, string | number>;
 const { t } = useI18n();
 
 interface Props {
-  modelValue?: string | number | Translations;
+  modelValue: undefined | string | number | Translations;
   modelModifiers?: Record<string, boolean>;
   label?: string;
   locales?: string[];
@@ -89,6 +101,9 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  modelModifiers: undefined,
+  label: '',
+  locales: undefined, // TODO Why cant I make it an empty array?
   always: false,
 });
 const emit = defineEmits<{
@@ -98,10 +113,6 @@ const emit = defineEmits<{
 const useTranslations = ref(defaultUseTranslations());
 const value = ref<string | number>(defaultValue());
 const translations = ref<Translations>(defaultTranslations());
-
-const label = computed<string>(() => {
-  return props.label ?? '';
-});
 
 const enabled = computed<boolean>(() => {
   return props.locales !== undefined && props.locales.length > 1;
@@ -154,6 +165,29 @@ watch(
 <style scoped>
 .margin-between > * + * {
   margin-top: 0.5rem;
+}
+
+.layer1,
+.layer2 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.bounce-enter-active {
+  animation: bounce-in 0.5s;
+}
+
+.bounce-leave-active {
+  animation: bounce-in 0.5s reverse;
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>
 

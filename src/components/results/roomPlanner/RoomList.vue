@@ -24,8 +24,8 @@
             <q-list style="min-width: 100px">
               <!-- Edit -->
               <q-item
-                clickable
                 v-close-popup
+                clickable
                 @click="editRoom"
               >
                 <q-item-section avatar>
@@ -37,8 +37,8 @@
               </q-item>
               <!-- Delete -->
               <q-item
-                clickable
                 v-close-popup
+                clickable
                 @click="deleteRoom"
               >
                 <q-item-section avatar>

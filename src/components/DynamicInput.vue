@@ -46,7 +46,7 @@
           borderless
           dense
         >
-          <template v-slot:control>
+          <template #control>
             <q-checkbox
               v-model="modelValue"
               :true-value="choices[0].value"
@@ -60,8 +60,8 @@
       <!-- Multi-option checkbox -->
       <q-option-group
         v-else
-        type="checkbox"
         v-model="modelValue"
+        type="checkbox"
         :disable="readOnly"
         :options="choices"
         :rules="[(val) => checkRequired(val)]"
@@ -77,7 +77,7 @@
       borderless
       dense
     >
-      <template v-slot:control>
+      <template #control>
         <q-toggle
           v-model="modelValue"
           :label="label"
@@ -135,7 +135,7 @@
       :multiple="element.allowMultiple"
       :accept="element.acceptedTypes"
     >
-      <template v-slot:prepend>
+      <template #prepend>
         <q-icon name="attach_file" />
       </template>
     </q-file>
@@ -162,7 +162,8 @@ const { to } = useObjectTranslation();
 const converter = new showdown.Converter();
 
 interface Props {
-  modelValue?:
+  modelValue:
+    | undefined
     | string
     | number
     | boolean
