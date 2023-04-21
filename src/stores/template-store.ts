@@ -31,6 +31,12 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
     }
   });
 
+  function reset() {
+    data.value = undefined;
+    isLoading.value = false;
+    error.value = null;
+  }
+
   // TODO Items:
   //  federal_licence_id
   //  (legal_guardian_permission_fly)
@@ -67,6 +73,7 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
   }
 
   return {
+    reset,
     data,
     isLoading,
     error,

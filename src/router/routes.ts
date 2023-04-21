@@ -49,11 +49,6 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/results/ParticipantsIndexPage.vue'),
           },
           {
-            path: 'participants/presets',
-            name: 'results-participants-presets',
-            component: () => import('pages/results/PresetIndexPage.vue'),
-          },
-          {
             path: 'room-planner',
             name: 'room-planner',
             component: () => import('pages/results/RoomPlanner.vue'),

@@ -7,7 +7,7 @@
           v-model="menu"
           :options="[
             { label: t('menu.public'), value: 'public' },
-            { label: t('menu.private'), value: 'private' },
+            { label: t('menu.draft'), value: 'draft' },
           ]"
           class="my-custom-toggle"
           no-caps
@@ -26,7 +26,9 @@
           <q-item>
             <q-item-section>
               <q-item-label>
-                <a class="text-h6">{{ t('title') }}</a>
+                <a class="text-h6">
+                  {{ t('title') }}
+                </a>
               </q-item-label>
             </q-item-section>
 
@@ -46,216 +48,54 @@
             </q-item-section>
           </q-item>
 
-          <!-- TODO Style no data -->
-          <!-- FIXME Always show list header -->
-          <q-item
-            v-if="camps.length === 0"
-            class="text-center vertical-middle"
+          <template v-if="isLoading">
+            <results-item-skeleton
+              v-for="index in 3"
+              :key="index"
+              :public="showPublic"
+            />
+          </template>
+
+          <TransitionGroup
+            v-else
+            name="fade"
+            mode="in-out"
           >
-            <q-item-section>
-              {{ t('no_data') }}
-            </q-item-section>
-          </q-item>
+            <template v-if="showPublic">
+              <q-item
+                v-if="publicCamps.length === 0"
+                class="text-center vertical-middle"
+              >
+                <q-item-section>
+                  {{ t('no_data') }}
+                </q-item-section>
+              </q-item>
 
-          <!-- TODO Add css for animation -->
-          <TransitionGroup name="fade">
-            <q-item
-              v-for="camp in camps"
-              :key="camp.id"
-            >
-              <q-item-section>
-                <q-item-label>
-                  {{ to(camp.name) }}
-                </q-item-label>
-              </q-item-section>
+              <ResultsItem
+                v-for="camp in publicCamps"
+                :key="camp.id"
+                :camp="camp"
+                :public="showPublic"
+              />
+            </template>
 
-              <q-item-section side>
-                <div class="q-gutter-xs">
-                  <q-btn
-                    v-if="showPublic"
-                    :label="t('action.share')"
-                    class="gt-xs"
-                    dense
-                    flat
-                    icon="share"
-                    rounded
-                    @click="shareAction(camp.id)"
-                  />
+            <template v-else>
+              <q-item
+                v-if="draftCamps.length === 0"
+                class="text-center vertical-middle"
+              >
+                <q-item-section>
+                  {{ t('no_data') }}
+                </q-item-section>
+              </q-item>
 
-                  <q-btn
-                    v-if="!showPublic"
-                    :label="t('action.publish')"
-                    class="gt-sm"
-                    color="warning"
-                    dense
-                    flat
-                    icon="publish"
-                    rounded
-                    @click="publishAction(camp.id)"
-                  />
-
-                  <q-btn
-                    :label="t('action.results')"
-                    class="gt-xs"
-                    dense
-                    flat
-                    icon="view_list"
-                    rounded
-                    @click="resultsAction(camp.id)"
-                  />
-
-                  <q-btn
-                    :label="t('action.edit')"
-                    class="gt-sm"
-                    dense
-                    flat
-                    icon="edit"
-                    rounded
-                    @click="editAction(camp.id)"
-                  />
-
-                  <q-btn
-                    v-if="showPublic"
-                    :label="t('action.unpublish')"
-                    class="gt-sm"
-                    color="warning"
-                    dense
-                    flat
-                    icon="unpublished"
-                    rounded
-                    @click="unpublishAction(camp.id)"
-                  />
-
-                  <q-btn
-                    v-if="!showPublic"
-                    :label="t('action.delete')"
-                    class="gt-sm"
-                    color="negative"
-                    dense
-                    flat
-                    icon="delete"
-                    rounded
-                    @click="deleteAction(camp.id)"
-                  />
-
-                  <q-btn
-                    class="lt-md"
-                    dense
-                    flat
-                    icon="more_vert"
-                    round
-                  >
-                    <q-menu>
-                      <q-list style="min-width: 100px">
-                        <q-item
-                          v-if="showPublic"
-                          v-close-popup
-                          clickable
-                          @click="shareAction(camp.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="share" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              {{ t('action.share') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-
-                        <q-separator />
-
-                        <q-item
-                          v-close-popup
-                          clickable
-                          @click="resultsAction(camp.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="view_list" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              {{ t('action.results') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-
-                        <q-separator />
-
-                        <q-item
-                          v-close-popup
-                          clickable
-                          @click="editAction(camp.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="edit" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              {{ t('action.edit') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-
-                        <q-item
-                          v-if="showPublic"
-                          v-close-popup
-                          v-ripple
-                          class="text-warning"
-                          clickable
-                          @click="unpublishAction(camp.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="unpublished" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              {{ t('action.unpublish') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-
-                        <q-item
-                          v-if="!showPublic"
-                          v-close-popup
-                          v-ripple
-                          class="text-warning"
-                          clickable
-                          @click="publishAction(camp.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="publish" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              {{ t('action.publish') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-
-                        <q-separator />
-
-                        <q-item
-                          v-close-popup
-                          class="text-negative"
-                          clickable
-                          @click="deleteAction(camp.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="delete" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              {{ t('action.delete') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-                      </q-list>
-                    </q-menu>
-                  </q-btn>
-                </div>
-              </q-item-section>
-            </q-item>
+              <ResultsItem
+                v-for="camp in draftCamps"
+                :key="camp.id"
+                :camp="camp"
+                :public="showPublic"
+              />
+            </template>
           </TransitionGroup>
         </q-list>
       </div>
@@ -267,61 +107,23 @@
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { Camp } from 'src/types/Camp';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRouter } from 'vue-router';
-import { copyToClipboard, useQuasar } from 'quasar';
-import { useCampsStore } from 'stores/camp/camps-store';
 import { useAuthStore } from 'stores/auth-store';
+import ResultsItem from 'components/results/index/ResultsItem.vue';
+import { storeToRefs } from 'pinia';
+import ResultsItemSkeleton from 'components/results/index/ResultsItemSkeleton.vue';
 
 const { t } = useI18n();
-const { to } = useObjectTranslation();
 const router = useRouter();
-const quasar = useQuasar();
-const capsStore = useCampsStore();
 const authStore = useAuthStore();
+
+const { data, isLoading, error } = storeToRefs(authStore);
 
 const showPublic = computed<boolean>(() => {
   return menu.value === 'public';
 });
 
-const menu = ref<'public' | 'private'>('public');
-
-function resultsAction(campId: string) {
-  router.push({
-    name: 'results-participants',
-    params: {
-      camp: campId,
-    },
-  });
-}
-
-function shareAction(campId: string) {
-  const url =
-    window.location.origin +
-    router.resolve({
-      name: 'results-participants',
-      params: {
-        camp: campId,
-      },
-    }).href;
-
-  copyToClipboard(url)
-    .then(() => {
-      quasar.notify({
-        type: 'positive',
-        message: t('notification.share_success'),
-        position: 'top',
-        icon: 'assignment_turned_in',
-      });
-    })
-    .catch(() => {
-      quasar.notify({
-        type: 'negative',
-        message: t('notification.share_fail'),
-        position: 'top',
-      });
-    });
-}
+const menu = ref<'public' | 'draft'>('public');
 
 function addAction() {
   router.push({
@@ -329,58 +131,27 @@ function addAction() {
   });
 }
 
-function editAction(campId: string) {
-  router.push({
-    name: 'edit-camp',
-    params: {
-      camp: campId,
-    },
-  });
-}
-
-function deleteAction(campId: string) {
-  // TODO Maybe use explicit confirm with camp name
-  quasar
-    .dialog({
-      title: t('dialog.delete.title'),
-      message: t('dialog.delete.message'),
-      ok: {
-        color: 'negative',
-        flat: true,
-      },
-      cancel: {
-        color: 'primary',
-        flat: true,
-      },
-      persistent: true,
-    })
-    .onOk(() => {
-      capsStore.deleteEntry(campId);
-    });
-}
-
-async function publishAction(id: string) {
-  await capsStore.updateEntry(id, {
-    public: true,
-  });
-}
-
-async function unpublishAction(id: string) {
-  await capsStore.updateEntry(id, {
-    public: false,
-  });
-}
-
-const camps = computed<Camp[]>(() => {
-  if (authStore.data == undefined) {
+const publicCamps = computed<Camp[]>(() => {
+  if (data.value == undefined) {
     return [];
   }
 
-  const camps = authStore.data.camps;
+  const camps = data.value.camps as Camp[];
   return camps
-    .filter((value) =>
-      showPublic.value ? value.public == true : value.public == false
-    )
+    .filter((value) => value.public)
+    .sort((a, b) => {
+      return new Date(b.startDate) - new Date(a.startDate);
+    });
+});
+
+const draftCamps = computed<Camp[]>(() => {
+  if (data.value == undefined) {
+    return [];
+  }
+
+  const camps = data.value.camps as Camp[];
+  return camps
+    .filter((value) => !value.public)
     .sort((a, b) => {
       return new Date(b.startDate) - new Date(a.startDate);
     });
@@ -391,27 +162,31 @@ const camps = computed<Camp[]>(() => {
 title: 'Camps'
 no_data: 'No data found'
 
-action:
-  create: 'Create new'
-  delete: 'Delete'
-  edit: 'Edit'
-  publish: 'Publish'
-  results: 'Results'
-  share: 'Share'
-  unpublish: 'Unpublish'
-
-dialog:
-  delete:
-    title: 'Delete camp'
-    message: 'Are you sure you want to delete this camp? All registrations will be lost. This camp cannot be used as a template fir future camps'
-
 menu:
-  private: 'Private'
+  draft: 'Draft'
   public: 'Public'
-
-notification:
-  share_success: 'Link copied to clipboard'
-  share_fail: 'Failed to copy link to clipboard'
 </i18n>
 
-<style scoped></style>
+<style scoped>
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+/* ensure leaving items are taken out of layout flow so that moving
+   animations can be calculated correctly. */
+.list-leave-active {
+  position: absolute;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

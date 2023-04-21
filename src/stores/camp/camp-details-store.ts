@@ -54,6 +54,12 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     }
   });
 
+  function reset() {
+    data.value = undefined;
+    isLoading.value = false;
+    error.value = null;
+  }
+
   async function fetchData(id?: string) {
     isLoading.value = true;
     error.value = null;
@@ -133,6 +139,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
   }
 
   return {
+    reset,
     data,
     isLoading,
     error,

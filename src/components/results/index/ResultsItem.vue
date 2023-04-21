@@ -1,0 +1,226 @@
+<template>
+  <q-item>
+    <q-item-section>
+      <q-item-label>
+        {{ to(props.camp.name) }}
+      </q-item-label>
+    </q-item-section>
+
+    <q-item-section side>
+      <div class="q-gutter-xs">
+        <q-btn
+          v-if="props.public"
+          :label="t('action.share')"
+          class="gt-xs"
+          dense
+          flat
+          icon="share"
+          rounded
+          @click="shareAction"
+        />
+
+        <q-btn
+          v-if="!props.public"
+          :label="t('action.publish')"
+          class="gt-sm"
+          color="warning"
+          dense
+          flat
+          icon="publish"
+          rounded
+          @click="publishAction"
+        />
+
+        <q-btn
+          :label="t('action.results')"
+          class="gt-xs"
+          dense
+          flat
+          icon="view_list"
+          rounded
+          @click="resultsAction"
+        />
+
+        <q-btn
+          :label="t('action.edit')"
+          class="gt-sm"
+          dense
+          flat
+          icon="edit"
+          rounded
+          @click="editAction"
+        />
+
+        <q-btn
+          v-if="props.public"
+          :label="t('action.unpublish')"
+          class="gt-sm"
+          color="warning"
+          dense
+          flat
+          icon="unpublished"
+          rounded
+          @click="unpublishAction"
+        />
+
+        <q-btn
+          v-if="!props.public"
+          :label="t('action.delete')"
+          class="gt-sm"
+          color="negative"
+          dense
+          flat
+          icon="delete"
+          rounded
+          @click="deleteAction"
+        />
+
+        <q-btn
+          class="lt-md"
+          dense
+          flat
+          icon="more_vert"
+          round
+        >
+          <results-item-menu
+            :camp="props.camp"
+            :public="props.public"
+            @edit="editAction"
+            @delete="deleteAction"
+            @share="shareAction"
+            @results="resultsAction"
+            @publish="publishAction"
+            @unpublish="unpublishAction"
+          />
+        </q-btn>
+      </div>
+    </q-item-section>
+  </q-item>
+</template>
+
+<script lang="ts" setup>
+import ResultsItemMenu from 'components/results/index/ResultsItemMenu.vue';
+import { useCampsStore } from 'stores/camp/camps-store';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { copyToClipboard, useQuasar } from 'quasar';
+import { Camp } from 'src/types/Camp';
+
+const capsStore = useCampsStore();
+const router = useRouter();
+const quasar = useQuasar();
+const { t } = useI18n();
+const { to } = useObjectTranslation();
+
+interface Props {
+  camp: Camp;
+  public?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  public: false,
+});
+
+function resultsAction() {
+  router.push({
+    name: 'results-participants',
+    params: {
+      camp: props.camp.id,
+    },
+  });
+}
+
+function shareAction() {
+  const url =
+    window.location.origin +
+    router.resolve({
+      name: 'results-participants',
+      params: {
+        camp: props.camp.id,
+      },
+    }).href;
+
+  copyToClipboard(url)
+    .then(() => {
+      quasar.notify({
+        type: 'positive',
+        message: t('notification.share_success'),
+        position: 'top',
+        icon: 'assignment_turned_in',
+      });
+    })
+    .catch(() => {
+      quasar.notify({
+        type: 'negative',
+        message: t('notification.share_fail'),
+        position: 'top',
+      });
+    });
+}
+
+function editAction() {
+  router.push({
+    name: 'edit-camp',
+    params: {
+      camp: props.camp.id,
+    },
+  });
+}
+
+function deleteAction() {
+  // TODO Maybe use explicit confirm with camp name
+  quasar
+    .dialog({
+      title: t('dialog.delete.title'),
+      message: t('dialog.delete.message'),
+      ok: {
+        color: 'negative',
+        flat: true,
+      },
+      cancel: {
+        color: 'primary',
+        flat: true,
+      },
+      persistent: true,
+    })
+    .onOk(() => {
+      capsStore.deleteEntry(props.camp.id);
+    });
+}
+
+async function publishAction() {
+  await capsStore.updateEntry(props.camp.id, {
+    public: true,
+  });
+}
+
+async function unpublishAction() {
+  await capsStore.updateEntry(props.camp.id, {
+    public: false,
+  });
+}
+</script>
+
+<style scoped></style>
+
+<!-- TODO Translate -->
+<i18n lang="yaml" locale="en">
+action:
+  create: 'Create new'
+  delete: 'Delete'
+  edit: 'Edit'
+  publish: 'Publish'
+  results: 'Results'
+  share: 'Share'
+  unpublish: 'Unpublish'
+
+dialog:
+  delete:
+    title: 'Delete camp'
+    message: 'Are you sure you want to delete this camp? All registrations will be lost. This camp cannot be used as a template fir future camps'
+
+notification:
+  share_success: 'Link copied to clipboard'
+  share_fail: 'Failed to copy link to clipboard'
+</i18n>

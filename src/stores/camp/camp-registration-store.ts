@@ -35,6 +35,12 @@ export const useCampRegistrationsStore = defineStore(
       }
     });
 
+    function reset() {
+      data.value = undefined;
+      isLoading.value = false;
+      error.value = null;
+    }
+
     async function fetchData(id?: string) {
       isLoading.value = true;
       error.value = null;
@@ -128,6 +134,7 @@ export const useCampRegistrationsStore = defineStore(
     }
 
     return {
+      reset,
       data,
       isLoading,
       error,

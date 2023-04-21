@@ -14,6 +14,12 @@ export const useCampsStore = defineStore('camps', () => {
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
+  function reset() {
+    data.value = undefined;
+    isLoading.value = false;
+    error.value = null;
+  }
+
   async function fetchData() {
     isLoading.value = true;
     error.value = null;
@@ -99,6 +105,7 @@ export const useCampsStore = defineStore('camps', () => {
   }
 
   return {
+    reset,
     data,
     isLoading,
     error,

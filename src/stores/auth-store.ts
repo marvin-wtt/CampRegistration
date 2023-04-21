@@ -7,6 +7,7 @@ import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { useTemplateStore } from 'stores/template-store';
 import { useCampsStore } from 'stores/camp/camps-store';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { api as requestApi } from 'boot/axios';
 
 export const useAuthStore = defineStore('auth', () => {
   const api = useAPIService();
@@ -15,6 +16,25 @@ export const useAuthStore = defineStore('auth', () => {
   const data = ref<User>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | object | null>(null);
+
+  requestApi.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    async function (error) {
+      if (error.response.status === 401) {
+        await router.push({
+          name: 'login',
+        });
+      }
+    }
+  );
+
+  function reset() {
+    data.value = undefined;
+    isLoading.value = false;
+    error.value = null;
+  }
 
   async function login(
     email: string,
@@ -62,16 +82,12 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout(): Promise<void> {
     await api.logout();
 
-    // CLear user
-    error.value = null;
-    isLoading.value = false;
-    data.value = undefined;
-
     // Reset all stores to make sure no confidential data is kept in memory
-    useCampsStore().$reset();
-    useCampDetailsStore().$reset();
-    useCampRegistrationsStore().$reset();
-    useTemplateStore().$reset();
+    reset();
+    useCampsStore().reset();
+    useCampDetailsStore().reset();
+    useCampRegistrationsStore().reset();
+    useTemplateStore().reset();
 
     await router.push('/');
   }
