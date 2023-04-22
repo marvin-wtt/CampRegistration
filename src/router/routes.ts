@@ -7,6 +7,12 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
   },
   {
+    name: 'login',
+    path: '/login',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
+  },
+  {
     path: '/results',
     name: 'results',
     component: () => import('layouts/ResultLayout.vue'),
@@ -82,12 +88,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/camps/CampPage.vue'),
       },
     ],
-  },
-  {
-    name: 'login',
-    path: '/login',
-    component: () => import('layouts/AuthenticationLayout.vue'),
-    children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
   },
 
   // Always leave this as last one,

@@ -12,5 +12,5 @@ export interface Camp extends Identifiable {
   maxAge: number;
   location: string | Record<string, string>;
   price: string;
-  form: object | SurveyJSCampData;
+  form: SurveyJSCampData;
 }

@@ -31,7 +31,7 @@ export function useTemplateService() {
     templateId: string,
     data: Partial<TableTemplate>
   ): Promise<void> {
-    await api.patch(`camps/${campId}/templates/${templateId}/`, data);
+    await api.put(`camps/${campId}/templates/${templateId}/`, data);
   }
 
   async function deleteResultTemplate(

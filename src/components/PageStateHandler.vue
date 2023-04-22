@@ -1,5 +1,8 @@
 <template>
-  <q-page class="row full-width justify-center">
+  <q-page
+    class="row full-width justify-center"
+    :padding="props.padding"
+  >
     <div
       v-if="props.loading"
       class="self-center"
@@ -34,9 +37,15 @@ import { computed, onErrorCaptured, ref } from 'vue';
 interface Props {
   error?: unknown;
   loading?: boolean;
+  padding?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  error: null,
+  loading: false,
+  padding: false,
+});
+
 const localError = ref(false);
 
 onErrorCaptured((err, instance) => {

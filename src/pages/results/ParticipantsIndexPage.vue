@@ -20,7 +20,6 @@ import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
-import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import ResultTable from 'components/results/table/ResultTable.vue';
 import { useTemplateStore } from 'stores/template-store';
@@ -55,11 +54,7 @@ const columns = computed<QTableColumn[]>(() => {
 
   const columns: QTableColumn[] = [];
 
-  if (!isSurveyJSData(data?.form)) {
-    return [];
-  }
-
-  if (!data?.form || !('pages' in data.form)) {
+  if (data?.form === undefined || !('pages' in data.form)) {
     return [];
   }
 
@@ -88,11 +83,6 @@ const columns = computed<QTableColumn[]>(() => {
 
   return columns;
 });
-
-function isSurveyJSData(data: unknown): data is SurveyJSCampData {
-  // TODO
-  return true;
-}
 
 const results = computed<Registration[]>(() => {
   const results = registrations.data.value;

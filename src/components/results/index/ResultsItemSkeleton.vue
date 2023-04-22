@@ -54,18 +54,6 @@
   </q-item>
 </template>
 
-<script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
-
-interface Props {
-  public?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  public: false,
-});
-</script>
+<script lang="ts" setup></script>
 
 <style scoped></style>

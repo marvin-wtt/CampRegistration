@@ -1,7 +1,11 @@
 <template>
-  <q-page padding>
+  <!-- Loading is handles by the list itself -->
+  <page-state-handler
+    padding
+    :error="error"
+  >
     <!-- content -->
-    <div class="column">
+    <div class="column fit">
       <div class="row justify-center">
         <q-btn-toggle
           v-model="menu"
@@ -48,59 +52,38 @@
             </q-item-section>
           </q-item>
 
-          <template v-if="isLoading">
-            <results-item-skeleton
-              v-for="index in 3"
-              :key="index"
-              :public="showPublic"
-            />
-          </template>
+          <q-separator />
 
-          <TransitionGroup
-            v-else
-            name="fade"
-            mode="in-out"
+          <q-tab-panels
+            v-model="menu"
+            animated
+            style="background-color: inherit"
           >
-            <template v-if="showPublic">
-              <q-item
-                v-if="publicCamps.length === 0"
-                class="text-center vertical-middle"
-              >
-                <q-item-section>
-                  {{ t('no_data') }}
-                </q-item-section>
-              </q-item>
-
-              <ResultsItem
-                v-for="camp in publicCamps"
-                :key="camp.id"
-                :camp="camp"
-                :public="showPublic"
+            <q-tab-panel
+              name="public"
+              class="q-pa-none"
+            >
+              <results-list
+                :camps="publicCamps"
+                :loading="isLoading"
+                public
               />
-            </template>
+            </q-tab-panel>
 
-            <template v-else>
-              <q-item
-                v-if="draftCamps.length === 0"
-                class="text-center vertical-middle"
-              >
-                <q-item-section>
-                  {{ t('no_data') }}
-                </q-item-section>
-              </q-item>
-
-              <ResultsItem
-                v-for="camp in draftCamps"
-                :key="camp.id"
-                :camp="camp"
-                :public="showPublic"
+            <q-tab-panel
+              name="draft"
+              class="q-pa-none"
+            >
+              <results-list
+                :loading="isLoading"
+                :camps="draftCamps"
               />
-            </template>
-          </TransitionGroup>
+            </q-tab-panel>
+          </q-tab-panels>
         </q-list>
       </div>
     </div>
-  </q-page>
+  </page-state-handler>
 </template>
 
 <script lang="ts" setup>
@@ -109,19 +92,15 @@ import { computed, ref } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import ResultsItem from 'components/results/index/ResultsItem.vue';
 import { storeToRefs } from 'pinia';
-import ResultsItemSkeleton from 'components/results/index/ResultsItemSkeleton.vue';
+import ResultsList from 'components/results/index/ResultsList.vue';
+import PageStateHandler from 'components/PageStateHandler.vue';
 
 const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
 
 const { data, isLoading, error } = storeToRefs(authStore);
-
-const showPublic = computed<boolean>(() => {
-  return menu.value === 'public';
-});
 
 const menu = ref<'public' | 'draft'>('public');
 
@@ -160,33 +139,10 @@ const draftCamps = computed<Camp[]>(() => {
 
 <i18n lang="yaml" locale="en">
 title: 'Camps'
-no_data: 'No data found'
 
 menu:
   draft: 'Draft'
   public: 'Public'
 </i18n>
 
-<style scoped>
-.list-enter-from,
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-/* ensure leaving items are taken out of layout flow so that moving
-   animations can be calculated correctly. */
-.list-leave-active {
-  position: absolute;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
+<style scoped></style>

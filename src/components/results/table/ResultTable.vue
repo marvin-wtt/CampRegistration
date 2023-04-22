@@ -170,6 +170,7 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
 import EditResultTemplatesDialog from 'components/results/table/dialogs/template/EditResultTemplatesDialog.vue';
 import { Camp } from 'src/types/Camp';
+import { useTemplateStore } from 'stores/template-store';
 
 interface Props {
   questions: QTableColumn[];
@@ -185,6 +186,8 @@ const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const { to } = useObjectTranslation();
+
+const templateStore = useTemplateStore();
 
 interface Pagination {
   rowsPerPage?: number;
@@ -396,7 +399,11 @@ async function exportPDF() {
       },
     });
   } catch (e: unknown) {
-    console.error('oops, something went wrong!', e);
+    quasar.notify({
+      type: 'negative',
+      position: 'top',
+      message: t('error.export.pdf'),
+    });
   } finally {
     printing.value = false;
     quasar.dark.set('auto');
@@ -414,7 +421,7 @@ function editTemplates() {
       },
     })
     .onOk((payload: TableTemplate[]) => {
-      // TODO Update store
+      templateStore.updateCollection(payload);
     });
 }
 </script>
@@ -467,6 +474,7 @@ function editTemplates() {
 }
 </style>
 
+<!-- TODO Add error.export.pdf -->
 <i18n lang="yaml" locale="en">
 template: Template
 title: Participants

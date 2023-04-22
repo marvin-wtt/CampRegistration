@@ -16,6 +16,7 @@
           flat
           icon="share"
           rounded
+          :disable="actionLoading"
           @click="shareAction"
         />
 
@@ -28,6 +29,8 @@
           flat
           icon="publish"
           rounded
+          :loading="publishLoading"
+          :disable="actionLoading && !unpublishLoading"
           @click="publishAction"
         />
 
@@ -38,6 +41,8 @@
           flat
           icon="view_list"
           rounded
+          :loading="resultLoading"
+          :disable="actionLoading && !resultLoading"
           @click="resultsAction"
         />
 
@@ -48,6 +53,7 @@
           flat
           icon="edit"
           rounded
+          :disable="actionLoading"
           @click="editAction"
         />
 
@@ -60,6 +66,8 @@
           flat
           icon="unpublished"
           rounded
+          :loading="unpublishLoading"
+          :disable="actionLoading && !unpublishLoading"
           @click="unpublishAction"
         />
 
@@ -72,6 +80,8 @@
           flat
           icon="delete"
           rounded
+          :loading="deleteLoading"
+          :disable="actionLoading && !deleteLoading"
           @click="deleteAction"
         />
 
@@ -81,6 +91,7 @@
           flat
           icon="more_vert"
           round
+          :disable="actionLoading"
         >
           <results-item-menu
             :camp="props.camp"
@@ -106,6 +117,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { Camp } from 'src/types/Camp';
+import { computed, Ref, ref } from 'vue';
 
 const capsStore = useCampsStore();
 const router = useRouter();
@@ -122,12 +134,24 @@ const props = withDefaults(defineProps<Props>(), {
   public: false,
 });
 
+const resultLoading = ref<boolean>(false);
+const publishLoading = ref<boolean>(false);
+const unpublishLoading = ref<boolean>(false);
+const editLoading = ref<boolean>(false);
+const deleteLoading = ref<boolean>(false);
+
+const actionLoading = computed<boolean>(() => {
+  return publishLoading.value || unpublishLoading.value || deleteLoading.value;
+});
+
 function resultsAction() {
-  router.push({
-    name: 'results-participants',
-    params: {
-      camp: props.camp.id,
-    },
+  withLoading(resultLoading, async () => {
+    await router.push({
+      name: 'results-participants',
+      params: {
+        camp: props.camp.id,
+      },
+    });
   });
 }
 
@@ -160,11 +184,13 @@ function shareAction() {
 }
 
 function editAction() {
-  router.push({
-    name: 'edit-camp',
-    params: {
-      camp: props.camp.id,
-    },
+  withLoading(editLoading, async () => {
+    await router.push({
+      name: 'edit-camp',
+      params: {
+        camp: props.camp.id,
+      },
+    });
   });
 }
 
@@ -185,20 +211,32 @@ function deleteAction() {
       persistent: true,
     })
     .onOk(() => {
-      capsStore.deleteEntry(props.camp.id);
+      withLoading(deleteLoading, async () => {
+        await capsStore.deleteEntry(props.camp.id);
+      });
     });
 }
 
-async function publishAction() {
-  await capsStore.updateEntry(props.camp.id, {
-    public: true,
+function publishAction() {
+  withLoading(publishLoading, async () => {
+    await capsStore.updateEntry(props.camp.id, {
+      public: true,
+    });
   });
 }
 
-async function unpublishAction() {
-  await capsStore.updateEntry(props.camp.id, {
-    public: false,
+function unpublishAction() {
+  withLoading(unpublishLoading, async () => {
+    await capsStore.updateEntry(props.camp.id, {
+      public: false,
+    });
   });
+}
+
+async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
+  flag.value = true;
+  await fn();
+  flag.value = false;
 }
 </script>
 

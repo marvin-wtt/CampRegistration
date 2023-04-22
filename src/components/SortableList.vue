@@ -126,6 +126,10 @@ function deleteItem(item: Element) {
   }
   const index = modelValue.value.indexOf(item);
   modelValue.value.splice(index, 1);
+
+  // Update order of all items
+  // This is more robust against errors than only updating the following items
+  updateOrder();
 }
 
 function orderUpwards(template: TableTemplate) {
@@ -159,14 +163,19 @@ function orderDownwards(template: TableTemplate) {
     return;
   }
   const next = modelValue.value[index + 1];
-  const nextOrder = next.order;
-  // Swap orders
-  next.order = template.order;
-  template.order = nextOrder;
 
   // Swap position for animation
   modelValue.value.splice(index, 1, next);
   modelValue.value.splice(index + 1, 1, template);
+
+  // Update order of all items. This is more robust against errors than swapping
+  updateOrder();
+}
+
+function updateOrder() {
+  modelValue.value.forEach((item, index) => {
+    item.order = index;
+  });
 }
 </script>
 

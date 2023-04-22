@@ -240,6 +240,7 @@ function onReset() {
 }
 </script>
 
+<!-- TODO Add validation translations -->
 <i18n lang="yaml" locale="en">
 title:
   create: 'Create new camp'

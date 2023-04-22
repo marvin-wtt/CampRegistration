@@ -37,6 +37,21 @@
         <q-item
           v-close-popup
           clickable
+          @click="goToCamps"
+        >
+          <q-item-section avatar>
+            <q-icon name="home" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('camps') }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator />
+
+        <q-item
+          v-close-popup
+          clickable
           @click="toggleDarkMode"
         >
           <q-item-section avatar>
@@ -106,7 +121,9 @@ import CountryIcon from 'components/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const quasar = useQuasar();
 const { t } = useI18n();
 const { locale } = useI18n({
@@ -121,6 +138,12 @@ const locales = computed(() => [
   { label: 'Français', value: 'fr-FR', country: 'fr' },
   { label: 'English', value: 'en-US', country: 'us' },
 ]);
+
+function goToCamps() {
+  router.push({
+    name: 'results-index',
+  });
+}
 
 function updateLocale(value: string) {
   locale.value = value;
@@ -139,6 +162,7 @@ function logout() {
 
 <i18n lang="yaml" locale="en">
 username: 'Signed in as'
+camps: 'My camps'
 logout: 'Sing out'
 profile: 'profile'
 language: 'Language'

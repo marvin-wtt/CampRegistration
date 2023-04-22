@@ -88,6 +88,7 @@
         </q-item>
 
         <q-item
+          v-if="beta"
           v-ripple
           :to="{ name: 'results-participants' }"
           clickable
@@ -102,6 +103,7 @@
         </q-item>
 
         <q-item
+          v-if="beta"
           v-ripple
           clickable
           disable
@@ -122,6 +124,7 @@
         </q-item>
 
         <q-item
+          v-if="beta"
           v-ripple
           clickable
           disable
@@ -142,6 +145,7 @@
         </q-item>
 
         <q-item
+          v-if="beta"
           v-ripple
           clickable
           :to="{ name: 'room-planner' }"
@@ -156,6 +160,22 @@
         </q-item>
 
         <q-item
+          v-if="beta"
+          v-ripple
+          clickable
+          :to="{ name: 'expenses' }"
+        >
+          <q-item-section avatar>
+            <q-icon name="payments" />
+          </q-item-section>
+
+          <q-item-section>
+            {{ t('expenses') }}
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="beta"
           v-ripple
           clickable
           :to="{ name: 'tools' }"
@@ -184,6 +204,7 @@
         </q-item>
 
         <q-item
+          v-if="beta"
           v-ripple
           clickable
           disable
@@ -227,6 +248,7 @@ import { useTemplateStore } from 'stores/template-store';
 import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import * as process from 'process';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -246,6 +268,11 @@ registrationsStore.fetchData();
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
+const beta = computed<boolean>(() => {
+  // TODO Maybe add feature flag
+  return process.env.NODE_ENV === 'development';
+});
+
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
 });
@@ -256,6 +283,7 @@ camps: 'Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
+expenses: 'Expenses'
 participants: 'Participants'
 room_planner: 'Room Planner'
 settings: 'Settings'
@@ -269,6 +297,7 @@ camps: 'Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
+expenses: 'Ausgaben'
 participants: 'Teilnehmende'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
@@ -282,6 +311,7 @@ camps: 'Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
+expenses: 'Dépenses'
 participants: 'Participants'
 room_planner: 'Aménageur'
 settings: 'Paramètres'

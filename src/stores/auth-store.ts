@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import { ref } from 'vue';
 import { User } from 'src/types/User';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { useTemplateStore } from 'stores/template-store';
 import { useCampsStore } from 'stores/camp/camps-store';
@@ -12,21 +12,39 @@ import { api as requestApi } from 'boot/axios';
 export const useAuthStore = defineStore('auth', () => {
   const api = useAPIService();
   const router = useRouter();
+  const route = useRoute();
 
   const data = ref<User>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | object | null>(null);
 
+  // Redirect to login page on unauthorized error
   requestApi.interceptors.response.use(
     (response) => {
       return response;
     },
     async function (error) {
-      if (error.response.status === 401) {
-        await router.push({
-          name: 'login',
-        });
+      // Don't redirect on login page
+      if (route.name === 'login' || route.fullPath.startsWith('/login')) {
+        return Promise.reject(error);
       }
+      // Only capture unauthorized error
+      if (error.response.status !== 401) {
+        return Promise.reject(error);
+      }
+
+      // Clear current user for login page
+      reset();
+      // TODO Why are named routes not working?
+      await router.push({
+        path: '/login',
+        query: {
+          origin: encodeURIComponent(route.path),
+        },
+      });
+
+      // Still reject error to avoid false success messages
+      return Promise.reject(error);
     }
   );
 
@@ -47,9 +65,14 @@ export const useAuthStore = defineStore('auth', () => {
       await api.login(email, password, remember);
 
       data.value = await api.fetchAuthUser();
-      // Redirect to home route
-      // TODO Maybe push other route if has is set
-      await router.push('results');
+
+      // Redirect to origin or home route
+      const destination =
+        'origin' in route.query && typeof route.query.origin === 'string'
+          ? decodeURIComponent(route.query.origin)
+          : 'results';
+
+      await router.push(destination);
     } catch (e: unknown) {
       error.value = hasResponseDataErrors(e)
         ? e.response.data.errors
