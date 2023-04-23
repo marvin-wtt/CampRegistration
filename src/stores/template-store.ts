@@ -1,18 +1,18 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { TableTemplate } from 'src/types/TableTemplate';
-
 import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
+import { useNotification } from 'src/composables/notifications';
 
 export const useTemplateStore = defineStore('resultTemplate', () => {
   const route = useRoute();
   const router = useRouter();
-  const quasar = useQuasar();
   const { t } = useI18n();
   const apiService = useAPIService();
+  const { withMultiProgressNotification, withProgressNotification } =
+    useNotification();
 
   const data = ref<TableTemplate[] | undefined>();
   const isLoading = ref<boolean>(false);
@@ -61,15 +61,9 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
       });
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'error';
-
-      quasar.notify({
-        type: 'negative',
-        message: t('fetch.error'),
-        position: 'top',
-      });
-    } finally {
-      isLoading.value = false;
     }
+
+    isLoading.value = false;
   }
 
   async function updateCollection(templates: TableTemplate[]) {
@@ -129,62 +123,116 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
       results.push(apiService.deleteResultTemplate(campId, t.id));
     }
 
-    // TODO Add translation
-    const progressNotify = quasar.notify({
-      group: false,
-      position: 'top',
-      timeout: 0,
-      spinner: true,
-      message: t('notification.progress'),
-      caption: '0 %',
+    const success = await withMultiProgressNotification(results, {
+      // TODO Add translation
+      progress: {
+        message: t('stores.template.update.progress'),
+      },
+      error: {
+        message: t('stores.template.update.error'),
+      },
+      success: {
+        message: t('stores.template.update.success'),
+      },
     });
 
-    try {
-      let doneCounter = 0;
-      for (const result of results) {
-        result.then(() => {
-          doneCounter++;
-          const percentage = Math.floor((doneCounter / results.length) * 100);
-
-          progressNotify({
-            caption: `${percentage} %`,
-          });
-        });
-      }
-
-      await Promise.all(results);
-
-      // TODO Add translation
-      progressNotify({
-        type: 'positive',
-        spinner: false,
-        message: t('notification.done'),
-        timeout: 2500,
-      });
-    } catch (error: unknown) {
-      progressNotify({
-        type: 'negative',
-        spinner: false,
-        message: t('notification.done'),
-        caption: '',
-        timeout: 2500,
-      });
+    if (success) {
+      // Always update store because of partial updates
+      await fetchData();
     }
-
-    // Always update store because of partial updates
-    await fetchData();
   }
 
   async function createEntry(template: TableTemplate) {
-    // TODO create template
+    const campId = route.params.camp as string | undefined;
+
+    if (campId === undefined) {
+      // TODO Notify error
+      return;
+    }
+
+    const success = await withProgressNotification(
+      async () => {
+        await apiService.createResultTemplate(campId, template);
+      },
+      {
+        progress: {
+          message: t('stores.template.create.progress'),
+        },
+        success: {
+          message: t('stores.template.create.success'),
+        },
+        error: {
+          message: t('stores.template.create.error'),
+        },
+      }
+    );
+
+    // Fetch data again because it updated
+    if (success) {
+      await fetchData();
+    }
   }
 
   async function updateEntry(template: TableTemplate) {
-    // TODO update template
+    const campId = route.params.camp as string | undefined;
+
+    if (campId === undefined) {
+      // TODO Notify error
+      return;
+    }
+
+    const success = await withProgressNotification(
+      async () => {
+        await apiService.updateResultTemplate(campId, template.id, template);
+      },
+      {
+        progress: {
+          message: t('stores.template.update.progress'),
+        },
+        success: {
+          message: t('stores.template.update.success'),
+        },
+        error: {
+          message: t('stores.template.update.error'),
+        },
+      }
+    );
+
+    // Fetch data again because it updated
+    if (success) {
+      await fetchData(template.id);
+    }
   }
 
   async function deleteEntry(id: string) {
-    // TODO delete template
+    const campId = route.params.camp as string | undefined;
+
+    if (campId === undefined) {
+      // TODO Notify error
+      return;
+    }
+
+    const success = await withProgressNotification(
+      async () => {
+        await apiService.deleteResultTemplate(campId, id);
+      },
+      {
+        progress: {
+          message: t('stores.template.delete.progress'),
+        },
+        success: {
+          message: t('stores.template.delete.success'),
+        },
+        error: {
+          message: t('stores.template.delete.error'),
+        },
+      }
+    );
+
+    // Fetch data again because it updated
+    if (success) {
+      await fetchData();
+    }
   }
 
   return {

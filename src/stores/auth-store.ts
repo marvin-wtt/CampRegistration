@@ -7,10 +7,15 @@ import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { useTemplateStore } from 'stores/template-store';
 import { useCampsStore } from 'stores/camp/camps-store';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
-import { api as requestApi } from 'boot/axios';
+import { api } from 'boot/axios';
+import {
+  hasResponseData,
+  hasResponseDataErrors,
+  hasResponseStatusText,
+} from 'src/composables/errorChecker';
 
 export const useAuthStore = defineStore('auth', () => {
-  const api = useAPIService();
+  const apiService = useAPIService();
   const router = useRouter();
   const route = useRoute();
 
@@ -19,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | object | null>(null);
 
   // Redirect to login page on unauthorized error
-  requestApi.interceptors.response.use(
+  api.interceptors.response.use(
     (response) => {
       return response;
     },
@@ -62,9 +67,9 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true;
 
     try {
-      await api.login(email, password, remember);
+      await apiService.login(email, password, remember);
 
-      data.value = await api.fetchAuthUser();
+      data.value = await apiService.fetchAuthUser();
 
       // Redirect to origin or home route
       const destination =
@@ -93,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
 
     try {
-      data.value = await api.fetchAuthUser();
+      data.value = await apiService.fetchAuthUser();
     } catch (e: unknown) {
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';
@@ -103,7 +108,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(): Promise<void> {
-    await api.logout();
+    await apiService.logout();
 
     // Reset all stores to make sure no confidential data is kept in memory
     reset();
@@ -113,45 +118,6 @@ export const useAuthStore = defineStore('auth', () => {
     useTemplateStore().reset();
 
     await router.push('/');
-  }
-
-  function hasResponse(e: unknown): e is { response: object } {
-    return (
-      e != null &&
-      typeof e === 'object' &&
-      'response' in e &&
-      e.response != null &&
-      typeof e.response === 'object'
-    );
-  }
-
-  function hasResponseStatusText(
-    e: unknown
-  ): e is { response: { statusText: string } } {
-    return (
-      hasResponse(e) &&
-      'statusText' in e.response &&
-      e.response.statusText != null &&
-      typeof e.response.statusText === 'string'
-    );
-  }
-
-  function hasResponseData(e: unknown): e is { response: { data: object } } {
-    return (
-      hasResponse(e) &&
-      'data' in e.response &&
-      typeof e.response.data === 'object'
-    );
-  }
-
-  function hasResponseDataErrors(
-    e: unknown
-  ): e is { response: { data: { errors: object } } } {
-    return (
-      hasResponseData(e) &&
-      'error' in e.response.data &&
-      typeof e.response.data.error === 'object'
-    );
   }
 
   function hasEmailErrorField(
@@ -185,15 +151,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(email: string, password: string) {
-    await api.register(email, password);
+    // TODO Progress
+    await apiService.register(email, password);
   }
 
   async function forgotPassword(email: string) {
-    await api.forgotPassword(email);
+    // TODO Progress
+    await apiService.forgotPassword(email);
   }
 
   async function resetPassword(token: string, email: string, password: string) {
-    await api.resetPassword(token, email, password);
+    // TODO Progress
+    await apiService.resetPassword(token, email, password);
   }
 
   return {

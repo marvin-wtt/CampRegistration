@@ -2,13 +2,15 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
-import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { useAuthStore } from 'stores/auth-store';
+import { useNotification } from 'src/composables/notifications';
+import { useI18n } from 'vue-i18n';
 
 export const useCampsStore = defineStore('camps', () => {
-  const quasar = useQuasar();
-  const api = useAPIService();
+  const apiService = useAPIService();
+  const { t } = useI18n();
+  const { withProgressNotification } = useNotification();
 
   const data = ref<Camp[]>();
   const isLoading = ref<boolean>(false);
@@ -25,83 +27,100 @@ export const useCampsStore = defineStore('camps', () => {
     error.value = null;
 
     try {
-      data.value = await api.fetchCamps();
+      data.value = await apiService.fetchCamps();
     } catch (e: unknown) {
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';
-    } finally {
-      isLoading.value = false;
+    }
+
+    isLoading.value = false;
+  }
+
+  async function refreshStores(id?: string) {
+    // Update camps
+    await fetchData();
+    // Update user camps
+    await useAuthStore().fetchData();
+    // Update camp details store
+    const campStore = useCampDetailsStore();
+    if (id && campStore.data?.id === id) {
+      await campStore.fetchData();
     }
   }
 
   async function createEntry(data: Camp): Promise<void> {
-    // TODO Translate errors
-    try {
-      await api.createCamp(data);
-      quasar.notify({
-        type: 'positive',
-        position: 'top',
-        message: 'Camp created',
-      });
-    } catch (e: unknown) {
-      quasar.notify({
-        type: 'negative',
-        position: 'top',
-        message: 'Some error',
-      });
+    const success = await withProgressNotification(
+      async () => {
+        await apiService.createCamp(data);
+      },
+      {
+        progress: {
+          message: t('store.camp.create.progress'),
+        },
+        success: {
+          message: t('store.camp.create.success'),
+        },
+        error: {
+          message: t('store.camp.create.error'),
+        },
+      }
+    );
+
+    if (!success) {
+      return;
     }
     // Update data after create
-    await fetchData();
+    await refreshStores();
   }
 
   async function updateEntry(id: string, data: Partial<Camp>) {
-    // TODO Translate errors
-    try {
-      await api.updateCamp(id, data);
-      quasar.notify({
-        type: 'positive',
-        position: 'top',
-        message: 'Camp created',
-      });
-    } catch (e: unknown) {
-      quasar.notify({
-        type: 'negative',
-        position: 'top',
-        message: 'Some error',
-      });
+    const success = await withProgressNotification(
+      async () => {
+        await apiService.updateCamp(id, data);
+      },
+      {
+        progress: {
+          message: t('stores.camp.update.progress'),
+        },
+        success: {
+          message: t('stores.camp.update.success'),
+        },
+        error: {
+          message: t('stores.camp.update.error'),
+        },
+      }
+    );
+
+    if (!success) {
+      return;
     }
-    // Update camps
-    await fetchData();
-    // Update camp details store
-    const campStore = useCampDetailsStore();
-    if (campStore.data?.id === id) {
-      await campStore.fetchData();
-    }
-    await useAuthStore().fetchData();
+
+    await refreshStores();
   }
 
   async function deleteEntry(id: string) {
-    // TODO Translate errors
-    try {
-      await api.deleteCamp(id);
-      quasar.notify({
-        type: 'positive',
-        position: 'top',
-        message: 'Camp created',
-      });
-    } catch (e: unknown) {
-      quasar.notify({
-        type: 'negative',
-        position: 'top',
-        message: 'Some error',
-      });
+    const success = await withProgressNotification(
+      async () => {
+        await apiService.deleteCamp(id);
+      },
+      {
+        progress: {
+          message: t('stores.camp.delete.progress'),
+        },
+        success: {
+          message: t('stores.camp.delete.success'),
+        },
+        error: {
+          message: t('stores.camp.delete.error'),
+        },
+      }
+    );
+
+    if (!success) {
+      return;
     }
-    await fetchData();
-    // Update camp details store
-    const campStore = useCampDetailsStore();
-    if (campStore.data?.id === id) {
-      await campStore.$reset();
-    }
+
+    await refreshStores();
   }
 
   return {
