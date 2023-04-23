@@ -19,4 +19,4 @@ export default {
     error: 'Failed to delete template',
     invalid: 'Invalid camp or template id',
   },
-}
+};

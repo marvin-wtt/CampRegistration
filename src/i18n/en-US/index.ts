@@ -5,5 +5,5 @@ import stores from './stores';
 export default {
   app_name: 'Ballaeron Registration Service',
 
-  stores: stores
+  stores: stores,
 };

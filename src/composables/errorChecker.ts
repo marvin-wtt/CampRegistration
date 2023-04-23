@@ -8,14 +8,9 @@ export function hasResponse(e: unknown): e is { response: object } {
   );
 }
 
-export function hasMessage(
-  e: unknown
-): e is { message: string } {
+export function hasMessage(e: unknown): e is { message: string } {
   return (
-    e != null &&
-    typeof e === 'object' &&
-    'message' in e &&
-    e.message != null
+    e != null && typeof e === 'object' && 'message' in e && e.message != null
   );
 }
 

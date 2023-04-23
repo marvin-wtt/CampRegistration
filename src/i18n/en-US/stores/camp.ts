@@ -1,5 +1,3 @@
-
-
 export default {
   fetch: {
     error: 'Failed to fetch camp',
@@ -21,4 +19,4 @@ export default {
     error: 'Failed to delete camp',
     invalid: 'Invalid camp id',
   },
-}
+};
