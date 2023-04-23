@@ -124,7 +124,6 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
     }
 
     const success = await withMultiProgressNotification(results, {
-      // TODO Add translation
       progress: {
         message: t('stores.template.update.progress'),
       },

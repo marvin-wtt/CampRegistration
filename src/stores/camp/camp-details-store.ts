@@ -5,12 +5,14 @@ import { useI18n } from 'vue-i18n';
 import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
 import { useNotification } from 'src/composables/notifications';
+import { useTemplateStore } from 'stores/template-store';
 
 export const useCampDetailsStore = defineStore('campDetails', () => {
   const route = useRoute();
   const router = useRouter();
   const { t } = useI18n();
   const api = useAPIService();
+  const templateStore = useTemplateStore();
   const { withProgressNotification } = useNotification();
 
   const data = ref<Camp>();
@@ -90,11 +92,6 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     await withProgressNotification(
       async () => {
         await api.deleteCamp(campId);
-
-        // Reset current store if the camp was loaded
-        if (id === data.value?.id) {
-          reset();
-        }
       },
       {
         progress: {
@@ -108,6 +105,12 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
         },
       }
     );
+
+    // Reset current store if the camp was loaded
+    if (id === data.value?.id) {
+      reset();
+      await templateStore.reset();
+    }
   }
 
   return {

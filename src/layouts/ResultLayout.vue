@@ -16,7 +16,13 @@
           @click="drawer = !drawer"
         />
         <q-toolbar-title>
-          {{ t('app_name') }}
+          <q-skeleton
+            v-if="campDetailStore.isLoading"
+            type="text"
+          />
+          <a v-else>
+            {{ to(title) }}
+          </a>
         </q-toolbar-title>
 
         <q-space />
@@ -50,7 +56,13 @@
           vertical
         />
 
-        <profile-menu-button />
+        <q-btn
+          flat
+          icon="account_circle"
+          stretch
+        >
+          <profile-menu />
+        </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -241,7 +253,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
-import ProfileMenuButton from 'components/results/ProfileMenuButton.vue';
+import ProfileMenu from 'components/results/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { useTemplateStore } from 'stores/template-store';
@@ -249,10 +261,12 @@ import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import * as process from 'process';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
@@ -275,6 +289,10 @@ const beta = computed<boolean>(() => {
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
+});
+
+const title = computed(() => {
+  return showDrawer.value ? campDetailStore.data?.name : t('app_name');
 });
 </script>
 

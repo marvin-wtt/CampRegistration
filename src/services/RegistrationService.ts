@@ -42,8 +42,7 @@ export function useRegistrationService() {
     campId: string,
     data: Registration
   ): Promise<void> {
-    const config = withoutMiddlewareConfig();
-    await api.post(`camps/${campId}/registrations/`, data, config);
+    await api.post(`camps/${campId}/registrations/`, data);
   }
 
   async function updateRegistration(
@@ -51,23 +50,14 @@ export function useRegistrationService() {
     registrationId: string,
     data: Partial<Registration>
   ): Promise<void> {
-    const config = withoutMiddlewareConfig();
-    await api.put(
-      `camps/${campId}/registrations/${registrationId}/`,
-      data,
-      config
-    );
+    await api.put(`camps/${campId}/registrations/${registrationId}/`, data);
   }
 
   async function deleteRegistration(
     campId: string,
     registrationId: string
   ): Promise<void> {
-    const config = withoutMiddlewareConfig();
-    await api.delete(
-      `camps/${campId}/registrations/${registrationId}/`,
-      config
-    );
+    await api.delete(`camps/${campId}/registrations/${registrationId}/`);
   }
 
   return {

@@ -6,10 +6,14 @@ import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { useAuthStore } from 'stores/auth-store';
 import { useNotification } from 'src/composables/notifications';
 import { useI18n } from 'vue-i18n';
+import { useTemplateStore } from 'stores/template-store';
 
 export const useCampsStore = defineStore('camps', () => {
   const apiService = useAPIService();
   const { t } = useI18n();
+  const campStore = useCampDetailsStore();
+  const authStore = useAuthStore();
+  const templateStore = useTemplateStore();
   const { withProgressNotification } = useNotification();
 
   const data = ref<Camp[]>();
@@ -40,11 +44,11 @@ export const useCampsStore = defineStore('camps', () => {
     // Update camps
     await fetchData();
     // Update user camps
-    await useAuthStore().fetchData();
+    await authStore.fetchData();
     // Update camp details store
-    const campStore = useCampDetailsStore();
     if (id && campStore.data?.id === id) {
       await campStore.fetchData();
+      await templateStore.fetchData();
     }
   }
 

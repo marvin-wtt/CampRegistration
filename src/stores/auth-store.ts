@@ -18,6 +18,10 @@ export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const route = useRoute();
+  const campsStore = useCampsStore();
+  const campDetailsStore = useCampDetailsStore();
+  const registrationStore = useCampRegistrationsStore();
+  const templateStore = useTemplateStore();
 
   const data = ref<User>();
   const isLoading = ref<boolean>(false);
@@ -112,10 +116,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Reset all stores to make sure no confidential data is kept in memory
     reset();
-    useCampsStore().reset();
-    useCampDetailsStore().reset();
-    useCampRegistrationsStore().reset();
-    useTemplateStore().reset();
+    campsStore.reset();
+    campDetailsStore.reset();
+    registrationStore.reset();
+    templateStore.reset();
 
     await router.push('/');
   }

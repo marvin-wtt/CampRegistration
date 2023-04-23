@@ -42,12 +42,14 @@
           :disable="loading"
           :label="t('action.cancel')"
           flat
+          rounded
           @click="onDialogCancel"
         />
         <q-btn
           :label="t('action.edit')"
           :loading="loading"
           color="primary"
+          rounded
           @click="onOKClick"
         />
       </q-card-actions>
@@ -58,7 +60,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
-import { reactive, ref } from 'vue';
+import { reactive, ref, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
@@ -86,14 +88,14 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const loading = ref<boolean>(false);
-const data = reactive(props.result ?? {});
+const data = reactive(structuredClone(toRaw(props.result)) ?? {});
 
 async function onOKClick() {
   const result = props.result;
 
   loading.value = true;
   const id = isIdentifiable(result) ? result.id : undefined;
-  await registrationStore.updateData(id, data);
+  await registrationStore.updateData(id, toRaw(data));
 
   onDialogOK();
 }
