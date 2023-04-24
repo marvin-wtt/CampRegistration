@@ -35,8 +35,7 @@ export class ComponentRegistry {
 
     try {
       component = defineAsyncComponent({
-        /* @vite-ignore */
-        loader: () => import(componentName),
+        loader: () => import(/* @vite-ignore */ componentName),
         errorComponent: DefaultTableCell,
       });
 
