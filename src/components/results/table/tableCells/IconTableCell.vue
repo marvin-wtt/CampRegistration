@@ -18,7 +18,9 @@ interface Props {
 }
 
 const visible = computed<boolean>(() => {
-  return typeof props.props.value === 'boolean' ? props.props.value : true;
+  // Visibility should be defined via the showIf / hideIf fields
+  // return typeof props.props.value === 'boolean' ? props.props.value : true;
+  return true;
 });
 
 const color = computed<string>(() => {

@@ -1,23 +1,31 @@
 <template>
-  {{ truncatedText }}
+  <div
+    class="fit"
+    @mouseenter="containerHover = true"
+    @mouseleave="containerHover = false"
+  >
+    {{ truncatedText }}
 
-  <template v-if="extraWords > 0">
-    {{ `(+${extraWords})` }}
-  </template>
+    <template v-if="extraWords > 0">
+      {{ `(+${extraWords})` }}
+    </template>
 
-  <q-tooltip v-if="extraWords > 0">
-    <q-banner
-      dense
-      style="max-width: 500px"
-    >
-      {{ props.props.value }}
-    </q-banner>
-  </q-tooltip>
+    <q-popup-proxy v-model="bannerVisible">
+      <q-banner
+        dense
+        style="max-width: 500px"
+        @mouseenter="bannerHover = true"
+        @mouseleave="bannerHover = false"
+      >
+        {{ props.props.value }}
+      </q-banner>
+    </q-popup-proxy>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 interface Props {
   props: QTableBodyCellProps;
@@ -28,6 +36,15 @@ interface Props {
 const props = defineProps<Props>();
 
 const limit = 25;
+
+const containerHover = ref<boolean>(false);
+const bannerHover = ref<boolean>(false);
+
+const bannerVisible = computed<boolean>(() => {
+  // Banner hover might behave weird when trying to hover the element below
+  // return extraWords.value > 0 && (containerHover.value || bannerHover.value);
+  return extraWords.value > 0 && containerHover.value;
+});
 
 const isTruncated = computed<boolean>(() => {
   const value = props.props.value;

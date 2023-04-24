@@ -19,7 +19,7 @@
       <div class="fit row no-wrap justify-end">
         <!-- Filter -->
         <q-select
-          v-if="!printing && !quasar.screen.xs"
+          v-if="!printing && countries.length > 1 && !quasar.screen.xs"
           v-model="countryFilter"
           :label="t('filter')"
           :options="countries"
@@ -264,6 +264,9 @@ function defaultTemplate(): TableTemplate {
     const id = route.hash.substring(1);
     const result = templates.value.find((value) => value.id == id);
     if (result) {
+      pagination.value.sortBy = result.sortBy;
+      pagination.value.descending = result.sortDirection === 'desc';
+
       return result;
     }
   }
