@@ -2,35 +2,35 @@
   <!-- Loading is handles by the list itself -->
   <page-state-handler
     padding
-    :error='error'
+    :error="error"
   >
     <!-- content -->
-    <div class='column fit'>
-      <div class='row justify-center'>
+    <div class="column fit">
+      <div class="row justify-center">
         <q-btn-toggle
-          v-model='menu'
+          v-model="menu"
           :options="[
             { label: t('menu.public'), value: 'public' },
             { label: t('menu.draft'), value: 'draft' },
           ]"
-          class='my-custom-toggle'
+          class="my-custom-toggle"
           no-caps
           rounded
           spread
-          toggle-color='primary'
+          toggle-color="primary"
         />
       </div>
 
-      <div class='row justify-center'>
+      <div class="row justify-center">
         <q-list
-          class='rounded-borders vertical-middle column col-sm-10 col-md-9 col-lg-7 col-xl-6 col-12'
+          class="rounded-borders vertical-middle column col-sm-10 col-md-9 col-lg-7 col-xl-6 col-12"
           padding
           separator
         >
           <q-item>
             <q-item-section>
               <q-item-label>
-                <a class='text-h6'>
+                <a class="text-h6">
                   {{ t('title') }}
                 </a>
               </q-item-label>
@@ -43,10 +43,10 @@
               <q-item-label caption>
                 <q-btn
                   :label="t('action.create')"
-                  icon='add'
+                  icon="add"
                   outline
                   rounded
-                  @click='addAction()'
+                  @click="addAction()"
                 />
               </q-item-label>
             </q-item-section>
@@ -55,37 +55,38 @@
           <q-separator />
 
           <q-tab-panels
-            v-model='menu'
+            v-model="menu"
             animated
-            style='background-color: inherit'
+            style="background-color: inherit"
           >
             <q-tab-panel
-              name='public'
-              class='q-pa-none'
+              name="public"
+              class="q-pa-none"
             >
               <results-list
-                :camps='publicCamps'
-                :loading='isLoading'
+                :camps="publicCamps"
+                :loading="isLoading"
                 public
               />
             </q-tab-panel>
 
             <q-tab-panel
-              name='draft'
-              class='q-pa-none'
+              name="draft"
+              class="q-pa-none"
             >
               <results-list
-                :loading='isLoading'
-                :camps='draftCamps'
+                :loading="isLoading"
+                :camps="draftCamps"
               />
             </q-tab-panel>
           </q-tab-panels>
         </q-list>
       </div>
+    </div>
   </page-state-handler>
 </template>
 
-<script lang='ts' setup>
+<script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { Camp } from 'src/types/Camp';
@@ -105,7 +106,7 @@ const menu = ref<'public' | 'draft'>('public');
 
 function addAction() {
   router.push({
-    name: 'create-camp'
+    name: 'create-camp',
   });
 }
 
@@ -136,7 +137,7 @@ const draftCamps = computed<Camp[]>(() => {
 });
 </script>
 
-<i18n lang='yaml' locale='en'>
+<i18n lang="yaml" locale="en">
 title: 'Camps'
 
 menu:
