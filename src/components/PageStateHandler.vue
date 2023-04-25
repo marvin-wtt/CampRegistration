@@ -1,33 +1,42 @@
 <template>
-  <q-page
-    class="row full-width justify-center"
-    :padding="props.padding"
-  >
+  <q-page :padding="props.padding">
     <div
-      v-if="props.loading"
-      class="self-center"
+      v-if="loading || error"
+      class="absolute fit row justify-center"
     >
-      <q-spinner
-        color="primary"
-        size="100px"
-      />
-    </div>
+      <slot
+        v-if="loading"
+        name="loading"
+      >
+        <div class="self-center">
+          <q-spinner
+            color="primary"
+            size="100px"
+          />
+        </div>
+      </slot>
 
-    <div
-      v-else-if="error"
-      class="text-center self-center"
-    >
-      <q-icon
+      <slot
+        v-else-if="error"
         name="error"
-        size="xl"
-      />
+      >
+        <div class="text-center self-center">
+          <q-icon
+            name="error"
+            size="xl"
+          />
 
-      <p class="text-h4">
-        {{ props.error || 'Error' }}
-      </p>
+          <p class="text-h4">
+            {{ props.error || 'Error' }}
+          </p>
+        </div>
+      </slot>
     </div>
 
-    <slot v-else />
+    <slot
+      v-else
+      class="col self-baseline"
+    />
   </q-page>
 </template>
 
@@ -48,15 +57,20 @@ const props = withDefaults(defineProps<Props>(), {
 
 const localError = ref(false);
 
+const error = computed<boolean>(() => {
+  return props.error != null || localError.value;
+});
+
+const loading = computed<boolean>(() => {
+  return props.loading;
+});
+
 onErrorCaptured((err, instance) => {
   // TODO Handle gracefully
   localError.value = true;
 });
 
 // TODO Not working...
-const error = computed<boolean>(() => {
-  return props.error != null || localError.value;
-});
 </script>
 
 <style scoped></style>

@@ -2,6 +2,7 @@
   <page-state-handler
     :error="error"
     :loading="isLoading"
+    class="flex justify-center"
   >
     <edit-camp-form
       v-model="camp"
@@ -27,7 +28,7 @@ const loading = ref<boolean>(false);
 const campsStore = useCampDetailsStore();
 const { data, error, isLoading } = storeToRefs(campsStore);
 
-const camp = ref<Camp | undefined>(data.value);
+const camp = ref<Camp | undefined>(data.value as Camp);
 
 watch(data, (value) => {
   if (camp.value === undefined && value) {
@@ -37,8 +38,7 @@ watch(data, (value) => {
 
 async function onSubmit() {
   loading.value = true;
-
-  const value = camp.value;
+  const value: Camp | undefined = camp.value as Camp | undefined;
 
   if (value === undefined) {
     return;
