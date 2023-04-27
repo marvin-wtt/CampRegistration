@@ -1,5 +1,9 @@
 <template>
   {{ formattedPhoneNumber }}
+
+  <q-tooltip>
+    {{ props.props.value }}
+  </q-tooltip>
 </template>
 
 <script lang="ts" setup>
@@ -54,7 +58,7 @@ function formatPhoneNumber(phoneNumber: string): string {
   if (phoneNumber.startsWith('00')) {
     return formatForCountry(
       phoneNumber.substring(4),
-      phoneNumber.substring(2, 3)
+      phoneNumber.substring(2, 4)
     );
   }
 
