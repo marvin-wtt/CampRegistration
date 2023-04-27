@@ -3,25 +3,20 @@ import { useAPIService } from 'src/services/APIService';
 import { ref } from 'vue';
 import { User } from 'src/types/User';
 import { useRoute, useRouter } from 'vue-router';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
-import { useTemplateStore } from 'stores/template-store';
-import { useCampsStore } from 'stores/camp/camps-store';
-import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { api } from 'boot/axios';
 import {
   hasResponseData,
   hasResponseDataErrors,
   hasResponseStatusText,
 } from 'src/composables/errorChecker';
+import { useAuthBus } from 'src/composables/bus';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const route = useRoute();
-  const campsStore = useCampsStore();
-  const campDetailsStore = useCampDetailsStore();
-  const registrationStore = useCampRegistrationsStore();
-  const templateStore = useTemplateStore();
+
+  const bus = useAuthBus();
 
   const data = ref<User>();
   const isLoading = ref<boolean>(false);
@@ -42,6 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
         return Promise.reject(error);
       }
 
+      bus.emit('logout');
       // Clear current user for login page
       reset();
       // TODO Why are named routes not working?
@@ -81,6 +77,8 @@ export const useAuthStore = defineStore('auth', () => {
           ? decodeURIComponent(route.query.origin)
           : 'results';
 
+      bus.emit('login', data.value);
+
       await router.push(destination);
     } catch (e: unknown) {
       error.value = hasResponseDataErrors(e)
@@ -116,10 +114,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Reset all stores to make sure no confidential data is kept in memory
     reset();
-    campsStore.reset();
-    campDetailsStore.reset();
-    registrationStore.reset();
-    templateStore.reset();
+
+    bus.emit('logout');
 
     await router.push('/');
   }
@@ -157,16 +153,19 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(email: string, password: string) {
     // TODO Progress
     await apiService.register(email, password);
+    // TODO emit event
   }
 
   async function forgotPassword(email: string) {
     // TODO Progress
     await apiService.forgotPassword(email);
+    // TODO emit event
   }
 
   async function resetPassword(token: string, email: string, password: string) {
     // TODO Progress
     await apiService.resetPassword(token, email, password);
+    // TODO emit event
   }
 
   return {

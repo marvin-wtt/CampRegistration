@@ -6,6 +6,7 @@ import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
 import { useNotification } from 'src/composables/notifications';
 import { useTemplateStore } from 'stores/template-store';
+import { useAuthBus, useCampBus } from 'src/composables/bus';
 
 export const useCampDetailsStore = defineStore('campDetails', () => {
   const route = useRoute();
@@ -13,21 +14,28 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
   const { t } = useI18n();
   const api = useAPIService();
   const templateStore = useTemplateStore();
+  const bus = useCampBus();
+  const authBus = useAuthBus();
   const { withProgressNotification } = useNotification();
 
   const data = ref<Camp>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
-  // TODO Should this even happen here?
-  router.beforeEach((to, from) => {
+  authBus.on('logout', () => {
+    reset();
+  });
+
+  router.beforeEach(async (to, from) => {
     if (to.params.camp === undefined) {
       return;
     }
 
     if (data.value === undefined || to.params.camp !== from.params.camp) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const ignored = fetchData(to.params.camp as string);
+      const campId = to.params.camp as string;
+      await fetchData(campId);
+
+      bus.emit('change', data.value);
       return;
     }
   });
@@ -66,6 +74,8 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     const success = await withProgressNotification(
       async () => {
         await api.updateCamp(campId, newData);
+
+        bus.emit('update');
       },
       {
         progress: {

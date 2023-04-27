@@ -1,16 +1,18 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { TableTemplate } from 'src/types/TableTemplate';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 import { useNotification } from 'src/composables/notifications';
+import { useAuthBus, useCampBus } from 'src/composables/bus';
 
 export const useTemplateStore = defineStore('resultTemplate', () => {
   const route = useRoute();
-  const router = useRouter();
   const { t } = useI18n();
   const apiService = useAPIService();
+  const authBus = useAuthBus();
+  const campBus = useCampBus();
   const { withMultiProgressNotification, withProgressNotification } =
     useNotification();
 
@@ -18,17 +20,12 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
-  // TODO Should this even happen here?
-  router.beforeEach((to, from) => {
-    if (to.params.camp === undefined) {
-      return;
-    }
+  authBus.on('logout', () => {
+    reset();
+  });
 
-    if (data.value === undefined || to.params.camp !== from.params.camp) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const ignored = fetchData(to.params.camp as string);
-      return;
-    }
+  campBus.on('change', async (campId: string) => {
+    await fetchData(campId);
   });
 
   function reset() {

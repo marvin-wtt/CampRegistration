@@ -1,36 +1,32 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 import { Registration } from 'src/types/Registration';
 import { useNotification } from 'src/composables/notifications';
+import { useAuthBus, useCampBus } from 'src/composables/bus';
 
 export const useCampRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
-  const router = useRouter();
   const quasar = useQuasar();
   const { t } = useI18n();
   const apiService = useAPIService();
+  const authBus = useAuthBus();
+  const campBus = useCampBus();
   const { withProgressNotification } = useNotification();
 
   const data = ref<Registration[]>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
-  // TODO Should this even happen here?
-  router.beforeEach((to, from) => {
-    if (to.params.camp === undefined) {
-      return;
-    }
+  authBus.on('logout', () => {
+    reset();
+  });
 
-    // TODO Only fetch for result routes - not camp.
-    if (data.value === undefined || to.params.camp !== from.params.camp) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const ignored = fetchData(to.params.camp as string);
-      return;
-    }
+  campBus.on('change', async (campId: string) => {
+    await fetchData(campId);
   });
 
   function reset() {

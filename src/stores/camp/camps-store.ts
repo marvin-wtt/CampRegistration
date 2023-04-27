@@ -7,6 +7,7 @@ import { useAuthStore } from 'stores/auth-store';
 import { useNotification } from 'src/composables/notifications';
 import { useI18n } from 'vue-i18n';
 import { useTemplateStore } from 'stores/template-store';
+import { useAuthBus } from 'src/composables/bus';
 
 export const useCampsStore = defineStore('camps', () => {
   const apiService = useAPIService();
@@ -14,11 +15,16 @@ export const useCampsStore = defineStore('camps', () => {
   const campStore = useCampDetailsStore();
   const authStore = useAuthStore();
   const templateStore = useTemplateStore();
+  const authBus = useAuthBus();
   const { withProgressNotification } = useNotification();
 
   const data = ref<Camp[]>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
+
+  authBus.on('logout', () => {
+    reset();
+  });
 
   function reset() {
     data.value = undefined;
