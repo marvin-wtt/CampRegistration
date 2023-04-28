@@ -20,24 +20,13 @@
       <template
         #day-body="{ scope: { timestamp, timeStartPos, timeDurationHeight } }"
       >
-        <template
+        <calendar-item
           v-for="event in getEvents(timestamp.date)"
           :key="event.id"
-        >
-          <div
-            v-if="event.time !== undefined"
-            class="my-event"
-            :class="badgeClasses(event, 'body')"
-            :style="
-              badgeStyles(event, 'body', timeStartPos, timeDurationHeight)
-            "
-          >
-            <span class="title q-calendar__ellipsis">
-              {{ event.title }}
-              <q-tooltip>{{ event.details }}</q-tooltip>
-            </span>
-          </div>
-        </template>
+          :event="event"
+          :time-start-position="timeStartPos"
+          :time-duration-height="timeDurationHeight"
+        />
       </template>
     </q-calendar>
   </page-state-handler>
@@ -56,6 +45,7 @@ import {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import CalendarItem from 'components/camp-management/programPlanner/CalendarItem.vue';
 
 const campDetailsStore = useCampDetailsStore();
 const { t, locale } = useI18n();
@@ -169,7 +159,7 @@ interface Event {
   date?: string;
   duration?: number;
   time?: string;
-  bgcolor?: string;
+  backgroundColor?: string;
   side?: string;
   icon?: string;
   days?: number;
@@ -181,14 +171,14 @@ const events = ref<Event[]>([
     title: '1st of the Month',
     details: 'Everything is funny as long as it is happening to someone else',
     date: '2023-07-29',
-    bgcolor: 'orange',
+    backgroundColor: 'orange',
   },
   {
     id: 2,
     title: 'Sisters Birthday',
     details: 'Buy a nice present',
     date: '2023-07-30',
-    bgcolor: 'green',
+    backgroundColor: 'green',
     icon: 'fas fa-birthday-cake',
   },
   {
@@ -198,7 +188,7 @@ const events = ref<Event[]>([
     date: '2023-07-31',
     time: '10:00',
     duration: 120,
-    bgcolor: 'red',
+    backgroundColor: 'red',
     icon: 'fas fa-handshake',
   },
   {
@@ -206,9 +196,9 @@ const events = ref<Event[]>([
     title: 'Lunch',
     details: 'Company is paying!',
     date: '2023-07-31',
-    time: '11:30',
+    time: '11:15',
     duration: 90,
-    bgcolor: 'teal',
+    backgroundColor: 'teal',
     icon: 'fas fa-hamburger',
   },
   {
@@ -218,7 +208,7 @@ const events = ref<Event[]>([
     date: '2023-07-30',
     time: '17:00',
     duration: 90,
-    bgcolor: 'grey',
+    backgroundColor: 'grey',
     icon: 'fas fa-car',
   },
   {
@@ -228,7 +218,7 @@ const events = ref<Event[]>([
     date: '2023-08-03',
     time: '08:00',
     duration: 540,
-    bgcolor: 'blue',
+    backgroundColor: 'blue',
     icon: 'fas fa-chalkboard-teacher',
   },
   {
@@ -238,7 +228,7 @@ const events = ref<Event[]>([
     date: '2023-08-04',
     time: '19:00',
     duration: 180,
-    bgcolor: 'teal',
+    backgroundColor: 'teal',
     icon: 'fas fa-utensils',
   },
 ]);
@@ -265,35 +255,6 @@ const eventsMap = computed(() => {
   });
   return map;
 });
-
-function badgeClasses(event, type) {
-  const isHeader = type === 'header';
-  return {
-    [`text-white bg-${event.bgcolor}`]: true,
-    'full-width': !isHeader && (!event.side || event.side === 'full'),
-    'left-side': !isHeader && event.side === 'left',
-    'right-side': !isHeader && event.side === 'right',
-    'rounded-border': true,
-  };
-}
-
-function badgeStyles(
-  event,
-  type,
-  timeStartPos = undefined,
-  timeDurationHeight = undefined
-) {
-  const s: {
-    top: string;
-    height: string;
-  } = {};
-  if (timeStartPos && timeDurationHeight) {
-    s.top = timeStartPos(event.time) + 'px';
-    s.height = timeDurationHeight(event.duration) + 'px';
-  }
-  s['align-items'] = 'flex-start';
-  return s;
-}
 
 function getEvents(dt) {
   // get all events for the specified date

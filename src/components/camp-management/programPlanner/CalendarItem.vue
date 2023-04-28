@@ -1,8 +1,60 @@
 <template>
-  TODO
+  <div
+    v-if="props.event.time !== undefined"
+    class="my-event"
+    :class="badgeClasses"
+    :style="badgeStyles"
+  >
+    <span class="title q-calendar__ellipsis">
+      {{ props.event.title }}
+      <q-tooltip>
+        {{ props.event.details }}
+      </q-tooltip>
+    </span>
+  </div>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { ProgramEvent } from 'src/types/ProgramEvent';
+import { computed } from 'vue';
+
+interface Props {
+  event: ProgramEvent;
+  timeStartPosition?: (time?: string) => number;
+  timeDurationHeight?: (duration?: number) => number;
+}
+
+const props = defineProps<Props>();
+
+const backgroundColor = computed<string>(() => {
+  return props.event.backgroundColor ?? '#0000ff';
+});
+
+const badgeClasses = computed<Record<string, string | boolean>>(() => {
+  return {
+    [`text-white bg-${props.event.backgroundColor}`]: true,
+    'full-width': !props.event.side || props.event.side === 'full',
+    'left-side': props.event.side === 'left',
+    'right-side': props.event.side === 'right',
+    'rounded-border': true,
+  };
+});
+
+const badgeStyles = computed(() => {
+  const s: {
+    top: string;
+    height: string;
+    backgroundColor: string;
+  } = {};
+  if (props.timeStartPosition && props.timeDurationHeight) {
+    s.top = props.timeStartPosition(props.event.time) + 'px';
+    s.height = props.timeDurationHeight(props.event.duration) + 'px';
+    s.backgroundColor = backgroundColor.value;
+  }
+  s['align-items'] = 'flex-start';
+  return s;
+});
+</script>
 
 <style lang="sass" scoped>
 .my-event
@@ -20,30 +72,6 @@
   justify-content: center
   align-items: center
   height: 100%
-
-.text-white
-  color: white
-
-.bg-blue
-  background: blue
-
-.bg-green
-  background: green
-
-.bg-orange
-  background: orange
-
-.bg-red
-  background: red
-
-.bg-teal
-  background: teal
-
-.bg-grey
-  background: grey
-
-.bg-purple
-  background: purple
 
 .full-width
   left: 0
