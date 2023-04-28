@@ -94,10 +94,10 @@ import { computed, ref } from 'vue';
 
 import ParticipantsByCountryChart from 'components/camp-management/charts/ParticipantsByCountryChart.vue';
 import ParticipantsByAgeAndCountry from 'components/camp-management/charts/ParticipantsByAgeAndCountry.vue';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 import { storeToRefs } from 'pinia';
 
-const registrationStore = useCampRegistrationsStore();
+const registrationStore = useRegistrationsStore();
 
 const registrations = storeToRefs(registrationStore);
 

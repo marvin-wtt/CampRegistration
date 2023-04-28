@@ -55,9 +55,9 @@
     </q-item>
 
     <room-list-item
-      v-for="(roomMate, index) in room.roomMates"
+      v-for="(roomMate, index) in room.roommates"
       :key="index"
-      v-model="room.roomMates[index]"
+      v-model="room.roommates[index]"
       :options="options"
       :position="index + 1"
     />
@@ -72,7 +72,7 @@ import { useQuasar } from 'quasar';
 import { Room } from 'src/types/Room';
 import ModifyRoomDialog from 'components/camp-management/roomPlanner/ModifyRoomDialog.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { RoomMate } from 'src/types/RoomMate';
+import { Roommate } from 'src/types/Roommate';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -81,7 +81,7 @@ const { to } = useObjectTranslation();
 interface Props {
   name: string | Record<string, string>;
   modelValue: Room;
-  people: (RoomMate | null)[];
+  people: (Roommate | null)[];
 }
 
 const props = defineProps<Props>();
@@ -99,7 +99,7 @@ const room = computed<Room>({
 const gender = computed<string | undefined>(() => {
   let gender: string | undefined = undefined;
 
-  room.value.roomMates.some((value) => {
+  room.value.roommates.some((value) => {
     if (value?.gender === undefined) {
       return false;
     }
@@ -114,7 +114,7 @@ const gender = computed<string | undefined>(() => {
 const leader = computed<boolean | undefined>(() => {
   let leader: boolean | undefined = undefined;
 
-  room.value.roomMates.some((value) => {
+  room.value.roommates.some((value) => {
     if (value?.leader === undefined) {
       return false;
     }

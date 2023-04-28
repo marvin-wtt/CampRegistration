@@ -6,6 +6,8 @@ import { Room } from 'src/types/Room';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useNotification } from 'src/composables/notifications';
+import { useCampBus, useRegistrationBus } from 'src/composables/bus';
+import { Camp } from 'src/types/Camp';
 
 export const useRoomPlannerStore = defineStore('room-planner', () => {
   const apiService = useAPIService();
@@ -13,10 +15,23 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
   const route = useRoute();
   const { t } = useI18n();
   const { withProgressNotification } = useNotification();
+  const campBus = useCampBus();
+  const registrationBus = useRegistrationBus();
 
   const data = ref<Room[]>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | object | null>(null);
+
+  campBus.on('change', async (camp: Camp) => {
+    // TODO It should be monitored if the rooms are even needed at that point of time
+    await fetchData(camp.id);
+  });
+
+  registrationBus.on('update', () => {
+    // TODO Check if changes or just remap
+  });
+
+  // TODO Registration store should listen to changes
 
   function reset() {
     data.value = undefined;

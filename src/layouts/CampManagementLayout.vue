@@ -269,8 +269,8 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/camp-management/ProfileMenu.vue';
-import { useCampDetailsStore } from 'stores/camp/camp-details-store';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 import { useTemplateStore } from 'stores/template-store';
 import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
@@ -286,7 +286,7 @@ const { to } = useObjectTranslation();
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
 const templateStore = useTemplateStore();
-const registrationsStore = useCampRegistrationsStore();
+const registrationsStore = useRegistrationsStore();
 
 authStore.fetchData();
 // TODO Dont do for index page

@@ -64,7 +64,7 @@ import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { reactive, ref, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 import DynamicInput from 'components/DynamicInput.vue';
 
 interface Props {
@@ -77,7 +77,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const registrationStore = useCampRegistrationsStore();
+const registrationStore = useRegistrationsStore();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

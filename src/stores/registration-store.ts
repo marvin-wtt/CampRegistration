@@ -6,15 +6,20 @@ import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 import { Registration } from 'src/types/Registration';
 import { useNotification } from 'src/composables/notifications';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import {
+  useAuthBus,
+  useCampBus,
+  useRegistrationBus,
+} from 'src/composables/bus';
 import { Camp } from 'src/types/Camp';
 
-export const useCampRegistrationsStore = defineStore('registrations', () => {
+export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
   const quasar = useQuasar();
   const { t } = useI18n();
   const apiService = useAPIService();
   const authBus = useAuthBus();
+  const bus = useRegistrationBus();
   const campBus = useCampBus();
   const { withProgressNotification } = useNotification();
 
@@ -64,7 +69,7 @@ export const useCampRegistrationsStore = defineStore('registrations', () => {
 
   async function updateData(
     registrationId: string | undefined,
-    data: Partial<Registration>
+    updateData: Partial<Registration>
   ) {
     const campId = route.params.camp as string;
 
@@ -79,7 +84,7 @@ export const useCampRegistrationsStore = defineStore('registrations', () => {
 
     const success = await withProgressNotification(
       async () => {
-        await apiService.updateRegistration(campId, registrationId, data);
+        await apiService.updateRegistration(campId, registrationId, updateData);
       },
       {
         progress: {
@@ -97,6 +102,8 @@ export const useCampRegistrationsStore = defineStore('registrations', () => {
     // Fetch data again because it updated
     if (success) {
       await fetchData();
+
+      bus.emit('update', registrationId);
     }
   }
 
@@ -129,6 +136,8 @@ export const useCampRegistrationsStore = defineStore('registrations', () => {
     // Fetch data again because it updated
     if (success) {
       await fetchData();
+
+      bus.emit('delete', registrationId);
     }
   }
 

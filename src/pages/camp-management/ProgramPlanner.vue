@@ -36,16 +36,19 @@
 import PageStateHandler from 'components/PageStateHandler.vue';
 import {
   addToDate,
+  compareTimestamps,
+  diffTimestamp,
   isBetweenDates,
   parsed,
   parseTime,
-  parseTimestamp,
   QCalendar,
+  Timestamp,
 } from '@quasar/quasar-ui-qcalendar';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 import CalendarItem from 'components/camp-management/programPlanner/CalendarItem.vue';
+import { ProgramEvent } from 'src/types/ProgramEvent';
 
 const campDetailsStore = useCampDetailsStore();
 const { t, locale } = useI18n();
@@ -162,7 +165,6 @@ interface Event {
   backgroundColor?: string;
   side?: string;
   icon?: string;
-  days?: number;
 }
 
 const events = ref<Event[]>([
@@ -199,6 +201,16 @@ const events = ref<Event[]>([
     time: '11:15',
     duration: 90,
     backgroundColor: 'teal',
+    icon: 'fas fa-hamburger',
+  },
+  {
+    id: 41,
+    title: 'Second Lunch',
+    details: 'Company is paying!',
+    date: '2023-07-31',
+    time: '12:00',
+    duration: 90,
+    backgroundColor: 'green',
     icon: 'fas fa-hamburger',
   },
   {
@@ -241,49 +253,87 @@ const eventsMap = computed(() => {
       map[event.date] = [];
     }
     map[event.date].push(event);
-    if (event.days) {
-      let timestamp = parseTimestamp(event.date);
-      let days = event.days;
-      do {
-        timestamp = addToDate(timestamp, { day: 1 });
-        if (!map[timestamp.date]) {
-          map[timestamp.date] = [];
-        }
-        map[timestamp.date].push(event);
-      } while (--days > 0);
-    }
   });
+
   return map;
 });
 
-function getEvents(dt) {
+function getEvents(date: string): ProgramEvent[] {
   // get all events for the specified date
-  const events = eventsMap.value[dt] || [];
+  const events = eventsMap.value[date] || [];
 
-  if (events.length === 1) {
-    events[0].side = 'full';
-  } else if (events.length === 2) {
-    // this example does no more than 2 events per day
-    // check if the two events overlap and if so, select
-    // left or right side alignment to prevent overlap
-    const startTime = addToDate(parsed(events[0].date), {
-      minute: parseTime(events[0].time),
+  // Convert all times to timestamps first
+  const eventTimes: {
+    start: Timestamp;
+    end: Timestamp;
+  }[] = events.map((event) => {
+    const start = addToDate(parsed(event.date), {
+      minute: parseTime(event.time),
     });
-    const endTime = addToDate(startTime, { minute: events[0].duration });
-    const startTime2 = addToDate(parsed(events[1].date), {
-      minute: parseTime(events[1].time),
-    });
-    const endTime2 = addToDate(startTime2, { minute: events[1].duration });
-    if (
-      isBetweenDates(startTime2, startTime, endTime, true) ||
-      isBetweenDates(endTime2, startTime, endTime, true)
-    ) {
-      events[0].side = 'left';
-      events[1].side = 'right';
-    } else {
-      events[0].side = 'full';
-      events[1].side = 'full';
+    const end = addToDate(start, { minute: event.duration });
+
+    return {
+      start: start,
+      end: end,
+    };
+  });
+
+  // Set the side of all events
+  for (let i = 0; i < events.length; i++) {
+    // Look ahead - all events in the past are already assigned
+    // Technically, the last element could be skipped as it can't be compared
+    for (let j = i + 1; j < events.length; j++) {
+      // Check if timestamps overlap
+      const overlapping =
+        isBetweenDates(
+          eventTimes[j].start,
+          eventTimes[i].start,
+          eventTimes[i].end,
+          true
+        ) ||
+        isBetweenDates(
+          eventTimes[j].end,
+          eventTimes[i].start,
+          eventTimes[i].end,
+          true
+        );
+      // Check if start and end are equal. This is considered as between but
+      //  should be ignored here.
+      const continuous =
+        compareTimestamps(eventTimes[i].start, eventTimes[j].end) ||
+        compareTimestamps(eventTimes[j].start, eventTimes[i].end);
+
+      // Skip all event that do not overlap
+      if (!overlapping || continuous) {
+        continue;
+      }
+
+      // Both events overlap. If one event has a side defined, assign the
+      //  other side to the other element. If both elements don't have a side
+      //  defined, the earlier event gets the left side.
+      if (events[i].side === undefined) {
+        // Other element has already a side. So take the other one
+        if (events[j].side !== undefined) {
+          events[i].side = events[j].side === 'left' ? 'right' : 'left';
+          continue;
+        }
+
+        // Compare who starts first
+        events[i].side =
+          diffTimestamp(eventTimes[i].start, eventTimes[j].start, true) >= 0
+            ? 'left'
+            : 'right';
+      }
+
+      // Set side of second element if not already set
+      if (events[j].side !== undefined) {
+        continue;
+      }
+
+      events[j].side = events[i].side === 'left' ? 'right' : 'left';
     }
+
+    events[i] ??= 'full';
   }
 
   return events;

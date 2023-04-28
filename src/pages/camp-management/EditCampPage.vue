@@ -18,7 +18,7 @@ import { ref, watch } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useRouter } from 'vue-router';
 import EditCampForm from 'components/camp-management/EditCampForm.vue';
-import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from 'components/PageStateHandler.vue';
 

@@ -15,7 +15,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { Camp } from 'src/types/Camp';
-import { useCampsStore } from 'stores/camp/camps-store';
+import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
 import EditCampForm from 'components/camp-management/EditCampForm.vue';
 

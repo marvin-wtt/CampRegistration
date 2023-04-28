@@ -1,6 +1,6 @@
 import { Identifiable } from 'src/types/Identifiable';
 
-export interface RoomMate extends Identifiable {
+export interface Roommate extends Identifiable {
   name: string;
   age?: number;
   gender?: string;

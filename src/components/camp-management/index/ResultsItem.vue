@@ -111,7 +111,7 @@
 
 <script lang="ts" setup>
 import ResultsItemMenu from 'components/camp-management/index/ResultsItemMenu.vue';
-import { useCampsStore } from 'stores/camp/camps-store';
+import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';

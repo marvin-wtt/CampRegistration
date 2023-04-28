@@ -58,7 +58,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDialogPluginComponent } from 'quasar';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 
 interface Props {
   result: unknown;
@@ -68,7 +68,7 @@ const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
-const registrationStore = useCampRegistrationsStore();
+const registrationStore = useRegistrationsStore();
 
 const confirmDeleteName = ref<string>('');
 const confirmDeleteDisabled = computed<boolean>(() => {

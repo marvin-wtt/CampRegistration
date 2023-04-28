@@ -80,25 +80,25 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const room = reactive<Room>(defaultRoom());
-const capacity = ref<number>(room.roomMates.length);
+const capacity = ref<number>(room.roommates.length);
 
 function defaultRoom(): Room {
   return props.room
     ? structuredClone(toRaw(props.room))
     : {
         name: '',
-        roomMates: [],
+        roommates: [],
       };
 }
 
 function onOKClick(): void {
-  const diff = capacity.value - room.roomMates.length;
+  const diff = capacity.value - room.roommates.length;
   if (diff > 0) {
     // Add elements
-    room.roomMates.push(...Array(diff).fill(null));
+    room.roommates.push(...Array(diff).fill(null));
   } else if (diff < 0) {
     // Remove n elements
-    room.roomMates.splice(diff);
+    room.roommates.splice(diff);
   }
 
   onDialogOK(room);

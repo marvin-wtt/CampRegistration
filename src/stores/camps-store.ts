@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
-import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useAuthStore } from 'stores/auth-store';
 import { useNotification } from 'src/composables/notifications';
 import { useI18n } from 'vue-i18n';

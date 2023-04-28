@@ -56,7 +56,7 @@
           v-model="rooms[index]"
           :name="room.name"
           :people="availablePeople"
-          :room-mates="room.roomMates"
+          :room-mates="room.roommates"
           class="q-ma-sm"
           style="max-width: 500px; min-width: 300px"
         />
@@ -80,28 +80,33 @@ import { computed, ref } from 'vue';
 import RoomList from 'components/camp-management/roomPlanner/RoomList.vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 import { Room } from 'src/types/Room';
 import { useQuasar } from 'quasar';
 import ModifyRoomDialog from 'components/camp-management/roomPlanner/ModifyRoomDialog.vue';
 import PageStateHandler from 'components/PageStateHandler.vue';
 import { Registration } from 'src/types/Registration';
 import RoomListSkeleton from 'components/camp-management/roomPlanner/RoomListSkeleton.vue';
-import { RoomMate } from 'src/types/RoomMate';
+import { Roommate } from 'src/types/Roommate';
+import { useRoomPlannerStore } from 'stores/room-planner-store';
 
 const quasar = useQuasar();
 const { t } = useI18n();
-const registrationsStore = useCampRegistrationsStore();
+const registrationsStore = useRegistrationsStore();
 const registrations = storeToRefs(registrationsStore);
+const roomStore = useRoomPlannerStore();
+const { data } = storeToRefs(roomStore);
 
 const addLoading = ref(false);
 
+roomStore.fetchData();
+
 const loading = computed<boolean>(() => {
-  return registrationsStore.isLoading;
+  return registrationsStore.isLoading || roomStore.isLoading;
 });
 
 const error = computed<unknown>(() => {
-  return registrationsStore.error;
+  return registrationsStore.error ?? roomStore.error;
 });
 
 const updateInProgress = computed<boolean>(() => {
@@ -109,8 +114,12 @@ const updateInProgress = computed<boolean>(() => {
 });
 
 const rooms = computed<Room[]>(() => {
-  return testRooms.value.map((room) => {
-    const diff = room.capacity - room.roomMates.length;
+  if (!data.value) {
+    return [];
+  }
+
+  return data.value.map((room) => {
+    const diff = room.capacity - room.roommates.length;
 
     if (diff == 0) {
       return room;
@@ -118,39 +127,18 @@ const rooms = computed<Room[]>(() => {
 
     // FIll all remaining slots with null values
     if (diff > 0) {
-      room.roomMates.push(...Array(diff).fill(null));
+      room.roommates.push(...Array(diff).fill(null));
       return room;
     }
 
     // Room is overfilled. Remove them
-    room.roomMates.splice(room.roomMates.length + diff, diff * -1);
+    room.roommates.splice(room.roommates.length + diff, diff * -1);
 
     return room;
   });
 });
 
-const testRooms = ref<Room[]>([
-  {
-    id: '',
-    name: 'Room 1',
-    capacity: 4,
-    roomMates: [],
-  },
-  {
-    id: '',
-    name: 'Room 2',
-    capacity: 5,
-    roomMates: [],
-  },
-  {
-    id: '',
-    name: 'Room 3',
-    capacity: 4,
-    roomMates: [],
-  },
-]);
-
-const availablePeople = computed<RoomMate[]>(() => {
+const availablePeople = computed<Roommate[]>(() => {
   let results: Registration[] | undefined = registrations.data.value;
 
   if (results === undefined) {
@@ -160,23 +148,27 @@ const availablePeople = computed<RoomMate[]>(() => {
   // Filter out people who are already in a group
   results = results.filter((person) => {
     return !rooms.value.some((room) => {
-      return room.roomMates.some((value) => value?.id === person.id);
+      return room.roommates.some((value) => value?.id === person.id);
     });
   });
 
   // TODO Set values based on settings
   // TODO Generate values if needed - name should be unique
   // Convert registrations to custom object
-  return results.map((roomMate) => {
-    return {
-      id: roomMate.id,
-      name: roomMate.first_name,
-      age: roomMate.age,
-      gender: roomMate.gender,
-      country: roomMate.country,
-      leader: false,
-    } as RoomMate;
-  });
+  return results
+    .map((roommate) => {
+      return {
+        id: roommate.id,
+        name: roommate.first_name,
+        age: roommate.age,
+        gender: roommate.gender,
+        country: roommate.country,
+        leader: false,
+      } as Roommate;
+    })
+    .sort((a, b) => {
+      return a.age - b.age;
+    });
 });
 
 function addRoom() {
@@ -184,7 +176,7 @@ function addRoom() {
     id: 'filled-by-server',
     name: '',
     capacity: 0,
-    roomMates: [],
+    roommates: [],
   };
 
   quasar

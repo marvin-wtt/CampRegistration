@@ -16,9 +16,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useCampDetailsStore } from 'stores/camp/camp-details-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
-import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import ResultTable from 'components/camp-management/table/ResultTable.vue';
@@ -29,7 +29,7 @@ import PageStateHandler from 'components/PageStateHandler.vue';
 import { Camp } from 'src/types/Camp';
 
 const campDetailStore = useCampDetailsStore();
-const registrationStore = useCampRegistrationsStore();
+const registrationStore = useRegistrationsStore();
 const templateStore = useTemplateStore();
 const { to } = useObjectTranslation();
 

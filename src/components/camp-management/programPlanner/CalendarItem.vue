@@ -85,6 +85,6 @@ const badgeStyles = computed(() => {
   left: 50%
   width: calc(50% - 3px)
 
-  .rounded-border
-    border-radius: 2px
+.rounded-border
+  border-radius: 2px
 </style>
