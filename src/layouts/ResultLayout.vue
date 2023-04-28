@@ -160,6 +160,21 @@
           v-if="beta"
           v-ripple
           clickable
+          :to="{ name: 'program-planner' }"
+        >
+          <q-item-section avatar>
+            <q-icon name="event" />
+          </q-item-section>
+
+          <q-item-section>
+            {{ t('program_planner') }}
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="beta"
+          v-ripple
+          clickable
           :to="{ name: 'room-planner' }"
         >
           <q-item-section avatar>
@@ -303,6 +318,7 @@ dashboard: 'Dashboard'
 edit: 'Edit'
 expenses: 'Expenses'
 participants: 'Participants'
+program_planner: 'Program'
 room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
@@ -317,6 +333,7 @@ dashboard: 'Dashboard'
 edit: 'Bearbeiten'
 expenses: 'Ausgaben'
 participants: 'Teilnehmende'
+program_planner: 'Programm'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
@@ -331,6 +348,7 @@ dashboard: 'Dashboard'
 edit: 'Modifier'
 expenses: 'Dépenses'
 participants: 'Participants'
+program_planner: 'Programme'
 room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
