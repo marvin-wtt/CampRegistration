@@ -135,7 +135,7 @@ const locales = computed(() => [
 
 function goToCamps() {
   router.push({
-    name: 'results-index',
+    name: 'camp-management',
   });
 }
 

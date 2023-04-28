@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useCampsStore } from 'stores/camp/camps-store';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/results/EditCampForm.vue';
+import EditCampForm from 'components/camp-management/EditCampForm.vue';
 
 const router = useRouter();
 
@@ -30,7 +30,7 @@ async function onSubmit() {
   await campsStore.createEntry(data.value as Camp);
 
   return router.push({
-    name: 'results-index',
+    name: 'camp-management',
     query: {
       public: 0,
     },

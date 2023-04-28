@@ -144,7 +144,7 @@ import TranslatedInput from 'components/TranslatedInput.vue';
 import { computed, reactive, toRaw } from 'vue';
 import SortableList from 'components/SortableList.vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
-import EditResultColumnTemplateDialog from 'components/results/table/dialogs/template/EditResultColumnTemplateDialog.vue';
+import EditResultColumnTemplateDialog from 'components/camp-management/table/dialogs/template/EditResultColumnTemplateDialog.vue';
 import { Camp } from 'src/types/Camp';
 
 interface Props {

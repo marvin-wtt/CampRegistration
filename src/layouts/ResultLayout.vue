@@ -34,7 +34,7 @@
 
         <q-btn
           :label="t('camps')"
-          :to="{ name: 'results-index' }"
+          :to="{ name: 'camp-management' }"
           flat
           stretch
         />
@@ -87,7 +87,7 @@
       <q-list padding>
         <q-item
           v-ripple
-          :to="{ name: 'results-dashboard' }"
+          :to="{ name: 'dashboard' }"
           clickable
         >
           <q-item-section avatar>
@@ -102,7 +102,7 @@
         <q-item
           v-if="beta"
           v-ripple
-          :to="{ name: 'results-participants' }"
+          :to="{ name: 'participants' }"
           clickable
         >
           <q-item-section avatar>
@@ -268,7 +268,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
-import ProfileMenu from 'components/results/ProfileMenu.vue';
+import ProfileMenu from 'components/camp-management/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { useCampRegistrationsStore } from 'stores/camp/camp-registration-store';
 import { useTemplateStore } from 'stores/template-store';

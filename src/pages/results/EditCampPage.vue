@@ -17,7 +17,7 @@
 import { ref, watch } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/results/EditCampForm.vue';
+import EditCampForm from 'components/camp-management/EditCampForm.vue';
 import { useCampDetailsStore } from 'stores/camp/camp-details-store';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from 'components/PageStateHandler.vue';
@@ -47,7 +47,7 @@ async function onSubmit() {
   await campsStore.updateData(value);
 
   return router.push({
-    name: 'results-dashboard',
+    name: 'dashboard',
     query: {
       public: 0,
     },

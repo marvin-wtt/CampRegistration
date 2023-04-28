@@ -110,7 +110,7 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItemMenu from 'components/results/index/ResultsItemMenu.vue';
+import ResultsItemMenu from 'components/camp-management/index/ResultsItemMenu.vue';
 import { useCampsStore } from 'stores/camp/camps-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -147,7 +147,7 @@ const actionLoading = computed<boolean>(() => {
 function resultsAction() {
   withLoading(resultLoading, async () => {
     await router.push({
-      name: 'results-participants',
+      name: 'participants',
       params: {
         camp: props.camp.id,
       },
@@ -159,7 +159,7 @@ function shareAction() {
   const url =
     window.location.origin +
     router.resolve({
-      name: 'results-participants',
+      name: 'participants',
       params: {
         camp: props.camp.id,
       },

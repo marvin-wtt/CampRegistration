@@ -35,7 +35,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import RoomListItemSkeleton from 'components/results/roomPlanner/RoomListItemSkeleton.vue';
+import RoomListItemSkeleton from 'components/camp-management/roomPlanner/RoomListItemSkeleton.vue';
 
 interface Props {
   capacity: number;

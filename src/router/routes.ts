@@ -13,13 +13,13 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
   },
   {
-    path: '/results',
+    path: '/camp-management',
     name: 'results',
     component: () => import('layouts/ResultLayout.vue'),
     children: [
       {
         path: '',
-        name: 'results-index',
+        name: 'camp-management',
         meta: {
           hideDrawer: true,
         },
@@ -36,7 +36,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: ':camp',
         redirect: {
-          name: 'results-dashboard',
+          name: 'dashboard',
         },
         children: [
           {
@@ -46,12 +46,12 @@ const routes: RouteRecordRaw[] = [
           },
           {
             path: 'dashboard',
-            name: 'results-dashboard',
+            name: 'dashboard',
             component: () => import('pages/results/DashboardPage.vue'),
           },
           {
             path: 'participants',
-            name: 'results-participants',
+            name: 'participants',
             component: () => import('pages/results/ParticipantsIndexPage.vue'),
           },
           {

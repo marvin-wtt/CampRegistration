@@ -1,8 +1,8 @@
 <template>
   <q-page class="row items-center justify-evenly">
     <q-btn
-      :to="{ name: 'results-index' }"
-      label="Results"
+      :to="{ name: 'camp-management' }"
+      label="Camp Management"
       outline
     />
     <q-btn

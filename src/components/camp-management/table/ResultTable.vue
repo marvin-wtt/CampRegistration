@@ -78,7 +78,6 @@
               <!-- Edit templates -->
               <q-item
                 v-close-popup
-                :to="{ name: 'results-participants-templates' }"
                 clickable
                 @click="editTemplates"
               >
@@ -151,9 +150,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ComponentRegistry } from 'components/results/table/ComponentRegistry';
+import { ComponentRegistry } from 'components/camp-management/table/ComponentRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
-import { TableCellRenderer } from 'components/results/table/TableCellRenderer';
+import { TableCellRenderer } from 'components/camp-management/table/TableCellRenderer';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { TableTemplate } from 'src/types/TableTemplate';
@@ -161,14 +160,14 @@ import { useQuasar } from 'quasar';
 import {
   createPDF,
   Dimension,
-} from 'components/results/table/export/tableToPdf';
+} from 'components/camp-management/table/export/tableToPdf';
 
 import { useRoute, useRouter } from 'vue-router';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
-import EditResultTemplatesDialog from 'components/results/table/dialogs/template/EditResultTemplatesDialog.vue';
+import EditResultTemplatesDialog from 'components/camp-management/table/dialogs/template/EditResultTemplatesDialog.vue';
 import { Camp } from 'src/types/Camp';
 import { useTemplateStore } from 'stores/template-store';
 
