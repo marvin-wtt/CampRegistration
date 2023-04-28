@@ -29,7 +29,7 @@
         </q-item-section>
         <q-item-section>
           <q-item-label>
-            {{ t('action.results') }}
+            {{ t('action.camp-management') }}
           </q-item-label>
         </q-item-section>
       </q-item>

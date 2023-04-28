@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           hideDrawer: true,
         },
-        component: () => import('pages/results/ResultsIndexPage.vue'),
+        component: () => import('pages/camp-management/ResultsIndexPage.vue'),
       },
       {
         path: 'create',
@@ -31,7 +31,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           hideDrawer: true,
         },
-        component: () => import('pages/results/CreateCampPage.vue'),
+        component: () => import('pages/camp-management/CreateCampPage.vue'),
       },
       {
         path: ':camp',
@@ -42,37 +42,38 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'edit',
             name: 'edit-camp',
-            component: () => import('pages/results/EditCampPage.vue'),
+            component: () => import('pages/camp-management/EditCampPage.vue'),
           },
           {
             path: 'dashboard',
             name: 'dashboard',
-            component: () => import('pages/results/DashboardPage.vue'),
+            component: () => import('pages/camp-management/DashboardPage.vue'),
           },
           {
             path: 'participants',
             name: 'participants',
-            component: () => import('pages/results/ParticipantsIndexPage.vue'),
+            component: () =>
+              import('pages/camp-management/ParticipantsIndexPage.vue'),
           },
           {
             path: 'program-planner',
             name: 'program-planner',
-            component: () => import('pages/results/ProgramPlanner.vue'),
+            component: () => import('pages/camp-management/ProgramPlanner.vue'),
           },
           {
             path: 'room-planner',
             name: 'room-planner',
-            component: () => import('pages/results/RoomPlanner.vue'),
+            component: () => import('pages/camp-management/RoomPlanner.vue'),
           },
           {
             path: 'tools',
             name: 'tools',
-            component: () => import('pages/results/ToolsPage.vue'),
+            component: () => import('pages/camp-management/ToolsPage.vue'),
           },
           {
             path: 'expenses',
             name: 'expenses',
-            component: () => import('pages/results/ExpensesPage.vue'),
+            component: () => import('pages/camp-management/ExpensesPage.vue'),
           },
         ],
       },
