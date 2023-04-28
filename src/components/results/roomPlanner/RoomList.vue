@@ -6,7 +6,7 @@
     <q-item dense>
       <q-item-section>
         <q-item-label>
-          {{ props.name }}
+          {{ to(props.name) }}
         </q-item-label>
       </q-item-section>
 
@@ -71,11 +71,17 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { Room } from 'src/types/Room';
 import ModifyRoomDialog from 'components/results/roomPlanner/ModifyRoomDialog.vue';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { RoomMate } from 'src/types/RoomMate';
+
+const quasar = useQuasar();
+const { t } = useI18n();
+const { to } = useObjectTranslation();
 
 interface Props {
-  name: string;
+  name: string | Record<string, string>;
   modelValue: Room;
-  people: unknown[];
+  people: (RoomMate | null)[];
 }
 
 const props = defineProps<Props>();
@@ -84,9 +90,6 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'update:modelValue', value: Room): void;
 }>();
-
-const quasar = useQuasar();
-const { t } = useI18n();
 
 const room = computed<Room>({
   get: () => props.modelValue,
@@ -97,7 +100,7 @@ const gender = computed<string | undefined>(() => {
   let gender: string | undefined = undefined;
 
   room.value.roomMates.some((value) => {
-    if (!hasGenderProperty(value)) {
+    if (value?.gender === undefined) {
       return false;
     }
 
@@ -108,19 +111,19 @@ const gender = computed<string | undefined>(() => {
   return gender;
 });
 
-const teamer = computed<boolean | undefined>(() => {
-  let teamer: boolean | undefined = undefined;
+const leader = computed<boolean | undefined>(() => {
+  let leader: boolean | undefined = undefined;
 
   room.value.roomMates.some((value) => {
-    if (!hasTeamerProperty(value)) {
+    if (value?.leader === undefined) {
       return false;
     }
 
-    teamer = value.teamer;
+    leader = value.leader;
     return true;
   });
 
-  return teamer;
+  return leader;
 });
 
 const options = computed<unknown[]>(() => {
@@ -128,36 +131,18 @@ const options = computed<unknown[]>(() => {
 
   if (gender.value !== undefined) {
     people = people.filter((value) => {
-      return hasGenderProperty(value) && value.gender === gender.value;
+      return value?.gender !== undefined && value.gender === gender.value;
     });
   }
 
-  if (teamer.value !== undefined) {
+  if (leader.value !== undefined) {
     people = people.filter((value) => {
-      return hasTeamerProperty(value) && value.teamer === teamer.value;
+      return value?.leader !== undefined && value.leader === leader.value;
     });
   }
 
   return people;
 });
-
-function hasGenderProperty(value: unknown): value is { gender: string } {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    'gender' in value &&
-    typeof value.gender === 'string'
-  );
-}
-
-function hasTeamerProperty(value: unknown): value is { teamer: boolean } {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    'teamer' in value &&
-    typeof value.teamer === 'boolean'
-  );
-}
 
 function editRoom(room: Room): void {
   quasar
@@ -180,3 +165,21 @@ function deleteRoom(): void {
 </script>
 
 <style scoped></style>
+
+<i18n lang="yaml" locale="en">
+menu:
+  edit: 'Edit'
+  delete: 'Delete'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+menu:
+  edit: 'Bearbeiten'
+  delete: 'Löschen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+menu:
+  edit: 'Modifier'
+  delete: 'Supprimer'
+</i18n>

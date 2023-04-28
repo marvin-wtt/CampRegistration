@@ -4,7 +4,7 @@
       <q-select
         v-model="person"
         :label="label"
-        :option-label="optionLabel"
+        option-label="name"
         :options="props.options"
         clearable
         option-value="id"
@@ -13,7 +13,7 @@
       >
         <template #prepend>
           <country-icon
-            v-if="person"
+            v-if="flagVisible"
             :locale="person.country"
           />
         </template>
@@ -24,12 +24,15 @@
 
         <template #option="scope">
           <q-item v-bind="scope.itemProps">
-            <q-item-section avatar>
+            <q-item-section
+              v-if="scope.opt.country"
+              avatar
+            >
               <country-icon :locale="scope.opt.country" />
             </q-item-section>
             <q-item-section>
               <q-item-label>
-                {{ `${scope.opt[optionLabel]} (${scope.opt.age})` }}
+                {{ `${scope.opt.name} (${scope.opt.age})` }}
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -55,35 +58,29 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: unknown): void;
 }>();
 
+const flagVisible = computed<boolean>(() => {
+  return props.modelValue !== null && 'country' in props.modelValue;
+});
+
 const person = computed<unknown>({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
-});
-
-const optionLabel = computed<string>(() => {
-  // TODO
-  return 'first_name';
 });
 
 const label = computed<string>(() => {
   return '#' + props.position;
 });
 
-const age = computed<number | string>(() => {
-  const person = props.modelValue;
-  return person !== null &&
-    typeof person === 'object' &&
-    'age' in person &&
-    typeof person.age === 'number'
-    ? person.age
-    : '?';
-});
-
 const selected = computed<string>(() => {
   const person = props.modelValue;
-  return person !== null && typeof person === 'object' && 'first_name' in person
-    ? `${person.first_name} (${age.value})`
-    : '';
+
+  if (person === null) {
+    return '';
+  }
+
+  return person.age === undefined
+    ? person.name
+    : `${person.name} (${person.age})`;
 });
 </script>
 

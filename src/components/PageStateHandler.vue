@@ -41,19 +41,31 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onErrorCaptured, ref } from 'vue';
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUnmount,
+  onErrorCaptured,
+  ref,
+} from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
+import { useQuasar } from 'quasar';
 
 interface Props {
   error?: unknown;
   loading?: boolean;
   padding?: boolean;
+  preventLeave?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   error: null,
   loading: false,
   padding: false,
+  preventLeave: false,
 });
+
+const quasar = useQuasar();
 
 const localError = ref(false);
 
@@ -63,6 +75,48 @@ const error = computed<boolean>(() => {
 
 const loading = computed<boolean>(() => {
   return props.loading;
+});
+
+onBeforeMount(() => {
+  window.addEventListener('beforeunload', preventPageLeave);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', preventPageLeave);
+});
+
+function preventPageLeave(event) {
+  if (!props.preventLeave) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = '';
+}
+
+onBeforeRouteLeave((to, from, next) => {
+  if (!props.preventLeave) {
+    next();
+    return;
+  }
+
+  quasar
+    .dialog({
+      title: 'Unsaved changes',
+      message:
+        'You have unsaved changes. These changes will be lost if you proceed',
+      cancel: true,
+      persistent: true,
+    })
+    .onOk(() => {
+      next();
+    })
+    .onDismiss(() => {
+      next(false);
+    })
+    .onCancel(() => {
+      next(false);
+    });
 });
 
 onErrorCaptured((err, instance) => {
