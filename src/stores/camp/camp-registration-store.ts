@@ -7,6 +7,7 @@ import { useAPIService } from 'src/services/APIService';
 import { Registration } from 'src/types/Registration';
 import { useNotification } from 'src/composables/notifications';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { Camp } from 'src/types/Camp';
 
 export const useCampRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -25,8 +26,8 @@ export const useCampRegistrationsStore = defineStore('registrations', () => {
     reset();
   });
 
-  campBus.on('change', async (campId: string) => {
-    await fetchData(campId);
+  campBus.on('change', async (camp: Camp) => {
+    await fetchData(camp.id);
   });
 
   function reset() {

@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 import { useNotification } from 'src/composables/notifications';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { Camp } from 'src/types/Camp';
 
 export const useTemplateStore = defineStore('resultTemplate', () => {
   const route = useRoute();
@@ -24,8 +25,8 @@ export const useTemplateStore = defineStore('resultTemplate', () => {
     reset();
   });
 
-  campBus.on('change', async (campId: string) => {
-    await fetchData(campId);
+  campBus.on('change', async (camp: Camp) => {
+    await fetchData(camp.id);
   });
 
   function reset() {
