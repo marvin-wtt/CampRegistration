@@ -15,7 +15,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/camp-management',
     name: 'results',
-    component: () => import('layouts/ResultLayout.vue'),
+    component: () => import('layouts/CampManagementLayout.vue'),
     children: [
       {
         path: '',
