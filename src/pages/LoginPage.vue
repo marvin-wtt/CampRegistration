@@ -49,7 +49,7 @@
               v-model="remember"
               :label="t('fields.remember')"
               class="col-shrink"
-              :disable="isLoading"
+              :disable="loading"
             />
 
             <router-link
@@ -64,7 +64,7 @@
 
         <q-card-actions>
           <q-btn
-            :loading="isLoading"
+            :loading="loading"
             type="submit"
             color="primary"
             size="lg"
@@ -110,7 +110,7 @@ const password = ref<string>('');
 const remember = ref<boolean>(false);
 
 const authStore = useAuthStore();
-const { isLoading, error } = storeToRefs(authStore);
+const { loading, error } = storeToRefs(authStore);
 
 const emailError = computed<string | undefined>(() => {
   if (

@@ -50,7 +50,7 @@ export const useCampsStore = defineStore('camps', () => {
     // Update camps
     await fetchData();
     // Update user camps
-    await authStore.fetchData();
+    await authStore.fetchUser();
     // Update camp details store
     if (id && campStore.data?.id === id) {
       await campStore.fetchData();

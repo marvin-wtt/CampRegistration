@@ -7,10 +7,10 @@
             {{ t('username') }}
           </q-item-label>
           <q-item-label caption>
-            {{ data?.name }}
+            {{ user?.name }}
           </q-item-label>
           <q-item-label caption>
-            {{ data?.email }}
+            {{ user?.email }}
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -125,7 +125,7 @@ const { locale } = useI18n({
 });
 
 const authStore = useAuthStore();
-const { data } = storeToRefs(authStore);
+const { user } = storeToRefs(authStore);
 
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE', country: 'de' },

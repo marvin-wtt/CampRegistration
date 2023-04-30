@@ -18,8 +18,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const bus = useAuthBus();
 
-  const data = ref<User>();
-  const isLoading = ref<boolean>(false);
+  const user = ref<User>();
+  const loading = ref<boolean>(false);
   const error = ref<string | object | null>(null);
 
   // Redirect to login page on unauthorized error
@@ -54,8 +54,8 @@ export const useAuthStore = defineStore('auth', () => {
   );
 
   function reset() {
-    data.value = undefined;
-    isLoading.value = false;
+    user.value = undefined;
+    loading.value = false;
     error.value = null;
   }
 
@@ -64,12 +64,12 @@ export const useAuthStore = defineStore('auth', () => {
     password: string,
     remember = false
   ): Promise<void> {
-    isLoading.value = true;
+    loading.value = true;
 
     try {
       await apiService.login(email, password, remember);
 
-      data.value = await apiService.fetchAuthUser();
+      user.value = await apiService.fetchAuthUser();
 
       // Redirect to origin or home route
       const destination =
@@ -77,7 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
           ? decodeURIComponent(route.query.origin)
           : 'results';
 
-      bus.emit('login', data.value);
+      bus.emit('login', user.value);
 
       await router.push(destination);
     } catch (e: unknown) {
@@ -92,20 +92,20 @@ export const useAuthStore = defineStore('auth', () => {
         : 'error';
     }
 
-    isLoading.value = false;
+    loading.value = false;
   }
 
-  async function fetchData(): Promise<void> {
-    isLoading.value = true;
+  async function fetchUser(): Promise<void> {
+    loading.value = true;
     error.value = null;
 
     try {
-      data.value = await apiService.fetchAuthUser();
+      user.value = await apiService.fetchAuthUser();
     } catch (e: unknown) {
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';
     } finally {
-      isLoading.value = false;
+      loading.value = false;
     }
   }
 
@@ -169,10 +169,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    data,
+    user,
     error,
-    isLoading,
-    fetchData,
+    loading,
+    fetchUser,
     login,
     logout,
     register,

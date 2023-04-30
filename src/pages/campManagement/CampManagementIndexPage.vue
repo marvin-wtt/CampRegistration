@@ -65,7 +65,7 @@
             >
               <results-list
                 :camps="publicCamps"
-                :loading="isLoading"
+                :loading="loading"
                 public
               />
             </q-tab-panel>
@@ -75,7 +75,7 @@
               class="q-pa-none"
             >
               <results-list
-                :loading="isLoading"
+                :loading="loading"
                 :camps="draftCamps"
               />
             </q-tab-panel>
@@ -100,7 +100,7 @@ const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
 
-const { data, isLoading, error } = storeToRefs(authStore);
+const { user, loading, error } = storeToRefs(authStore);
 
 const menu = ref<'public' | 'draft'>('public');
 
@@ -111,11 +111,11 @@ function addAction() {
 }
 
 const publicCamps = computed<Camp[]>(() => {
-  if (data.value == undefined) {
+  if (user.value == undefined) {
     return [];
   }
 
-  const camps = data.value.camps as Camp[];
+  const camps = user.value.camps as Camp[];
   return camps
     .filter((value) => value.public)
     .sort((a, b) => {
@@ -124,11 +124,11 @@ const publicCamps = computed<Camp[]>(() => {
 });
 
 const draftCamps = computed<Camp[]>(() => {
-  if (data.value == undefined) {
+  if (user.value == undefined) {
     return [];
   }
 
-  const camps = data.value.camps as Camp[];
+  const camps = user.value.camps as Camp[];
   return camps
     .filter((value) => !value.public)
     .sort((a, b) => {

@@ -288,7 +288,8 @@ const campDetailStore = useCampDetailsStore();
 const templateStore = useTemplateStore();
 const registrationsStore = useRegistrationsStore();
 
-authStore.fetchData();
+// TODO The component should register itself each the store instead
+authStore.fetchUser();
 // TODO Dont do for index page
 campDetailStore.fetchData();
 templateStore.fetchData();
