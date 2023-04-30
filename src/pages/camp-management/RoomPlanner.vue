@@ -118,24 +118,7 @@ const rooms = computed<Room[]>(() => {
     return [];
   }
 
-  return data.value.map((room) => {
-    const diff = room.capacity - room.roommates.length;
-
-    if (diff == 0) {
-      return room;
-    }
-
-    // FIll all remaining slots with null values
-    if (diff > 0) {
-      room.roommates.push(...Array(diff).fill(null));
-      return room;
-    }
-
-    // Room is overfilled. Remove them
-    room.roommates.splice(room.roommates.length + diff, diff * -1);
-
-    return room;
-  });
+  return data.value;
 });
 
 const availablePeople = computed<Roommate[]>(() => {

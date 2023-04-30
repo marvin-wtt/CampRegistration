@@ -8,6 +8,9 @@ import { useI18n } from 'vue-i18n';
 import { useNotification } from 'src/composables/notifications';
 import { useCampBus, useRegistrationBus } from 'src/composables/bus';
 import { Camp } from 'src/types/Camp';
+import { useRegistrationsStore } from 'stores/registration-store';
+import { Registration } from 'src/types/Registration';
+import { Roommate } from 'src/types/Roommate';
 
 export const useRoomPlannerStore = defineStore('room-planner', () => {
   const apiService = useAPIService();
@@ -17,6 +20,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
   const { withProgressNotification } = useNotification();
   const campBus = useCampBus();
   const registrationBus = useRegistrationBus();
+  const registrationsStore = useRegistrationsStore();
 
   const data = ref<Room[]>();
   const isLoading = ref<boolean>(false);
@@ -29,9 +33,60 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
 
   registrationBus.on('update', () => {
     // TODO Check if changes or just remap
+    data.value = mapRegistrations();
   });
 
-  // TODO Registration store should listen to changes
+  function mapRegistrations(rooms?: Room[]): Room[] {
+    rooms ??= data.value;
+    const registrations = registrationsStore.data as Registration[];
+    if (rooms === undefined) {
+      return [];
+    }
+
+    // Map all registrations to their room
+    for (const room of rooms) {
+      if (registrations === undefined) {
+        room.roommates = [...Array(room.capacity).fill(null)];
+        continue;
+      }
+
+      // Fill with registrations
+      room.roommates = registrations
+        .filter((registration) => {
+          return registration.room_id === room.id;
+        })
+        .map((registration) => {
+          // TODO Get mapping from settings
+          return {
+            id: registration.id,
+            name: registration.first_name,
+            age: registration.age,
+            gender: registration.gender,
+            country: registration.country,
+            leader: false,
+          } as Roommate;
+        });
+
+      // Fill all remaining fields with null
+      const diff = room.capacity - room.roommates.length;
+
+      if (diff == 0) {
+        continue;
+      }
+
+      // FIll all remaining slots with null values
+      if (diff > 0) {
+        room.roommates.push(...Array(diff).fill(null));
+        continue;
+      }
+
+      // Room is overfilled. Remove them
+      // TODO This must be done via store to update API...
+      room.roommates.splice(room.roommates.length + diff, diff * -1);
+    }
+
+    return rooms;
+  }
 
   function reset() {
     data.value = undefined;
@@ -51,7 +106,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     }
 
     try {
-      data.value = await apiService.fetchRooms(campId);
+      data.value = mapRegistrations(await apiService.fetchRooms(campId));
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'error';
 
