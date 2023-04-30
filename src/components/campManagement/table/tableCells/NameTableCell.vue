@@ -5,6 +5,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import { formatPersonName } from 'src/utils/formatters';
 
 interface Props {
   props: QTableBodyCellProps;
@@ -20,11 +21,7 @@ const formattedName = computed<string | unknown>(() => {
     return value;
   }
 
-  return value
-    .toLowerCase()
-    .replace(/(^|\s|-)(\w)/g, (match: string, p1: string, p2: string) => {
-      return p1 + p2.toUpperCase();
-    });
+  return formatPersonName(value);
 });
 </script>
 
