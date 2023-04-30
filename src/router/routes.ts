@@ -23,7 +23,8 @@ const routes: RouteRecordRaw[] = [
         meta: {
           hideDrawer: true,
         },
-        component: () => import('pages/camp-management/ResultsIndexPage.vue'),
+        component: () =>
+          import('pages/camp-management/CampManagementIndexPage.vue'),
       },
       {
         path: 'create',
