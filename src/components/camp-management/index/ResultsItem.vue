@@ -35,7 +35,7 @@
         />
 
         <q-btn
-          :label="t('action.camp-management')"
+          :label="t('action.results')"
           class="gt-xs"
           dense
           flat
