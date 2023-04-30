@@ -77,16 +77,16 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import RoomList from 'components/camp-management/roomPlanner/RoomList.vue';
+import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { Room } from 'src/types/Room';
 import { useQuasar } from 'quasar';
-import ModifyRoomDialog from 'components/camp-management/roomPlanner/ModifyRoomDialog.vue';
+import ModifyRoomDialog from 'components/campManagement/roomPlanner/ModifyRoomDialog.vue';
 import PageStateHandler from 'components/PageStateHandler.vue';
 import { Registration } from 'src/types/Registration';
-import RoomListSkeleton from 'components/camp-management/roomPlanner/RoomListSkeleton.vue';
+import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
 import { Roommate } from 'src/types/Roommate';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
 

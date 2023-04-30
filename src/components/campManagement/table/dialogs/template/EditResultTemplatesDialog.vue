@@ -54,7 +54,7 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';
-import EditResultTemplateDialog from 'components/camp-management/table/dialogs/template/EditResultTemplateDialog.vue';
+import EditResultTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultTemplateDialog.vue';
 import SortableList from 'components/SortableList.vue';
 import { reactive, toRaw } from 'vue';
 import { Camp } from 'src/types/Camp';

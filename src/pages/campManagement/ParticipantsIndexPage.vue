@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
-import ResultTable from 'components/camp-management/table/ResultTable.vue';
+import ResultTable from 'components/campManagement/table/ResultTable.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';

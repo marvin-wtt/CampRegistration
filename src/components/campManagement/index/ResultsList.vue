@@ -28,10 +28,10 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItem from 'components/camp-management/index/ResultsItem.vue';
+import ResultsItem from 'components/campManagement/index/ResultsItem.vue';
 import { Camp } from 'src/types/Camp';
 import { useI18n } from 'vue-i18n';
-import ResultsItemSkeleton from 'components/camp-management/index/ResultsItemSkeleton.vue';
+import ResultsItemSkeleton from 'components/campManagement/index/ResultsItemSkeleton.vue';
 
 const { t } = useI18n();
 

@@ -3,7 +3,10 @@
     :loading="loading"
     :error="error"
     padding
+    class="column"
   >
+    <div class="col-shrink">Header</div>
+
     <!-- Classes absolute fit is currently not working due to other style classes -->
     <q-calendar
       v-model="startDate"
@@ -47,27 +50,11 @@ import {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import CalendarItem from 'components/camp-management/programPlanner/CalendarItem.vue';
+import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import { ProgramEvent } from 'src/types/ProgramEvent';
 
 const campDetailsStore = useCampDetailsStore();
 const { t, locale } = useI18n();
-
-type Mode = 'day' | 'month' | 'agenda' | 'resource' | 'scheduler' | 'task';
-type View =
-  | 'month'
-  | 'month-interval'
-  | 'week'
-  | 'day'
-  | 'month-scheduler'
-  | 'week-scheduler'
-  | 'day-scheduler'
-  | 'month-agenda'
-  | 'week-agenda'
-  | 'day-agenda'
-  | 'month-resource'
-  | 'week-resource'
-  | 'day-resource';
 
 const loading = computed<boolean>(() => {
   return campDetailsStore.isLoading;
@@ -127,8 +114,8 @@ function getTime(timeString: string): number {
 
 const startDate = ref('2023-07-29');
 
-const mode = ref<Mode>('day');
-const view = ref<View>();
+const mode = ref('day');
+const view = ref();
 
 const weekDays = ref<number[]>([1, 2, 3, 4, 5, 6, 0]);
 

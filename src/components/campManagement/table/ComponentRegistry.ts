@@ -1,5 +1,5 @@
 import { Component, defineAsyncComponent } from 'vue';
-import DefaultTableCell from 'components/camp-management/table/tableCells/DefaultTableCell.vue';
+import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 
 export class ComponentRegistry {
   public static INSTANCE: ComponentRegistry = new ComponentRegistry();

@@ -93,7 +93,7 @@ import { Camp } from 'src/types/Camp';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
-import ResultsList from 'components/camp-management/index/ResultsList.vue';
+import ResultsList from 'components/campManagement/index/ResultsList.vue';
 import PageStateHandler from 'components/PageStateHandler.vue';
 
 const { t } = useI18n();

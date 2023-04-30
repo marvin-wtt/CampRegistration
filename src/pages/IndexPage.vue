@@ -6,7 +6,7 @@
       outline
     />
     <q-btn
-      :to="{ name: 'camp-management' }"
+      :to="{ name: 'campManagement' }"
       label="Camp Management"
       outline
     />

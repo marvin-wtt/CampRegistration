@@ -65,12 +65,12 @@
 </template>
 
 <script lang="ts" setup>
-import RoomListItem from 'components/camp-management/roomPlanner/RoomListItem.vue';
+import RoomListItem from 'components/campManagement/roomPlanner/RoomListItem.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { Room } from 'src/types/Room';
-import ModifyRoomDialog from 'components/camp-management/roomPlanner/ModifyRoomDialog.vue';
+import ModifyRoomDialog from 'components/campManagement/roomPlanner/ModifyRoomDialog.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Roommate } from 'src/types/Roommate';
 

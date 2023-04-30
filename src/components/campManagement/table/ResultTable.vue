@@ -150,9 +150,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ComponentRegistry } from 'components/camp-management/table/ComponentRegistry';
+import { ComponentRegistry } from 'components/campManagement/table/ComponentRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
-import { TableCellRenderer } from 'components/camp-management/table/TableCellRenderer';
+import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { TableTemplate } from 'src/types/TableTemplate';
@@ -160,14 +160,14 @@ import { useQuasar } from 'quasar';
 import {
   createPDF,
   Dimension,
-} from 'components/camp-management/table/export/tableToPdf';
+} from 'components/campManagement/table/export/tableToPdf';
 
 import { useRoute, useRouter } from 'vue-router';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Registration } from 'src/types/Registration';
-import EditResultTemplatesDialog from 'components/camp-management/table/dialogs/template/EditResultTemplatesDialog.vue';
+import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
 import { Camp } from 'src/types/Camp';
 import { useTemplateStore } from 'stores/template-store';
 

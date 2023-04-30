@@ -110,7 +110,7 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItemMenu from 'components/camp-management/index/ResultsItemMenu.vue';
+import ResultsItemMenu from 'components/campManagement/index/ResultsItemMenu.vue';
 import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';

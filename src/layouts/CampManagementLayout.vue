@@ -34,7 +34,7 @@
 
         <q-btn
           :label="t('camps')"
-          :to="{ name: 'camp-management' }"
+          :to="{ name: 'campManagement' }"
           flat
           stretch
         />
@@ -268,7 +268,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
-import ProfileMenu from 'components/camp-management/ProfileMenu.vue';
+import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useTemplateStore } from 'stores/template-store';

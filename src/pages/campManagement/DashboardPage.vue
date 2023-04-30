@@ -92,8 +92,8 @@ import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry'
 // -----------------------------------------------------------------------------
 import { computed, ref } from 'vue';
 
-import ParticipantsByCountryChart from 'components/camp-management/charts/ParticipantsByCountryChart.vue';
-import ParticipantsByAgeAndCountry from 'components/camp-management/charts/ParticipantsByAgeAndCountry.vue';
+import ParticipantsByCountryChart from 'components/campManagement/charts/ParticipantsByCountryChart.vue';
+import ParticipantsByAgeAndCountry from 'components/campManagement/charts/ParticipantsByAgeAndCountry.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { storeToRefs } from 'pinia';
 
