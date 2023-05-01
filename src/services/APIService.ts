@@ -10,6 +10,7 @@ export function useAPIService() {
     ...useLoginService(),
     ...useUserService(),
     ...useCampService(),
+    ...useCampManagerService(),
     ...useRegistrationService(),
     ...useTemplateService(),
     ...useRoomPlannerService(),
