@@ -71,7 +71,7 @@
       <slot
         :name="name"
         v-bind="data"
-      ></slot>
+      />
     </template>
   </q-input>
 </template>
