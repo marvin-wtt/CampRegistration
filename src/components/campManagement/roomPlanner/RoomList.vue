@@ -68,13 +68,10 @@
 import RoomListItem from 'components/campManagement/roomPlanner/RoomListItem.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useQuasar } from 'quasar';
 import { Room } from 'src/types/Room';
-import ModifyRoomDialog from 'components/campManagement/roomPlanner/ModifyRoomDialog.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { Roommate } from 'src/types/Roommate';
 
-const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
@@ -88,6 +85,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'delete'): void;
+  (e: 'edit'): void;
   (e: 'update:modelValue', value: Room): void;
 }>();
 
@@ -144,19 +142,8 @@ const options = computed<unknown[]>(() => {
   return people;
 });
 
-function editRoom(room: Room): void {
-  quasar
-    .dialog({
-      component: ModifyRoomDialog,
-      componentProps: {
-        room: room,
-        mode: 'edit',
-      },
-      persistent: true,
-    })
-    .onOk((payload: Room) => {
-      room = payload;
-    });
+function editRoom(): void {
+  emit('edit');
 }
 
 function deleteRoom(): void {

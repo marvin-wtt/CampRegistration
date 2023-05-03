@@ -3,7 +3,9 @@ import { useCampService } from 'src/services/CampService';
 import { useRegistrationService } from 'src/services/RegistrationService';
 import { useTemplateService } from 'src/services/TemplateService';
 import { useUserService } from 'src/services/UserService';
-import { useRoomPlannerService } from 'src/services/RoomPlannerService';
+import { useRoomService } from 'src/services/RoomService';
+import { useRoomRoommateService } from 'src/services/RoomRoommateService';
+import { useCampManagerService } from 'src/services/CampManagerService';
 
 export function useAPIService() {
   return {
@@ -13,6 +15,7 @@ export function useAPIService() {
     ...useCampManagerService(),
     ...useRegistrationService(),
     ...useTemplateService(),
-    ...useRoomPlannerService(),
+    ...useRoomService(),
+    ...useRoomRoommateService(),
   };
 }

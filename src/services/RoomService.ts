@@ -1,7 +1,7 @@
 import { api } from 'boot/axios';
 import { Room } from 'src/types/Room';
 
-export function useRoomPlannerService() {
+export function useRoomService() {
   async function fetchRooms(campId: string): Promise<Room[]> {
     const response = await api.get(`camps/${campId}/rooms/`);
 
@@ -14,16 +14,20 @@ export function useRoomPlannerService() {
     return response.data.data;
   }
 
-  async function createRoom(campId: string, data: Room): Promise<void> {
-    await api.post(`camps/${campId}/rooms/`, data);
+  async function createRoom(campId: string, data: Room): Promise<Room> {
+    const response = await api.post(`camps/${campId}/rooms/`, data);
+
+    return response.data.data;
   }
 
   async function updateRoom(
     campId: string,
     id: string,
     data: Partial<Room>
-  ): Promise<void> {
-    await api.patch(`camps/${campId}/rooms/${id}/`, data);
+  ): Promise<Room> {
+    const response = await api.patch(`camps/${campId}/rooms/${id}/`, data);
+
+    return response.data.data;
   }
 
   async function deleteRoom(campId: string, id: string): Promise<void> {

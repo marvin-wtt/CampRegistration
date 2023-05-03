@@ -2,156 +2,139 @@
   <page-state-handler
     :error="error"
     :prevent-leave="updateInProgress"
+    style="padding-top: 66px"
     padding
     class="column"
   >
     <!-- Header -->
-    <div class="row justify-between">
-      <p class="col text-h4">
-        {{ t('title') }}
-      </p>
-
-      <div class="col-shrink">
-        <q-btn
-          color="primary"
-          rounded
-          label="add"
-          icon="add"
-          :disable="loading"
-          @click="addRoom"
-        />
-
-        <q-btn
-          round
-          icon="settings"
-          :disable="loading"
-          @click="onSettings"
-        />
-      </div>
-    </div>
-
-    <!-- Skeleton loader -->
-    <div
-      v-if="loading"
-      class="row items-start"
-    >
-      <room-list-skeleton
-        v-for="index in 4"
-        :key="index"
-        :capacity="4"
-        class="q-ma-sm"
-        style="max-width: 500px; min-width: 300px"
-      />
-    </div>
 
     <!-- Content -->
-    <div
-      v-else
-      class="row items-start"
-    >
-      <transition-group name="fade">
-        <room-list
-          v-for="(room, index) in rooms"
-          :key="room.name"
-          v-model="rooms[index]"
-          :name="room.name"
-          :people="availablePeople"
-          :room-mates="room.roommates"
-          class="q-ma-sm"
-          style="max-width: 500px; min-width: 300px"
-        />
-      </transition-group>
-
-      <!-- Room adder skeleton -->
-      <transition name="fade">
+    <div class="row items-start">
+      <template v-if="loading">
         <room-list-skeleton
-          v-if="addLoading"
+          v-for="index in 4"
+          :key="index"
           :capacity="4"
           class="q-ma-sm"
           style="max-width: 500px; min-width: 300px"
         />
-      </transition>
+      </template>
+
+      <!-- Content -->
+      <template v-else>
+        <transition-group name="fade">
+          <!-- TODO events -->
+          <room-list
+            v-for="(room, index) in rooms"
+            :key="room.name"
+            v-model="rooms[index]"
+            :name="room.name"
+            :people="availablePeople"
+            :room-mates="room.roommates"
+            class="q-ma-sm"
+            style="max-width: 500px; min-width: 300px"
+            @update:model-value="onRoomUpdate(room)"
+            @edit="editRoom(room)"
+            @delete="deleteRoom(room.id)"
+          />
+        </transition-group>
+
+        <!-- Room adder skeleton -->
+        <transition name="fade">
+          <room-list-skeleton
+            v-if="addLoading"
+            :capacity="4"
+            class="q-ma-sm"
+            style="max-width: 500px; min-width: 300px"
+          />
+        </transition>
+      </template>
     </div>
+
+    <q-page-sticky
+      expand
+      position="top"
+    >
+      <q-toolbar class="bg-dark text-white row justify-between">
+        <q-toolbar-title>
+          {{ t('title') }}
+        </q-toolbar-title>
+
+        <div class="col-shrink">
+          <create-room-button
+            color="primary"
+            rounded
+            icon="add"
+            :disable="loading"
+            @add="addRoom"
+            @add-multiple="addMultipleRooms"
+          />
+
+          <q-btn
+            round
+            icon="settings"
+            :disable="loading"
+            @click="onSettings"
+          />
+        </div>
+      </q-toolbar>
+    </q-page-sticky>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { Room } from 'src/types/Room';
 import { useQuasar } from 'quasar';
-import ModifyRoomDialog from 'components/campManagement/roomPlanner/ModifyRoomDialog.vue';
-import PageStateHandler from 'components/PageStateHandler.vue';
-import { Registration } from 'src/types/Registration';
-import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
-import { Roommate } from 'src/types/Roommate';
+import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
+import { Room } from 'src/types/Room';
+import { Roommate } from 'src/types/Roommate';
+import CreateRoomButton from 'components/campManagement/roomPlanner/CreateRoomButton.vue';
+import ModifyRoomDialog from 'components/campManagement/roomPlanner/dialogs/ModifyRoomDialog.vue';
+import PageStateHandler from 'components/PageStateHandler.vue';
+import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
+import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
+const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
-const registrations = storeToRefs(registrationsStore);
 const roomStore = useRoomPlannerStore();
-const { data } = storeToRefs(roomStore);
 
 const addLoading = ref(false);
 
-roomStore.fetchData();
+roomStore.fetchRooms();
 
 const loading = computed<boolean>(() => {
-  return registrationsStore.isLoading || roomStore.isLoading;
+  return roomStore.loading;
 });
 
 const error = computed<unknown>(() => {
   return registrationsStore.error ?? roomStore.error;
 });
 
+// TODO
 const updateInProgress = computed<boolean>(() => {
   return false;
 });
 
+const locales = computed<string[] | undefined>(() => {
+  return campDetailsStore.data?.countries;
+});
+
 const rooms = computed<Room[]>(() => {
-  if (!data.value) {
+  const rooms = roomStore.rooms;
+  if (rooms === undefined) {
     return [];
   }
 
-  return data.value;
+  return rooms;
 });
 
 const availablePeople = computed<Roommate[]>(() => {
-  let results: Registration[] | undefined = registrations.data.value;
-
-  if (results === undefined) {
-    return [];
-  }
-
-  // Filter out people who are already in a group
-  results = results.filter((person) => {
-    return !rooms.value.some((room) => {
-      return room.roommates.some((value) => value?.id === person.id);
-    });
-  });
-
-  // TODO Set values based on settings
-  // TODO Generate values if needed - name should be unique
-  // Convert registrations to custom object
-  return results
-    .map((roommate) => {
-      return {
-        id: roommate.id,
-        name: roommate.first_name,
-        age: roommate.age,
-        gender: roommate.gender,
-        country: roommate.country,
-        leader: false,
-      } as Roommate;
-    })
-    .sort((a, b) => {
-      return a.age - b.age;
-    });
+  return roomStore.availableRoommates;
 });
 
 function addRoom() {
@@ -168,11 +151,40 @@ function addRoom() {
       componentProps: {
         mode: 'create',
         room: room,
+        locales: locales.value,
       },
     })
     .onOk((payload) => {
-      // TODO Push the room
+      roomStore.createRoom(payload);
     });
+}
+
+function editRoom(room: Room): void {
+  quasar
+    .dialog({
+      component: ModifyRoomDialog,
+      componentProps: {
+        room: room,
+        mode: 'edit',
+        locales: locales,
+      },
+      persistent: true,
+    })
+    .onOk((payload: Room) => {
+      // TODO Trigger store action
+    });
+}
+
+function deleteRoom(id: string) {
+  roomStore.deleteRoom(id);
+}
+
+function addMultipleRooms() {
+  // TODO Create dialog
+}
+
+function onRoomUpdate(room: Room) {
+  // TODO Detect changes
 }
 
 function onSettings() {

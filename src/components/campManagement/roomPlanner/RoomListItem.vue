@@ -14,7 +14,7 @@
         <template #prepend>
           <country-icon
             v-if="flagVisible"
-            :locale="person.country"
+            :locale="flag"
           />
         </template>
 
@@ -31,8 +31,11 @@
               <country-icon :locale="scope.opt.country" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>
+              <q-item-label v-if="scope.opt.age">
                 {{ `${scope.opt.name} (${scope.opt.age})` }}
+              </q-item-label>
+              <q-item-label v-else>
+                {{ scope.opt.name }}
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -45,9 +48,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import CountryIcon from 'components/localization/CountryIcon.vue';
+import { Roommate } from 'src/types/Roommate';
 
 interface Props {
-  modelValue: unknown;
+  modelValue: Roommate | null;
   position: number;
   options: unknown[];
 }
@@ -62,7 +66,11 @@ const flagVisible = computed<boolean>(() => {
   return props.modelValue !== null && 'country' in props.modelValue;
 });
 
-const person = computed<unknown>({
+const flag = computed<string>(() => {
+  return person.value?.country ?? '';
+});
+
+const person = computed<Roommate | null>({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
 });

@@ -4,7 +4,10 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin q-pb-none">
-      <q-form>
+      <q-form
+        @submit="onOKClick"
+        @reset="onCancelClick"
+      >
         <q-card-section>
           <div class="text-h6">
             {{ t(`title.${props.mode}`) }}
@@ -12,16 +15,17 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
-          <q-input
+          <translated-input
             v-model="room.name"
             :label="t('fields.name.label')"
             :rules="[(val) => !!val || t('fields.name.rules.required')]"
             outlined
             rounded
+            :locales="props.locales"
           />
 
           <q-input
-            v-model.number="capacity"
+            v-model.number="room.capacity"
             type="number"
             :label="t('fields.capacity.label')"
             :rules="[(val) => !!val || t('fields.capacity.rules.required')]"
@@ -38,14 +42,12 @@
             rounded
             color="primary"
             :label="t('actions.cancel')"
-            @click="onDialogCancel"
           />
           <q-btn
             type="submit"
             rounded
             color="primary"
             :label="t('actions.save')"
-            @click="onOKClick"
           />
         </q-card-actions>
       </q-form>
@@ -56,12 +58,14 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive, ref, toRaw } from 'vue';
+import { reactive, toRaw } from 'vue';
 import { Room } from 'src/types/Room';
+import TranslatedInput from 'components/TranslatedInput.vue';
 
 interface Props {
   room?: Room;
   mode: 'create' | 'edit';
+  locales?: string[];
 }
 
 const props = defineProps<Props>();
@@ -80,19 +84,13 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const room = reactive<Room>(defaultRoom());
-const capacity = ref<number>(room.roommates.length);
 
 function defaultRoom(): Room {
-  return props.room
-    ? structuredClone(toRaw(props.room))
-    : {
-        name: '',
-        roommates: [],
-      };
+  return structuredClone(toRaw(props.room));
 }
 
 function onOKClick(): void {
-  const diff = capacity.value - room.roommates.length;
+  const diff = room.capacity - room.roommates.length;
   if (diff > 0) {
     // Add elements
     room.roommates.push(...Array(diff).fill(null));
@@ -102,6 +100,10 @@ function onOKClick(): void {
   }
 
   onDialogOK(room);
+}
+
+function onCancelClick() {
+  onDialogCancel();
 }
 </script>
 
