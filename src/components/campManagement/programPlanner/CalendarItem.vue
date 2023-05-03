@@ -4,6 +4,7 @@
     class="my-event"
     :class="badgeClasses"
     :style="badgeStyles"
+    :draggable="true"
   >
     <span class="title q-calendar__ellipsis">
       {{ props.event.title }}

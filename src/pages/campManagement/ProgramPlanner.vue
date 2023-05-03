@@ -7,6 +7,7 @@
   >
     <div class="col-shrink">Header</div>
 
+    <!-- TODO FIx element height -->
     <!-- Classes absolute fit is currently not working due to other style classes -->
     <q-calendar
       v-model="startDate"
@@ -18,6 +19,10 @@
       :interval-minutes="intervalMinutes"
       :interval-start="intervalStart"
       :interval-count="intervalCount"
+      :drag-enter-func="onDragEnter"
+      :drag-over-func="onDragOver"
+      :drag-leave-func="onDragLeave"
+      :drop-func="onDrop"
       hour24-format
     >
       <template
@@ -71,6 +76,11 @@ const settings = ref({
   timeIntervalMinutes: 30,
 });
 
+const startDate = ref('2023-07-29');
+const mode = ref('day');
+const view = ref();
+const weekDays = ref<number[]>([1, 2, 3, 4, 5, 6, 0]);
+
 const intervalMinutes = computed<number | undefined>(() => {
   return settings.value.timeIntervalMinutes;
 });
@@ -107,18 +117,6 @@ const intervalStart = computed<number | undefined>(() => {
   return Math.floor(start / intervalMinutes);
 });
 
-function getTime(timeString: string): number {
-  const [hours, minutes] = timeString.split(':').map(Number);
-  return hours * 60 + minutes;
-}
-
-const startDate = ref('2023-07-29');
-
-const mode = ref('day');
-const view = ref();
-
-const weekDays = ref<number[]>([1, 2, 3, 4, 5, 6, 0]);
-
 const maxDays = computed<number>(() => {
   if (campDetailsStore.data === undefined) {
     return 0;
@@ -129,6 +127,57 @@ const maxDays = computed<number>(() => {
     campDetailsStore.data.endDate
   );
 });
+
+// TODO https://qcalendar.netlify.app/developing/qcalendarday-week/week-drag-and-drop
+// TODO https://qcalendar.netlify.app/developing/qcalendarday-week/week-slot-day-body
+
+function onDragStart(event, item) {
+  console.log('onDragStart called');
+  event.dataTransfer.dropEffect = 'copy';
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('ID', item.id);
+}
+
+function onDragEnter(e, type, scope) {
+  console.log('onDragEnter');
+  e.preventDefault();
+  return true;
+}
+
+function onDragOver(e, type, scope) {
+  console.log('onDragOver');
+  e.preventDefault();
+  return true;
+}
+
+function onDragLeave(e, type, scope) {
+  console.log('onDragLeave');
+  return false;
+}
+
+function onDrop(e, type, scope) {
+  // console.log('onDrop', type, scope)
+  // const itemID = parseInt(e.dataTransfer.getData('ID'), 10)
+  // const event = { ...this.defaultEvent }
+  // event.id = this.events.length + 1
+  // const item = this.dragItems.filter(item => item.id === itemID)
+  // event.type = item[ 0 ].id
+  // event.name = item[ 0 ].name
+  // event.date = scope.timestamp.date
+  // if (type === 'interval') {
+  //   event.time = scope.timestamp.time
+  // }
+  // else { // head-day
+  //   event.allDay = true
+  // }
+  // this.events.push(event)
+  return false;
+}
+
+function getTime(timeString: string): number {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  return hours * 60 + minutes;
+}
 
 function calculateDaysBetween(startDate: string, endDate: string): number {
   const ONE_DAY_IN_MS = 1000 * 60 * 60 * 24; // number of milliseconds in one day
