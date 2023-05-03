@@ -84,7 +84,23 @@
           rounded
         />
 
-        <!-- TODO render options -->
+        <!-- render options -->
+        <q-list
+          v-if="column.renderAs"
+          bordered
+          class="rounded-borders"
+        >
+          <q-expansion-item
+            :label="t('fields.renderOptions.label')"
+            :caption="t('fields.renderOptions.hint')"
+          >
+            <json-input
+              v-model="column.renderOptions"
+              filled
+            />
+          </q-expansion-item>
+        </q-list>
+
         <q-toggle
           v-model="column.sortable"
           :label="t('fields.sortable.label')"
@@ -151,6 +167,7 @@ import TranslatedInput from 'components/TranslatedInput.vue';
 import { Camp } from 'src/types/Camp';
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import JsonInput from 'components/JsonInput.vue';
 
 interface Props {
   column: TableColumnTemplate;
@@ -271,6 +288,9 @@ fields:
   renderAs:
     label: 'Render As'
     hint: 'Name of a custom display type'
+  renderOptions:
+    label: 'Custom options for the renderer'
+    hint: 'The content should be valid JSON'
   sortable:
     label: 'Sortable'
     hint: ''
@@ -316,6 +336,9 @@ fields:
   renderAs:
     label: 'Darstellen als'
     hint: 'Name eines benutzerdefinierten Anzeigetyps'
+  renderOptions:
+    label: 'Benutzerdefinierte Optionen für den Renderer'
+    hint: 'Der Inhalt sollte gültiges JSON sein'
   sortable:
     label: 'Sortierbar'
     hint: ''
@@ -361,6 +384,9 @@ fields:
   renderAs:
     label: 'Rendre comme'
     hint: "Nom d'un type d'affichage personnalisé"
+  renderOptions:
+    label: 'Options personnalisées pour le moteur de rendu'
+    hint: 'Le contenu doit être du JSON valide'
   sortable:
     label: 'Triable'
     hint: ''

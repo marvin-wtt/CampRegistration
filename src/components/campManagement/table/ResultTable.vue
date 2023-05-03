@@ -207,14 +207,43 @@ const rows = computed<Registration[]>(() => {
   // Preset filter
   if (template.value.filter !== undefined) {
     const ex = new ExpressionEvaluator(template.value.filter);
-    rows = props.results.filter((row) => {
+    rows = rows.filter((row) => {
       return ex.evaluate(row);
+    });
+  }
+
+  // TODO Get keys from setting store
+  const waitingListKey = 'waiting_list';
+  const leaderKey = 'leader';
+
+  // Waiting list
+  if (template.value.filterWaitingList) {
+    rows = rows.filter((row) => {
+      return row[waitingListKey] === undefined || row[waitingListKey] == false;
+    });
+  }
+
+  // Leaders
+  if (template.value.filterLeaders) {
+    rows = rows.filter((row) => {
+      return row[leaderKey] === undefined || row[leaderKey] == false;
+    });
+  }
+
+  // Participants
+  if (template.value.filterParticipants) {
+    rows = rows.filter((row) => {
+      const waitingList =
+        row[waitingListKey] !== undefined && row[waitingListKey] == true;
+      const leader = row[leaderKey] !== undefined && row[leaderKey] == true;
+
+      return waitingList || leader;
     });
   }
 
   // Select filter
   if (Array.isArray(countryFilter.value) && countryFilter.value.length > 0) {
-    rows = props.results.filter((value) => {
+    rows = rows.filter((value) => {
       return (
         'country' in value &&
         typeof value.country === 'string' &&

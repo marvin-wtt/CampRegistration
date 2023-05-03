@@ -5,16 +5,16 @@
     @hide="onDialogHide"
   >
     <q-card
-      class="q-dialog-plugin q-pb-none"
-      style="min-width: 500px"
+      class="q-dialog-plugin q-pb-none row justify-between content-start"
+      :style="`min-width: ${minWidth}px`"
     >
-      <q-card-section>
-        <div class="text-h6">
+      <q-card-section class="col-12">
+        <div class="text-h5">
           {{ t('title') }}
         </div>
       </q-card-section>
 
-      <q-card-section class="q-pt-none q-gutter-y-sm column">
+      <q-card-section class="col-12 col-md-5 q-pt-none q-gutter-y-sm column">
         <translated-input
           v-model="template.title"
           :label="t('fields.title.label')"
@@ -25,15 +25,9 @@
           :locales="props.camp.countries"
         />
 
-        <q-toggle
-          v-model="template.indexed"
-          :label="t('fields.indexed.label')"
-        />
-
-        <q-toggle
-          v-model="template.actions"
-          :label="t('fields.actions.label')"
-        />
+        <a class="text-h6">
+          {{ t('sections.sort') }}
+        </a>
 
         <q-select
           v-model="template.sortBy"
@@ -78,6 +72,25 @@
           </template>
         </q-select>
 
+        <a class="text-h6">
+          {{ t('sections.filter') }}
+        </a>
+
+        <q-toggle
+          v-model="template.filterWaitingList"
+          :label="t('fields.filter_waiting_list.label')"
+        />
+
+        <q-toggle
+          v-model="template.filterParticipants"
+          :label="t('fields.filter_participants.label')"
+        />
+
+        <q-toggle
+          v-model="template.filterLeaders"
+          :label="t('fields.filter_leaders.label')"
+        />
+
         <q-input
           v-model="template.filter"
           :label="t('fields.filter.label')"
@@ -86,12 +99,25 @@
           outlined
           rounded
         />
+
+        <q-separator class="lt-md" />
       </q-card-section>
-      <q-separator spaced />
-      <q-card-section>
-        <a class="text-h6 q-pb-lg">
+
+      <q-card-section class="col-12 col-md-7 q-pt-none q-gutter-y-sm column">
+        <a class="text-h6">
           {{ t('sections.columns') }}
         </a>
+
+        <q-toggle
+          v-model="template.indexed"
+          :label="t('fields.indexed.label')"
+        />
+
+        <q-toggle
+          v-model="template.actions"
+          :label="t('fields.actions.label')"
+        />
+
         <sortable-list
           v-slot="slotProps"
           v-model="template.columns"
@@ -116,7 +142,10 @@
       </q-card-section>
 
       <!-- action buttons -->
-      <q-card-actions align="right">
+      <q-card-actions
+        class="col-12"
+        align="right"
+      >
         <q-btn
           outline
           rounded
@@ -182,6 +211,10 @@ const sortByOptions = computed(() => {
   });
 });
 
+const minWidth = computed<number>(() => {
+  return quasar.screen.xs || quasar.screen.sm ? 500 : 1000;
+});
+
 function swapSortDirection(): void {
   template.sortDirection = template.sortDirection === 'asc' ? 'desc' : 'asc';
 }
@@ -233,6 +266,8 @@ title: 'Edit Template'
 
 sections:
   columns: 'Columns'
+  filter: 'Filters'
+  sort: 'Sorting'
 
 actions:
   ok: 'Ok'
@@ -254,6 +289,15 @@ fields:
   filter:
     label: 'Filter row by'
     hint: 'Expression when to show a row'
+  filter_participants:
+    label: 'Filter normal registrations'
+    hint: ''
+  filter_waiting_list:
+    label: 'Filter registrations on waiting list'
+    hint: ''
+  filter_leaders:
+    label: 'Filter camp leader registrations'
+    hint: ''
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -261,6 +305,8 @@ title: 'Vorlage bearbeiten'
 
 sections:
   columns: 'Spalten'
+  filter: 'Filter'
+  sort: 'Sortierung'
 
 actions:
   ok: 'Ok'
@@ -280,8 +326,17 @@ fields:
     label: 'Nach Spalte sortieren'
     hint: ''
   filter:
-    label: 'Filter-Zeile nach'
+    label: 'Zeile filtern nach'
     hint: 'Ausdruck, wann eine Zeile angezeigt werden soll'
+  filter_participants:
+    label: 'Normale Anmeldungen filtern'
+    hint: ''
+  filter_waiting_list:
+    label: 'Anmeldungen auf Warteliste filtern'
+    hint: ''
+  filter_leaders:
+    label: 'Anmeldungen von Lagerleitern filtern'
+    hint: ''
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -289,6 +344,8 @@ title: 'Modifier le modèle'
 
 sections:
   columns: 'Colonnes'
+  filter: 'Filtres'
+  sort: 'Trier'
 
 actions:
   ok: 'Ok'
@@ -309,5 +366,14 @@ fields:
     hint: ''
   filter:
     label: 'Filtrer la ligne par'
-    hint: 'Expression pour afficher une ligne'
+    hint: 'Expression indiquant quand afficher une ligne'
+  filter_participants:
+    label: 'Filtrer les inscriptions normales'
+    hint: ''
+  filter_waiting_list:
+    label: 'Filtrer les inscriptions en liste d’attente'
+    hint: ''
+  filter_leaders:
+    label: 'Filtrer les inscriptions de chefs de camp'
+    hint: ''
 </i18n>
