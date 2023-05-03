@@ -5,6 +5,7 @@ import { User } from 'src/types/User';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import {
+  hasResponse,
   hasResponseData,
   hasResponseDataErrors,
   hasResponseStatusText,
@@ -81,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       await router.push(destination);
     } catch (e: unknown) {
+      console.log(hasResponse(e), hasResponseData(e), hasResponseDataErrors(e));
       error.value = hasResponseDataErrors(e)
         ? e.response.data.errors
         : hasResponseData(e)
@@ -118,36 +120,6 @@ export const useAuthStore = defineStore('auth', () => {
     bus.emit('logout');
 
     await router.push('/');
-  }
-
-  function hasEmailErrorField(
-    e: unknown
-  ): e is { response: { data: { errors: { email: string } } } } {
-    return (
-      hasResponseDataErrors(e) &&
-      'email' in e.response.data.errors &&
-      typeof e.response.data.errors.email === 'string'
-    );
-  }
-
-  function hasPasswordErrorField(
-    e: unknown
-  ): e is { response: { data: { errors: { password: string } } } } {
-    return (
-      hasResponseDataErrors(e) &&
-      'password' in e.response.data.errors &&
-      typeof e.response.data.errors.password === 'string'
-    );
-  }
-
-  function hasTokenErrorField(
-    e: unknown
-  ): e is { response: { data: { errors: { token: string } } } } {
-    return (
-      hasResponseDataErrors(e) &&
-      'token' in e.response.data.errors &&
-      typeof e.response.data.errors.token === 'string'
-    );
   }
 
   async function register(email: string, password: string) {

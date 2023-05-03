@@ -73,12 +73,6 @@
             rounded
           />
         </q-card-actions>
-        <!-- Error -->
-        <q-card-section v-if="error != null">
-          <a class="text-negative">
-            {{ error }}
-          </a>
-        </q-card-section>
 
         <q-separator spaced />
 
@@ -110,34 +104,47 @@ const password = ref<string>('');
 const remember = ref<boolean>(false);
 
 const authStore = useAuthStore();
-const { loading, error } = storeToRefs(authStore);
+const { loading } = storeToRefs(authStore);
 
 const emailError = computed<string | undefined>(() => {
-  if (
-    authStore.error === null ||
-    typeof email.value !== 'object' ||
-    !('email' in email.value)
-  ) {
+  const error = authStore.error;
+
+  if (!hasEmailErrorField(error)) {
     return undefined;
   }
 
-  return email.value.email;
+  return error.email[0];
 });
 
 const passwordError = computed<string | undefined>(() => {
-  if (
-    email.value == null ||
-    typeof email.value !== 'object' ||
-    !('password' in email.value)
-  ) {
+  const error = authStore.error;
+  if (!hasPasswordErrorField(error)) {
     return undefined;
   }
 
-  return email.value.password;
+  return error.password;
 });
 
 function login() {
   authStore.login(email.value, password.value, remember.value);
+}
+
+function hasEmailErrorField(e: unknown): e is { email: string[] } {
+  return (
+    e !== null &&
+    typeof e === 'object' &&
+    'email' in e &&
+    Array.isArray(e.email)
+  );
+}
+
+function hasPasswordErrorField(e: unknown): e is { password: string } {
+  return (
+    e !== null &&
+    typeof e === 'object' &&
+    'password' in e &&
+    typeof e.password === 'string'
+  );
 }
 </script>
 
