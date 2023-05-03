@@ -1,5 +1,5 @@
 <template>
-  <q-item>
+  <q-item :dense="props.dense">
     <q-item-section>
       <q-select
         v-model="person"
@@ -10,6 +10,7 @@
         option-value="id"
         outlined
         rounded
+        :dense="props.dense"
       >
         <template #prepend>
           <country-icon
@@ -54,9 +55,12 @@ interface Props {
   modelValue: Roommate | null;
   position: number;
   options: unknown[];
+  dense?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  dense: false,
+});
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: unknown): void;

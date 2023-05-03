@@ -2,6 +2,7 @@
   <q-list
     bordered
     padding
+    :dense="props.dense"
   >
     <q-item dense>
       <q-item-section>
@@ -60,6 +61,7 @@
       v-model="room.roommates[index]"
       :options="options"
       :position="index + 1"
+      :dense="props.dense"
     />
   </q-list>
 </template>
@@ -79,9 +81,12 @@ interface Props {
   name: string | Record<string, string>;
   modelValue: Room;
   people: (Roommate | null)[];
+  dense?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  dense: false,
+});
 
 const emit = defineEmits<{
   (e: 'delete'): void;

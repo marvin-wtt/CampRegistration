@@ -16,7 +16,7 @@
           :key="index"
           :capacity="4"
           class="q-ma-sm"
-          style="max-width: 500px; min-width: 300px"
+          style="max-width: 500px; min-width: 275px"
         />
       </template>
 
@@ -32,7 +32,7 @@
             :people="availablePeople"
             :room-mates="room.roommates"
             class="q-ma-sm"
-            style="max-width: 500px; min-width: 300px"
+            style="max-width: 500px; min-width: 275px"
             @update:model-value="onRoomUpdate(room)"
             @edit="editRoom(room)"
             @delete="deleteRoom(room.id)"
