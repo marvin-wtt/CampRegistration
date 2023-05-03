@@ -40,8 +40,8 @@ export function hasResponseDataErrors(
 ): e is { response: { data: { errors: object } } } {
   return (
     hasResponseData(e) &&
-    'error' in e.response.data &&
-    typeof e.response.data.error === 'object'
+    'errors' in e.response.data &&
+    typeof e.response.data.errors === 'object'
   );
 }
 
