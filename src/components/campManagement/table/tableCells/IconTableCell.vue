@@ -9,13 +9,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
+const props = defineProps<TableCellProps>();
 
 const visible = computed<boolean>(() => {
   // Visibility should be defined via the showIf / hideIf fields
@@ -44,8 +40,6 @@ const name = computed<string>(() => {
   }
   return '';
 });
-
-const props = defineProps<Props>();
 
 const size = computed<string>(() => {
   return props.props.dense ? 'xs' : 'md';

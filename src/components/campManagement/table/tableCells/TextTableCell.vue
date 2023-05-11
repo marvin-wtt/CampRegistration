@@ -24,19 +24,11 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { computed, ref } from 'vue';
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
-
-const props = defineProps<Props>();
-
+const props = defineProps<TableCellProps>();
 const limit = 25;
-
 const containerHover = ref<boolean>(false);
 const bannerHover = ref<boolean>(false);
 

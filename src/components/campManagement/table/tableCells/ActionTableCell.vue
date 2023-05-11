@@ -18,6 +18,16 @@
           {{ t('edit') }}
         </q-item-section>
       </q-item>
+      <q-item
+        v-if="waitingList"
+        v-close-popup
+        clickable
+        @click="accept"
+      >
+        <q-item-section>
+          {{ t('accept') }}
+        </q-item-section>
+      </q-item>
       <q-separator />
       <q-item
         v-close-popup
@@ -35,7 +45,6 @@
 
 <script lang="ts" setup>
 import { useQuasar } from 'quasar';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { useI18n } from 'vue-i18n';
 import EditResultComponent from 'components/campManagement/table/dialogs/EditResultComponent.vue';
 
@@ -43,23 +52,21 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import ConfirmDeleteDialog from 'components/campManagement/table/dialogs/ConfirmDeleteRegistrationDialog.vue';
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
-
-const props = defineProps<Props>();
-
+const props = defineProps<TableCellProps>();
 const quasar = useQuasar();
 const { t } = useI18n();
-
 const campDetailStore = useCampDetailsStore();
 const camp = storeToRefs(campDetailStore);
 
 const size = computed<string>(() => {
   return props.props.dense ? 'xs' : 'md';
+});
+
+const waitingList = computed<boolean>(() => {
+  const key = props.settings?.waitingListKey ?? 'waiting_list';
+  return props.props.row[key] == true;
 });
 
 function deleteItem(): void {
@@ -69,6 +76,11 @@ function deleteItem(): void {
       result: props.props.row,
     },
   });
+}
+
+function accept(): void {
+  // TODO
+  quasar.dialog({});
 }
 
 function editItem(): void {
@@ -82,21 +94,22 @@ function editItem(): void {
 }
 </script>
 
-<i18n>
-{
-  "en": {
-    "edit": "Edit",
-    "delete": "Delete"
-  },
-  "de": {
-    "edit": "Bearbeiten",
-    "delete": "Löschen"
-  },
-  "fr": {
-    "edit": "Modifier",
-    "delete": "Supprimer"
-  }
-}
+<!-- TODO Add translations -->
+<i18n lang="yaml">
+en:
+  edit: 'Edit'
+  delete: 'Delete'
+  accept: 'Accept registration'
+
+de:
+  edit: 'Bearbeiten'
+  delete: 'Löschen'
+  accept: 'Anmeldung akzeptieren'
+
+fr:
+  edit: 'Modifier'
+  delete: 'Supprimer'
+  accept: "Accepter l'inscription"
 </i18n>
 
 <style scoped></style>

@@ -4,16 +4,11 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { formatPersonName } from 'src/utils/formatters';
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
+const props = defineProps<TableCellProps>();
 
-const props = defineProps<Props>();
 const formattedName = computed<string | unknown>(() => {
   const value = props.props.value;
 

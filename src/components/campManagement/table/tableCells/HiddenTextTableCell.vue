@@ -24,15 +24,10 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
+const props = defineProps<TableCellProps>();
 
-const props = defineProps<Props>();
 const invalid = computed<boolean>(() => {
   return props.props.value !== undefined && !isString(props.props.value);
 });

@@ -16,13 +16,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
-
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 interface Icon {
   key: string;
@@ -30,8 +24,7 @@ interface Icon {
   opacity: number;
 }
 
-const props = defineProps<Props>();
-
+const props = defineProps<TableCellProps>();
 const icons = computed<Icon[]>(() => {
   const value = props.props.value;
 

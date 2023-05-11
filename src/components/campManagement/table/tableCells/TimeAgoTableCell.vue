@@ -6,20 +6,12 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-interface Props {
-  props: QTableBodyCellProps;
-  options?: object;
-  printing: boolean;
-}
-
-const props = defineProps<Props>();
-
+const props = defineProps<TableCellProps>();
 const { t } = useI18n();
-
 const timeIntervals = {
   second: 1000,
   minute: 60,
