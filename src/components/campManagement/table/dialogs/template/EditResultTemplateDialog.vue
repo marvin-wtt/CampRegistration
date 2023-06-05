@@ -127,7 +127,7 @@
           bordered
           separator
           dense
-          @edit="(item) => editColumn(item as TableColumnTemplate)"
+          @edit="(item) => editColumn(item)"
           @add="addColumn"
         >
           <q-item-section>

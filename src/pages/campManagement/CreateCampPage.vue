@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import { Camp } from 'src/types/Camp';
 import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/campManagement/EditCampForm.vue';
+import EditCampForm from 'components/campManagement/edit/EditCampForm.vue';
 
 const router = useRouter();
 

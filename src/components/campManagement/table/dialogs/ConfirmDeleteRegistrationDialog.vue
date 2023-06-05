@@ -160,7 +160,7 @@ text:
   explanation: 'Geben Sie zur Bestätigung den Namen des Benutzers ein.'
   property: 'Name:'
 input:
-  label: 'Nom'
+  label: 'Name'
 action:
   delete: 'Löschen'
   cancel: 'Abbrechen'

@@ -1,7 +1,7 @@
 <template>
   {{ formattedPhoneNumber }}
 
-  <q-tooltip>
+  <q-tooltip v-if='formattedPhoneNumber'>
     {{ props.props.value }}
   </q-tooltip>
 </template>

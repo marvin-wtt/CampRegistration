@@ -1,6 +1,48 @@
-# Camp Registration (ballaeronregistrationweb)
+# Youth Camp Management Application
 
-A frontent for camp registrations
+A web service that allows users to register for a youth camp and leaders to manage the camp.
+
+## Features
+
+### Custom registration form
+
+The registration form is fully customizable based on the information needed for the camp.
+
+### Dashboard
+
+### Participants view
+
+### Table Cells
+
+### Program Planner
+
+The program planner is a calendar what allows managers to schedule all activities for the camp.
+
+### Send Emails
+
+### Tools
+
+The tools page provides some useful tools to fill forms for the FGYO or other organisations.
+
+### Settings
+
+## Registration
+
+- Reserved keys:
+  - `waiting_list`
+  - `leader`
+  - `room_id`
+  - `room_name`
+- Default keys:
+  - `first_name` - The first name of a participant
+  - `last_name` - The last name of a participant
+  - `full_name` - The full name of a participant
+  - `date_of_birth` - The date of birth of a participant
+  - `age` - The age of a participant
+
+## Configuration
+
+## Development
 
 ### Build the app for production
 
@@ -8,21 +50,4 @@ A frontent for camp registrations
 quasar build
 ```
 
-## Features
-
-- Manage camp registrations
-- Create timetable to plan the weeks activities
-- Create room planner to fill all participants
-- Create budget planner for FAYO budgets
-- Create tools to fill pdfs automatically
-- Create mailing tool
-
-## TODOs / Ideas
-
-- Translate texts with deepl API
-- Analyze for duplicate registrations
-- Show diff when editing user data
-
-### Customize the configuration
-
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+### Contribution

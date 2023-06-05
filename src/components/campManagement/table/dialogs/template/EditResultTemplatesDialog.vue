@@ -21,7 +21,7 @@
           bordered
           separator
           @add="addTemplate"
-          @edit="(item) => editTemplate(item as TableTemplate)"
+          @edit="(item) => editTemplate(item)"
         >
           <q-item-section>
             {{ to(slotProps.item.title) }}

@@ -8,6 +8,7 @@
         v-if="loading"
         name="loading"
       >
+        <!-- TODO Can we use <q-inner-loading> instead ?-->
         <div class="self-center">
           <q-spinner
             color="primary"

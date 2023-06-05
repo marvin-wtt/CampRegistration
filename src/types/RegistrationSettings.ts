@@ -7,4 +7,5 @@ export interface RegistrationSettings {
   ageKey?: string;
   dateOfBirthKey?: string;
   leaderKey?: string;
+  waitingListKey?: string;
 }

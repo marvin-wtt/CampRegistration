@@ -2,6 +2,16 @@
   <q-page padding>
     <!-- TODO Show if camp is public -->
     <div class="q-pa-md fit column items-start">
+      <q-card class="row full-width">
+        <participants-count-chart
+          class="col-12 col-md-4"
+          country="de"
+          :participants="participants"
+          :max="17"
+          height="200px"
+        />
+      </q-card>
+
       <!-- Header --->
       <q-card class="col full-width q-ma-md">
         <q-card-section>
@@ -96,6 +106,7 @@ import ParticipantsByCountryChart from 'components/campManagement/charts/Partici
 import ParticipantsByAgeAndCountry from 'components/campManagement/charts/ParticipantsByAgeAndCountry.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { storeToRefs } from 'pinia';
+import ParticipantsCountChart from 'components/campManagement/charts/ParticipantsCountChart.vue';
 
 const registrationStore = useRegistrationsStore();
 

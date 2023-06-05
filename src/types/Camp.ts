@@ -14,3 +14,4 @@ export interface Camp extends Identifiable {
   price: string;
   form: SurveyJSCampData;
 }
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

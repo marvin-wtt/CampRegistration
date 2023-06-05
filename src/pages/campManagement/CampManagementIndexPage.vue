@@ -42,7 +42,7 @@
             >
               <q-item-label caption>
                 <q-btn
-                  :label="t('action.create')"
+                  :label="t('actions.create')"
                   icon="add"
                   outline
                   rounded
@@ -139,6 +139,9 @@ const draftCamps = computed<Camp[]>(() => {
 
 <i18n lang="yaml" locale="en">
 title: 'Camps'
+
+actions:
+  create: 'Create new'
 
 menu:
   draft: 'Draft'

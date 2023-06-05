@@ -71,16 +71,12 @@
   </q-list>
 </template>
 
-<script lang="ts" setup>
+<script lang="ts" generic="T" setup>
 import { TableTemplate } from 'src/types/TableTemplate';
 import { computed } from 'vue';
 
-export interface Element {
-  order: number;
-}
-
 interface Props {
-  modelValue: Element[];
+  modelValue: T[];
   keyName?: string;
   addable?: boolean;
   editable?: boolean;
@@ -100,13 +96,13 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', modelValue: Element[]): void;
+  (e: 'update:modelValue', modelValue: T[]): void;
   (e: 'add'): void;
-  (e: 'edit', object: Element): void;
-  (e: 'delete', object: Element): void;
+  (e: 'edit', object: T): void;
+  (e: 'delete', object: T): void;
 }>();
 
-const modelValue = computed<Element[]>({
+const modelValue = computed<T[]>({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
 });
@@ -115,11 +111,11 @@ function addItem() {
   emit('add');
 }
 
-function editItem(item: Element) {
+function editItem(item: T) {
   emit('edit', item);
 }
 
-function deleteItem(item: Element) {
+function deleteItem(item: T) {
   emit('delete', item);
   if (!modelValue.value) {
     return;

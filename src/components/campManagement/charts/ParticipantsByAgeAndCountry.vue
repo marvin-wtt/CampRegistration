@@ -11,21 +11,17 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Registration } from 'src/types/Registration';
 
 const { t } = useI18n();
 
 interface Props {
   width?: string;
   height?: string;
-  participants: Participant[];
+  participants: Registration[];
   ageMin: number;
   ageMax: number;
   countries: string[];
-}
-
-interface Participant {
-  age?: number;
-  country: string;
 }
 
 interface SeriesEntry {
