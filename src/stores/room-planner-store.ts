@@ -91,7 +91,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
 
   // TODO This should be done in a utility function
   function calculateAge(dateOfBirth: string): number | undefined {
-    const campStart = campDetailsStore.data?.startDate;
+    const campStart = campDetailsStore.data?.startAt;
 
     const birthDate = new Date(dateOfBirth);
     const currentDate = campStart ? new Date(campStart) : new Date();

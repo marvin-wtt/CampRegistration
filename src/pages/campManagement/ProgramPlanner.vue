@@ -10,7 +10,7 @@
     <!-- TODO FIx element height -->
     <!-- Classes absolute fit is currently not working due to other style classes -->
     <q-calendar
-      v-model="startDate"
+      v-model="startAt"
       :view="view"
       :mood="mode"
       :weekdays="weekDays"
@@ -76,7 +76,7 @@ const settings = ref({
   timeIntervalMinutes: 30,
 });
 
-const startDate = ref('2023-07-29');
+const startAt = ref('2023-07-29');
 const mode = ref('day');
 const view = ref();
 const weekDays = ref<number[]>([1, 2, 3, 4, 5, 6, 0]);
@@ -123,8 +123,8 @@ const maxDays = computed<number>(() => {
   }
 
   return calculateDaysBetween(
-    campDetailsStore.data.startDate,
-    campDetailsStore.data.endDate
+    campDetailsStore.data.startAt,
+    campDetailsStore.data.endAt
   );
 });
 
@@ -179,10 +179,10 @@ function getTime(timeString: string): number {
   return hours * 60 + minutes;
 }
 
-function calculateDaysBetween(startDate: string, endDate: string): number {
+function calculateDaysBetween(startAt: string, endAt: string): number {
   const ONE_DAY_IN_MS = 1000 * 60 * 60 * 24; // number of milliseconds in one day
-  const start = new Date(startDate); // make a copy of the start date
-  const end = new Date(endDate); // make a copy of the end date
+  const start = new Date(startAt); // make a copy of the start date
+  const end = new Date(endAt); // make a copy of the end date
   start.setHours(0, 0, 0, 0); // set the time to midnight
   end.setHours(0, 0, 0, 0); // set the time to midnight
   const diffInMs = end.getTime() - start.getTime(); // calculate the difference in milliseconds

@@ -119,7 +119,7 @@ const publicCamps = computed<Camp[]>(() => {
   return camps
     .filter((value) => value.public)
     .sort((a, b) => {
-      return new Date(b.startDate) - new Date(a.startDate);
+      return new Date(b.startAt) - new Date(a.startAt);
     });
 });
 
@@ -132,7 +132,7 @@ const draftCamps = computed<Camp[]>(() => {
   return camps
     .filter((value) => !value.public)
     .sort((a, b) => {
-      return new Date(b.startDate) - new Date(a.startDate);
+      return new Date(b.startAt) - new Date(a.startAt);
     });
 });
 </script>

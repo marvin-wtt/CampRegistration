@@ -65,12 +65,12 @@
     </translated-input>
 
     <!-- dates -->
-    <!-- startDate -->
+    <!-- startAt -->
     <date-time-input
-      v-model="data.startDate"
+      v-model="data.startAt"
       :disable="loading"
-      :label="t('field.startDate')"
-      :rules="[(val) => !!val || t('validation.startDate.empty')]"
+      :label="t('field.startAt')"
+      :rules="[(val) => !!val || t('validation.startAt.empty')]"
       hide-bottom-space
       outlined
       rounded
@@ -80,14 +80,14 @@
       </template>
     </date-time-input>
 
-    <!-- endDate -->
+    <!-- endAt -->
     <date-time-input
-      v-model="data.endDate"
+      v-model="data.endAt"
       :disable="loading"
-      :label="t('field.endDate')"
+      :label="t('field.endAt')"
       :rules="[
-        (val) => !!val || t('validation.endDate.empty'),
-        (val) => val >= data.startDate || t('validation.endDate.later'),
+        (val) => !!val || t('validation.endAt.empty'),
+        (val) => val >= data.startAt || t('validation.endAt.later'),
       ]"
       hide-bottom-space
       outlined
@@ -250,8 +250,8 @@ field:
   countries: 'Countries'
   name: 'Camp name'
   maxParticipants: 'Maximum amount of participants'
-  startDate: 'Start date'
-  endDate: 'End date'
+  startAt: 'Start date'
+  endAt: 'End date'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
   location: 'Location'
@@ -273,8 +273,8 @@ field:
   countries: 'Länder'
   name: 'Camp Name'
   maxParticipants: 'Maximale Anzahl von Teilnehmenden'
-  startDate: 'Startdatum'
-  endDate: 'Enddatum'
+  startAt: 'Startdatum'
+  endAt: 'Enddatum'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
   location: 'Ort'
@@ -296,8 +296,8 @@ field:
   countries: 'Pays'
   name: 'Nom du camp'
   maxParticipants: 'Nombre maximum de participants'
-  startDate: 'Date de début'
-  endDate: 'Date de fin'
+  startAt: 'Date de début'
+  endAt: 'Date de fin'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
   location: 'Emplacement'

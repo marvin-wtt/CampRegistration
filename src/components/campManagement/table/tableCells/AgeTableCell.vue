@@ -28,7 +28,7 @@ import { TableCellProps } from 'components/campManagement/table/tableCells/Table
 const props = defineProps<TableCellProps>();
 const { d } = useI18n();
 
-const startDate = computed<Date>(() => {
+const startAt = computed<Date>(() => {
   // TODO How get start end end date from store?
   return new Date('2023-07-29');
 });
@@ -55,7 +55,7 @@ const age = computed<string>(() => {
   }
 
   // TODO Use camp start date as reference
-  const months = startDate.value.getTime() - new Date(value).getTime();
+  const months = startAt.value.getTime() - new Date(value).getTime();
   const years = new Date(months);
 
   return Math.abs(years.getUTCFullYear() - 1970).toString();

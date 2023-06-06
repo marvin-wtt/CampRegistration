@@ -6,12 +6,11 @@ export interface Camp extends Identifiable {
   countries: string[];
   name: string | Record<string, string>;
   maxParticipants: number | Record<string, number>;
-  startDate: string;
-  endDate: string;
+  startAt: string;
+  endAt: string;
   minAge: number;
   maxAge: number;
   location: string | Record<string, string>;
   price: string;
   form: SurveyJSCampData;
 }
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
