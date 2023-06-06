@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @db.Char(36)
+  name          String        @db.VarChar(255)
+  email         String        @unique(map: "users_email_unique") @db.VarChar(255)
+  emailVerified Boolean?      @map("email_verified_at")
+  password      String        @db.VarChar(255)
+  role          Role          @default(USER)
+  locale        String        @default("en-US") @db.VarChar(5)
+  createdAt     DateTime?     @default(now()) @map("created_at")
+  updatedAt     DateTime?     @updatedAt @map("updated_at")
+  camps         CampManager[]
+  tokens        Token[]
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Camp {
+  id                     String                  @id @db.Char(36)
+  public                 Boolean
+  countries              Json                    @db.Json
+  name                   Json                    @db.Json
+  maxParticipants        Json                    @map("max_participants") @db.Json
+  minAge                 Int                     @map("min_age") @db.UnsignedInt
+  maxAge                 Int                     @map("max_age") @db.UnsignedInt
+  startAt                DateTime                @map("start_at") @db.DateTime(0)
+  endAt                  DateTime                @map("end_at") @db.DateTime(0)
+  price                  Float?
+  location               Json?                   @db.Json
+  form                   Json                    @db.Json
+  createdAt              DateTime?               @default(now()) @map("created_at")
+  updatedAt              DateTime?               @updatedAt @map("updated_at")
+  campManager            CampManager[]
+  campManagerInvitations CampManagerInvitation[]
+  registrations          Registration[]
+  rooms                  Room[]
+  templates              Template[]
+
+  @@map("camps")
+}
+
+model CampManager {
+  id     BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  campId String @map("camp_id") @db.Char(36)
+  userId String @map("user_id") @db.Char(36)
+  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_camp_id_foreign")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_user_id_foreign")
+
+  @@index([campId], map: "camp_manager_camp_id_foreign")
+  @@index([userId], map: "camp_manager_user_id_foreign")
+  @@map("camp_manager")
+}
+
+model CampManagerInvitation {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  campId          String    @map("camp_id") @db.Char(36)
+  email           String    @db.VarChar(255)
+  invitationToken String    @map("invitation_token") @db.VarChar(255)
+  createdAt       DateTime? @map("created_at") @db.Timestamp(0)
+  camp            Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_invitations_camp_id_foreign")
+
+  @@index([campId], map: "camp_manager_invitations_camp_id_foreign")
+  @@map("camp_manager_invitations")
+}
+
+model Registration {
+  id        String    @id @db.Char(36)
+  campId    String?   @map("camp_id") @db.Char(36)
+  data      Json      @db.Json
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "registrations_camp_id_foreign")
+
+  @@index([campId], map: "registrations_camp_id_foreign")
+  @@map("registrations")
+}
+
+model Room {
+  id       String @id @db.Char(36)
+  campId   String @map("camp_id") @db.Char(36)
+  name     String @db.LongText
+  capacity Int    @db.UnsignedInt
+  camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
+
+  @@index([campId], map: "rooms_camp_id_foreign")
+  @@map("rooms")
+}
+
+model Template {
+  id     String @id @db.Char(36)
+  campId String @map("camp_id") @db.Char(36)
+  data   Json   @db.Json
+  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "templates_camp_id_foreign")
+
+  @@index([campId], map: "templates_camp_id_foreign")
+  @@map("templates")
+}
+
+model Token {
+  id          Int       @id @default(autoincrement())
+  userId      String    @map("user_id") @db.Char(36)
+  token       String
+  type        TokenType
+  expiresAt   DateTime  @map("expires_at")
+  blacklisted Boolean
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("tokens")
+}
+
+enum TokenType {
+  ACCESS
+  REFRESH
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
