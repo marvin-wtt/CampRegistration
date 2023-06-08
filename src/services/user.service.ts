@@ -1,8 +1,9 @@
-import {User, type Prisma, Camp, CampManager} from "@prisma/client";
+import { User, type Prisma, Camp, CampManager } from "@prisma/client";
 import httpStatus from "http-status";
 import prisma from "../client";
 import ApiError from "../utils/ApiError";
 import { orderedUuid } from "../utils/uuid";
+import { encryptPassword } from "../utils/encryption";
 
 export interface UserWithCamps extends User {
   camps: CampManager[];
@@ -18,7 +19,10 @@ const createUser = async (
   return prisma.user.create({
     data: {
       id: orderedUuid(),
-      ...data,
+      name: data.name,
+      email: data.email,
+      password: await encryptPassword(data.password),
+      role: data.role,
     },
   });
 };
@@ -61,8 +65,8 @@ const getUserByIdWithCamps = (id: string) => {
     include: {
       camps: {
         include: {
-          camp: true
-        }
+          camp: true,
+        },
       },
     },
   });
@@ -74,16 +78,14 @@ const getUserById = async (id: string): Promise<User | null> => {
   });
 };
 
-const getUserByEmailWithCamps = async (
-  email: string
-) => {
+const getUserByEmailWithCamps = async (email: string) => {
   return prisma.user.findUnique({
     where: { email },
     include: {
       camps: {
         include: {
-          camp: true
-        }
+          camp: true,
+        },
       },
     },
   });
@@ -117,7 +119,7 @@ const updateUserById = async <Key extends keyof User>(
 
 const updateUserByIdWithCamps = async (
   userId: string,
-  updateBody: Omit<Prisma.UserUpdateInput, "id">,
+  updateBody: Omit<Prisma.UserUpdateInput, "id">
 ) => {
   const user = await getUserById(userId);
   if (!user) {
@@ -132,13 +134,12 @@ const updateUserByIdWithCamps = async (
     include: {
       camps: {
         include: {
-          camp: true
-        }
-      }
+          camp: true,
+        },
+      },
     },
   });
-}
-
+};
 
 const deleteUserById = async (userId: string): Promise<User> => {
   const user = await getUserById(userId);
