@@ -9,7 +9,7 @@ import {
 import exclude from "../utils/exclude";
 import { User } from "@prisma/client";
 import { Request, Response } from "express";
-import { AuthTokensResponse, TokenResponse } from "../types/response";
+import { AuthTokensResponse } from "../types/response";
 import config from "../config";
 import {userCampResource} from "../resources";
 
