@@ -1,4 +1,3 @@
-import { Controller } from "./controller";
 import catchAsync from "../utils/catchAsync";
 import { SurveyModel } from "survey-core";
 import ApiError from "../utils/ApiError";
@@ -6,13 +5,10 @@ import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
 import { registrationService } from "../services";
 import { registrationResource } from "../resources";
-import {Prisma} from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 const show = catchAsync(async (req, res) => {
-  const { registrationId } = req.params;
-  const registration = await registrationService.getRegistrationById(
-    registrationId
-  );
+  const registration = req.models.registration;
 
   if (registration == null) {
     throw new ApiError(httpStatus.NOT_FOUND, "Registration does not exist");
@@ -35,8 +31,13 @@ const store = catchAsync(async (req, res) => {
 
   // TODO Data not validated
 
-  const registration = await registrationService.createRegistration(campId, data);
-  res.status(httpStatus.CREATED).json(resource(registrationResource(registration)));
+  const registration = await registrationService.createRegistration(
+    campId,
+    data
+  );
+  res
+    .status(httpStatus.CREATED)
+    .json(resource(registrationResource(registration)));
 });
 
 const update = catchAsync(async (req, res) => {
@@ -45,9 +46,15 @@ const update = catchAsync(async (req, res) => {
 
   // TODO Data not validated - but should it be?
 
-  const registration = await registrationService.updateRegistrationById(registrationId, data);
+  const registration = await registrationService.updateRegistrationById(
+    registrationId,
+    data
+  );
   if (registration == null) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Update without response.")
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Update without response."
+    );
   }
   res.json(resource(registrationResource(registration)));
 });

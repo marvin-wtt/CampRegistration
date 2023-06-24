@@ -7,7 +7,7 @@ import {
 import { Request } from "express";
 
 import config from "./index";
-import {TokenType} from "@prisma/client";
+import { TokenType } from "@prisma/client";
 
 function cookieExtractor(req: Request) {
   if (req && req.signedCookies && "accessToken" in req.signedCookies) {
@@ -30,7 +30,7 @@ const jwtOptions = {
 const jwtVerify: VerifyCallback = async (payload, done) => {
   try {
     if (payload.type !== TokenType.ACCESS) {
-        throw new Error('Invalid token type');
+      throw new Error("Invalid token type");
     }
     // TODO Use service
     const user = await prisma.user.findUnique({
@@ -40,9 +40,9 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
         name: true,
         camps: {
           select: {
-            id: true
-          }
-        }
+            id: true,
+          },
+        },
       },
       where: { id: payload.sub },
     });

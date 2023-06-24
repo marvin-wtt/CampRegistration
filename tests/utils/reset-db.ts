@@ -7,8 +7,7 @@ export default async () => {
     (key) => !["_", "$"].includes(key[0])
   );
 
-  for (let i = 0; i < modelNames.length; i += 1) {
-    const name = modelNames[i];
+  for (const name of modelNames) {
     try {
       // @ts-expect-error https://github.com/prisma/docs/issues/451
       await prisma[name].deleteMany();

@@ -1,7 +1,7 @@
 import { campService } from "../services";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
-import { campResource } from "../resources";
+import { campResource, detailedCampResource } from "../resources";
 import catchAsync from "../utils/catchAsync";
 import pick from "../utils/pick";
 import { type Prisma } from "@prisma/client";
@@ -10,14 +10,13 @@ import { collection, resource } from "../resources/resource";
 import authUserId from "../utils/authUserId";
 
 const show = catchAsync(async (req, res) => {
-  const { campId } = req.params;
-  const camp = await campService.getCampById(campId);
+  const camp = req.models.camp;
 
   if (camp == null) {
     throw new ApiError(httpStatus.NOT_FOUND, "Camp does not exist");
   }
 
-  res.json(resource(campResource(camp)));
+  res.json(resource(detailedCampResource(camp)));
 });
 
 const index = catchAsync(async (req, res) => {
@@ -41,7 +40,10 @@ const update = catchAsync(async (req, res) => {
   const data = req.body as Prisma.CampUpdateInput;
   const camp = await campService.updateCampById(campId, data);
   if (camp == null) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Update without response.")
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Update without response."
+    );
   }
   res.json(resource(campResource(camp)));
 });

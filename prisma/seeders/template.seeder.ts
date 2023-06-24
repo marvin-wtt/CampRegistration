@@ -4,7 +4,7 @@ import data from "./json/templates.json";
 
 const name = "template";
 
-const run = (prisma: PrismaClient): PrismaPromise<any> => {
+const run = (prisma: PrismaClient) => {
   const campId = "98daa32a-f6dd-41bd-b723-af10071459ad";
 
   const templates: Prisma.TemplateCreateManyInput[] = [];

@@ -1,7 +1,9 @@
-import { Request } from "express";
 import { campManagerService } from "../services";
+import { Request } from "express-serve-static-core";
 
-export const isCampManager = async (req: Request): Promise<boolean | string> => {
+export const campManager = async (
+  req: Request
+): Promise<boolean | string> => {
   if (!req.user || !("id" in req.user) || typeof req.user.id !== "string") {
     return "Unauthenticated";
   }
@@ -13,9 +15,12 @@ export const isCampManager = async (req: Request): Promise<boolean | string> => 
   const userId = req.user.id;
   const campId = req.params.campId;
 
-  return await campManagerService.campManagerExistsWithUserIdAndCampId(campId, userId);
+  return await campManagerService.campManagerExistsWithUserIdAndCampId(
+    campId,
+    userId
+  );
 };
 
-export default {
-  isCampManager,
+export const campPublic = async (req: Request): Promise<boolean | string> => {
+  return req.models.camp.public;
 };

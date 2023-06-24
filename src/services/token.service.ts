@@ -74,7 +74,7 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
  */
 const generateAuthTokens = async (
   user: Pick<User, "id">,
-  remember: boolean = false
+  remember = false
 ): Promise<AuthTokensResponse> => {
   const accessTokenExpires = moment().add(
     config.jwt.accessExpirationMinutes,

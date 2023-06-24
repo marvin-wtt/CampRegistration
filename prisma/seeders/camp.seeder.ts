@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import form from "./json/campForm.json";
-import { PrismaPromise } from "@prisma/client";
 
 const name = "camp";
 
-const run = (prisma: PrismaClient): PrismaPromise<any> => {
+const run = (prisma: PrismaClient) => {
   return prisma.camp.create({
     data: {
       id: "98daa32a-f6dd-41bd-b723-af10071459ad",

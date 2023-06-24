@@ -1,13 +1,12 @@
 import httpStatus from "http-status";
-import userService, { UserWithCamps } from "./user.service";
+import userService from "./user.service";
 import ApiError from "../utils/ApiError";
-import { TokenType, User } from "@prisma/client";
+import { TokenType } from "@prisma/client";
 import { encryptPassword, isPasswordMatch } from "../utils/encryption";
 import exclude from "../utils/exclude";
 import { AuthTokensResponse } from "../types/response";
 import tokenService from "./token.service";
 import prisma from "../client";
-
 
 const loginUserWithEmailAndPassword = async (
   email: string,
@@ -36,7 +35,7 @@ const logout = async (refreshToken: string): Promise<void> => {
     },
   });
   if (!refreshTokenData) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Not found");
+    return;
   }
   await prisma.token.delete({ where: { id: refreshTokenData.id } });
 };

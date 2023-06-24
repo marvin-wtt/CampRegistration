@@ -15,5 +15,5 @@ const campManagerExistsWithUserIdAndCampId = async (
 };
 
 export default {
-    campManagerExistsWithUserIdAndCampId,
+  campManagerExistsWithUserIdAndCampId,
 };

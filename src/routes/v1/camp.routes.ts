@@ -1,9 +1,10 @@
 import express from "express";
 import { auth, guard, validate } from "../../middlewares";
-import { isCampManager } from "../../guards";
+import { campManager } from "../../guards";
 import { campController } from "../../controllers";
 import { campValidation } from "../../validations";
 import catchAsync from "../../utils/catchAsync";
+import { bindRouteModels } from "../../middlewares";
 
 const router = express.Router({ mergeParams: true });
 
@@ -14,6 +15,7 @@ router.get(
 );
 router.get(
   "/:campId",
+  bindRouteModels,
   validate(campValidation.show),
   catchAsync(campController.show)
 );
@@ -26,14 +28,16 @@ router.post(
 router.put(
   "/:campId",
   auth(),
-  guard(isCampManager),
+  bindRouteModels,
+  guard([campManager]),
   validate(campValidation.update),
   catchAsync(campController.update)
 );
 router.delete(
   "/:campId",
   auth(),
-  guard(isCampManager),
+  bindRouteModels,
+  // guard([campManager]),
   validate(campValidation.destroy),
   catchAsync(campController.destroy)
 );

@@ -4,18 +4,16 @@ import jwt from "jsonwebtoken";
 import request from "supertest";
 import prisma from "../utils/prisma";
 import app from "../../src/app";
-import {TokenType, User} from "@prisma/client";
+import { TokenType, User } from "@prisma/client";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
     it("should respond with a `201` status code when provided with details", async () => {
-      const { status } = await request(app)
-        .post("/api/v1/auth/register")
-        .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "password1",
-        });
+      const { status } = await request(app).post("/api/v1/auth/register").send({
+        name: "testuser",
+        email: "test@email.net",
+        password: "password1",
+      });
 
       expect(status).toBe(201);
     });
@@ -88,14 +86,12 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code if the role is set in request body", async () => {
-      const { status } = await request(app)
-        .post("/api/v1/auth/register")
-        .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "password1",
-          role: "ADMIN",
-        });
+      const { status } = await request(app).post("/api/v1/auth/register").send({
+        name: "testuser",
+        email: "test@email.net",
+        password: "password1",
+        role: "ADMIN",
+      });
 
       const userCount = await prisma.user.count();
 
@@ -103,33 +99,31 @@ describe("/api/v1/auth", async () => {
       expect(userCount).toBe(0);
     });
 
-    it('should encode the user password', async () => {
-      await request(app)
-        .post("/api/v1/auth/register")
-        .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "password1",
-        });
+    it("should encode the user password", async () => {
+      await request(app).post("/api/v1/auth/register").send({
+        name: "testuser",
+        email: "test@email.net",
+        password: "password1",
+      });
 
-      const user = await prisma.user.findFirst() as User;
+      const user = (await prisma.user.findFirst()) as User;
 
       expect(bcrypt.compare(user.password, "password1")).toBeTruthy();
     });
 
-    it('should set USER role as default', async () => {
-      await request(app)
-        .post("/api/v1/auth/register")
-        .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "password1",
-        });
+    it("should set USER role as default", async () => {
+      await request(app).post("/api/v1/auth/register").send({
+        name: "testuser",
+        email: "test@email.net",
+        password: "password1",
+      });
 
-      const user = await prisma.user.findFirst() as User;
+      const user = (await prisma.user.findFirst()) as User;
 
       expect(user.role).toEqual("USER");
     });
+
+    it.todo("should store user preferred locale when successful");
   });
 
   describe("POST /api/v1/auth/login", () => {
@@ -208,13 +202,11 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with refresh token when remember is set when successful", async () => {
-      const { body } = await request(app)
-        .post("/api/v1/auth/login")
-        .send({
-          email: "test@email.net",
-          password: "password",
-          remember: true,
-        });
+      const { body } = await request(app).post("/api/v1/auth/login").send({
+        email: "test@email.net",
+        password: "password",
+        remember: true,
+      });
 
       expect(body).toHaveProperty("tokens.refresh.token");
       expect(body).toHaveProperty("tokens.refresh.expires");
@@ -264,18 +256,16 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should store the refresh token when remember is set when successful", async () => {
-      await request(app)
-        .post("/api/v1/auth/login")
-        .send({
-          email: "test@email.net",
-          password: "password",
-          remember: true,
-        });
+      await request(app).post("/api/v1/auth/login").send({
+        email: "test@email.net",
+        password: "password",
+        remember: true,
+      });
 
       const tokenCount = await prisma.token.count({
         where: {
-          type: TokenType.REFRESH
-        }
+          type: TokenType.REFRESH,
+        },
       });
 
       expect(tokenCount).toBe(1);
@@ -283,9 +273,13 @@ describe("/api/v1/auth", async () => {
   });
 
   describe("POST /api/v1/auth/logout", () => {
-    it.todo("should respond with a `200` status code when the user is authenticated");
+    it.todo(
+      "should respond with a `200` status code when the user is authenticated"
+    );
 
-    it.todo("should respond with a `401` status code when the user unauthenticated");
+    it.todo(
+      "should respond with a `401` status code when the user unauthenticated"
+    );
 
     it.todo("should delete the refresh token when successful");
 
@@ -293,52 +287,80 @@ describe("/api/v1/auth", async () => {
   });
 
   describe("POST /api/v1/auth/refresh-tokens", () => {
-    it.todo("should respond with a `200` status code when the user is authenticated");
+    it.todo(
+      "should respond with a `200` status code when the user is authenticated"
+    );
 
-    it.todo("should respond with a new access and refresh token when successful");
+    it.todo(
+      "should respond with a new access and refresh token when successful"
+    );
 
     it.todo("should respond with a access and refresh cookie when successful");
 
     it.todo("should store the new refresh token when successful");
 
-    it.todo("should respond with `400` status code when the user has no refresh token");
+    it.todo(
+      "should respond with `400` status code when the user has no refresh token"
+    );
 
-    it.todo("should respond with `401` status code when the user is unauthenticated");
+    it.todo(
+      "should respond with `401` status code when the user is unauthenticated"
+    );
   });
 
   describe("POST /api/v1/auth/forgot-password", () => {
-    it.todo('should respond with `200` status code when provided with valid email');
+    it.todo(
+      "should respond with `200` status code when provided with valid email"
+    );
 
-    it.todo('should respond with `200` status code when provided with invalid email');
+    it.todo(
+      "should respond with `200` status code when provided with invalid email"
+    );
 
-    it.todo('should store a token for the user when successful');
+    it.todo("should store a token for the user when successful");
 
-    it.todo('should send an email to the user when successful')
+    it.todo("should send an email to the user when successful");
   });
 
   describe("POST /api/v1/auth/reset-password", () => {
-    it.todo('should respond with `200` status code when provided with valid token and email');
+    it.todo(
+      "should respond with `200` status code when provided with valid token and email"
+    );
 
-    it.todo('should respond with `400` status code when provided with invalid token and email');
+    it.todo(
+      "should respond with `400` status code when provided with invalid token and email"
+    );
 
-    it.todo('should respond with `400` status code when provided with without token');
+    it.todo(
+      "should respond with `400` status code when provided with without token"
+    );
 
-    it.todo('should respond with `400` status code when provided with without email');
+    it.todo(
+      "should respond with `400` status code when provided with without email"
+    );
 
-    it.todo('should send an email to the user when successful');
+    it.todo("should send an email to the user when successful");
   });
 
   describe("POST /api/v1/auth/send-verification-email", () => {
-    it.todo('should respond with `200` status code when the user is authenticated');
+    it.todo(
+      "should respond with `200` status code when the user is authenticated"
+    );
 
-    it.todo('should respond with `401` status code when the user unauthenticated');
+    it.todo(
+      "should respond with `401` status code when the user unauthenticated"
+    );
 
-    it.todo('should send an email to the user when successful');
+    it.todo("should send an email to the user when successful");
   });
 
   describe("POST /api/v1/auth/verify-email", () => {
-    it.todo('should respond with `200` status code when provided with valid token');
+    it.todo(
+      "should respond with `200` status code when provided with valid token"
+    );
 
-    it.todo('should respond with `400` status code when provided with without token');
+    it.todo(
+      "should respond with `400` status code when provided with without token"
+    );
   });
 });

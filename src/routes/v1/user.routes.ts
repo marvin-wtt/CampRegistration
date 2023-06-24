@@ -1,36 +1,33 @@
 import express from "express";
 import catchAsync from "../../utils/catchAsync";
-import {auth, guard, validate} from "../../middlewares";
+import { auth, guard, validate } from "../../middlewares";
 import userController from "../../controllers/user.controller";
-import {userValidation} from "../../validations";
+import { userValidation } from "../../validations";
 
 const router = express.Router();
 
-// TODO guard admins
-router.get("/", auth(), catchAsync(userController.index));
-// TODO guard admin
-router.get("/:userId", auth(), catchAsync(userController.show));
-// TODO guard admins
+router.get("/", auth(), guard(), catchAsync(userController.index));
+router.get("/:userId", auth(), guard(), catchAsync(userController.show));
 router.post(
-    "/",
-    auth(),
-    validate(userValidation.store),
-    catchAsync(userController.store)
+  "/",
+  auth(),
+  guard(),
+  validate(userValidation.store),
+  catchAsync(userController.store)
 );
-// TODO guard admin
 router.put(
-    "/:userId",
-    auth(),
-    validate(userValidation.update),
-    catchAsync(userController.update)
+  "/:userId",
+  auth(),
+  guard(),
+  validate(userValidation.update),
+  catchAsync(userController.update)
 );
-
-// TODO admin
 router.delete(
-    "/:userId",
-    auth(),
-    validate(userValidation.destroy),
-    catchAsync(userController.destroy)
+  "/:userId",
+  auth(),
+  guard(),
+  validate(userValidation.destroy),
+  catchAsync(userController.destroy)
 );
 
 export default router;

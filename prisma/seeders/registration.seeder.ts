@@ -3,7 +3,7 @@ import data from "./json/registrations.json";
 import { randomUUID } from "crypto";
 
 const name = "registration";
-const run = (prisma: PrismaClient): PrismaPromise<any> => {
+const run = (prisma: PrismaClient) => {
   const campId = "98daa32a-f6dd-41bd-b723-af10071459ad";
 
   const registrations: Prisma.RegistrationCreateManyInput[] = [];

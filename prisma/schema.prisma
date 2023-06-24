@@ -28,6 +28,7 @@ enum Role {
   ADMIN
 }
 
+// TODO rename age column
 model Camp {
   id                     String                  @id @default(uuid()) @db.Char(36)
   public                 Boolean
@@ -112,7 +113,7 @@ model Template {
 model Token {
   id          Int       @id @default(autoincrement())
   userId      String    @map("user_id") @db.Char(36)
-  token       String    @db.Char(211)
+  token       String    @db.Char(255)
   type        TokenType
   expiresAt   DateTime  @map("expires_at")
   blacklisted Boolean   @default(false)

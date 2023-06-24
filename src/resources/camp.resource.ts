@@ -11,8 +11,8 @@ const campResource = (camp: Camp) => {
     max_age: camp.maxAge,
     start_at: camp.startAt,
     end_at: camp.endAt,
-    price: camp.price,
-    location: camp.location,
+    price: camp.price ?? null,
+    location: camp.location ?? null,
   };
 };
 

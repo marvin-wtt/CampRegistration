@@ -1,4 +1,4 @@
-import {Request} from "express";
+import { Request } from "express";
 import ApiError from "./ApiError";
 import httpStatus from "http-status";
 

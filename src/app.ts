@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import compression from 'compression';
+import compression from "compression";
 import passport from "passport";
 import apiRoutes from "./routes";
 import config from "./config";
@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Use cookies
-app.use(cookieParser())
+app.use(cookieParser());
 
 // // gzip compression
 app.use(compression());

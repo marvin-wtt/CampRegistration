@@ -4,7 +4,6 @@ import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
 import { templateService } from "../services";
 import { templateResource } from "../resources";
-import { Prisma } from "@prisma/client";
 
 const show = catchAsync(async (req, res) => {
   const { templateId } = req.params;

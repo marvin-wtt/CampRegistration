@@ -13,20 +13,14 @@ const login = {
   body: Joi.object().keys({
     email: Joi.string().required(),
     password: Joi.string().required(),
-    remember: Joi.boolean().default(false)
-  }),
-};
-
-const logout = {
-  body: Joi.object().keys({
-    refreshToken: Joi.string().required(),
+    remember: Joi.boolean().default(false),
   }),
 };
 
 const refreshTokens = {
   // TODO Token can be in cookie too
   body: Joi.object().keys({
-    refreshToken: Joi.string().required(),
+    refreshToken: Joi.string(),
   }),
 };
 
@@ -54,7 +48,6 @@ const verifyEmail = {
 export default {
   register,
   login,
-    logout,
   refreshTokens,
   forgotPassword,
   resetPassword,

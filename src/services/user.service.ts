@@ -1,13 +1,9 @@
-import { User, type Prisma, Camp, CampManager } from "@prisma/client";
+import { User, type Prisma } from "@prisma/client";
 import httpStatus from "http-status";
 import prisma from "../client";
 import ApiError from "../utils/ApiError";
 import { orderedUuid } from "../utils/uuid";
 import { encryptPassword } from "../utils/encryption";
-
-export interface UserWithCamps extends User {
-  camps: CampManager[];
-}
 
 const createUser = async (
   data: Pick<Prisma.UserCreateInput, "email" | "name" | "password" | "role">

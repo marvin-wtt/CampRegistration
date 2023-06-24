@@ -11,7 +11,8 @@ import { User } from "@prisma/client";
 import { Request, Response } from "express";
 import { AuthTokensResponse } from "../types/response";
 import config from "../config";
-import {userCampResource} from "../resources";
+import { userCampResource } from "../resources";
+import ApiError from "../utils/ApiError";
 
 const register = catchAsync(async (req, res) => {
   const { name, email, password } = req.body;
@@ -53,13 +54,28 @@ const logout = async (req: Request, res: Response) => {
 };
 
 const refreshTokens = catchAsync(async (req, res) => {
-  const tokens = await authService.refreshAuth(req.body.refreshToken);
+  const refreshToken = req.body.refreshToken ?? extractCookieRefreshToken(req);
 
-  destroyAuthCookies(res)
+  if (!refreshToken) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Missing refresh token");
+  }
+
+  const tokens = await authService.refreshAuth(refreshToken);
+  destroyAuthCookies(res);
   setAuthCookies(res, tokens);
 
   res.send({ ...tokens });
 });
+
+const extractCookieRefreshToken = (req: Request) => {
+  if (req && req.signedCookies && "refreshToken" in req.signedCookies) {
+    return req.signedCookies.refreshToken;
+  }
+  if (req && req.cookies && "refreshToken" in req.cookies) {
+    return req.cookies.refreshToken;
+  }
+  return null;
+};
 
 const forgotPassword = catchAsync(async (req, res) => {
   const resetPasswordToken = await tokenService.generateResetPasswordToken(
@@ -109,8 +125,9 @@ const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
 };
 
 const destroyAuthCookies = (res: Response) => {
-  // TODO
-}
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+};
 
 export default {
   register,

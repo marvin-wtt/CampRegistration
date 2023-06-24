@@ -6,7 +6,7 @@ import { User } from "@prisma/client";
 
 const verifyCallback =
   (
-    req: any,
+    req: Request,
     resolve: (value?: unknown) => void,
     reject: (reason?: unknown) => void,
     requiredRights: string[]

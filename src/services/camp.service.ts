@@ -8,6 +8,7 @@ const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
   "public",
   "name",
+  "countries",
   "maxParticipants",
   "minAge",
   "maxAge",
@@ -35,9 +36,9 @@ const getCampsByUserId = async (userId: string) => {
     where: {
       campManager: {
         some: {
-          userId: userId
-        }
-      }
+          userId: userId,
+        },
+      },
     },
   });
 };
