@@ -29,9 +29,7 @@ const getCampsByUserId = async (userId: string) => {
   return prisma.camp.findMany({
     where: {
       campManager: {
-        some: {
-          userId: userId,
-        },
+        some: { userId },
       },
     },
   });
@@ -74,7 +72,7 @@ const queryPublicCamps = async <Key extends keyof Camp>(
   };
 
   const camps = await prisma.camp.findMany({
-    where: where,
+    where,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
     skip: (page - 1) * limit,
     take: limit,
@@ -92,11 +90,7 @@ const createCamp = async (
     data: {
       id: orderedUuid(),
       ...data,
-      campManager: {
-        create: {
-          userId: userId,
-        },
-      },
+      campManager: { create: { userId } },
     },
   });
 };

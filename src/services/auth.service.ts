@@ -72,23 +72,19 @@ const resetPassword = async (
   resetPasswordToken: string,
   newPassword: string
 ): Promise<void> => {
-  try {
-    const resetPasswordTokenData = await tokenService.verifyToken(
-      resetPasswordToken,
-      TokenType.RESET_PASSWORD
-    );
-    const user = await userService.getUserById(resetPasswordTokenData.userId);
-    if (!user) {
-      throw new Error();
-    }
-    const encryptedPassword = await encryptPassword(newPassword);
-    await userService.updateUserById(user.id, { password: encryptedPassword });
-    await prisma.token.deleteMany({
-      where: { userId: user.id, type: TokenType.RESET_PASSWORD },
-    });
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, "Password reset failed");
+  const resetPasswordTokenData = await tokenService.verifyToken(
+    resetPasswordToken,
+    TokenType.RESET_PASSWORD
+  );
+  const user = await userService.getUserById(resetPasswordTokenData.userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Invalid reset token");
   }
+  const encryptedPassword = await encryptPassword(newPassword);
+  await userService.updateUserById(user.id, { password: encryptedPassword });
+  await prisma.token.deleteMany({
+    where: { userId: user.id, type: TokenType.RESET_PASSWORD },
+  });
 };
 
 /**

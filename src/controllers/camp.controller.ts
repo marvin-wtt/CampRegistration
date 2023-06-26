@@ -3,13 +3,14 @@ import httpStatus from "http-status";
 import { campResource, detailedCampResource } from "../resources";
 import catchAsync from "../utils/catchAsync";
 import pick from "../utils/pick";
-import { type Prisma } from "@prisma/client";
+import { Camp, type Prisma } from "@prisma/client";
 import exclude from "../utils/exclude";
 import { collection, resource } from "../resources/resource";
 import authUserId from "../utils/authUserId";
+import { routeModel } from "../utils/verifyModel";
 
 const show = catchAsync(async (req, res) => {
-  const camp = req.models.camp;
+  const camp = routeModel(req.models.camp);
 
   res.json(resource(detailedCampResource(camp)));
 });

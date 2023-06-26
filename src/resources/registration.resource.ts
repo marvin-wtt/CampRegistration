@@ -9,10 +9,7 @@ const extractFiles = (registration: Registration): object => {
   return Object.fromEntries(
     Object.entries(
       groupBy(registration.files as File[], (i) => i.field ?? "files")
-    ).map(([field, files]) => [
-      field,
-      files.map((file) => file.name).join(";"),
-    ])
+    ).map(([field, files]) => [field, files.map((file) => file.name).join(";")])
   );
 };
 

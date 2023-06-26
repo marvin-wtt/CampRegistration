@@ -17,7 +17,7 @@ const multiPart = () => {
     },
   });
 
-  if (!fs.existsSync(tmpDir)){
+  if (!fs.existsSync(tmpDir)) {
     fs.mkdirSync(tmpDir);
   }
 

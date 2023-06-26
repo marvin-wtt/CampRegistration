@@ -5,9 +5,10 @@ import { collection, resource } from "../resources/resource";
 import { fileService, registrationService } from "../services";
 import { registrationResource } from "../resources";
 import { Prisma } from "@prisma/client";
+import { routeModel } from "../utils/verifyModel";
 
 const show = catchAsync(async (req, res) => {
-  const registration = req.models.registration;
+  const registration = routeModel(req.models.registration);
 
   if (registration == null) {
     throw new ApiError(httpStatus.NOT_FOUND, "Registration does not exist");
@@ -35,8 +36,10 @@ const store = catchAsync(async (req, res) => {
     await fileService.saveRegistrationFiles(registration.id, req.files);
     // Null safe operator for type safety. It should never be null as it was just inserted.
     registration =
-      (await registrationService.getRegistrationById(registration.id)) ??
-      registration;
+      (await registrationService.getRegistrationById(
+        campId,
+        registration.id
+      )) ?? registration;
   }
 
   res

@@ -1,29 +1,20 @@
 import { type Prisma } from "@prisma/client";
 import prisma from "../client";
 import { orderedUuid } from "../utils/uuid";
-import ApiError from "../utils/ApiError";
-import httpStatus from "http-status";
-import { campService } from "./index";
 
-const getTemplateById = async (id: string) => {
+const getTemplateById = async (campId: string, id: string) => {
   return prisma.template.findFirst({
-    where: { id },
+    where: { id, campId },
   });
 };
 
 const queryTemplates = async (campId: string) => {
   return prisma.template.findMany({
-    where: {
-      campId: campId,
-    },
+    where: { campId },
   });
 };
 
 const createTemplate = async (campId: string, data: object) => {
-  const camp = await campService.getCampById(campId);
-  if (!camp) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Camp not found");
-  }
   return prisma.template.create({
     data: {
       id: orderedUuid(),
@@ -37,23 +28,14 @@ const updateTemplateById = async (
   templateId: string,
   updateBody: Omit<Prisma.TemplateUpdateInput, "id">
 ) => {
-  const template = await getTemplateById(templateId);
-  if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
-  }
   return prisma.template.update({
-    where: { id: template.id },
+    where: { id: templateId },
     data: updateBody,
   });
 };
 
 const deleteTemplateById = async (templateId: string) => {
-  const template = await getTemplateById(templateId);
-  if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
-  }
-  await prisma.template.delete({ where: { id: template.id } });
-  return template;
+  await prisma.template.delete({ where: { id: templateId } });
 };
 
 export default {

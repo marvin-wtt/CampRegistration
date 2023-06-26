@@ -1,5 +1,6 @@
-import { campManagerService } from "../services";
+import { managerService } from "../services";
 import { Request } from "express-serve-static-core";
+import { routeModel } from "../utils/verifyModel";
 
 export const campManager = async (req: Request): Promise<boolean | string> => {
   if (
@@ -19,12 +20,12 @@ export const campManager = async (req: Request): Promise<boolean | string> => {
   const userId = req.user.id;
   const campId = req.params.campId;
 
-  return await campManagerService.campManagerExistsWithUserIdAndCampId(
+  return await managerService.campManagerExistsWithUserIdAndCampId(
     campId,
     userId
   );
 };
 
 export const campPublic = async (req: Request): Promise<boolean | string> => {
-  return req.models.camp.public;
+  return routeModel(req.models.camp).public;
 };

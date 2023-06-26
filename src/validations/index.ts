@@ -4,3 +4,4 @@ export { default as registrationValidation } from "./registration.validation";
 export { default as userValidation } from "./user.validation";
 export { default as profileValidation } from "./profile.validation";
 export { default as templateValidation } from "./template.validation";
+export { default as managerValidation } from "./manager.validation";

@@ -6,8 +6,8 @@ import { templateService } from "../services";
 import { templateResource } from "../resources";
 
 const show = catchAsync(async (req, res) => {
-  const { templateId } = req.params;
-  const template = await templateService.getTemplateById(templateId);
+  const { campId, templateId } = req.params;
+  const template = await templateService.getTemplateById(campId, templateId);
 
   if (template == null) {
     throw new ApiError(httpStatus.NOT_FOUND, "Template does not exist");
@@ -34,7 +34,7 @@ const store = catchAsync(async (req, res) => {
 });
 
 const update = catchAsync(async (req, res) => {
-  const {  templateId } = req.params;
+  const { templateId } = req.params;
   const data = req.body;
   const template = await templateService.updateTemplateById(templateId, {
     data: data,

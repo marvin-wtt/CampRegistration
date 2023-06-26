@@ -4,12 +4,13 @@ import { campManager, campPublic } from "../../../guards";
 import express from "express";
 import { registrationValidation } from "../../../validations";
 import { registrationService } from "../../../services";
-import { verifyModelExists } from "../../../utils/verifyModel";
+import {routeModel, verifyModelExists} from "../../../utils/verifyModel";
 
 const router = express.Router({ mergeParams: true });
 
 router.param("registrationId", async (req, res, next, id) => {
-  const registration = await registrationService.getRegistrationById(id);
+  const camp = routeModel(req.models.camp);
+  const registration = await registrationService.getRegistrationById(camp.id, id);
   req.models.registration = verifyModelExists(registration);
   next();
 });

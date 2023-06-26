@@ -28,53 +28,51 @@ enum Role {
   ADMIN
 }
 
-// TODO rename age column
 model Camp {
-  id                     String                  @id @default(uuid()) @db.Char(36)
-  public                 Boolean
-  countries              Json                    @db.Json
-  name                   Json                    @db.Json
-  maxParticipants        Json                    @map("max_participants") @db.Json
-  minAge                 Int                     @map("min_age") @db.UnsignedInt
-  maxAge                 Int                     @map("max_age") @db.UnsignedInt
-  startAt                DateTime                @map("start_at") @db.DateTime(0)
-  endAt                  DateTime                @map("end_at") @db.DateTime(0)
-  price                  Float?
-  location               Json?                   @db.Json
-  form                   Json                    @db.Json
-  createdAt              DateTime?               @default(now()) @map("created_at")
-  updatedAt              DateTime?               @updatedAt @map("updated_at")
-  campManager            CampManager[]
-  campManagerInvitations CampManagerInvitation[]
-  registrations          Registration[]
-  rooms                  Room[]
-  templates              Template[]
-  files                  File[]
+  id              String         @id @default(uuid()) @db.Char(36)
+  public          Boolean
+  countries       Json           @db.Json
+  name            Json           @db.Json
+  maxParticipants Json           @map("max_participants") @db.Json
+  minAge          Int            @map("min_age") @db.UnsignedInt
+  maxAge          Int            @map("max_age") @db.UnsignedInt
+  startAt         DateTime       @map("start_at") @db.DateTime(0)
+  endAt           DateTime       @map("end_at") @db.DateTime(0)
+  price           Float?
+  location        Json?          @db.Json
+  form            Json           @db.Json
+  createdAt       DateTime?      @default(now()) @map("created_at")
+  updatedAt       DateTime?      @updatedAt @map("updated_at")
+  campManager     CampManager[]
+  registrations   Registration[]
+  rooms           Room[]
+  templates       Template[]
+  files           File[]
 
   @@map("camps")
 }
 
 model CampManager {
-  id     BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  campId String @map("camp_id") @db.Char(36)
-  userId String @map("user_id") @db.Char(36)
-  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_camp_id_foreign")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_user_id_foreign")
+  id           String      @id @default(uuid()) @db.Char(36)
+  campId       String      @map("camp_id") @db.Char(36)
+  userId       String?     @map("user_id") @db.Char(36)
+  invitationId String?     @map("invitation_id") @db.Char(36)
+  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_camp_id_foreign")
+  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_user_id_foreign")
+  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_invitation_id_foreign")
 
   @@index([campId], map: "camp_manager_camp_id_foreign")
   @@index([userId], map: "camp_manager_user_id_foreign")
+  @@index([invitationId], map: "camp_manager_invitation_id_foreign")
   @@map("camp_manager")
 }
 
-model CampManagerInvitation {
-  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  campId          String    @map("camp_id") @db.Char(36)
-  email           String    @db.VarChar(255)
-  invitationToken String    @map("invitation_token") @db.VarChar(255)
-  createdAt       DateTime? @map("created_at") @db.Timestamp(0)
-  camp            Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_invitations_camp_id_foreign")
+model Invitation {
+  id          String        @id @default(uuid()) @db.Char(36)
+  email       String        @db.VarChar(255)
+  token       String        @map("invitation_token") @db.VarChar(255)
+  CampManager CampManager[]
 
-  @@index([campId], map: "camp_manager_invitations_camp_id_foreign")
   @@map("camp_manager_invitations")
 }
 

@@ -27,7 +27,7 @@ const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
   const fileData: Prisma.FileCreateInput[] = [];
   for (const [field, files] of Object.entries(requestFiles)) {
     files.forEach((file) => {
-      fileData.push(mapFields(file, field),);
+      fileData.push(mapFields(file, field));
     });
   }
 
@@ -40,7 +40,7 @@ const moveFiles = (files: RequestFiles) => {
     .forEach((file) => {
       const sourcePath = file.path;
       const destinationDir = config.storage.uploadDir;
-      if (!fs.existsSync(destinationDir)){
+      if (!fs.existsSync(destinationDir)) {
         fs.mkdirSync(destinationDir);
       }
       const destinationPath = destinationDir + file.filename;
@@ -55,12 +55,14 @@ const moveFiles = (files: RequestFiles) => {
 };
 
 const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
-  const fileData: Prisma.FileCreateInput[] = mapFileData(files).map((fileData) => {
-    return {
-      ...fileData,
-      registrationId: id
-    };
-  });
+  const fileData: Prisma.FileCreateInput[] = mapFileData(files).map(
+    (fileData) => {
+      return {
+        ...fileData,
+        registrationId: id,
+      };
+    }
+  );
 
   const fileModes = await prisma.file.createMany({
     data: fileData,
@@ -75,7 +77,7 @@ const saveCampFiles = async (id: string, files: RequestFiles) => {
   const fileData = mapFileData(files).map((fileData) => {
     return {
       ...fileData,
-      campId: id
+      campId: id,
     };
   });
 

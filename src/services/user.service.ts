@@ -7,7 +7,7 @@ import { encryptPassword } from "../utils/encryption";
 
 const createUser = async (
   data: Pick<Prisma.UserCreateInput, "email" | "name" | "password" | "role">
-): Promise<User> => {
+) => {
   if (await getUserByEmail(data.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
@@ -60,9 +60,7 @@ const getUserByIdWithCamps = (id: string) => {
     where: { id },
     include: {
       camps: {
-        include: {
-          camp: true,
-        },
+        include: { camp: true },
       },
     },
   });
@@ -79,9 +77,7 @@ const getUserByEmailWithCamps = async (email: string) => {
     where: { email },
     include: {
       camps: {
-        include: {
-          camp: true,
-        },
+        include: { camp: true },
       },
     },
   });
@@ -98,15 +94,11 @@ const updateUserById = async <Key extends keyof User>(
   updateBody: Omit<Prisma.UserUpdateInput, "id">,
   keys: Key[] = ["id", "email", "name", "role"] as Key[]
 ): Promise<Pick<User, Key> | null> => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
-  }
   if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
   const updatedUser = await prisma.user.update({
-    where: { id: user.id },
+    where: { id: userId },
     data: updateBody,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
   });
@@ -137,13 +129,8 @@ const updateUserByIdWithCamps = async (
   });
 };
 
-const deleteUserById = async (userId: string): Promise<User> => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
-  }
-  await prisma.user.delete({ where: { id: user.id } });
-  return user;
+const deleteUserById = async (userId: string) => {
+  await prisma.user.delete({ where: { id: userId } });
 };
 
 export default {

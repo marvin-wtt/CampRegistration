@@ -219,7 +219,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body).toHaveProperty("data.last_name");
     });
 
-    it<RegistrationTestContext>("should respond with `201` status code when form has file", async (context) => {
+    it<RegistrationTestContext>("should respond with `201` status code when form has file", async () => {
       const camp = await CampFactory.create({
         public: true,
         form: {

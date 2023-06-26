@@ -1,6 +1,7 @@
 import Joi from "joi";
 import { Request } from "express-serve-static-core";
 import { SurveyModel } from "survey-core";
+import { routeModel } from "../utils/verifyModel";
 
 const fileFields = (req: Request) => {
   const mapFileToSurveyData = (file: Express.Multer.File) => {
@@ -45,7 +46,7 @@ export const registrationData: Joi.CustomValidator<object> = (
   }
 
   const req = helpers.prefs.context as Request;
-  const surveyJson = req.models.camp.form;
+  const surveyJson = routeModel(req.models.camp).form;
   const survey = new SurveyModel(surveyJson);
   survey.data = { ...value, ...fileFields(req) };
 
@@ -59,10 +60,9 @@ export const registrationData: Joi.CustomValidator<object> = (
   return Object.keys(value)
     .filter((key) => surveyFields.includes(key))
     .reduce((obj, key) => {
-      const objectKey = key as keyof typeof value;
-      obj[objectKey] = value[objectKey];
+      obj[key] = value[key as keyof typeof value];
       return obj;
-    }, {});
+    }, {} as Record<string, object>);
 };
 
 const index = {

@@ -33,7 +33,7 @@ const saveToken = async (
   return prisma.token.create({
     data: {
       token,
-      userId: userId,
+      userId,
       expiresAt: expires.toDate(),
       type,
       blacklisted,
@@ -51,7 +51,7 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   const payload = jwt.verify(token, config.jwt.secret);
 
   if (payload.sub === undefined || typeof payload.sub !== "string") {
-    throw new Error("Invalid token sub");
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token sub");
   }
 
   const userId = payload.sub;
@@ -60,7 +60,7 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   });
 
   if (!tokenData) {
-    throw new Error("Token not found");
+    throw new ApiError(httpStatus.NOT_FOUND, "Invalid token sub");
   }
 
   return tokenData;
