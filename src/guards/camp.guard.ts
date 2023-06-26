@@ -1,24 +1,17 @@
 import { managerService } from "../services";
 import { Request } from "express-serve-static-core";
 import { routeModel } from "../utils/verifyModel";
+import authUserId from "../utils/authUserId";
 
 export const campManager = async (req: Request): Promise<boolean | string> => {
-  if (
-    req.isUnauthenticated() ||
-    !req.user ||
-    !("id" in req.user) ||
-    typeof req.user.id !== "string"
-  ) {
+  let userId = "";
+  try {
+    userId = authUserId(req);
+  } catch (error) {
     return "Unauthenticated";
   }
 
-  if (!("campId" in req.params) || typeof req.params.campId !== "string") {
-    return "Invalid camp parameter";
-  }
-
-  // TODO Extract information from camp request model (req.models.camp)
-  const userId = req.user.id;
-  const campId = req.params.campId;
+  const campId = routeModel(req.models.camp).id;
 
   return await managerService.campManagerExistsWithUserIdAndCampId(
     campId,

@@ -3,7 +3,7 @@ import httpStatus from "http-status";
 import { campResource, detailedCampResource } from "../resources";
 import catchAsync from "../utils/catchAsync";
 import pick from "../utils/pick";
-import { Camp, type Prisma } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import exclude from "../utils/exclude";
 import { collection, resource } from "../resources/resource";
 import authUserId from "../utils/authUserId";

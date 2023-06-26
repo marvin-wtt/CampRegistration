@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
+import catchAsync from "../utils/catchAsync";
 
 /**
  * Middleware to guard the access to a route.
@@ -12,7 +13,7 @@ import httpStatus from "http-status";
 const guard = (
   guardFns: ((req: Request) => Promise<boolean | string>)[] = []
 ) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return  catchAsync( async (req: Request, res: Response, next: NextFunction) => {
     // TODO Check if admin - if yes return true here
 
     let message = "Insufficient permissions";
@@ -35,6 +36,6 @@ const guard = (
     }
 
     next(new ApiError(httpStatus.FORBIDDEN, message));
-  };
+  });
 };
 export default guard;

@@ -4,6 +4,7 @@ import httpStatus from "http-status";
 
 const authUserId = (req: Request): string | never => {
   if (
+    req.isAuthenticated() &&
     req.user !== undefined &&
     "id" in req.user &&
     typeof req.user.id === "string"
