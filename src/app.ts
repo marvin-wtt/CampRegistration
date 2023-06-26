@@ -9,7 +9,7 @@ import morgan from "./config/morgan";
 import { errorConverter, errorHandler } from "./middlewares";
 import ApiError from "./utils/ApiError";
 import httpStatus from "http-status";
-import { jwtStrategy } from "./config/passport";
+import { anonymousStrategy, jwtStrategy } from "./config/passport";
 import cookieParser from "cookie-parser";
 
 // TODO https://expressjs.com/en/advanced/best-practice-security.html#use-tls
@@ -37,7 +37,6 @@ app.use(cookieParser());
 app.use(compression());
 
 // enable cors
-
 app.use(
   cors({
     // TODO
@@ -50,9 +49,10 @@ app.options("*", cors());
 
 // authentication
 app.use(passport.initialize());
-passport.use("jwt", jwtStrategy);
+passport.use(jwtStrategy);
+passport.use(anonymousStrategy);
 
-// // api routes
+// api routes
 app.use("/api", apiRoutes);
 
 // send back a 404 error for any unknown api request

@@ -6,3 +6,4 @@ export { default as emailService } from "./email.service";
 export { default as campManagerService } from "./campManager.serivce";
 export { default as registrationService } from "./registration.service";
 export { default as templateService } from "./template.service";
+export { default as fileService } from "./file.service";

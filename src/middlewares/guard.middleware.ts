@@ -7,14 +7,16 @@ import httpStatus from "http-status";
  * At least one guard must be true to gain access.
  * Administrations always have access.
  *
- * @param fns The guard function or an empty array if only administrators should have access
+ * @param guardFns The guard function or an empty array if only administrators should have access
  */
-const guard = (fns: ((req: Request) => Promise<boolean | string>)[] = []) => {
+const guard = (
+  guardFns: ((req: Request) => Promise<boolean | string>)[] = []
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     // TODO Check if admin - if yes return true here
 
     let message = "Insufficient permissions";
-    for (const fn of fns) {
+    for (const fn of guardFns) {
       const result = await fn(req);
 
       if (result === true) {
@@ -25,6 +27,11 @@ const guard = (fns: ((req: Request) => Promise<boolean | string>)[] = []) => {
       if (typeof result === "string") {
         message = result;
       }
+    }
+
+    if (req.isUnauthenticated()) {
+      next(new ApiError(httpStatus.UNAUTHORIZED, "Unauthenticated"));
+      return;
     }
 
     next(new ApiError(httpStatus.FORBIDDEN, message));

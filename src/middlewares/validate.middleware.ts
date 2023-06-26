@@ -1,14 +1,42 @@
 import httpStatus from "http-status";
 import ApiError from "../utils/ApiError";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response } from "express-serve-static-core";
 import pick from "../utils/pick";
 import Joi from "joi";
+import * as fs from "fs";
 
 export interface ValidationSchema {
   params?: Joi.ObjectSchema;
   query?: Joi.ObjectSchema;
   body?: Joi.ObjectSchema;
 }
+
+type File = Express.Multer.File;
+
+const extractRequestFiles = (req: Request): File[] => {
+  const files: File[] = [];
+
+  if (req.file) {
+    files.push(req.file);
+  }
+
+  if (req.files) {
+    files.push(...Object.values(req.files));
+  }
+
+  return files;
+};
+
+const handleFileError = (req: Request) => {
+  const files = extractRequestFiles(req);
+  files.forEach((file) => {
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.error(`Error deleting tmp file: ${file.path}: ${err}`);
+      }
+    });
+  });
+};
 
 const validate =
   (schema: ValidationSchema) =>
@@ -18,8 +46,11 @@ const validate =
 
     const { value, error } = Joi.object(validSchema)
       .prefs({ errors: { label: "key" }, abortEarly: false })
-      .validate(obj);
+      .validate(obj, {
+        context: req,
+      });
     if (error) {
+      handleFileError(req);
       const errorMessage = error.details
         .map((details) => details.message)
         .join(", ");

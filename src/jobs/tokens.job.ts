@@ -2,7 +2,7 @@ import Cron from "croner";
 import prisma from "../client";
 import moment from "moment";
 
-const removeExpiredTokens = () => {
+export const removeExpiredTokens = () => {
   Cron(
     "0 2 * * *",
     {

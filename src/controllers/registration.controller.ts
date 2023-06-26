@@ -1,9 +1,8 @@
 import catchAsync from "../utils/catchAsync";
-import { SurveyModel } from "survey-core";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
-import { registrationService } from "../services";
+import { fileService, registrationService } from "../services";
 import { registrationResource } from "../resources";
 import { Prisma } from "@prisma/client";
 
@@ -29,22 +28,25 @@ const store = catchAsync(async (req, res) => {
   const { campId } = req.params;
   const data = req.body as Prisma.RegistrationCreateInput;
 
-  // TODO Data not validated
+  let registration = await registrationService.createRegistration(campId, data);
 
-  const registration = await registrationService.createRegistration(
-    campId,
-    data
-  );
+  // Store related files
+  if (req.files) {
+    await fileService.saveRegistrationFiles(registration.id, req.files);
+    // Null safe operator for type safety. It should never be null as it was just inserted.
+    registration =
+      (await registrationService.getRegistrationById(registration.id)) ??
+      registration;
+  }
+
   res
     .status(httpStatus.CREATED)
     .json(resource(registrationResource(registration)));
 });
 
 const update = catchAsync(async (req, res) => {
-  const { campId, registrationId } = req.params;
+  const { registrationId } = req.params;
   const data = req.body as Prisma.RegistrationUpdateInput;
-
-  // TODO Data not validated - but should it be?
 
   const registration = await registrationService.updateRegistrationById(
     registrationId,
@@ -56,23 +58,19 @@ const update = catchAsync(async (req, res) => {
       "Update without response."
     );
   }
+
+  if (req.files) {
+    await fileService.saveRegistrationFiles(registration.id, req.files);
+  }
+
   res.json(resource(registrationResource(registration)));
 });
 
 const destroy = catchAsync(async (req, res) => {
-  const { campId, registrationId } = req.params;
+  const { registrationId } = req.params;
   await registrationService.deleteRegistrationById(registrationId);
   res.status(httpStatus.NO_CONTENT).send();
 });
-
-const validateSurvey = (surveyJson: object, dataJson: object): boolean => {
-  const survey = new SurveyModel(surveyJson);
-  survey.data = dataJson;
-  let hasErrors = false;
-  survey.visiblePages.forEach((p) => (hasErrors = p.hasErrors() || hasErrors));
-
-  return !hasErrors;
-};
 
 export default {
   index,

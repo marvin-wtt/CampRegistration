@@ -8,6 +8,9 @@ import { campService } from "./index";
 const getRegistrationById = async (id: string) => {
   return prisma.registration.findFirst({
     where: { id },
+    include: {
+      files: true
+    }
   });
 };
 
@@ -16,6 +19,9 @@ const queryRegistrations = async (campId: string) => {
     where: {
       campId: campId,
     },
+    include: {
+      files: true
+    }
   });
 };
 
@@ -30,6 +36,9 @@ const createRegistration = async (campId: string, data: object) => {
       data: data,
       campId: campId,
     },
+    include: {
+      files: true
+    }
   });
 };
 

@@ -3,8 +3,8 @@ import prisma from "../utils/prisma";
 import { generateAccessToken } from "../utils/token";
 import request from "supertest";
 import app from "../../src/app";
-import {CampFactory, UserFactory} from "../../prisma/factories";
-import {Camp, Registration, User} from "@prisma/client";
+import { CampFactory, UserFactory } from "../../prisma/factories";
+import { Camp, Registration, User } from "@prisma/client";
 
 export interface RegistrationTestContext {
   user: User;
@@ -19,22 +19,154 @@ describe("/api/v1/camps/:campId/registrations", () => {
   beforeEach<RegistrationTestContext>(async (context) => {
     context.user = await UserFactory.create();
     context.otherUser = await UserFactory.create();
-    context.camp = await CampFactory.create();
+    context.camp = await CampFactory.create({
+      public: true,
+      form: {
+        pages: [
+          {
+            name: "page1",
+            elements: [
+              {
+                name: "first_name",
+                type: "text",
+                isRequired: true,
+              },
+              {
+                name: "last_name",
+                type: "text",
+              },
+            ],
+          },
+          {
+            name: "page2",
+            elements: [
+              {
+                name: "waiting_list",
+                type: "boolean",
+              },
+              {
+                name: "invisible_field",
+                type: "text",
+                isRequired: true,
+                visible: false,
+              },
+            ],
+          },
+        ],
+      },
+      campManager: {
+        create: {
+          userId: context.user.id,
+        },
+      },
+    });
+    context.registration = await prisma.registration.create({
+      data: {
+        data: {
+          first_name: "Jhon",
+          last_name: "Doe",
+        },
+        camp: {
+          connect: {
+            id: context.camp.id,
+          },
+        },
+      },
+    });
 
     context.accessToken = generateAccessToken(context.user);
     context.otherAccessToken = generateAccessToken(context.otherUser);
   });
 
   describe("GET /api/v1/camps/:campId/registrations/", () => {
-    it.todo("should respond with `200` status code when user is camp manager");
+    it<RegistrationTestContext>("should respond with `200` status code when user is camp manager", async (context) => {
+      const { status, body } = await request(app)
+        .get(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send()
+        .set("Authorization", `Bearer ${context.accessToken}`);
 
-    it.todo("should show all registrations of a camp");
+      expect(status).toBe(200);
+      expect(body).toHaveProperty("data");
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toHaveProperty("id");
+    });
 
-    it.todo(
-      "should respond with `403` status code when user is not camp manager"
-    );
+    it<RegistrationTestContext>("should include files in the response body ", async (context) => {
+      await prisma.file.create({
+        data: {
+          field: "file_field",
+          name: "file.pdf",
+          type: "application/pdf",
+          originalName: "FileName",
+          size: 1000,
+          registration: {
+            connect: {
+              id: context.registration.id,
+            },
+          },
+        },
+      });
 
-    it.todo("should respond with `401` status code when unauthenticated");
+      await prisma.file.create({
+        data: {
+          field: "multiple_files_field",
+          name: "file1.pdf",
+          type: "application/pdf",
+          originalName: "FileName1",
+          size: 1000,
+          registration: {
+            connect: {
+              id: context.registration.id,
+            },
+          },
+        },
+      });
+
+      await prisma.file.create({
+        data: {
+          field: "multiple_files_field",
+          name: "file2.pdf",
+          type: "application/pdf",
+          originalName: "FileName2",
+          size: 1000,
+          registration: {
+            connect: {
+              id: context.registration.id,
+            },
+          },
+        },
+      });
+
+      const { status, body } = await request(app)
+        .get(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send()
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(200);
+      expect(body.data[0]).toHaveProperty("file_field", "file.pdf");
+      expect(body.data[0]).toHaveProperty("multiple_files_field");
+      expect(body.data[0].multiple_files_field.split(";").sort()).toEqual([
+        "file1.pdf",
+        "file2.pdf",
+      ]);
+    });
+
+    it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
+      const { status } = await request(app)
+        .get(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send()
+        .set("Authorization", `Bearer ${context.otherAccessToken}`);
+
+      expect(status).toBe(403);
+    });
+
+    it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
+      const { status } = await request(app)
+        .get(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send();
+
+      expect(status).toBe(401);
+    });
 
     it.todo(
       "should respond with `400` status code when query parameters are invalid"
@@ -44,21 +176,124 @@ describe("/api/v1/camps/:campId/registrations", () => {
   describe("GET /api/v1/camps/:campId/registrations/:registrationId", () => {
     it.todo("should respond with `200` status code when user is camp manager");
 
-    it.todo(
-      "should respond with `403` status code when user is not camp manager"
-    );
+    it.todo("should include files in the response body ");
 
-    it.todo("should respond with `401` status code when unauthenticated");
+    it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
+      const { status } = await request(app)
+        .get(
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+        )
+        .send()
+        .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
-    it.todo(
-      "should respond with `400` status code when query parameters are invalid"
-    );
+      expect(status).toBe(403);
+    });
+
+    it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
+      const { status } = await request(app)
+        .get(
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+        )
+        .send();
+
+      expect(status).toBe(401);
+    });
   });
 
   describe("POST /api/v1/camps/:campId/registrations/", () => {
-    it.todo("should respond with `201` status code");
+    it<RegistrationTestContext>("should respond with `201` status code", async (context) => {
+      const data = {
+        first_name: "Jhon",
+        last_name: "Doe",
+      };
 
-    it.todo("should respond with `400` status code when the survey is invalid");
+      const { status, body } = await request(app)
+        .post(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send(data);
+
+      expect(status).toBe(201);
+
+      expect(body).toHaveProperty("data");
+      expect(body).toHaveProperty("data.id");
+      expect(body).toHaveProperty("data.first_name");
+      expect(body).toHaveProperty("data.last_name");
+    });
+
+    it<RegistrationTestContext>("should respond with `201` status code when form has file", async (context) => {
+      const camp = await CampFactory.create({
+        public: true,
+        form: {
+          pages: [
+            {
+              elements: [
+                {
+                  name: "some_field",
+                  type: "text",
+                  isRequired: true
+                },
+                {
+                  name: "some_file",
+                  type: "file",
+                  isRequired: true
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      const { status, body } = await request(app)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .field("some_field", "Some value")
+        .attach("some_file", `${__dirname}/resources/blank.pdf`);
+
+      expect(status).toBe(201);
+      expect(body).toHaveProperty("data.some_file");
+    });
+
+    it<RegistrationTestContext>("should respond with `401` status code when camp is private", async () => {
+      const privateCamp = await CampFactory.create({
+        public: false,
+      });
+
+      const { status } = await request(app)
+        .post(`/api/v1/camps/${privateCamp.id}/registrations`)
+        .send();
+
+      expect(status).toBe(401);
+    });
+
+    it<RegistrationTestContext>("should ignore additional fields", async (context) => {
+      const data = {
+        first_name: "Jhon",
+        last_name: "Doe",
+        invisible_field: "should not be stored",
+        another_field: "should not be stored",
+      };
+
+      const { status, body } = await request(app)
+        .post(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send(data);
+
+      expect(status).toBe(201);
+
+      expect(body).not.toHaveProperty("data.invisible_field");
+      expect(body).not.toHaveProperty("data.another_field");
+    });
+
+    it<RegistrationTestContext>("should respond with `400` status code when a required field is missing", async (context) => {
+      const data = {
+        last_name: "Doe",
+      };
+
+      const { status } = await request(app)
+        .post(`/api/v1/camps/${context.camp.id}/registrations`)
+        .send(data);
+
+      expect(status).toBe(400);
+    });
+
+    it.todo("should respond with `400` status code when file is missing");
   });
 
   describe("PUT /api/v1/camps/:campId/registrations/:registrationId", () => {
@@ -66,11 +301,26 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
     it.todo("should upload files if attached");
 
-    it.todo(
-      "should respond with `403` status code when user is not camp manager"
-    );
+    it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
+      const { status } = await request(app)
+        .put(
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+        )
+        .send({})
+        .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
-    it.todo("should respond with `401` status code when unauthenticated");
+      expect(status).toBe(403);
+    });
+
+    it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
+      const { status } = await request(app)
+        .put(
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+        )
+        .send({});
+
+      expect(status).toBe(401);
+    });
 
     it.todo("should respond with `400` status code when request body is empty");
   });
@@ -100,13 +350,9 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
       const registrationCount = await prisma.registration.count();
 
-      expect(status).toBe(204);
+      expect(status).toBe(403);
       expect(registrationCount).toBe(1);
     });
-
-    it.todo(
-      "should respond with `403` status code when user is camp manager of another camp"
-    );
 
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
       const { status } = await request(app)
@@ -117,10 +363,8 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
       const registrationCount = await prisma.registration.count();
 
-      expect(status).toBe(204);
+      expect(status).toBe(401);
       expect(registrationCount).toBe(1);
     });
-
-    it.todo("should delete all files related to the registration");
   });
 });

@@ -7,6 +7,7 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 import authConfig from "./auth.config";
 import emailConfig from "./email.config";
+import storageOptions from "./storage.config";
 
 const { value: envVars, error } = Joi.object()
   .keys({
@@ -33,5 +34,8 @@ export default {
   },
   email: {
     ...emailConfig,
+  },
+  storage: {
+    ...storageOptions,
   },
 };

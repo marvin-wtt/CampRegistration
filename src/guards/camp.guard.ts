@@ -1,10 +1,13 @@
 import { campManagerService } from "../services";
 import { Request } from "express-serve-static-core";
 
-export const campManager = async (
-  req: Request
-): Promise<boolean | string> => {
-  if (!req.user || !("id" in req.user) || typeof req.user.id !== "string") {
+export const campManager = async (req: Request): Promise<boolean | string> => {
+  if (
+    req.isUnauthenticated() ||
+    !req.user ||
+    !("id" in req.user) ||
+    typeof req.user.id !== "string"
+  ) {
     return "Unauthenticated";
   }
 
@@ -12,6 +15,7 @@ export const campManager = async (
     return "Invalid camp parameter";
   }
 
+  // TODO Extract information from camp request model (req.models.camp)
   const userId = req.user.id;
   const campId = req.params.campId;
 

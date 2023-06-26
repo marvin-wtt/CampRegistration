@@ -1,22 +1,22 @@
 import express from "express";
 import config from "../../config";
-import campRoutes from "./camp.routes";
-import registrationRoutes from "./registration.routes";
+import campRoutes from "./camps/camp.routes";
 import authRoutes from "./auth.routes";
 import profileRoutes from "./profile.routes";
-import templateRoutes from "./template.routes";
+import userRoutes from "./user.routes";
 
 const router = express.Router();
 
+// Initialize models
+router.use((req, res, next) => {
+  req.models = req.models ?? {};
+  next();
+});
+
 router.use("/auth", authRoutes);
-router.use("/camps/:campId/registrations", registrationRoutes);
-router.use("/camps/:campId/templates", templateRoutes);
-router.use("/camps", campRoutes);
-
-// TODO Add controllers
-// router.use("/users", userRoutes)
-
+router.use("/users", userRoutes);
 router.use("/profile", profileRoutes);
+router.use("/camps", campRoutes);
 
 if (config.env === "development") {
   // TODO

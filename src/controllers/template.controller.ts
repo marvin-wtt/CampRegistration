@@ -34,7 +34,7 @@ const store = catchAsync(async (req, res) => {
 });
 
 const update = catchAsync(async (req, res) => {
-  const { campId, templateId } = req.params;
+  const {  templateId } = req.params;
   const data = req.body;
   const template = await templateService.updateTemplateById(templateId, {
     data: data,
@@ -49,7 +49,7 @@ const update = catchAsync(async (req, res) => {
 });
 
 const destroy = catchAsync(async (req, res) => {
-  const { campId, templateId } = req.params;
+  const { templateId } = req.params;
   await templateService.deleteTemplateById(templateId);
   res.status(httpStatus.NO_CONTENT).send();
 });

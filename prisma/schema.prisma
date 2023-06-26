@@ -49,6 +49,7 @@ model Camp {
   registrations          Registration[]
   rooms                  Room[]
   templates              Template[]
+  files                  File[]
 
   @@map("camps")
 }
@@ -83,7 +84,8 @@ model Registration {
   data      Json      @db.Json
   createdAt DateTime? @map("created_at") @db.Timestamp(0)
   updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
-  camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "registrations_camp_id_foreign")
+  camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_camp_id_foreign")
+  files     File[]
 
   @@index([campId], map: "registrations_camp_id_foreign")
   @@map("registrations")
@@ -128,4 +130,20 @@ enum TokenType {
   REFRESH
   RESET_PASSWORD
   VERIFY_EMAIL
+}
+
+model File {
+  id             String        @id @default(uuid()) @db.Char(36)
+  campId         String?       @map("camp_id") @db.Char(36) // Prisma does not support mirth
+  registrationId String?       @map("registration_id") @db.Char(36) // Prisma does not support mirth
+  name           String
+  originalName   String        @map("original_name")
+  field          String?
+  type           String
+  size           Int
+  createdAt      DateTime      @default(now()) @map("created_at")
+  camp           Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
+  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@map("files")
 }

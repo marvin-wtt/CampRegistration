@@ -4,6 +4,7 @@ import {
   ExtractJwt,
   VerifyCallback,
 } from "passport-jwt";
+import { Strategy as AnonymousStrategy } from "passport-anonymous";
 import { Request } from "express";
 
 import config from "./index";
@@ -56,3 +57,5 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
 };
 
 export const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
+
+export const anonymousStrategy = new AnonymousStrategy();
