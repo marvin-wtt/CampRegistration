@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { Request } from "express-serve-static-core";
+import { Request } from "express";
 import { SurveyModel } from "survey-core";
 import { routeModel } from "../utils/verifyModel";
 

@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import ApiError from "../utils/ApiError";
-import { NextFunction, Request, Response } from "express-serve-static-core";
+import { NextFunction, Request, Response } from "express";
 import pick from "../utils/pick";
 import Joi from "joi";
 import * as fs from "fs";

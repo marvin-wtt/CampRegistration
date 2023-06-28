@@ -9,7 +9,7 @@ const router = express.Router();
 
 // Initialize models
 router.use((req, res, next) => {
-  req.models = req.models ?? {};
+  req.models = {};
   next();
 });
 

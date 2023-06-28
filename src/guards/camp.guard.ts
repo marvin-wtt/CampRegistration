@@ -1,5 +1,5 @@
 import { managerService } from "../services";
-import { Request } from "express-serve-static-core";
+import { Request } from "express";
 import { routeModel } from "../utils/verifyModel";
 import authUserId from "../utils/authUserId";
 

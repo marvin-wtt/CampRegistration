@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { Request, Response, NextFunction } from "express-serve-static-core";
+import { Request, Response, NextFunction } from "express";
 
 // Can be removed with express v5.x
 const catchAsync =
