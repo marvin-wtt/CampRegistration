@@ -1,12 +1,12 @@
 import express from "express";
-import { auth, guard, validate } from "../../../middlewares";
-import { campManager, campPublic } from "../../../guards";
-import { campController } from "../../../controllers";
-import { campValidation } from "../../../validations";
+import { auth, guard, validate } from "../../../../middlewares";
+import { campManager, campPublic } from "../../../../guards";
+import { campController } from "../../../../controllers";
+import { campValidation } from "../../../../validations";
 import registrationRoutes from "./registration.routes";
 import templateRoutes from "./template.routes";
-import { campService } from "../../../services";
-import { verifyModelExists } from "../../../utils/verifyModel";
+import { campService } from "../../../../services";
+import { verifyModelExists } from "../../../../utils/verifyModel";
 
 const router = express.Router({ mergeParams: true });
 

@@ -1,10 +1,10 @@
-import { templateController } from "../../../controllers";
-import { auth, guard, validate } from "../../../middlewares";
-import { campManager } from "../../../guards";
+import { templateController } from "../../../../controllers";
+import { auth, guard, validate } from "../../../../middlewares";
+import { campManager } from "../../../../guards";
 import express from "express";
-import { templateValidation } from "../../../validations";
-import { templateService } from "../../../services";
-import {routeModel, verifyModelExists} from "../../../utils/verifyModel";
+import { templateValidation } from "../../../../validations";
+import { templateService } from "../../../../services";
+import {routeModel, verifyModelExists} from "../../../../utils/verifyModel";
 
 const router = express.Router({ mergeParams: true });
 

@@ -1,9 +1,9 @@
-import {managerService, registrationService} from "../../../services";
-import {routeModel, verifyModelExists} from "../../../utils/verifyModel";
-import { auth, guard, multipart, validate } from "../../../middlewares";
-import { campManager, campPublic } from "../../../guards";
-import { managerValidation } from "../../../validations";
-import { managerController } from "../../../controllers";
+import {managerService, registrationService} from "../../../../services";
+import {routeModel, verifyModelExists} from "../../../../utils/verifyModel";
+import { auth, guard, multipart, validate } from "../../../../middlewares";
+import { campManager, campPublic } from "../../../../guards";
+import { managerValidation } from "../../../../validations";
+import { managerController } from "../../../../controllers";
 import router from "./registration.routes";
 
 router.param("managerId", async (req, res, next, id) => {

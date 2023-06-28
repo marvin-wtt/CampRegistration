@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import passport from "passport";
-import apiRoutes from "./routes";
+import apiRoutes from "./routes/api";
 import config from "./config";
 import morgan from "./config/morgan";
 import { errorConverter, errorHandler } from "./middlewares";
