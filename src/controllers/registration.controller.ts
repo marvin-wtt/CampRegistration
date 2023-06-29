@@ -1,4 +1,4 @@
-import catchAsync from "../utils/catchAsync";
+import { catchRequestAsync } from "../utils/catchAsync";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
@@ -7,7 +7,7 @@ import { registrationResource } from "../resources";
 import { Prisma } from "@prisma/client";
 import { routeModel } from "../utils/verifyModel";
 
-const show = catchAsync(async (req, res) => {
+const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
 
   if (registration == null) {
@@ -17,7 +17,7 @@ const show = catchAsync(async (req, res) => {
   res.json(resource(registrationResource(registration)));
 });
 
-const index = catchAsync(async (req, res) => {
+const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const registrations = await registrationService.queryRegistrations(campId);
   const resources = registrations.map((value) => registrationResource(value));
@@ -25,7 +25,7 @@ const index = catchAsync(async (req, res) => {
   res.json(collection(resources));
 });
 
-const store = catchAsync(async (req, res) => {
+const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const data = req.body as Prisma.RegistrationCreateInput;
 
@@ -47,7 +47,7 @@ const store = catchAsync(async (req, res) => {
     .json(resource(registrationResource(registration)));
 });
 
-const update = catchAsync(async (req, res) => {
+const update = catchRequestAsync(async (req, res) => {
   const { registrationId } = req.params;
   const data = req.body as Prisma.RegistrationUpdateInput;
 
@@ -69,7 +69,7 @@ const update = catchAsync(async (req, res) => {
   res.json(resource(registrationResource(registration)));
 });
 
-const destroy = catchAsync(async (req, res) => {
+const destroy = catchRequestAsync(async (req, res) => {
   const { registrationId } = req.params;
   await registrationService.deleteRegistrationById(registrationId);
   res.status(httpStatus.NO_CONTENT).send();

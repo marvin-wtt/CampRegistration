@@ -20,9 +20,9 @@ const registrationResource = (registration: Registration) => {
   // TODO How to get the room here?
 
   return {
-    id: registration.id,
     ...data,
     ...fileData,
+    id: registration.id,
     room_id: null,
     room_name: null,
     updated_at: registration.updatedAt,

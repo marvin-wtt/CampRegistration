@@ -6,7 +6,6 @@ import passport from "passport";
 const router = express.Router();
 
 router.use(generalLimiter);
-
 router.use(passport.authenticate(["jwt", "anonymous"], { session: false }));
 
 router.use("/v1", v1routes);

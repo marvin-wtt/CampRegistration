@@ -1,18 +1,18 @@
 import httpStatus from "http-status";
 import pick from "../utils/pick";
 import ApiError from "../utils/ApiError";
-import catchAsync from "../utils/catchAsync";
+import { catchRequestAsync } from "../utils/catchAsync";
 import { userService } from "../services";
 import exclude from "../utils/exclude";
 
-const index = catchAsync(async (req, res) => {
+const index = catchRequestAsync(async (req, res) => {
   const filter = exclude(req.query, ["sortBy", "limit", "page"]);
   const options = pick(req.query, ["sortBy", "limit", "page"]);
   const result = await userService.queryUsers(filter, options);
   res.send(result);
 });
 
-const show = catchAsync(async (req, res) => {
+const show = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   const user = await userService.getUserById(userId);
   if (!user) {
@@ -21,7 +21,7 @@ const show = catchAsync(async (req, res) => {
   res.send(user);
 });
 
-const store = catchAsync(async (req, res) => {
+const store = catchRequestAsync(async (req, res) => {
   const { email, password, name, role } = req.body;
   const user = await userService.createUser({
     name: name,
@@ -32,13 +32,13 @@ const store = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send(user);
 });
 
-const update = catchAsync(async (req, res) => {
+const update = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   const user = await userService.updateUserById(userId, req.body);
   res.send(user);
 });
 
-const destroy = catchAsync(async (req, res) => {
+const destroy = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   await userService.deleteUserById(userId);
   res.status(httpStatus.NO_CONTENT).send();

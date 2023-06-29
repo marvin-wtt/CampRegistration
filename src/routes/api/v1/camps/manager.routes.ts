@@ -1,17 +1,21 @@
-import {managerService, registrationService} from "../../../../services";
-import {routeModel, verifyModelExists} from "../../../../utils/verifyModel";
+import { managerService, registrationService } from "../../../../services";
+import { routeModel, verifyModelExists } from "../../../../utils/verifyModel";
 import { auth, guard, multipart, validate } from "../../../../middlewares";
 import { campManager, campPublic } from "../../../../guards";
 import { managerValidation } from "../../../../validations";
 import { managerController } from "../../../../controllers";
 import router from "./registration.routes";
+import { catchParamAsync } from "../../../../utils/catchAsync";
 
-router.param("managerId", async (req, res, next, id) => {
-  const camp = routeModel(req.models.camp);
-  const manager = await managerService.getManagerById(camp.id, id);
-  req.models.manager = verifyModelExists(manager);
-  next();
-});
+router.param(
+  "managerId",
+  catchParamAsync(async (req, res, next, id) => {
+    const camp = routeModel(req.models.camp);
+    const manager = await managerService.getManagerById(camp.id, id);
+    req.models.manager = verifyModelExists(manager);
+    next();
+  })
+);
 
 router.get(
   "/",

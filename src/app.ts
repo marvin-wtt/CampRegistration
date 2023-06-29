@@ -54,6 +54,7 @@ passport.use(anonymousStrategy);
 
 // api routes
 app.use("/api", apiRoutes);
+app.use(express.static("public"));
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

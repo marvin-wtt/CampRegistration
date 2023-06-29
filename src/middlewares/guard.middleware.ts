@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
-import catchAsync from "../utils/catchAsync";
+import { catchRequestAsync } from "../utils/catchAsync";
 
 /**
  * Middleware to guard the access to a route.
@@ -13,29 +13,31 @@ import catchAsync from "../utils/catchAsync";
 const guard = (
   guardFns: ((req: Request) => Promise<boolean | string>)[] = []
 ) => {
-  return  catchAsync( async (req: Request, res: Response, next: NextFunction) => {
-    // TODO Check if admin - if yes return true here
+  return catchRequestAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+      // TODO Check if admin - if yes return true here
 
-    let message = "Insufficient permissions";
-    for (const fn of guardFns) {
-      const result = await fn(req);
+      let message = "Insufficient permissions";
+      for (const fn of guardFns) {
+        const result = await fn(req);
 
-      if (result === true) {
-        next();
+        if (result === true) {
+          next();
+          return;
+        }
+
+        if (typeof result === "string") {
+          message = result;
+        }
+      }
+
+      if (req.isUnauthenticated()) {
+        next(new ApiError(httpStatus.UNAUTHORIZED, "Unauthenticated"));
         return;
       }
 
-      if (typeof result === "string") {
-        message = result;
-      }
+      next(new ApiError(httpStatus.FORBIDDEN, message));
     }
-
-    if (req.isUnauthenticated()) {
-      next(new ApiError(httpStatus.UNAUTHORIZED, "Unauthenticated"));
-      return;
-    }
-
-    next(new ApiError(httpStatus.FORBIDDEN, message));
-  });
+  );
 };
 export default guard;

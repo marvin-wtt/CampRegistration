@@ -1,41 +1,50 @@
 import Joi from "joi";
 
-const validateTemplateBody = Joi.object({
-  title: Joi.string().required(),
-  columns: Joi.array().items(
-    Joi.object({
-      name: Joi.string().required(),
-      label: Joi.object().unknown().required(), // Assuming `Translation` is a custom validation rule
-      field: Joi.string(),
-      required: Joi.boolean().allow(null),
-      align: Joi.string().valid("left", "right", "center"),
-      sortable: Joi.boolean().allow(null),
-      sortOrder: Joi.string().valid("ad", "da"),
-      headerStyle: Joi.string().allow(null),
-      headerClasses: Joi.string().allow(null),
-      renderAs: Joi.string().allow(null),
-      renderOptions: Joi.array().allow(null),
-      headerVertical: Joi.boolean().allow(null),
-      shrink: Joi.boolean().allow(null),
-      hideIf: Joi.string().allow(null),
-      showIf: Joi.string().allow(null),
-      style: Joi.string().allow(null),
-      classes: Joi.string().allow(null),
-    })
-  ),
-  order: Joi.number().integer().required(),
-  filter: Joi.string().allow(null),
-  filter_waiting_list: Joi.boolean().allow(null),
-  filter_leaders: Joi.boolean().allow(null),
-  filter_participants: Joi.boolean().allow(null),
-  printOptions: Joi.object({
+const TemplateBodySchema = Joi.object({
+  title: Joi.alternatives()
+    .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
+    .required(),
+  columns: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().required(),
+        field: Joi.alternatives().try(Joi.string(), Joi.function()).required(),
+        label: Joi.alternatives()
+          .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
+          .required(),
+        required: Joi.boolean(),
+        align: Joi.string().valid("left", "right", "center"),
+        sortable: Joi.boolean(),
+        sort: Joi.function(),
+        sort_order: Joi.string().valid("ad", "da"),
+        format: Joi.function(),
+        style: Joi.alternatives().try(Joi.string(), Joi.function()),
+        classes: Joi.alternatives().try(Joi.string(), Joi.function()),
+        header_style: Joi.string(),
+        header_classes: Joi.string(),
+        render_as: Joi.string(),
+        render_options: Joi.object(),
+        header_vertical: Joi.boolean(),
+        shrink: Joi.boolean(),
+        hide_if: Joi.string(),
+        show_if: Joi.string(),
+      })
+    )
+    .required(),
+  order: Joi.number().required(),
+  filter: Joi.string(),
+  filter_waiting_list: Joi.boolean(),
+  filter_leaders: Joi.boolean(),
+  filter_participants: Joi.boolean(),
+  print_options: Joi.object({
     orientation: Joi.string().valid("portrait", "landscape"),
   }),
-  indexed: Joi.boolean().allow(null),
-  actions: Joi.boolean().allow(null),
-  sortBy: Joi.string().allow(null),
-  sortDirection: Joi.string().valid("asc", "desc").allow(null),
-});
+  indexed: Joi.boolean(),
+  actions: Joi.boolean(),
+  sort_by: Joi.string(),
+  sort_direction: Joi.string().valid("asc", "desc"),
+  generated: Joi.boolean(),
+}).options({ stripUnknown: true });
 
 const show = {
   params: Joi.object({
@@ -54,7 +63,7 @@ const store = {
   params: Joi.object({
     campId: Joi.string(),
   }),
-  body: validateTemplateBody,
+  body: TemplateBodySchema,
 };
 
 const update = {
@@ -62,7 +71,7 @@ const update = {
     campId: Joi.string(),
     templateId: Joi.string(),
   }),
-  body: validateTemplateBody,
+  body: TemplateBodySchema,
 };
 
 const destroy = {

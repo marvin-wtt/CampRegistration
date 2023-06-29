@@ -7,14 +7,18 @@ import registrationRoutes from "./registration.routes";
 import templateRoutes from "./template.routes";
 import { campService } from "../../../../services";
 import { verifyModelExists } from "../../../../utils/verifyModel";
+import { catchParamAsync } from "../../../../utils/catchAsync";
 
 const router = express.Router({ mergeParams: true });
 
-router.param("campId", async (req, res, next, id) => {
-  const camp = await campService.getCampById(id);
-  req.models.camp = verifyModelExists(camp);
-  next();
-});
+router.param(
+  "campId",
+  catchParamAsync(async (req, res, next, id) => {
+    const camp = await campService.getCampById(id);
+    req.models.camp = verifyModelExists(camp);
+    next();
+  })
+);
 
 router.use("/:campId/registrations", registrationRoutes);
 router.use("/:campId/templates", templateRoutes);

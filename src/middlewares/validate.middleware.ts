@@ -41,6 +41,8 @@ const handleFileError = (req: Request) => {
 const validate =
   (schema: ValidationSchema) =>
   (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.body);
+
     const validSchema = pick(schema, ["params", "query", "body"]);
     const obj = pick(req, Object.keys(validSchema) as (keyof Request)[]);
 

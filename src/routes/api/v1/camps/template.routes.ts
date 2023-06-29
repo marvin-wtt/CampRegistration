@@ -4,16 +4,20 @@ import { campManager } from "../../../../guards";
 import express from "express";
 import { templateValidation } from "../../../../validations";
 import { templateService } from "../../../../services";
-import {routeModel, verifyModelExists} from "../../../../utils/verifyModel";
+import { routeModel, verifyModelExists } from "../../../../utils/verifyModel";
+import { catchParamAsync } from "../../../../utils/catchAsync";
 
 const router = express.Router({ mergeParams: true });
 
-router.param("templateId", async (req, res, next, id) => {
-  const camp = routeModel(req.models.camp);
-  const template = await templateService.getTemplateById(camp.id, id);
-  req.models.template = verifyModelExists(template);
-  next();
-});
+router.param(
+  "templateId",
+  catchParamAsync(async (req, res, next, id) => {
+    const camp = routeModel(req.models.camp);
+    const template = await templateService.getTemplateById(camp.id, id);
+    req.models.template = verifyModelExists(template);
+    next();
+  })
+);
 
 router.get(
   "/",

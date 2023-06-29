@@ -1,11 +1,11 @@
-import catchAsync from "../utils/catchAsync";
+import { catchRequestAsync } from "../utils/catchAsync";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
 import { templateService } from "../services";
 import { templateResource } from "../resources";
 
-const show = catchAsync(async (req, res) => {
+const show = catchRequestAsync(async (req, res) => {
   const { campId, templateId } = req.params;
   const template = await templateService.getTemplateById(campId, templateId);
 
@@ -16,7 +16,7 @@ const show = catchAsync(async (req, res) => {
   res.json(resource(templateResource(template)));
 });
 
-const index = catchAsync(async (req, res) => {
+const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const templates = await templateService.queryTemplates(campId);
   const resources = templates.map((value) => templateResource(value));
@@ -24,7 +24,7 @@ const index = catchAsync(async (req, res) => {
   res.json(collection(resources));
 });
 
-const store = catchAsync(async (req, res) => {
+const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const data = req.body;
   const template = await templateService.createTemplate(campId, {
@@ -33,7 +33,7 @@ const store = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).json(resource(templateResource(template)));
 });
 
-const update = catchAsync(async (req, res) => {
+const update = catchRequestAsync(async (req, res) => {
   const { templateId } = req.params;
   const data = req.body;
   const template = await templateService.updateTemplateById(templateId, {
@@ -48,7 +48,7 @@ const update = catchAsync(async (req, res) => {
   res.json(resource(templateResource(template)));
 });
 
-const destroy = catchAsync(async (req, res) => {
+const destroy = catchRequestAsync(async (req, res) => {
   const { templateId } = req.params;
   await templateService.deleteTemplateById(templateId);
   res.status(httpStatus.NO_CONTENT).send();

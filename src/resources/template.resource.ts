@@ -6,8 +6,8 @@ const templateResource = (template: TemplateInput) => {
   const data = typeof template.data === "object" ? template.data : {};
 
   return {
-    id: template.id,
     ...data,
+    id: template.id,
   };
 };
 

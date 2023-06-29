@@ -40,13 +40,11 @@ const updateRegistrationById = async (
 ) => {
   return prisma.registration.update({
     where: { id: registrationId },
-    data: updateBody,
+    data: { data: updateBody as object },
   });
 };
 
-const deleteRegistrationById = async (
-  registrationId: string
-) => {
+const deleteRegistrationById = async (registrationId: string) => {
   await prisma.registration.delete({ where: { id: registrationId } });
 };
 

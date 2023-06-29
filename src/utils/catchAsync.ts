@@ -1,10 +1,21 @@
 import { RequestHandler } from "express";
 import { Request, Response, NextFunction } from "express";
+import { RequestParamHandler } from "express-serve-static-core";
 
-// Can be removed with express v5.x
-const catchAsync =
+// TODO Can be removed with express v5.x
+export const catchRequestAsync =
   (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch((err) => next(err));
   };
 
-export default catchAsync;
+export const catchParamAsync =
+  (fn: RequestParamHandler) =>
+  (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+    value: any,
+    name: string
+  ) => {
+    Promise.resolve(fn(req, res, next, value, name)).catch((err) => next(err));
+  };

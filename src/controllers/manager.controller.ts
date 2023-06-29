@@ -1,4 +1,4 @@
-import catchAsync from "../utils/catchAsync";
+import { catchRequestAsync } from "../utils/catchAsync";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
@@ -10,13 +10,13 @@ import {
 } from "../services";
 import { templateResource } from "../resources";
 
-const index = catchAsync(async (req, res) => {
+const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   // TODO
   res.send(httpStatus.NOT_IMPLEMENTED);
 });
 
-const store = catchAsync(async (req, res) => {
+const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const { email } = req.body;
 
@@ -44,13 +44,13 @@ const store = catchAsync(async (req, res) => {
   res.send(httpStatus.NOT_IMPLEMENTED);
 });
 
-const acceptInvite = catchAsync(async (req, res) => {
+const acceptInvite = catchRequestAsync(async (req, res) => {
   const { campId, managerId } = req.params;
   // TODO
   res.send(httpStatus.NOT_IMPLEMENTED);
 });
 
-const destroy = catchAsync(async (req, res) => {
+const destroy = catchRequestAsync(async (req, res) => {
   const { campId, managerId } = req.params;
   // TODO
   res.send(httpStatus.NOT_IMPLEMENTED);
