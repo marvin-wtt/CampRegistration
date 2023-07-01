@@ -68,7 +68,7 @@ export interface TextElement extends Element {
 }
 
 export interface SelectionElement extends Element {
-  type: 'radiogroup' | 'checkbox';
+  type: 'radiogroup' | 'checkbox' | 'dropdown';
   choices: {
     text: string | Record<string, string>;
     value: unknown;

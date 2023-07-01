@@ -121,27 +121,6 @@
           disable
         >
           <q-item-section avatar>
-            <q-icon name="supervisor_account" />
-          </q-item-section>
-
-          <q-item-section>
-            <q-badge
-              align="top"
-              floating
-              rounded
-              >Coming soon!
-            </q-badge>
-            {{ t('supervisors') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          clickable
-          disable
-        >
-          <q-item-section avatar>
             <q-icon name="email" />
           </q-item-section>
 
@@ -323,7 +302,6 @@ program_planner: 'Program'
 room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
-supervisors: 'Supervisors'
 tools: 'Tools'
 </i18n>
 
@@ -338,7 +316,6 @@ program_planner: 'Programm'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
-supervisors: 'Betreuende'
 tools: 'Tools'
 </i18n>
 
@@ -353,7 +330,6 @@ program_planner: 'Programme'
 room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
-supervisors: 'Responsables'
 tools: 'Tools'
 </i18n>
 

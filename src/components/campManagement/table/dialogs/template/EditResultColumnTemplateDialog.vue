@@ -75,11 +75,14 @@
           rounded
         />
 
-        <q-input
+        <q-select
           v-model="column.renderAs"
           :label="t('fields.renderAs.label')"
           :hint="t('fields.renderAs.hint')"
+          :options="renderAsOptions"
           clearable
+          emit-value
+          map-options
           outlined
           rounded
         />
@@ -101,19 +104,25 @@
           </q-expansion-item>
         </q-list>
 
-        <q-toggle
+        <toggle-item
+          v-model="column.editable"
+          :label="t('fields.editable.label')"
+          :hint="t('fields.editable.hint')"
+        />
+
+        <toggle-item
           v-model="column.sortable"
           :label="t('fields.sortable.label')"
           :hint="t('fields.sortable.hint')"
         />
 
-        <q-toggle
+        <toggle-item
           v-model="column.headerVertical"
           :label="t('fields.headerVertical.label')"
           :hint="t('fields.headerVertical.hint')"
         />
 
-        <q-toggle
+        <toggle-item
           v-model="column.shrink"
           :label="t('fields.shrink.label')"
           :hint="t('fields.shrink.hint')"
@@ -138,7 +147,7 @@
         />
       </q-card-section>
 
-      <!-- buttons example -->
+      <!-- action buttons -->
       <q-card-actions align="right">
         <q-btn
           color="primary"
@@ -168,6 +177,8 @@ import { Camp } from 'src/types/Camp';
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import JsonInput from 'components/JsonInput.vue';
+import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
+import ToggleItem from 'components/ToggleItem.vue';
 
 interface Props {
   column: TableColumnTemplate;
@@ -213,6 +224,23 @@ const alignOptions = computed(() => {
       value: 'center',
     },
   ];
+});
+
+const renderAsOptions = computed<{ label: string; value: string }[]>(() => {
+  return Array.from(ComponentRegistry.all().entries(), ([key, value]) => {
+    const options = value.options;
+    if (options.internal) {
+      return undefined;
+    }
+
+    return {
+      label: to(options.label) || key,
+      value: key,
+    };
+  }).filter((value) => value !== undefined) as {
+    label: string;
+    value: string;
+  }[];
 });
 
 const fieldOptions = computed(() => {
@@ -291,6 +319,9 @@ fields:
   renderOptions:
     label: 'Custom options for the renderer'
     hint: 'The content should be valid JSON'
+  editable:
+    label: 'Editable'
+    hint: 'Allow edit in table cell'
   sortable:
     label: 'Sortable'
     hint: ''
@@ -336,6 +367,9 @@ fields:
   renderAs:
     label: 'Darstellen als'
     hint: 'Name eines benutzerdefinierten Anzeigetyps'
+  editable:
+    label: 'Bearbeitbar'
+    hint: 'Bearbeitung in Tabellenzelle zulassen'
   renderOptions:
     label: 'Benutzerdefinierte Optionen für den Renderer'
     hint: 'Der Inhalt sollte gültiges JSON sein'
@@ -387,6 +421,9 @@ fields:
   renderOptions:
     label: 'Options personnalisées pour le moteur de rendu'
     hint: 'Le contenu doit être du JSON valide'
+  editable:
+    label: 'Editable'
+    hint: "Permettre l'édition dans une cellule de tableau"
   sortable:
     label: 'Triable'
     hint: ''

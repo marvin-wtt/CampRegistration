@@ -5,12 +5,12 @@ import { User } from 'src/types/User';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import {
-  hasResponse,
   hasResponseData,
   hasResponseDataErrors,
   hasResponseStatusText,
 } from 'src/composables/errorChecker';
 import { useAuthBus } from 'src/composables/bus';
+import { AccessTokens } from 'src/types/AccessTokens';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -23,12 +23,21 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref<boolean>(false);
   const error = ref<string | object | null>(null);
 
+  let accessTokenTimer: NodeJS.Timeout | null = null;
+  let isRefreshingToken = false;
+
   // Redirect to login page on unauthorized error
   api.interceptors.response.use(
     (response) => {
       return response;
     },
     async function (error) {
+      if (error.response === undefined) {
+        return Promise.reject(
+          'Server not reachable... Please try again later :('
+        );
+      }
+
       // Don't redirect on login page
       if (route.name === 'login' || route.fullPath.startsWith('/login')) {
         return Promise.reject(error);
@@ -38,16 +47,24 @@ export const useAuthStore = defineStore('auth', () => {
         return Promise.reject(error);
       }
 
+      const authenticated = await refreshTokens();
+      if (authenticated) {
+        return Promise.resolve();
+      }
+
       bus.emit('logout');
       // Clear current user for login page
       reset();
-      // TODO Why are named routes not working?
-      await router.push({
-        path: '/login',
-        query: {
-          origin: encodeURIComponent(route.path),
-        },
-      });
+
+      if (!route.path.startsWith('/login')) {
+        // TODO Why are named routes not working?
+        await router.push({
+          path: '/login',
+          query: {
+            origin: encodeURIComponent(route.path),
+          },
+        });
+      }
 
       // Still reject error to avoid false success messages
       return Promise.reject(error);
@@ -55,6 +72,11 @@ export const useAuthStore = defineStore('auth', () => {
   );
 
   function reset() {
+    if (accessTokenTimer != null) {
+      clearTimeout(accessTokenTimer);
+      accessTokenTimer = null;
+    }
+
     user.value = undefined;
     loading.value = false;
     error.value = null;
@@ -68,21 +90,23 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
 
     try {
-      await apiService.login(email, password, remember);
+      const result = await apiService.login(email, password, remember);
+      user.value = result.user;
 
-      user.value = await apiService.fetchAuthUser();
+      handleTokenRefresh(result.tokens);
+
+      bus.emit('login', user.value);
 
       // Redirect to origin or home route
       const destination =
         'origin' in route.query && typeof route.query.origin === 'string'
           ? decodeURIComponent(route.query.origin)
-          : 'results';
-
-      bus.emit('login', user.value);
+          : 'campManagement';
 
       await router.push(destination);
     } catch (e: unknown) {
-      console.log(hasResponse(e), hasResponseData(e), hasResponseDataErrors(e));
+      // TODO Show error as notification
+
       error.value = hasResponseDataErrors(e)
         ? e.response.data.errors
         : hasResponseData(e)
@@ -97,12 +121,44 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = false;
   }
 
+  async function refreshTokens(): Promise<boolean> {
+    if (isRefreshingToken) {
+      return false;
+    }
+
+    try {
+      isRefreshingToken = true;
+      const tokens: AccessTokens = await apiService.refreshTokens();
+      handleTokenRefresh(tokens);
+      return true;
+    } catch (ignored) {
+    } finally {
+      isRefreshingToken = false;
+    }
+
+    return false;
+  }
+
+  function handleTokenRefresh(tokens: AccessTokens) {
+    if (tokens.refresh === undefined) {
+      return;
+    }
+
+    const expires = new Date(tokens.access.expires);
+    const now = Date.now();
+    const refreshTime = expires.getTime() - now - 1000 * 60;
+    accessTokenTimer = setTimeout(async () => {
+      const tokens: AccessTokens = await apiService.refreshTokens();
+      handleTokenRefresh(tokens);
+    }, refreshTime);
+  }
+
   async function fetchUser(): Promise<void> {
     loading.value = true;
     error.value = null;
 
     try {
-      user.value = await apiService.fetchAuthUser();
+      user.value = await apiService.fetchProfile();
     } catch (e: unknown) {
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';

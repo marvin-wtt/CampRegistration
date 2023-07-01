@@ -1,4 +1,4 @@
-import { useLoginService } from 'src/services/LoginService';
+import { useAuthService } from 'src/services/AuthService';
 import { useCampService } from 'src/services/CampService';
 import { useRegistrationService } from 'src/services/RegistrationService';
 import { useTemplateService } from 'src/services/TemplateService';
@@ -9,7 +9,7 @@ import { useCampManagerService } from 'src/services/CampManagerService';
 
 export function useAPIService() {
   return {
-    ...useLoginService(),
+    ...useAuthService(),
     ...useUserService(),
     ...useCampService(),
     ...useCampManagerService(),

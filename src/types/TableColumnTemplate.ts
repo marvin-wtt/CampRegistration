@@ -4,6 +4,7 @@ export interface TableColumnTemplate extends Omit<QTableColumn, 'label'> {
   renderAs?: string;
   renderOptions?: object;
   headerVertical?: boolean;
+  editable?: boolean;
   shrink?: boolean;
   hideIf?: string;
   showIf?: string;

@@ -137,6 +137,20 @@
       #[`body-cell-${key}`]="rendererProps"
     >
       <q-td :props="rendererProps">
+        <!-- TODO -->
+        <!--        <q-popup-edit-->
+        <!--          v-if="renderer.isEditable()"-->
+        <!--          v-slot="scope"-->
+        <!--          buttons-->
+        <!--          persistent-->
+        <!--        >-->
+        <!--          <dynamic-input-->
+        <!--            v-model="scope.value"-->
+        <!--            :data="{}"-->
+        <!--            :element="{ type: 'text' }"-->
+        <!--          />-->
+        <!--        </q-popup-edit>-->
+
         <component
           :is="renderer.component"
           v-if="renderer.isVisible(rendererProps.row)"
@@ -150,7 +164,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ComponentRegistry } from 'components/campManagement/table/ComponentRegistry';
+import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, ref, watch } from 'vue';
@@ -345,9 +359,9 @@ const renderers = computed<Map<string, TableCellRenderer>>(() => {
     // Always use a custom renderer to use renderer options
     column.renderAs ??= 'default';
 
-    const renderComponent = ComponentRegistry.INSTANCE.getComponent(
-      column.renderAs
-    );
+    const componentEntry = TableComponentRegistry.load(column.renderAs);
+    const renderComponent = componentEntry.component;
+    // TODO What to do with options?
     if (renderComponent) {
       rendererMap.set(
         column.name,

@@ -139,7 +139,7 @@ action:
   delete: 'Delete'
   edit: 'Edit'
   publish: 'Publish'
-  results: 'Results'
+  campManagement: 'Manage'
   share: 'Share'
   unpublish: 'Unpublish'
 </i18n>

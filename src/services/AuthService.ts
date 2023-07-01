@@ -1,17 +1,15 @@
-import { api, apiUrl } from 'boot/axios';
+import { api } from 'boot/axios';
 import { User } from 'src/types/User';
+import { LoginResponse } from 'src/types/LoginResponse';
+import { AccessTokens } from 'src/types/AccessTokens';
 
-export function useLoginService() {
+export function useAuthService() {
   async function login(
     email: string,
     password: string,
     remember = false
-  ): Promise<void> {
-    await api.get('/sanctum/csrf-cookie', {
-      baseURL: apiUrl,
-    });
-
-    const response = await api.post('/login', {
+  ): Promise<LoginResponse> {
+    const response = await api.post('auth/login', {
       email: email,
       password: password,
       remember: remember,
@@ -21,13 +19,19 @@ export function useLoginService() {
   }
 
   async function logout(): Promise<void> {
-    const response = await api.post('logout');
+    const response = await api.post('auth/logout');
+
+    return response.data;
+  }
+
+  async function refreshTokens(): Promise<AccessTokens> {
+    const response = await api.post('auth/refresh-tokens');
 
     return response.data;
   }
 
   async function register(email: string, password: string): Promise<void> {
-    const response = await api.post('register', {
+    const response = await api.post('auth/register', {
       email: email,
       password: password,
     });
@@ -36,7 +40,7 @@ export function useLoginService() {
   }
 
   async function forgotPassword(email: string): Promise<void> {
-    const response = await api.post('forgot-password', {
+    const response = await api.post('auth/forgot-password', {
       email: email,
     });
 
@@ -48,7 +52,7 @@ export function useLoginService() {
     email: string,
     password: string
   ): Promise<void> {
-    const response = await api.post('reset-password', {
+    const response = await api.post('auth/reset-password', {
       token: token,
       email: email,
       password: password,
@@ -57,8 +61,8 @@ export function useLoginService() {
     return response.data;
   }
 
-  async function fetchAuthUser(): Promise<User> {
-    const response = await api.get('user');
+  async function fetchProfile(): Promise<User> {
+    const response = await api.get('profile');
 
     return response.data.data;
   }
@@ -69,6 +73,7 @@ export function useLoginService() {
     register,
     forgotPassword,
     resetPassword,
-    fetchAuthUser,
+    fetchProfile,
+    refreshTokens,
   };
 }

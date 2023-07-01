@@ -1,53 +1,54 @@
-import { Component, defineAsyncComponent } from 'vue';
+import { Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
+import components from 'components/campManagement/table/tableCells';
+import { AnyElement } from 'src/types/SurveyJSCampData';
 
-export class ComponentRegistry {
-  public static INSTANCE: ComponentRegistry = new ComponentRegistry();
+type MaybeLazyComponent = Component | (() => Component);
 
-  public static BASE_PATH = './tableCells/';
-  public static FILE_PREFIX = '';
-  public static FILE_SUFFIX = 'TableCell';
+interface ComponentOptions {
+  editable?: false | object;
+  label?: string | Record<string, string>;
+  internal?: boolean;
+  edit?: Omit<AnyElement, 'name' | 'title'>;
+}
 
-  private _components: Map<string, Component> = new Map<string, Component>();
+interface ComponentEntry {
+  component: MaybeLazyComponent;
+  options: ComponentOptions;
+}
 
-  registerComponent(name: string, component: Component) {
-    this._components.set(name, component);
-  }
+const componentMap: Map<string, ComponentEntry> = new Map<
+  string,
+  ComponentEntry
+>();
 
-  getComponent(name: string): Component | undefined {
-    let component = this._components.get(name);
+const TableComponentRegistry = {
+  register: (
+    name: string,
+    component: Component,
+    options: ComponentOptions = {}
+  ): void => {
+    componentMap.set(name, { component, options });
+  },
 
-    if (component !== undefined) {
-      return component;
+  load: (name: string): ComponentEntry => {
+    const entry = componentMap.get(name);
+    if (!entry) {
+      return { component: DefaultTableCell, options: {} };
     }
 
-    // Try to load component
-    const camelName = name
-      .replace(/_\w/g, (m) => m[1].toUpperCase())
-      .replace(/^\w/, (c) => c.toUpperCase());
+    return entry;
+  },
 
-    const componentName =
-      ComponentRegistry.BASE_PATH +
-      ComponentRegistry.FILE_PREFIX +
-      camelName +
-      ComponentRegistry.FILE_SUFFIX +
-      '.vue';
+  all: (): Map<string, ComponentEntry> => {
+    return componentMap;
+  },
 
-    try {
-      component = defineAsyncComponent({
-        loader: () => import(/* @vite-ignore */ componentName),
-        errorComponent: DefaultTableCell,
-      });
-
-      // Cache it for next iteration
-      if (component !== undefined) {
-        this.registerComponent(name, component);
-      }
-    } catch (e: unknown) {}
-    return component;
+  remove: (name: string): void => {
+    componentMap.delete(name);
   }
+};
 
-  unregisterComponent(name: string) {
-    this._components.delete(name);
-  }
-}
+export default TableComponentRegistry;
+
+components();

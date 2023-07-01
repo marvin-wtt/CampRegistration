@@ -8,7 +8,7 @@ declare module '@vue/runtime-core' {
   }
 }
 
-const apiUrl = 'http://localhost:8000';
+const apiUrl = 'http://localhost:3000';
 
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
@@ -19,7 +19,7 @@ const apiUrl = 'http://localhost:8000';
 const api = applyCaseMiddleware(
   axios.create({
     baseURL: `${apiUrl}/api/v1/`,
-    // Needed for laravel sanctum
+    // Needed for auth
     withCredentials: true,
   })
 );
@@ -36,4 +36,4 @@ export default boot(({ app }) => {
   //       so you can easily perform requests against your app's API
 });
 
-export { api, apiUrl };
+export { api };
