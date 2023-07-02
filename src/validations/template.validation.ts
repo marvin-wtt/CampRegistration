@@ -24,6 +24,7 @@ const TemplateBodySchema = Joi.object({
         header_classes: Joi.string(),
         render_as: Joi.string(),
         render_options: Joi.object(),
+        editable: Joi.boolean(),
         header_vertical: Joi.boolean(),
         shrink: Joi.boolean(),
         hide_if: Joi.string(),
