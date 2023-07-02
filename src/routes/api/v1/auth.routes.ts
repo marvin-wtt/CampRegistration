@@ -19,7 +19,6 @@ router.post("/login", validate(authValidation.login), authController.login);
 router.post("/logout", auth(), authController.logout);
 router.post(
   "/refresh-tokens",
-  guest(),
   validate(authValidation.refreshTokens),
   authController.refreshTokens
 );
