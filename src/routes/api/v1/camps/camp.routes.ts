@@ -31,7 +31,7 @@ router.get(
   campController.show
 );
 router.post("/", auth(), validate(campValidation.store), campController.store);
-router.put(
+router.patch(
   "/:campId",
   auth(),
   guard([campManager]),
