@@ -80,9 +80,11 @@ model Registration {
   id        String    @id @default(uuid()) @db.Char(36)
   campId    String?   @map("camp_id") @db.Char(36)
   data      Json      @db.Json
+  roomId    String?   @map("room_id") @db.Char(36)
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
   camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_camp_id_foreign")
+  room      Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_room_id_foreign")
   files     File[]
 
   @@index([campId], map: "registrations_camp_id_foreign")
@@ -90,11 +92,12 @@ model Registration {
 }
 
 model Room {
-  id       String @id @default(uuid()) @db.Char(36)
-  campId   String @map("camp_id") @db.Char(36)
-  name     String @db.LongText
-  capacity Int    @db.UnsignedInt
-  camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
+  id            String         @id @default(uuid()) @db.Char(36)
+  campId        String         @map("camp_id") @db.Char(36)
+  name          String         @db.LongText
+  capacity      Int            @db.UnsignedInt
+  camp          Camp           @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
+  registrations Registration[]
 
   @@index([campId], map: "rooms_camp_id_foreign")
   @@map("rooms")

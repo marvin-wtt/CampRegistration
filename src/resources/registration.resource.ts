@@ -17,14 +17,13 @@ const registrationResource = (registration: Registration) => {
   const data = typeof registration.data === "object" ? registration.data : {};
 
   const fileData = extractFiles(registration);
-  // TODO How to get the room here?
+  const room = 'room' in registration ? registration.room : null;
 
   return {
     ...data,
     ...fileData,
     id: registration.id,
-    room_id: null,
-    room_name: null,
+    room,
     updated_at: registration.updatedAt,
     created_at: registration.createdAt,
   };

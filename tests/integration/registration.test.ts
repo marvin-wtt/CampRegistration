@@ -89,6 +89,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body).toHaveProperty("data");
       expect(body.data).toHaveLength(1);
       expect(body.data[0]).toHaveProperty("id");
+      expect(body.data[0]).toHaveProperty("room");
     });
 
     it<RegistrationTestContext>("should include files in the response body ", async (context) => {
