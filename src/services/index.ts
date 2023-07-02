@@ -7,3 +7,4 @@ export { default as managerService } from "./manager.service";
 export { default as registrationService } from "./registration.service";
 export { default as templateService } from "./template.service";
 export { default as fileService } from "./file.service";
+export { default as roomService } from "./room.service";

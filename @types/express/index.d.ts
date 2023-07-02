@@ -9,6 +9,7 @@ declare global {
         registration?: import("@prisma/client").Registration;
         template?: import("@prisma/client").Template;
         manager?: import("@prisma/client").CampManager;
+        room?: import("@prisma/client").Room;
       };
     }
   }
