@@ -8,6 +8,7 @@ import templateRoutes from "./template.routes";
 import { campService } from "../../../../services";
 import { verifyModelExists } from "../../../../utils/verifyModel";
 import { catchParamAsync } from "../../../../utils/catchAsync";
+import roomRoutes from "./room.routes";
 
 const router = express.Router({ mergeParams: true });
 
@@ -22,6 +23,7 @@ router.param(
 
 router.use("/:campId/registrations", registrationRoutes);
 router.use("/:campId/templates", templateRoutes);
+router.use("/:campId/rooms", roomRoutes);
 
 router.get("/", validate(campValidation.index), campController.index);
 router.get(
