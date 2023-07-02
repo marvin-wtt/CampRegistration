@@ -1,4 +1,4 @@
-import { PrismaPromise, type Prisma, PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 import data from "./json/templates.json";
 
