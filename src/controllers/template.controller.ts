@@ -37,7 +37,7 @@ const update = catchRequestAsync(async (req, res) => {
   const { templateId } = req.params;
   const data = req.body;
   const template = await templateService.updateTemplateById(templateId, {
-    data: data,
+    data,
   });
   if (template == null) {
     throw new ApiError(
