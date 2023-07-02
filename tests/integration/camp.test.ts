@@ -218,7 +218,7 @@ describe("/api/v1/camps", () => {
     });
   });
 
-  describe("PUT /api/v1/camps/:campId", () => {
+  describe("PATCH /api/v1/camps/:campId", () => {
     it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context)  => {
       const data = {
         public: false,
@@ -235,7 +235,7 @@ describe("/api/v1/camps", () => {
       };
 
       const { status, body } = await request(app)
-        .put(`/api/v1/camps/${context.publicCamp.id}`)
+        .patch(`/api/v1/camps/${context.publicCamp.id}`)
         .send(data)
         .set("Authorization", `Bearer ${context.accessToken}`);
 
@@ -250,7 +250,7 @@ describe("/api/v1/camps", () => {
 
     it<CampTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
       const { status } = await request(app)
-        .put(`/api/v1/camps/${context.privateCamp.id}`)
+        .patch(`/api/v1/camps/${context.privateCamp.id}`)
         .send()
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
@@ -259,7 +259,7 @@ describe("/api/v1/camps", () => {
 
     it<CampTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
       const { status } = await request(app)
-        .put(`/api/v1/camps/${context.privateCamp.id}`)
+        .patch(`/api/v1/camps/${context.privateCamp.id}`)
         .send();
 
       expect(status).toBe(401);
@@ -269,7 +269,7 @@ describe("/api/v1/camps", () => {
       // TODO Test all fields
 
       const { status } = await request(app)
-        .put(`/api/v1/camps/${context.privateCamp.id}`)
+        .patch(`/api/v1/camps/${context.privateCamp.id}`)
         .send()
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
