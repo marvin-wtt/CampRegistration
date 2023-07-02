@@ -94,7 +94,7 @@ model Registration {
 model Room {
   id            String         @id @default(uuid()) @db.Char(36)
   campId        String         @map("camp_id") @db.Char(36)
-  name          String         @db.LongText
+  name          Json           @db.Json
   capacity      Int            @db.UnsignedInt
   camp          Camp           @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
   registrations Registration[]

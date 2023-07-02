@@ -29,7 +29,10 @@ const update = {
     roomId: Joi.string(),
   }),
   body: Joi.object({
-    name: Joi.string(),
+    name: Joi.alternatives().try(
+      Joi.string(),
+      Joi.object().pattern(Joi.string(), Joi.string())
+    ),
     capacity: Joi.number().min(1),
   }),
 };
@@ -37,7 +40,10 @@ const update = {
 const destroy = {
   params: Joi.object({
     campId: Joi.string(),
-    roomId: Joi.string(),
+    roomId: Joi.alternatives().try(
+      Joi.string(),
+      Joi.object().pattern(Joi.string(), Joi.string())
+    ),
   }),
 };
 
