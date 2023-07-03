@@ -2,6 +2,7 @@ import prisma from "../client";
 import { Prisma } from "@prisma/client";
 import config from "../config";
 import fs from "fs";
+import { ulid } from "../utils/ulid";
 
 type File = Express.Multer.File;
 
@@ -10,6 +11,7 @@ type RequestFiles = { [field: string]: File[] } | File[];
 const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
   const mapFields = (file: File, fieldName?: string) => {
     return {
+      id: ulid(),
       type: file.mimetype,
       originalName: file.originalname,
       name: file.filename,

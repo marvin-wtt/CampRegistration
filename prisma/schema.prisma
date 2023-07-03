@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(uuid()) @db.Char(36)
+  id            String        @id @unique(map: "users_id_unique") @db.Char(26)
   name          String        @db.VarChar(255)
   email         String        @unique(map: "users_email_unique") @db.VarChar(255)
   emailVerified Boolean?      @map("email_verified_at")
@@ -29,7 +29,7 @@ enum Role {
 }
 
 model Camp {
-  id              String         @id @default(uuid()) @db.Char(36)
+  id              String         @id @unique(map: "camps_id_unique") @db.Char(26)
   public          Boolean
   countries       Json           @db.Json
   name            Json           @db.Json
@@ -53,22 +53,22 @@ model Camp {
 }
 
 model CampManager {
-  id           String      @id @default(uuid()) @db.Char(36)
-  campId       String      @map("camp_id") @db.Char(36)
-  userId       String?     @map("user_id") @db.Char(36)
-  invitationId String?     @map("invitation_id") @db.Char(36)
-  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_camp_id_foreign")
-  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_user_id_foreign")
-  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_manager_invitation_id_foreign")
+  id           String      @id @unique(map: "camp_managers_id_unique") @db.Char(26)
+  campId       String      @map("camp_id") @db.Char(26)
+  userId       String?     @map("user_id") @db.Char(26)
+  invitationId String?     @map("invitation_id") @db.Char(26)
+  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_managers_camp_id_foreign")
+  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_managers_user_id_foreign")
+  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_managers_invitation_id_foreign")
 
-  @@index([campId], map: "camp_manager_camp_id_foreign")
-  @@index([userId], map: "camp_manager_user_id_foreign")
+  @@index([campId], map: "camp_managers_camp_id_foreign")
+  @@index([userId], map: "camp_managers_user_id_foreign")
   @@index([invitationId], map: "camp_manager_invitation_id_foreign")
-  @@map("camp_manager")
+  @@map("camp_managers")
 }
 
 model Invitation {
-  id          String        @id @default(uuid()) @db.Char(36)
+  id          String        @id @unique(map: "invitations_id_unique") @db.Char(26)
   email       String        @db.VarChar(255)
   token       String        @map("invitation_token") @db.VarChar(255)
   CampManager CampManager[]
@@ -77,10 +77,10 @@ model Invitation {
 }
 
 model Registration {
-  id        String    @id @default(uuid()) @db.Char(36)
-  campId    String?   @map("camp_id") @db.Char(36)
+  id        String    @id @unique(map: "registrations_id_unique") @db.Char(26)
+  campId    String?   @map("camp_id") @db.Char(26)
   data      Json      @db.Json
-  roomId    String?   @map("room_id") @db.Char(36)
+  roomId    String?   @map("room_id") @db.Char(26)
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
   camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_camp_id_foreign")
@@ -92,8 +92,8 @@ model Registration {
 }
 
 model Room {
-  id            String         @id @default(uuid()) @db.Char(36)
-  campId        String         @map("camp_id") @db.Char(36)
+  id            String         @id @unique(map: "rooms_id_unique") @db.Char(26)
+  campId        String         @map("camp_id") @db.Char(26)
   name          Json           @db.Json
   capacity      Int            @db.UnsignedInt
   camp          Camp           @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
@@ -104,8 +104,8 @@ model Room {
 }
 
 model Template {
-  id     String @id @default(uuid()) @db.Char(36)
-  campId String @map("camp_id") @db.Char(36)
+  id     String @id @unique(map: "templates_id_unique") @db.Char(26)
+  campId String @map("camp_id") @db.Char(26)
   data   Json   @db.Json
   camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "templates_camp_id_foreign")
 
@@ -115,7 +115,7 @@ model Template {
 
 model Token {
   id          Int       @id @default(autoincrement())
-  userId      String    @map("user_id") @db.Char(36)
+  userId      String    @map("user_id") @db.Char(26)
   token       String    @db.Char(255)
   type        TokenType
   expiresAt   DateTime  @map("expires_at")
@@ -134,7 +134,7 @@ enum TokenType {
 }
 
 model File {
-  id             String        @id @default(uuid()) @db.Char(36)
+  id             String        @id @unique(map: "files_id_unique") @db.Char(26)
   campId         String?       @map("camp_id") @db.Char(36) // Prisma does not support mirth
   registrationId String?       @map("registration_id") @db.Char(36) // Prisma does not support mirth
   name           String

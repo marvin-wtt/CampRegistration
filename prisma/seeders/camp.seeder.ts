@@ -1,12 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import form from "./json/campForm.json";
+import { ulid } from "../../src/utils/ulid"
 
 const name = "camp";
 
 const run = (prisma: PrismaClient) => {
   return prisma.camp.create({
     data: {
-      id: "98daa32a-f6dd-41bd-b723-af10071459ad",
+      id: "01H4BK6DFQAVVB5TDS5BJ1AB95 ",
       public: true,
       countries: ["de", "fr"],
       name: {
@@ -28,11 +29,10 @@ const run = (prisma: PrismaClient) => {
       price: 250.0,
       form: form,
       campManager: {
-        create: [
-          {
-            userId: "0a9b8159-d6b8-438c-9557-9dcaa52d0270",
-          },
-        ],
+        create: {
+          id: ulid(),
+          userId: "01H4BK7J4WV75DZNAQBHMM99MA",
+        }
       },
     },
   });

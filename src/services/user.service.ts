@@ -2,7 +2,7 @@ import { User, type Prisma } from "@prisma/client";
 import httpStatus from "http-status";
 import prisma from "../client";
 import ApiError from "../utils/ApiError";
-import { orderedUuid } from "../utils/uuid";
+import { ulid } from "../utils/ulid";
 import { encryptPassword } from "../utils/encryption";
 
 const createUser = async (
@@ -14,7 +14,7 @@ const createUser = async (
 
   return prisma.user.create({
     data: {
-      id: orderedUuid(),
+      id: ulid(),
       name: data.name,
       email: data.email,
       password: await encryptPassword(data.password),

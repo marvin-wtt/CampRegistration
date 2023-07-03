@@ -1,6 +1,6 @@
 import { type Prisma } from "@prisma/client";
 import prisma from "../client";
-import { orderedUuid } from "../utils/uuid";
+import { ulid } from "../utils/ulid";
 
 const getRoomById = async (campId: string, id: string) => {
   return prisma.room.findFirst({
@@ -17,7 +17,7 @@ const queryRooms = async (campId: string) => {
 const createRoom = async (campId: string, name: string, capacity: number) => {
   return prisma.room.create({
     data: {
-      id: orderedUuid(),
+      id: ulid(),
       name,
       capacity,
       campId,

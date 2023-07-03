@@ -1,6 +1,6 @@
 import { type Prisma } from "@prisma/client";
 import prisma from "../client";
-import { orderedUuid } from "../utils/uuid";
+import { ulid } from "../utils/ulid";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { campService } from "./index";
@@ -26,7 +26,7 @@ const createRegistration = async (campId: string, data: object) => {
   }
   return prisma.registration.create({
     data: {
-      id: orderedUuid(),
+      id: ulid(),
       data: data,
       campId: campId,
     },

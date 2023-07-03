@@ -1,6 +1,6 @@
 import { type Prisma } from "@prisma/client";
 import prisma from "../client";
-import { orderedUuid } from "../utils/uuid";
+import { ulid } from "../utils/ulid";
 
 const getTemplateById = async (campId: string, id: string) => {
   return prisma.template.findFirst({
@@ -17,7 +17,7 @@ const queryTemplates = async (campId: string) => {
 const createTemplate = async (campId: string, data: object) => {
   return prisma.template.create({
     data: {
-      id: orderedUuid(),
+      id: ulid(),
       data: data,
       campId: campId,
     },

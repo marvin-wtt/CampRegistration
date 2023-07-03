@@ -1,17 +1,17 @@
 import { type Prisma, PrismaClient } from "@prisma/client";
-import { randomUUID } from "crypto";
 import data from "./json/room.json";
+import { ulid } from "../../src/utils/ulid"
 
 const name = "room";
 
 const run = (prisma: PrismaClient) => {
-  const campId = "98daa32a-f6dd-41bd-b723-af10071459ad";
+  const campId = "01H4BK6DFQAVVB5TDS5BJ1AB95 ";
 
   const rooms: Prisma.RoomCreateManyInput[] = [];
 
   for (const room of data) {
     rooms.push({
-      id: randomUUID(),
+      id: ulid(),
       campId,
       name: room.name,
       capacity: room.capacity,

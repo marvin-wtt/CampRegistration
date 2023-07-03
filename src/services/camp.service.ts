@@ -1,6 +1,6 @@
 import { Camp, type Prisma } from "@prisma/client";
 import prisma from "../client";
-import { orderedUuid } from "../utils/uuid";
+import { ulid } from "../utils/ulid";
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
@@ -88,9 +88,9 @@ const createCamp = async (
 ) => {
   return prisma.camp.create({
     data: {
-      id: orderedUuid(),
+      id: ulid(),
       ...data,
-      campManager: { create: { userId } },
+      campManager: { create: { userId, id: ulid() } },
     },
   });
 };

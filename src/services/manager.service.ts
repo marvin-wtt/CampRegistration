@@ -1,5 +1,6 @@
 import prisma from "../client";
 import { randomUUID } from "crypto";
+import { ulid } from "../utils/ulid";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
@@ -51,9 +52,11 @@ const acceptManagerInvitation = async (
 const inviteManager = async (campId: string, email: string) => {
   return prisma.campManager.create({
     data: {
+      id: ulid(),
       camp: { connect: { id: campId } },
       invitation: {
         create: {
+          id: ulid(),
           email,
           token: randomUUID(),
         },

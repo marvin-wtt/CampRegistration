@@ -1,5 +1,5 @@
 import multer from "multer";
-import { orderedUuid } from "../utils/uuid";
+import { ulid } from "../utils/ulid";
 import config from "../config";
 import fs from "fs";
 
@@ -11,7 +11,7 @@ const multiPart = () => {
       cb(null, tmpDir);
     },
     filename: (req, file, cb) => {
-      const fileName = orderedUuid();
+      const fileName = ulid();
       const fileExtension = file.originalname.split(".").pop();
       cb(null, `${fileName}.${fileExtension}`);
     },
