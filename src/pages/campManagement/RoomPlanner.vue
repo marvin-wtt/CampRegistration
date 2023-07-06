@@ -125,7 +125,7 @@ const locales = computed<string[] | undefined>(() => {
 });
 
 const rooms = computed<Room[]>(() => {
-  const rooms = roomStore.rooms;
+  const rooms = roomStore.data;
   if (rooms === undefined) {
     return [];
   }
