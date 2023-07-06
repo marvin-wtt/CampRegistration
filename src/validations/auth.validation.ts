@@ -18,7 +18,6 @@ const login = {
 };
 
 const refreshTokens = {
-  // TODO Token can be in cookie too
   body: Joi.object().keys({
     refreshToken: Joi.string(),
   }),
