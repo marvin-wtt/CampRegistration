@@ -97,6 +97,11 @@ export const useAuthStore = defineStore('auth', () => {
 
       bus.emit('login', user.value);
 
+      if (!user.value) {
+        error.value = 'Login attempt failed!';
+        return;
+      }
+
       // Redirect to origin or home route
       const destination =
         'origin' in route.query && typeof route.query.origin === 'string'

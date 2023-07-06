@@ -44,13 +44,3 @@ export function hasResponseDataErrors(
     typeof e.response.data.errors === 'object'
   );
 }
-
-export function hasResponseDataMessages(
-  e: unknown
-): e is { response: { data: { message: string } } } {
-  return (
-    hasResponseData(e) &&
-    'message' in e.response.data &&
-    typeof e.response.data.message === 'string'
-  );
-}

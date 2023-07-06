@@ -246,7 +246,7 @@ const renderAsOptions = computed<{ label: string; value: string }[]>(() => {
 const fieldOptions = computed(() => {
   const form = props.camp.form as SurveyJSCampData;
 
-  return form.pages.flatMap((page) => {
+  const formFields = form.pages.flatMap((page) => {
     return page.elements
       .filter((element) => {
         return element.type !== 'expression';
@@ -258,6 +258,10 @@ const fieldOptions = computed(() => {
         };
       });
   });
+
+  // TODO Add default form fields
+
+  return formFields;
 });
 
 const fieldFilterOptions = ref(fieldOptions.value);

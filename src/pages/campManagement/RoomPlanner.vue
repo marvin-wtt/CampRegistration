@@ -108,7 +108,7 @@ const addLoading = ref(false);
 roomStore.fetchRooms();
 
 const loading = computed<boolean>(() => {
-  return roomStore.loading;
+  return roomStore.isLoading;
 });
 
 const error = computed<unknown>(() => {
@@ -171,7 +171,7 @@ function editRoom(room: Room): void {
       persistent: true,
     })
     .onOk((payload: Room) => {
-      // TODO Trigger store action
+      roomStore.updateRoom(room.id, payload);
     });
 }
 

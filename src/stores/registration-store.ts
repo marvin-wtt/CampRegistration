@@ -1,11 +1,8 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useQuasar } from 'quasar';
-import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 import { Registration } from 'src/types/Registration';
-import { useNotification } from 'src/composables/notifications';
+import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
   useAuthBus,
   useCampBus,
@@ -15,56 +12,41 @@ import { Camp } from 'src/types/Camp';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
-  const quasar = useQuasar();
-  const { t } = useI18n();
   const apiService = useAPIService();
   const authBus = useAuthBus();
   const bus = useRegistrationBus();
   const campBus = useCampBus();
-  const { withProgressNotification } = useNotification();
-
-  const data = ref<Registration[]>();
-  const isLoading = ref<boolean>(false);
-  const error = ref<string | null>(null);
+  const {
+    data,
+    isLoading,
+    error,
+    reset,
+    withProgressNotification,
+    errorOnFailure,
+    checkNotNullWithError,
+    checkNotNullWithNotification,
+  } = useServiceHandler<Registration[]>('registration');
 
   authBus.on('logout', () => {
     reset();
   });
 
-  campBus.on('change', async (camp: Camp) => {
-    await fetchData(camp.id);
-  });
-
-  function reset() {
-    data.value = undefined;
-    isLoading.value = false;
-    error.value = null;
-  }
-
-  async function fetchData(campId?: string) {
-    isLoading.value = true;
-    error.value = null;
-
-    campId = campId ?? (route.params.camp as string | undefined);
-    if (campId === undefined) {
-      error.value = '404';
-      isLoading.value = false;
+  campBus.on('change', async (camp?: Camp) => {
+    if (!camp) {
+      reset();
       return;
     }
 
-    try {
-      data.value = await apiService.fetchRegistrations(campId);
-    } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'error';
+    await fetchData(camp.id);
+  });
 
-      quasar.notify({
-        type: 'negative',
-        message: t('stores.registration.fetch.error'),
-        position: 'top',
-      });
-    }
+  async function fetchData(campId?: string) {
+    const cid: string = campId ?? (route.params.camp as string);
+    checkNotNullWithError(cid);
 
-    isLoading.value = false;
+    await errorOnFailure(async () => {
+      return await apiService.fetchRegistrations(cid);
+    });
   }
 
   async function updateData(
@@ -73,72 +55,39 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   ) {
     const campId = route.params.camp as string;
 
-    if (campId === undefined || registrationId === undefined) {
-      quasar.notify({
-        type: 'negative',
-        message: t('stores.registration.update.invalid'),
-        position: 'top',
-      });
-      return;
-    }
+    const cid = checkNotNullWithError(campId);
+    const rid = checkNotNullWithNotification(registrationId);
+    await withProgressNotification('update', async () => {
+      const updatedRegistration = await apiService.updateRegistration(
+        cid,
+        rid,
+        updateData
+      );
 
-    const success = await withProgressNotification(
-      async () => {
-        await apiService.updateRegistration(campId, registrationId, updateData);
-      },
-      {
-        progress: {
-          message: t('stores.registration.update.progress'),
-        },
-        success: {
-          message: t('stores.registration.update.success'),
-        },
-        error: {
-          message: t('stores.registration.update.error'),
-        },
-      }
-    );
+      // Replace the registration with a new one
+      data.value = data.value?.map((registration) =>
+        registration.id === registrationId ? updatedRegistration : registration
+      );
 
-    // Fetch data again because it updated
-    if (success) {
-      await fetchData();
-
-      bus.emit('update', registrationId);
-    }
+      bus.emit('update', updatedRegistration);
+    });
   }
 
   async function deleteData(registrationId?: string) {
     const campId = route.params.camp as string;
 
-    if (campId === undefined || registrationId === undefined) {
-      quasar.notify({
-        type: 'negative',
-        message: t('stores.registration.delete.invalid'),
-        position: 'top',
-      });
-      return;
-    }
+    const cid = checkNotNullWithError(campId);
+    const rid = checkNotNullWithNotification(registrationId);
+    await withProgressNotification('delete', async () => {
+      await apiService.deleteRegistration(cid, rid);
 
-    const success = await withProgressNotification(
-      async () => {
-        await apiService.deleteRegistration(campId, registrationId);
-      },
-      {
-        success: {
-          message: t('stores.registration.delete.success'),
-        },
-        error: {
-          message: t('stores.registration.delete.error'),
-        },
-      }
-    );
+      // Replace the registration with a new one
+      data.value = data.value?.filter(
+        (registration) => registration.id !== registrationId
+      );
 
-    // Fetch data again because it updated
-    if (success) {
-      await fetchData();
-
-      bus.emit('delete', registrationId);
-    }
+      bus.emit('delete', rid);
+    });
   }
 
   return {

@@ -41,16 +41,23 @@ export function useRegistrationService() {
   async function createRegistration(
     campId: string,
     data: Registration
-  ): Promise<void> {
-    await api.post(`camps/${campId}/registrations/`, data);
+  ): Promise<Registration> {
+    const response = await api.post(`camps/${campId}/registrations/`, data);
+
+    return response.data.data;
   }
 
   async function updateRegistration(
     campId: string,
     registrationId: string,
     data: Partial<Registration>
-  ): Promise<void> {
-    await api.put(`camps/${campId}/registrations/${registrationId}/`, data);
+  ): Promise<Registration> {
+    const response = await api.put(
+      `camps/${campId}/registrations/${registrationId}/`,
+      data
+    );
+
+    return response.data.data;
   }
 
   async function deleteRegistration(

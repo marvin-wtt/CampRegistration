@@ -14,12 +14,16 @@ export function useCampService() {
     return response.data.data;
   }
 
-  async function createCamp(data: Camp): Promise<void> {
-    await api.post('camps/', data);
+  async function createCamp(data: Camp): Promise<Camp> {
+    const response = await api.post('camps/', data);
+
+    return response.data.data;
   }
 
-  async function updateCamp(id: string, data: Partial<Camp>): Promise<void> {
-    await api.patch(`camps/${id}/`, data);
+  async function updateCamp(id: string, data: Partial<Camp>): Promise<Camp> {
+    const response = await api.patch(`camps/${id}/`, data);
+
+    return response.data.data;
   }
 
   async function deleteCamp(id: string): Promise<void> {

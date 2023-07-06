@@ -1,8 +1,8 @@
 import { Identifiable } from 'src/types/Identifiable';
+import { Room } from 'src/types/Room';
 
 export interface Registration extends Identifiable {
-  room_name?: string | Record<string, string>;
-  room_id?: string | null;
+  room?: Room;
   created_at: string;
   updated_at: string;
 

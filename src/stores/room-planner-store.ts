@@ -3,9 +3,7 @@ import { useAPIService } from 'src/services/APIService';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { Room } from 'src/types/Room';
-import { useQuasar } from 'quasar';
-import { useI18n } from 'vue-i18n';
-import { useNotification } from 'src/composables/notifications';
+import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
   useAuthBus,
   useCampBus,
@@ -21,39 +19,38 @@ import { formatPersonName, formatUniqueName } from 'src/utils/formatters';
 
 export const useRoomPlannerStore = defineStore('room-planner', () => {
   const apiService = useAPIService();
-  const quasar = useQuasar();
   const route = useRoute();
-  const { t } = useI18n();
-  const { withProgressNotification } = useNotification();
+  const {
+    data,
+    isLoading,
+    error,
+    reset,
+    withProgressNotification,
+    errorOnFailure,
+    checkNotNullWithError,
+    checkNotNullWithNotification,
+  } = useServiceHandler<Room[]>('room-planner');
   const campDetailsStore = useCampDetailsStore();
   const registrationsStore = useRegistrationsStore();
   const campBus = useCampBus();
   const authBus = useAuthBus();
   const registrationBus = useRegistrationBus();
 
-  const rooms = ref<Room[]>();
-  const isLoading = ref<boolean>(false);
-  const storeError = ref<string | object | null>(null);
-
   authBus.on('logout', () => {
     reset();
   });
 
-  campBus.on('change', async (camp: Camp) => {
+  campBus.on('change', async (camp?: Camp) => {
+    if (!camp) {
+      reset();
+      return;
+    }
     // TODO It should be monitored if the rooms are even needed at that point of time
     await fetchRooms(camp.id);
   });
 
   registrationBus.on('update', () => {
-    rooms.value = mapRoomsRoommates(rooms.value ?? []);
-  });
-
-  const loading = computed<boolean>(() => {
-    return isLoading.value || registrationsStore.isLoading;
-  });
-
-  const error = computed<string | object | null>(() => {
-    return storeError.value ?? registrationsStore.error;
+    data.value = mapRoomsRoommates(data.value ?? []);
   });
 
   const settings = ref<RegistrationSettings>({
@@ -65,7 +62,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
   });
 
   const availableRoommates = computed<Roommate[]>(() => {
-    const localRooms = rooms.value;
+    const localRooms = data.value;
     let results: Registration[] | undefined = registrationsStore.data;
 
     if (localRooms === undefined || results === undefined) {
@@ -196,155 +193,85 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     return rooms;
   }
 
-  function reset() {
-    rooms.value = undefined;
-    isLoading.value = false;
-    storeError.value = null;
-  }
-
   async function fetchRooms(campId?: string) {
-    isLoading.value = true;
-    storeError.value = null;
-
     campId = campId ?? (route.params.camp as string | undefined);
-    if (campId === undefined) {
-      storeError.value = '404';
-      isLoading.value = false;
-      return;
-    }
 
-    try {
-      const data = await apiService.fetchRooms(campId);
-      rooms.value = mapRoomsRoommates(data);
-    } catch (e: unknown) {
-      storeError.value = e instanceof Error ? e.message : 'error';
-
-      quasar.notify({
-        type: 'negative',
-        message: t('stores.room-planner.fetch.error'),
-        position: 'top',
-      });
-    }
-
-    isLoading.value = false;
+    const cid = checkNotNullWithError(campId);
+    await errorOnFailure(async () => {
+      const data = await apiService.fetchRooms(cid);
+      return mapRoomsRoommates(data);
+    });
   }
 
-  async function createRoom(data: Room): Promise<void> {
+  async function createRoom(createData: Room): Promise<void> {
     const campId = route.params.camp as string | undefined;
 
-    if (campId === undefined) {
-      storeError.value = '404';
-      isLoading.value = false;
-      return;
-    }
+    const cid = checkNotNullWithError(campId);
+    await withProgressNotification('create', async () => {
+      const room = await apiService.createRoom(cid, createData);
 
-    await withProgressNotification(
-      async () => {
-        const room = await apiService.createRoom(campId, data);
-
-        rooms.value?.push(mapRoomRoommates(room));
-      },
-      {
-        progress: {
-          message: t('store.room-planner.create.progress'),
-        },
-        success: {
-          message: t('store.room-planner.create.success'),
-        },
-        error: {
-          message: t('store.room-planner.create.error'),
-        },
-      }
-    );
+      data.value?.push(mapRoomRoommates(room));
+    });
   }
 
-  async function updateRoom(roomId: string | undefined, data: Partial<Room>) {
+  async function updateRoom(
+    roomId: string | undefined,
+    updateData: Partial<Room>
+  ) {
     const campId = route.params.camp as string;
 
-    if (campId === undefined || roomId === undefined) {
-      quasar.notify({
-        type: 'negative',
-        message: t('stores.room-planner.update.invalid'),
-        position: 'top',
-      });
-      return;
-    }
-
+    const cid = checkNotNullWithError(campId);
+    const rid = checkNotNullWithNotification(roomId);
     // TODO Check if people need to be removed first
-    await withProgressNotification(
-      async () => {
-        await apiService.updateRoom(campId, roomId, data);
+    await withProgressNotification('update', async () => {
+      await apiService.updateRoom(cid, rid, updateData);
 
-        // TODO Just replace the element instead
-        //  Also remapping needs to be done
-        await fetchRooms();
-      },
-      {
-        progress: {
-          message: t('stores.room-planner.update.progress'),
-        },
-        success: {
-          message: t('stores.room-planner.update.success'),
-        },
-        error: {
-          message: t('stores.room-planner.update.error'),
-        },
-      }
-    );
+      // TODO Just replace the element instead
+      //  Also remapping needs to be done
+      await fetchRooms();
+    });
   }
 
-  async function deleteRoom(roomId: string) {
+  async function deleteRoom(roomId: string | undefined) {
     const campId = route.params.camp as string;
 
-    if (campId === undefined) {
-      quasar.notify({
-        type: 'negative',
-        message: t('stores.room-planner.delete.invalid'),
-        position: 'top',
-      });
-      return;
-    }
+    const cid = checkNotNullWithError(campId);
+    const rid = checkNotNullWithNotification(roomId);
+    await withProgressNotification('delete', async () => {
+      await apiService.deleteRoom(cid, rid);
 
-    await withProgressNotification(
-      async () => {
-        await apiService.deleteRoom(campId, roomId);
-
-        // Remove the room from the list
-        const index = rooms.value?.findIndex((value) => value.id === roomId);
-        if (index !== undefined && index != -1) {
-          rooms.value?.splice(index, 1);
-        }
-
-        // TODO Inform bus - registration store needs to listen
-      },
-      {
-        success: {
-          message: t('stores.room-planner.delete.success'),
-        },
-        error: {
-          message: t('stores.room-planner.delete.error'),
-        },
+      // Remove the room from the list
+      const index = data.value?.findIndex((value) => value.id === rid);
+      if (index !== undefined && index != -1) {
+        data.value?.splice(index, 1);
       }
-    );
+      // TODO Inform bus - registration store needs to listen
+    });
   }
 
   async function addRoommate(roomId: string, roommateId: string) {
     const campId = route.params.camp as string;
-    // TODO
-    await apiService.createRoomRoommate(campId, roomId, roommateId);
+    // TODO Update registration instead
   }
 
   async function removeRoommate(roomId: string, roommateId: string) {
     const campId = route.params.camp as string;
-    // TODO
-    await apiService.deleteRoomRoommate(campId, roomId, roommateId);
+    // TODO Update registration instead
   }
 
+  const storeLoading = computed<boolean>(() => {
+    return isLoading.value || registrationsStore.isLoading;
+  });
+
+  const storeError = computed<string | object | null>(() => {
+    return error.value ?? registrationsStore.error;
+  });
+
   return {
-    rooms,
+    data,
     availableRoommates,
-    loading,
-    error,
+    isLoading: storeLoading,
+    error: storeError,
     fetchRooms,
     createRoom,
     updateRoom,
