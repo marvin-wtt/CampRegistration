@@ -39,10 +39,8 @@ app.use(compression());
 // enable cors
 app.use(
   cors({
-    // TODO
-    origin: "http://localhost:9000",
+    origin: config.origin || "*",
     credentials: true,
-    // origin: config.origin || "*",
   })
 );
 app.options("*", cors());
