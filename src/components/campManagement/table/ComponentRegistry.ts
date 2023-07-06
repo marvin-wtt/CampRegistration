@@ -46,7 +46,7 @@ const TableComponentRegistry = {
 
   remove: (name: string): void => {
     componentMap.delete(name);
-  }
+  },
 };
 
 export default TableComponentRegistry;
