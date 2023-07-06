@@ -13,7 +13,7 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
   },
   {
-    path: '/campManagement',
+    path: '/camp-management',
     component: () => import('layouts/CampManagementLayout.vue'),
     meta: {
       auth: true,
@@ -21,7 +21,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'campManagement',
+        name: 'camp-management',
         meta: {
           hideDrawer: true,
         },
