@@ -50,6 +50,9 @@ app.use(passport.initialize());
 passport.use(jwtStrategy);
 passport.use(anonymousStrategy);
 
+// view engine
+app.set('view engine', 'ejs');
+
 // api routes
 app.use("/api", apiRoutes);
 app.use(express.static("public"));
