@@ -58,17 +58,12 @@ export function useServiceHandler<T>(storeName: string) {
   }
 
   function defaultResultOptions(
-    options?: ResultOptions
+    operation: string,
+    options?: ResultOptions,
   ): Required<ResultOptions> {
     // Set defaults
-    const successOptions = options?.success ?? {};
-    successOptions.type = successOptions.type ?? 'positive';
-    successOptions.position = successOptions.position ?? 'top';
-
-    //
-    const errorOptions = options?.error ?? {};
-    errorOptions.type = errorOptions.type ?? 'negative';
-    errorOptions.position = errorOptions.position ?? 'top';
+    const successOptions = defaultSuccessOptions(operation, options?.success);
+    const errorOptions = defaultErrorOptions(operation, options?.error);
 
     return {
       success: successOptions,
@@ -157,11 +152,12 @@ export function useServiceHandler<T>(storeName: string) {
   }
 
   async function withResultNotification<T>(
+    operation: string,
     fn: () => Promise<T>,
     options?: ResultOptions
   ): Promise<boolean> {
     // TODO Fetch default message
-    const opt = defaultResultOptions(options);
+    const opt = defaultResultOptions(operation, options);
 
     // Set defaults
     try {
@@ -179,8 +175,8 @@ export function useServiceHandler<T>(storeName: string) {
   }
 
   async function withErrorNotification<T>(
-    fn: () => Promise<T>,
     operation: string,
+    fn: () => Promise<T>,
     options?: QNotifyCreateOptions
   ): Promise<boolean> {
     const opt = defaultErrorOptions(operation, options);

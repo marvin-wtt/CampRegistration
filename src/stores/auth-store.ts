@@ -1,16 +1,11 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import { ref } from 'vue';
 import { User } from 'src/types/User';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
-import {
-  hasResponseData,
-  hasResponseDataErrors,
-  hasResponseStatusText,
-} from 'src/composables/errorChecker';
 import { useAuthBus } from 'src/composables/bus';
 import { AccessTokens } from 'src/types/AccessTokens';
+import { useServiceHandler } from 'src/composables/serviceHandler';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -19,14 +14,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   const bus = useAuthBus();
 
-  const user = ref<User>();
-  const loading = ref<boolean>(false);
-  const error = ref<string | object | null>(null);
+  const {
+    data,
+    isLoading,
+    error,
+    reset: resetDefault,
+    withErrorNotification,
+    withResultNotification,
+    errorOnFailure,
+  } = useServiceHandler<User>('user');
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
 
   // Redirect to login page on unauthorized error
+  // TODO Avoid using axios here.
   api.interceptors.response.use(
     (response) => {
       return response;
@@ -77,9 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
       accessTokenTimer = null;
     }
 
-    user.value = undefined;
-    loading.value = false;
-    error.value = null;
+    resetDefault();
   }
 
   async function login(
@@ -87,20 +87,12 @@ export const useAuthStore = defineStore('auth', () => {
     password: string,
     remember = false
   ): Promise<void> {
-    loading.value = true;
-
-    try {
+    await errorOnFailure(async () => {
       const result = await apiService.login(email, password, remember);
-      user.value = result.user;
+
+      bus.emit('login', result.user);
 
       handleTokenRefresh(result.tokens);
-
-      bus.emit('login', user.value);
-
-      if (!user.value) {
-        error.value = 'Login attempt failed!';
-        return;
-      }
 
       // Redirect to origin or home route
       const destination =
@@ -109,21 +101,9 @@ export const useAuthStore = defineStore('auth', () => {
           : 'campManagement';
 
       await router.push(destination);
-    } catch (e: unknown) {
-      // TODO Show error as notification
 
-      error.value = hasResponseDataErrors(e)
-        ? e.response.data.errors
-        : hasResponseData(e)
-        ? e.response.data
-        : hasResponseStatusText(e)
-        ? e.response.statusText
-        : e instanceof Error
-        ? e.message
-        : 'error';
-    }
-
-    loading.value = false;
+      return result.user;
+    });
   }
 
   async function refreshTokens(): Promise<boolean> {
@@ -159,52 +139,45 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUser(): Promise<void> {
-    loading.value = true;
-    error.value = null;
-
-    try {
-      user.value = await apiService.fetchProfile();
-    } catch (e: unknown) {
-      error.value =
-        e instanceof Error ? e.message : typeof e === 'string' ? e : 'error';
-    } finally {
-      loading.value = false;
-    }
+    await errorOnFailure(async () => {
+      return await apiService.fetchProfile();
+    });
   }
 
   async function logout(): Promise<void> {
-    await apiService.logout();
+    await withErrorNotification('logout', async () => {
+      await apiService.logout();
 
-    // Reset all stores to make sure no confidential data is kept in memory
-    reset();
+      reset();
 
-    bus.emit('logout');
+      bus.emit('logout');
+    });
 
     await router.push('/');
   }
 
-  async function register(email: string, password: string) {
-    // TODO Progress
-    await apiService.register(email, password);
-    // TODO emit event
+  async function register(name: string, email: string, password: string) {
+    await withResultNotification('register', async () => {
+      await apiService.register(name, email, password);
+    });
   }
 
   async function forgotPassword(email: string) {
-    // TODO Progress
-    await apiService.forgotPassword(email);
-    // TODO emit event
+    await withErrorNotification('forgot-password', async () => {
+      await apiService.forgotPassword(email);
+    });
   }
 
   async function resetPassword(token: string, email: string, password: string) {
-    // TODO Progress
-    await apiService.resetPassword(token, email, password);
-    // TODO emit event
+    await withErrorNotification('reset-password', async () => {
+      await apiService.resetPassword(token, email, password);
+    });
   }
 
   return {
-    user,
+    user: data,
     error,
-    loading,
+    loading: isLoading,
     fetchUser,
     login,
     logout,

@@ -30,10 +30,15 @@ export function useAuthService() {
     return response.data;
   }
 
-  async function register(email: string, password: string): Promise<void> {
+  async function register(
+    name: string,
+    email: string,
+    password: string
+  ): Promise<void> {
     const response = await api.post('auth/register', {
-      email: email,
-      password: password,
+      name,
+      email,
+      password,
     });
 
     return response.data;
