@@ -78,6 +78,11 @@ const routes: RouteRecordRaw[] = [
             name: 'expenses',
             component: () => import('pages/campManagement/ExpensesPage.vue'),
           },
+          {
+            path: 'settings',
+            name: 'settings',
+            component: () => import('pages/campManagement/SettingsPage.vue'),
+          },
         ],
       },
     ],
