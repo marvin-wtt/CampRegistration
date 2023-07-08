@@ -1,10 +1,10 @@
 import Joi from "joi";
-import { password } from "./custom.validation";
+import { PasswordSchema } from "./custom.validation";
 
 const update = {
   body: Joi.object({
     email: Joi.string().email(),
-    password: Joi.string().custom(password),
+    password: PasswordSchema,
     name: Joi.string(),
   }).min(1),
 };

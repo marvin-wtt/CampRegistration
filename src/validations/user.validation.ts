@@ -1,6 +1,6 @@
 import { Role } from "@prisma/client";
 import Joi from "joi";
-import { password } from "./custom.validation";
+import { PasswordSchema } from "./custom.validation";
 
 const show = {
   params: Joi.object({
@@ -22,7 +22,7 @@ const index = {
 const store = {
   body: Joi.object({
     email: Joi.string().required().email(),
-    password: Joi.string().required().custom(password),
+    password: PasswordSchema,
     name: Joi.string().required(),
     role: Joi.string().valid(Role.USER, Role.ADMIN),
   }),
@@ -34,7 +34,7 @@ const update = {
   }),
   body: Joi.object({
     email: Joi.string().email(),
-    password: Joi.string().custom(password),
+    password: PasswordSchema,
     name: Joi.string(),
   }).min(1),
 };
