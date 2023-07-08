@@ -53,7 +53,7 @@
             />
 
             <router-link
-              to="/forgot-password"
+              :to="{ name: 'forgot-password' }"
               style="text-decoration: none; color: inherit"
               class="col-shrink flex justify-center content-center"
             >
@@ -81,7 +81,8 @@
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.create_new')"
+            :label="t('actions.register')"
+            :to="{ name: 'register' }"
             rounded
             outline
           />
@@ -147,7 +148,7 @@ function hasPasswordErrorField(e: unknown): e is { password: string } {
   );
 }
 </script>
-
+<!-- TODO Add translations -->
 <i18n lang="yaml" locale="en">
 title: 'Login'
 
@@ -164,6 +165,6 @@ fields:
 
 actions:
   login: 'Login'
-  create_new: 'Create New'
+  register: 'Register'
   forgot_password: 'Forgot password ?'
 </i18n>
