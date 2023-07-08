@@ -1,111 +1,125 @@
 <template>
-  <q-menu>
-    <q-list style="min-width: 100px">
-      <q-item>
-        <q-item-section>
-          <q-item-label>
-            {{ t('username') }}
-          </q-item-label>
-          <q-item-label caption>
-            {{ user?.name }}
-          </q-item-label>
-          <q-item-label caption>
-            {{ user?.email }}
-          </q-item-label>
-        </q-item-section>
-      </q-item>
+  <q-btn
+    v-if="authenticated"
+    flat
+    icon="account_circle"
+    stretch
+  >
+    <q-menu>
+      <q-list style="min-width: 100px">
+        <q-item>
+          <q-item-section>
+            <q-item-label>
+              {{ t('username') }}
+            </q-item-label>
+            <q-item-label caption>
+              {{ user?.name }}
+            </q-item-label>
+            <q-item-label caption>
+              {{ user?.email }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
 
-      <q-separator />
+        <q-separator />
 
-      <q-item
-        v-close-popup
-        clickable
-      >
-        <q-item-section avatar>
-          <q-icon name="account_circle" />
-        </q-item-section>
-        <q-item-section>
-          {{ t('profile') }}
-        </q-item-section>
-      </q-item>
-
-      <q-item
-        v-close-popup
-        clickable
-        @click="goToCamps"
-      >
-        <q-item-section avatar>
-          <q-icon name="home" />
-        </q-item-section>
-        <q-item-section>
-          {{ t('camps') }}
-        </q-item-section>
-      </q-item>
-
-      <q-separator />
-
-      <q-item
-        v-close-popup
-        clickable
-        @click="toggleDarkMode"
-      >
-        <q-item-section avatar>
-          <q-icon name="dark_mode" />
-        </q-item-section>
-        <q-item-section>
-          {{ t('dark_mode') }}
-        </q-item-section>
-      </q-item>
-
-      <q-item clickable>
-        <q-item-section avatar>
-          <q-icon name="language" />
-        </q-item-section>
-        <q-item-section>
-          {{ t('language') }}
-        </q-item-section>
-
-        <q-menu
-          anchor="top start"
-          auto-close
-          self="top end"
+        <q-item
+          v-close-popup
+          clickable
         >
-          <q-list>
-            <q-item
-              v-for="localeOption in locales"
-              :key="localeOption.value"
-              clickable
-              @click="updateLocale(localeOption.value)"
-            >
-              <q-item-section avatar>
-                <country-icon :locale="localeOption.country" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>
-                  {{ localeOption.label }}
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </q-item>
+          <q-item-section avatar>
+            <q-icon name="account_circle" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('profile') }}
+          </q-item-section>
+        </q-item>
 
-      <q-separator />
+        <q-item
+          v-close-popup
+          clickable
+          @click="goToCamps"
+        >
+          <q-item-section avatar>
+            <q-icon name="home" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('camps') }}
+          </q-item-section>
+        </q-item>
 
-      <q-item
-        v-close-popup
-        clickable
-        @click="logout"
-      >
-        <q-item-section avatar>
-          <q-icon name="logout" />
-        </q-item-section>
-        <q-item-section>
-          {{ t('logout') }}
-        </q-item-section>
-      </q-item>
-    </q-list>
-  </q-menu>
+        <q-separator />
+
+        <q-item
+          v-close-popup
+          clickable
+          @click="toggleDarkMode"
+        >
+          <q-item-section avatar>
+            <q-icon name="dark_mode" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('dark_mode') }}
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable>
+          <q-item-section avatar>
+            <q-icon name="language" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('language') }}
+          </q-item-section>
+
+          <q-menu
+            anchor="top start"
+            auto-close
+            self="top end"
+          >
+            <q-list>
+              <q-item
+                v-for="localeOption in locales"
+                :key="localeOption.value"
+                clickable
+                @click="updateLocale(localeOption.value)"
+              >
+                <q-item-section avatar>
+                  <country-icon :locale="localeOption.country" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>
+                    {{ localeOption.label }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-item>
+
+        <q-separator />
+
+        <q-item
+          v-close-popup
+          clickable
+          @click="logout"
+        >
+          <q-item-section avatar>
+            <q-icon name="logout" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('logout') }}
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-menu>
+  </q-btn>
+
+  <q-btn
+    v-else
+    :to="{ name: 'login' }"
+    :label="t('login')"
+    stretch
+  />
 </template>
 
 <script lang="ts" setup>
@@ -127,11 +141,16 @@ const { locale } = useI18n({
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
+// TODO Read from config
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE', country: 'de' },
   { label: 'Français', value: 'fr-FR', country: 'fr' },
   { label: 'English', value: 'en-US', country: 'us' },
 ]);
+
+const authenticated = computed<boolean>(() => {
+  return authStore.user !== undefined;
+});
 
 function goToCamps() {
   router.push({
@@ -157,6 +176,7 @@ function logout() {
 <i18n lang="yaml" locale="en">
 username: 'Signed in as'
 camps: 'My camps'
+login: 'Login'
 logout: 'Sing out'
 profile: 'Profile'
 language: 'Language'

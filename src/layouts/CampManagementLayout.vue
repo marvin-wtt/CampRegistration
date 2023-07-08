@@ -56,21 +56,7 @@
           vertical
         />
 
-        <q-btn
-          v-if="authenticated"
-          flat
-          icon="account_circle"
-          stretch
-        >
-          <profile-menu />
-        </q-btn>
-
-        <q-btn
-          v-if="!authenticated"
-          :to="{ name: 'login' }"
-          :label="t('login')"
-          stretch
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -289,10 +275,6 @@ const showDrawer = computed<boolean>(() => {
 
 const title = computed(() => {
   return showDrawer.value ? campDetailStore.data?.name : t('app_name');
-});
-
-const authenticated = computed<boolean>(() => {
-  return authStore.user !== undefined;
 });
 </script>
 
