@@ -25,7 +25,7 @@ const store = {
     password: PasswordSchema,
     name: Joi.string().required(),
     role: Joi.string().valid(Role.USER, Role.ADMIN),
-    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/g),
+    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
   }),
 };
 
@@ -37,7 +37,7 @@ const update = {
     email: Joi.string().email(),
     password: PasswordSchema,
     name: Joi.string(),
-    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/g),
+    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
   }).min(1),
 };
 

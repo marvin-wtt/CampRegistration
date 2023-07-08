@@ -6,7 +6,7 @@ const update = {
     email: Joi.string().email(),
     password: PasswordSchema,
     name: Joi.string(),
-    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/g),
+    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
   }).min(1),
 };
 
