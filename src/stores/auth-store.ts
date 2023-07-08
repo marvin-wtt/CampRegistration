@@ -58,10 +58,9 @@ export const useAuthStore = defineStore('auth', () => {
       // Clear current user for login page
       reset();
 
-      if (!route.path.startsWith('/login')) {
-        // TODO Why are named routes not working?
+      if (route.name !== 'login') {
         await router.push({
-          path: '/login',
+          name: 'login',
           query: {
             origin: encodeURIComponent(route.path),
           },
@@ -98,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
       const destination =
         'origin' in route.query && typeof route.query.origin === 'string'
           ? decodeURIComponent(route.query.origin)
-          : 'campManagement';
+          : { name: 'camp-management' };
 
       await router.push(destination);
 
