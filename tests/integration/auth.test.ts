@@ -5,6 +5,7 @@ import request from "supertest";
 import prisma from "../utils/prisma";
 import app from "../../src/app";
 import { TokenType, User } from "@prisma/client";
+import { UserFactory } from "../../prisma/factories";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -65,12 +66,10 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code if the email is already used", async () => {
-      prisma.user.create({
-        data: {
-          email: "test@email.net",
-          name: "test",
-          password: "",
-        },
+      await UserFactory.create({
+        email: "test@email.net",
+        name: "test",
+        password: "",
       });
 
       const { status } = await request(app).post("/api/v1/auth/register").send({
@@ -128,12 +127,10 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/login", () => {
     beforeEach(async () => {
-      await prisma.user.create({
-        data: {
-          name: "testuser",
-          email: "test@email.net",
-          password: bcrypt.hashSync("password", 8),
-        },
+      await UserFactory.create({
+        name: "testuser",
+        email: "test@email.net",
+        password: bcrypt.hashSync("password", 8),
       });
     });
 

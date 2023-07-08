@@ -8,6 +8,7 @@ export const UserFactory = {
       name: faker.person.fullName(),
       password: "password",
       email: faker.internet.email(),
+      emailVerified: true,
       ...data,
     };
   },

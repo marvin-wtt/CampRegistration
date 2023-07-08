@@ -11,7 +11,7 @@ model User {
   id            String        @id @unique(map: "users_id_unique") @db.Char(26)
   name          String        @db.VarChar(255)
   email         String        @unique(map: "users_email_unique") @db.VarChar(255)
-  emailVerified Boolean?      @map("email_verified_at")
+  emailVerified Boolean       @map("email_verified_at") @default(false)
   password      String        @db.VarChar(255)
   role          Role          @default(USER)
   locale        String        @default("en-US") @db.VarChar(5)
