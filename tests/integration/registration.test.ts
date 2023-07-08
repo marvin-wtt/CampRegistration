@@ -3,8 +3,14 @@ import prisma from "../utils/prisma";
 import { generateAccessToken } from "../utils/token";
 import request from "supertest";
 import app from "../../src/app";
-import { CampFactory, UserFactory } from "../../prisma/factories";
+import {
+  CampFactory,
+  FileFactory,
+  RegistrationFactory,
+  UserFactory,
+} from "../../prisma/factories";
 import { Camp, Registration, User } from "@prisma/client";
+import { ulid } from "ulidx";
 
 export interface RegistrationTestContext {
   user: User;
@@ -56,20 +62,19 @@ describe("/api/v1/camps/:campId/registrations", () => {
       },
       campManager: {
         create: {
+          id: ulid(),
           userId: context.user.id,
         },
       },
     });
-    context.registration = await prisma.registration.create({
+    context.registration = await RegistrationFactory.create({
       data: {
-        data: {
-          first_name: "Jhon",
-          last_name: "Doe",
-        },
-        camp: {
-          connect: {
-            id: context.camp.id,
-          },
+        first_name: "Jhon",
+        last_name: "Doe",
+      },
+      camp: {
+        connect: {
+          id: context.camp.id,
         },
       },
     });
@@ -93,47 +98,41 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it<RegistrationTestContext>("should include files in the response body ", async (context) => {
-      await prisma.file.create({
-        data: {
-          field: "file_field",
-          name: "file.pdf",
-          type: "application/pdf",
-          originalName: "FileName",
-          size: 1000,
-          registration: {
-            connect: {
-              id: context.registration.id,
-            },
+      await FileFactory.create({
+        field: "file_field",
+        name: "file.pdf",
+        type: "application/pdf",
+        originalName: "FileName",
+        size: 1000,
+        registration: {
+          connect: {
+            id: context.registration.id,
           },
         },
       });
 
-      await prisma.file.create({
-        data: {
-          field: "multiple_files_field",
-          name: "file1.pdf",
-          type: "application/pdf",
-          originalName: "FileName1",
-          size: 1000,
-          registration: {
-            connect: {
-              id: context.registration.id,
-            },
+      await FileFactory.create({
+        field: "multiple_files_field",
+        name: "file1.pdf",
+        type: "application/pdf",
+        originalName: "FileName1",
+        size: 1000,
+        registration: {
+          connect: {
+            id: context.registration.id,
           },
         },
       });
 
-      await prisma.file.create({
-        data: {
-          field: "multiple_files_field",
-          name: "file2.pdf",
-          type: "application/pdf",
-          originalName: "FileName2",
-          size: 1000,
-          registration: {
-            connect: {
-              id: context.registration.id,
-            },
+      await FileFactory.create({
+        field: "multiple_files_field",
+        name: "file2.pdf",
+        type: "application/pdf",
+        originalName: "FileName2",
+        size: 1000,
+        registration: {
+          connect: {
+            id: context.registration.id,
           },
         },
       });
@@ -230,12 +229,12 @@ describe("/api/v1/camps/:campId/registrations", () => {
                 {
                   name: "some_field",
                   type: "text",
-                  isRequired: true
+                  isRequired: true,
                 },
                 {
                   name: "some_file",
                   type: "file",
-                  isRequired: true
+                  isRequired: true,
                 },
               ],
             },

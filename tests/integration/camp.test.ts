@@ -6,6 +6,7 @@ import app from "../../src/app";
 import { CampFactory, UserFactory } from "../../prisma/factories";
 import {Camp, Prisma, User} from "@prisma/client";
 import moment from "moment";
+import {ulid} from "ulidx";
 
 // test.todo("Camp manager invitation");
 
@@ -65,6 +66,7 @@ describe("/api/v1/camps", () => {
       public: true,
       campManager: {
         create: {
+          id: ulid(),
           userId: context.user.id,
         },
       },
@@ -73,6 +75,7 @@ describe("/api/v1/camps", () => {
       public: false,
       campManager: {
         create: {
+          id: ulid(),
           userId: context.user.id,
         },
       },
@@ -170,6 +173,7 @@ describe("/api/v1/camps", () => {
   describe("POST /api/v1/camps", () => {
     it<CampTestContext>("should respond with `201` status code when user is authenticated", async (context) => {
       const data = {
+        id: ulid(),
         public: false,
         countries: ["de"],
         name: { de: "Test Camp" },
@@ -221,6 +225,7 @@ describe("/api/v1/camps", () => {
   describe("PATCH /api/v1/camps/:campId", () => {
     it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context)  => {
       const data = {
+        id: ulid(),
         public: false,
         countries: ["de"],
         name: { de: "Test Camp" },
