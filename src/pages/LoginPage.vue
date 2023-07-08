@@ -17,8 +17,6 @@
             type="email"
             autocomplete="username"
             :rules="[(val) => !!val || t('fields.email.rules.required')]"
-            :error="emailError !== undefined ? true : undefined"
-            :error-message="emailError"
             :label="t('fields.email.label')"
             outlined
             rounded
@@ -33,8 +31,6 @@
             type="password"
             autocomplete="current-password"
             :rules="[(val) => !!val || t('fields.password.rules.required')]"
-            :error="passwordError !== undefined ? true : undefined"
-            :error-message="passwordError"
             :label="t('fields.password.label')"
             outlined
             rounded
@@ -114,53 +110,12 @@ const remember = ref<boolean>(false);
 const authStore = useAuthStore();
 const { loading } = storeToRefs(authStore);
 
-const error = computed<string | undefined>(() => {
-  if (emailError.value || passwordError.value) {
-    return undefined;
-  }
-
-  return authStore.error as string;
-});
-
-const emailError = computed<string | undefined>(() => {
-  const error = authStore.error;
-
-  if (!hasEmailErrorField(error)) {
-    return undefined;
-  }
-
-  return error.email[0];
-});
-
-const passwordError = computed<string | undefined>(() => {
-  const error = authStore.error;
-  if (!hasPasswordErrorField(error)) {
-    return undefined;
-  }
-
-  return error.password;
+const error = computed(() => {
+  return authStore.error;
 });
 
 function login() {
   authStore.login(email.value, password.value, remember.value);
-}
-
-function hasEmailErrorField(e: unknown): e is { email: string[] } {
-  return (
-    e !== null &&
-    typeof e === 'object' &&
-    'email' in e &&
-    Array.isArray(e.email)
-  );
-}
-
-function hasPasswordErrorField(e: unknown): e is { password: string } {
-  return (
-    e !== null &&
-    typeof e === 'object' &&
-    'password' in e &&
-    typeof e.password === 'string'
-  );
 }
 </script>
 <!-- TODO Add translations -->
