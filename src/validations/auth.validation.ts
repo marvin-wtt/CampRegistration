@@ -1,11 +1,17 @@
 import Joi from "joi";
-import { password } from "./custom.validation";
+import passwordComplexity from "joi-password-complexity";
+
+const passwordComplexityOptions = {
+  min: 8,
+  symbol: 1,
+  numeric: 1,
+};
 
 const register = {
   body: Joi.object().keys({
     name: Joi.string().required(),
     email: Joi.string().required().email(),
-    password: Joi.string().required().custom(password),
+    password: passwordComplexity(passwordComplexityOptions),
   }),
 };
 
@@ -34,7 +40,7 @@ const resetPassword = {
     token: Joi.string().required(),
   }),
   body: Joi.object().keys({
-    password: Joi.string().required().custom(password),
+    password: passwordComplexity(passwordComplexityOptions),
   }),
 };
 
