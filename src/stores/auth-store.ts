@@ -157,13 +157,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(name: string, email: string, password: string) {
-    await withResultNotification('register', async () => {
+    await errorOnFailure(async () => {
       await apiService.register(name, email, password);
+      // Return undefined as registration does not log in automatically
+      return undefined;
     });
   }
 
   async function forgotPassword(email: string) {
-    await withErrorNotification('forgot-password', async () => {
+    await withResultNotification('forgot-password', async () => {
       await apiService.forgotPassword(email);
     });
   }
