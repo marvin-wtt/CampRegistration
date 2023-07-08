@@ -57,12 +57,20 @@
         />
 
         <q-btn
+          v-if="authenticated"
           flat
           icon="account_circle"
           stretch
         >
           <profile-menu />
         </q-btn>
+
+        <q-btn
+          v-if="!authenticated"
+          :to="{ name: 'login' }"
+          :label="t('login')"
+          stretch
+        />
       </q-toolbar>
     </q-header>
 
@@ -210,22 +218,15 @@
         </q-item>
 
         <q-item
-          v-if="beta"
           v-ripple
+          :to="{ name: 'settings' }"
           clickable
-          disable
         >
           <q-item-section avatar>
             <q-icon name="settings" />
           </q-item-section>
 
           <q-item-section>
-            <q-badge
-              align="top"
-              floating
-              rounded
-              >Coming soon!
-            </q-badge>
             {{ t('settings') }}
           </q-item-section>
         </q-item>
@@ -289,9 +290,14 @@ const showDrawer = computed<boolean>(() => {
 const title = computed(() => {
   return showDrawer.value ? campDetailStore.data?.name : t('app_name');
 });
+
+const authenticated = computed<boolean>(() => {
+  return authStore.user !== undefined;
+});
 </script>
 
 <i18n lang="yaml" locale="en">
+login: 'Login'
 camps: 'Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
@@ -306,6 +312,7 @@ tools: 'Tools'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+login: 'Login'
 camps: 'Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
@@ -320,6 +327,7 @@ tools: 'Tools'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+login: 'Login'
 camps: 'Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
