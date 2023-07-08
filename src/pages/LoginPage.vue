@@ -96,7 +96,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
@@ -112,6 +112,11 @@ const { loading } = storeToRefs(authStore);
 
 const error = computed(() => {
   return authStore.error;
+});
+
+onMounted(() => {
+  // Suppress any previous errors
+  authStore.reset();
 });
 
 function login() {
