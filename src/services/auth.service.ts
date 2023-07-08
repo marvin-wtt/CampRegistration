@@ -15,7 +15,11 @@ const loginUserWithEmailAndPassword = async (
   const user = await userService.getUserByEmailWithCamps(email);
 
   if (!user || !(await isPasswordMatch(password, user.password as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect email or password");
+    throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect email or password.");
+  }
+
+  if (!user.emailVerified) {
+    throw new ApiError(httpStatus.FORBIDDEN, "Please confirm your email to login.")
   }
 
   return exclude(user, ["password"]);

@@ -228,6 +228,21 @@ describe("/api/v1/auth", async () => {
       );
     });
 
+    it("should respond with a `403` status code when email is not verified", async () => {
+      await UserFactory.create({
+        email: 'test2@email.net',
+        emailVerified: false,
+        password: bcrypt.hashSync("password", 8)
+      })
+
+      const { status } = await request(app).post("/api/v1/auth/login").send({
+        email: "test2@email.net",
+        password: "password",
+        remember: true,
+      });
+      expect(status).toBe(403);
+    });
+
     it("should respond with a `400` status code when given invalid credentials", async () => {
       const { body, status } = await request(app)
         .post("/api/v1/auth/login")
