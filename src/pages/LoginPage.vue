@@ -74,6 +74,13 @@
           />
         </q-card-actions>
 
+        <q-card-section
+          v-if="error"
+          class="text-negative text-center text-bold"
+        >
+          {{ error }}
+        </q-card-section>
+
         <q-separator spaced />
 
         <q-card-section class="text-center">
@@ -106,6 +113,14 @@ const remember = ref<boolean>(false);
 
 const authStore = useAuthStore();
 const { loading } = storeToRefs(authStore);
+
+const error = computed<string | undefined>(() => {
+  if (emailError.value || passwordError.value) {
+    return undefined;
+  }
+
+  return authStore.error as string;
+});
 
 const emailError = computed<string | undefined>(() => {
   const error = authStore.error;
