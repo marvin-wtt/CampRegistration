@@ -26,8 +26,7 @@ const register = catchRequestAsync(async (req, res) => {
     "createdAt",
     "updatedAt",
   ]);
-  const tokens = await tokenService.generateAuthTokens(user);
-  res.status(httpStatus.CREATED).send({ user: userWithoutPassword, tokens });
+  res.status(httpStatus.CREATED).json(userWithoutPassword);
 });
 
 const login = catchRequestAsync(async (req, res) => {
