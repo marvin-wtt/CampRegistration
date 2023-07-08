@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker/locale/de";
 import { Prisma } from "@prisma/client";
 import prisma from "../../tests/utils/prisma";
+import { ulid } from "ulidx";
 
 export const CampFactory = {
   build: (data: Partial<Prisma.CampCreateInput>): Prisma.CampCreateInput => {
@@ -20,7 +21,7 @@ export const CampFactory = {
     });
 
     return {
-      id: faker.string.uuid(),
+      id: ulid(),
       public: faker.datatype.boolean(),
       countries: ["de"],
       name: { de: faker.lorem.word() },
