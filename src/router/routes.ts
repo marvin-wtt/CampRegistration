@@ -7,10 +7,48 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
   },
   {
-    name: 'login',
     path: '/login',
     component: () => import('layouts/AuthenticationLayout.vue'),
-    children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
+    children: [
+      {
+        name: 'login',
+        path: '',
+        component: () => import('pages/LoginPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/register',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'register',
+        path: '/register',
+        component: () => import('pages/RegisterPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/forgot-password',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'forgot-password',
+        path: '',
+        component: () => import('pages/ForgotPassword.vue'),
+      },
+    ],
+  },
+  {
+    path: '/reset-password',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'reset-password',
+        path: '',
+        component: () => import('pages/ResetPassword.vue'),
+      },
+    ],
   },
   {
     path: '/camp-management',

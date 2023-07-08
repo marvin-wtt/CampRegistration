@@ -11,9 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const route = useRoute();
-
   const bus = useAuthBus();
-
   const {
     data,
     isLoading,
@@ -22,7 +20,10 @@ export const useAuthStore = defineStore('auth', () => {
     withErrorNotification,
     withResultNotification,
     errorOnFailure,
+    checkNotNullWithError,
   } = useServiceHandler<User>('user');
+
+  // TODO Add i18n message for all operations
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
@@ -158,6 +159,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(name: string, email: string, password: string) {
     await errorOnFailure(async () => {
       await apiService.register(name, email, password);
+
+      await router.push({ name: 'login' });
+
       // Return undefined as registration does not log in automatically
       return undefined;
     });
@@ -166,12 +170,22 @@ export const useAuthStore = defineStore('auth', () => {
   async function forgotPassword(email: string) {
     await withResultNotification('forgot-password', async () => {
       await apiService.forgotPassword(email);
+
+      await router.push({ name: 'login' });
     });
   }
 
-  async function resetPassword(token: string, email: string, password: string) {
+  async function resetPassword(password: string) {
+    const email = route.query.email as string;
+    const token = route.query.token as string;
+
+    checkNotNullWithError(email);
+    checkNotNullWithError(token);
+
     await withErrorNotification('reset-password', async () => {
       await apiService.resetPassword(token, email, password);
+
+      await router.push({ name: 'login' });
     });
   }
 
@@ -179,6 +193,7 @@ export const useAuthStore = defineStore('auth', () => {
     user: data,
     error,
     loading: isLoading,
+    reset,
     fetchUser,
     login,
     logout,
