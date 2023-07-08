@@ -13,13 +13,17 @@ import { AuthTokensResponse } from "../types/response";
 import config from "../config";
 import { userCampResource } from "../resources";
 import ApiError from "../utils/ApiError";
+import getUserLocale from "get-user-locale";
 
 const register = catchRequestAsync(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password } = req.body
+  const locale = getUserLocale();
+
   const user = await userService.createUser({
-    name: name,
-    email: email,
-    password: password,
+    name,
+    email,
+    password,
+    locale,
   });
   const userWithoutPassword = exclude(user, [
     "password",

@@ -22,19 +22,27 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { email, password, name, role } = req.body;
+  const { email, password, name, role, locale } = req.body;
   const user = await userService.createUser({
-    name: name,
-    email: email,
-    password: password,
-    role: role,
+    name,
+    email,
+    password,
+    role,
+    locale
   });
   res.status(httpStatus.CREATED).send(user);
 });
 
 const update = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
-  const user = await userService.updateUserById(userId, req.body);
+  const { email, password, name, role, locale } = req.body;
+  const user = await userService.updateUserById(userId, {
+    name,
+    email,
+    password,
+    role,
+    locale
+  });
   res.send(user);
 });
 

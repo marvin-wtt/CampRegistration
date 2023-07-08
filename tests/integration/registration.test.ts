@@ -97,6 +97,8 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body.data[0]).toHaveProperty("room");
     });
 
+    it.todo("should set the users preferred locale");
+
     it<RegistrationTestContext>("should include files in the response body ", async (context) => {
       await FileFactory.create({
         field: "file_field",
