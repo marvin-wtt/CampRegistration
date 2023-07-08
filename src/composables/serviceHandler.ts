@@ -194,7 +194,7 @@ export function useServiceHandler<T>(storeName: string) {
     }
   }
 
-  async function errorOnFailure(fn: () => Promise<T>): Promise<void> {
+  async function errorOnFailure(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
     isLoading.value = true;
     error.value = null;
     data.value = undefined;
