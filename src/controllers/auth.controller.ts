@@ -15,7 +15,7 @@ import { userCampResource } from "../resources";
 import ApiError from "../utils/ApiError";
 
 const register = catchRequestAsync(async (req, res) => {
-  const { name, email, password } = req.body
+  const { name, email, password } = req.body;
   const locale = req.headers["accept-language"];
 
   const user = await userService.createUser({
@@ -83,6 +83,10 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
   const resetPasswordToken = await tokenService.generateResetPasswordToken(
     req.body.email
   );
+  if (resetPasswordToken === undefined) {
+    res.status(httpStatus.NO_CONTENT).send();
+    return;
+  }
   await emailService.sendResetPasswordEmail(req.body.email, resetPasswordToken);
   res.status(httpStatus.NO_CONTENT).send();
 });
