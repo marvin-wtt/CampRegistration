@@ -33,6 +33,10 @@ const registrationStore = useRegistrationsStore();
 const templateStore = useTemplateStore();
 const { to } = useObjectTranslation();
 
+campDetailStore.fetchData();
+registrationStore.fetchData();
+templateStore.fetchData();
+
 const camp = storeToRefs(campDetailStore);
 const registrations = storeToRefs(registrationStore);
 const templates = storeToRefs(templateStore);

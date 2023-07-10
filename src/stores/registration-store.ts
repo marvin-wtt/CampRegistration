@@ -8,7 +8,6 @@ import {
   useCampBus,
   useRegistrationBus,
 } from 'src/composables/bus';
-import { Camp } from 'src/types/Camp';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -21,8 +20,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     isLoading,
     error,
     reset,
+    invalidate,
     withProgressNotification,
-    errorOnFailure,
+    lazyFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Registration[]>('registration');
@@ -31,20 +31,15 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     reset();
   });
 
-  campBus.on('change', async (camp?: Camp) => {
-    if (!camp) {
-      reset();
-      return;
-    }
-
-    await fetchData(camp.id);
+  campBus.on('change', () => {
+    invalidate();
   });
 
   async function fetchData(campId?: string) {
     const cid: string = campId ?? (route.params.camp as string);
     checkNotNullWithError(cid);
 
-    await errorOnFailure(async () => {
+    await lazyFetch(async () => {
       return await apiService.fetchRegistrations(cid);
     });
   }

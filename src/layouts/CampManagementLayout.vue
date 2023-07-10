@@ -231,13 +231,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { useTemplateStore } from 'stores/template-store';
 import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
@@ -251,15 +249,12 @@ const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
-const templateStore = useTemplateStore();
-const registrationsStore = useRegistrationsStore();
 
-// TODO The component should register itself each the store instead
-authStore.fetchUser();
-// TODO Dont do for index page
-campDetailStore.fetchData();
-templateStore.fetchData();
-registrationsStore.fetchData();
+onMounted(async () => {
+  if (!authStore.user) {
+    await authStore.fetchUser();
+  }
+});
 
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);

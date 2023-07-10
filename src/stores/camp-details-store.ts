@@ -16,8 +16,9 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     isLoading,
     error,
     reset,
+    invalidate,
     withProgressNotification,
-    errorOnFailure,
+    lazyFetch,
     checkNotNullWithError,
   } = useServiceHandler<Camp>('camp');
 
@@ -27,15 +28,17 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
   router.beforeEach(async (to, from) => {
     if (to.params.camp === undefined) {
+      if (data.value !== undefined) {
+        reset();
+        bus.emit('change', undefined);
+      }
       return;
     }
 
     if (data.value === undefined || to.params.camp !== from.params.camp) {
       const campId = to.params.camp as string;
+      invalidate();
       await fetchData(campId);
-
-      bus.emit('change', data.value);
-      return;
     }
   });
 
@@ -43,8 +46,11 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     const campId = id ?? (route.params.camp as string);
 
     const cid = checkNotNullWithError(campId);
-    await errorOnFailure(async () => {
-      return await api.fetchCamp(cid);
+    await lazyFetch(async () => {
+      const result = await api.fetchCamp(cid);
+      bus.emit('change', result);
+
+      return result;
     });
   }
 
@@ -59,7 +65,6 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
       // Replace element
       data.value = updatedCamp;
-
       bus.emit('update', updatedCamp);
     });
   }
@@ -71,14 +76,11 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
     const success = await withProgressNotification('delete', async () => {
       await api.deleteCamp(cid);
+      bus.emit('delete', cid);
     });
 
     if (success) {
-      await fetchData();
-
-      bus.emit('delete', cid);
-
-      // TODO Update route
+      await router.push({ name: 'camp-management' });
     }
   }
 

@@ -9,7 +9,6 @@ import {
   useCampBus,
   useRegistrationBus,
 } from 'src/composables/bus';
-import { Camp } from 'src/types/Camp';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { Registration } from 'src/types/Registration';
 import { Roommate } from 'src/types/Roommate';
@@ -25,8 +24,9 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     isLoading,
     error,
     reset,
+    invalidate,
     withProgressNotification,
-    errorOnFailure,
+    lazyFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Room[]>('room-planner');
@@ -40,16 +40,12 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     reset();
   });
 
-  campBus.on('change', async (camp?: Camp) => {
-    if (!camp) {
-      reset();
-      return;
-    }
-    // TODO It should be monitored if the rooms are even needed at that point of time
-    await fetchRooms(camp.id);
+  campBus.on('change', () => {
+    invalidate();
   });
 
   registrationBus.on('update', () => {
+    // TODO Remap with registration data instead
     data.value = mapRoomsRoommates(data.value ?? []);
   });
 
@@ -197,7 +193,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     campId = campId ?? (route.params.camp as string | undefined);
 
     const cid = checkNotNullWithError(campId);
-    await errorOnFailure(async () => {
+    await lazyFetch(async () => {
       const data = await apiService.fetchRooms(cid);
       return mapRoomsRoommates(data);
     });

@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { Camp } from 'src/types/Camp';
 
 export const useTemplateStore = defineStore('templates', () => {
   const route = useRoute();
@@ -16,9 +15,10 @@ export const useTemplateStore = defineStore('templates', () => {
     isLoading,
     error,
     reset,
+    invalidate,
     withProgressNotification,
     withMultiProgressNotification,
-    errorOnFailure,
+    lazyFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<TableTemplate[]>('template');
@@ -27,13 +27,8 @@ export const useTemplateStore = defineStore('templates', () => {
     reset();
   });
 
-  campBus.on('change', async (camp?: Camp) => {
-    if (!camp) {
-      reset();
-      return;
-    }
-
-    await fetchData(camp.id);
+  campBus.on('change', () => {
+    invalidate();
   });
 
   // TODO Items:
@@ -46,7 +41,7 @@ export const useTemplateStore = defineStore('templates', () => {
     const campId = id ?? (route.params.camp as string | undefined);
 
     const cid = checkNotNullWithError(campId);
-    await errorOnFailure(async () => {
+    await lazyFetch(async () => {
       const data = await apiService.fetchResultTemplates(cid);
       return data.sort((a, b) => {
         return a.order - b.order;
