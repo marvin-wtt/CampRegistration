@@ -40,3 +40,12 @@ router.delete(
   validate(managerValidation.destroy),
   managerController.destroy
 );
+router.post(
+  "/:managerId/accept",
+  auth(),
+  guard([campPublic]),
+  validate(managerValidation.accept),
+  managerController.accept
+);
+
+export default router;
