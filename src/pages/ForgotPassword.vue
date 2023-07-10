@@ -22,7 +22,7 @@
             rounded
           >
             <template #prepend>
-              <q-icon name="email" />
+              <q-icon name="alternate_email" />
             </template>
           </q-input>
         </q-card-section>
