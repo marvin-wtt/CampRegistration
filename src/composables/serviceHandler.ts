@@ -204,11 +204,11 @@ export function useServiceHandler<T>(storeName: string) {
     data.value = undefined;
     try {
       data.value = await fn();
+      needsUpdate.value = false;
     } catch (err: unknown) {
       error.value = extractErrorText(err);
     } finally {
       isLoading.value = false;
-      needsUpdate.value = false;
     }
   }
 
