@@ -29,7 +29,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     lazyFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<Room[]>('room-planner');
+  } = useServiceHandler<Room[]>('roomPlanner');
   const campDetailsStore = useCampDetailsStore();
   const registrationsStore = useRegistrationsStore();
   const campBus = useCampBus();
