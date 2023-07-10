@@ -23,6 +23,7 @@ export function useServiceHandler<T>(storeName: string) {
   const data = ref<T>();
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
+  const needsUpdate = ref<boolean>(true);
 
   function defaultProgressOptions(
     operation: string,
@@ -156,7 +157,6 @@ export function useServiceHandler<T>(storeName: string) {
     fn: () => Promise<T>,
     options?: ResultOptions
   ): Promise<boolean> {
-    // TODO Fetch default message
     const opt = defaultResultOptions(operation, options);
 
     // Set defaults
@@ -194,6 +194,10 @@ export function useServiceHandler<T>(storeName: string) {
     }
   }
 
+  async function forceFetch(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
+    await errorOnFailure(fn);
+    needsUpdate.value = false;
+  }
   async function errorOnFailure(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
     isLoading.value = true;
     error.value = null;
@@ -204,7 +208,16 @@ export function useServiceHandler<T>(storeName: string) {
       error.value = extractErrorText(err);
     } finally {
       isLoading.value = false;
+      needsUpdate.value = false;
     }
+  }
+
+  async function lazyFetch(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
+    if (!needsUpdate.value) {
+      return;
+    }
+
+    await forceFetch(fn);
   }
 
   function checkNotNullWithError(
@@ -246,18 +259,25 @@ export function useServiceHandler<T>(storeName: string) {
     return 'Server temporary not available.';
   }
 
-  const reset = () => {
+  function invalidate() {
+    needsUpdate.value = true;
+  }
+
+  function reset() {
     data.value = undefined;
     isLoading.value = false;
     error.value = null;
-  };
+  }
 
   return {
     data,
     isLoading,
     error,
     reset,
+    invalidate,
     errorOnFailure,
+    forceFetch,
+    lazyFetch,
     withProgressNotification,
     withMultiProgressNotification,
     withResultNotification,
