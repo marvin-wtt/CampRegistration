@@ -93,7 +93,7 @@ import { Room } from 'src/types/Room';
 import { Roommate } from 'src/types/Roommate';
 import CreateRoomButton from 'components/campManagement/roomPlanner/CreateRoomButton.vue';
 import ModifyRoomDialog from 'components/campManagement/roomPlanner/dialogs/ModifyRoomDialog.vue';
-import PageStateHandler from 'components/PageStateHandler.vue';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
 

@@ -53,7 +53,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import CountryIcon from 'components/localization/CountryIcon.vue';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {

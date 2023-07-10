@@ -101,7 +101,7 @@ import { useI18n } from 'vue-i18n';
 import { useCampManagerStore } from 'stores/camp-manager-store';
 import { computed, ref } from 'vue';
 import { CampManager } from 'src/types/CampManager';
-import PageStateHandler from 'components/PageStateHandler.vue';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const { t } = useI18n();
 const campManagerStore = useCampManagerStore();

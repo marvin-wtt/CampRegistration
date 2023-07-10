@@ -32,5 +32,5 @@
 </template>
 <script setup>
 import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
-import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
+import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 </script>

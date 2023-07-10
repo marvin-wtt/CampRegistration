@@ -59,7 +59,7 @@ import { useI18n } from 'vue-i18n';
 import { Page } from 'src/types/SurveyJSCampData';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
-import DynamicInput from 'components/inputs/DynamicInput.vue';
+import DynamicInput from 'components/common/inputs/DynamicInput.vue';
 import { QForm } from 'quasar';
 
 const { t } = useI18n();

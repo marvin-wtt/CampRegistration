@@ -26,5 +26,5 @@
 </template>
 
 <script lang="ts" setup>
-import LanguageSwitch from 'components/localization/LocaleSwitch.vue';
+import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 </script>

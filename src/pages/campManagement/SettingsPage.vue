@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/PageStateHandler.vue';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 

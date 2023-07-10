@@ -248,7 +248,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import LocaleSwitch from 'components/localization/LocaleSwitch.vue';
+import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useQuasar } from 'quasar';

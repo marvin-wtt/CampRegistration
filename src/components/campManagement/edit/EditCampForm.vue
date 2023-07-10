@@ -194,10 +194,10 @@
 import { computed, ref, toRaw } from 'vue';
 import { Camp } from 'src/types/Camp';
 
-import TranslatedInput from 'components/inputs/TranslatedInput.vue';
-import DateTimeInput from 'components/inputs/DateTimeInput.vue';
+import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
 import { useI18n } from 'vue-i18n';
-import CountrySwitch from 'components/CountrySwitch.vue';
+import CountrySwitch from 'components/common/CountrySwitch.vue';
 
 const { t } = useI18n();
 

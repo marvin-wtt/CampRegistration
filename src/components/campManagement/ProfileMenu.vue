@@ -125,7 +125,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
-import CountryIcon from 'components/localization/CountryIcon.vue';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';

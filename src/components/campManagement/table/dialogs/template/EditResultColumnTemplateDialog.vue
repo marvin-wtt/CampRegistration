@@ -172,13 +172,13 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref, toRaw } from 'vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
-import TranslatedInput from 'components/inputs/TranslatedInput.vue';
+import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { Camp } from 'src/types/Camp';
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import JsonInput from 'components/inputs/JsonInput.vue';
+import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import ToggleItem from 'components/ToggleItem.vue';
+import ToggleItem from 'components/common/ToggleItem.vue';
 
 interface Props {
   column: TableColumnTemplate;

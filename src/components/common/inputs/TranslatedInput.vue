@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import CountryIcon from 'components/localization/CountryIcon.vue';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 

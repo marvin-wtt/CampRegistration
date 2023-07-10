@@ -94,7 +94,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
-import PageStateHandler from 'components/PageStateHandler.vue';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const { t } = useI18n();
 const router = useRouter();

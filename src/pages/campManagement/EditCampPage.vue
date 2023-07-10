@@ -20,7 +20,7 @@ import { useRouter } from 'vue-router';
 import EditCampForm from 'components/campManagement/edit/EditCampForm.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
-import PageStateHandler from 'components/PageStateHandler.vue';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const router = useRouter();
 

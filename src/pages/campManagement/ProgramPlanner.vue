@@ -41,7 +41,7 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/PageStateHandler.vue';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 import {
   addToDate,
   compareTimestamps,
