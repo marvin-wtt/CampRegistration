@@ -1,11 +1,13 @@
-import { managerService, registrationService } from "../../../../services";
+import { managerService } from "../../../../services";
 import { routeModel, verifyModelExists } from "../../../../utils/verifyModel";
-import { auth, guard, multipart, validate } from "../../../../middlewares";
+import { auth, guard, validate } from "../../../../middlewares";
 import { campManager, campPublic } from "../../../../guards";
 import { managerValidation } from "../../../../validations";
 import { managerController } from "../../../../controllers";
-import router from "./registration.routes";
 import { catchParamAsync } from "../../../../utils/catchAsync";
+import express from "express";
+
+const router = express.Router({ mergeParams: true });
 
 router.param(
   "managerId",
@@ -26,8 +28,8 @@ router.get(
 );
 router.post(
   "/",
+  auth(),
   guard([campPublic]),
-  multipart(),
   validate(managerValidation.store),
   managerController.store
 );
