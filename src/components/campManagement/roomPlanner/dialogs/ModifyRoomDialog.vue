@@ -60,7 +60,7 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
 import { Room } from 'src/types/Room';
-import TranslatedInput from 'components/TranslatedInput.vue';
+import TranslatedInput from 'components/inputs/TranslatedInput.vue';
 
 interface Props {
   room?: Room;

@@ -65,7 +65,7 @@ import { reactive, ref, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRegistrationsStore } from 'stores/registration-store';
-import DynamicInput from 'components/DynamicInput.vue';
+import DynamicInput from 'components/inputs/DynamicInput.vue';
 
 interface Props {
   questions: SurveyJSCampData;

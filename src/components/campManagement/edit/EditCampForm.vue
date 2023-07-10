@@ -194,8 +194,8 @@
 import { computed, ref, toRaw } from 'vue';
 import { Camp } from 'src/types/Camp';
 
-import TranslatedInput from 'components/TranslatedInput.vue';
-import DateTimeInput from 'components/DateTimeInput.vue';
+import TranslatedInput from 'components/inputs/TranslatedInput.vue';
+import DateTimeInput from 'components/inputs/DateTimeInput.vue';
 import { useI18n } from 'vue-i18n';
 import CountrySwitch from 'components/CountrySwitch.vue';
 

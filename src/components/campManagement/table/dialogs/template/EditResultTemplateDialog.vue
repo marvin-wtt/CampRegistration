@@ -169,7 +169,7 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';
-import TranslatedInput from 'components/TranslatedInput.vue';
+import TranslatedInput from 'components/inputs/TranslatedInput.vue';
 import { computed, reactive, toRaw } from 'vue';
 import SortableList from 'components/SortableList.vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
