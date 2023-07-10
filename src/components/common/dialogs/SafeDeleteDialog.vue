@@ -4,7 +4,7 @@
     persistent
     @hide="onDialogHide"
   >
-    <q-card>
+    <q-card style="min-width: 350px">
       <q-card-section>
         <div class="text-h6">
           {{ props.title }}
