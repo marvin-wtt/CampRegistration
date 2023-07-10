@@ -205,7 +205,22 @@
 
         <q-item
           v-ripple
+          :to="{ name: 'access' }"
+          clickable
+        >
+          <q-item-section avatar>
+            <q-icon name="key" />
+          </q-item-section>
+
+          <q-item-section>
+            {{ t('access') }}
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          v-ripple
           :to="{ name: 'settings' }"
+          disable
           clickable
         >
           <q-item-section avatar>
@@ -274,6 +289,7 @@ const title = computed(() => {
 </script>
 
 <i18n lang="yaml" locale="en">
+access: 'Access'
 login: 'Login'
 camps: 'Camps'
 contact: 'Contact'
@@ -289,6 +305,7 @@ tools: 'Tools'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+access: 'Zugriff'
 login: 'Login'
 camps: 'Camps'
 contact: 'Kontaktieren'
@@ -304,6 +321,7 @@ tools: 'Tools'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+access: 'Accès'
 login: 'Login'
 camps: 'Camps'
 contact: 'Contacter'

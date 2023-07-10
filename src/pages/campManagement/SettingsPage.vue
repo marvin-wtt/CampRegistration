@@ -8,19 +8,8 @@
     <q-list
       bordered
       padding
-      class="col-12 col-md-3"
+      class="col-12 col-sm-3 col-lg-2 col-xl-1"
     >
-      <q-item
-        v-ripple
-        :active="page === 'access'"
-        clickable
-        @click="page = 'access'"
-      >
-        <q-item-section>
-          {{ t('access') }}
-        </q-item-section>
-      </q-item>
-
       <q-item
         v-ripple
         :active="page === 'features'"
@@ -36,9 +25,8 @@
     <!-- Options -->
     <q-tab-panels
       v-model="page"
-      class="col-12 col-md-9"
+      class="col-12 col-sm-9 col-lg-10 col-xl-11"
     >
-      <q-tab-panel name="access"></q-tab-panel>
       <q-tab-panel name="features"></q-tab-panel>
     </q-tab-panels>
   </page-state-handler>
@@ -62,16 +50,13 @@ const error = computed<string | null>(() => {
 });
 </script>
 <i18n locale="en">
-access: 'Access'
 features: 'Features'
 </i18n>
 
 <i18n locale="de">
-access: 'Zugriff'
 features: 'Features'
 </i18n>
 
 <i18n locale="fr">
-access: 'Accès'
 features: 'features'
 </i18n>
