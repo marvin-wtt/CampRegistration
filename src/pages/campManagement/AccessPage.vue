@@ -195,4 +195,62 @@ role:
   manager: 'Manager'
 </i18n>
 
+<i18n lang="yaml" locale="de">
+title: 'Zugriff'
+
+action:
+  add: 'Hinzufügen'
+
+dialog:
+  add:
+    title: 'Zugriff gewähren'
+    message: 'Geben Sie die E-Mail-Adresse ein:'
+  delete:
+    title: 'Zugriff entfernen'
+    message: 'Möchten Sie diese Person wirklich entfernen?'
+    label: 'E-Mail'
+
+column:
+  email: 'E-Mail'
+  name: 'Name'
+  role: 'Rolle'
+  status: 'Status'
+
+status:
+  accepted: 'Akzeptiert'
+  pending: 'Ausstehend'
+
+role:
+  manager: 'Manager'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Accès'
+
+action:
+  add: 'Ajouter'
+
+dialog:
+  add:
+    title: "Accorder l'accès"
+    message: "Entrez l'adresse e-mail :"
+  delete:
+    title: "Supprimer l'accès"
+    message: 'Êtes-vous sûr de vouloir supprimer cette personne ?'
+    label: 'E-mail'
+
+column:
+  email: 'E-mail'
+  name: 'Nom'
+  role: 'Rôle'
+  status: 'Statut'
+
+status:
+  accepted: 'Accepté'
+  pending: 'En attente'
+
+role:
+  manager: 'Manager'
+</i18n>
+
 <style scoped></style>
