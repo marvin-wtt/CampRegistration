@@ -16,7 +16,10 @@ const campManagerExistsWithUserIdAndCampId = async (
 const getManagers = async (campId: string) => {
   return prisma.campManager.findMany({
     where: { campId },
-    include: { invitation: true },
+    include: {
+      invitation: true,
+      user: true
+    },
   });
 };
 
@@ -36,7 +39,6 @@ const getManagerByEmail = async (campId: string, email: string) => {
 };
 
 const acceptManagerInvitation = async (
-  campId: string,
   managerId: string,
   userId: string
 ) => {
@@ -46,6 +48,10 @@ const acceptManagerInvitation = async (
       invitation: { delete: true },
       user: { connect: { id: userId } },
     },
+    include: {
+      invitation: true,
+      user: true,
+    }
   });
 };
 
@@ -62,7 +68,10 @@ const inviteManager = async (campId: string, email: string) => {
         },
       },
     },
-    include: { invitation: true },
+    include: {
+      invitation: true,
+      user: true,
+    },
   });
 };
 
