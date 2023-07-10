@@ -63,52 +63,23 @@
       </template>
     </q-table>
   </page-state-handler>
-
-  <q-dialog v-model="addDialog">
-    <q-card>
-      <q-card-section>
-        <div class="text-h6">
-          {{ t('dialog.add.title') }}
-        </div>
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
-        {{ t('dialog.add.text') }}
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
-        {{ t('dialog.add.text') }}
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
-        <q-input type="email" />
-      </q-card-section>
-
-      <q-card-actions align="right">
-        <q-btn
-          v-close-popup
-          color="primary"
-          label="OK"
-          flat
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { useCampManagerStore } from 'stores/camp-manager-store';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { CampManager } from 'src/types/CampManager';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
+import { useQuasar } from 'quasar';
+import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import AddCampManagerDialog from 'components/campManagement/access/AddCampManagerDialog.vue';
 
+const quasar = useQuasar();
 const { t } = useI18n();
 const campManagerStore = useCampManagerStore();
 
 campManagerStore.fetchData();
-
-const addDialog = ref<boolean>(false);
 
 const pagination = {
   page: 1,
@@ -165,11 +136,33 @@ const loading = computed<boolean>(() => {
 });
 
 function showAddDialog() {
-  // TODO
+  quasar
+    .dialog({
+      component: AddCampManagerDialog,
+      componentProps: {
+        title: t('dialog.add.title'),
+        message: t('dialog.add.message'),
+      },
+    })
+    .onOk((email) => {
+      campManagerStore.createData(email);
+    });
 }
 
 function showDeleteDialog(manager: CampManager) {
-  // TODO
+  quasar
+    .dialog({
+      component: SafeDeleteDialog,
+      componentProps: {
+        title: t('dialog.delete.title'),
+        message: t('dialog.delete.message'),
+        label: t('dialog.delete.label'),
+        value: manager.email,
+      },
+    })
+    .onOk(() => {
+      campManagerStore.deleteData(manager.id);
+    });
 }
 </script>
 
@@ -182,10 +175,11 @@ action:
 dialog:
   add:
     title: 'Grant Access'
-    text: 'Enter the email address:'
-  remove:
+    message: 'Enter the email address:'
+  delete:
     title: 'Remove Access'
-    text: 'Are you sure you want to remove this person?'
+    message: 'Are you sure you want to remove this person?'
+    label: 'Email'
 
 column:
   email: 'Email'
