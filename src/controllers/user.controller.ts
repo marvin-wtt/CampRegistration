@@ -9,7 +9,7 @@ const index = catchRequestAsync(async (req, res) => {
   const filter = exclude(req.query, ["sortBy", "limit", "page"]);
   const options = pick(req.query, ["sortBy", "limit", "page"]);
   const result = await userService.queryUsers(filter, options);
-  res.send(result);
+  res.json(result);
 });
 
 const show = catchRequestAsync(async (req, res) => {
@@ -18,7 +18,7 @@ const show = catchRequestAsync(async (req, res) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
-  res.send(user);
+  res.json(user);
 });
 
 const store = catchRequestAsync(async (req, res) => {
@@ -30,7 +30,7 @@ const store = catchRequestAsync(async (req, res) => {
     role,
     locale
   });
-  res.status(httpStatus.CREATED).send(user);
+  res.status(httpStatus.CREATED).json(user);
 });
 
 const update = catchRequestAsync(async (req, res) => {
@@ -43,13 +43,13 @@ const update = catchRequestAsync(async (req, res) => {
     role,
     locale
   });
-  res.send(user);
+  res.json(user);
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   await userService.deleteUserById(userId);
-  res.status(httpStatus.NO_CONTENT).send();
+  res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 export default {

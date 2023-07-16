@@ -48,7 +48,7 @@ const destroy = catchRequestAsync(async (req, res) => {
 
   await managerService.removeManager(managerId);
 
-  res.send(httpStatus.NO_CONTENT);
+  res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const accept = catchRequestAsync(async (req, res) => {
@@ -56,7 +56,7 @@ const accept = catchRequestAsync(async (req, res) => {
 
   const manager = routeModel(req.models.manager);
 
-  res.send(httpStatus.NOT_IMPLEMENTED);
+  res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   // TODO Get typed manager
   // const invitation = manager.invitation as Invitation | null;
   //

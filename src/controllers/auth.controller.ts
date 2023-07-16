@@ -44,16 +44,16 @@ const login = catchRequestAsync(async (req, res) => {
   });
 
   const response = userCampResource(user, camps);
-  res.send({ user: response, tokens });
+  res.json({ user: response, tokens });
 });
 
-const logout = async (req: Request, res: Response) => {
+const logout = catchRequestAsync(async (req: Request, res: Response) => {
   await authService.logout(req.body.refreshToken);
 
   destroyAuthCookies(res);
 
   res.status(httpStatus.NO_CONTENT).send();
-};
+});
 
 const refreshTokens = catchRequestAsync(async (req, res) => {
   const refreshToken = req.body.refreshToken ?? extractCookieRefreshToken(req);
@@ -66,7 +66,7 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
   destroyAuthCookies(res);
   setAuthCookies(res, tokens);
 
-  res.send({ ...tokens });
+  res.json({ ...tokens });
 });
 
 const extractCookieRefreshToken = (req: Request) => {
@@ -80,32 +80,33 @@ const extractCookieRefreshToken = (req: Request) => {
 };
 
 const forgotPassword = catchRequestAsync(async (req, res) => {
+  const { email } = req.body;
   const resetPasswordToken = await tokenService.generateResetPasswordToken(
-    req.body.email
+    email
   );
   if (resetPasswordToken === undefined) {
     res.status(httpStatus.NO_CONTENT).send();
     return;
   }
-  await emailService.sendResetPasswordEmail(req.body.email, resetPasswordToken);
-  res.status(httpStatus.NO_CONTENT).send();
+  await emailService.sendResetPasswordEmail(email, resetPasswordToken);
+  res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const resetPassword = catchRequestAsync(async (req, res) => {
   await authService.resetPassword(req.query.token as string, req.body.password);
-  res.status(httpStatus.NO_CONTENT).send();
+  res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   const user = req.user as User;
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
   await emailService.sendVerificationEmail(user.email, verifyEmailToken);
-  res.status(httpStatus.NO_CONTENT).send();
+  res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const verifyEmail = catchRequestAsync(async (req, res) => {
   await authService.verifyEmail(req.query.token as string);
-  res.status(httpStatus.NO_CONTENT).send();
+  res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
