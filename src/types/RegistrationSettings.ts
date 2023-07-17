@@ -8,4 +8,6 @@ export interface RegistrationSettings {
   dateOfBirthKey?: string;
   leaderKey?: string;
   waitingListKey?: string;
+  emailKey?: string;
+  emailSecondaryKey?: string;
 }
