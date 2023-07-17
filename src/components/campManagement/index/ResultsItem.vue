@@ -118,8 +118,10 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { Camp } from 'src/types/Camp';
 import { computed, Ref, ref } from 'vue';
+import { useAuthStore } from 'stores/auth-store';
 
 const capsStore = useCampsStore();
+const authStore = useAuthStore();
 const router = useRouter();
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -222,6 +224,7 @@ function publishAction() {
     await capsStore.updateEntry(props.camp.id, {
       public: true,
     });
+    await authStore.fetchUser();
   });
 }
 
@@ -230,6 +233,7 @@ function unpublishAction() {
     await capsStore.updateEntry(props.camp.id, {
       public: false,
     });
+    await authStore.fetchUser();
   });
 }
 
