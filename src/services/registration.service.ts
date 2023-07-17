@@ -8,14 +8,20 @@ import { campService } from "./index";
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
     where: { id, campId },
-    include: { files: true },
+    include: {
+      files: true,
+      bed: { include: { room: true } },
+    },
   });
 };
 
 const queryRegistrations = async (campId: string) => {
   return prisma.registration.findMany({
     where: { campId },
-    include: { files: true },
+    include: {
+      files: true,
+      bed: { include: { room: true } },
+    },
   });
 };
 
@@ -41,6 +47,10 @@ const updateRegistrationById = async (
   return prisma.registration.update({
     where: { id: registrationId },
     data: { data: updateBody as object },
+    include: {
+      files: true,
+      bed: { include: { room: true } },
+    },
   });
 };
 

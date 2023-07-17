@@ -11,7 +11,7 @@ model User {
   id            String        @id @unique(map: "users_id_unique") @db.Char(26)
   name          String        @db.VarChar(255)
   email         String        @unique(map: "users_email_unique") @db.VarChar(255)
-  emailVerified Boolean       @map("email_verified") @default(false)
+  emailVerified Boolean       @default(false) @map("email_verified")
   password      String        @db.VarChar(255)
   role          Role          @default(USER)
   locale        String        @default("en-US") @db.VarChar(5)
@@ -80,27 +80,36 @@ model Registration {
   id        String    @id @unique(map: "registrations_id_unique") @db.Char(26)
   campId    String?   @map("camp_id") @db.Char(26)
   data      Json      @db.Json
-  roomId    String?   @map("room_id") @db.Char(26)
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
   camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_camp_id_foreign")
-  room      Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_room_id_foreign")
+  bed       Bed?
   files     File[]
 
-  @@index([campId], map: "registrations_camp_id_foreign")
   @@map("registrations")
 }
 
 model Room {
-  id            String         @id @unique(map: "rooms_id_unique") @db.Char(26)
-  campId        String         @map("camp_id") @db.Char(26)
-  name          Json           @db.Json
-  capacity      Int            @db.UnsignedInt
-  camp          Camp           @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
-  registrations Registration[]
+  id       String @id @unique(map: "rooms_id_unique") @db.Char(26)
+  campId   String @map("camp_id") @db.Char(26)
+  name     Json   @db.Json
+  capacity Int    @db.UnsignedInt
+  camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
+  beds     Bed[]
 
-  @@index([campId], map: "rooms_camp_id_foreign")
   @@map("rooms")
+}
+
+model Bed {
+  id             String       @id @unique @db.Char(26)
+  roomId         String       @map("room_id") @db.Char(26)
+  registrationId String       @unique(map: "beds_registration_id_unique") @db.Char(26)
+  bedNumber      Int
+  room           Room         @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_room_id_foreign")
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_registration_id_foreign")
+
+  @@unique([roomId, bedNumber], name: "beds_room_id_bed_number_unique")
+  @@map("beds")
 }
 
 model Template {

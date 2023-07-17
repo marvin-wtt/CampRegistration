@@ -1,23 +1,37 @@
-import { File, Registration } from "@prisma/client";
+import { File, Registration, Room, Bed } from "@prisma/client";
 import groupBy from "../utils/groupBy";
 
-const extractFiles = (registration: Registration): object => {
-  if (!("files" in registration)) {
+interface RegistrationWithBedAndFiles extends Registration {
+  bed?: BedWithRoom | null;
+  files?: File[] | null;
+}
+
+interface BedWithRoom extends Bed {
+  room: Room;
+}
+
+const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
+  if (!registration.files) {
     return {};
   }
 
   return Object.fromEntries(
     Object.entries(
-      groupBy(registration.files as File[], (i) => i.field ?? "files")
+      groupBy(registration.files, (i) => i.field ?? "files")
     ).map(([field, files]) => [field, files.map((file) => file.name).join(";")])
   );
 };
 
-const registrationResource = (registration: Registration) => {
+
+const registrationResource = (registration: RegistrationWithBedAndFiles) => {
   const data = typeof registration.data === "object" ? registration.data : {};
 
   const fileData = extractFiles(registration);
-  const room = 'room' in registration ? registration.room : null;
+  const room = registration.bed ? {
+    id: registration.bed.room.id,
+    name: registration.bed.room.name,
+    bed: registration.bed.bedNumber,
+  } : null;
 
   return {
     ...data,

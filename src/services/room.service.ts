@@ -29,6 +29,18 @@ const updateRoomById = async (
   roomId: string,
   updateBody: Omit<Prisma.RoomUpdateInput, "id">
 ) => {
+  // Remove all beds that exceed the capacity limit
+  if (updateBody.capacity && typeof updateBody.capacity === "number") {
+    await prisma.bed.deleteMany({
+      where: {
+        roomId,
+        bedNumber: {
+          gte: updateBody.capacity,
+        },
+      },
+    });
+  }
+
   return prisma.room.update({
     where: { id: roomId },
     data: updateBody,
