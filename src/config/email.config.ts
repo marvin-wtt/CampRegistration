@@ -9,6 +9,9 @@ const { value: envVars, error } = Joi.object()
     EMAIL_FROM: Joi.string().description(
       "the from field in the emails sent by the app"
     ),
+    EMAIL_REPLY_TO: Joi.string().description(
+      "the replyTo field in the emails sent by the app"
+    ),
   })
   .unknown()
   .prefs({ errors: { label: "key" } })
@@ -28,4 +31,5 @@ export default {
     },
   },
   from: envVars.EMAIL_FROM,
+  replyTo: envVars.EMAIL_REPLY_TO,
 };
