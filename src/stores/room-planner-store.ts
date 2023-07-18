@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { Room } from 'src/types/Room';
+import { ResponseRoom, Room } from 'src/types/Room';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
   useAuthBus,
@@ -12,9 +12,9 @@ import {
 import { useRegistrationsStore } from 'stores/registration-store';
 import { Registration } from 'src/types/Registration';
 import { Roommate } from 'src/types/Roommate';
-import { RegistrationSettings } from 'src/types/RegistrationSettings';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { formatPersonName, formatUniqueName } from 'src/utils/formatters';
+import { formatUniqueName } from 'src/utils/formatters';
+import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { useSettingsStore } from 'stores/settings-store';
 
 export const useRoomPlannerStore = defineStore('room-planner', () => {
   const apiService = useAPIService();
@@ -26,15 +26,19 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     reset,
     invalidate,
     withProgressNotification,
+    withErrorNotification,
     lazyFetch,
+    asyncUpdate,
+    requestPending,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Room[]>('roomPlanner');
-  const campDetailsStore = useCampDetailsStore();
+  const settingsStore = useSettingsStore();
   const registrationsStore = useRegistrationsStore();
   const campBus = useCampBus();
   const authBus = useAuthBus();
   const registrationBus = useRegistrationBus();
+  const registrationHelper = useRegistrationHelper();
 
   authBus.on('logout', () => {
     reset();
@@ -44,150 +48,9 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     invalidate();
   });
 
-  registrationBus.on('update', () => {
-    // TODO Remap with registration data instead
-    data.value = mapRoomsRoommates(data.value ?? []);
+  registrationBus.on('update', async () => {
+    invalidate();
   });
-
-  const settings = ref<RegistrationSettings>({
-    firstNameKey: 'first_name',
-    lastNameKey: 'last_name',
-    dateOfBirthKey: 'date_of_birth',
-    genderKey: 'gender',
-    countryKey: 'country',
-  });
-
-  const availableRoommates = computed<Roommate[]>(() => {
-    const localRooms = data.value;
-    let results: Registration[] | undefined = registrationsStore.data;
-
-    if (localRooms === undefined || results === undefined) {
-      return [];
-    }
-
-    // Filter out people who are already in a group
-    results = results.filter((person) => {
-      return !localRooms.some((room) => {
-        return room.roommates.some((value) => value?.id === person.id);
-      });
-    });
-
-    // Map to roommate type and sort by age
-    return results
-      .map((roommate) => {
-        return mapRegistrationRoommate(roommate);
-      })
-      .sort((a, b) => {
-        return (a.age ?? 999) - (b.age ?? 999);
-      });
-  });
-
-  // TODO This should be done in a utility function
-  function calculateAge(dateOfBirth: string): number | undefined {
-    const campStart = campDetailsStore.data?.startAt;
-
-    const birthDate = new Date(dateOfBirth);
-    const currentDate = campStart ? new Date(campStart) : new Date();
-
-    if (isNaN(birthDate.getTime())) {
-      return undefined;
-    }
-
-    const ageInMilliseconds = currentDate.getTime() - birthDate.getTime();
-    const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
-
-    return Math.floor(ageInYears);
-  }
-
-  function uniqueName(registration: Registration): string {
-    const firstNameKey =
-      settings.value.firstNameKey ?? settings.value.fullNameKey;
-    const lastNameKey = settings.value.lastNameKey;
-    const others = registrationsStore.data;
-
-    if (!firstNameKey || others === undefined) {
-      return 'Undefined';
-    }
-
-    return formatUniqueName(registration, others, firstNameKey, lastNameKey);
-  }
-
-  function mapRegistrationRoommate(registration: Registration): Roommate {
-    const name = settings.value.fullNameKey
-      ? formatPersonName(registration[settings.value.fullNameKey] as string)
-      : uniqueName(registration);
-    const age = settings.value.ageKey
-      ? (registration[settings.value.ageKey] as number)
-      : settings.value.dateOfBirthKey
-      ? calculateAge(registration[settings.value.dateOfBirthKey] as string)
-      : undefined;
-    const gender = settings.value.genderKey
-      ? (registration[settings.value.genderKey] as string)
-      : undefined;
-    const country = settings.value.countryKey
-      ? (registration[settings.value.countryKey] as string)
-      : undefined;
-    const leader = settings.value.leaderKey
-      ? (registration[settings.value.leaderKey] as boolean)
-      : undefined;
-
-    return {
-      id: registration.id,
-      name: name,
-      age: age,
-      gender: gender,
-      country: country,
-      leader: leader,
-    };
-  }
-
-  function mapRoomRoommates(room: Room): Room {
-    const registrations = registrationsStore.data as Registration[] | undefined;
-    if (registrations === undefined) {
-      room.roommates = [...Array(room.capacity).fill(null)];
-      return room;
-    }
-
-    // Fill with registrations
-    room.roommates = registrations
-      .filter((registration) => {
-        return registration.room_id === room.id;
-      })
-      .map((registration) => {
-        return mapRegistrationRoommate(registration);
-      });
-
-    // Fill all remaining fields with null
-    const diff = room.capacity - room.roommates.length;
-
-    if (diff == 0) {
-      return room;
-    }
-
-    // FIll all remaining slots with null values
-    if (diff > 0) {
-      room.roommates.push(...Array(diff).fill(null));
-      return room;
-    }
-
-    // Room is overfilled. Remove them
-    // TODO This must be done via store to update API...
-    room.roommates.splice(room.roommates.length + diff, diff * -1);
-    return room;
-  }
-
-  function mapRoomsRoommates(rooms: Room[]): Room[] {
-    if (rooms === undefined) {
-      return [];
-    }
-
-    // Map all registrations to their room
-    for (const room of rooms) {
-      mapRoomRoommates(room);
-    }
-
-    return rooms;
-  }
 
   async function fetchRooms(campId?: string) {
     campId = campId ?? (route.params.camp as string | undefined);
@@ -195,7 +58,8 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => {
       const data = await apiService.fetchRooms(cid);
-      return mapRoomsRoommates(data);
+
+      return data.map((room) => mapResponseRoom(room));
     });
   }
 
@@ -206,7 +70,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     await withProgressNotification('create', async () => {
       const room = await apiService.createRoom(cid, createData);
 
-      data.value?.push(mapRoomRoommates(room));
+      data.value?.push(mapResponseRoom(room));
     });
   }
 
@@ -218,14 +82,12 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(roomId);
-    // TODO Check if people need to be removed first
     await withProgressNotification('update', async () => {
       await apiService.updateRoom(cid, rid, updateData);
-
-      // TODO Just replace the element instead
-      //  Also remapping needs to be done
-      await fetchRooms();
     });
+
+    invalidate();
+    await fetchRooms();
   }
 
   async function deleteRoom(roomId: string | undefined) {
@@ -245,15 +107,114 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     });
   }
 
-  async function addRoommate(roomId: string, roommateId: string) {
+  async function updateBed(
+    room: Room,
+    position: number,
+    person: Roommate | null
+  ) {
     const campId = route.params.camp as string;
-    // TODO Update registration instead
+    const roomId = room.id;
+    const bedId = room.beds[position].id;
+    const registrationId = person?.id ?? null;
+
+    asyncUpdate(() => {
+      return withErrorNotification('update-bed', () => {
+        return apiService.updateBed(campId, roomId, bedId, registrationId);
+      });
+    });
+
+    // Optimistic update
+    room.beds[position].person = person;
   }
 
-  async function removeRoommate(roomId: string, roommateId: string) {
-    const campId = route.params.camp as string;
-    // TODO Update registration instead
+  function mapResponseRoom(room: ResponseRoom): Room {
+    return {
+      id: room.id,
+      name: room.name,
+      capacity: room.capacity,
+      beds: room.beds.map((bed) => {
+        return {
+          id: bed.id,
+          person: findRegistrationById(bed.registrationId),
+        };
+      }),
+    };
   }
+
+  function findRegistrationById(registrationId: string | null) {
+    if (!registrationId) {
+      return null;
+    }
+
+    const registrations = registrationsStore.data;
+    if (!registrations) {
+      return null;
+    }
+
+    const registration = registrations.find(
+      (value) => value.id === registrationId
+    );
+    if (!registration) {
+      return null;
+    }
+
+    return mapRegistrationRoommate(registration);
+  }
+
+  // TODO This should be done in a utility function
+  function uniqueName(registration: Registration): string {
+    const firstNameKey = settingsStore.getKey('firstName');
+    const lastNameKey = settingsStore.getKey('lastName');
+    const others = registrationsStore.data;
+
+    if (!firstNameKey || others === undefined) {
+      return 'Undefined';
+    }
+
+    return formatUniqueName(registration, others, firstNameKey, lastNameKey);
+  }
+
+  function mapRegistrationRoommate(registration: Registration): Roommate {
+    const name = uniqueName(registration);
+    const age = registrationHelper.age(registration);
+    const gender = registrationHelper.gender(registration);
+    const country = registrationHelper.country(registration);
+    const leader = registrationHelper.leader(registration);
+
+    return {
+      id: registration.id,
+      name: name,
+      age: age,
+      gender: gender,
+      country: country,
+      leader: leader,
+    };
+  }
+
+  const availableRoommates = computed<Roommate[]>(() => {
+    const localRooms = data.value;
+    let results: Registration[] | undefined = registrationsStore.data;
+
+    if (localRooms === undefined || results === undefined) {
+      return [];
+    }
+
+    // Filter out people who are already in a group
+    results = results.filter((person) => {
+      return !localRooms.some((room) => {
+        return room.beds.some((value) => value?.person?.id === person.id);
+      });
+    });
+
+    // Map to roommate type and sort by age
+    return results
+      .map((roommate) => {
+        return mapRegistrationRoommate(roommate);
+      })
+      .sort((a, b) => {
+        return (a.age ?? 999) - (b.age ?? 999);
+      });
+  });
 
   const storeLoading = computed<boolean>(() => {
     return isLoading.value || registrationsStore.isLoading;
@@ -268,12 +229,12 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     availableRoommates,
     isLoading: storeLoading,
     error: storeError,
+    requestPending,
     fetchRooms,
     createRoom,
     updateRoom,
     deleteRoom,
-    addRoommate,
-    removeRoommate,
+    updateBed,
     reset,
   };
 });

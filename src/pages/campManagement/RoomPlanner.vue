@@ -2,12 +2,9 @@
   <page-state-handler
     :error="error"
     :prevent-leave="updateInProgress"
-    style="padding-top: 66px"
     padding
     class="column"
   >
-    <!-- Header -->
-
     <!-- Content -->
     <div class="row items-start">
       <template v-if="loading">
@@ -23,19 +20,17 @@
       <!-- Content -->
       <template v-else>
         <transition-group name="fade">
-          <!-- TODO events -->
           <room-list
             v-for="(room, index) in rooms"
             :key="room.name"
             v-model="rooms[index]"
             :name="room.name"
             :people="availablePeople"
-            :room-mates="room.roommates"
             class="q-ma-sm"
             style="max-width: 500px; min-width: 275px"
-            @update:model-value="onRoomUpdate(room)"
             @edit="editRoom(room)"
             @delete="deleteRoom(room.id)"
+            @update="(position, val) => onBedUpdate(room, position, val)"
           />
         </transition-group>
 
@@ -51,61 +46,56 @@
       </template>
     </div>
 
+    <!-- Action buttons -->
     <q-page-sticky
-      expand
-      position="top"
+      position="bottom-right"
+      :offset="[18, 18]"
     >
-      <q-toolbar class="bg-dark text-white row justify-between">
-        <q-toolbar-title>
-          {{ t('title') }}
-        </q-toolbar-title>
-
-        <div class="col-shrink">
-          <create-room-button
-            color="primary"
-            rounded
-            icon="add"
-            :disable="loading"
-            @add="addRoom"
-            @add-multiple="addMultipleRooms"
-          />
-
-          <q-btn
-            round
-            icon="settings"
-            :disable="loading"
-            @click="onSettings"
-          />
-        </div>
-      </q-toolbar>
+      <q-fab
+        color="primary"
+        icon="keyboard_arrow_up"
+        direction="up"
+      >
+        <q-fab-action
+          color="primary"
+          icon="swap_vert"
+          @click="orderRooms"
+        />
+        <q-fab-action
+          color="primary"
+          icon="add"
+          @click="addRoom"
+        />
+      </q-fab>
     </q-page-sticky>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
 import { Room } from 'src/types/Room';
 import { Roommate } from 'src/types/Roommate';
-import CreateRoomButton from 'components/campManagement/roomPlanner/CreateRoomButton.vue';
 import ModifyRoomDialog from 'components/campManagement/roomPlanner/dialogs/ModifyRoomDialog.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
+import OrderRoomsDialog from 'components/campManagement/roomPlanner/dialogs/OrderRoomsDialog.vue';
 
 const quasar = useQuasar();
-const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomPlannerStore();
 
 const addLoading = ref(false);
 
-roomStore.fetchRooms();
+onMounted(async () => {
+  await registrationsStore.fetchData();
+  await roomStore.fetchRooms();
+});
 
 const loading = computed<boolean>(() => {
   return roomStore.isLoading;
@@ -115,9 +105,8 @@ const error = computed<unknown>(() => {
   return registrationsStore.error ?? roomStore.error;
 });
 
-// TODO
 const updateInProgress = computed<boolean>(() => {
-  return false;
+  return roomStore.requestPending;
 });
 
 const locales = computed<string[] | undefined>(() => {
@@ -138,11 +127,10 @@ const availablePeople = computed<Roommate[]>(() => {
 });
 
 function addRoom() {
-  const room: Room = {
+  const room: Omit<Room, 'beds'> = {
     id: 'filled-by-server',
     name: '',
     capacity: 0,
-    roommates: [],
   };
 
   quasar
@@ -175,26 +163,26 @@ function editRoom(room: Room): void {
     });
 }
 
+function orderRooms() {
+  quasar
+    .dialog({
+      component: OrderRoomsDialog,
+      componentProps: {
+        rooms: rooms.value,
+      },
+      persistent: true,
+    })
+    .onOk((payload: Room[]) => {
+      // TODO Compare changes and update
+    });
+}
+
 function deleteRoom(id: string) {
   roomStore.deleteRoom(id);
 }
 
-function addMultipleRooms() {
-  // TODO Create dialog
-}
-
-function onRoomUpdate(room: Room) {
-  // TODO Detect changes
-}
-
-function onSettings() {
-  // TODO open settings dialog
-  // age or date_of_birth
-  // first_name
-  // last_name
-  // full_name
-  // country
-  // teamer / leader
+function onBedUpdate(room: Room, position: number, roommate: Roommate | null) {
+  roomStore.updateBed(room, position, roommate);
 }
 </script>
 

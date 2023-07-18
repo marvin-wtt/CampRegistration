@@ -56,12 +56,13 @@
     </q-item>
 
     <room-list-item
-      v-for="(roomMate, index) in room.roommates"
+      v-for="(bed, index) in room.beds"
       :key="index"
-      v-model="room.roommates[index]"
+      v-model="room.beds[index].person"
       :options="options"
       :position="index + 1"
       :dense="props.dense"
+      @update="(roommate) => onBedUpdate(index, roommate)"
     />
   </q-list>
 </template>
@@ -91,6 +92,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'edit'): void;
+  (e: 'update', position: number, roommate: Roommate | null): void;
   (e: 'update:modelValue', value: Room): void;
 }>();
 
@@ -102,12 +104,13 @@ const room = computed<Room>({
 const gender = computed<string | undefined>(() => {
   let gender: string | undefined = undefined;
 
-  room.value.roommates.some((value) => {
-    if (value?.gender === undefined) {
+  room.value.beds.some((bed) => {
+    const person = bed.person;
+    if (person?.gender === undefined) {
       return false;
     }
 
-    gender = value.gender;
+    gender = person.gender;
     return true;
   });
 
@@ -117,12 +120,13 @@ const gender = computed<string | undefined>(() => {
 const leader = computed<boolean | undefined>(() => {
   let leader: boolean | undefined = undefined;
 
-  room.value.roommates.some((value) => {
-    if (value?.leader === undefined) {
+  room.value.beds.some((bed) => {
+    const person = bed.person;
+    if (person?.leader === undefined) {
       return false;
     }
 
-    leader = value.leader;
+    leader = person.leader;
     return true;
   });
 
@@ -146,6 +150,10 @@ const options = computed<unknown[]>(() => {
 
   return people;
 });
+
+function onBedUpdate(position: number, roomMate: Roommate | null) {
+  emit('update', position, roomMate);
+}
 
 function editRoom(): void {
   emit('edit');

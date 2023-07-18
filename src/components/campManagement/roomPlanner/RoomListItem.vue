@@ -63,7 +63,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: unknown): void;
+  (e: 'update', value: Roommate | null): void;
 }>();
 
 const flagVisible = computed<boolean>(() => {
@@ -76,7 +76,7 @@ const flag = computed<string>(() => {
 
 const person = computed<Roommate | null>({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
+  set: (val) => emit('update', val),
 });
 
 const label = computed<string>(() => {

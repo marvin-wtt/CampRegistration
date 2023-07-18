@@ -63,7 +63,7 @@ import { Room } from 'src/types/Room';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
 interface Props {
-  room?: Room;
+  room?: Omit<Room, 'beds'>;
   mode: 'create' | 'edit';
   locales?: string[];
 }
@@ -90,15 +90,6 @@ function defaultRoom(): Room {
 }
 
 function onOKClick(): void {
-  const diff = room.capacity - room.roommates.length;
-  if (diff > 0) {
-    // Add elements
-    room.roommates.push(...Array(diff).fill(null));
-  } else if (diff < 0) {
-    // Remove n elements
-    room.roommates.splice(diff);
-  }
-
   onDialogOK(room);
 }
 

@@ -2,7 +2,7 @@ import { QNotifyCreateOptions, useQuasar } from 'quasar';
 import { QNotifyUpdateOptions } from 'quasar/dist/types/api';
 import { hasMessage } from 'src/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { isAPIServiceError } from 'src/services/APIService';
 
 export interface ProgressOptions {
@@ -24,6 +24,11 @@ export function useServiceHandler<T>(storeName: string) {
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
   const needsUpdate = ref<boolean>(true);
+  const pendingRequests = ref<number>(0);
+
+  const requestPending = computed<boolean>(() => {
+    return pendingRequests.value > 0;
+  });
 
   function defaultProgressOptions(
     operation: string,
@@ -194,10 +199,26 @@ export function useServiceHandler<T>(storeName: string) {
     }
   }
 
+  function showErrorNotification(operation: string, options?: QNotifyCreateOptions) {
+    const opt = defaultErrorOptions(operation, options);
+    quasar.notify(opt);
+  }
+
+  function showSuccessNotification(operation: string, options?: QNotifyCreateOptions) {
+    const opt = defaultSuccessOptions(operation, options);
+    quasar.notify(opt);
+  }
+
   async function forceFetch(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
     await errorOnFailure(fn);
     needsUpdate.value = false;
   }
+
+  function asyncUpdate(fn: () => Promise<unknown>) {
+   pendingRequests.value++;
+   fn().finally(() => pendingRequests.value--);
+  }
+
   async function errorOnFailure(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
     isLoading.value = true;
     error.value = null;
@@ -273,15 +294,19 @@ export function useServiceHandler<T>(storeName: string) {
     data,
     isLoading,
     error,
+    requestPending,
     reset,
     invalidate,
     errorOnFailure,
     forceFetch,
     lazyFetch,
+    asyncUpdate,
     withProgressNotification,
     withMultiProgressNotification,
     withResultNotification,
     withErrorNotification,
+    showErrorNotification,
+    showSuccessNotification,
     checkNotNullWithError,
     checkNotNullWithNotification,
   };
