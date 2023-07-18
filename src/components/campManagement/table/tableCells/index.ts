@@ -16,6 +16,7 @@ import PermissionLeaveTableCell from 'components/campManagement/table/tableCells
 import PhoneNumberTableCell from 'components/campManagement/table/tableCells/PhoneNumberTableCell.vue';
 import TextTableCell from 'components/campManagement/table/tableCells/TextTableCell.vue';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
+import TranslatedValueTableCell from 'components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
 
 const components = () => {
   TableComponentRegistry.register('action', ActionTableCell, {
@@ -178,6 +179,17 @@ const components = () => {
       fr: 'Avant',
     },
   });
+  TableComponentRegistry.register(
+    'translated_value',
+    TranslatedValueTableCell,
+    {
+      label: {
+        en: 'Translated value',
+        de: 'Übersetzter Wert',
+        fr: 'Valeur traduite',
+      },
+    }
+  );
 };
 
 export default components;
