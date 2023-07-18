@@ -8,6 +8,7 @@ const run = (prisma: PrismaClient): PrismaPromise<any> => {
       name: "John Doe",
       email: "john@example.com",
       password: "$2a$12$f4dwwAVJRqlz4okStqitmuC5UKrDhWMFjZEtviqrEJp4.in2uFPAK", // "password"
+      emailVerified: true,
     },
   });
 };
