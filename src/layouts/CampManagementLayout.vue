@@ -269,6 +269,9 @@ onMounted(async () => {
   if (!authStore.user) {
     await authStore.fetchUser();
   }
+  if (route.params.camp) {
+    await campDetailStore.fetchData();
+  }
 });
 
 const drawer = ref<boolean>(false);
