@@ -37,6 +37,11 @@ export const useTemplateStore = defineStore('templates', () => {
   //  (legal_guardian_permission_written_consent)
   //  language_skills
 
+  async function forceFetchData(id?: string) {
+    invalidate();
+    return fetchData(id);
+  }
+
   async function fetchData(id?: string) {
     const campId = id ?? (route.params.camp as string | undefined);
 
@@ -107,7 +112,7 @@ export const useTemplateStore = defineStore('templates', () => {
 
     if (success) {
       // Always update store because of partial updates
-      await fetchData();
+      await forceFetchData();
     }
   }
 
@@ -121,7 +126,7 @@ export const useTemplateStore = defineStore('templates', () => {
 
     // Fetch data again because it updated
     if (success) {
-      await fetchData();
+      await forceFetchData();
     }
   }
 
@@ -135,7 +140,7 @@ export const useTemplateStore = defineStore('templates', () => {
 
     // Fetch data again because it updated
     if (success) {
-      await fetchData(template.id);
+      await forceFetchData(template.id);
     }
   }
 
@@ -150,7 +155,7 @@ export const useTemplateStore = defineStore('templates', () => {
 
     // Fetch data again because it updated
     if (success) {
-      await fetchData();
+      await forceFetchData();
     }
   }
 
