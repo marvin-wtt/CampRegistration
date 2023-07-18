@@ -4,3 +4,4 @@ export { default as registrationResource } from "./registration.resource";
 export { default as templateResource } from "./template.resource";
 export { default as campManagerResource } from "./manager.resource";
 export { default as roomResource } from "./room.resource";
+export { default as bedResource } from "./bed.rescource";

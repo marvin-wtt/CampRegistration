@@ -1,4 +1,3 @@
-import { type Prisma } from "@prisma/client";
 import prisma from "../client";
 import { ulid } from "../utils/ulid";
 import ApiError from "../utils/ApiError";
@@ -42,11 +41,11 @@ const createRegistration = async (campId: string, data: object) => {
 
 const updateRegistrationById = async (
   registrationId: string,
-  updateBody: Omit<Prisma.RegistrationUpdateInput, "id">
+  updateBody: object
 ) => {
   return prisma.registration.update({
     where: { id: registrationId },
-    data: { data: updateBody as object },
+    data: { data: updateBody },
     include: {
       files: true,
       bed: { include: { room: true } },

@@ -4,7 +4,6 @@ import httpStatus from "http-status";
 import { collection, resource } from "../resources/resource";
 import { fileService, registrationService } from "../services";
 import { registrationResource } from "../resources";
-import { Prisma } from "@prisma/client";
 import { routeModel } from "../utils/verifyModel";
 
 const show = catchRequestAsync(async (req, res) => {
@@ -27,7 +26,7 @@ const index = catchRequestAsync(async (req, res) => {
 
 const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
-  const data = req.body as Prisma.RegistrationCreateInput;
+  const data = req.body;
 
   let registration = await registrationService.createRegistration(campId, data);
 
@@ -49,7 +48,7 @@ const store = catchRequestAsync(async (req, res) => {
 
 const update = catchRequestAsync(async (req, res) => {
   const { registrationId } = req.params;
-  const data = req.body as Prisma.RegistrationUpdateInput;
+  const data = req.body;
 
   const registration = await registrationService.updateRegistrationById(
     registrationId,

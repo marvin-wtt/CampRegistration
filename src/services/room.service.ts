@@ -5,12 +5,14 @@ import { ulid } from "../utils/ulid";
 const getRoomById = async (campId: string, id: string) => {
   return prisma.room.findFirst({
     where: { id, campId },
+    include: { beds: true },
   });
 };
 
 const queryRooms = async (campId: string) => {
   return prisma.room.findMany({
     where: { campId },
+    include: { beds: true },
   });
 };
 
@@ -21,7 +23,16 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
       name,
       capacity,
       campId,
+      beds: {
+        createMany: {
+          data: Array.from({ length: capacity }).map((_, index) => ({
+            id: ulid(),
+            bedNumber: index,
+          })),
+        },
+      },
     },
+    include: { beds: true },
   });
 };
 
@@ -29,21 +40,12 @@ const updateRoomById = async (
   roomId: string,
   updateBody: Omit<Prisma.RoomUpdateInput, "id">
 ) => {
-  // Remove all beds that exceed the capacity limit
-  if (updateBody.capacity && typeof updateBody.capacity === "number") {
-    await prisma.bed.deleteMany({
-      where: {
-        roomId,
-        bedNumber: {
-          gte: updateBody.capacity,
-        },
-      },
-    });
-  }
+  // TODO Delete or add beds
 
   return prisma.room.update({
     where: { id: roomId },
     data: updateBody,
+    include: { beds: true },
   });
 };
 

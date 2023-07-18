@@ -1,10 +1,16 @@
-import { Room } from "@prisma/client";
+import {Bed, Room} from "@prisma/client";
+import { bedResource } from "./index";
 
-const roomResource = (room: Room) => {
+interface RoomWithBeds extends Room {
+  beds: Bed[];
+}
+
+const roomResource = (room: RoomWithBeds) => {
   return {
     id: room.id,
     name: room.name,
     capacity: room.capacity,
+    beds: room.beds.map((value) => bedResource(value)),
   };
 };
 

@@ -8,7 +8,7 @@ import { campValidation } from "../../../../validations";
 import { campService } from "../../../../services";
 import registrationRoutes from "./registration.routes";
 import templateRoutes from "./template.routes";
-import roomRoutes from "./room.routes";
+import roomRoutes from "./rooms/room.routes";
 import managerRoutes from "./manager.routes";
 
 const router = express.Router({ mergeParams: true });

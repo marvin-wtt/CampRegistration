@@ -101,14 +101,12 @@ model Room {
 }
 
 model Bed {
-  id             String       @id @unique @db.Char(26)
-  roomId         String       @map("room_id") @db.Char(26)
-  registrationId String       @unique(map: "beds_registration_id_unique") @db.Char(26)
-  bedNumber      Int
-  room           Room         @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_room_id_foreign")
-  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_registration_id_foreign")
+  id             String        @id @unique @db.Char(26)
+  roomId         String        @map("room_id") @db.Char(26)
+  registrationId String?       @unique(map: "beds_registration_id_unique") @db.Char(26)
+  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_room_id_foreign")
+  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_registration_id_foreign")
 
-  @@unique([roomId, bedNumber], name: "beds_room_id_bed_number_unique")
   @@map("beds")
 }
 

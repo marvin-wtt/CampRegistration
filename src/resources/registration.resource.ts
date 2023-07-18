@@ -27,11 +27,7 @@ const registrationResource = (registration: RegistrationWithBedAndFiles) => {
   const data = typeof registration.data === "object" ? registration.data : {};
 
   const fileData = extractFiles(registration);
-  const room = registration.bed ? {
-    id: registration.bed.room.id,
-    name: registration.bed.room.name,
-    bed: registration.bed.bedNumber,
-  } : null;
+  const room = registration.bed ? registration.bed.room.name : null;
 
   return {
     ...data,

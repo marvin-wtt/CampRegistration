@@ -10,6 +10,7 @@ declare global {
         template?: import("@prisma/client").Template;
         manager?: import("@prisma/client").CampManager;
         room?: import("@prisma/client").Room;
+        bed?: import("@prisma/client").Bed;
       };
     }
   }
