@@ -1,5 +1,5 @@
 <template>
-  <q-page :padding="props.padding">
+  <q-page :padding="padding">
     <div
       v-if="loading || error"
       class="absolute fit row justify-center"
@@ -76,6 +76,10 @@ const error = computed<boolean>(() => {
 
 const loading = computed<boolean>(() => {
   return props.loading;
+});
+
+const padding = computed<boolean>(() => {
+  return props.padding && !loading.value && !error.value;
 });
 
 onBeforeMount(() => {
