@@ -42,7 +42,13 @@ export function useRegistrationService() {
     campId: string,
     data: Registration
   ): Promise<Registration> {
-    const response = await api.post(`camps/${campId}/registrations/`, data);
+    const headers = {
+      'Content-Type': 'multipart/form-data',
+    };
+
+    const response = await api.post(`camps/${campId}/registrations/`, data, {
+      headers,
+    });
 
     return response.data.data;
   }
