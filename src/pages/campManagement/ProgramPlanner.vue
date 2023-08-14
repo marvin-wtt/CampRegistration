@@ -1,4 +1,5 @@
 <template>
+  <!-- https://github.com/quasarframework/quasar-ui-qcalendar/blob/dev/demo/src/pages/Calendar.vue -->
   <page-state-handler
     :loading="loading"
     :error="error"
@@ -16,14 +17,18 @@
       :weekdays="weekDays"
       :locale="locale"
       :max-days="maxDays"
+      transition-prev="slide-right"
+      transition-next="slide-left"
       :interval-minutes="intervalMinutes"
       :interval-start="intervalStart"
       :interval-count="intervalCount"
       :drag-enter-func="onDragEnter"
       :drag-over-func="onDragOver"
       :drag-leave-func="onDragLeave"
+      :drag-end-func="onDragEnd"
       :drop-func="onDrop"
       hour24-format
+      animated
     >
       <template
         #day-body="{ scope: { timestamp, timeStartPos, timeDurationHeight } }"
@@ -50,13 +55,16 @@ import {
   parsed,
   parseTime,
   QCalendar,
-  Timestamp,
+  Timestamp
 } from '@quasar/quasar-ui-qcalendar';
-import { computed, ref } from 'vue';
+import { computed, CSSProperties, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import { ProgramEvent } from 'src/types/ProgramEvent';
+import { prevent, stop, stopAndPrevent } from 'quasar/src/utils/event';
+import { CalendarEvent } from 'src/types/CalendarEvent';
+import { colors } from 'quasar';
 
 const campDetailsStore = useCampDetailsStore();
 const { t, locale } = useI18n();
@@ -80,6 +88,9 @@ const startAt = ref('2023-07-29');
 const mode = ref('day');
 const view = ref();
 const weekDays = ref<number[]>([1, 2, 3, 4, 5, 6, 0]);
+
+const dragging = ref(false);
+const draggedEvent = ref<CalendarEvent>();
 
 const intervalMinutes = computed<number | undefined>(() => {
   return settings.value.timeIntervalMinutes;
@@ -131,23 +142,82 @@ const maxDays = computed<number>(() => {
 // TODO https://qcalendar.netlify.app/developing/qcalendarday-week/week-drag-and-drop
 // TODO https://qcalendar.netlify.app/developing/qcalendarday-week/week-slot-day-body
 
-function onDragStart(event, item) {
-  console.log('onDragStart called');
-  event.dataTransfer.dropEffect = 'copy';
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('ID', item.id);
+function isCssColor(color) {
+  return !!color && !!color.match(/^(#|(rgb|hsl)a?\()/);
 }
 
-function onDragEnter(e, type, scope) {
-  console.log('onDragEnter');
-  e.preventDefault();
-  return true;
+function badgeClasses(event: ProgramEvent, type: string) {
+  const cssColor = isCssColor(event.backgroundColor);
+  const isHeader = type === 'header';
+  return {
+    [`text-white bg-${event.backgroundColor}`]: !cssColor,
+    'full-width': !isHeader && (!event.side || event.side === 'full'),
+    'left-side': !isHeader && event.side === 'left',
+    'right-side': !isHeader && event.side === 'right',
+  };
 }
 
-function onDragOver(e, type, scope) {
-  console.log('onDragOver');
-  e.preventDefault();
-  return true;
+function badgeStyles(event: ProgramEvent, type: string, timeStartPos?, timeDurationHeight?) {
+  const s: CSSProperties = {};
+  if (isCssColor(event.backgroundColor)) {
+    s.backgroundColor = event.backgroundColor;
+    s.color = colors.luminosity(event.backgroundColor) > 0.5 ? 'black' : 'white';
+  }
+  if (timeStartPos) {
+    // don't clamp position to 0px
+    s.top = timeStartPos(event.time, false) + 'px';
+    s.position = 'absolute';
+    if (event.side !== undefined) {
+      s.width = '50%';
+      if (event.side === 'right') {
+        s.left = '50%';
+      }
+    } else {
+      s.width = '100%';
+    }
+  }
+  if (timeDurationHeight) {
+    s.height = timeDurationHeight(event.duration) + 'px';
+  }
+  s.alignItems = 'flex-start';
+  return s;
+}
+
+function showEvent (event: ProgramEvent) {
+  // TODO Open dialog
+}
+
+function onDragStart(e, event) {
+  dragging.value = true;
+  draggedEvent.value = event;
+  stop(e);
+
+  // TODO Is this needed?
+  // e.dataTransfer.dropEffect = 'copy';
+  // e.dataTransfer.effectAllowed = 'move';
+  // e.dataTransfer.setData('ID', event.id);
+}
+
+function onDragEnter(e, event) {
+  prevent(e);
+}
+
+function onDragOver(e, event: ProgramEvent, type: string) {
+  // TODO
+  // if (type === 'day') {
+  //   stopAndPrevent(e);
+  //   return draggedEvent.value.date !== day.date;
+  // } else if (type === 'interval') {
+  //   stopAndPrevent(ev);
+  //   return (
+  //     this.draggedEvent.date !== day.date && this.draggedEvent.time !== day.time
+  //   );
+  // }
+}
+
+function onDragEnd(e, event) {
+  stopAndPrevent(e);
+  // TODO Reset drag
 }
 
 function onDragLeave(e, type, scope) {
@@ -190,29 +260,16 @@ function calculateDaysBetween(startAt: string, endAt: string): number {
   return diffInDays + 1; // add one to count every started day
 }
 
-// Event
-interface Event {
-  id: number;
-  title: string;
-  details?: string;
-  date?: string;
-  duration?: number;
-  time?: string;
-  backgroundColor?: string;
-  side?: string;
-  icon?: string;
-}
-
-const events = ref<Event[]>([
+const events = ref<ProgramEvent[]>([
   {
-    id: 1,
+    id: '1',
     title: '1st of the Month',
     details: 'Everything is funny as long as it is happening to someone else',
     date: '2023-07-29',
     backgroundColor: 'orange',
   },
   {
-    id: 2,
+    id: '2',
     title: 'Sisters Birthday',
     details: 'Buy a nice present',
     date: '2023-07-30',
@@ -220,7 +277,7 @@ const events = ref<Event[]>([
     icon: 'fas fa-birthday-cake',
   },
   {
-    id: 3,
+    id: '3',
     title: 'Meeting',
     details: 'Time to pitch my idea to the company',
     date: '2023-07-31',
@@ -230,7 +287,7 @@ const events = ref<Event[]>([
     icon: 'fas fa-handshake',
   },
   {
-    id: 4,
+    id: '4',
     title: 'Lunch',
     details: 'Company is paying!',
     date: '2023-07-31',
@@ -240,7 +297,7 @@ const events = ref<Event[]>([
     icon: 'fas fa-hamburger',
   },
   {
-    id: 41,
+    id: '41',
     title: 'Second Lunch',
     details: 'Company is paying!',
     date: '2023-07-31',
@@ -250,7 +307,7 @@ const events = ref<Event[]>([
     icon: 'fas fa-hamburger',
   },
   {
-    id: 5,
+    id: '5',
     title: 'Visit mom',
     details: 'Always a nice chat with mom',
     date: '2023-07-30',
@@ -260,7 +317,7 @@ const events = ref<Event[]>([
     icon: 'fas fa-car',
   },
   {
-    id: 6,
+    id: '6',
     title: 'Conference',
     details: 'Teaching Javascript 101',
     date: '2023-08-03',
@@ -270,7 +327,7 @@ const events = ref<Event[]>([
     icon: 'fas fa-chalkboard-teacher',
   },
   {
-    id: 7,
+    id: '7',
     title: 'Girlfriend',
     details: 'Meet GF for dinner at Swanky Restaurant',
     date: '2023-08-04',
