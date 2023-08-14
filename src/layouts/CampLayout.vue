@@ -19,8 +19,11 @@
     </q-header>
 
     <q-page-container>
-      <!-- This is where pages get injected -->
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="fade">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </q-page-container>
   </q-layout>
 </template>
@@ -28,3 +31,42 @@
 <script lang="ts" setup>
 import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 </script>
+
+<style>
+/* width */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.1s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Scrollbar */
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 0.125rem grey;
+  border-radius: 0.25rem;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #656565;
+  border-radius: 0.25rem;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #4b4b4b;
+}
+
+::-webkit-scrollbar-corner {
+}
+</style>
