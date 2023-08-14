@@ -6,6 +6,7 @@
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
   "scripts": {
+    "dev": "quasar dev",
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0"
@@ -35,7 +36,7 @@
   "devDependencies": {
     "@intlify/vite-plugin-vue-i18n": "^3.4.0",
     "@quasar/app-vite": "^1.2.1",
-    "@quasar/cli": "^2.0.1",
+    "@quasar/cli": "^2.2.2",
     "@quasar/quasar-app-extension-qcalendar": "^4.0.0-beta.15",
     "@types/dom-to-image": "^2.6.4",
     "@types/lodash": "^4.14.192",
