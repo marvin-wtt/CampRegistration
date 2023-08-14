@@ -5,6 +5,7 @@
     class="flex justify-center"
   >
     <edit-camp-form
+      v-if='camp'
       v-model="camp"
       :loading="loading"
       mode="edit"
@@ -27,6 +28,8 @@ const router = useRouter();
 const loading = ref<boolean>(false);
 const campsStore = useCampDetailsStore();
 const { data, error, isLoading } = storeToRefs(campsStore);
+
+campsStore.fetchData();
 
 const camp = ref<Camp | undefined>(data.value as Camp);
 
