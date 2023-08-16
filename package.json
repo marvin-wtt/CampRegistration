@@ -19,6 +19,9 @@
   "prisma": {
     "seed": "ts-node prisma/seeders/index.ts"
   },
+  "_moduleAliases": {
+    "@": "./src"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -80,6 +83,7 @@
     "i": "^0.3.7",
     "jest": "^29.5.0",
     "joi-to-typescript": "^4.4.1",
+    "module-alias": "^2.2.3",
     "nodemon": "^2.0.22",
     "npm": "^9.6.7",
     "prettier": "^2.8.8",
