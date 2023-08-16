@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { Request } from "express";
 import { SurveyModel } from "survey-core";
-import { routeModel } from "../utils/verifyModel";
+import { routeModel } from "@/utils/verifyModel";
 
 const fileFields = (req: Request) => {
   const mapFileToSurveyData = (file: Express.Multer.File) => {

@@ -1,10 +1,10 @@
-import { catchRequestAsync } from "../utils/catchAsync";
-import ApiError from "../utils/ApiError";
+import { catchRequestAsync } from "@/utils/catchAsync";
+import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import { collection, resource } from "../resources/resource";
-import { fileService, registrationService } from "../services";
-import { registrationResource } from "../resources";
-import { routeModel } from "../utils/verifyModel";
+import { collection, resource } from "@/resources/resource";
+import { fileService, registrationService } from "@/services";
+import { registrationResource } from "@/resources";
+import { routeModel } from "@/utils/verifyModel";
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);

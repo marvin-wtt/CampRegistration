@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import ApiError from "../utils/ApiError";
+import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import { catchRequestAsync } from "../utils/catchAsync";
+import { catchRequestAsync } from "@/utils/catchAsync";
 
 /**
  * Middleware to guard the access to a route.

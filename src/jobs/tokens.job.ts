@@ -1,5 +1,5 @@
 import Cron from "croner";
-import prisma from "../client";
+import prisma from "@/client";
 import moment from "moment";
 
 export const removeExpiredTokens = () => {

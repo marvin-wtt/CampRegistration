@@ -1,9 +1,9 @@
 import { User, type Prisma } from "@prisma/client";
 import httpStatus from "http-status";
 import prisma from "../client";
-import ApiError from "../utils/ApiError";
-import { ulid } from "../utils/ulid";
-import { encryptPassword } from "../utils/encryption";
+import ApiError from "@/utils/ApiError";
+import { ulid } from "@/utils/ulid";
+import { encryptPassword } from "@/utils/encryption";
 
 const createUser = async (
   data: Pick<Prisma.UserCreateInput, "email" | "name" | "password" | "role" | "locale">

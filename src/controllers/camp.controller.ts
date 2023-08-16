@@ -1,12 +1,12 @@
-import { campService } from "../services";
+import { campService } from "@/services";
 import httpStatus from "http-status";
-import { campResource, detailedCampResource } from "../resources";
-import { catchRequestAsync } from "../utils/catchAsync";
-import pick from "../utils/pick";
-import exclude from "../utils/exclude";
-import { collection, resource } from "../resources/resource";
-import authUserId from "../utils/authUserId";
-import { routeModel } from "../utils/verifyModel";
+import { campResource, detailedCampResource } from "@/resources";
+import { catchRequestAsync } from "@/utils/catchAsync";
+import pick from "@/utils/pick";
+import exclude from "@/utils/exclude";
+import { collection, resource } from "@/resources/resource";
+import authUserId from "@/utils/authUserId";
+import { routeModel } from "@/utils/verifyModel";
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);

@@ -1,10 +1,10 @@
 import express from "express";
-import { auth, guard, validate } from "../../../middlewares";
-import userController from "../../../controllers/user.controller";
-import { userValidation } from "../../../validations";
-import { campService, userService } from "../../../services";
-import { verifyModelExists } from "../../../utils/verifyModel";
-import { catchParamAsync } from "../../../utils/catchAsync";
+import { auth, guard, validate } from "@/middlewares";
+import userController from "@/controllers/user.controller";
+import { userValidation } from "@/validations";
+import { userService } from "@/services";
+import { verifyModelExists } from "@/utils/verifyModel";
+import { catchParamAsync } from "@/utils/catchAsync";
 
 const router = express.Router();
 

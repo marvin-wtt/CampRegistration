@@ -1,9 +1,9 @@
-import { catchRequestAsync } from "../utils/catchAsync";
-import ApiError from "../utils/ApiError";
+import { catchRequestAsync } from "@/utils/catchAsync";
+import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import { resource } from "../resources/resource";
-import { bedService } from "../services";
-import { bedResource } from "../resources";
+import { resource } from "@/resources/resource";
+import { bedService } from "@/services";
+import { bedResource } from "@/resources";
 
 const update = catchRequestAsync(async (req, res) => {
   const { bedId } = req.params;

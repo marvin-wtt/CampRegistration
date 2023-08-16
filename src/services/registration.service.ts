@@ -1,6 +1,6 @@
 import prisma from "../client";
-import { ulid } from "../utils/ulid";
-import ApiError from "../utils/ApiError";
+import { ulid } from "@/utils/ulid";
+import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { campService } from "./index";
 

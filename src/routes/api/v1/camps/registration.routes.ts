@@ -1,11 +1,11 @@
-import { registrationController } from "../../../../controllers";
-import { auth, guard, multipart, validate } from "../../../../middlewares";
-import { campManager, campPublic } from "../../../../guards";
+import { registrationController } from "@/controllers";
+import { auth, guard, multipart, validate } from "@/middlewares";
+import { campManager, campPublic } from "@/guards";
 import express from "express";
-import { registrationValidation } from "../../../../validations";
-import { registrationService } from "../../../../services";
-import { routeModel, verifyModelExists } from "../../../../utils/verifyModel";
-import { catchParamAsync } from "../../../../utils/catchAsync";
+import { registrationValidation } from "@/validations";
+import { registrationService } from "@/services";
+import { routeModel, verifyModelExists } from "@/utils/verifyModel";
+import { catchParamAsync } from "@/utils/catchAsync";
 
 const router = express.Router({ mergeParams: true });
 

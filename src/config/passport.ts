@@ -1,4 +1,3 @@
-import prisma from "../client";
 import {
   Strategy as JwtStrategy,
   ExtractJwt,

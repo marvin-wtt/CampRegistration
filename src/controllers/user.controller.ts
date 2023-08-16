@@ -1,9 +1,9 @@
 import httpStatus from "http-status";
-import pick from "../utils/pick";
-import ApiError from "../utils/ApiError";
-import { catchRequestAsync } from "../utils/catchAsync";
-import { userService } from "../services";
-import exclude from "../utils/exclude";
+import pick from "@/utils/pick";
+import ApiError from "@/utils/ApiError";
+import { catchRequestAsync } from "@/utils/catchAsync";
+import { userService } from "@/services";
+import exclude from "@/utils/exclude";
 
 const index = catchRequestAsync(async (req, res) => {
   const filter = exclude(req.query, ["sortBy", "limit", "page"]);

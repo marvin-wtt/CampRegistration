@@ -1,6 +1,6 @@
 import prisma from "../client";
 import { randomUUID } from "crypto";
-import { ulid } from "../utils/ulid";
+import { ulid } from "@/utils/ulid";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,

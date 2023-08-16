@@ -1,7 +1,7 @@
 import express from "express";
-import { auth, validate } from "../../../middlewares";
-import { profileValidation } from "../../../validations";
-import { profileController } from "../../../controllers";
+import { auth, validate } from "@/middlewares";
+import { profileValidation } from "@/validations";
+import { profileController } from "@/controllers";
 
 const router = express.Router({ mergeParams: true });
 

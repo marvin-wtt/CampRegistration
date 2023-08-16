@@ -1,18 +1,18 @@
 import httpStatus from "http-status";
-import { catchRequestAsync } from "../utils/catchAsync";
+import { catchRequestAsync } from "@/utils/catchAsync";
 import {
   authService,
   userService,
   tokenService,
   emailService,
-} from "../services";
-import exclude from "../utils/exclude";
+} from "@/services";
+import exclude from "@/utils/exclude";
 import { User } from "@prisma/client";
 import { Request, Response } from "express";
-import { AuthTokensResponse } from "../types/response";
-import config from "../config";
-import { userCampResource } from "../resources";
-import ApiError from "../utils/ApiError";
+import { AuthTokensResponse } from "@/types/response";
+import config from "@/config";
+import { userCampResource } from "@/resources";
+import ApiError from "@/utils/ApiError";
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;

@@ -2,9 +2,9 @@ import httpStatus from "http-status";
 import userService from "./user.service";
 import ApiError from "../utils/ApiError";
 import { TokenType } from "@prisma/client";
-import { encryptPassword, isPasswordMatch } from "../utils/encryption";
+import { encryptPassword, isPasswordMatch } from "@/utils/encryption";
 import exclude from "../utils/exclude";
-import { AuthTokensResponse } from "../types/response";
+import { AuthTokensResponse } from "@/types/response";
 import tokenService from "./token.service";
 import prisma from "../client";
 

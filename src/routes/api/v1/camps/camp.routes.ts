@@ -1,11 +1,11 @@
 import express from "express";
-import { auth, guard, validate } from "../../../../middlewares";
-import { campManager, campPublic } from "../../../../guards";
-import { verifyModelExists } from "../../../../utils/verifyModel";
-import { catchParamAsync } from "../../../../utils/catchAsync";
-import { campController } from "../../../../controllers";
-import { campValidation } from "../../../../validations";
-import { campService } from "../../../../services";
+import { auth, guard, validate } from "@/middlewares";
+import { campManager, campPublic } from "@/guards";
+import { verifyModelExists } from "@/utils/verifyModel";
+import { catchParamAsync } from "@/utils/catchAsync";
+import { campController } from "@/controllers";
+import { campValidation } from "@/validations";
+import { campService } from "@/services";
 import registrationRoutes from "./registration.routes";
 import templateRoutes from "./template.routes";
 import roomRoutes from "./rooms/room.routes";

@@ -1,5 +1,5 @@
 import { File, Registration, Room, Bed } from "@prisma/client";
-import groupBy from "../utils/groupBy";
+import groupBy from "@/utils/groupBy";
 
 interface RegistrationWithBedAndFiles extends Registration {
   bed?: BedWithRoom | null;

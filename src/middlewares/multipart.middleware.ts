@@ -1,6 +1,6 @@
 import multer from "multer";
-import { ulid } from "../utils/ulid";
-import config from "../config";
+import { ulid } from "@/utils/ulid";
+import config from "@/config";
 import fs from "fs";
 
 const multiPart = () => {

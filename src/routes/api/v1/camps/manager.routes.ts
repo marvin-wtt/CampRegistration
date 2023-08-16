@@ -1,10 +1,10 @@
-import { managerService } from "../../../../services";
-import { routeModel, verifyModelExists } from "../../../../utils/verifyModel";
-import { auth, guard, validate } from "../../../../middlewares";
-import { campManager, campPublic } from "../../../../guards";
-import { managerValidation } from "../../../../validations";
-import { managerController } from "../../../../controllers";
-import { catchParamAsync } from "../../../../utils/catchAsync";
+import { managerService } from "@/services";
+import { routeModel, verifyModelExists } from "@/utils/verifyModel";
+import { auth, guard, validate } from "@/middlewares";
+import { campManager, campPublic } from "@/guards";
+import { managerValidation } from "@/validations";
+import { managerController } from "@/controllers";
+import { catchParamAsync } from "@/utils/catchAsync";
 import express from "express";
 
 const router = express.Router({ mergeParams: true });

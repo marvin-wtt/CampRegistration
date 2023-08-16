@@ -1,8 +1,8 @@
 import prisma from "../client";
 import { Prisma } from "@prisma/client";
-import config from "../config";
+import config from "@/config";
 import fs from "fs";
-import { ulid } from "../utils/ulid";
+import { ulid } from "@/utils/ulid";
 
 type File = Express.Multer.File;
 

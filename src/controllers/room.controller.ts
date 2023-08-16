@@ -1,9 +1,9 @@
-import { catchRequestAsync } from "../utils/catchAsync";
-import ApiError from "../utils/ApiError";
+import { catchRequestAsync } from "@/utils/catchAsync";
+import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import { collection, resource } from "../resources/resource";
-import { roomService } from "../services";
-import { roomResource } from "../resources";
+import { collection, resource } from "@/resources/resource";
+import { roomService } from "@/services";
+import { roomResource } from "@/resources";
 
 const show = catchRequestAsync(async (req, res) => {
   const { campId, roomId } = req.params;
