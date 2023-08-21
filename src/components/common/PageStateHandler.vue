@@ -53,7 +53,7 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { useQuasar } from 'quasar';
 
 interface Props {
-  error?: unknown;
+  error?: string | string[] | null;
   loading?: boolean;
   padding?: boolean;
   preventLeave?: boolean;
