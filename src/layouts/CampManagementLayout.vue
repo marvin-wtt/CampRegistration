@@ -189,6 +189,8 @@
           </q-item-section>
         </q-item>
 
+        <q-separator />
+
         <q-item
           v-ripple
           :to="{ name: 'edit-camp' }"
