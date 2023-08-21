@@ -1,78 +1,76 @@
 <template>
   <q-card
-    class="camp-card"
+    v-ripple
+    class="cursor-pointer q-hoverable"
     @click="navigateToRegistration"
   >
-    <q-card-section class="row items-start">
-      <q-avatar>
-        <!-- TODO add logo -->
-        <img
-          src="camp-image-url"
-          alt="logo"
-        />
-      </q-avatar>
-      <div class="q-ml-md">
-        <q-badge color="secondary">
-          {{ formatDate(props.camp.startAt) }} - {{ formatDate(props.camp.endAt) }}
-        </q-badge>
-        <div class="camp-name">
-          {{ to(props.camp.name) }}
-        </div>
-      </div>
+    <!-- Helper to make it hover and selectable -->
+    <span class="q-focus-helper" />
+    <!-- Image -->
+    <q-card-section class="col q-pa-none">
+      <!-- TODO Use actual logo -->
+      <q-img
+        src="https://via.placeholder.com/1024x768/eee?text=4:3"
+        alt="Logo"
+        :ratio="4 / 3"
+        :fit="'cover'"
+      />
     </q-card-section>
 
-    <q-card-section class="row reverse-wrap justify-between">
-      <div class='col-md-8'>
-        <div class="camp-location">
+    <!-- Content -->
+    <div class="col">
+      <q-card-section class="column items-start">
+        <div class="col text-caption">
+          {{ formatDate(props.camp.startAt) }} -
+          {{ formatDate(props.camp.endAt) }}
+        </div>
+        <div class="col text-h5">
+          {{ to(props.camp.name) }}
+        </div>
+      </q-card-section>
+      <q-card-section class="column q-pt-none">
+        <div>
+          <q-icon
+            name="place"
+            size="sm"
+          />
           {{ to(props.camp.location) }}
         </div>
-        <div class="camp-countries">
-          <!-- TODO Style -->
-          {{ props.camp.countries }}
-        </div>
-      </div>
-      <div class="col">
         <div>
-          <q-icon name='place' size='sm' />
-          {{ to(props.camp.location) }}
-        </div>
-
-        <div>
-          <q-icon name="attach_money" size="sm" />
+          <q-icon
+            name="attach_money"
+            size="sm"
+          />
           {{ props.camp.price }} €
         </div>
         <div>
-          <q-icon name="person" size="sm" />
+          <q-icon
+            name="person"
+            size="sm"
+          />
           {{ props.camp.minAge }} - {{ props.camp.maxAge }} years
         </div>
-      </div>
-    </q-card-section>
-
-    <q-card-actions align="right">
-      <q-btn
-        label="Register Now"
-        color="primary"
-        rounded
-        flat
-        @click="navigateToRegistration"
-      />
-    </q-card-actions>
+        <div class="col q-col-gutter-sm">
+          <q-icon
+            name="flag"
+            size="sm"
+          />
+          <country-icon
+            v-for="locale in props.camp.countries"
+            :key="locale"
+            :locale="locale"
+          />
+        </div>
+      </q-card-section>
+    </div>
   </q-card>
-
-  <!--  <q-card>-->
-  <!--    <q-card-section>-->
-  <!--      <div class="text-h6">-->
-  <!--        {{ to(props.camp.name) }}-->
-  <!--      </div>-->
-  <!--    </q-card-section>-->
-  <!--    Test-->
-  <!--  </q-card>-->
 </template>
 
 <script lang="ts" setup>
 import { Camp } from 'src/types/Camp';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRouter } from 'vue-router';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
 const { to } = useObjectTranslation();
 const router = useRouter();
@@ -83,24 +81,19 @@ interface Props {
 
 const props = defineProps<Props>();
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
+function formatDate(dateString: string | Date) {
+  const date =
+    typeof dateString === 'string' ? new Date(dateString) : dateString;
 
-  // TODO Handle time zones
-  return date.getHours() === 0 &&
-    date.getMinutes() === 0 &&
-    date.getSeconds() === 0 &&
-    date.getMilliseconds() === 0
-    ? date.toLocaleDateString()
-    : date.toLocaleString();
+  return date.toLocaleDateString();
 }
 
 function navigateToRegistration() {
   router.push({
     name: 'camp',
     params: {
-      camp: props.camp.id
-    }
+      camp: props.camp.id,
+    },
   });
 }
 </script>
