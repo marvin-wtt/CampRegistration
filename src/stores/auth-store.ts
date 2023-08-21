@@ -60,7 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
       reset();
 
       if (route.name !== 'login') {
-        await router.push({
+        await router.replace({
           name: 'login',
           query: {
             origin: encodeURIComponent(route.path),
