@@ -2,7 +2,7 @@ import { catchRequestAsync, catchSilent } from "@/utils/catchAsync";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
-import { emailService, managerService } from "@/services";
+import { notificationService, managerService } from "@/services";
 import { campManagerResource } from "@/resources";
 import { routeModel } from "@/utils/verifyModel";
 
