@@ -46,7 +46,7 @@
       <slot
         :name="name"
         v-bind="data"
-      ></slot>
+      />
     </template>
   </q-select>
 </template>
@@ -57,7 +57,12 @@ import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
-  modelValue: undefined | string | number | Record<string, string | number>;
+  modelValue:
+    | undefined
+    | string
+    | string[]
+    | number
+    | Record<string, string | number>;
   countries?: string[];
   nativeNames?: boolean;
   emitCountry?: boolean;

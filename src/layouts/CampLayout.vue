@@ -5,9 +5,23 @@
     <!-- (Optional) The Header -->
     <q-header elevated>
       <q-toolbar>
-        <q-toolbar-title> Header</q-toolbar-title>
+        <q-toolbar-title>
+          {{ t('app_name') }}
+        </q-toolbar-title>
 
         <q-space />
+
+        <q-btn
+          :label="t('camps')"
+          :to="{ name: 'camps' }"
+          flat
+          stretch
+        />
+
+        <q-separator
+          dark
+          vertical
+        />
 
         <language-switch
           borderless
@@ -30,6 +44,9 @@
 
 <script lang="ts" setup>
 import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 </script>
 
 <style>
@@ -70,3 +87,15 @@ import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 ::-webkit-scrollbar-corner {
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+camps: 'Camps'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+camps: 'Camps'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+camps: 'Camps'
+</i18n>

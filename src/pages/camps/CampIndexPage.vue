@@ -1,15 +1,18 @@
 <template>
   <page-state-handler
     :error="error"
+    :loading="loading"
     padding
     class="row justify-center"
   >
-    <div class="col-12 col-md-10 col-lg-8 col-xl-6 q-gutter-md">
-      <camp-card
-        v-for="camp in filteredCamps"
-        :key='camp.id'
-        :camp="camp"
-      />
+    <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+      <div class="q-pa-md row items-start q-gutter-md">
+        <camp-card
+          v-for="camp in filteredCamps"
+          :key="camp.id"
+          :camp="camp"
+        />
+      </div>
     </div>
   </page-state-handler>
 </template>
@@ -34,6 +37,6 @@ const error = computed(() => {
 });
 
 const loading = computed<boolean>(() => {
-  return true;
+  return campsStore.isLoading;
 });
 </script>
