@@ -33,7 +33,16 @@ const store = catchRequestAsync(async (req, res) => {
   const manager = await managerService.inviteManager(campId, email);
 
   const token = manager.invitation?.token;
-  // TODO Send notification
+  if (!token) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Invitation is missing the token."
+    );
+  }
+
+  await catchSilent(() =>
+    notificationService.sendCampManagerInvitation(email, campId, manager.id, token)
+  );
 
   res.status(201).json(resource(campManagerResource(manager)));
 });
@@ -43,7 +52,10 @@ const destroy = catchRequestAsync(async (req, res) => {
 
   const managers = await managerService.getManagers(campId);
   if (managers.length <= 1) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "The camp must always have at least one camp manager.");
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "The camp must always have at least one camp manager."
+    );
   }
 
   await managerService.removeManager(managerId);
