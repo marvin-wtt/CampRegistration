@@ -17,7 +17,7 @@
       :label="t('field.countries')"
       :countries="['de', 'fr', 'pl']"
       :rules="[
-        (val) => (val && val.length > 0) || t('validation.countries.empty'),
+        (val: string) => (val && val.length > 0) || t('validation.countries.empty'),
       ]"
       hide-bottom-space
       outlined
@@ -36,7 +36,7 @@
       :disable="loading"
       :label="t('field.name')"
       :locales="data.countries"
-      :rules="[(val) => !!val || t('validation.name.empty')]"
+      :rules="[(val: string) => !!val || t('validation.name.empty')]"
       hide-bottom-space
       outlined
       rounded
@@ -52,7 +52,7 @@
       :disable="loading"
       :label="t('field.maxParticipants')"
       :locales="data.countries"
-      :rules="[(val) => !!val || t('validation.maxParticipants.empty')]"
+      :rules="[(val: string) => !!val || t('validation.maxParticipants.empty')]"
       always
       hide-bottom-space
       outlined
@@ -70,7 +70,7 @@
       v-model="data.startAt"
       :disable="loading"
       :label="t('field.startAt')"
-      :rules="[(val) => !!val || t('validation.startAt.empty')]"
+      :rules="[(val: string) => !!val || t('validation.startAt.empty')]"
       hide-bottom-space
       outlined
       rounded
@@ -86,8 +86,8 @@
       :disable="loading"
       :label="t('field.endAt')"
       :rules="[
-        (val) => !!val || t('validation.endAt.empty'),
-        (val) => val >= data.startAt || t('validation.endAt.later'),
+        (val: string) => !!val || t('validation.endAt.empty'),
+        (val: string) => data.startAt && val >= data.startAt || t('validation.endAt.later'),
       ]"
       hide-bottom-space
       outlined
@@ -120,7 +120,9 @@
       v-model.number="data.maxAge"
       :disable="loading"
       :label="t('field.maxAge')"
-      :rules="[(val) => val >= data.minAge || t('validation.maxAge')]"
+      :rules="[
+        (val) => (data.minAge && val >= data.minAge) || t('validation.maxAge'),
+      ]"
       hide-bottom-space
       outlined
       rounded
@@ -137,7 +139,7 @@
       :disable="loading"
       :label="t('field.location')"
       :locales="data.countries"
-      :rules="[(val) => !!val || t('validation.location.empty')]"
+      :rules="[(val: unknown) => !!val || t('validation.location.empty')]"
       hide-bottom-space
       outlined
       rounded
@@ -164,9 +166,6 @@
         <q-icon name="euro" />
       </template>
     </q-input>
-
-    <!-- form -->
-    <!-- TODO Edit form -->
 
     <!-- action -->
     <div class="row justify-end">
@@ -218,7 +217,8 @@ const loading = computed<boolean>(() => {
   return props.loading ?? false;
 });
 
-const data = ref<Partial<Camp>>(structuredClone(toRaw(props.modelValue)));
+const showFormDialog = ref<boolean>(false);
+const data = ref<Partial<Camp>>(initialValue());
 
 const title = computed<string>(() => {
   return props.mode === 'create' ? t('title.create') : t('title.edit');
@@ -230,13 +230,17 @@ const submitLabel = computed<string>(() => {
     : t('action.submit.edit');
 });
 
+function initialValue(): Partial<Camp> {
+  return structuredClone(toRaw(props.modelValue));
+}
+
 function onSubmit() {
   emit('update:modelValue', data.value);
   emit('submit');
 }
 
 function onReset() {
-  data.value = structuredClone(toRaw(props.modelValue));
+  data.value = initialValue();
 }
 </script>
 

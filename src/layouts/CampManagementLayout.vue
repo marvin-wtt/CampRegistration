@@ -205,6 +205,20 @@
 
         <q-item
           v-ripple
+          :to="{ name: 'edit-form' }"
+          clickable
+        >
+          <q-item-section avatar>
+            <q-icon name="feed" />
+          </q-item-section>
+
+          <q-item-section>
+            {{ t('form') }}
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          v-ripple
           :to="{ name: 'access' }"
           clickable
         >
@@ -298,6 +312,7 @@ camps: 'Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
+form: 'Registration Form'
 expenses: 'Expenses'
 participants: 'Participants'
 program_planner: 'Program'
@@ -315,6 +330,7 @@ contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
 expenses: 'Ausgaben'
+form: 'Anmeldeformular'
 participants: 'Teilnehmende'
 program_planner: 'Programm'
 room_planner: 'Raumplaner'
@@ -331,6 +347,7 @@ contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
 expenses: 'Dépenses'
+form: "formulaire d'inscription"
 participants: 'Participants'
 program_planner: 'Programme'
 room_planner: 'Aménageur'

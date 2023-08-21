@@ -86,6 +86,11 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/campManagement/EditCampPage.vue'),
           },
           {
+            path: 'edit-form',
+            name: 'edit-form',
+            component: () => import('pages/campManagement/FormEditPage.vue'),
+          },
+          {
             path: 'dashboard',
             name: 'dashboard',
             component: () => import('pages/campManagement/DashboardPage.vue'),
