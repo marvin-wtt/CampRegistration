@@ -3,9 +3,10 @@
     :loading="loading"
     :error="error"
     class="row justify-center"
+    :style="{ backgroundColor: bgColor }"
   >
     <survey
-      v-if="model"
+      id="survey"
       class="col-xs-12 col-sm-12 col-md-8 col-lg-6 col-xl-6"
       :model="model"
     />
@@ -14,13 +15,21 @@
 
 <script lang="ts" setup>
 import { SurveyModel } from 'survey-core';
+import 'survey-core/defaultV2.min.css';
+import { PlainLight } from 'survey-core/themes/plain-light';
+import { PlainDark } from 'survey-core/themes/plain-dark';
+
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
+import { useSurveyTools } from 'src/composables/survey';
+import { useQuasar } from 'quasar';
 
 const { locale } = useI18n();
+const { setCampVariables } = useSurveyTools();
+const quasar = useQuasar();
 
 const markdownConverter = new showdown.Converter();
 const campDetailsStore = useCampDetailsStore();
@@ -37,6 +46,14 @@ const error = computed(() => {
 });
 
 const model = ref<SurveyModel>();
+const bgColor = ref<string>();
+
+watch(
+  () => quasar.dark.isActive,
+  (val) => {
+    applyTheme(val);
+  }
+);
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
@@ -48,16 +65,30 @@ onMounted(async () => {
   const form = campDetailsStore.data.form;
   const id = campDetailsStore.data.id;
   model.value = createModel(id, form);
+  applyTheme();
+
+  setCampVariables(campDetailsStore.data, model.value);
 });
+
+function applyTheme(dark?: boolean) {
+  dark ??= quasar.dark.isActive;
+  const theme = dark ? PlainDark : PlainLight;
+
+  model.value?.applyTheme(theme);
+
+  nextTick(() => {
+    const element = document.getElementById('survey');
+    if (element) {
+      bgColor.value = window.getComputedStyle(element).backgroundColor;
+    }
+  });
+}
 
 function createModel(id: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
-  survey.surveyPostId = id;
+  survey.surveyId = id;
   survey.locale = locale.value;
   survey.surveyShowDataSaving = true;
-  // TODO Apply theme
-  survey.applyTheme({});
-
   // Handle file uploads
   survey.onUploadFiles.add(async (survey, options) => {
     // Add files to the temporary storage
@@ -67,9 +98,16 @@ function createModel(id: string, form: object): SurveyModel {
       temporaryFilesStorage[options.name] = options.files;
     }
 
+    interface FileOption {
+      name: string;
+      type: string;
+      content: string | ArrayBuffer | null;
+      file: File;
+    }
+
     // Load previews in base64. Until the survey is completed, files are loaded temporarily as base64 for previews.
     const contentPromises = options.files.map((file) => {
-      return new Promise((resolve) => {
+      return new Promise<FileOption>((resolve) => {
         const fileReader = new FileReader();
         fileReader.onload = () => {
           resolve({
@@ -113,17 +151,21 @@ function createModel(id: string, form: object): SurveyModel {
   });
   // Workaround for date input for Safari < 4.1
   survey.onAfterRenderPage.add((survey, options) => {
-    const dateInputs = options.htmlElement.querySelectorAll('input[type=date]');
-    dateInputs.forEach((input: HTMLInputElement) => {
+    const dateInputs: NodeListOf<HTMLInputElement> =
+      options.htmlElement.querySelectorAll('input[type=date]');
+    dateInputs.forEach((input) => {
       input.placeholder = 'yyyy-mm-dd';
     });
   });
   // Send data to server
   survey.onComplete.add((sender, options) => {
-
-
-
     // TODO Send data to server
+
+    options.showSaveInProgress();
+
+    setTimeout(() => {
+      options.showSaveSuccess();
+    }, 3000);
   });
 
   return survey;
