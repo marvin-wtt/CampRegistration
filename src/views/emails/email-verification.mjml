@@ -1,0 +1,41 @@
+<mjml>
+  <mj-head>
+    <mj-preview>
+      {{ meta.preview }}<
+    </mj-preview>
+  </mj-head>
+  <mj-body>
+    <!-- Header -->
+    <mj-section>
+      <mj-column width="100%">
+        <!-- TODO Render asset dynamically -->
+        <mj-image
+          alt="Logo"
+          src="https://www.ballaeron.de/bloog/wp-content/uploads/2017/05/cropped-20170525_ballaeron_logo_landscape_1_Website-1-1.jpg"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- Content -->
+    <mj-section>
+      <mj-column width="100%">
+        <mj-text>
+          Test
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+      <mj-column width="100%">
+        <mj-divider
+          border-width="1px"
+          border-color="#E0E0E0"/>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section>
+
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -1,0 +1,63 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-text font-size="16px" color="#333333" line-height="1.5" />
+      <mj-section padding-bottom="20px" padding-top="20px" />
+      <mj-column padding-bottom="10px" padding-top="10px" />
+    </mj-attributes>
+
+    <mj-preview>
+      {{ meta.preview }}<
+    </mj-preview>
+  </mj-head>
+  <mj-body>
+    <!-- Header -->
+    <mj-section>
+      <mj-column width="100%">
+        <!-- TODO Render asset dynamically -->
+        <mj-image
+          alt="Logo"
+          src="https://www.ballaeron.de/bloog/wp-content/uploads/2017/05/cropped-20170525_ballaeron_logo_landscape_1_Website-1-1.jpg"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- Main Content -->
+    <mj-section>
+      <mj-column>
+        <mj-text align="center" color="#333333" font-size="24px" font-weight="bold" padding-bottom="10px">Welcome to Our Website!</mj-text>
+        <mj-text align="center" color="#555555" font-size="16px" padding-top="20px" padding-bottom="20px">Thank you for registering an account.</mj-text>
+        <mj-button
+          href="https://example.com/confirm_email"
+          align="center"
+          font-size="16px"
+          background-color="#FF3366"
+          padding-top="20px"
+          padding-bottom="20px"
+        >
+          {{t 'registration' }}
+        </mj-button>
+        <mj-text align="center" color="#555555" font-size="14px" padding-top="20px" padding-bottom="20px">If the button above doesn't work, you can also click the link below:</mj-text>
+        <mj-text align="center" color="#555555" font-size="14px" padding-top="10px" padding-bottom="20px"><a href="https://example.com/confirm_email">https://example.com/confirm_email</a></mj-text>
+        <mj-text align="center" color="#555555" font-size="14px" padding-bottom="20px">If you did not register an account, please disregard this email.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Separator -->
+    <mj-section background-color="#FFFFFF" padding-bottom="20px">
+      <mj-column>
+        <mj-divider border-color="#CCCCCC" border-width="1px" padding-bottom="10px" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#FFFFFF" padding-bottom="20px" padding-top="20px">
+      <mj-column>
+        <mj-text align="center" color="#555555" font-size="12px" padding-top="10px" padding-bottom="10px">
+          Company Name | Address Line 1 | Address Line 2 | City | Postal Code | Country<br />
+          Phone: +123456789 | Email: info@example.com
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
