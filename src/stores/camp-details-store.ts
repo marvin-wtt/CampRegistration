@@ -4,6 +4,7 @@ import { Camp } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { omitProperty } from 'src/utils/omitProperty';
 
 export const useCampDetailsStore = defineStore('campDetails', () => {
   const route = useRoute();
@@ -18,6 +19,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     reset,
     invalidate,
     withProgressNotification,
+    handlerByType,
     lazyFetch,
     checkNotNullWithError,
   } = useServiceHandler<Camp>('camp');
@@ -54,14 +56,19 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     });
   }
 
-  async function updateData(newData: Camp) {
+  async function updateData(
+    newData: Partial<Camp>,
+    notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress'
+  ) {
     const campId =
       newData.id ?? data.value?.id ?? (route.params.camp as string);
 
     checkNotNullWithError(campId);
 
-    await withProgressNotification('update', async () => {
-      const updatedCamp = await api.updateCamp(campId, newData);
+    const newDataWithoutId = omitProperty(newData, 'id');
+
+    await handlerByType(notificationType)('update', async () => {
+      const updatedCamp = await api.updateCamp(campId, newDataWithoutId);
 
       // Replace element
       data.value = updatedCamp;

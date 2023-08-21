@@ -290,6 +290,29 @@ export function useServiceHandler<T>(storeName: string) {
     error.value = null;
   }
 
+  function handlerByType(
+    type: 'progress' | 'result' | 'error' | 'none'
+  ): (operation: string, fn: () => Promise<void>) => Promise<boolean> {
+    switch (type) {
+      case 'progress':
+        return withProgressNotification;
+      case 'result':
+        return withResultNotification;
+      case 'error':
+        return withErrorNotification;
+      case 'none':
+        return async (operation: string, fn: () => Promise<void>) => {
+          try {
+            await fn();
+
+            return true;
+          } catch (ignored: unknown) {
+            return false;
+          }
+        }
+    }
+  }
+
   return {
     data,
     isLoading,
@@ -301,6 +324,7 @@ export function useServiceHandler<T>(storeName: string) {
     forceFetch,
     lazyFetch,
     asyncUpdate,
+    handlerByType,
     withProgressNotification,
     withMultiProgressNotification,
     withResultNotification,
