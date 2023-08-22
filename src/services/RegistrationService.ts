@@ -1,26 +1,9 @@
 import { Registration } from 'src/types/Registration';
 import { api } from 'boot/axios';
-import { AxiosRequestConfig } from 'axios';
 
 export function useRegistrationService() {
-  function withoutMiddlewareConfig(): AxiosRequestConfig {
-    const transformResponse = Array.isArray(api.defaults.transformResponse)
-      ? api.defaults.transformResponse[0]
-      : [];
-
-    const transformRequest = Array.isArray(api.defaults.transformRequest)
-      ? api.defaults.transformRequest[0]
-      : [];
-
-    return {
-      transformRequest: transformRequest,
-      transformResponse: transformResponse,
-    };
-  }
-
   async function fetchRegistrations(campId: string): Promise<Registration[]> {
-    const config = withoutMiddlewareConfig();
-    const response = await api.get(`camps/${campId}/registrations/`, config);
+    const response = await api.get(`camps/${campId}/registrations/`);
 
     return response.data.data;
   }
@@ -29,10 +12,8 @@ export function useRegistrationService() {
     campId: string,
     registrationId: string
   ): Promise<Registration> {
-    const config = withoutMiddlewareConfig();
     const response = await api.get(
-      `camps/${campId}/registrations/${registrationId}/`,
-      config
+      `camps/${campId}/registrations/${registrationId}/`
     );
 
     return response.data.data;
@@ -40,7 +21,7 @@ export function useRegistrationService() {
 
   async function createRegistration(
     campId: string,
-    data: Registration
+    data: Omit<Registration, 'id'>
   ): Promise<Registration> {
     const headers = {
       'Content-Type': 'multipart/form-data',

@@ -1,5 +1,4 @@
 import { boot } from 'quasar/wrappers';
-import applyCaseMiddleware from 'axios-case-converter';
 import axios, { AxiosInstance } from 'axios';
 
 declare module '@vue/runtime-core' {
@@ -16,13 +15,11 @@ const apiUrl = 'http://localhost:3000';
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = applyCaseMiddleware(
-  axios.create({
-    baseURL: `${apiUrl}/api/v1/`,
-    // Needed for auth
-    withCredentials: true,
-  })
-);
+const api = axios.create({
+  baseURL: `${apiUrl}/api/v1/`,
+  // Needed for auth
+  withCredentials: true,
+});
 
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
