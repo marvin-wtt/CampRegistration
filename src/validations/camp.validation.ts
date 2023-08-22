@@ -34,13 +34,13 @@ const store = {
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
       .required(),
     // TODO This should be an exact match
-    max_participants: Joi.alternatives()
+    maxParticipants: Joi.alternatives()
       .try(Joi.number(), Joi.object().pattern(Joi.string(), Joi.number()))
       .required(),
-    start_at: Joi.date().iso().required(),
-    end_at: Joi.date().iso().min(Joi.ref("start_at")).required(),
-    min_age: Joi.number().integer().min(0).max(99).required(),
-    max_age: Joi.number().integer().min(Joi.ref("min_age")).max(99).required(),
+    startAt: Joi.date().iso().required(),
+    endAt: Joi.date().iso().min(Joi.ref("startAt")).required(),
+    minAge: Joi.number().integer().min(0).max(99).required(),
+    maxAge: Joi.number().integer().min(Joi.ref("minAge")).max(99).required(),
     location: Joi.alternatives()
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
       .required(),
@@ -60,12 +60,12 @@ const update = {
       .min(1),
     name: Joi.alternatives()
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string())),
-    max_participants: Joi.alternatives()
+    maxParticipants: Joi.alternatives()
       .try(Joi.number(), Joi.object().pattern(Joi.string(), Joi.number())),
-    start_at: Joi.date().iso(),
-    end_at: Joi.date().iso().min(Joi.ref("start_at")),
-    min_age: Joi.number().integer().min(0).max(99),
-    max_age: Joi.number().integer().min(Joi.ref("min_age")).max(99),
+    startAt: Joi.date().iso(),
+    endAt: Joi.date().iso().min(Joi.ref("startAt")),
+    minAge: Joi.number().integer().min(0).max(99),
+    maxAge: Joi.number().integer().min(Joi.ref("minAge")).max(99),
     location: Joi.alternatives()
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string())),
     price: Joi.number().min(0),

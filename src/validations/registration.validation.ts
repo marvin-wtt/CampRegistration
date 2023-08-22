@@ -50,7 +50,8 @@ export const registrationData: Joi.CustomValidator<object> = (
   const survey = new SurveyModel(surveyJson);
   survey.data = { ...value, ...fileFields(req) };
 
-  const error = survey.pages.some((p) => p.hasErrors());
+  const error = survey.pages.some((p) => p.hasErrors(false, false));
+  console.log(error);
   if (error) {
     return helpers.message({ en: "Invalid survey data" });
   }

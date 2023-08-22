@@ -34,6 +34,7 @@ const registrationResource = (registration: RegistrationWithBedAndFiles) => {
     ...fileData,
     id: registration.id,
     room,
+    // Use snake case because form keys should be snake case too
     updated_at: registration.updatedAt,
     created_at: registration.createdAt,
   };
