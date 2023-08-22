@@ -8,7 +8,7 @@ import { bedResource } from "@/resources";
 const update = catchRequestAsync(async (req, res) => {
   const { bedId } = req.params;
   const data = req.body;
-  const bed = await bedService.updateBedById(bedId, data.registration_id);
+  const bed = await bedService.updateBedById(bedId, data.registrationId);
   if (bed == null) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
