@@ -8,25 +8,12 @@ const fileFields = (req: Request) => {
     return {
       type: file.mimetype,
       name: file.originalname,
-      content: file.originalname,
     };
   };
 
-  if (req.file) {
-    return {
-      [req.file.fieldname]: mapFileToSurveyData(req.file),
-    };
-  }
-
-  if (!req.files) {
+  // Array should already be formatted
+  if (!req.files || Array.isArray(req.files) || typeof req.files !== "object") {
     return {};
-  }
-
-  if (Array.isArray(req.files)) {
-    return req.files.reduce((acc, file) => {
-      acc[file.fieldname] = mapFileToSurveyData(file);
-      return acc;
-    }, {} as Record<string, object>);
   }
 
   const requestFiles = req.files;

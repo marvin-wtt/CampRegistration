@@ -21,7 +21,7 @@ const extractRequestFiles = (req: Request): File[] => {
   }
 
   if (req.files) {
-    files.push(...Object.values(req.files));
+    files.push(...Object.values(req.files).flat());
   }
 
   return files;
