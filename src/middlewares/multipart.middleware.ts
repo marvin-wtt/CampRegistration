@@ -14,6 +14,7 @@ const multiPart = (req: Request, res: Response, next: NextFunction) => {
     }
 
     // Convert bull prototypes to objects
+    // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
     req.body = removePrototype(req.body);
 
     // Format files so that they are always grouped by the field name
