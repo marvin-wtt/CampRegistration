@@ -1,7 +1,7 @@
 <template>
   <q-card
     v-ripple
-    class="cursor-pointer q-hoverable"
+    class="camp-card cursor-pointer q-hoverable"
     @click="navigateToRegistration"
   >
     <!-- Helper to make it hover and selectable -->
@@ -98,4 +98,9 @@ function navigateToRegistration() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.camp-card {
+  width: 100%;
+  max-width: 300px;
+}
+</style>
