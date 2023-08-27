@@ -90,7 +90,7 @@
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { Camp } from 'src/types/Camp';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
@@ -98,11 +98,22 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+
+type MenuState = 'public' | 'draft';
 
 const { user, loading, error } = storeToRefs(authStore);
 
-const menu = ref<'public' | 'draft'>('public');
+const menu = ref<MenuState>(getMenuStateFromQueryParameter());
+
+function getMenuStateFromQueryParameter(): MenuState {
+  if ('public' in route.query) {
+    return route.query.public === '0' ? 'draft' : 'public';
+  }
+
+  return 'public';
+}
 
 function addAction() {
   router.push({
