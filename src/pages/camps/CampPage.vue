@@ -26,10 +26,12 @@ import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
 import { useSurveyTools } from 'src/composables/survey';
 import { useQuasar } from 'quasar';
+import { useRegistrationsStore } from 'stores/registration-store';
 
 const { locale } = useI18n();
 const { setCampVariables } = useSurveyTools();
 const quasar = useQuasar();
+const registrationStore = useRegistrationsStore();
 
 const markdownConverter = new showdown.Converter();
 const campDetailsStore = useCampDetailsStore();
@@ -66,8 +68,7 @@ onMounted(async () => {
   const id = campDetailsStore.data.id;
   model.value = createModel(id, form);
   applyTheme();
-
-  setCampVariables(campDetailsStore.data, model.value);
+  setCampVariables(model.value, campDetailsStore.data);
 });
 
 function applyTheme(dark?: boolean) {
@@ -88,12 +89,12 @@ function createModel(id: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.surveyId = id;
   survey.locale = locale.value;
-  survey.surveyShowDataSaving = true;
+
   // Handle file uploads
-  survey.onUploadFiles.add(async (survey, options) => {
+  survey.onUploadFiles.add(async (_, options) => {
     // Add files to the temporary storage
     if (options.name in temporaryFilesStorage) {
-      temporaryFilesStorage[options.name].concat(options.files);
+      temporaryFilesStorage[options.name].push(...options.files);
     } else {
       temporaryFilesStorage[options.name] = options.files;
     }
@@ -130,7 +131,7 @@ function createModel(id: string, form: object): SurveyModel {
     );
   });
   // Remove file from storage
-  survey.onClearFiles.add((sender, options) => {
+  survey.onClearFiles.add((_, options) => {
     const tempFiles = temporaryFilesStorage[options.name] || [];
     const fileInfoToRemove = tempFiles.find(
       (file) => file.name === options.fileName
@@ -158,14 +159,19 @@ function createModel(id: string, form: object): SurveyModel {
     });
   });
   // Send data to server
-  survey.onComplete.add((sender, options) => {
-    // TODO Send data to server
-
+  survey.onComplete.add(async (sender, options) => {
     options.showSaveInProgress();
 
-    setTimeout(() => {
-      options.showSaveSuccess();
-    }, 3000);
+    const campId = sender.surveyId;
+    let data = sender.data;
+    const registration = { ...data, ...temporaryFilesStorage };
+
+    try {
+      await registrationStore.storeData(campId, registration);
+      options.showDataSavingSuccess();
+    } catch (e: unknown) {
+      options.showSaveError('Error');
+    }
   });
 
   return survey;
