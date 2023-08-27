@@ -44,6 +44,15 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
+  async function storeData(
+    campId: string,
+    registration: Omit<Registration, 'id'>
+  ) {
+    checkNotNullWithError(campId);
+
+    await apiService.createRegistration(campId, registration);
+  }
+
   async function updateData(
     registrationId: string | undefined,
     updateData: Partial<Registration>
@@ -91,6 +100,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     isLoading,
     error,
     fetchData,
+    storeData,
     updateData,
     deleteData,
   };
