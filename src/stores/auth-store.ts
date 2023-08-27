@@ -3,7 +3,7 @@ import { useAPIService } from 'src/services/APIService';
 import { User } from 'src/types/User';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
-import { useAuthBus } from 'src/composables/bus';
+import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { AccessTokens } from 'src/types/AccessTokens';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
   const route = useRoute();
   const bus = useAuthBus();
+  const campBus = useCampBus();
   const {
     data,
     isLoading,
@@ -22,6 +23,18 @@ export const useAuthStore = defineStore('auth', () => {
     errorOnFailure,
     checkNotNullWithError,
   } = useServiceHandler<User>('user');
+
+  campBus.on('create', async () => {
+    await fetchUser();
+  });
+
+  campBus.on('delete', async (campId) => {
+    const index = data.value?.camps.findIndex((camp) => camp.id === campId);
+
+    if (index && index >= 0) {
+      data.value?.camps.splice(index);
+    }
+  });
 
   // TODO Add i18n message for all operations
 
