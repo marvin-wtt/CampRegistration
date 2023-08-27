@@ -1,15 +1,20 @@
 import prisma from "../client";
-import { Prisma } from "@prisma/client";
+import { File, Prisma } from "@prisma/client";
 import config from "@/config";
 import fs from "fs";
 import { ulid } from "@/utils/ulid";
+import ApiError from "@/utils/ApiError";
+import path from "path";
 
-type File = Express.Multer.File;
+type RequestFile = Express.Multer.File;
 
-type RequestFiles = { [field: string]: File[] } | File[];
+type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
 
-const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
-  const mapFields = (file: File, fieldName?: string) => {
+const mapFileData = (requestFiles: RequestFiles, visibility = 'private'): Prisma.FileCreateInput[] => {
+  const mapFields = (
+    file: RequestFile,
+    fieldName?: string
+  ): Prisma.FileCreateInput => {
     return {
       id: ulid(),
       type: file.mimetype,
@@ -17,6 +22,8 @@ const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
       name: file.filename,
       size: file.size,
       field: fieldName ?? file.fieldname,
+      storageLocation: config.storage.location,
+      visibility,
     };
   };
 
@@ -45,7 +52,7 @@ const moveFiles = (files: RequestFiles) => {
       if (!fs.existsSync(destinationDir)) {
         fs.mkdirSync(destinationDir);
       }
-      const destinationPath = destinationDir + file.filename;
+      const destinationPath = path.join(destinationDir, file.filename);
       fs.rename(sourcePath, destinationPath, (err) => {
         if (err) {
           console.error(
@@ -57,7 +64,7 @@ const moveFiles = (files: RequestFiles) => {
 };
 
 const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
-  const fileData: Prisma.FileCreateInput[] = mapFileData(files).map(
+  const fileData: Prisma.FileCreateInput[] = mapFileData(files, 'private').map(
     (fileData) => {
       return {
         ...fileData,
@@ -92,7 +99,29 @@ const saveCampFiles = async (id: string, files: RequestFiles) => {
   return fileModes;
 };
 
+const getFileByName = async (name: string) => {
+  return prisma.file.findFirst({
+    where: {
+      name,
+    },
+    include: {
+      camp: true,
+    },
+  });
+};
+
+const getFileStream = async (file: File) => {
+  if (file.storageLocation === "local") {
+    const filePath = path.join(config.storage.uploadDir,file.name);
+    return fs.createReadStream(filePath);
+  }
+
+  throw new ApiError(400, "Unknown storage type");
+};
+
 export default {
   saveRegistrationFiles,
   saveCampFiles,
+  getFileByName,
+  getFileStream,
 };

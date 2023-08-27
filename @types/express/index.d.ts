@@ -11,6 +11,7 @@ declare global {
         manager?: import("@prisma/client").CampManager;
         room?: import("@prisma/client").Room;
         bed?: import("@prisma/client").Bed;
+        file?: import("@prisma/client").File;
       };
     }
   }

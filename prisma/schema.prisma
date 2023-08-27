@@ -141,17 +141,19 @@ enum TokenType {
 }
 
 model File {
-  id             String        @id @unique(map: "files_id_unique") @db.Char(26)
-  campId         String?       @map("camp_id") @db.Char(36) // Prisma does not support mirth
-  registrationId String?       @map("registration_id") @db.Char(36) // Prisma does not support mirth
-  name           String
-  originalName   String        @map("original_name")
-  field          String?
-  type           String
-  size           Int
-  createdAt      DateTime      @default(now()) @map("created_at")
-  camp           Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
-  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  id              String        @id @unique(map: "files_id_unique") @db.Char(26)
+  campId          String?       @map("camp_id") @db.Char(36) // Prisma does not support morth
+  registrationId  String?       @map("registration_id") @db.Char(36) // Prisma does not support morth
+  name            String
+  originalName    String        @map("original_name")
+  field           String?
+  type            String
+  size            Int
+  visibility      String
+  storageLocation String
+  createdAt       DateTime      @default(now()) @map("created_at")
+  camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
+  registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@map("files")
 }
