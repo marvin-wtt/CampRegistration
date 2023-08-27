@@ -119,6 +119,7 @@
     :to="{ name: 'login' }"
     :label="t('login')"
     stretch
+    flat
   />
 </template>
 
