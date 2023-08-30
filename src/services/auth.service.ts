@@ -60,7 +60,7 @@ const refreshAuth = async (
     const { userId } = refreshTokenData;
     await prisma.token.delete({ where: { id: refreshTokenData.id } });
 
-    return tokenService.generateAuthTokens({ id: userId });
+    return tokenService.generateAuthTokens({ id: userId }, true);
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
   }
