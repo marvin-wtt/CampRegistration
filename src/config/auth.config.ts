@@ -14,7 +14,7 @@ if (error) {
 
 export default {
   secret: envVars.JWT_SECRET,
-  accessExpirationMinutes: 2,
+  accessExpirationMinutes: 30,
   refreshExpirationDays: 30,
   resetPasswordExpirationMinutes: 10,
   verifyEmailExpirationMinutes: 10,

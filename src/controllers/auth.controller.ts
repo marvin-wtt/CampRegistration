@@ -113,20 +113,23 @@ const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
   const httpOnly = true;
   const secure = config.env !== "development";
   const sameSite = "strict";
+  const path = "/";
 
   res.cookie("accessToken", tokens.access.token, {
-    httpOnly: httpOnly,
-    secure: secure,
+    httpOnly,
+    secure,
+    path,
     expires: tokens.access.expires,
-    sameSite: sameSite,
+    sameSite,
   });
 
   if (tokens.refresh) {
     res.cookie("refreshToken", tokens.refresh.token, {
-      httpOnly: httpOnly,
-      secure: secure,
+      httpOnly,
+      secure,
+      path,
       expires: tokens.refresh.expires,
-      sameSite: sameSite,
+      sameSite,
     });
   }
 };
