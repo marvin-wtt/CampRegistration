@@ -31,7 +31,8 @@ const store = catchRequestAsync(async (req, res) => {
   const camp = await campService.createCamp(userId, {
     countries: data.countries,
     name: data.name,
-    public: data.public,
+    organization: data.organization,
+    public: false,
     maxParticipants: data.maxParticipants,
     startAt: data.startAt,
     endAt: data.endAt,

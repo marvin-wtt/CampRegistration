@@ -54,11 +54,12 @@ const update = {
     campId: Joi.string(),
   }),
   body: Joi.object({
-    public: Joi.boolean(),
     countries: Joi.array()
       .items(Joi.string().lowercase().length(2))
       .min(1),
     name: Joi.alternatives()
+      .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string())),
+    organization: Joi.alternatives()
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string())),
     maxParticipants: Joi.alternatives()
       .try(Joi.number(), Joi.object().pattern(Joi.string(), Joi.number())),

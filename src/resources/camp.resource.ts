@@ -6,6 +6,7 @@ const campResource = (camp: Camp) => {
     public: camp.public,
     countries: camp.countries,
     name: camp.name,
+    organization: camp.organization,
     maxParticipants: camp.maxParticipants,
     minAge: camp.minAge,
     maxAge: camp.maxAge,
