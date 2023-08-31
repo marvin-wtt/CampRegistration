@@ -49,6 +49,25 @@
       </template>
     </translated-input>
 
+    <!-- organization -->
+    <translated-input
+      v-model="data.name"
+      :disable="loading"
+      :label="t('field.organization')"
+      :locales="data.countries"
+      :rules="[
+        (val?: string) => !!val || t('validation.organization.empty'),
+        (val: string) => val.length <= 255 || t('validation.organization.length'),
+        ]"
+      hide-bottom-space
+      outlined
+      rounded
+    >
+      <template #before>
+        <q-icon name="corporate_fare" />
+      </template>
+    </translated-input>
+
     <!-- participants -->
     <translated-input
       v-model.number="data.maxParticipants"
@@ -296,7 +315,8 @@ title:
 field:
   countries: 'Countries'
   name: 'Camp name'
-  maxParticipants: 'Maximum amount of participants'
+  organization: 'Organization / Provider / Club'
+  maxParticipants: 'Maximum number of participants'
   dateRange: 'Start and end date'
   startTime: 'Start time'
   endTime: 'End time'
@@ -308,9 +328,11 @@ field:
 validation:
   countries:
     empty: 'Please select at least one country'
-  n-ame:
+  name:
     empty: 'Please enter a camp name'
     length: 'Camp name must not exceed 255 characters'
+  organization:
+    empty: 'Please enter an organization'
   maxParticipants:
     empty: 'Please enter the maximum number of participants'
     positive: 'Maximum participants must be a positive number'
@@ -350,7 +372,8 @@ title:
 field:
   countries: 'Länder'
   name: 'Camp Name'
-  maxParticipants: 'Maximale Anzahl von Teilnehmenden'
+  organization: 'Organisation / Träger / Verein'
+  maxParticipants: 'Maximale Teilnehmeranzahl'
   dateRange: 'Start- und Enddatum'
   startTime: 'Startzeit'
   endTime: 'Endzeit'
@@ -365,6 +388,8 @@ validation:
   name:
     empty: 'Bitte geben Sie einen Camp-Namen ein'
     length: 'Der Camp-Name darf maximal 255 Zeichen haben'
+  organization:
+    empty: 'Bitte geben Sie eine Organisation ein'
   maxParticipants:
     empty: 'Bitte geben Sie die maximale Teilnehmerzahl ein'
     positive: 'Die maximale Teilnehmerzahl muss eine positive Zahl sein'
@@ -404,6 +429,7 @@ title:
 field:
   countries: 'Pays'
   name: 'Nom du camp'
+  organization: 'Organisation / Fournisseur / Association'
   maxParticipants: 'Nombre maximum de participants'
   dateRange: 'Date de début et de fin'
   startTime: 'Heure de début'
@@ -419,6 +445,8 @@ validation:
   name:
     empty: 'Veuillez entrer un nom de camp'
     length: 'Le nom du camp ne doit pas dépasser 255 caractères'
+  organization:
+    empty: 'Veuillez entrer un nom de camp'
   maxParticipants:
     empty: 'Veuillez entrer le nombre maximum de participants'
     positive: 'Le nombre maximum de participants doit être un nombre positif'
