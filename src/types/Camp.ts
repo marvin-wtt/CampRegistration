@@ -5,6 +5,7 @@ export interface Camp extends Identifiable {
   public?: boolean;
   countries: string[];
   name: string | Record<string, string>;
+  organization: string | Record<string, string>;
   maxParticipants: number | Record<string, number>;
   startAt: string;
   endAt: string;
