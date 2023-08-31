@@ -6,7 +6,7 @@ export interface RegistrationSettings {
   countryKey?: string;
   ageKey?: string;
   dateOfBirthKey?: string;
-  leaderKey?: string;
+  counselorKey?: string;
   waitingListKey?: string;
   emailKey?: string;
   emailSecondaryKey?: string;

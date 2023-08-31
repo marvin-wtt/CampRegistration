@@ -5,5 +5,5 @@ export interface Roommate extends Identifiable {
   age?: number;
   gender?: string;
   country?: string;
-  leader?: boolean;
+  counselor?: boolean;
 }

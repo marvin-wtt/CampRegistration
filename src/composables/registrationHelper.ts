@@ -111,8 +111,8 @@ export function useRegistrationHelper() {
     return stringValue(registration, 'country');
   }
 
-  function leader(registration: Registration): boolean {
-    return booleanValue(registration, 'leader') ?? false;
+  function counselor(registration: Registration): boolean {
+    return booleanValue(registration, 'counselor') ?? false;
   }
 
   function participant(registration: Registration): boolean {
@@ -146,7 +146,7 @@ export function useRegistrationHelper() {
     age,
     gender,
     country,
-    leader,
+    counselor,
     participant,
     waitingList,
     email,

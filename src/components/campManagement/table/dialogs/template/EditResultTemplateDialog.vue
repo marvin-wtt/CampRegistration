@@ -87,8 +87,8 @@
         />
 
         <q-toggle
-          v-model="template.filterLeaders"
-          :label="t('fields.filter_leaders.label')"
+          v-model="template.filterCounselors"
+          :label="t('fields.filter_counselors.label')"
         />
 
         <q-input
@@ -295,8 +295,8 @@ fields:
   filter_waiting_list:
     label: 'Filter registrations on waiting list'
     hint: ''
-  filter_leaders:
-    label: 'Filter camp leader registrations'
+  filter_counselors:
+    label: 'Filter camp counselors registrations'
     hint: ''
 </i18n>
 
@@ -334,7 +334,7 @@ fields:
   filter_waiting_list:
     label: 'Anmeldungen auf Warteliste filtern'
     hint: ''
-  filter_leaders:
+  filter_counselor:
     label: 'Anmeldungen von Lagerleitern filtern'
     hint: ''
 </i18n>
@@ -373,7 +373,7 @@ fields:
   filter_waiting_list:
     label: 'Filtrer les inscriptions en liste d’attente'
     hint: ''
-  filter_leaders:
+  filter_counselor:
     label: 'Filtrer les inscriptions de chefs de camp'
     hint: ''
 </i18n>

@@ -179,15 +179,15 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     const age = registrationHelper.age(registration);
     const gender = registrationHelper.gender(registration);
     const country = registrationHelper.country(registration);
-    const leader = registrationHelper.leader(registration);
+    const counselor = registrationHelper.counselor(registration);
 
     return {
       id: registration.id,
-      name: name,
-      age: age,
-      gender: gender,
-      country: country,
-      leader: leader,
+      name,
+      age,
+      gender,
+      country,
+      counselor,
     };
   }
 

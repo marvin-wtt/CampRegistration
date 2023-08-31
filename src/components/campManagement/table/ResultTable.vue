@@ -228,7 +228,7 @@ const rows = computed<Registration[]>(() => {
 
   // TODO Get keys from setting store
   const waitingListKey = 'waiting_list';
-  const leaderKey = 'leader';
+  const counselorsKey = 'counselor';
 
   // Waiting list
   if (template.value.filterWaitingList) {
@@ -237,10 +237,10 @@ const rows = computed<Registration[]>(() => {
     });
   }
 
-  // Leaders
-  if (template.value.filterLeaders) {
+  // Counselors
+  if (template.value.filterCounselors) {
     rows = rows.filter((row) => {
-      return row[leaderKey] === undefined || row[leaderKey] == false;
+      return row[counselorsKey] === undefined || row[counselorsKey] == false;
     });
   }
 
@@ -249,9 +249,10 @@ const rows = computed<Registration[]>(() => {
     rows = rows.filter((row) => {
       const waitingList =
         row[waitingListKey] !== undefined && row[waitingListKey] == true;
-      const leader = row[leaderKey] !== undefined && row[leaderKey] == true;
+      const counselor =
+        row[counselorsKey] !== undefined && row[counselorsKey] == true;
 
-      return waitingList || leader;
+      return waitingList || counselor;
     });
   }
 

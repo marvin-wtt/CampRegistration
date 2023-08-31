@@ -117,20 +117,20 @@ const gender = computed<string | undefined>(() => {
   return gender;
 });
 
-const leader = computed<boolean | undefined>(() => {
-  let leader: boolean | undefined = undefined;
+const counselor = computed<boolean | undefined>(() => {
+  let counselor: boolean | undefined = undefined;
 
   room.value.beds.some((bed) => {
     const person = bed.person;
-    if (person?.leader === undefined) {
+    if (person?.counselor === undefined) {
       return false;
     }
 
-    leader = person.leader;
+    counselor = person.counselor;
     return true;
   });
 
-  return leader;
+  return counselor;
 });
 
 const options = computed<unknown[]>(() => {
@@ -142,9 +142,11 @@ const options = computed<unknown[]>(() => {
     });
   }
 
-  if (leader.value !== undefined) {
+  if (counselor.value !== undefined) {
     people = people.filter((value) => {
-      return value?.leader !== undefined && value.leader === leader.value;
+      return (
+        value?.counselor !== undefined && value.counselor === counselor.value
+      );
     });
   }
 

@@ -21,15 +21,15 @@ interface Props {
   participants: Registration[];
   max: number;
   country: string;
-  leader?: boolean;
+  counselor?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  leader: false,
+  counselor: false,
 });
 
 const series = computed<number[]>(() => {
-  // TODO Filter leader
+  // TODO Filter counselors
   return [
     props.participants.filter((value) => {
       return (
