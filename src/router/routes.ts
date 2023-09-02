@@ -124,12 +124,22 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'access',
             name: 'access',
-            component: () => import('pages/campManagement/AccessPage.vue'),
+            component: () =>
+              import('pages/campManagement/settings/AccessPage.vue'),
           },
           {
             path: 'settings',
             name: 'settings',
-            component: () => import('pages/campManagement/SettingsPage.vue'),
+            component: () =>
+              import('pages/campManagement/settings/SettingsPage.vue'),
+            children: [
+              {
+                path: 'access',
+                name: 'settings-access',
+                component: () =>
+                  import('pages/campManagement/settings/AccessPage.vue'),
+              },
+            ],
           },
         ],
       },
