@@ -52,7 +52,7 @@
             :props="props"
           >
             <q-btn
-              icon="clear"
+              icon="delete"
               round
               outline
               size="xs"
