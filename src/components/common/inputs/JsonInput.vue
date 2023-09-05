@@ -22,14 +22,14 @@
 import { computed } from 'vue';
 
 interface Props {
-  modelValue: string | undefined;
+  modelValue: string | object | undefined;
   modelModifiers?: Record<string, boolean>;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: T): void;
+  (e: 'update:modelValue', value: string): void;
 }>();
 
 const modelValue = computed<string>({
