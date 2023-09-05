@@ -18,11 +18,11 @@
   </q-input>
 </template>
 
-<script lang="ts" generic="T" setup>
+<script lang="ts" setup>
 import { computed } from 'vue';
 
 interface Props {
-  modelValue: T;
+  modelValue: string | undefined;
   modelModifiers?: Record<string, boolean>;
 }
 
@@ -32,9 +32,9 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: T): void;
 }>();
 
-const modelValue = computed<T>({
+const modelValue = computed<string>({
   get: () => JSON.stringify(props.modelValue),
-  set: (value) => emit('update:modelValue', JSON.parse(value)),
+  set: (value: string) => emit('update:modelValue', JSON.parse(value)),
 });
 </script>
 
