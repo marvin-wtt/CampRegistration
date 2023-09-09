@@ -38,6 +38,7 @@ const store = catchRequestAsync(async (req, res) => {
     endAt: data.endAt,
     minAge: data.minAge,
     maxAge: data.maxAge,
+    price: data.price,
     location: data.location,
     form: data.form,
   });
@@ -51,12 +52,14 @@ const update = catchRequestAsync(async (req, res) => {
   const camp = await campService.updateCampById(campId, {
     countries: data.countries,
     name: data.name,
+    organization: data.organization,
     public: data.public,
     maxParticipants: data.maxParticipants,
     startAt: data.startAt,
     endAt: data.endAt,
     minAge: data.minAge,
     maxAge: data.maxAge,
+    price: data.price,
     location: data.location,
     form: data.form,
   });
