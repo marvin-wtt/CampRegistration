@@ -1,28 +1,7 @@
 import Joi from "joi";
 import { Request } from "express";
-import { SurveyModel } from "survey-core";
 import { routeModel } from "@/utils/verifyModel";
-
-const fileFields = (req: Request) => {
-  const mapFileToSurveyData = (file: Express.Multer.File) => {
-    return {
-      type: file.mimetype,
-      name: file.originalname,
-    };
-  };
-
-  // Array should already be formatted
-  if (!req.files || Array.isArray(req.files) || typeof req.files !== "object") {
-    return {};
-  }
-
-  const requestFiles = req.files;
-  return Object.keys(requestFiles).reduce((acc, key) => {
-    const files = requestFiles[key];
-    acc[key] = files.map((file) => mapFileToSurveyData(file));
-    return acc;
-  }, {} as Record<string, object>);
-};
+import {hasSurveyErrors, loadSurvey} from "@/utils/surveyJs";
 
 export const registrationData: Joi.CustomValidator<object> = (
   value,
@@ -34,16 +13,17 @@ export const registrationData: Joi.CustomValidator<object> = (
 
   const req = helpers.prefs.context as Request;
   const surveyJson = routeModel(req.models.camp).form;
-  const survey = new SurveyModel(surveyJson);
-  survey.data = { ...value, ...fileFields(req) };
 
-  const error = survey.pages.some((p) => p.hasErrors(false, false));
+  const survey = loadSurvey(surveyJson, value, req.files);
+  const error = hasSurveyErrors(survey);
   if (error) {
     return helpers.message({ en: "Invalid survey data" });
   }
 
   // Remove additional fields not included in the survey or not visible
-  const surveyFields = survey.getAllQuestions(true).map((q) => q.name);
+  const surveyFields = survey
+    .getAllQuestions(true)
+    .map((q) => q.valueName || q.name);
   return Object.keys(value)
     .filter((key) => surveyFields.includes(key))
     .reduce((obj, key) => {
