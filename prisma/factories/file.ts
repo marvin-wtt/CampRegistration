@@ -7,10 +7,13 @@ export const FileFactory = {
   build: (data: Partial<Prisma.FileCreateInput>): Prisma.FileCreateInput => {
     return {
       id: ulid(),
+      visibility: "public",
+      storageLocation: "local",
       name: faker.string.uuid() + "pdf",
-      type: 'application/pdf',
+      type: "application/pdf",
       size: faker.number.int(),
-      originalName: faker.system.fileName()
+      originalName: faker.system.fileName(),
+      ...data,
     };
   },
 

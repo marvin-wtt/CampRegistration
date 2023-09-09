@@ -25,6 +25,7 @@ export const CampFactory = {
       public: faker.datatype.boolean(),
       countries: ["de"],
       name: { de: faker.lorem.word() },
+      organization: { de: faker.company.name() },
       maxParticipants: {
         de: faker.number.int({ min: 1, max: 100 }),
       },

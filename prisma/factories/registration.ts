@@ -4,10 +4,13 @@ import prisma from "../../tests/utils/prisma";
 import { ulid } from "ulidx";
 
 export const RegistrationFactory = {
-  build: (data: Partial<Prisma.RegistrationCreateInput>): Prisma.RegistrationCreateInput => {
+  build: (
+    data: Partial<Prisma.RegistrationCreateInput>
+  ): Prisma.RegistrationCreateInput => {
     return {
       id: ulid(),
-      data: {}
+      data: {},
+      ...data,
     };
   },
 
