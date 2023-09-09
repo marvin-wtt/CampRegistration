@@ -33,6 +33,8 @@ const store = {
     name: Joi.alternatives()
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
       .required(),
+    organization: Joi.alternatives()
+      .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string())),
     // TODO This should be an exact match
     maxParticipants: Joi.alternatives()
       .try(Joi.number(), Joi.object().pattern(Joi.string(), Joi.number()))
