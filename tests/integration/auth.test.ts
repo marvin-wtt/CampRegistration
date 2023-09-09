@@ -107,6 +107,7 @@ describe("/api/v1/auth", async () => {
 
       const user = (await prisma.user.findFirst()) as User;
 
+      expect(user).toBeDefined();
       expect(bcrypt.compare(user.password, "password1")).toBeTruthy();
     });
 
