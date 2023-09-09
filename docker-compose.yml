@@ -8,8 +8,9 @@ services:
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_TCP_PORT: 3307
     ports:
-      - '3306:3306'
+      - '3307:3307'
     volumes:
       - db:/var/lib/mysql
 volumes:
