@@ -1,9 +1,9 @@
-import { registrationController } from "@/controllers";
+import { fileController, registrationController } from "@/controllers";
 import { auth, guard, multipart, validate } from "@/middlewares";
 import { campManager, campPublic } from "@/guards";
 import express from "express";
-import { registrationValidation } from "@/validations";
-import { registrationService } from "@/services";
+import { registrationValidation, fileValidation } from "@/validations";
+import { fileService, registrationService } from "@/services";
 import { routeModel, verifyModelExists } from "@/utils/verifyModel";
 import { catchParamAsync } from "@/utils/catchAsync";
 
@@ -18,6 +18,20 @@ router.param(
       id
     );
     req.models.registration = verifyModelExists(registration);
+    next();
+  })
+);
+
+router.param(
+  "file",
+  catchParamAsync(async (req, res, next, name) => {
+    const registration = routeModel(req.models.registration);
+
+    const file = await fileService.getRegistrationFileByName(
+      name,
+      registration.id
+    );
+    req.models.file = verifyModelExists(file);
     next();
   })
 );
@@ -57,6 +71,15 @@ router.delete(
   guard([campManager]),
   validate(registrationValidation.destroy),
   registrationController.destroy
+);
+
+// Files
+router.get(
+  "/:registrationId/files/:file",
+  auth(),
+  guard([campManager]),
+  validate(fileValidation.show),
+  fileController.show
 );
 
 export default router;
