@@ -1,7 +1,4 @@
-import {
-  Serializer,
-  SurveyModel,
-} from "survey-core";
+import { Serializer, SurveyModel } from "survey-core";
 import { IQuestionPlainData } from "survey-core/typings/question";
 
 type File = Express.Multer.File;
@@ -14,25 +11,52 @@ type FileOptions = Record<
   }[]
 >;
 
-export const loadSurvey = (
-  surveyJson: unknown,
-  data?: unknown,
-  files?: FileType
-): SurveyModel => {
-  const survey = new SurveyModel(surveyJson);
+export const formUtils = (formJson: unknown) => {
+  const survey = new SurveyModel(formJson);
 
-  const surveyData = !data || typeof data !== "object" ? {} : data;
-  const surveyFiles = !files ? {} : mapFileFields(files);
+  const updateData = (data?: unknown, files?: FileType) => {
+    const surveyData = typeof data !== "object" ? {} : data;
+    const surveyFiles = !files ? {} : mapFileFields(files);
 
-  survey.data = { ...surveyData, ...surveyFiles };
+    survey.data = { ...surveyData, ...surveyFiles };
+  };
 
-  return survey;
+  const hasDataErrors = (): boolean => {
+    return survey.pages.some((p) => p.hasErrors(false, false));
+  };
+
+  const unknownDataFields = (): string[] => {
+    const data = survey.data;
+
+    return Object.keys(data).filter(valueName => {
+      return survey.getQuestionByValueName(valueName) === null;
+    });
+  };
+
+  return {
+    updateData,
+    hasDataErrors,
+    unknownDataFields,
+  };
 };
 
-export const hasSurveyErrors = (survey: SurveyModel): boolean => {
-  return survey.pages.some((p) => p.hasErrors(false, false));
+export const hasUnknownFields = (survey: SurveyModel): boolean => {
+  const data = survey.getPlainData({
+    includeEmpty: false,
+    includeValues: true,
+    calculations: [
+      {
+        propertyName: "valueName",
+      },
+    ],
+  });
+
+  console.log(data);
+
+  return false;
 };
 
+// TODO Is this needed? Otherwise remove
 Serializer.addProperty("question", {
   name: "campData",
   type: "campDataMapping",
@@ -42,26 +66,8 @@ Serializer.addProperty("question", {
   visibleIndex: 3,
 });
 
-export const extractCampFormFields = (form: unknown) => {
-  const survey = loadSurvey(form);
-
-  const plainData = survey.getPlainData({
-    includeEmpty: true,
-    includeValues: false,
-    includeQuestionTypes: false,
-    calculations: [
-      {
-        propertyName: "valueName",
-      },
-      {
-        propertyName: "campData",
-      },
-    ],
-  });
-  showPlainData(plainData);
-};
-
 const showPlainData = (data: IQuestionPlainData[], name = "") => {
+  // TODO
   data.forEach((value) => {
     const valueName = value["valueName"];
 
@@ -81,10 +87,6 @@ const mapFileFields = (files: FileType): FileOptions => {
       name: file.originalname,
     };
   };
-
-  if (files instanceof File) {
-    return {};
-  }
 
   // Array should already be formatted
   if (!files || Array.isArray(files) || typeof files !== "object") {
