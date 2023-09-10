@@ -1,6 +1,6 @@
 import { type Prisma, PrismaClient } from "@prisma/client";
 import data from "./json/registrations.json";
-import { ulid } from "../../src/utils/ulid"
+import { ulid } from "@/utils/ulid"
 
 const name = "registration";
 const run = (prisma: PrismaClient) => {
@@ -19,7 +19,7 @@ const run = (prisma: PrismaClient) => {
       registration
     );
     // Integers
-    convertStringToInt("legal_guardian_permission_leave", registration);
+    convertStringToInt("guardian_permission_leave", registration);
 
     registrations.push({
       id: ulid(),
