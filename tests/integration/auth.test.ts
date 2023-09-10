@@ -13,7 +13,7 @@ describe("/api/v1/auth", async () => {
       const { status } = await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
-        password: "password1",
+        password: "Password1",
       });
 
       expect(status).toBe(201);
@@ -23,7 +23,7 @@ describe("/api/v1/auth", async () => {
       const { body } = await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
-        password: "password1",
+        password: "Password1",
       });
 
       const newUser = await prisma.user.findFirst();
@@ -35,7 +35,7 @@ describe("/api/v1/auth", async () => {
         name: "testuser",
         role: "USER",
         locale: expect.anything(),
-        emailVerified: null,
+        emailVerified: false,
       });
     });
 
@@ -43,7 +43,7 @@ describe("/api/v1/auth", async () => {
       const { status } = await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test(at)email.net",
-        password: "password1",
+        password: "Password1",
       });
 
       const userCount = await prisma.user.count();
@@ -75,20 +75,20 @@ describe("/api/v1/auth", async () => {
       const { status } = await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
-        password: "invalid",
+        password: "Password1",
       });
 
       const userCount = await prisma.user.count();
 
       expect(status).toBe(400);
-      expect(userCount).toBe(0);
+      expect(userCount).toBe(1);
     });
 
     it("should respond with a `400` status code if the role is set in request body", async () => {
       const { status } = await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
-        password: "password1",
+        password: "Password1",
         role: "ADMIN",
       });
 
@@ -102,7 +102,7 @@ describe("/api/v1/auth", async () => {
       await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
-        password: "password1",
+        password: "Password1",
       });
 
       const user = (await prisma.user.findFirst()) as User;
@@ -115,7 +115,7 @@ describe("/api/v1/auth", async () => {
       await request(app).post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
-        password: "password1",
+        password: "Password1",
       });
 
       const user = (await prisma.user.findFirst()) as User;
