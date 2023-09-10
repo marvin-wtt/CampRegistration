@@ -145,11 +145,11 @@ describe("/api/v1/camps/:campId/registrations", () => {
         .set("Authorization", `Bearer ${context.accessToken}`);
 
       expect(status).toBe(200);
-      expect(body.data[0]).toHaveProperty("file_field", "file.pdf");
+      expect(body.data[0]).toHaveProperty("file_field", expect.stringMatching(/.*file\.pdf$/));
       expect(body.data[0]).toHaveProperty("multiple_files_field");
-      expect(body.data[0].multiple_files_field.split(";").sort()).toEqual([
-        "file1.pdf",
-        "file2.pdf",
+      expect(body.data[0]["multiple_files_field"].split(";").sort()).toEqual([
+        expect.stringMatching(/.*file1\.pdf$/),
+        expect.stringMatching(/.*file2\.pdf$/),
       ]);
     });
 
@@ -199,6 +199,16 @@ describe("/api/v1/camps/:campId/registrations", () => {
         .send();
 
       expect(status).toBe(401);
+    });
+
+    it<RegistrationTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
+      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+      const { status } = await request(app)
+        .get(`/api/v1/camps/${context.camp.id}/registrations/${id}`)
+        .send()
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(404);
     });
   });
 
@@ -265,7 +275,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(status).toBe(401);
     });
 
-    it<RegistrationTestContext>("should ignore additional fields", async (context) => {
+    it<RegistrationTestContext>("should respond with `400` status code when additional fields are provided", async (context) => {
       const data = {
         first_name: "Jhon",
         last_name: "Doe",
@@ -273,14 +283,11 @@ describe("/api/v1/camps/:campId/registrations", () => {
         another_field: "should not be stored",
       };
 
-      const { status, body } = await request(app)
+      const { status } = await request(app)
         .post(`/api/v1/camps/${context.camp.id}/registrations`)
         .send(data);
 
-      expect(status).toBe(201);
-
-      expect(body).not.toHaveProperty("data.invisible_field");
-      expect(body).not.toHaveProperty("data.another_field");
+      expect(status).toBe(400);
     });
 
     it<RegistrationTestContext>("should respond with `400` status code when a required field is missing", async (context) => {
@@ -325,6 +332,19 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it.todo("should respond with `400` status code when request body is empty");
+
+    it<RegistrationTestContext>("should respond with `404` status code when registration id does not exists", async (context) => {
+      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+      const data = {
+        public: true,
+      };
+      const { status } = await request(app)
+        .patch(`/api/v1/camps/${context.camp.id}/registrations/${id}`)
+        .send(data)
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(404);
+    });
   });
 
   describe("DELETE /api/v1/camps/:campId/registrations/:registrationId", () => {
@@ -367,6 +387,16 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
       expect(status).toBe(401);
       expect(registrationCount).toBe(1);
+    });
+
+    it<RegistrationTestContext>("should respond with `404` status code when registration id does not exists", async (context) => {
+      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+      const { status } = await request(app)
+        .delete(`/api/v1/camps/${context.camp.id}/registrations/${id}`)
+        .send()
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(404);
     });
   });
 });

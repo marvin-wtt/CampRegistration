@@ -4,11 +4,13 @@ import { generateAccessToken } from "../utils/token";
 import request from "supertest";
 import app from "../../src/app";
 import { CampFactory, UserFactory } from "../../prisma/factories";
-import {Camp, Prisma, User} from "@prisma/client";
+import { Camp, Prisma, User } from "@prisma/client";
 import moment from "moment";
-import {ulid} from "ulidx";
+import { ulid } from "ulidx";
 
 // test.todo("Camp manager invitation");
+
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 export interface CampTestContext {
   user: User;
@@ -19,44 +21,57 @@ export interface CampTestContext {
   privateCamp: Camp;
 }
 
-const assertCampModel = async (id: string, data: Prisma.CampCreateInput) => {
-  const camp = await prisma.camp.findFirst({
+const assertCampModel = async (
+  id: string,
+  data: PartialBy<Prisma.CampCreateInput, "id">
+) => {
+  const camp = (await prisma.camp.findFirst({
     where: {
-      id: id
-    }
-  }) as Camp;
-  expect(camp.countries).toEqual(data.countries);
-  expect(camp.public).toEqual(data.public);
-  expect(camp.name).toEqual(data.name);
-  expect(camp.maxParticipants).toEqual(
-    data.maxParticipants
-  );
-  expect(camp.minAge).toEqual(data.minAge);
-  expect(camp.maxAge).toEqual(data.maxAge);
-  expect(camp.startAt.toISOString()).toEqual(data.startAt);
-  expect(camp.endAt.toISOString()).toEqual(data.endAt);
-  expect(camp.price).toEqual(data.price);
-  expect(camp.location).toEqual(data.location);
-  expect(camp.form).toEqual(data.form);
-}
+      id: id,
+    },
+  })) as Camp;
+  expect(camp).not.toBeNull();
 
-const assertCampResponse = (body: object, data: Prisma.CampCreateInput) => {
-  expect(body).toHaveProperty("data.id");
-  expect(body).toHaveProperty("data.public", false);
-  expect(body).toHaveProperty("data.countries", data.countries);
-  expect(body).toHaveProperty("data.name", data.name);
-  expect(body).toHaveProperty(
-    "data.max_participants",
-    data.maxParticipants
-  );
-  expect(body).toHaveProperty("data.min_age", data.minAge);
-  expect(body).toHaveProperty("data.max_age", data.maxAge);
-  expect(body).toHaveProperty("data.start_at", data.startAt);
-  expect(body).toHaveProperty("data.end_at", data.endAt);
-  expect(body).toHaveProperty("data.price", data.price);
-  expect(body).toHaveProperty("data.location", data.location);
-  expect(body).toHaveProperty("data.form", data.form);
-}
+  expect(camp).toEqual({
+    id: data.id ?? expect.anything(),
+    public: data.public,
+    countries: data.countries,
+    name: data.name,
+    organization: data.organization,
+    maxParticipants: data.maxParticipants,
+    minAge: data.minAge,
+    maxAge: data.maxAge,
+    startAt: new Date(data.startAt),
+    endAt: new Date(data.endAt),
+    price: data.price,
+    location: data.location,
+    form: data.form,
+    updatedAt: expect.anything(),
+    createdAt: expect.anything(),
+  });
+};
+
+const assertCampResponseBody = (
+  body: any,
+  data: PartialBy<Prisma.CampCreateInput, "id">
+) => {
+  expect(body).toHaveProperty("data");
+  expect(body.data).toEqual({
+    id: data.id ?? expect.anything(),
+    public: data.public,
+    countries: data.countries,
+    name: data.name,
+    organization: data.organization,
+    maxParticipants: data.maxParticipants,
+    minAge: data.minAge,
+    maxAge: data.maxAge,
+    startAt: data.startAt,
+    endAt: data.endAt,
+    price: data.price,
+    location: data.location,
+    form: data.form,
+  });
+};
 
 describe("/api/v1/camps", () => {
   beforeEach<CampTestContext>(async (context) => {
@@ -101,42 +116,36 @@ describe("/api/v1/camps", () => {
       // TODO Test properties
     });
 
-    it.todo("should not show private camps to unauthenticated users");
-
     it.todo("should not show private camps to users");
+
+    it.todo("should not show private camps to guests");
   });
 
   describe("GET /api/v1/camps/:campId", () => {
     it<CampTestContext>("should respond with `200` status code when camp is public", async (context) => {
+      const camp = context.publicCamp;
       const { status, body } = await request(app)
         .get(`/api/v1/camps/${context.publicCamp.id}`)
         .send();
 
       expect(status).toBe(200);
-      expect(body).toHaveProperty("data.id", context.publicCamp.id);
-      expect(body).toHaveProperty("data.public", context.publicCamp.public);
-      expect(body).toHaveProperty(
-        "data.countries",
-        context.publicCamp.countries
-      );
-      expect(body).toHaveProperty("data.name", context.publicCamp.name);
-      expect(body).toHaveProperty(
-        "data.max_participants",
-        context.publicCamp.maxParticipants
-      );
-      expect(body).toHaveProperty("data.min_age", context.publicCamp.minAge);
-      expect(body).toHaveProperty("data.max_age", context.publicCamp.maxAge);
-      expect(body).toHaveProperty(
-        "data.start_at",
-        context.publicCamp.startAt.toISOString()
-      );
-      expect(body).toHaveProperty(
-        "data.end_at",
-        context.publicCamp.endAt.toISOString()
-      );
-      expect(body).toHaveProperty("data.price", context.publicCamp.price);
-      expect(body).toHaveProperty("data.location", context.publicCamp.location);
-      expect(body).toHaveProperty("data.form", context.publicCamp.form);
+      expect(body).toHaveProperty("data");
+      // TODO Use common assertion method
+      expect(body.data).toEqual({
+        id: camp.id,
+        public: camp.public,
+        countries: camp.countries,
+        name: camp.name,
+        organization: camp.organization,
+        maxParticipants: camp.maxParticipants,
+        minAge: camp.minAge,
+        maxAge: camp.maxAge,
+        startAt: camp.startAt.toISOString(),
+        endAt: camp.endAt.toISOString(),
+        price: camp.price,
+        location: camp.location,
+        form: camp.form,
+      });
     });
 
     it<CampTestContext>("should respond with `200` status code when camp is private and user is camp manager", async (context) => {
@@ -165,6 +174,16 @@ describe("/api/v1/camps", () => {
       expect(status).toBe(403);
     });
 
+    it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
+      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+      const { status } = await request(app)
+        .get(`/api/v1/camps/${id}`)
+        .send()
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(404);
+    });
+
     it.todo(
       "should respond with `400` status code when query parameters are invalid"
     );
@@ -173,17 +192,17 @@ describe("/api/v1/camps", () => {
   describe("POST /api/v1/camps", () => {
     it<CampTestContext>("should respond with `201` status code when user is authenticated", async (context) => {
       const data = {
-        id: ulid(),
         public: false,
         countries: ["de"],
-        name: { de: "Test Camp" },
-        maxParticipants: { de: 10 },
+        name: "Test Camp",
+        organization: "Test Org",
+        maxParticipants: 10,
         minAge: 10,
         maxAge: 15,
         startAt: moment().add("20 days").startOf("hour").toDate().toISOString(),
         endAt: moment().add("22 days").startOf("hour").toDate().toISOString(),
         price: 100.0,
-        location: { de: "Somewhere" },
+        location: "Somewhere",
         form: {},
       };
 
@@ -195,7 +214,7 @@ describe("/api/v1/camps", () => {
       expect(status).toBe(201);
 
       // Test response
-      assertCampResponse(body, data);
+      assertCampResponseBody(body, data);
 
       // Test model
       const campCount = await prisma.camp.count();
@@ -223,34 +242,35 @@ describe("/api/v1/camps", () => {
   });
 
   describe("PATCH /api/v1/camps/:campId", () => {
-    it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context)  => {
+    it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context) => {
       const data = {
-        id: ulid(),
         public: false,
         countries: ["de"],
-        name: { de: "Test Camp" },
-        maxParticipants: { de: 10 },
+        name: "Test Camp",
+        organization: "Test Org",
+        maxParticipants: 10,
         minAge: 10,
         maxAge: 15,
         startAt: moment().add("20 days").startOf("hour").toDate().toISOString(),
         endAt: moment().add("22 days").startOf("hour").toDate().toISOString(),
         price: 100.0,
-        location: { de: "Somewhere" },
+        location: "Somewhere",
         form: {},
       };
 
+      const id = context.publicCamp.id;
       const { status, body } = await request(app)
-        .patch(`/api/v1/camps/${context.publicCamp.id}`)
+        .patch(`/api/v1/camps/${id}`)
         .send(data)
         .set("Authorization", `Bearer ${context.accessToken}`);
 
       expect(status).toBe(200);
 
       // Test response
-      assertCampResponse(body, data);
+      assertCampResponseBody(body, data);
 
       // Test model
-      await assertCampModel(body.data.id, data);
+      await assertCampModel(id, data);
     });
 
     it<CampTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
@@ -279,6 +299,19 @@ describe("/api/v1/camps", () => {
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
       expect(status).toBe(403);
+    });
+
+    it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
+      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+      const data = {
+        public: true
+      }
+      const { status } = await request(app)
+        .patch(`/api/v1/camps/${id}`)
+        .send(data)
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(404);
     });
   });
 
@@ -316,6 +349,16 @@ describe("/api/v1/camps", () => {
 
       expect(status).toBe(401);
       expect(campCount).toBe(2);
+    });
+
+    it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
+      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+      const { status } = await request(app)
+        .delete(`/api/v1/camps/${id}`)
+        .send()
+        .set("Authorization", `Bearer ${context.accessToken}`);
+
+      expect(status).toBe(404);
     });
   });
 });
