@@ -10,7 +10,10 @@ type RequestFile = Express.Multer.File;
 
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
 
-const mapFileData = (requestFiles: RequestFiles, visibility = 'private'): Prisma.FileCreateInput[] => {
+const mapFileData = (
+  requestFiles: RequestFiles,
+  visibility = "private"
+): Prisma.FileCreateInput[] => {
   const mapFields = (
     file: RequestFile,
     fieldName?: string
@@ -64,22 +67,27 @@ const moveFiles = (files: RequestFiles) => {
 };
 
 const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
-  const fileData: Prisma.FileCreateInput[] = mapFileData(files, 'private').map(
-    (fileData) => {
-      return {
-        ...fileData,
-        registrationId: id,
-      };
-    }
-  );
+  const fileData: Prisma.FileCreateInput[] = mapFileData(files, "private");
 
-  const fileModes = await prisma.file.createMany({
-    data: fileData,
+  const registration = await prisma.registration.update({
+    where: {
+      id: id,
+    },
+    data: {
+      files: {
+        createMany: {
+          data: fileData,
+        },
+      },
+    },
+    include: {
+      files: true,
+    },
   });
 
   moveFiles(files);
 
-  return fileModes;
+  return registration;
 };
 
 const saveCampFiles = async (id: string, files: RequestFiles) => {
@@ -99,6 +107,24 @@ const saveCampFiles = async (id: string, files: RequestFiles) => {
   return fileModes;
 };
 
+const getCampFileByName = async (name: string, id: string) => {
+  return prisma.file.findFirst({
+    where: {
+      name,
+      campId: id,
+    },
+  });
+};
+
+const getRegistrationFileByName = async (name: string, id: string) => {
+  return prisma.file.findFirst({
+    where: {
+      name,
+      registrationId: id,
+    },
+  });
+};
+
 const getFileByName = async (name: string) => {
   return prisma.file.findFirst({
     where: {
@@ -112,7 +138,7 @@ const getFileByName = async (name: string) => {
 
 const getFileStream = async (file: File) => {
   if (file.storageLocation === "local") {
-    const filePath = path.join(config.storage.uploadDir,file.name);
+    const filePath = path.join(config.storage.uploadDir, file.name);
     return fs.createReadStream(filePath);
   }
 
@@ -123,5 +149,7 @@ export default {
   saveRegistrationFiles,
   saveCampFiles,
   getFileByName,
+  getCampFileByName,
+  getRegistrationFileByName,
   getFileStream,
 };
