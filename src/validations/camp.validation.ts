@@ -56,6 +56,7 @@ const update = {
     campId: Joi.string(),
   }),
   body: Joi.object({
+    public: Joi.boolean(),
     countries: Joi.array()
       .items(Joi.string().lowercase().length(2))
       .min(1),
