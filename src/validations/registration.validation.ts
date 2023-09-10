@@ -1,35 +1,34 @@
 import Joi from "joi";
 import { Request } from "express";
 import { routeModel } from "@/utils/verifyModel";
-import {hasSurveyErrors, loadSurvey} from "@/utils/surveyJs";
+import { formUtils } from "@/utils/surveyJs";
 
 export const registrationData: Joi.CustomValidator<object> = (
   value,
   helpers
 ) => {
   if (typeof value !== "object" || value == null) {
-    return helpers.message({ en: "Survey may not be null" });
+    return helpers.message({ custom: "Survey may not be null" });
   }
 
   const req = helpers.prefs.context as Request;
   const surveyJson = routeModel(req.models.camp).form;
 
-  const survey = loadSurvey(surveyJson, value, req.files);
-  const error = hasSurveyErrors(survey);
-  if (error) {
-    return helpers.message({ en: "Invalid survey data" });
+  const formHelper = formUtils(surveyJson);
+  formHelper.updateData(value, req.files);
+
+  if (formHelper.hasDataErrors()) {
+    return helpers.message({ custom: "Invalid survey data" });
   }
 
-  // Remove additional fields not included in the survey or not visible
-  const surveyFields = survey
-    .getAllQuestions(true)
-    .map((q) => q.valueName || q.name);
-  return Object.keys(value)
-    .filter((key) => surveyFields.includes(key))
-    .reduce((obj, key) => {
-      obj[key] = value[key as keyof typeof value];
-      return obj;
-    }, {} as Record<string, object>);
+  const unknownDataFields = formHelper.unknownDataFields();
+  if (unknownDataFields.length > 0) {
+    return helpers.message({
+      custom: `Unknown fields '${unknownDataFields.join(", ")}'`,
+    });
+  }
+
+  return value;
 };
 
 const index = {
@@ -49,7 +48,7 @@ const store = {
   params: Joi.object({
     campId: Joi.string(),
   }),
-  body: Joi.object().custom(registrationData).required(),
+  body: Joi.object().custom(registrationData, "registration data").required(),
 };
 
 const update = {
