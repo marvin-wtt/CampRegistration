@@ -20,7 +20,7 @@
 import { computed } from 'vue';
 
 interface Props {
-  modelValue: boolean;
+  modelValue: boolean | undefined;
   label: string;
   hint?: string;
   color?: string;
