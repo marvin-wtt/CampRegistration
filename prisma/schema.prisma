@@ -39,7 +39,7 @@ model Camp {
   maxAge          Int            @map("max_age") @db.UnsignedInt
   startAt         DateTime       @map("start_at") @db.DateTime(0)
   endAt           DateTime       @map("end_at") @db.DateTime(0)
-  price           Float?
+  price           Float
   location        Json?          @db.Json
   form            Json           @db.Json
   createdAt       DateTime?      @default(now()) @map("created_at")
