@@ -51,7 +51,7 @@
 
     <!-- organization -->
     <translated-input
-      v-model="data.name"
+      v-model="data.organization"
       :disable="loading"
       :label="t('field.organization')"
       :locales="data.countries"
@@ -65,27 +65,6 @@
     >
       <template #before>
         <q-icon name="corporate_fare" />
-      </template>
-    </translated-input>
-
-    <!-- participants -->
-    <translated-input
-      v-model.number="data.maxParticipants"
-      :disable="loading"
-      :label="t('field.maxParticipants')"
-      :locales="data.countries"
-      :rules="[
-        (val?: number) => !!val || t('validation.maxParticipants.empty'),
-        (val: number) => val >= 0 || t('validation.maxParticipants.positive'),
-        ]"
-      always
-      hide-bottom-space
-      outlined
-      rounded
-      type="number"
-    >
-      <template #before>
-        <q-icon name="group" />
       </template>
     </translated-input>
 
@@ -138,6 +117,27 @@
         </template>
       </time-input>
     </div>
+
+    <!-- participants -->
+    <translated-input
+      v-model.number="data.maxParticipants"
+      :disable="loading"
+      :label="t('field.maxParticipants')"
+      :locales="data.countries"
+      :rules="[
+        (val?: number) => !!val || t('validation.maxParticipants.empty'),
+        (val: number) => val >= 0 || t('validation.maxParticipants.positive'),
+        ]"
+      always
+      hide-bottom-space
+      outlined
+      rounded
+      type="number"
+    >
+      <template #before>
+        <q-icon name="group" />
+      </template>
+    </translated-input>
 
     <!-- age -->
     <!-- minAge -->
@@ -206,7 +206,7 @@
       :disable="loading"
       :label="t('field.price')"
       :rules="[
-        (val?: number) => !!val || t('validation.price.empty'),
+        (val?: number) => !!val || val === 0 || t('validation.price.empty'),
         (val: number) => val >= 0 || t('validation.price.positive'),
       ]"
       hide-bottom-space
