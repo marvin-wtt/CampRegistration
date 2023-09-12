@@ -10,6 +10,10 @@ const run = (prisma: PrismaClient) => {
       id: "01H4BK6DFQAVVB5TDS5BJ1AB95 ",
       public: true,
       countries: ["de", "fr"],
+      organization: {
+        de: 'Luftsportjugend des DAeC',
+        fr: "Fédération Française d'Aérostation"
+      },
       name: {
         de: "DFJW Ballonsommercamp 2023",
         fr: "OFAJ Camp d'été en montgolfière 2023",
