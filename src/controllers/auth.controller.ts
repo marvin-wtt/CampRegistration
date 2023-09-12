@@ -24,12 +24,15 @@ const register = catchRequestAsync(async (req, res) => {
     password,
     locale,
   });
+  // TODO Use resource instead
   const userWithoutPassword = exclude(user, [
     "password",
     "createdAt",
     "updatedAt",
   ]);
-  res.status(httpStatus.CREATED).json(userWithoutPassword);
+  res.status(httpStatus.CREATED).json({
+    user: userWithoutPassword,
+  });
 });
 
 const login = catchRequestAsync(async (req, res) => {
@@ -44,6 +47,7 @@ const login = catchRequestAsync(async (req, res) => {
   });
 
   const response = userCampResource(user, camps);
+  // TODO Use resource instead
   res.json({ user: response, tokens });
 });
 
