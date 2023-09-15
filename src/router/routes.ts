@@ -81,16 +81,6 @@ const routes: RouteRecordRaw[] = [
         },
         children: [
           {
-            path: 'edit',
-            name: 'edit-camp',
-            component: () => import('pages/campManagement/EditCampPage.vue'),
-          },
-          {
-            path: 'edit-form',
-            name: 'edit-form',
-            component: () => import('pages/campManagement/FormEditPage.vue'),
-          },
-          {
             path: 'dashboard',
             name: 'dashboard',
             component: () => import('pages/campManagement/DashboardPage.vue'),
@@ -122,12 +112,6 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/campManagement/ExpensesPage.vue'),
           },
           {
-            path: 'access',
-            name: 'access',
-            component: () =>
-              import('pages/campManagement/settings/AccessPage.vue'),
-          },
-          {
             path: 'settings',
             name: 'settings',
             component: () =>
@@ -135,9 +119,21 @@ const routes: RouteRecordRaw[] = [
             children: [
               {
                 path: 'access',
-                name: 'settings-access',
+                name: 'access',
                 component: () =>
                   import('pages/campManagement/settings/AccessPage.vue'),
+              },
+              {
+                path: 'edit',
+                name: 'edit-camp',
+                component: () =>
+                  import('pages/campManagement/EditCampPage.vue'),
+              },
+              {
+                path: 'edit-form',
+                name: 'edit-form',
+                component: () =>
+                  import('pages/campManagement/FormEditPage.vue'),
               },
             ],
           },

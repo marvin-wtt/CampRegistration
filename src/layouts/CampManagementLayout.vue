@@ -79,174 +79,16 @@
       <!--              horizontal-thumb-style='opacity: 0'-->
       <!--            >-->
       <q-list padding>
-        <q-item
-          v-ripple
-          :to="{ name: 'dashboard' }"
-          clickable
-        >
-          <q-item-section avatar>
-            <q-icon name="dashboard" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('dashboard') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          :to="{ name: 'participants' }"
-          clickable
-        >
-          <q-item-section avatar>
-            <q-icon name="groups" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('participants') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          clickable
-          disable
-        >
-          <q-item-section avatar>
-            <q-icon name="email" />
-          </q-item-section>
-
-          <q-item-section>
-            <q-badge
-              align="top"
-              floating
-              rounded
-              >Coming soon!
-            </q-badge>
-            {{ t('contact') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          clickable
-          :to="{ name: 'program-planner' }"
-        >
-          <q-item-section avatar>
-            <q-icon name="event" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('program_planner') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          clickable
-          :to="{ name: 'room-planner' }"
-        >
-          <q-item-section avatar>
-            <q-icon name="single_bed" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('room_planner') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          clickable
-          :to="{ name: 'expenses' }"
-        >
-          <q-item-section avatar>
-            <q-icon name="payments" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('expenses') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-if="beta"
-          v-ripple
-          clickable
-          :to="{ name: 'tools' }"
-        >
-          <q-item-section avatar>
-            <q-icon name="menu" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('tools') }}
-          </q-item-section>
-        </q-item>
-
-        <q-separator />
-
-        <q-item
-          v-ripple
-          :to="{ name: 'edit-camp' }"
-          clickable
-        >
-          <q-item-section avatar>
-            <q-icon name="edit" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('edit') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-ripple
-          :to="{ name: 'edit-form' }"
-          clickable
-        >
-          <q-item-section avatar>
-            <q-icon name="feed" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('form') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-ripple
-          :to="{ name: 'access' }"
-          clickable
-        >
-          <q-item-section avatar>
-            <q-icon name="key" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('access') }}
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          v-ripple
-          :to="{ name: 'settings' }"
-          disable
-          clickable
-        >
-          <q-item-section avatar>
-            <q-icon name="settings" />
-          </q-item-section>
-
-          <q-item-section>
-            {{ t('settings') }}
-          </q-item-section>
-        </q-item>
+        <navigation-item
+          v-for="item in filteredItems"
+          :key="item.name"
+          :name="item.name"
+          :label="item.label"
+          :icon="item.icon"
+          :to="item.to"
+          :separated="item.separated"
+          :children="item.children"
+        />
       </q-list>
       <!--            </q-scroll-area>-->
     </q-drawer>
@@ -264,13 +106,13 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import * as process from 'process';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const quasar = useQuasar();
@@ -293,7 +135,99 @@ onMounted(async () => {
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
-const beta = computed<boolean>(() => {
+interface NavigationItem {
+  name: string;
+  to?: string | object;
+  label?: string;
+  icon?: string;
+  dev?: boolean;
+  separated?: boolean;
+  children?: NavigationItem[];
+}
+
+const items: NavigationItem[] = [
+  {
+    name: 'dashboard',
+    label: t('dashboard'),
+    icon: 'dashboard',
+    to: { name: 'dashboard' },
+  },
+  {
+    name: 'participants',
+    label: t('participants'),
+    icon: 'groups',
+    to: { name: 'participants' },
+  },
+  {
+    name: 'contact',
+    label: t('contact'),
+    icon: 'email',
+    to: undefined,
+  },
+  {
+    name: 'program_planner',
+    label: t('program_planner'),
+    icon: 'event',
+    to: { name: 'program-planner' },
+  },
+  {
+    name: 'room_planner',
+    label: t('room_planner'),
+    icon: 'single_bed',
+    to: { name: 'room-planner' },
+  },
+  {
+    name: 'expenses',
+    label: t('expenses'),
+    icon: 'payments',
+    to: { name: 'expenses' },
+  },
+  {
+    name: 'tools',
+    label: t('tools'),
+    icon: 'menu',
+    to: { name: 'tools' },
+  },
+  {
+    name: 'settings',
+    label: t('settings'),
+    icon: 'settings',
+    to: { name: 'settings' },
+    separated: true,
+    children: [
+      {
+        name: 'edit',
+        label: t('edit'),
+        icon: 'edit',
+        to: { name: 'edit-camp' },
+      },
+      {
+        name: 'form',
+        label: t('form'),
+        icon: 'feed',
+        to: { name: 'edit-form' },
+      },
+      {
+        name: 'access',
+        label: t('access'),
+        icon: 'key',
+        to: { name: 'access' },
+      },
+    ],
+  },
+];
+
+const filteredItems = computed<NavigationItem[]>(() => {
+  if (dev.value) {
+    return items;
+  }
+
+  return items.filter((item) => {
+    return !item.dev;
+  });
+});
+
+const dev = computed<boolean>(() => {
   // TODO Maybe add feature flag
   return process.env.NODE_ENV === 'development';
 });
