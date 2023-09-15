@@ -19,12 +19,12 @@
 
     <q-item-section>
       <q-badge
-        v-if="disabled"
+        v-if="props.preview"
         align="top"
         floating
         rounded
       >
-        Coming soon!
+        Preview
       </q-badge>
       {{ props.label }}
     </q-item-section>
@@ -49,6 +49,7 @@
       :separated="child.separated"
       :children="child.children"
       :insert-level="0.2"
+      :preview="child.preview"
     />
   </q-expansion-item>
 </template>
@@ -63,6 +64,7 @@ interface Props {
   icon?: string;
   separated?: boolean;
   insertLevel?: number;
+  preview?: boolean;
   children?: Props[];
 }
 
