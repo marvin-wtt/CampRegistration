@@ -5,7 +5,7 @@
     class="flex justify-center"
   >
     <edit-camp-form
-      v-if='camp'
+      v-if="camp"
       v-model="camp"
       :loading="loading"
       mode="edit"
@@ -26,10 +26,10 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 const router = useRouter();
 
 const loading = ref<boolean>(false);
-const campsStore = useCampDetailsStore();
-const { data, error, isLoading } = storeToRefs(campsStore);
+const campStore = useCampDetailsStore();
+const { data, error, isLoading } = storeToRefs(campStore);
 
-campsStore.fetchData();
+campStore.fetchData();
 
 const camp = ref<Camp | undefined>(data.value as Camp);
 
@@ -47,7 +47,7 @@ async function onSubmit() {
     return;
   }
 
-  await campsStore.updateData(value);
+  await campStore.updateData(value);
 
   return router.push({
     name: 'dashboard',
