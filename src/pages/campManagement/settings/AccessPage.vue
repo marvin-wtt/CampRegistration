@@ -1,7 +1,6 @@
 <template>
   <page-state-handler
     :error="error"
-    :loading="false"
     padding
   >
     <q-table
@@ -52,6 +51,7 @@
             :props="props"
           >
             <q-btn
+              v-if="userEmail !== props.row.email"
               icon="delete"
               round
               outline
@@ -74,10 +74,12 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import AddCampManagerDialog from 'components/campManagement/access/AddCampManagerDialog.vue';
+import { useAuthStore } from 'stores/auth-store';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 const campManagerStore = useCampManagerStore();
+const authStore = useAuthStore();
 
 campManagerStore.fetchData();
 
@@ -122,6 +124,10 @@ const columns = [
     align: 'center',
   },
 ];
+
+const userEmail = computed<string | undefined>(() => {
+  return authStore.user?.email;
+});
 
 const rows = computed<CampManager[]>(() => {
   return campManagerStore.data ?? [];
@@ -175,7 +181,7 @@ action:
 dialog:
   add:
     title: 'Grant Access'
-    message: 'Enter the email address:'
+    message: 'Enter the email addressQuestion:'
   delete:
     title: 'Remove Access'
     message: 'Are you sure you want to remove this person?'
