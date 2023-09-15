@@ -87,6 +87,7 @@
           :icon="item.icon"
           :to="item.to"
           :separated="item.separated"
+          :preview="item.preview"
           :children="item.children"
         />
       </q-list>
@@ -140,7 +141,7 @@ interface NavigationItem {
   to?: string | object;
   label?: string;
   icon?: string;
-  dev?: boolean;
+  preview?: boolean;
   separated?: boolean;
   children?: NavigationItem[];
 }
@@ -160,12 +161,14 @@ const items: NavigationItem[] = [
   },
   {
     name: 'contact',
+    preview: true,
     label: t('contact'),
     icon: 'email',
     to: undefined,
   },
   {
     name: 'program_planner',
+    preview: true,
     label: t('program_planner'),
     icon: 'event',
     to: { name: 'program-planner' },
@@ -178,12 +181,14 @@ const items: NavigationItem[] = [
   },
   {
     name: 'expenses',
+    preview: true,
     label: t('expenses'),
     icon: 'payments',
     to: { name: 'expenses' },
   },
   {
     name: 'tools',
+    preview: true,
     label: t('tools'),
     icon: 'menu',
     to: { name: 'tools' },
@@ -200,6 +205,13 @@ const items: NavigationItem[] = [
         label: t('edit'),
         icon: 'edit',
         to: { name: 'edit-camp' },
+      },
+      {
+        name: 'files',
+        preview: true,
+        label: t('files'),
+        icon: 'folder',
+        to: { name: 'edit-files' },
       },
       {
         name: 'form',
@@ -223,7 +235,7 @@ const filteredItems = computed<NavigationItem[]>(() => {
   }
 
   return items.filter((item) => {
-    return !item.dev;
+    return !item.preview;
   });
 });
 
@@ -248,6 +260,7 @@ camps: 'Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
+files: 'Files'
 form: 'Registration Form'
 expenses: 'Expenses'
 participants: 'Participants'
@@ -265,6 +278,7 @@ camps: 'Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
+files: 'Dateien'
 expenses: 'Ausgaben'
 form: 'Anmeldeformular'
 participants: 'Teilnehmende'
@@ -282,6 +296,7 @@ camps: 'Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
+files: 'Fichiers'
 expenses: 'Dépenses'
 form: "formulaire d'inscription"
 participants: 'Participants'
