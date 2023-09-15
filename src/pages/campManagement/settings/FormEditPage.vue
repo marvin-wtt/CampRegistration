@@ -19,16 +19,43 @@ import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { SurveyCreator } from 'survey-creator-knockout';
+import {
+  PropertyGridEditorCollection,
+  SurveyCreator,
+} from 'survey-creator-knockout';
 import { computed, onMounted } from 'vue';
 import { localization } from 'survey-creator-core';
 import { useI18n } from 'vue-i18n';
 import { useSurveyTools } from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 
 const campDetailsStore = useCampDetailsStore();
 const { locale } = useI18n();
 const { setCampVariables } = useSurveyTools();
+
+// Custom properties
+PropertyGridEditorCollection.register(campDataMapping);
+
+// Add localization
+// TODO campData property
+const deLocale = localization.getLocale('de');
+deLocale.qt.address = 'Adresse';
+deLocale.qt.country = 'Land';
+deLocale.qt.date_of_birth = 'Geburtstag';
+deLocale.qt.role = 'Rolle';
+
+const enLocale = localization.getLocale('en');
+enLocale.qt.address = 'Address';
+enLocale.qt.country = 'Country';
+enLocale.qt.date_of_birth = 'Birthday';
+enLocale.qt.rolle = 'Role';
+
+const frLocale = localization.getLocale('fr');
+frLocale.qt.address = 'Adresse';
+frLocale.qt.country = 'Pays';
+frLocale.qt.date_of_birth = 'Date de Naissance';
+frLocale.qt.role = 'Rôle';
 
 const loading = computed<boolean>(() => {
   return campDetailsStore.isLoading;
@@ -45,12 +72,26 @@ const creatorOptions = {
   showEmbeddedSurveyTab: false,
   isAutoSave: true, // Survey is currently only saved when pressing the button.
   themeForPreview: 'defaultV2', // TODO Which should be the default?
+  showThemeTab: false, // TODO Enable when ready to store themes
 };
 
 onMounted(async () => {
   localization.currentLocale = locale.value.split(/[-_]/)[0];
 
   const creator = new SurveyCreator(creatorOptions);
+  creator.onPropertyValidationCustomError.add((sender, options) => {
+    if (!['name', 'valueName'].includes(options.propertyName)) {
+      return;
+    }
+
+    if (options.value === 0) {
+      options.error = 'Zero is not allowed here.';
+    }
+
+    if (options.value.includes('.')) {
+      options.error = 'Dots are not allowed here.';
+    }
+  });
 
   await campDetailsStore.fetchData();
 
@@ -80,7 +121,7 @@ onMounted(async () => {
   };
 
   creator.onPreviewSurveyCreated.add((sender, options) => {
-    setCampVariables(campDetailsStore.data, options.survey);
+    setCampVariables(options.survey, campDetailsStore.data);
 
     // TODO Add functions
   });
