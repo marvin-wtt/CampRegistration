@@ -286,14 +286,7 @@ const submitLabel = computed<string>(() => {
 });
 
 function initialValue(): Partial<Camp> {
-  // TODO This is for testing only. Remove
-  const data = structuredClone(toRaw(props.modelValue));
-  data.form = {
-    title: 'Test',
-    description: 'Survey',
-    pages: [],
-  };
-  return data;
+  return structuredClone(toRaw(props.modelValue));
 }
 
 function onSubmit() {
@@ -327,7 +320,7 @@ field:
 
 validation:
   countries:
-    empty: 'Please select at least one country'
+    empty: 'Please select at least one countryQuestion'
   name:
     empty: 'Please enter a camp name'
     length: 'Camp name must not exceed 255 characters'

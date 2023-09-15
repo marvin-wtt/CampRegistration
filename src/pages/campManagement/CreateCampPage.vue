@@ -27,6 +27,14 @@ const campsStore = useCampsStore();
 
 async function onSubmit() {
   loading.value = true;
+
+  // TODO Replace with default
+  data.value.form = {
+    title: 'Test',
+    description: 'Survey',
+    pages: [],
+  };
+
   await campsStore.createEntry(data.value as Camp);
 
   return router.push({
