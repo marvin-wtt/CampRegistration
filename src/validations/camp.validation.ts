@@ -1,4 +1,7 @@
 import Joi from "joi";
+import JoiDate from "@joi/date"
+
+const extendedJoi = Joi.extend(JoiDate);
 
 const show = {
   params: Joi.object({
@@ -39,8 +42,8 @@ const store = {
     maxParticipants: Joi.alternatives()
       .try(Joi.number(), Joi.object().pattern(Joi.string(), Joi.number()))
       .required(),
-    startAt: Joi.date().iso().required(),
-    endAt: Joi.date().iso().min(Joi.ref("startAt")).required(),
+    startAt: extendedJoi.date().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ").required(),
+    endAt: extendedJoi.date().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ").min(Joi.ref("startAt")).required(),
     minAge: Joi.number().integer().min(0).max(99).required(),
     maxAge: Joi.number().integer().min(Joi.ref("minAge")).max(99).required(),
     location: Joi.alternatives()
