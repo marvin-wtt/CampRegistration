@@ -12,7 +12,7 @@ type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
 
 const mapFileData = (
   requestFiles: RequestFiles,
-  visibility = "private"
+  accessLevel = "private"
 ): Prisma.FileCreateInput[] => {
   const mapFields = (
     file: RequestFile,
@@ -26,7 +26,7 @@ const mapFileData = (
       size: file.size,
       field: fieldName ?? file.fieldname,
       storageLocation: config.storage.location,
-      visibility,
+      accessLevel,
     };
   };
 
