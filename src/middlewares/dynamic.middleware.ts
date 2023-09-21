@@ -5,21 +5,23 @@ const dynamicMiddleware = (middlewares: RequestHandler[]) => {
     let index = 0;
 
     const processNextMiddleware = () => {
-      if (index < middlewares.length) {
-        try {
-          middlewares[index](req, res, (err: unknown) => {
-            if (err) {
-              next(err);
-            } else {
-              index++;
-              processNextMiddleware();
-            }
-          });
-        } catch (err) {
-          next(err);
-        }
-      } else {
+      if (index >= middlewares.length) {
         next();
+        return;
+      }
+
+      try {
+        middlewares[index](req, res, (err: unknown) => {
+          if (err) {
+            next(err);
+            return;
+          }
+
+          index++;
+          processNextMiddleware();
+        });
+      } catch (err) {
+        next(err);
       }
     };
 
