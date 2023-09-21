@@ -39,30 +39,30 @@ const index = {
 
 const show = {
   params: Joi.object({
-    campId: Joi.string(),
-    registrationId: Joi.string(),
+    campId: Joi.string().required(),
+    registrationId: Joi.string().required(),
   }),
 };
 
 const store = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
   body: Joi.object().custom(registrationData, "registration data").required(),
 };
 
 const update = {
   params: Joi.object({
-    campId: Joi.string(),
-    registrationId: Joi.string(),
+    campId: Joi.string().required(),
+    registrationId: Joi.string().required(),
   }),
   body: Joi.object().required(), // TODO Validate against form or template fields
 };
 
 const destroy = {
   params: Joi.object({
-    campId: Joi.string(),
-    registrationId: Joi.string(),
+    campId: Joi.string().required(),
+    registrationId: Joi.string().required(),
   }),
 };
 

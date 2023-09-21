@@ -5,7 +5,7 @@ const extendedJoi = Joi.extend(JoiDate);
 
 const show = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
 };
 
@@ -56,7 +56,7 @@ const store = {
 
 const update = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
   body: Joi.object({
     public: Joi.boolean(),
@@ -82,7 +82,7 @@ const update = {
 
 const destroy = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
 };
 

@@ -4,7 +4,7 @@ import { PasswordSchema } from "./custom.validation";
 
 const show = {
   params: Joi.object({
-    userId: Joi.number().integer(),
+    userId: Joi.number().integer().required(),
   }),
 };
 
@@ -31,7 +31,7 @@ const store = {
 
 const update = {
   params: Joi.object({
-    userId: Joi.string(),
+    userId: Joi.string().required(),
   }),
   body: Joi.object({
     email: Joi.string().email(),
@@ -43,7 +43,7 @@ const update = {
 
 const destroy = {
   params: Joi.object({
-    userId: Joi.string(),
+    userId: Joi.string().required(),
   }),
 };
 

@@ -49,36 +49,36 @@ const TemplateBodySchema = Joi.object({
 
 const show = {
   params: Joi.object({
-    campId: Joi.string(),
-    templateId: Joi.string(),
+    campId: Joi.string().required(),
+    templateId: Joi.string().required(),
   }),
 };
 
 const index = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
 };
 
 const store = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
   body: TemplateBodySchema,
 };
 
 const update = {
   params: Joi.object({
-    campId: Joi.string(),
-    templateId: Joi.string(),
+    campId: Joi.string().required(),
+    templateId: Joi.string().required(),
   }),
   body: TemplateBodySchema,
 };
 
 const destroy = {
   params: Joi.object({
-    campId: Joi.string(),
-    templateId: Joi.string(),
+    campId: Joi.string().required(),
+    templateId: Joi.string().required(),
   }),
 };
 
