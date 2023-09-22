@@ -25,7 +25,7 @@ const destroy = {
 const accept = {
   params: Joi.object({
     managerId: Joi.string().required(),
-    token: Joi.string().required()
+    token: Joi.string().required(),
   }),
 };
 

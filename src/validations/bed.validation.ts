@@ -7,7 +7,7 @@ const update = {
     bedId: Joi.string(),
   }),
   body: Joi.object({
-    registrationId: Joi.string().allow(null)
+    registrationId: Joi.string().allow(null),
   }),
 };
 

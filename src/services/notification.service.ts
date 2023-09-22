@@ -3,7 +3,12 @@ import transport from "@/config/mail";
 import { render } from "@/utils/render";
 import { generateQueryString } from "@/utils/uri";
 
-const sendEmail = async (to: string, subject: string, text: string, html: string) => {
+const sendEmail = async (
+  to: string,
+  subject: string,
+  text: string,
+  html: string
+) => {
   const { from, replyTo } = config.email;
   const { appName } = config;
 
@@ -15,7 +20,7 @@ const sendEmail = async (to: string, subject: string, text: string, html: string
     to,
     subject,
     text,
-    html
+    html,
   });
 };
 
@@ -68,9 +73,12 @@ const sendCampManagerInvitation = async (
 ) => {
   const subject = "Camp Invitation";
 
-  const url = generateUrl(`camp-management/${campId}/managers/${managerId}/accept`, {
-    token,
-  });
+  const url = generateUrl(
+    `camp-management/${campId}/managers/${managerId}/accept`,
+    {
+      token,
+    }
+  );
 
   const text = ""; // TODO
   const html = await render("emails/camp_manager_invitation", {

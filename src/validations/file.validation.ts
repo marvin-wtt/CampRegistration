@@ -12,7 +12,7 @@ const index = {
     name: Joi.string(),
     type: Joi.string(),
   }),
-}
+};
 
 const store = {
   body: Joi.object({
@@ -28,10 +28,9 @@ const destroy = {
   }),
 };
 
-
 export default {
   show,
   index,
   store,
-  destroy
+  destroy,
 };

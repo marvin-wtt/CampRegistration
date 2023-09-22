@@ -6,7 +6,10 @@ import { ulid } from "@/utils/ulid";
 import { encryptPassword } from "@/utils/encryption";
 
 const createUser = async (
-  data: Pick<Prisma.UserCreateInput, "email" | "name" | "password" | "role" | "locale">
+  data: Pick<
+    Prisma.UserCreateInput,
+    "email" | "name" | "password" | "role" | "locale"
+  >
 ) => {
   if (await getUserByEmail(data.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -19,7 +22,7 @@ const createUser = async (
       email: data.email,
       password: await encryptPassword(data.password),
       role: data.role,
-      locale: data.locale
+      locale: data.locale,
     },
   });
 };

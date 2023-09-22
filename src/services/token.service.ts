@@ -127,7 +127,9 @@ const generateAuthTokens = async (
  * @param {string} email
  * @returns {Promise<string>}
  */
-const generateResetPasswordToken = async (email: string): Promise<string | undefined> => {
+const generateResetPasswordToken = async (
+  email: string
+): Promise<string | undefined> => {
   const user = await userService.getUserByEmail(email);
   if (!user) {
     return undefined;

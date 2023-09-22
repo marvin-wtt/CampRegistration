@@ -97,7 +97,12 @@ const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
   return registration;
 };
 
-const  saveModelFiles = async (modelName: string, modelId: string, files: RequestFiles, accessLevel = 'private') => {
+const saveModelFiles = async (
+  modelName: string,
+  modelId: string,
+  files: RequestFiles,
+  accessLevel = "private"
+) => {
   const fileData = mapFileData(files, accessLevel).map((fileData) => {
     return {
       ...fileData,
@@ -106,7 +111,7 @@ const  saveModelFiles = async (modelName: string, modelId: string, files: Reques
   });
 
   const fileModes = await prisma.$transaction(
-    fileData.map((file) => prisma.file.create({ data: file })),
+    fileData.map((file) => prisma.file.create({ data: file }))
   );
 
   moveFiles(files);
@@ -142,11 +147,7 @@ const getModelFileByName = async (
   });
 };
 
-const getModelFile = async (
-  modelName: string,
-  modelId: string,
-  id: string
-) => {
+const getModelFile = async (modelName: string, modelId: string, id: string) => {
   return prisma.file.findFirst({
     where: {
       id,
@@ -180,13 +181,13 @@ const queryModelFiles = async <Key extends keyof File>(
       startsWith: `_${filter.name}_`,
     },
     type: filter.type,
-  }
+  };
 
   return prisma.file.findMany({
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
     where: {
       [`${modelName}Id`]: modelId,
-      ...where
+      ...where,
     },
     skip: (page - 1) * limit,
     take: limit,
@@ -206,10 +207,10 @@ const getFileStream = async (file: File) => {
 const deleteFile = async (id: string) => {
   return prisma.file.delete({
     where: {
-      id
-    }
+      id,
+    },
   });
-}
+};
 
 export default {
   saveRegistrationFiles,

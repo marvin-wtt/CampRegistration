@@ -28,7 +28,7 @@ export const formUtils = (formJson: unknown) => {
   const unknownDataFields = (): string[] => {
     const data = survey.data;
 
-    return Object.keys(data).filter(valueName => {
+    return Object.keys(data).filter((valueName) => {
       return survey.getQuestionByValueName(valueName) === null;
     });
   };

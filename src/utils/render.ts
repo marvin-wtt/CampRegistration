@@ -1,6 +1,6 @@
 import ejs from "ejs";
 import { join } from "path";
-import mjml2html from 'mjml'
+import mjml2html from "mjml";
 
 interface RenderOptions {
   layout?: string;
@@ -12,11 +12,11 @@ const renderMjml = (mjml: string): string => {
 
   // TODO Precompile it
   if (errors && errors.length > 0) {
-    throw new Error(errors[0].message)
+    throw new Error(errors[0].message);
   }
 
   return html;
-}
+};
 
 export const render = async (
   template: string,
@@ -50,6 +50,3 @@ export const render = async (
 
   return renderMjml(layout);
 };
-
-
-

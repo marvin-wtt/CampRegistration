@@ -41,7 +41,12 @@ const store = catchRequestAsync(async (req, res) => {
   }
 
   await catchSilent(() =>
-    notificationService.sendCampManagerInvitation(email, campId, manager.id, token)
+    notificationService.sendCampManagerInvitation(
+      email,
+      campId,
+      manager.id,
+      token
+    )
   );
 
   res.status(201).json(resource(campManagerResource(manager)));

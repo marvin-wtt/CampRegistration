@@ -1,4 +1,4 @@
-import {File} from "@prisma/client";
+import { File } from "@prisma/client";
 
 const fileResource = (file: File) => {
   return {
@@ -9,7 +9,7 @@ const fileResource = (file: File) => {
     size: file.size,
     accessLevel: file.accessLevel,
     createdAt: file.createdAt,
-  }
-}
+  };
+};
 
 export default fileResource;

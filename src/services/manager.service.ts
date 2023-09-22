@@ -18,7 +18,7 @@ const getManagers = async (campId: string) => {
     where: { campId },
     include: {
       invitation: true,
-      user: true
+      user: true,
     },
   });
 };
@@ -38,10 +38,7 @@ const getManagerByEmail = async (campId: string, email: string) => {
   });
 };
 
-const acceptManagerInvitation = async (
-  managerId: string,
-  userId: string
-) => {
+const acceptManagerInvitation = async (managerId: string, userId: string) => {
   return prisma.campManager.update({
     where: { id: managerId },
     data: {
@@ -51,7 +48,7 @@ const acceptManagerInvitation = async (
     include: {
       invitation: true,
       user: true,
-    }
+    },
   });
 };
 

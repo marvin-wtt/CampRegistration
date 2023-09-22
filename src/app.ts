@@ -51,10 +51,11 @@ passport.use(jwtStrategy);
 passport.use(anonymousStrategy);
 
 // view engine
-app.set('view engine', 'ejs');
+app.set("view engine", "ejs");
 
 // api routes
 app.use("/api", apiRoutes);
+// static content
 app.use(express.static("public"));
 
 // send back a 404 error for any unknown api request

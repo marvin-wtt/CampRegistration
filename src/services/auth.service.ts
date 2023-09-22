@@ -19,7 +19,10 @@ const loginUserWithEmailAndPassword = async (
   }
 
   if (!user.emailVerified) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Please confirm your email to login.")
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      "Please confirm your email to login."
+    );
   }
 
   return exclude(user, ["password"]);

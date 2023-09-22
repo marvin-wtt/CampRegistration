@@ -1,6 +1,6 @@
 import passwordComplexity from "joi-password-complexity";
 
-export const PasswordSchema =  passwordComplexity({
+export const PasswordSchema = passwordComplexity({
   min: 8,
   max: 26,
   lowerCase: 1,

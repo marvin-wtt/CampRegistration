@@ -28,7 +28,7 @@ const store = catchRequestAsync(async (req, res) => {
     email,
     password,
     role,
-    locale
+    locale,
   });
   res.status(httpStatus.CREATED).json(user);
 });
@@ -41,7 +41,7 @@ const update = catchRequestAsync(async (req, res) => {
     email,
     password,
     role,
-    locale
+    locale,
   });
   res.json(user);
 });

@@ -22,9 +22,9 @@ if (error) {
 }
 
 const defaultOptions = {
-  location: 'local',
-  tmpDir: path.join('storage', 'tmp') + path.sep,
-  uploadDir: path.join('storage', 'uploads') + path.sep,
+  location: "local",
+  tmpDir: path.join("storage", "tmp") + path.sep,
+  uploadDir: path.join("storage", "uploads") + path.sep,
 };
 
 const storageOptions = {
