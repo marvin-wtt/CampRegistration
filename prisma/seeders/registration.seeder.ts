@@ -21,6 +21,9 @@ const run = (prisma: PrismaClient) => {
     // Integers
     convertStringToInt("guardian_permission_leave", registration);
 
+    // @ts-ignore
+    registration.role = "participant";
+
     registrations.push({
       id: ulid(),
       campId: campId,
