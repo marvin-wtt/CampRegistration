@@ -22,20 +22,6 @@ router.param(
   })
 );
 
-router.param(
-  "file",
-  catchParamAsync(async (req, res, next, name) => {
-    const registration = routeModel(req.models.registration);
-
-    const file = await fileService.getRegistrationFileByName(
-      name,
-      registration.id
-    );
-    req.models.file = verifyModelExists(file);
-    next();
-  })
-);
-
 router.get(
   "/",
   auth(),
@@ -74,6 +60,20 @@ router.delete(
 );
 
 // Files
+router.param(
+  "fileId",
+  catchParamAsync(async (req, res, next, id) => {
+    const registration = routeModel(req.models.registration);
+    const file = await fileService.getModelFile(
+      'registration',
+      registration.id,
+      id,
+    );
+    req.models.file = verifyModelExists(file);
+    next();
+  })
+);
+
 router.get(
   "/:registrationId/files/:file",
   auth(),
