@@ -1,37 +1,18 @@
-import multer from "multer";
+import multer, { Field } from "multer";
 import { ulid } from "@/utils/ulid";
 import config from "@/config";
 import fs from "fs";
 import { NextFunction, Request, Response } from "express";
+import dynamicMiddleware from "@/middlewares/dynamic.middleware";
 
+type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 type FileFormat = Record<string, Express.Multer.File[]>;
 
-const multiPart = (req: Request, res: Response, next: NextFunction) => {
-  upload()(req, res, (param: unknown) => {
-    if (param) {
-      next(param);
-      return;
-    }
-
-    // Convert bull prototypes to objects
-    // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
-    req.body = removePrototype(req.body);
-
-    // Format files so that they are always grouped by the field name
-    req.files = req.file
-      ? formatFile(req.file)
-      : Array.isArray(req.files)
-      ? formatFileArray(req.files)
-      : typeof req.files === "object"
-      ? formatFileGroup(req.files)
-      : req.files;
-    req.file = undefined;
-
-    next();
-  });
+const multiPart = (fields: ParameterType) => {
+  return dynamicMiddleware([upload(fields), formatterMiddleware]);
 };
 
-const upload = () => {
+const upload = (fields: ParameterType) => {
   const tmpDir = config.storage.tmpDir;
 
   const tmpStorage = multer.diskStorage({
@@ -51,13 +32,60 @@ const upload = () => {
 
   const upload = multer({
     storage: tmpStorage,
+    limits: {
+      fileSize: 100e6,
+    },
   });
 
-  return upload.any();
+  return resolveMulterMiddleware(upload, fields);
+};
+
+const resolveMulterMiddleware = (
+  upload: multer.Multer,
+  fields: ParameterType
+) => {
+  if (fields === null) {
+    return upload.none();
+  }
+
+  if (fields === undefined) {
+    return upload.any();
+  }
+
+  if (typeof fields === "string") {
+    return upload.single(fields);
+  }
+
+  if (Array.isArray(fields)) {
+    return upload.fields(fields);
+  }
+
+  // TODO Why do I need to cast here?
+  const field = fields as Field;
+  return upload.array(field.name, field.maxCount);
+};
+
+const formatterMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  // Convert null prototypes to objects
+  // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
+  req.body = removePrototype(req.body);
+
+  // Format files so that they are always grouped by the field name
+  req.files = Array.isArray(req.files)
+    ? formatFileArray(req.files)
+    : typeof req.files === "object"
+    ? formatFileGroup(req.files)
+    : req.files;
+
+  next();
 };
 
 const removePrototype = <T>(obj: T): T => {
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || typeof obj !== "object") {
     return obj;
   }
 
@@ -69,7 +97,7 @@ const removePrototype = <T>(obj: T): T => {
   }
 
   return newObj;
-}
+};
 
 const formatFieldName = (name: string): string => {
   // Remove brackets if they exist
@@ -100,15 +128,6 @@ const formatFileGroup = (filesObject: FileFormat): FileFormat => {
     });
     return acc;
   }, {} as FileFormat);
-};
-
-const formatFile = (file: Express.Multer.File): FileFormat => {
-  const fieldName = formatFieldName(file.fieldname);
-  file.fieldname = fieldName;
-
-  return {
-    [fieldName]: [file],
-  };
 };
 
 export default multiPart;
