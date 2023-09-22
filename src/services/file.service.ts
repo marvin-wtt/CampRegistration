@@ -7,8 +7,14 @@ import ApiError from "@/utils/ApiError";
 import path from "path";
 
 type RequestFile = Express.Multer.File;
-
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
+
+const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
+  "id",
+  "name",
+  "field",
+  "type",
+];
 
 const mapFileData = (
   requestFiles: RequestFiles,
@@ -67,6 +73,7 @@ const moveFiles = (files: RequestFiles) => {
 };
 
 const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
+  // TODO Remove or move to registration service
   const fileData: Prisma.FileCreateInput[] = mapFileData(files, "private");
 
   const registration = await prisma.registration.update({
@@ -90,39 +97,21 @@ const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
   return registration;
 };
 
-const saveCampFiles = async (id: string, files: RequestFiles) => {
-  const fileData = mapFileData(files).map((fileData) => {
+const  saveModelFiles = async (modelName: string, modelId: string, files: RequestFiles, accessLevel = 'private') => {
+  const fileData = mapFileData(files, accessLevel).map((fileData) => {
     return {
       ...fileData,
-      campId: id,
+      [`${modelName}Id`]: modelId,
     };
   });
 
-  const fileModes = await prisma.file.createMany({
-    data: fileData,
-  });
+  const fileModes = await prisma.$transaction(
+    fileData.map((file) => prisma.file.create({ data: file })),
+  );
 
   moveFiles(files);
 
   return fileModes;
-};
-
-const getCampFileByName = async (name: string, id: string) => {
-  return prisma.file.findFirst({
-    where: {
-      name,
-      campId: id,
-    },
-  });
-};
-
-const getRegistrationFileByName = async (name: string, id: string) => {
-  return prisma.file.findFirst({
-    where: {
-      name,
-      registrationId: id,
-    },
-  });
 };
 
 const getFileByName = async (name: string) => {
@@ -136,6 +125,75 @@ const getFileByName = async (name: string) => {
   });
 };
 
+const getModelFileByName = async (
+  modelName: "camp" | "registration",
+  modelId: string,
+  name: string
+) => {
+  return prisma.file.findFirst({
+    where: {
+      name,
+      [`${modelName}Id`]: modelId,
+    },
+    include: {
+      camp: true,
+      registration: true,
+    },
+  });
+};
+
+const getModelFile = async (
+  modelName: string,
+  modelId: string,
+  id: string
+) => {
+  return prisma.file.findFirst({
+    where: {
+      id,
+      [`${modelName}Id`]: modelId,
+    },
+  });
+};
+
+const queryModelFiles = async <Key extends keyof File>(
+  modelName: string,
+  modelId: string,
+  filter: {
+    name?: string;
+    type?: string;
+  },
+  options: {
+    limit?: number;
+    page?: number;
+    sortBy?: string;
+    sortType?: "asc" | "desc";
+  },
+  keys: Key[] = defaultSelectKeys as Key[]
+) => {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 10;
+  const sortBy = options.sortBy ?? "name";
+  const sortType = options.sortType ?? "desc";
+
+  const where: Prisma.FileWhereInput = {
+    name: {
+      startsWith: `_${filter.name}_`,
+    },
+    type: filter.type,
+  }
+
+  return prisma.file.findMany({
+    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+    where: {
+      [`${modelName}Id`]: modelId,
+      ...where
+    },
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: sortBy ? { [sortBy]: sortType } : undefined,
+  });
+};
+
 const getFileStream = async (file: File) => {
   if (file.storageLocation === "local") {
     const filePath = path.join(config.storage.uploadDir, file.name);
@@ -145,11 +203,21 @@ const getFileStream = async (file: File) => {
   throw new ApiError(400, "Unknown storage type");
 };
 
+const deleteFile = async (id: string) => {
+  return prisma.file.delete({
+    where: {
+      id
+    }
+  });
+}
+
 export default {
   saveRegistrationFiles,
-  saveCampFiles,
+  saveModelFiles,
   getFileByName,
-  getCampFileByName,
-  getRegistrationFileByName,
+  getModelFile,
+  getModelFileByName,
   getFileStream,
+  queryModelFiles,
+  deleteFile,
 };
