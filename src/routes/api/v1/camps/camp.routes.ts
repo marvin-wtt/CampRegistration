@@ -55,7 +55,7 @@ router.param(
   "fileId",
   catchParamAsync(async (req, res, next, id) => {
     const camp = routeModel(req.models.camp);
-    const file = await fileService.getModelFileByName("camp", camp.id, id);
+    const file = await fileService.getModelFile("camp", camp.id, id);
     req.models.file = verifyModelExists(file);
     next();
   })
@@ -82,7 +82,7 @@ router.get(
   fileController.index
 )
 router.post(
-  "/:campId/files/:fileId",
+  "/:campId/files/",
   auth(),
   guard([campManager]),
   multipart('file'),
