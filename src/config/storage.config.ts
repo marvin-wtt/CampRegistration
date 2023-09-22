@@ -12,6 +12,9 @@ const { value: envVars, error } = Joi.object()
     STORAGE_LOCATION: Joi.string().description(
       "Location where new files should be stored to"
     ),
+    MAX_FILE_SIZE: Joi.string().description(
+      "Maximum size of uploaded files"
+    ),
   })
   .unknown()
   .prefs({ errors: { label: "key" } })
@@ -25,12 +28,14 @@ const defaultOptions = {
   location: "local",
   tmpDir: path.join("storage", "tmp") + path.sep,
   uploadDir: path.join("storage", "uploads") + path.sep,
+  maxFileSize: 100e6,
 };
 
 const storageOptions = {
   location: envVars.STORAGE_LOCATION ?? defaultOptions.location,
   tmpDir: envVars.TMP_DIR ?? defaultOptions.tmpDir,
   uploadDir: envVars.UPLOAD_DIR ?? defaultOptions.uploadDir,
+  maxFileSize: envVars.MAX_FILE_SIZE ?? defaultOptions.maxFileSize,
 };
 
 export default storageOptions;

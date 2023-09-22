@@ -33,7 +33,7 @@ const upload = (fields: ParameterType) => {
   const upload = multer({
     storage: tmpStorage,
     limits: {
-      fileSize: 100e6,
+      fileSize: config.storage.maxFileSize,
     },
   });
 
