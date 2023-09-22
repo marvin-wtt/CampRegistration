@@ -183,11 +183,24 @@ const getFileStream = async (file: File) => {
 };
 
 const deleteFile = async (id: string) => {
-  return prisma.file.delete({
+  const file = await prisma.file.delete({
     where: {
       id,
     },
   });
+
+  if (file.storageLocation === "local") {
+    const filePath = path.join(config.storage.uploadDir, file.name);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error(`Error deleting tmp file: ${filePath}: ${err}`);
+      }
+    });
+  } else {
+    // TODO Handle
+  }
+
+  return file;
 };
 
 export default {
