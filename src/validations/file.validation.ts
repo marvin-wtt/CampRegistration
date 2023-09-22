@@ -28,7 +28,7 @@ const store = {
 const destroy = {
   params: Joi.object({
     fileId: Joi.string().required(),
-  }),
+  }).unknown(),
 };
 
 export default {
