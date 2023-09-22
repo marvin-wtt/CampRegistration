@@ -15,9 +15,8 @@ const router = express.Router({ mergeParams: true });
 router.param(
   "bedId",
   catchParamAsync(async (req, res, next, id) => {
-    const camp = routeModel(req.models.camp);
     const room = routeModel(req.models.room);
-    const bed = await bedService.getBedById(camp.id, room.id, id);
+    const bed = await bedService.getBedById(id, room.id);
     req.models.bed = verifyModelExists(bed);
     next();
   })

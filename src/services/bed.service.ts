@@ -1,15 +1,14 @@
 import prisma from "../client";
-import { Prisma } from "@prisma/client";
 
-const getBedById = async (campId: string, roomId: string, id: string) => {
+const getBedById = async (id: string, roomId: string) => {
   return prisma.bed.findFirst({
     where: { id, roomId },
   });
 };
 
-const updateBedById = async (bedId: string, registrationId: string | null) => {
+const updateBedById = async (id: string, registrationId: string | null) => {
   return prisma.bed.update({
-    where: { id: bedId },
+    where: { id },
     data: {
       registrationId,
     },
