@@ -14,7 +14,8 @@ const show = catchRequestAsync(async (req, res) => {
   const fileStream = await fileService.getFileStream(file);
 
   // Set response headers for image display
-  res.setHeader("Content-Type", file.type); // Adjust content type as needed
+  res.contentType(file.type);
+  res.setHeader("Content-Disposition", ["inline", `filename=${file.originalName}`]);
 
   fileStream.pipe(res); // Pipe the file stream to the response
 });
