@@ -11,7 +11,7 @@ const managerResource = (manager: ManagerWithRelationships) => {
   const name: string | null = user ? user.name : null;
   const email: string = invitation ? invitation.email : user?.email ?? "";
   const status: string = user ? "accepted" : "pending";
-  const role: string = "manager";
+  const role = "manager";
 
   return {
     id: manager.id,

@@ -1,8 +1,9 @@
 export const generateQueryString = (params: Record<string, string>): string => {
-  return Object.keys(params)
-    .map((key) => {
-      const value = encodeURIComponent(params[key]);
-      return `${key}=${value}`;
+  return Object.entries(params)
+    .map(([key, value]) => {
+      const encodedKey = encodeURIComponent(key);
+      const encodedValue = encodeURIComponent(value);
+      return `${encodedKey}=${encodedValue}`;
     })
     .join("&");
 };

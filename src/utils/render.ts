@@ -23,6 +23,7 @@ export const render = async (
   data?: Record<string, unknown>,
   options?: RenderOptions
 ): Promise<string> => {
+  // TODO Continue
   const filePath =
     join(__dirname, "..", "views", ...template.split("/")) + ".ejs";
 

@@ -1,9 +1,9 @@
 import multer, { Field } from "multer";
-import { ulid } from "@/utils/ulid";
 import config from "@/config";
 import fs from "fs";
 import { NextFunction, Request, Response } from "express";
 import dynamicMiddleware from "@/middlewares/dynamic.middleware";
+import {randomUUID} from "crypto";
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 type FileFormat = Record<string, Express.Multer.File[]>;
@@ -20,7 +20,7 @@ const upload = (fields: ParameterType) => {
       cb(null, tmpDir);
     },
     filename: (req, file, cb) => {
-      const fileName = ulid();
+      const fileName = randomUUID();
       const fileExtension = file.originalname.split(".").pop();
       cb(null, `${fileName}.${fileExtension}`);
     },
