@@ -3,7 +3,7 @@ import { routeModel } from "@/utils/verifyModel";
 import { fileService } from "@/services";
 import httpStatus from "http-status";
 import ApiError from "@/utils/ApiError";
-import { collection } from "@/resources/resource";
+import { collection, resource } from "@/resources/resource";
 import { Request } from "express";
 import { fileResource } from "@/resources";
 import { File } from "@prisma/client";
@@ -49,22 +49,24 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { accessLevel } = req.body;
-  const files = req.files;
+  const { accessLevel, field, name } = req.body;
+  const file = req.file;
 
-  if (!files) {
+  if (!file) {
     throw new ApiError(httpStatus.BAD_REQUEST, "No files provided.");
   }
 
   const model = getRelationModel(req);
-  const data = await fileService.saveModelFiles(
+  const data = await fileService.saveModelFile(
     model.name,
     model.id,
-    files,
+    file,
+    name,
+    field,
     accessLevel
   );
 
-  const response = collection(data.map((value) => fileResource(value)));
+  const response = resource(fileResource(data));
   res.status(httpStatus.CREATED).json(response);
 });
 
