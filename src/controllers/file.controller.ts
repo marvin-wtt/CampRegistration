@@ -9,13 +9,15 @@ import { fileResource } from "@/resources";
 import { File } from "@prisma/client";
 
 const show = catchRequestAsync(async (req, res) => {
+  const { download } = req.query;
   const file = routeModel(req.models.file);
-
   const fileStream = await fileService.getFileStream(file);
 
   // Set response headers for image display
   res.contentType(file.type);
-  res.setHeader("Content-Disposition", ["inline", `filename=${file.originalName}`]);
+
+  const disposition = download ? 'attachment' : 'inline';
+  res.setHeader('Content-disposition', `${disposition}; filename=${file.originalName}`);
 
   fileStream.pipe(res); // Pipe the file stream to the response
 });
