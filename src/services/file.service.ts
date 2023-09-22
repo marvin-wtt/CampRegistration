@@ -5,6 +5,8 @@ import fs from "fs";
 import { ulid } from "@/utils/ulid";
 import ApiError from "@/utils/ApiError";
 import path from "path";
+import fse from "fs-extra";
+import httpStatus from "http-status";
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
@@ -24,7 +26,7 @@ const mapFields = (
   file: RequestFile,
   name?: string,
   field?: string,
-  accessLevel?: string
+  accessLevel?: string,
 ): Prisma.FileCreateInput => {
   return {
     id: ulid(),
@@ -61,20 +63,12 @@ const moveFiles = (files: RequestFiles) => {
     .forEach((file) => moveFile(file));
 };
 
-const moveFile = (file: RequestFile) => {
+const moveFile = async (file: RequestFile) => {
   const sourcePath = file.path;
-  const destinationDir = config.storage.uploadDir;
-  if (!fs.existsSync(destinationDir)) {
-    fs.mkdirSync(destinationDir);
-  }
-  const destinationPath = path.join(destinationDir, file.filename);
-  fs.rename(sourcePath, destinationPath, (err) => {
-    if (err) {
-      console.error(
-        `Error moving file: ${sourcePath} to ${destinationPath}: ${err}`
-      );
-    }
-  });
+
+  const storage = getStorage();
+  // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?
+  await storage.moveToStorage(sourcePath, file.filename);
 };
 
 const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
@@ -108,9 +102,9 @@ const saveModelFile = async (
   file: RequestFile,
   name: string,
   field: string,
-  accessLevel: string
+  accessLevel: string,
 ) => {
-  const fileName = name + '.' + file.filename.split(".").pop();
+  const fileName = name + "." + file.filename.split(".").pop();
   const fileData = mapFields(file, fileName, field, accessLevel);
 
   const data = await prisma.file.create({
@@ -119,7 +113,7 @@ const saveModelFile = async (
       [`${modelName}Id`]: modelId,
     },
   });
-  moveFile(file);
+  await moveFile(file);
 
   return data;
 };
@@ -146,7 +140,7 @@ const queryModelFiles = async <Key extends keyof File>(
     sortBy?: string;
     sortType?: "asc" | "desc";
   },
-  keys: Key[] = defaultSelectKeys as Key[]
+  keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -174,12 +168,8 @@ const queryModelFiles = async <Key extends keyof File>(
 };
 
 const getFileStream = async (file: File) => {
-  if (file.storageLocation === "local") {
-    const filePath = path.join(config.storage.uploadDir, file.name);
-    return fs.createReadStream(filePath);
-  }
-
-  throw new ApiError(400, "Unknown storage type");
+  const storage = getStorage(file.storageLocation);
+  return storage.stream(file);
 };
 
 const deleteFile = async (id: string) => {
@@ -189,18 +179,50 @@ const deleteFile = async (id: string) => {
     },
   });
 
-  if (file.storageLocation === "local") {
-    const filePath = path.join(config.storage.uploadDir, file.name);
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error(`Error deleting tmp file: ${filePath}: ${err}`);
-      }
-    });
-  } else {
-    // TODO Handle
-  }
+  const storage = getStorage(file.storageLocation);
+  // TODO Can this be done in a job?
+  await storage.remove(file);
 
   return file;
+};
+
+// Generic storage
+interface StorageStrategy {
+  remove: (file: File) => Promise<void>;
+  moveToStorage: (sourcePath: string, filename: string) => Promise<void>;
+  stream: (file: File) => fs.ReadStream;
+}
+
+const getStorage = (name?: string): StorageStrategy => {
+  if (name === undefined) {
+    name = config.storage.location;
+  }
+
+  if (name === 'local') {
+    return LocalStorage;
+  }
+
+  throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Unknown storage strategy ${name}`);
+}
+
+const LocalStorage: StorageStrategy = {
+  remove: async (file: File) => {
+    const filePath = path.join(config.storage.uploadDir, file.name);
+    return fse.remove(filePath);
+  },
+  moveToStorage: async (sourcePath: string, filename: string) => {
+    const destinationDir = config.storage.uploadDir;
+    const destinationPath = path.join(destinationDir, filename);
+
+    await fse.ensureDir(destinationDir);
+    await fse.move(sourcePath, destinationPath, {
+      overwrite: false,
+    });
+  },
+  stream: (file: File) => {
+    const filePath = path.join(config.storage.uploadDir, file.name);
+    return fse.createReadStream(filePath);
+  },
 };
 
 export default {
