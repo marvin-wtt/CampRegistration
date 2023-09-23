@@ -151,7 +151,7 @@ model File {
   type            String
   size            Int           @map("access_level")
   accessLevel     String?
-  storageLocation String
+  storageLocation String        @map("storage_location")
   createdAt       DateTime      @default(now()) @map("created_at")
   camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
   registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
