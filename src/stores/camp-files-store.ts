@@ -21,7 +21,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     errorOnFailure,
     checkNotNullWithNotification,
     checkNotNullWithError,
-  } = useServiceHandler<ServiceFile[]>('campFiles');
+  } = useServiceHandler<ServiceFile[]>('camp.files');
 
   authBus.on('logout', () => {
     reset();
