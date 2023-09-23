@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import form from "./json/campForm.json";
-import { ulid } from "../../src/utils/ulid"
+import { ulid } from "@/utils/ulid"
 
 const name = "camp";
 
