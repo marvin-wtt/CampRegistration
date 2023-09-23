@@ -1,5 +1,6 @@
 // Can be replaced by Array.group() in the future
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
   arr.reduce((groups, item) => {
     (groups[key(item)] ||= []).push(item);

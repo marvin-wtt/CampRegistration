@@ -15,7 +15,7 @@ export const catchParamAsync =
     req: Request,
     res: Response,
     next: NextFunction,
-    value: any,
+    value: unknown,
     name: string
   ) => {
     Promise.resolve(fn(req, res, next, value, name)).catch((err) => next(err));
