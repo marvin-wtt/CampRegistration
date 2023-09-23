@@ -43,7 +43,7 @@ export const render = async (
   const layout = await ejs.renderFile(layoutPath, {
     // content,
     meta: {
-      copyright: "2023 Ballaeron e.V.",
+      copyright: "2023 Ballaeron e.V.", // TODO Who is the publisher?
       imprintUrl: "",
       contactUrl: "",
     },
