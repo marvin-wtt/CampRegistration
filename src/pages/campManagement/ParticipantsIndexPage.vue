@@ -3,7 +3,7 @@
     :error="error"
     :loading="loading"
   >
-    <ResultTable
+    <result-table
       ref="table"
       class="absolute fit"
       :questions="columns"
@@ -121,7 +121,7 @@ DataProviderRegistry.INSTANCE.register({
 });
 
 function hasFullName(
-  data: unknown
+  data: unknown,
 ): data is { first_name?: string; last_name?: string } {
   if (data === null || typeof data !== 'object') return false;
   return (
@@ -146,7 +146,7 @@ DataProviderRegistry.INSTANCE.register({
 });
 
 function hasAddressRows(
-  data: unknown
+  data: unknown,
 ): data is { address: string; zip_code: string; city: string } {
   if (data === null) return false;
   if (typeof data !== 'object') return false;

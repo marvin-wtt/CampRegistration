@@ -1,6 +1,6 @@
 <template>
   <q-select
-    v-model="modelValue"
+    v-model="value"
     :options="options"
     v-bind="$attrs"
     :option-value="optionValue"
@@ -81,7 +81,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: unknown): void;
 }>();
 
-const modelValue = computed({
+const value = computed({
   get: () => validModelValue.value,
   set: (value) => emit('update:modelValue', value),
 });
@@ -153,7 +153,7 @@ const langOptions = computed(() => [
   // {
   //   label: props.nativeNames ? 'Polski' : t('countries.pl'),
   //   locale: 'pl', // 'pl-PL'
-  //   country: 'pl',
+  //   countryQuestion: 'pl',
   //   isoName: 'pl',
   // },
 ]);

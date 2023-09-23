@@ -14,7 +14,7 @@
       <q-card-section class="q-pt-none">
         <sortable-list
           v-slot="slotProps"
-          v-model="templates"
+          v-model="modifiedTemplates"
           addable
           editable
           deletable
@@ -81,7 +81,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const templates = reactive<TableTemplate[]>(propTemplates());
+const modifiedTemplates = reactive<TableTemplate[]>(propTemplates());
 
 function propTemplates(): TableTemplate[] {
   // Filter generated templates as they cannot be edited and remove vue proxies
@@ -99,7 +99,7 @@ function addTemplate() {
   const template: TableTemplate = {
     id: 'filled-by-server',
     title: t('defaults.title'),
-    order: templates.length,
+    order: modifiedTemplates.length,
     columns: [],
   };
   quasar
@@ -111,7 +111,7 @@ function addTemplate() {
       },
     })
     .onOk((payload) => {
-      templates.push(payload);
+      modifiedTemplates.push(payload);
     });
 }
 
@@ -126,18 +126,18 @@ function editTemplate(template: TableTemplate) {
       persistent: true,
     })
     .onOk((payload) => {
-      const index = templates.indexOf(template);
+      const index = modifiedTemplates.indexOf(template);
 
       if (index < 0) {
         return;
       }
 
-      templates[index] = payload;
+      modifiedTemplates[index] = payload;
     });
 }
 
 function onOKClick() {
-  onDialogOK(templates);
+  onDialogOK(modifiedTemplates);
 }
 </script>
 

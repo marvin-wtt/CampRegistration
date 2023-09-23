@@ -3,7 +3,7 @@
   <q-table
     id="print-table"
     v-model:pagination="pagination"
-    :columns="columns"
+    :columns="columns as QTableColumn[]"
     :rows="rows"
     :rows-per-page-options="[0]"
     :style="style"
@@ -278,7 +278,7 @@ const countries = computed<string[]>(() => {
     ...new Set(
       props.results.map((value) => {
         return 'country' in value ? (value.country as string) : '';
-      })
+      }),
     ),
   ];
 });
@@ -366,7 +366,7 @@ const renderers = computed<Map<string, TableCellRenderer>>(() => {
     if (renderComponent) {
       rendererMap.set(
         column.name,
-        new TableCellRenderer(renderComponent, column)
+        new TableCellRenderer(renderComponent, column),
       );
     }
   });
