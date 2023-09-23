@@ -6,6 +6,7 @@ import { useUserService } from 'src/services/UserService';
 import { useRoomService } from 'src/services/RoomService';
 import { useCampManagerService } from 'src/services/CampManagerService';
 import axios, { AxiosError } from 'axios';
+import { useFileService } from 'src/services/FileService';
 
 export function useAPIService() {
   return {
@@ -16,6 +17,7 @@ export function useAPIService() {
     ...useRegistrationService(),
     ...useTemplateService(),
     ...useRoomService(),
+    ...useFileService(),
   };
 }
 
