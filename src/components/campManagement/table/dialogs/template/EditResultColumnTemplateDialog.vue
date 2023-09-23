@@ -174,11 +174,11 @@ import { computed, reactive, ref, toRaw } from 'vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { Camp } from 'src/types/Camp';
-import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
+import { extractFormFields } from 'src/utils/surveyJS';
 
 interface Props {
   column: TableColumnTemplate;
@@ -202,7 +202,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const column = reactive<TableColumnTemplate>(
-  structuredClone(toRaw(props.column))
+  structuredClone(toRaw(props.column)),
 );
 
 function onOKClick(): void {
@@ -244,29 +244,12 @@ const renderAsOptions = computed<{ label: string; value: string }[]>(() => {
 });
 
 const fieldOptions = computed(() => {
-  const form = props.camp.form as SurveyJSCampData;
-
-  const formFields = form.pages.flatMap((page) => {
-    return page.elements
-      .filter((element) => {
-        return element.type !== 'expression';
-      })
-      .map((element) => {
-        return {
-          label: element.title,
-          value: element.name,
-        };
-      });
-  });
-
-  // TODO Add default form fields
-
-  return formFields;
+  return extractFormFields(props.camp.form);
 });
 
 const fieldFilterOptions = ref(fieldOptions.value);
 
-function createField(val: string, done) {
+function createField(val: string, done: (val: string) => void) {
   val = val.trim();
   if (val.length === 0 && /\s/g.test(val)) {
     return;
@@ -274,14 +257,14 @@ function createField(val: string, done) {
   done(val);
 }
 
-function fieldFilterFn(val: string, update) {
+function fieldFilterFn(val: string, update: (a: () => void) => void) {
   update(() => {
     if (val === '') {
       fieldFilterOptions.value = fieldOptions.value;
     } else {
       const needle = val.toLowerCase();
       fieldFilterOptions.value = fieldOptions.value.filter(
-        (v) => v.value.toLowerCase().indexOf(needle) > -1
+        (v) => v.value.toLowerCase().indexOf(needle) > -1,
       );
     }
   });
