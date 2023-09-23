@@ -1,4 +1,4 @@
-const htmlDate = (params: any[]) => {
+const htmlDate = (params: unknown[]) => {
   if (params.length !== 1) {
     return '';
   }

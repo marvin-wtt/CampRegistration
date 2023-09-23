@@ -7,9 +7,10 @@ const dateOfBirth: ICustomQuestionTypeConfiguration = {
     type: 'text',
     inputType: 'date',
     autocomplete: 'bday',
-    minValueExpression: 'htmlDate(subtractYears({camp.endAt}, {camp.maxAge}))',
+    minValueExpression:
+      'htmlDate(subtractYearsFromDate({camp.endAt}, {camp.maxAge}))',
     maxValueExpression:
-      'htmlDate(subtractYears({camp.startAt}, {camp.minAge}))',
+      'htmlDate(subtractYearsFromDate({camp.startAt}, {camp.minAge}))',
     minErrorText: {
       de: 'Das maximale Alter für dieses Camp is {camp.maxAge} Jahre',
       en: 'The maximum age for this camp is {camp.maxAge} years',

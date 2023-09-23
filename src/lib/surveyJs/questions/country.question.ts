@@ -5,9 +5,11 @@ const country: ICustomQuestionTypeConfiguration = {
   title: 'Country',
   questionJSON: {
     type: 'dropdown',
-    autocomplete: 'country',
+    autocomplete: 'countryQuestion',
     placeholder: {
-      en: 'Select a country...',
+      de: 'Ein Land auswählen...',
+      en: 'Select a countryQuestion...',
+      fr: 'Sélectionnez un pays...',
     },
     choices: [
       {

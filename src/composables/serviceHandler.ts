@@ -270,7 +270,8 @@ export function useServiceHandler<T>(storeName: string) {
 
   function extractErrorText(err: unknown): string {
     if (!isAPIServiceError(err)) {
-      return hasMessage(err) ? err.message : 'Service not available.';
+      // TODO Translate
+      return hasMessage(err) ? err.message : 'Service temporary unavailable. Please try again later.';
     }
 
     if (err.response) {

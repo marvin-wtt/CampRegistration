@@ -1,14 +1,17 @@
-
-const isMinor = (params: any[]) => {
-  if (params.length !== 2) {
+const isMinor = (params: unknown[]) => {
+  if (params.length < 1 || params[0] === null) {
     return true;
+  }
+
+  if (typeof params[0] !== 'string' || typeof params[1] !== 'string') {
+    return 'Error';
   }
 
   const birthdate = new Date(params[0]);
   const date = new Date(params[1]);
 
   if (isNaN(birthdate.getTime()) || isNaN(date.getTime())) {
-    throw new Error('Invalid date format in the array.');
+    return true;
   }
 
   const ageInMillis = date.getTime() - birthdate.getTime();

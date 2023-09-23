@@ -26,6 +26,7 @@ export type AnyElement =
 
 export interface Element {
   name: string;
+  valueName?: string;
   type: string;
   title: string | Record<string, string>;
   description?: string | Record<string, string>;
