@@ -79,12 +79,21 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     await apiService.downloadCampFile(cid, id);
   }
 
+  function getUrl(id: string, campId?: string) {
+    campId = campId ?? (route.params.camp as string);
+    const cid = checkNotNullWithNotification(campId);
+    checkNotNullWithNotification(id);
+
+    return apiService.getCampFileUrl(cid, id);
+  }
+
   return {
     reset,
     data,
     isLoading,
     error,
     downloadData,
+    getUrl,
     fetchData,
     createEntry,
     deleteEntry,

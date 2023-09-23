@@ -45,6 +45,18 @@
           </template>
         </div>
       </template>
+      <!-- Custom cells -->
+      <template #body-cell-name="props">
+        <q-td :props="props">
+          <a
+            :href="props.row.href"
+            target="_blank"
+            style="text-decoration: none; color: inherit"
+          >
+            {{ props.value }}
+          </a>
+        </q-td>
+      </template>
     </q-table>
   </page-state-handler>
 </template>
@@ -139,6 +151,7 @@ function mapColumnData(file: ServiceFile) {
     size: formatBytes(file.size),
     accessLevel: t(`access_level.${file.accessLevel}`, file.accessLevel),
     createdAt: formatUtcDateTime(file.createdAt),
+    href: campFileStore.getUrl(file.id),
   };
 }
 

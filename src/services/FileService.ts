@@ -29,10 +29,15 @@ export function useFileService() {
     // TODO
   }
 
+  function getCampFileUrl(campId: string, id: string): string {
+    return `${api.defaults.baseURL}camps/${campId}/files/${id}/`;
+  }
+
   return {
     fetchCampFiles,
     createCampFile,
     deleteCampFile,
     downloadCampFile,
+    getCampFileUrl,
   };
 }
