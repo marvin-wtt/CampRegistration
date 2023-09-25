@@ -50,7 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function (error) {
       if (error.response === undefined) {
         return Promise.reject(
-          'Server not reachable... Please try again later :('
+          'Server not reachable... Please try again later :(',
         );
       }
 
@@ -83,7 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Still reject error to avoid false success messages
       return Promise.reject(error);
-    }
+    },
   );
 
   function reset() {
@@ -98,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(
     email: string,
     password: string,
-    remember = false
+    remember = false,
   ): Promise<void> {
     await errorOnFailure(async () => {
       const result = await apiService.login(email, password, remember);
@@ -152,6 +152,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUser(): Promise<void> {
+    await refreshTokens();
     await errorOnFailure(async () => {
       return await apiService.fetchProfile();
     });
