@@ -15,6 +15,10 @@
         {{ props.message }}
       </q-card-section>
 
+      <q-card-section class="q-pt-none">
+        {{ t('text.confirm', { label: props.label }) }}
+      </q-card-section>
+
       <q-card-section class="q-pt-none text-center text-bold">
         {{ props.value }}
       </q-card-section>
@@ -85,18 +89,27 @@ const confirmDeleteDisabled = computed<boolean>(() => {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
+text:
+  confirm: 'Please enter the {label} to confirm:'
+
 action:
   delete: 'Delete'
   cancel: 'Cancel'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+text:
+  confirm: 'Bitte zur Bestätigung {label} eingeben:'
+
 action:
   delete: 'Löschen'
   cancel: 'Abbrechen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+texte:
+  confirm: 'Veuillez entrer {label} pour confirmer :'
+
 action:
   delete: 'Supprimer'
   cancel: 'Annuler'
