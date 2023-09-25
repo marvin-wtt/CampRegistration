@@ -5,7 +5,7 @@
     class="row justify-center"
   >
     <div
-      v-if="filteredCamps.length === 0"
+      v-if="!loading && filteredCamps.length === 0"
       class="class=&quot;absolute fit row justify-center&quot;"
     >
       <div class="text-center self-center text-h1">
