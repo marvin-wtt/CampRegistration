@@ -24,6 +24,42 @@ const queryRegistrations = async (campId: string) => {
   });
 };
 
+const countRegistrationsByField = async (
+  campId: string,
+  countryField: string,
+  roleField: string,
+) => {
+  const countryKey = `$.${countryField}`;
+  const roleKey = `$.${roleField}`;
+  const roleValue = "participant";
+  // TODO Filter camp counselors
+  // const result = await prisma.$queryRaw(Prisma.sql`
+  //   SELECT
+  //       JSON_VALUE(registrations.data, ${countryKey}) AS value,
+  //       COUNT(*)     AS count
+  //   FROM
+  //       registrations
+  //   WHERE
+  //       registrations.camp_id = ${campId}
+  //       AND JSON_VALUE(registrations.data, ${roleKey}) = ${roleValue}
+  //   GROUP BY
+  //       value
+  // `);
+  const result = {};
+
+  if (!result || !Array.isArray(result)) {
+    return undefined;
+  }
+
+  const countObject: Record<string, number> = {};
+  result.forEach((item) => {
+    // Convert bigint to number
+    countObject[item.value] = Number(item.count);
+  });
+
+  return countObject;
+};
+
 const createRegistration = async (campId: string, data: object) => {
   const camp = await campService.getCampById(campId);
   if (!camp) {
@@ -41,7 +77,7 @@ const createRegistration = async (campId: string, data: object) => {
 
 const updateRegistrationById = async (
   registrationId: string,
-  updateBody: object
+  updateBody: object,
 ) => {
   return prisma.registration.update({
     where: { id: registrationId },
@@ -60,6 +96,7 @@ const deleteRegistrationById = async (registrationId: string) => {
 export default {
   getRegistrationById,
   queryRegistrations,
+  countRegistrationsByField,
   createRegistration,
   updateRegistrationById,
   deleteRegistrationById,
