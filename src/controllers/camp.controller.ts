@@ -19,6 +19,7 @@ const index = catchRequestAsync(async (req, res) => {
   // Set user id if private camps should be included filter for camp manager
   filter.userId = filter.private ? authUserId(req) : undefined;
   const options = pick(req.query, ["sortBy", "limit", "page"]);
+  // TODO Add default options, make sure validation is correct and add pagination meta
   const camps = await campService.queryPublicCamps(filter, options);
 
   const resources = camps.map((value) => campResource(value));
