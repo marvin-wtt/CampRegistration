@@ -244,7 +244,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
 
 <style scoped></style>
 
-<!-- TODO Translate -->
 <i18n lang="yaml" locale="en">
 action:
   create: 'Create new'
@@ -264,4 +263,46 @@ dialog:
 notification:
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+action:
+  create: 'Neu erstellen'
+  delete: 'Löschen'
+  edit: 'Bearbeiten'
+  publish: 'Veröffentlichen'
+  results: 'Ergebnisse'
+  share: 'Teilen'
+  unpublish: 'Nicht veröffentlichen'
+
+dialog:
+  delete:
+    title: 'Lager löschen'
+    message: 'Sind Sie sicher, dass Sie dieses Lager löschen möchten? Alle Anmeldungen gehen verloren. Dieses Lager kann nicht als Vorlage für zukünftige Lager verwendet werden.'
+    label: 'Lagername'
+
+notification:
+  share_success: 'Link in die Zwischenablage kopiert'
+  share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+action:
+  create: 'Créer un nouveau'
+  delete: 'Supprimer'
+  edit: 'Modifier'
+  publish: 'Publier'
+  results: 'Résultats'
+  share: 'Partager'
+  unpublish: 'Ne pas publier'
+
+dialog:
+  delete:
+    title: 'Supprimer le camp'
+    message: 'Êtes-vous sûr de vouloir supprimer ce camp ? Toutes les inscriptions seront perdues. Ce camp ne peut pas être utilisé comme modèle pour les camps futurs.'
+    label: 'Nom du camp'
+
+notification:
+  share_success: 'Lien copié dans le presse-papiers'
+  share_fail: 'Échec de la copie du lien dans le presse-papiers'
 </i18n>

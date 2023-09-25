@@ -158,4 +158,26 @@ menu:
   public: 'Public'
 </i18n>
 
+<i18n lang="yaml" locale="de">
+title: 'Camps'
+
+actions:
+  create: 'Neu erstellen'
+
+menu:
+  draft: 'Entwurf'
+  public: 'Öffentlich'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Camps'
+
+actions:
+  create: 'Créer un nouveau'
+
+menu:
+  draft: 'Brouillon'
+  public: 'Public'
+</i18n>
+
 <style scoped></style>
