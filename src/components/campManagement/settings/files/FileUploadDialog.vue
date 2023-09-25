@@ -70,21 +70,6 @@
               </q-item>
             </template>
           </q-select>
-
-          <!-- Field -->
-          <q-input
-            v-model="file.field"
-            :label="t('fields.field.label')"
-            :hint="t('fields.field.hint')"
-            :rules="[
-              (val) => !!val || t('fields.field.rules.required'),
-              (val) =>
-                /^[a-z_][a-z0-9_]*$/.test(val) ||
-                t('fields.name.rules.snake_case'),
-            ]"
-            outlined
-            rounded
-          />
         </q-card-section>
 
         <!-- action buttons -->
@@ -172,12 +157,6 @@ fields:
     label: 'Access'
     rules:
       required: 'This field is required'
-  field:
-    label: 'Group'
-    hint: 'Optional. May be used to group translated files'
-    rules:
-      required: 'This field is required'
-      snake_case: 'Only lowercase letters, numbers and underscores are allowed'
   file:
     label: 'File'
     rules:
@@ -208,12 +187,6 @@ fields:
     label: 'Zugriff'
     rules:
       required: 'Dieses Feld ist erforderlich'
-  field:
-    label: 'Gruppe'
-    hint: 'Optional. Kann verwendet werden, um übersetzte Dateien zu gruppieren'
-    rules:
-      required: 'Dieses Feld ist erforderlich'
-      snake_case: 'Nur Kleinbuchstaben, Zahlen und Unterstriche sind erlaubt'
   file:
     label: 'Datei'
     rules:
@@ -244,12 +217,6 @@ fields:
     label: 'Accès'
     rules:
       required: 'Ce champ est requis'
-  field:
-    label: 'Groupe'
-    hint: 'Facultatif. Peut être utilisé pour regrouper les fichiers traduits'
-    rules:
-      required: 'Ce champ est requis'
-      snake_case: 'Seuls les lettres minuscules, les chiffres et les traits de soulignement sont autorisés'
   file:
     label: 'Fichier'
     rules:
