@@ -98,6 +98,12 @@ const columns: QTableColumn[] = [
     align: 'left',
   },
   {
+    name: 'id',
+    label: t('column.id'),
+    field: 'id',
+    align: 'center',
+  },
+  {
     name: 'access',
     label: t('column.access_level'),
     field: 'accessLevel',
@@ -188,6 +194,7 @@ action:
 
 column:
   access_level: 'Access'
+  id: 'ID'
   last_modified: 'Last Modified'
   name: 'Name'
   size: 'Size'
@@ -208,6 +215,7 @@ action:
 
 column:
   access_level: 'Zugriff'
+  id: 'ID'
   last_modified: 'Zuletzt geändert'
   name: 'Name'
   size: 'Größe'
@@ -228,6 +236,7 @@ action:
 
 column:
   access_level: "Niveau d'accès"
+  id: 'ID'
   last_modified: 'Dernière modification'
   name: 'Nom'
   size: 'Taille'
