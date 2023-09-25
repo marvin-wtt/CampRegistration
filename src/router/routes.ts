@@ -35,7 +35,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'forgot-password',
         path: '',
-        component: () => import('pages/ForgotPassword.vue'),
+        component: () => import('pages/ForgotPasswordPage.vue'),
       },
     ],
   },
@@ -46,7 +46,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'reset-password',
         path: '',
-        component: () => import('pages/ResetPassword.vue'),
+        component: () => import('pages/ResetPasswordPage.vue'),
       },
     ],
   },
@@ -168,7 +168,7 @@ const routes: RouteRecordRaw[] = [
   // but you can also remove it
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue'),
+    component: () => import('pages/ErrorNotFoundPage.vue'),
   },
 ];
 
