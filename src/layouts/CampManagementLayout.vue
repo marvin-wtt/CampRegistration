@@ -63,10 +63,10 @@
     <q-drawer
       v-if="showDrawer"
       v-model="drawer"
-      :breakpoint="500"
+      :breakpoint="599.99"
       :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
       :mini="miniState"
-      :width="200"
+      :width="220"
       bordered
       mini-to-overlay
       show-if-above
