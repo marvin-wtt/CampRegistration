@@ -90,6 +90,7 @@
       <q-separator />
 
       <q-item
+        v-if="!props.camp.public"
         v-close-popup
         class="text-negative"
         clickable
