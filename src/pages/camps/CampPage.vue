@@ -54,7 +54,7 @@ watch(
   () => quasar.dark.isActive,
   (val) => {
     applyTheme(val);
-  }
+  },
 );
 
 onMounted(async () => {
@@ -106,35 +106,29 @@ function createModel(id: string, form: object): SurveyModel {
       file: File;
     }
 
-    // Load previews in base64. Until the survey is completed, files are loaded temporarily as base64 for previews.
-    const contentPromises = options.files.map((file) => {
-      return new Promise<FileOption>((resolve) => {
-        const fileReader = new FileReader();
-        fileReader.onload = () => {
-          resolve({
-            name: file.name,
-            type: file.type,
-            content: fileReader.result,
-            file: file,
-          });
-        };
-        fileReader.readAsDataURL(file);
-      });
+    // FIXME Files not uploaded correctly
+    const fileOptions = options.files.map((value) => {
+      return {
+        file: value,
+        filename: value.name,
+        content: 'uuid',
+      };
     });
 
-    const contents = await Promise.all(contentPromises);
-    options.callback(
-      'success',
-      contents.map((fileContent) => {
-        return { file: fileContent.file, content: fileContent.content };
-      })
-    );
+    options.callback('success', fileOptions);
   });
   // Remove file from storage
   survey.onClearFiles.add((_, options) => {
+    // Filename is null if clear all button is pressed
+    if (options.fileName === null) {
+      temporaryFilesStorage[options.name] = [];
+      options.callback('success');
+      return;
+    }
+
     const tempFiles = temporaryFilesStorage[options.name] || [];
     const fileInfoToRemove = tempFiles.find(
-      (file) => file.name === options.fileName
+      (file) => file.name === options.fileName,
     );
 
     if (fileInfoToRemove !== undefined) {
