@@ -119,6 +119,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import { Camp } from 'src/types/Camp';
 import { computed, Ref, ref } from 'vue';
 import { useAuthStore } from 'stores/auth-store';
+import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 
 const capsStore = useCampsStore();
 const authStore = useAuthStore();
@@ -200,15 +201,12 @@ function deleteAction() {
   // TODO Maybe use explicit confirm with camp name
   quasar
     .dialog({
-      title: t('dialog.delete.title'),
-      message: t('dialog.delete.message'),
-      ok: {
-        color: 'negative',
-        flat: true,
-      },
-      cancel: {
-        color: 'primary',
-        flat: true,
+      component: SafeDeleteDialog,
+      componentProps: {
+        title: t('dialog.delete.title'),
+        message: t('dialog.delete.message'),
+        label: t('dialog.delete.label'),
+        value: to(props.camp.name),
       },
       persistent: true,
     })
@@ -260,7 +258,8 @@ action:
 dialog:
   delete:
     title: 'Delete camp'
-    message: 'Are you sure you want to delete this camp? All registrations will be lost. This camp cannot be used as a template fir future camps'
+    message: 'Are you sure you want to delete this camp? All registrations will be lost. This camp cannot be used as a template for future camps.'
+    label: 'Camp name'
 
 notification:
   share_success: 'Link copied to clipboard'
