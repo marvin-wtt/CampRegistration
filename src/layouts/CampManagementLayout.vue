@@ -208,7 +208,6 @@ const items: NavigationItem[] = [
       },
       {
         name: 'files',
-        preview: true,
         label: t('files'),
         icon: 'folder',
         to: { name: 'edit-files' },
