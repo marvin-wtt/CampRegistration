@@ -127,11 +127,7 @@ const publicCamps = computed<Camp[]>(() => {
   }
 
   const camps = user.value.camps as Camp[];
-  return camps
-    .filter((value) => value.public)
-    .sort((a, b) => {
-      return new Date(b.startAt) - new Date(a.startAt);
-    });
+  return camps.filter((value) => value.public).sort(sortCamps);
 });
 
 const draftCamps = computed<Camp[]>(() => {
@@ -140,12 +136,15 @@ const draftCamps = computed<Camp[]>(() => {
   }
 
   const camps = user.value.camps as Camp[];
-  return camps
-    .filter((value) => !value.public)
-    .sort((a, b) => {
-      return new Date(b.startAt) - new Date(a.startAt);
-    });
+  return camps.filter((value) => !value.public).sort(sortCamps);
 });
+
+function sortCamps(a: Camp, b: Camp) {
+  return (
+    new Date(b.startAt).getUTCMilliseconds() -
+    new Date(a.startAt).getUTCMilliseconds()
+  );
+}
 </script>
 
 <i18n lang="yaml" locale="en">
