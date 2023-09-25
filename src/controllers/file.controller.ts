@@ -40,7 +40,7 @@ const index = catchRequestAsync(async (req, res) => {
       limit: 20,
       page,
       sortBy: "id",
-      sortType: "desc",
+      sortType: "asc",
     }
   )) as File[];
 
