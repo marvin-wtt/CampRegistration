@@ -11,7 +11,7 @@ import { catchRequestAsync } from "@/utils/catchAsync";
  * @param guardFns The guard function or an empty array if only administrators should have access
  */
 const guard = (
-  guardFns: ((req: Request) => Promise<boolean | string>)[] = []
+  guardFns: ((req: Request) => Promise<boolean | string>)[] = [],
 ) => {
   return catchRequestAsync(
     async (req: Request, res: Response, next: NextFunction) => {
@@ -19,7 +19,13 @@ const guard = (
 
       let message = "Insufficient permissions";
       for (const fn of guardFns) {
-        const result = await fn(req);
+        let result: string | boolean = false;
+
+        try {
+          result = await fn(req);
+        } catch (e: unknown) {
+          result = e instanceof Error ? e.message : false;
+        }
 
         if (result === true) {
           next();
@@ -37,7 +43,7 @@ const guard = (
       }
 
       next(new ApiError(httpStatus.FORBIDDEN, message));
-    }
+    },
   );
 };
 export default guard;
