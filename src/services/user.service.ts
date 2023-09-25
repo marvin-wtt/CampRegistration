@@ -1,4 +1,4 @@
-import { User, type Prisma } from "@prisma/client";
+import { type Prisma, User } from "@prisma/client";
 import httpStatus from "http-status";
 import prisma from "../client";
 import ApiError from "@/utils/ApiError";
@@ -9,7 +9,7 @@ const createUser = async (
   data: Pick<
     Prisma.UserCreateInput,
     "email" | "name" | "password" | "role" | "locale"
-  >
+  >,
 ) => {
   if (await getUserByEmail(data.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");

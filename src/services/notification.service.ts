@@ -68,16 +68,12 @@ const sendVerificationEmail = async (to: string, token: string) => {
 const sendCampManagerInvitation = async (
   to: string,
   campId: string,
-  managerId: string,
-  token: string
+  managerId: string
 ) => {
   const subject = "Camp Invitation";
 
   const url = generateUrl(
-    `camp-management/${campId}/managers/${managerId}/accept`,
-    {
-      token,
-    }
+    `camp-management/`,
   );
 
   const text = ""; // TODO

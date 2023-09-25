@@ -71,8 +71,7 @@ model CampManager {
 model Invitation {
   id          String        @id @unique(map: "invitations_id_unique") @db.Char(26)
   email       String        @db.VarChar(255)
-  token       String        @map("invitation_token") @db.VarChar(255)
-  CampManager CampManager[]
+  campManager CampManager[]
 
   @@map("camp_manager_invitations")
 }

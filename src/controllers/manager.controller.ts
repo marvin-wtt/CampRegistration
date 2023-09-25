@@ -2,9 +2,8 @@ import { catchRequestAsync, catchSilent } from "@/utils/catchAsync";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
-import { notificationService, managerService } from "@/services";
+import {notificationService, managerService, userService} from "@/services";
 import { campManagerResource } from "@/resources";
-import { routeModel } from "@/utils/verifyModel";
 
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
@@ -12,7 +11,7 @@ const index = catchRequestAsync(async (req, res) => {
   const managers = await managerService.getManagers(campId);
   const resources = managers.map((manager) => campManagerResource(manager));
 
-  res.json(collection(resources));
+  res.status(httpStatus.OK).json(collection(resources));
 });
 
 const store = catchRequestAsync(async (req, res) => {
@@ -21,35 +20,26 @@ const store = catchRequestAsync(async (req, res) => {
 
   const existingCampManager = await managerService.getManagerByEmail(
     campId,
-    email
+    email,
   );
   if (existingCampManager) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "User is already a camp manager."
+      "User is already a camp manager.",
     );
   }
 
-  const manager = await managerService.inviteManager(campId, email);
+  const user = await userService.getUserByEmail(email);
 
-  const token = manager.invitation?.token;
-  if (!token) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      "Invitation is missing the token."
-    );
-  }
+  const manager = user === null
+    ? await managerService.inviteManager(campId, email)
+    : await managerService.addManager(campId, user.id);
 
   await catchSilent(() =>
-    notificationService.sendCampManagerInvitation(
-      email,
-      campId,
-      manager.id,
-      token
-    )
+    notificationService.sendCampManagerInvitation(email, campId, manager.id),
   );
 
-  res.status(201).json(resource(campManagerResource(manager)));
+  res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
@@ -59,7 +49,7 @@ const destroy = catchRequestAsync(async (req, res) => {
   if (managers.length <= 1) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "The camp must always have at least one camp manager."
+      "The camp must always have at least one camp manager.",
     );
   }
 
@@ -68,29 +58,8 @@ const destroy = catchRequestAsync(async (req, res) => {
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
-const accept = catchRequestAsync(async (req, res) => {
-  const { campId, managerId, token } = req.params;
-
-  const manager = routeModel(req.models.manager);
-
-  res.sendStatus(httpStatus.NOT_IMPLEMENTED);
-  // TODO Get typed manager
-  // const invitation = manager.invitation as Invitation | null;
-  //
-  // if (!invitation || invitation.token !== token) {
-  //   throw new ApiError(httpStatus.FORBIDDEN, "Invalid invitation token");
-  // }
-  //
-  // const userId: string = req.user?.id;
-  //
-  // const updatedManager = await managerService.acceptManagerInvitation(managerId, userId);
-  //
-  // res.json(resource(campManagerResource(updatedManager)));
-});
-
 export default {
   index,
   store,
   destroy,
-  accept,
 };

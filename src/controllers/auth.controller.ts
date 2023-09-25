@@ -13,6 +13,7 @@ import { AuthTokensResponse } from "@/types/response";
 import config from "@/config";
 import { userCampResource } from "@/resources";
 import ApiError from "@/utils/ApiError";
+import managerService from "@/services/manager.service";
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;
@@ -24,6 +25,9 @@ const register = catchRequestAsync(async (req, res) => {
     password,
     locale,
   });
+
+  await managerService.resolveManagerInvitations(user.email, user.id);
+
   // TODO Use resource instead
   const userWithoutPassword = exclude(user, [
     "password",

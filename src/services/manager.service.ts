@@ -1,6 +1,8 @@
 import prisma from "../client";
 import { randomUUID } from "crypto";
 import { ulid } from "@/utils/ulid";
+import {userService} from "@/services/index";
+import {as} from "vitest/dist/reporters-5f784f42";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
@@ -38,19 +40,38 @@ const getManagerByEmail = async (campId: string, email: string) => {
   });
 };
 
-const acceptManagerInvitation = async (managerId: string, userId: string) => {
-  return prisma.campManager.update({
-    where: { id: managerId },
-    data: {
-      invitation: { delete: true },
-      user: { connect: { id: userId } },
+const resolveManagerInvitations = async (email: string, userId: string) => {
+  await prisma.campManager.updateMany({
+    where: {
+      invitation: {
+        email
+      }
     },
-    include: {
-      invitation: true,
-      user: true,
+    data: {
+      userId,
     },
   });
-};
+
+  await prisma.invitation.deleteMany({
+    where: {
+      email
+    }
+  });
+}
+
+const addManager = async (campId: string, userId: string) => {
+  return prisma.campManager.create({
+    data: {
+      id: ulid(),
+      campId,
+      userId
+    },
+    include: {
+      user: true,
+      invitation: true,
+    }
+  });
+}
 
 const inviteManager = async (campId: string, email: string) => {
   return prisma.campManager.create({
@@ -61,7 +82,6 @@ const inviteManager = async (campId: string, email: string) => {
         create: {
           id: ulid(),
           email,
-          token: randomUUID(),
         },
       },
     },
@@ -82,8 +102,9 @@ export default {
   getManagers,
   getManagerByEmail,
   getManagerById,
-  acceptManagerInvitation,
+  addManager,
   inviteManager,
+  resolveManagerInvitations,
   campManagerExistsWithUserIdAndCampId,
   removeManager,
 };
