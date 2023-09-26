@@ -10,7 +10,7 @@ export const campManager = async (req: Request): Promise<boolean | string> => {
   // TODO This guard is called very often. Is it possible to store the information in the token?
   return await managerService.campManagerExistsWithUserIdAndCampId(
     campId,
-    userId
+    userId,
   );
 };
 

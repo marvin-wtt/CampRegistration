@@ -35,7 +35,7 @@ const store = catchRequestAsync(async (req, res) => {
   if (req.files) {
     registration = await fileService.saveRegistrationFiles(
       registration.id,
-      req.files
+      req.files,
     );
   }
 
@@ -50,12 +50,12 @@ const update = catchRequestAsync(async (req, res) => {
 
   const registration = await registrationService.updateRegistrationById(
     registrationId,
-    data
+    data,
   );
   if (registration == null) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Update without response."
+      "Update without response.",
     );
   }
 

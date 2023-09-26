@@ -17,7 +17,7 @@ export const resource = <T>(data: T, meta: object = {}): JsonResource<T> => {
 
 export const collection = <T>(
   data: T[],
-  meta: object = {}
+  meta: object = {},
 ): JsonCollection<T> => {
   return {
     meta: meta,

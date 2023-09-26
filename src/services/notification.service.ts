@@ -7,7 +7,7 @@ const sendEmail = async (
   to: string,
   subject: string,
   text: string,
-  html: string
+  html: string,
 ) => {
   const { from, replyTo } = config.email;
   const { appName } = config;
@@ -26,7 +26,7 @@ const sendEmail = async (
 
 const generateUrl = (
   path: string,
-  params: Record<string, string> = {}
+  params: Record<string, string> = {},
 ): string => {
   const { origin } = config;
   const query = generateQueryString(params);
@@ -68,13 +68,11 @@ const sendVerificationEmail = async (to: string, token: string) => {
 const sendCampManagerInvitation = async (
   to: string,
   campId: string,
-  managerId: string
+  managerId: string,
 ) => {
   const subject = "Camp Invitation";
 
-  const url = generateUrl(
-    `camp-management/`,
-  );
+  const url = generateUrl(`camp-management/`);
 
   const text = ""; // TODO
   const html = await render("emails/camp_manager_invitation", {

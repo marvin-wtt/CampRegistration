@@ -14,7 +14,7 @@ router.param(
     const camp = await userService.getUserById(id);
     req.models.user = verifyModelExists(camp);
     next();
-  })
+  }),
 );
 
 router.get("/", auth(), guard(), userController.index);
@@ -24,21 +24,21 @@ router.post(
   auth(),
   guard(),
   validate(userValidation.store),
-  userController.store
+  userController.store,
 );
 router.put(
   "/:userId",
   auth(),
   guard(),
   validate(userValidation.update),
-  userController.update
+  userController.update,
 );
 router.delete(
   "/:userId",
   auth(),
   guard(),
   validate(userValidation.destroy),
-  userController.destroy
+  userController.destroy,
 );
 
 export default router;

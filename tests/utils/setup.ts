@@ -1,5 +1,5 @@
 import resetDb from "./reset-db";
-import {afterEach, beforeEach} from "vitest";
+import { afterEach, beforeEach } from "vitest";
 
 beforeEach(async () => {
   await resetDb();

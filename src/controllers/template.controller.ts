@@ -42,7 +42,7 @@ const update = catchRequestAsync(async (req, res) => {
   if (template == null) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Update without response."
+      "Update without response.",
     );
   }
   res.json(resource(templateResource(template)));

@@ -16,7 +16,7 @@ router.param(
     const manager = await managerService.getManagerById(camp.id, id);
     req.models.manager = verifyModelExists(manager);
     next();
-  })
+  }),
 );
 
 router.get(
@@ -24,21 +24,21 @@ router.get(
   auth(),
   guard([campManager]),
   validate(managerValidation.index),
-  managerController.index
+  managerController.index,
 );
 router.post(
   "/",
   auth(),
   guard([campPublic]),
   validate(managerValidation.store),
-  managerController.store
+  managerController.store,
 );
 router.delete(
   "/:managerId",
   auth(),
   guard([campManager]),
   validate(managerValidation.destroy),
-  managerController.destroy
+  managerController.destroy,
 );
 
 export default router;

@@ -5,7 +5,7 @@ import { formUtils } from "@/utils/form";
 
 export const registrationData: Joi.CustomValidator<object> = (
   value,
-  helpers
+  helpers,
 ) => {
   if (typeof value !== "object" || value == null) {
     return helpers.message({ custom: "Survey may not be null" });

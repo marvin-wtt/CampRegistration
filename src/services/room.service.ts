@@ -38,7 +38,7 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
 
 const updateRoomById = async (
   roomId: string,
-  updateBody: Omit<Prisma.RoomUpdateInput, "id">
+  updateBody: Omit<Prisma.RoomUpdateInput, "id">,
 ) => {
   // TODO Delete or add beds
 

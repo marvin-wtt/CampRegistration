@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import form from "./json/campForm.json";
-import { ulid } from "@/utils/ulid"
+import { ulid } from "@/utils/ulid";
 
 const name = "camp";
 
@@ -11,8 +11,8 @@ const run = (prisma: PrismaClient) => {
       public: true,
       countries: ["de", "fr"],
       organization: {
-        de: 'Luftsportjugend des DAeC',
-        fr: "Fédération Française d'Aérostation"
+        de: "Luftsportjugend des DAeC",
+        fr: "Fédération Française d'Aérostation",
       },
       name: {
         de: "DFJW Ballonsommercamp 2023",
@@ -36,7 +36,7 @@ const run = (prisma: PrismaClient) => {
         create: {
           id: ulid(),
           userId: "01H4BK7J4WV75DZNAQBHMM99MA",
-        }
+        },
       },
     },
   });

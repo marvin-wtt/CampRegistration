@@ -26,7 +26,7 @@ app.use(
   helmet({
     // TODO This is required for SurveyJS Creator
     contentSecurityPolicy: false,
-  })
+  }),
 );
 
 // parse urlencoded request body
@@ -46,7 +46,7 @@ app.use(
   cors({
     origin: config.origin || "*",
     credentials: true,
-  })
+  }),
 );
 app.options("*", cors());
 

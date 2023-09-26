@@ -12,7 +12,7 @@ const generateToken = (
   userId: string,
   expires: Moment,
   type: TokenType,
-  secret = config.jwt.secret
+  secret = config.jwt.secret,
 ): string => {
   const payload = {
     sub: userId,
@@ -28,7 +28,7 @@ const saveToken = async (
   userId: string,
   expires: Moment,
   type: TokenType,
-  blacklisted = false
+  blacklisted = false,
 ): Promise<Token> => {
   return prisma.token.create({
     data: {
@@ -74,16 +74,16 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
  */
 const generateAuthTokens = async (
   user: Pick<User, "id">,
-  remember = false
+  remember = false,
 ): Promise<AuthTokensResponse> => {
   const accessTokenExpires = moment().add(
     config.jwt.accessExpirationMinutes,
-    "minutes"
+    "minutes",
   );
   const accessToken = generateToken(
     user.id,
     accessTokenExpires,
-    TokenType.ACCESS
+    TokenType.ACCESS,
   );
 
   if (!remember) {
@@ -97,18 +97,18 @@ const generateAuthTokens = async (
 
   const refreshTokenExpires = moment().add(
     config.jwt.refreshExpirationDays,
-    "days"
+    "days",
   );
   const refreshToken = generateToken(
     user.id,
     refreshTokenExpires,
-    TokenType.REFRESH
+    TokenType.REFRESH,
   );
   await saveToken(
     refreshToken,
     user.id,
     refreshTokenExpires,
-    TokenType.REFRESH
+    TokenType.REFRESH,
   );
 
   return {
@@ -128,7 +128,7 @@ const generateAuthTokens = async (
  * @returns {Promise<string>}
  */
 const generateResetPasswordToken = async (
-  email: string
+  email: string,
 ): Promise<string | undefined> => {
   const user = await userService.getUserByEmail(email);
   if (!user) {
@@ -136,18 +136,18 @@ const generateResetPasswordToken = async (
   }
   const expires = moment().add(
     config.jwt.resetPasswordExpirationMinutes,
-    "minutes"
+    "minutes",
   );
   const resetPasswordToken = generateToken(
     user.id,
     expires,
-    TokenType.RESET_PASSWORD
+    TokenType.RESET_PASSWORD,
   );
   await saveToken(
     resetPasswordToken,
     user.id,
     expires,
-    TokenType.RESET_PASSWORD
+    TokenType.RESET_PASSWORD,
   );
   return resetPasswordToken;
 };
@@ -158,16 +158,16 @@ const generateResetPasswordToken = async (
  * @returns {Promise<string>}
  */
 const generateVerifyEmailToken = async (
-  user: Pick<User, "id">
+  user: Pick<User, "id">,
 ): Promise<string> => {
   const expires = moment().add(
     config.jwt.verifyEmailExpirationMinutes,
-    "minutes"
+    "minutes",
   );
   const verifyEmailToken = generateToken(
     user.id,
     expires,
-    TokenType.VERIFY_EMAIL
+    TokenType.VERIFY_EMAIL,
   );
   await saveToken(verifyEmailToken, user.id, expires, TokenType.VERIFY_EMAIL);
   return verifyEmailToken;

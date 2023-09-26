@@ -9,7 +9,7 @@ export const routeModel = <T>(model: T): NonNullable<T> => {
 };
 
 export const verifyModelExists = <T>(
-  model: T | undefined | null
+  model: T | undefined | null,
 ): T | never => {
   if (model != null) {
     return model;

@@ -4,7 +4,7 @@ import { ulid } from "ulidx";
 
 export const RegistrationFactory = {
   build: (
-    data: Partial<Prisma.RegistrationCreateInput>
+    data: Partial<Prisma.RegistrationCreateInput>,
   ): Prisma.RegistrationCreateInput => {
     return {
       id: ulid(),

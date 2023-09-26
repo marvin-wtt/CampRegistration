@@ -10,7 +10,7 @@ import prisma from "../client";
 
 const loginUserWithEmailAndPassword = async (
   email: string,
-  password: string
+  password: string,
 ) => {
   const user = await userService.getUserByEmailWithCamps(email);
 
@@ -21,7 +21,7 @@ const loginUserWithEmailAndPassword = async (
   if (!user.emailVerified) {
     throw new ApiError(
       httpStatus.FORBIDDEN,
-      "Please confirm your email to login."
+      "Please confirm your email to login.",
     );
   }
 
@@ -53,12 +53,12 @@ const logout = async (refreshToken: string): Promise<void> => {
  * @returns {Promise<AuthTokensResponse>}
  */
 const refreshAuth = async (
-  refreshToken: string
+  refreshToken: string,
 ): Promise<AuthTokensResponse> => {
   try {
     const refreshTokenData = await tokenService.verifyToken(
       refreshToken,
-      TokenType.REFRESH
+      TokenType.REFRESH,
     );
     const { userId } = refreshTokenData;
     await prisma.token.delete({ where: { id: refreshTokenData.id } });
@@ -77,11 +77,11 @@ const refreshAuth = async (
  */
 const resetPassword = async (
   resetPasswordToken: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<void> => {
   const resetPasswordTokenData = await tokenService.verifyToken(
     resetPasswordToken,
-    TokenType.RESET_PASSWORD
+    TokenType.RESET_PASSWORD,
   );
   const user = await userService.getUserById(resetPasswordTokenData.userId);
   if (!user) {
@@ -103,7 +103,7 @@ const verifyEmail = async (verifyEmailToken: string): Promise<void> => {
   try {
     const verifyEmailTokenData = await tokenService.verifyToken(
       verifyEmailToken,
-      TokenType.VERIFY_EMAIL
+      TokenType.VERIFY_EMAIL,
     );
     await prisma.token.deleteMany({
       where: {

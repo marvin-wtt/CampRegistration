@@ -1,12 +1,12 @@
 import prisma from "../client";
 import { randomUUID } from "crypto";
 import { ulid } from "@/utils/ulid";
-import {userService} from "@/services/index";
-import {as} from "vitest/dist/reporters-5f784f42";
+import { userService } from "@/services/index";
+import { as } from "vitest/dist/reporters-5f784f42";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
-  userId: string
+  userId: string,
 ): Promise<boolean> => {
   return await prisma.campManager
     .findFirst({
@@ -44,8 +44,8 @@ const resolveManagerInvitations = async (email: string, userId: string) => {
   await prisma.campManager.updateMany({
     where: {
       invitation: {
-        email
-      }
+        email,
+      },
     },
     data: {
       userId,
@@ -54,24 +54,24 @@ const resolveManagerInvitations = async (email: string, userId: string) => {
 
   await prisma.invitation.deleteMany({
     where: {
-      email
-    }
+      email,
+    },
   });
-}
+};
 
 const addManager = async (campId: string, userId: string) => {
   return prisma.campManager.create({
     data: {
       id: ulid(),
       campId,
-      userId
+      userId,
     },
     include: {
       user: true,
       invitation: true,
-    }
+    },
   });
-}
+};
 
 const inviteManager = async (campId: string, email: string) => {
   return prisma.campManager.create({

@@ -16,8 +16,11 @@ const show = catchRequestAsync(async (req, res) => {
   // Set response headers for image display
   res.contentType(file.type);
 
-  const disposition = download ? 'attachment' : 'inline';
-  res.setHeader('Content-disposition', `${disposition}; filename=${file.originalName}`);
+  const disposition = download ? "attachment" : "inline";
+  res.setHeader(
+    "Content-disposition",
+    `${disposition}; filename=${file.originalName}`,
+  );
 
   fileStream.pipe(res); // Pipe the file stream to the response
 });
@@ -41,7 +44,7 @@ const index = catchRequestAsync(async (req, res) => {
       page,
       sortBy: "id",
       sortType: "asc",
-    }
+    },
   )) as File[];
 
   const response = collection(data.map((value) => fileResource(value)));
@@ -63,7 +66,7 @@ const store = catchRequestAsync(async (req, res) => {
     file,
     name,
     field,
-    accessLevel
+    accessLevel,
   );
 
   const response = resource(fileResource(data));
@@ -97,7 +100,7 @@ const getRelationModel = (req: Request): ModelData => {
   if (!model.name || !model.id) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "File not associated to any model."
+      "File not associated to any model.",
     );
   }
 

@@ -16,11 +16,11 @@ router.param(
     const camp = routeModel(req.models.camp);
     const registration = await registrationService.getRegistrationById(
       camp.id,
-      id
+      id,
     );
     req.models.registration = verifyModelExists(registration);
     next();
-  })
+  }),
 );
 
 router.use("/:registrationId/files", registrationFiles);
@@ -30,21 +30,21 @@ router.get(
   auth(),
   guard([campManager]),
   validate(registrationValidation.index),
-  registrationController.index
+  registrationController.index,
 );
 router.get(
   "/:registrationId",
   auth(),
   guard([campManager]),
   validate(registrationValidation.show),
-  registrationController.show
+  registrationController.show,
 );
 router.post(
   "/",
   guard([campPublic]),
   multipart(undefined),
   validate(registrationValidation.store),
-  registrationController.store
+  registrationController.store,
 );
 router.put(
   "/:registrationId",
@@ -52,14 +52,14 @@ router.put(
   guard([campManager]),
   multipart(undefined),
   validate(registrationValidation.update),
-  registrationController.update
+  registrationController.update,
 );
 router.delete(
   "/:registrationId",
   auth(),
   guard([campManager]),
   validate(registrationValidation.destroy),
-  registrationController.destroy
+  registrationController.destroy,
 );
 
 export default router;

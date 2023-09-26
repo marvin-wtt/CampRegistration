@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export default async () => {
   const modelNames = Object.keys(prisma).filter(
-    (key) => !["_", "$"].includes(key[0])
+    (key) => !["_", "$"].includes(key[0]),
   );
 
   for (const name of modelNames) {

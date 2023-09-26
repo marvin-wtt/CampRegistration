@@ -29,7 +29,7 @@ const TemplateBodySchema = Joi.object({
         shrink: Joi.boolean(),
         hideIf: Joi.string(),
         showIf: Joi.string(),
-      })
+      }),
     )
     .required(),
   order: Joi.number().required(),

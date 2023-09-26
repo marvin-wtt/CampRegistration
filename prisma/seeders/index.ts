@@ -8,7 +8,13 @@ import roomSeeder from "./room.seeder";
 const prisma = new PrismaClient();
 
 async function main() {
-  const seeders = [userSeeder, campSeeder, registrationSeeder, templateSeeder, roomSeeder];
+  const seeders = [
+    userSeeder,
+    campSeeder,
+    registrationSeeder,
+    templateSeeder,
+    roomSeeder,
+  ];
 
   console.log(`Start seeding ...`);
   for (const seeder of seeders) {

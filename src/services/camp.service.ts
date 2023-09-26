@@ -52,7 +52,7 @@ const queryPublicCamps = async <Key extends keyof Camp>(
     sortBy?: string;
     sortType?: "asc" | "desc";
   },
-  keys: Key[] = defaultSelectKeys as Key[]
+  keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -85,7 +85,7 @@ const queryPublicCamps = async <Key extends keyof Camp>(
 
 const createCamp = async (
   userId: string,
-  data: Omit<Prisma.CampCreateInput, "id">
+  data: Omit<Prisma.CampCreateInput, "id">,
 ) => {
   return prisma.camp.create({
     data: {
@@ -98,7 +98,7 @@ const createCamp = async (
 
 const updateCampById = async (
   id: string,
-  data: Omit<Prisma.CampUpdateInput, "id">
+  data: Omit<Prisma.CampUpdateInput, "id">,
 ) => {
   return prisma.camp.update({
     where: { id },

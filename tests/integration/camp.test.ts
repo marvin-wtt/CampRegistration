@@ -23,7 +23,7 @@ export interface CampTestContext {
 
 const assertCampModel = async (
   id: string,
-  data: PartialBy<Prisma.CampCreateInput, "id">
+  data: PartialBy<Prisma.CampCreateInput, "id">,
 ) => {
   const camp = (await prisma.camp.findFirst({
     where: {
@@ -53,7 +53,7 @@ const assertCampModel = async (
 
 const assertCampResponseBody = (
   body: any,
-  data: PartialBy<Prisma.CampCreateInput, "id">
+  data: PartialBy<Prisma.CampCreateInput, "id">,
 ) => {
   expect(body).toHaveProperty("data");
   expect(body.data).toEqual({
@@ -185,7 +185,7 @@ describe("/api/v1/camps", () => {
     });
 
     it.todo(
-      "should respond with `400` status code when query parameters are invalid"
+      "should respond with `400` status code when query parameters are invalid",
     );
   });
 
@@ -304,8 +304,8 @@ describe("/api/v1/camps", () => {
     it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
       const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
       const data = {
-        public: true
-      }
+        public: true,
+      };
       const { status } = await request(app)
         .patch(`/api/v1/camps/${id}`)
         .send(data)

@@ -2,7 +2,7 @@ import { catchRequestAsync, catchSilent } from "@/utils/catchAsync";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
-import {notificationService, managerService, userService} from "@/services";
+import { notificationService, managerService, userService } from "@/services";
 import { campManagerResource } from "@/resources";
 
 const index = catchRequestAsync(async (req, res) => {
@@ -31,9 +31,10 @@ const store = catchRequestAsync(async (req, res) => {
 
   const user = await userService.getUserByEmail(email);
 
-  const manager = user === null
-    ? await managerService.inviteManager(campId, email)
-    : await managerService.addManager(campId, user.id);
+  const manager =
+    user === null
+      ? await managerService.inviteManager(campId, email)
+      : await managerService.addManager(campId, user.id);
 
   await catchSilent(() =>
     notificationService.sendCampManagerInvitation(email, campId, manager.id),

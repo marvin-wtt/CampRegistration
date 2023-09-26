@@ -42,7 +42,7 @@ const queryUsers = async <Key extends keyof Prisma.UserSelect>(
     "password",
     "createdAt",
     "updatedAt",
-  ] as Key[]
+  ] as Key[],
 ): Promise<Pick<Prisma.UserSelect, Key>[]> => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -96,7 +96,7 @@ const getUserByEmail = async (email: string): Promise<User | null> => {
 const updateUserById = async <Key extends keyof User>(
   userId: string,
   updateBody: Omit<Prisma.UserUpdateInput, "id">,
-  keys: Key[] = ["id", "email", "name", "role"] as Key[]
+  keys: Key[] = ["id", "email", "name", "role"] as Key[],
 ): Promise<Pick<User, Key> | null> => {
   if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -111,7 +111,7 @@ const updateUserById = async <Key extends keyof User>(
 
 const updateUserByIdWithCamps = async (
   userId: string,
-  updateBody: Omit<Prisma.UserUpdateInput, "id">
+  updateBody: Omit<Prisma.UserUpdateInput, "id">,
 ) => {
   const user = await getUserById(userId);
   if (!user) {

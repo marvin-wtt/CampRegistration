@@ -21,7 +21,7 @@ const renderMjml = (mjml: string): string => {
 export const render = async (
   template: string,
   data?: Record<string, unknown>,
-  options?: RenderOptions
+  options?: RenderOptions,
 ): Promise<string> => {
   // TODO Continue
   const filePath =

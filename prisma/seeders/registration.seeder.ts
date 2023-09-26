@@ -1,6 +1,6 @@
 import { type Prisma, PrismaClient } from "@prisma/client";
 import data from "./json/registrations.json";
-import { ulid } from "@/utils/ulid"
+import { ulid } from "@/utils/ulid";
 
 const name = "registration";
 const run = (prisma: PrismaClient) => {
@@ -16,7 +16,7 @@ const run = (prisma: PrismaClient) => {
     convertBooleanCheckbox("agreement_forward_list_participants", registration);
     convertBooleanCheckbox(
       "agreement_general_terms_and_conditions",
-      registration
+      registration,
     );
     // Integers
     convertStringToInt("guardian_permission_leave", registration);
@@ -38,7 +38,7 @@ const run = (prisma: PrismaClient) => {
 
 function convertBooleanCheckbox(
   key: string,
-  registration: Record<string, any>
+  registration: Record<string, any>,
 ): void {
   if (!(key in registration) || !Array.isArray(registration[key])) {
     return;
@@ -50,7 +50,7 @@ function convertBooleanCheckbox(
 
 function convertStringToInt(
   key: string,
-  registration: Record<string, any>
+  registration: Record<string, any>,
 ): void {
   if (!(key in registration)) {
     return;

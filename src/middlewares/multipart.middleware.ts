@@ -3,7 +3,7 @@ import config from "@/config";
 import fs from "fs";
 import { NextFunction, Request, Response } from "express";
 import dynamicMiddleware from "@/middlewares/dynamic.middleware";
-import {randomUUID} from "crypto";
+import { randomUUID } from "crypto";
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 type FileFormat = Record<string, Express.Multer.File[]>;
@@ -42,7 +42,7 @@ const upload = (fields: ParameterType) => {
 
 const resolveMulterMiddleware = (
   upload: multer.Multer,
-  fields: ParameterType
+  fields: ParameterType,
 ) => {
   if (fields === null) {
     return upload.none();
@@ -68,7 +68,7 @@ const resolveMulterMiddleware = (
 const formatterMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   // Convert null prototypes to objects
   // TODO Why do I need to do this? This seems to be a bug but I cant find out why...

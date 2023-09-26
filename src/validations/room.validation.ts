@@ -31,7 +31,7 @@ const update = {
   body: Joi.object({
     name: Joi.alternatives().try(
       Joi.string(),
-      Joi.object().pattern(Joi.string(), Joi.string())
+      Joi.object().pattern(Joi.string(), Joi.string()),
     ),
     capacity: Joi.number().min(1),
   }),

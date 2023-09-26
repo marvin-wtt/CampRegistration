@@ -198,12 +198,15 @@ const getStorage = (name?: string): StorageStrategy => {
     name = config.storage.location;
   }
 
-  if (name === 'local') {
+  if (name === "local") {
     return LocalStorage;
   }
 
-  throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Unknown storage strategy ${name}`);
-}
+  throw new ApiError(
+    httpStatus.INTERNAL_SERVER_ERROR,
+    `Unknown storage strategy ${name}`,
+  );
+};
 
 const LocalStorage: StorageStrategy = {
   remove: async (file: File) => {

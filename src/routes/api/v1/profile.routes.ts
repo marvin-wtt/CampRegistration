@@ -10,7 +10,7 @@ router.put(
   "/",
   auth(),
   validate(profileValidation.update),
-  profileController.update
+  profileController.update,
 );
 
 export default router;

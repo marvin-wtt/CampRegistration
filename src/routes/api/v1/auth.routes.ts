@@ -13,36 +13,36 @@ router.post(
   "/register",
   guest(),
   validate(authValidation.register),
-  authController.register
+  authController.register,
 );
 router.post("/login", validate(authValidation.login), authController.login);
 router.post("/logout", auth(), authController.logout);
 router.post(
   "/refresh-tokens",
   validate(authValidation.refreshTokens),
-  authController.refreshTokens
+  authController.refreshTokens,
 );
 router.post(
   "/forgot-password",
   guest(),
   validate(authValidation.forgotPassword),
-  authController.forgotPassword
+  authController.forgotPassword,
 );
 router.post(
   "/reset-password",
   guest(),
   validate(authValidation.resetPassword),
-  authController.resetPassword
+  authController.resetPassword,
 );
 router.post(
   "/send-verification-email",
   auth(),
-  authController.sendVerificationEmail
+  authController.sendVerificationEmail,
 );
 router.post(
   "/verify-email",
   validate(authValidation.verifyEmail),
-  authController.verifyEmail
+  authController.verifyEmail,
 );
 
 export default router;

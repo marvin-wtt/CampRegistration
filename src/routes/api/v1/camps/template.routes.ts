@@ -16,7 +16,7 @@ router.param(
     const template = await templateService.getTemplateById(camp.id, id);
     req.models.template = verifyModelExists(template);
     next();
-  })
+  }),
 );
 
 router.get(
@@ -24,14 +24,14 @@ router.get(
   auth(),
   guard([campManager]),
   validate(templateValidation.index),
-  templateController.index
+  templateController.index,
 );
 router.get(
   "/:templateId",
   auth(),
   guard([campManager]),
   validate(templateValidation.show),
-  templateController.show
+  templateController.show,
 );
 router.post("/", auth(), guard([campManager]), templateController.store);
 router.put(
@@ -39,14 +39,14 @@ router.put(
   auth(),
   guard([campManager]),
   validate(templateValidation.update),
-  templateController.update
+  templateController.update,
 );
 router.delete(
   "/:templateId",
   auth(),
   guard([campManager]),
   validate(templateValidation.destroy),
-  templateController.destroy
+  templateController.destroy,
 );
 
 export default router;

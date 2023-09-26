@@ -38,7 +38,7 @@ const store = {
       .required(),
     organization: Joi.alternatives().try(
       Joi.string(),
-      Joi.object().pattern(Joi.string(), Joi.string())
+      Joi.object().pattern(Joi.string(), Joi.string()),
     ),
     // TODO This should be an exact match
     maxParticipants: Joi.alternatives()
@@ -74,15 +74,15 @@ const update = {
     countries: Joi.array().items(Joi.string().lowercase().length(2)).min(1),
     name: Joi.alternatives().try(
       Joi.string(),
-      Joi.object().pattern(Joi.string(), Joi.string())
+      Joi.object().pattern(Joi.string(), Joi.string()),
     ),
     organization: Joi.alternatives().try(
       Joi.string(),
-      Joi.object().pattern(Joi.string(), Joi.string())
+      Joi.object().pattern(Joi.string(), Joi.string()),
     ),
     maxParticipants: Joi.alternatives().try(
       Joi.number(),
-      Joi.object().pattern(Joi.string(), Joi.number())
+      Joi.object().pattern(Joi.string(), Joi.number()),
     ),
     startAt: Joi.date().iso(),
     endAt: Joi.date().iso().min(Joi.ref("startAt")),
@@ -90,7 +90,7 @@ const update = {
     maxAge: Joi.number().integer().min(Joi.ref("minAge")).max(99),
     location: Joi.alternatives().try(
       Joi.string(),
-      Joi.object().pattern(Joi.string(), Joi.string())
+      Joi.object().pattern(Joi.string(), Joi.string()),
     ),
     price: Joi.number().min(0),
     form: Joi.object(),

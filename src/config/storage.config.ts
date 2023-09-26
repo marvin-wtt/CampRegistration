@@ -4,17 +4,15 @@ import path from "path";
 const { value: envVars, error } = Joi.object()
   .keys({
     TMP_DIR: Joi.string().description(
-      "Directory where unprocessed files are stored"
+      "Directory where unprocessed files are stored",
     ),
     UPLOAD_DIR: Joi.string().description(
-      "Directory where uploaded files are stored"
+      "Directory where uploaded files are stored",
     ),
     STORAGE_LOCATION: Joi.string().description(
-      "Location where new files should be stored to"
+      "Location where new files should be stored to",
     ),
-    MAX_FILE_SIZE: Joi.string().description(
-      "Maximum size of uploaded files"
-    ),
+    MAX_FILE_SIZE: Joi.string().description("Maximum size of uploaded files"),
   })
   .unknown()
   .prefs({ errors: { label: "key" } })

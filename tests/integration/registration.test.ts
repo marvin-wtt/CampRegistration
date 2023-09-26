@@ -145,7 +145,10 @@ describe("/api/v1/camps/:campId/registrations", () => {
         .set("Authorization", `Bearer ${context.accessToken}`);
 
       expect(status).toBe(200);
-      expect(body.data[0]).toHaveProperty("file_field", expect.stringMatching(/.*file\.pdf$/));
+      expect(body.data[0]).toHaveProperty(
+        "file_field",
+        expect.stringMatching(/.*file\.pdf$/),
+      );
       expect(body.data[0]).toHaveProperty("multiple_files_field");
       expect(body.data[0]["multiple_files_field"].split(";").sort()).toEqual([
         expect.stringMatching(/.*file1\.pdf$/),
@@ -171,7 +174,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it.todo(
-      "should respond with `400` status code when query parameters are invalid"
+      "should respond with `400` status code when query parameters are invalid",
     );
   });
 
@@ -183,7 +186,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
       const { status } = await request(app)
         .get(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send()
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
@@ -194,7 +197,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
       const { status } = await request(app)
         .get(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send();
 
@@ -313,7 +316,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
       const { status } = await request(app)
         .put(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send({})
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
@@ -324,7 +327,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
       const { status } = await request(app)
         .put(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send({});
 
@@ -351,7 +354,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `204` status code when user is camp manager", async (context) => {
       const { status } = await request(app)
         .delete(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send()
         .set("Authorization", `Bearer ${context.accessToken}`);
@@ -365,7 +368,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
       const { status } = await request(app)
         .delete(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send()
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
@@ -379,7 +382,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
       const { status } = await request(app)
         .delete(
-          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`
+          `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
         .send();
 

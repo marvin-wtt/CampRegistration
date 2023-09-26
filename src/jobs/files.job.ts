@@ -9,6 +9,6 @@ export const deleteUnusedFiles = () => {
     () => {
       // TODO Go through all files and check if there is a reference in the DB. If not, delete it
       //  Maybe just do a diff and mass delete
-    }
+    },
   );
 };

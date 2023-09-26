@@ -171,7 +171,7 @@ describe("/api/v1/auth", async () => {
       expect(body).toHaveProperty("tokens.access.expires");
 
       expect(
-        jwt.verify(body.tokens.access.token, process.env.JWT_SECRET as string)
+        jwt.verify(body.tokens.access.token, process.env.JWT_SECRET as string),
       );
     });
 
@@ -195,7 +195,7 @@ describe("/api/v1/auth", async () => {
       const setCookie = headers["set-cookie"];
 
       expect(setCookie).not.toContainEqual(
-        expect.stringMatching(/^refreshToken.*/)
+        expect.stringMatching(/^refreshToken.*/),
       );
     });
 
@@ -210,7 +210,7 @@ describe("/api/v1/auth", async () => {
       expect(body).toHaveProperty("tokens.refresh.expires");
 
       expect(
-        jwt.verify(body.tokens.refresh.token, process.env.JWT_SECRET as string)
+        jwt.verify(body.tokens.refresh.token, process.env.JWT_SECRET as string),
       );
     });
 
@@ -225,16 +225,16 @@ describe("/api/v1/auth", async () => {
 
       expect(setCookie).toContainEqual(expect.stringMatching(/^accessToken.*/));
       expect(setCookie).toContainEqual(
-        expect.stringMatching(/^refreshToken.*/)
+        expect.stringMatching(/^refreshToken.*/),
       );
     });
 
     it("should respond with a `403` status code when email is not verified", async () => {
       await UserFactory.create({
-        email: 'test2@email.net',
+        email: "test2@email.net",
         emailVerified: false,
-        password: bcrypt.hashSync("password", 8)
-      })
+        password: bcrypt.hashSync("password", 8),
+      });
 
       const { status } = await request(app).post("/api/v1/auth/login").send({
         email: "test2@email.net",
@@ -287,11 +287,11 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/logout", () => {
     it.todo(
-      "should respond with a `200` status code when the user is authenticated"
+      "should respond with a `200` status code when the user is authenticated",
     );
 
     it.todo(
-      "should respond with a `401` status code when the user unauthenticated"
+      "should respond with a `401` status code when the user unauthenticated",
     );
 
     it.todo("should delete the refresh token when successful");
@@ -301,11 +301,11 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/refresh-tokens", () => {
     it.todo(
-      "should respond with a `200` status code when the user is authenticated"
+      "should respond with a `200` status code when the user is authenticated",
     );
 
     it.todo(
-      "should respond with a new access and refresh token when successful"
+      "should respond with a new access and refresh token when successful",
     );
 
     it.todo("should respond with a access and refresh cookie when successful");
@@ -313,21 +313,21 @@ describe("/api/v1/auth", async () => {
     it.todo("should store the new refresh token when successful");
 
     it.todo(
-      "should respond with `400` status code when the user has no refresh token"
+      "should respond with `400` status code when the user has no refresh token",
     );
 
     it.todo(
-      "should respond with `401` status code when the user is unauthenticated"
+      "should respond with `401` status code when the user is unauthenticated",
     );
   });
 
   describe("POST /api/v1/auth/forgot-password", () => {
     it.todo(
-      "should respond with `200` status code when provided with valid email"
+      "should respond with `200` status code when provided with valid email",
     );
 
     it.todo(
-      "should respond with `200` status code when provided with invalid email"
+      "should respond with `200` status code when provided with invalid email",
     );
 
     it.todo("should store a token for the user when successful");
@@ -337,19 +337,19 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/reset-password", () => {
     it.todo(
-      "should respond with `200` status code when provided with valid token and email"
+      "should respond with `200` status code when provided with valid token and email",
     );
 
     it.todo(
-      "should respond with `400` status code when provided with invalid token and email"
+      "should respond with `400` status code when provided with invalid token and email",
     );
 
     it.todo(
-      "should respond with `400` status code when provided with without token"
+      "should respond with `400` status code when provided with without token",
     );
 
     it.todo(
-      "should respond with `400` status code when provided with without email"
+      "should respond with `400` status code when provided with without email",
     );
 
     it.todo("should send an email to the user when successful");
@@ -357,11 +357,11 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/send-verification-email", () => {
     it.todo(
-      "should respond with `200` status code when the user is authenticated"
+      "should respond with `200` status code when the user is authenticated",
     );
 
     it.todo(
-      "should respond with `401` status code when the user unauthenticated"
+      "should respond with `401` status code when the user unauthenticated",
     );
 
     it.todo("should send an email to the user when successful");
@@ -369,11 +369,11 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/verify-email", () => {
     it.todo(
-      "should respond with `200` status code when provided with valid token"
+      "should respond with `200` status code when provided with valid token",
     );
 
     it.todo(
-      "should respond with `400` status code when provided with without token"
+      "should respond with `400` status code when provided with without token",
     );
   });
 });

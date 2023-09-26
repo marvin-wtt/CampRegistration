@@ -22,8 +22,8 @@ const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
       ([field, files]) => [
         field,
         files.map((file) => fileUrl + file.name).join(";"),
-      ]
-    )
+      ],
+    ),
   );
 };
 

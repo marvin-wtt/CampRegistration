@@ -89,9 +89,8 @@ const extractCookieRefreshToken = (req: Request) => {
 
 const forgotPassword = catchRequestAsync(async (req, res) => {
   const { email } = req.body;
-  const resetPasswordToken = await tokenService.generateResetPasswordToken(
-    email
-  );
+  const resetPasswordToken =
+    await tokenService.generateResetPasswordToken(email);
   if (resetPasswordToken === undefined) {
     res.status(httpStatus.NO_CONTENT).send();
     return;
