@@ -25,8 +25,6 @@
           </a>
         </q-toolbar-title>
 
-        <q-space />
-
         <q-separator
           dark
           vertical
@@ -35,23 +33,26 @@
         <q-btn
           :label="t('camps')"
           :to="{ name: 'camp-management' }"
+          class="gt-sm"
           flat
           stretch
         />
 
         <q-separator
+          class="gt-sm"
           dark
           vertical
         />
 
         <locale-switch
           borderless
-          class="q-px-md"
+          class="q-px-md gt-xs"
           dense
           rounded
         />
 
         <q-separator
+          class="gt-xs"
           dark
           vertical
         />
@@ -255,7 +256,7 @@ const title = computed(() => {
 <i18n lang="yaml" locale="en">
 access: 'Access'
 login: 'Login'
-camps: 'Camps'
+camps: 'My Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
@@ -273,7 +274,7 @@ tools: 'Tools'
 <i18n lang="yaml" locale="de">
 access: 'Zugriff'
 login: 'Login'
-camps: 'Camps'
+camps: 'Meine Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
@@ -291,7 +292,7 @@ tools: 'Tools'
 <i18n lang="yaml" locale="fr">
 access: 'Accès'
 login: 'Login'
-camps: 'Camps'
+camps: 'Mes Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
