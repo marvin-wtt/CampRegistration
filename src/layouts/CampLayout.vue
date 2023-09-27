@@ -6,7 +6,12 @@
     <q-header elevated>
       <q-toolbar>
         <q-toolbar-title>
-          {{ t('app_name') }}
+          <router-link
+            to="/"
+            style="text-decoration: none; color: inherit"
+          >
+            {{ t('app_name') }}
+          </router-link>
         </q-toolbar-title>
 
         <q-space />

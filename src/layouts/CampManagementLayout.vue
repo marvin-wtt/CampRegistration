@@ -20,9 +20,13 @@
             v-if="campDetailStore.isLoading"
             type="text"
           />
-          <a v-else>
+          <router-link
+            v-else
+            to="/"
+            style="text-decoration: none; color: inherit"
+          >
             {{ to(title) }}
-          </a>
+          </router-link>
         </q-toolbar-title>
 
         <q-separator
