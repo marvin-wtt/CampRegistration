@@ -14,7 +14,7 @@
       <q-card-section class="q-pt-none">
         <sortable-list
           v-slot="slotProps"
-          v-model="rooms"
+          v-model="modifiedRooms"
           bordered
           separator
         >
@@ -72,7 +72,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const rooms = reactive<Room[]>(propRooms());
+const modifiedRooms = reactive<Room[]>(propRooms());
 
 function propRooms(): Room[] {
   const rooms = props.rooms.map((room) => {
@@ -82,7 +82,7 @@ function propRooms(): Room[] {
 }
 
 function onOKClick() {
-  onDialogOK(rooms);
+  onDialogOK(modifiedRooms);
 }
 </script>
 

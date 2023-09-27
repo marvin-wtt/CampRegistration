@@ -16,19 +16,22 @@
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <translated-input
-            v-model="room.name"
+            v-model="modifiedRoom.name"
             :label="t('fields.name.label')"
-            :rules="[(val) => !!val || t('fields.name.rules.required')]"
+            :rules="[
+              (val: string | Record<string, string> | undefined) =>
+                !!val || t('fields.name.rules.required'),
+            ]"
             outlined
             rounded
             :locales="props.locales"
           />
 
           <q-input
-            v-model.number="room.capacity"
+            v-model.number="modifiedRoom.capacity"
             type="number"
             :label="t('fields.capacity.label')"
-            :rules="[(val) => !!val || t('fields.capacity.rules.required')]"
+            :rules="[(val: number | undefined) => !!val || t('fields.capacity.rules.required')]"
             outlined
             rounded
           />
@@ -83,14 +86,14 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const room = reactive<Room>(defaultRoom());
+const modifiedRoom = reactive<Partial<Room>>(defaultRoom());
 
-function defaultRoom(): Room {
-  return structuredClone(toRaw(props.room));
+function defaultRoom(): Partial<Room> {
+  return structuredClone(toRaw(props.room)) ?? {};
 }
 
 function onOKClick(): void {
-  onDialogOK(room);
+  onDialogOK(modifiedRoom);
 }
 
 function onCancelClick() {
