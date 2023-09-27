@@ -99,19 +99,11 @@ function createModel(id: string, form: object): SurveyModel {
       temporaryFilesStorage[options.name] = options.files;
     }
 
-    interface FileOption {
-      name: string;
-      type: string;
-      content: string | ArrayBuffer | null;
-      file: File;
-    }
-
     // FIXME Files not uploaded correctly
     const fileOptions = options.files.map((value) => {
       return {
         file: value,
-        filename: value.name,
-        content: 'uuid',
+        //content: 'uuid',
       };
     });
 
