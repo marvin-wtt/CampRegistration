@@ -89,6 +89,20 @@
         >
           {{ error }}
         </q-card-section>
+
+        <q-separator spaced />
+
+        <q-card-section class="text-center">
+          <q-btn
+            color="primary"
+            size="lg"
+            class="full-width"
+            :label="t('actions.login')"
+            :to="{ name: 'login' }"
+            rounded
+            outline
+          />
+        </q-card-section>
       </q-form>
     </q-card>
   </q-page>
@@ -146,5 +160,6 @@ fields:
       identical: 'Password does not match'
 
 actions:
+  login: 'Login'
   register: 'Register'
 </i18n>
