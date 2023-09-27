@@ -13,7 +13,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'login',
         path: '',
-        component: () => import('pages/LoginPage.vue'),
+        component: () => import('pages/auth/LoginPage.vue'),
       },
     ],
   },
@@ -24,7 +24,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'register',
         path: '/register',
-        component: () => import('pages/RegisterPage.vue'),
+        component: () => import('pages/auth/RegisterPage.vue'),
       },
     ],
   },
@@ -35,7 +35,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'forgot-password',
         path: '',
-        component: () => import('pages/ForgotPasswordPage.vue'),
+        component: () => import('pages/auth/ForgotPasswordPage.vue'),
       },
     ],
   },
@@ -46,7 +46,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'reset-password',
         path: '',
-        component: () => import('pages/ResetPasswordPage.vue'),
+        component: () => import('pages/auth/ResetPasswordPage.vue'),
       },
     ],
   },
