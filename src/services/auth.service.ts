@@ -88,7 +88,10 @@ const resetPassword = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Invalid reset token");
   }
   const encryptedPassword = await encryptPassword(newPassword);
-  await userService.updateUserById(user.id, { password: encryptedPassword });
+  await userService.updateUserById(user.id, {
+    password: encryptedPassword,
+    emailVerified: true,
+  });
   await prisma.token.deleteMany({
     where: { userId: user.id, type: TokenType.RESET_PASSWORD },
   });
