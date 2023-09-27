@@ -120,6 +120,7 @@ import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useMeta } from 'quasar';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -128,6 +129,13 @@ const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
+
+useMeta(() => {
+  return {
+    title: to(title.value),
+    titleTemplate: title => `${title} | ${t('app_name')}`,
+  };
+});
 
 onMounted(async () => {
   if (!authStore.user) {

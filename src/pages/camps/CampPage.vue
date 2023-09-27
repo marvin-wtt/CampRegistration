@@ -25,9 +25,11 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
 import { useSurveyTools } from 'src/composables/survey';
-import { useQuasar } from 'quasar';
+import {useMeta, useQuasar} from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store';
+import {useObjectTranslation} from 'src/composables/objectTranslation';
 
+const { to } = useObjectTranslation();
 const { locale } = useI18n();
 const { setCampVariables } = useSurveyTools();
 const quasar = useQuasar();
@@ -36,6 +38,12 @@ const registrationStore = useRegistrationsStore();
 const markdownConverter = new showdown.Converter();
 const campDetailsStore = useCampDetailsStore();
 const temporaryFilesStorage: Record<string, File[]> = {};
+
+useMeta(() => {
+  return {
+    title: to(campDetailsStore.data?.name),
+  };
+});
 
 const loading = computed<boolean>(() => {
   return (

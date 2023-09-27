@@ -50,8 +50,16 @@
 <script lang="ts" setup>
 import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
+import {useMeta} from 'quasar';
 
 const { t } = useI18n();
+
+useMeta(() => {
+  return {
+    title: 'Camps',
+    titleTemplate: title => `${title} | ${t('app_name')}`,
+  };
+});
 </script>
 
 <style>
