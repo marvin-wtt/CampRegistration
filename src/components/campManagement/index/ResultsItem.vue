@@ -162,7 +162,7 @@ function shareAction() {
   const url =
     window.location.origin +
     router.resolve({
-      name: 'participants',
+      name: 'camp',
       params: {
         camp: props.camp.id,
       },
