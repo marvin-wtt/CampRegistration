@@ -1,7 +1,7 @@
 import { managerService } from "@/services";
 import { routeModel, verifyModelExists } from "@/utils/verifyModel";
 import { auth, guard, validate } from "@/middlewares";
-import { campManager, campPublic } from "@/guards";
+import { campManager } from "@/guards";
 import { managerValidation } from "@/validations";
 import { managerController } from "@/controllers";
 import { catchParamAsync } from "@/utils/catchAsync";
@@ -29,7 +29,7 @@ router.get(
 router.post(
   "/",
   auth(),
-  guard([campPublic]),
+  guard([campManager]),
   validate(managerValidation.store),
   managerController.store,
 );
