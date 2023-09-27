@@ -58,9 +58,9 @@ model CampManager {
   campId       String      @map("camp_id") @db.Char(26)
   userId       String?     @map("user_id") @db.Char(26)
   invitationId String?     @map("invitation_id") @db.Char(26)
-  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_managers_camp_id_foreign")
-  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_managers_user_id_foreign")
-  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "camp_managers_invitation_id_foreign")
+  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
+  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
+  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
 
   @@index([campId], map: "camp_managers_camp_id_foreign")
   @@index([userId], map: "camp_managers_user_id_foreign")
@@ -82,7 +82,7 @@ model Registration {
   data      Json      @db.Json
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
-  camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "registrations_camp_id_foreign")
+  camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed       Bed?
   files     File[]
 
@@ -94,7 +94,7 @@ model Room {
   campId   String @map("camp_id") @db.Char(26)
   name     Json   @db.Json
   capacity Int    @db.UnsignedInt
-  camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "rooms_camp_id_foreign")
+  camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
   beds     Bed[]
 
   @@map("rooms")
@@ -104,8 +104,8 @@ model Bed {
   id             String        @id @unique @db.Char(26)
   roomId         String        @map("room_id") @db.Char(26)
   registrationId String?       @unique(map: "beds_registration_id_unique") @db.Char(26)
-  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_room_id_foreign")
-  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "beds_registration_id_foreign")
+  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_room_id_foreign")
+  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_registration_id_foreign")
 
   @@map("beds")
 }
@@ -114,7 +114,7 @@ model Template {
   id     String @id @unique(map: "templates_id_unique") @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
   data   Json   @db.Json
-  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "templates_camp_id_foreign")
+  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "templates_camp_id_foreign")
 
   @@index([campId], map: "templates_camp_id_foreign")
   @@map("templates")
