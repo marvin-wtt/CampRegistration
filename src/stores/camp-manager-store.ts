@@ -20,7 +20,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
     lazyFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<CampManager[]>('camp-manager');
+  } = useServiceHandler<CampManager[]>('campManager');
 
   authBus.on('logout', () => {
     reset();

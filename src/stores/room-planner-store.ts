@@ -32,7 +32,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     requestPending,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<Room[]>('room-planner');
+  } = useServiceHandler<Room[]>('roomPlanner');
   const settingsStore = useSettingsStore();
   const registrationsStore = useRegistrationsStore();
   const campBus = useCampBus();
@@ -76,7 +76,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
 
   async function updateRoom(
     roomId: string | undefined,
-    updateData: Partial<Room>,
+    updateData: Partial<Room>
   ) {
     const campId = route.params.camp as string;
 
@@ -110,7 +110,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
   async function updateBed(
     room: Room,
     position: number,
-    person: Roommate | null,
+    person: Roommate | null
   ) {
     const campId = route.params.camp as string;
     const roomId = room.id;
@@ -152,7 +152,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     }
 
     const registration = registrations.find(
-      (value) => value.id === registrationId,
+      (value) => value.id === registrationId
     );
     if (!registration) {
       return null;
