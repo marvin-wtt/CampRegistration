@@ -130,13 +130,6 @@ const { to } = useObjectTranslation();
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
 
-useMeta(() => {
-  return {
-    title: to(title.value),
-    titleTemplate: title => `${title} | ${t('app_name')}`,
-  };
-});
-
 onMounted(async () => {
   if (!authStore.user) {
     await authStore.fetchUser();
@@ -144,6 +137,21 @@ onMounted(async () => {
   if (route.params.camp) {
     await campDetailStore.fetchData();
   }
+});
+
+const showDrawer = computed<boolean>(() => {
+  return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
+});
+
+const title = computed(() => {
+  return showDrawer.value ? campDetailStore.data?.name : t('app_name');
+});
+
+useMeta(() => {
+  return {
+    title: to(title.value),
+    titleTemplate: title => `${title} | ${t('app_name')}`,
+  };
 });
 
 const drawer = ref<boolean>(false);
@@ -254,14 +262,6 @@ const filteredItems = computed<NavigationItem[]>(() => {
 const dev = computed<boolean>(() => {
   // TODO Maybe add feature flag
   return process.env.NODE_ENV === 'development';
-});
-
-const showDrawer = computed<boolean>(() => {
-  return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
-});
-
-const title = computed(() => {
-  return showDrawer.value ? campDetailStore.data?.name : t('app_name');
 });
 </script>
 
