@@ -71,6 +71,7 @@ const waitingList = computed<boolean>(() => {
 
 function deleteItem(): void {
   quasar.dialog({
+      // TODO Use safe delete component instead
     component: ConfirmDeleteDialog,
     componentProps: {
       result: props.props.row,
