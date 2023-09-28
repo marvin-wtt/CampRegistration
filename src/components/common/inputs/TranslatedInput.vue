@@ -126,6 +126,12 @@ function defaultUseTranslations(): boolean {
 }
 
 function defaultValue(): string | number {
+  // If the model value if an object and there is only one locale, we assume that the object is a translation and
+  //  contains a translation for the given locale
+  if (props.locales?.length === 1 && typeof props.modelValue === 'object') {
+    return props.modelValue[props.locales[0]];
+  }
+
   return typeof props.modelValue === 'string' ||
     typeof props.modelValue === 'number'
     ? props.modelValue
