@@ -18,19 +18,21 @@ const createTemplate = async (campId: string, data: object) => {
   return prisma.template.create({
     data: {
       id: ulid(),
-      data: data,
-      campId: campId,
+      data,
+      campId,
     },
   });
 };
 
 const updateTemplateById = async (
   templateId: string,
-  updateBody: Omit<Prisma.TemplateUpdateInput, "id">,
+  data: Prisma.InputJsonValue,
 ) => {
   return prisma.template.update({
     where: { id: templateId },
-    data: updateBody,
+    data: {
+      data,
+    },
   });
 };
 

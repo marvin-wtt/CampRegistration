@@ -27,18 +27,14 @@ const index = catchRequestAsync(async (req, res) => {
 const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const data = req.body;
-  const template = await templateService.createTemplate(campId, {
-    data: data,
-  });
+  const template = await templateService.createTemplate(campId, data);
   res.status(httpStatus.CREATED).json(resource(templateResource(template)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
   const { templateId } = req.params;
   const data = req.body;
-  const template = await templateService.updateTemplateById(templateId, {
-    data,
-  });
+  const template = await templateService.updateTemplateById(templateId, data);
   if (template == null) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
