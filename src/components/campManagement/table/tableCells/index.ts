@@ -2,7 +2,7 @@ import TableComponentRegistry from 'components/campManagement/table/ComponentReg
 import ActionTableCell from 'components/campManagement/table/tableCells/ActionTableCell.vue';
 import AgeTableCell from 'components/campManagement/table/tableCells/AgeTableCell.vue';
 import CountryFlagTableCell from 'components/campManagement/table/tableCells/CountryFlagTableCell.vue';
-import DateOfBirthTableCell from 'components/campManagement/table/tableCells/DateOfBirthTableCell.vue';
+import DateTableCell from 'components/campManagement/table/tableCells/DateTableCell.vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import EmailTableCell from 'components/campManagement/table/tableCells/EmailTableCell.vue';
 import FileTableCell from 'components/campManagement/table/tableCells/FileTableCell.vue';
@@ -40,11 +40,11 @@ const components = () => {
       fr: 'Drapeau du Pays',
     },
   });
-  TableComponentRegistry.register('date_of_birth', DateOfBirthTableCell, {
+  TableComponentRegistry.register('date', DateTableCell, {
     label: {
-      en: 'Date of Birth',
-      de: 'Geburtsdatum',
-      fr: 'Date de Naissance',
+      en: 'Date',
+      de: 'Datum',
+      fr: 'Date',
     },
     edit: {
       type: 'text',

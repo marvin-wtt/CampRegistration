@@ -16,7 +16,9 @@ const date = computed(() => {
     return props.props.value;
   }
 
-  return d(value);
+  return d(value, {
+    dateStyle: 'medium'
+  });
 });
 </script>
 
