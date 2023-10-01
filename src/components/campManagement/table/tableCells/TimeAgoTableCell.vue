@@ -1,7 +1,7 @@
 <template>
   {{ timeAgo }}
   <q-tooltip>
-    {{ props.props.value }}
+    {{ timestamp }}
   </q-tooltip>
 </template>
 
@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 const props = defineProps<TableCellProps>();
-const { t } = useI18n();
+const { t, d } = useI18n();
 const timeIntervals = {
   second: 1000,
   minute: 60,
@@ -21,6 +21,17 @@ const timeIntervals = {
   month: 365 / 12,
   year: 12,
 };
+
+const timestamp = computed<string | unknown>(() => {
+  if (typeof props.props.value !== 'string') {
+    return props.props.value;
+  }
+
+  return d(props.props.value, {
+    dateStyle: 'long',
+    timeStyle: 'long',
+  });
+});
 
 const timeAgo = computed<string>(() => {
   if (typeof props.props.value !== 'string') {
