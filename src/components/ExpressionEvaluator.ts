@@ -18,7 +18,7 @@ export class ExpressionEvaluator {
 
   addFunction(
     name: string,
-    callable: (...args: jsep.baseTypes[]) => jsep.baseTypes
+    callable: (...args: jsep.baseTypes[]) => jsep.baseTypes,
   ): void {
     this.callables[name] = callable;
   }
@@ -35,16 +35,20 @@ export class ExpressionEvaluator {
         return this.evaluateArrayExpression(expression as jsep.ArrayExpression);
       case 'BinaryExpression':
         return this.evaluateBinaryExpression(
-          expression as jsep.BinaryExpression
+          expression as jsep.BinaryExpression,
         );
       case 'CallExpression':
         return this.evaluateCallExpression(expression as jsep.CallExpression);
       case 'ConditionalExpression':
         return this.evaluateConditionalExpression(
-          expression as jsep.ConditionalExpression
+          expression as jsep.ConditionalExpression,
         );
       case 'Identifier':
         return this.evaluateIdentifier(expression as jsep.Identifier);
+      case 'MemberExpression':
+        return this.evaluateMemberExpression(
+          expression as jsep.MemberExpression,
+        );
       case 'Literal':
         return this.evaluateLiteral(expression as jsep.Literal);
       case 'UnaryExpression':
@@ -55,13 +59,13 @@ export class ExpressionEvaluator {
   }
 
   private evaluateArrayExpression(
-    expression: jsep.ArrayExpression
+    expression: jsep.ArrayExpression,
   ): jsep.baseTypes[] {
     return expression.elements.map((value) => this.evaluateAny(value));
   }
 
   private evaluateCallExpression(
-    expression: jsep.CallExpression
+    expression: jsep.CallExpression,
   ): jsep.baseTypes {
     if (expression.callee.type !== 'Identifier') {
       throw `Unsupported callee type: ${expression.callee.type}`;
@@ -82,7 +86,7 @@ export class ExpressionEvaluator {
   }
 
   private evaluateConditionalExpression(
-    expression: jsep.ConditionalExpression
+    expression: jsep.ConditionalExpression,
   ): jsep.baseTypes {
     const condition = this.evaluateAny(expression.test);
 
@@ -92,7 +96,7 @@ export class ExpressionEvaluator {
   }
 
   private evaluateBinaryExpression(
-    expression: jsep.BinaryExpression
+    expression: jsep.BinaryExpression,
   ): boolean | string | number {
     let left = this.evaluateAny(expression.left);
     let right = this.evaluateAny(expression.right);
@@ -186,23 +190,62 @@ export class ExpressionEvaluator {
     throw `Unsupported expression operator: ${expression.operator}`;
   }
 
-  private evaluateIdentifier(expression: jsep.Identifier): jsep.baseTypes {
-    const data = this._data;
-    const name = expression.name.substring(1);
+  private evaluateIdentifier(
+    expression: jsep.Identifier,
+    data?: object,
+  ): jsep.baseTypes {
+    data = data ?? this._data;
+
+    const name = this.IDENTIFIERS.includes(expression.name.charAt(0))
+      ? expression.name.substring(1)
+      : expression.name;
 
     return data !== undefined && name in data
       ? data[name as keyof typeof data]
       : undefined;
   }
 
+  private evaluateMemberExpression(
+    expression: jsep.MemberExpression,
+  ): jsep.baseTypes {
+    if (expression.computed) {
+      // Access with bracket syntax []
+      throw 'Computed member expressions are not supported';
+    }
+
+    if (expression.property.type !== 'Identifier') {
+      throw 'Member expression object must be of type Identifier';
+    }
+
+    let parent: jsep.baseTypes | undefined;
+    if (expression.object.type === 'MemberExpression') {
+      parent = this.evaluateMemberExpression(
+        expression.object as jsep.MemberExpression,
+      );
+    } else if (expression.object.type === 'Identifier') {
+      parent = this.evaluateIdentifier(expression.object as jsep.Identifier);
+    } else {
+      throw `Unsupported MemberExpression object of type ${expression.object.type}`;
+    }
+
+    if (!parent || typeof parent !== 'object') {
+      return undefined;
+    }
+
+    return this.evaluateIdentifier(
+      expression.property as jsep.Identifier,
+      parent,
+    );
+  }
+
   private evaluateLiteral(
-    expression: jsep.Literal
+    expression: jsep.Literal,
   ): string | number | boolean | RegExp | null {
     return expression.value;
   }
 
   private evaluateUnaryExpression(
-    expression: jsep.UnaryExpression
+    expression: jsep.UnaryExpression,
   ): jsep.baseTypes {
     const argument = this.evaluateAny(expression.argument);
     switch (expression.operator) {
@@ -228,7 +271,7 @@ export class ExpressionEvaluator {
 }
 
 function isNotNullOrUndefined(
-  value: jsep.baseTypes
+  value: jsep.baseTypes,
 ): value is boolean | number | string | object | RegExp {
   return value !== null && value !== undefined;
 }
