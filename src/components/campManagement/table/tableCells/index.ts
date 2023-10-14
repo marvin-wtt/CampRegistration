@@ -18,6 +18,7 @@ import TextTableCell from 'components/campManagement/table/tableCells/TextTableC
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import TranslatedValueTableCell from 'components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
 
+// TODO Add custom config options
 const components = () => {
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,

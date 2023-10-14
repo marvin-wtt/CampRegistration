@@ -2,6 +2,7 @@ import { Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import components from 'components/campManagement/table/tableCells';
 import { AnyElement } from 'src/types/SurveyJSCampData';
+import { BaseComponent } from 'components/common/inputs/BaseComponent';
 
 type MaybeLazyComponent = Component | (() => Component);
 
@@ -10,6 +11,7 @@ interface ComponentOptions {
   label?: string | Record<string, string>;
   internal?: boolean;
   edit?: Omit<AnyElement, 'name' | 'title'>;
+  customOptions?: BaseComponent[];
 }
 
 interface ComponentEntry {
@@ -26,9 +28,13 @@ const TableComponentRegistry = {
   register: (
     name: string,
     component: Component,
-    options: ComponentOptions = {}
+    options: ComponentOptions = {},
   ): void => {
     componentMap.set(name, { component, options });
+  },
+
+  get: (name: string): ComponentEntry | undefined => {
+    return componentMap.get(name);
   },
 
   load: (name: string): ComponentEntry => {

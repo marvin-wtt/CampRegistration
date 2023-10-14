@@ -97,7 +97,14 @@
             :label="t('fields.renderOptions.label')"
             :caption="t('fields.renderOptions.hint')"
           >
+            <dynamic-input-group
+              v-if="renderOptions"
+              v-model="column.renderOptions"
+              :elements="renderOptions"
+            />
+
             <json-input
+              v-else
               v-model="column.renderOptions"
               filled
             />
@@ -179,6 +186,8 @@ import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
+import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 
 interface Props {
   column: TableColumnTemplate;
@@ -226,7 +235,22 @@ const alignOptions = computed(() => {
   ];
 });
 
-const renderAsOptions = computed<{ label: string; value: string }[]>(() => {
+interface SelectOption {
+  label: string;
+  value: string;
+}
+
+const renderOptions = computed<BaseComponent[] | undefined>(() => {
+  if (!column.renderAs) {
+    return undefined;
+  }
+
+  const renderer = ComponentRegistry.get(column.renderAs);
+
+  return renderer?.options.customOptions;
+});
+
+const renderAsOptions = computed<SelectOption[]>(() => {
   return Array.from(ComponentRegistry.all().entries(), ([key, value]) => {
     const options = value.options;
     if (options.internal) {
@@ -244,7 +268,13 @@ const renderAsOptions = computed<{ label: string; value: string }[]>(() => {
 });
 
 const fieldOptions = computed(() => {
-  return extractFormFields(props.camp.form);
+  const formFields = extractFormFields(props.camp.form);
+  return formFields.map((field) => {
+    return {
+      ...field,
+      value: 'data.' + field.value,
+    };
+  });
 });
 
 const fieldFilterOptions = ref(fieldOptions.value);

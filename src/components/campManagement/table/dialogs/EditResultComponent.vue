@@ -25,7 +25,7 @@
           <q-card>
             <q-card-section>
               <!-- TODO required, visible, readonly -->
-              <dynamic-input
+              <dynamic-from-input
                 v-for="element in page.elements"
                 :key="element.name"
                 v-model="data[element.name]"
@@ -65,7 +65,7 @@ import { reactive, ref, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRegistrationsStore } from 'stores/registration-store';
-import DynamicInput from 'components/common/inputs/DynamicInput.vue';
+import DynamicFromInput from 'components/common/inputs/DynamicFromInput.vue';
 
 interface Props {
   questions: SurveyJSCampData;
