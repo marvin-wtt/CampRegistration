@@ -10,6 +10,7 @@ export class ExpressionEvaluator {
   > = {};
 
   constructor(expression: string) {
+    // TODO Is the replacement still needed?
     // Replace surveyJS style variables
     expression = expression.replace(/{(.*?)}/g, '_$1');
     jsep.addBinaryOp('=', 0);
@@ -208,39 +209,61 @@ export class ExpressionEvaluator {
   private evaluateMemberExpression(
     expression: jsep.MemberExpression,
   ): jsep.baseTypes {
-    if (expression.computed) {
-      // Access with bracket syntax []
-      throw 'Computed member expressions are not supported';
+    // expression.computed is not used because I don't know how I should handle it
+
+    if (['Identifier', 'Literal'].includes(expression.property.type)) {
+      throw `Unsupported expression property type ${expression.property.type}`;
     }
 
-    if (expression.property.type !== 'Identifier') {
-      throw 'Member expression object must be of type Identifier';
+    if (['Identifier', 'MemberExpression'].includes(expression.object.type)) {
+      throw `Unsupported MemberExpression object of type ${expression.object.type}`;
     }
 
+    // Resolve object first
     let parent: jsep.baseTypes | undefined;
     if (expression.object.type === 'MemberExpression') {
       parent = this.evaluateMemberExpression(
         expression.object as jsep.MemberExpression,
       );
-    } else if (expression.object.type === 'Identifier') {
+    }
+    if (expression.object.type === 'Identifier') {
       parent = this.evaluateIdentifier(expression.object as jsep.Identifier);
-    } else {
-      throw `Unsupported MemberExpression object of type ${expression.object.type}`;
     }
 
+    // Parents must be an object. Return undefined otherwise to handle errors graceful,
     if (!parent || typeof parent !== 'object') {
       return undefined;
     }
 
+    // Allow array style access
+    if (expression.property.type === 'Literal') {
+      const literal = expression.property as jsep.Literal;
+      if (typeof literal.value !== 'number') {
+        throw `Unsupported literal in member expression (${literal.value}). Pleas use dot syntax.`;
+      }
+
+      if (!Array.isArray(parent)) {
+        return undefined;
+      }
+
+      // Allow negative access
+      const index =
+        literal.value < 0 ? parent.length + literal.value : literal.value;
+      if (index < 0 || parent.length <= index) {
+        return undefined;
+      }
+
+      return parent[index];
+    }
+
+    // Normal member style access
     return this.evaluateIdentifier(
       expression.property as jsep.Identifier,
       parent,
     );
   }
 
-  private evaluateLiteral(
-    expression: jsep.Literal,
-  ): string | number | boolean | RegExp | null {
+  private evaluateLiteral(expression: jsep.Literal): jsep.baseTypes {
     return expression.value;
   }
 
