@@ -211,12 +211,12 @@ export class ExpressionEvaluator {
   ): jsep.baseTypes {
     // expression.computed is not used because I don't know how I should handle it
 
-    if (['Identifier', 'Literal'].includes(expression.property.type)) {
-      throw `Unsupported expression property type ${expression.property.type}`;
+    if (!['Identifier', 'Literal'].includes(expression.property.type)) {
+      throw `Unsupported member expression property type ${expression.property.type}`;
     }
 
-    if (['Identifier', 'MemberExpression'].includes(expression.object.type)) {
-      throw `Unsupported MemberExpression object of type ${expression.object.type}`;
+    if (!['Identifier', 'MemberExpression'].includes(expression.object.type)) {
+      throw `Unsupported member expression object of type ${expression.object.type}`;
     }
 
     // Resolve object first
