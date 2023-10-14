@@ -5,27 +5,29 @@ export function formatUniqueName(
   registration: Registration,
   others: Registration[],
   firstNameKey: string,
-  lastNameKey?: string
+  lastNameKey?: string,
 ): string {
-  const firstName = registration[firstNameKey] as string;
+  const firstName = registration.data[firstNameKey] as string;
 
   // Search for people with same name
   const sameFirstName = others.filter((value) => {
-    return value[firstNameKey] === firstName;
+    return value.data[firstNameKey] === firstName;
   });
 
   // If no match was found, this can be ignored. (Filter finds itself)
+  // TODO Use accessor
   if (
     sameFirstName.length === 1 ||
     lastNameKey === undefined ||
-    typeof registration[lastNameKey] !== 'string'
+    typeof registration.data[lastNameKey] !== 'string'
   ) {
     return formatPersonName(firstName);
   }
-
-  const lastName = registration[lastNameKey] as string;
+  // TODO Use accessor
+  const lastName = registration.data[lastNameKey] as string;
   const sameLastNameStart = sameFirstName.filter((value) => {
-    return value[lastNameKey] === lastName;
+    // TODO Use accessor
+    return value.data[lastNameKey] === lastName;
   });
 
   const name =

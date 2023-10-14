@@ -8,14 +8,14 @@ export function useRegistrationHelper() {
 
   function stringValue(
     registration: Registration,
-    keyName: string
+    keyName: string,
   ): string | undefined {
     const key = settingsStore.getKey(keyName);
-    if (!key || !(key in registration)) {
+    if (!key || !(key in registration.data)) {
       return undefined;
     }
 
-    const value = registration[key];
+    const value = registration.data[key];
     if (typeof value !== 'string') {
       return undefined;
     }
@@ -25,14 +25,14 @@ export function useRegistrationHelper() {
 
   function booleanValue(
     registration: Registration,
-    keyName: string
+    keyName: string,
   ): boolean | undefined {
     const key = settingsStore.getKey(keyName);
     if (!key || !(key in registration)) {
       return undefined;
     }
 
-    const value = registration[key];
+    const value = registration.data[key];
     if (typeof value !== 'boolean') {
       return undefined;
     }
@@ -45,7 +45,7 @@ export function useRegistrationHelper() {
   }
 
   function lastName(registration: Registration): string | undefined {
-    return stringValue(registration, 'firstName');
+    return stringValue(registration, 'lastName');
   }
 
   function fullName(registration: Registration): string | undefined {
@@ -63,7 +63,7 @@ export function useRegistrationHelper() {
       return undefined;
     }
 
-    const dateOfBirth = registration[key];
+    const dateOfBirth = registration.data[key];
     if (typeof dateOfBirth !== 'string') {
       return undefined;
     }
@@ -81,7 +81,7 @@ export function useRegistrationHelper() {
     const ageKey = settingsStore.getKey('age');
     if (ageKey && ageKey in registration) {
       // Type check
-      const age = registration[ageKey];
+      const age = registration.data[ageKey];
       if (typeof age !== 'number') {
         return undefined;
       }

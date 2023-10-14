@@ -12,7 +12,6 @@ import {
 import { useRegistrationsStore } from 'stores/registration-store';
 import { Registration } from 'src/types/Registration';
 import { Roommate } from 'src/types/Roommate';
-import { formatUniqueName } from 'src/utils/formatters';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { useSettingsStore } from 'stores/settings-store';
 
@@ -163,15 +162,21 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
 
   // TODO This should be done in a utility function
   function uniqueName(registration: Registration): string {
-    const firstNameKey = settingsStore.getKey('firstName');
-    const lastNameKey = settingsStore.getKey('lastName');
-    const others = registrationsStore.data;
+    // TODO Use unique names
+    const firstName = registrationHelper.firstName(registration);
+    const lastName = registrationHelper.lastName(registration);
 
-    if (!firstNameKey || others === undefined) {
-      return 'Undefined';
-    }
+    return `${firstName} ${lastName}`;
 
-    return formatUniqueName(registration, others, firstNameKey, lastNameKey);
+    // const firstNameKey = settingsStore.getKey('firstName');
+    // const lastNameKey = settingsStore.getKey('lastName');
+    // const others = registrationsStore.data;
+    //
+    // if (!firstNameKey || others === undefined) {
+    //   return 'Undefined';
+    // }
+    //
+    // return formatUniqueName(registration, others, firstNameKey, lastNameKey);
   }
 
   function mapRegistrationRoommate(registration: Registration): Roommate {

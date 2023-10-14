@@ -184,6 +184,7 @@ import { Registration } from 'src/types/Registration';
 import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
 import { Camp } from 'src/types/Camp';
 import { useTemplateStore } from 'stores/template-store';
+import { objectValueByPath } from 'src/utils/objectValueByPath';
 
 interface Props {
   questions: QTableColumn[];
@@ -200,6 +201,7 @@ const route = useRoute();
 const router = useRouter();
 const { to } = useObjectTranslation();
 
+// TODO emit instead
 const templateStore = useTemplateStore();
 
 interface Pagination {
@@ -226,21 +228,27 @@ const rows = computed<Registration[]>(() => {
     });
   }
 
-  // TODO Get keys from setting store
+  // TODO Get keys from setting store or use accessors
   const waitingListKey = 'waiting_list';
   const counselorsKey = 'counselor';
 
   // Waiting list
   if (template.value.filterWaitingList) {
     rows = rows.filter((row) => {
-      return row[waitingListKey] === undefined || row[waitingListKey] == false;
+      return (
+        row.data[waitingListKey] === undefined ||
+        row.data[waitingListKey] == false
+      );
     });
   }
 
   // Counselors
   if (template.value.filterCounselors) {
     rows = rows.filter((row) => {
-      return row[counselorsKey] === undefined || row[counselorsKey] == false;
+      return (
+        row.data[counselorsKey] === undefined ||
+        row.data[counselorsKey] == false
+      );
     });
   }
 
@@ -248,9 +256,11 @@ const rows = computed<Registration[]>(() => {
   if (template.value.filterParticipants) {
     rows = rows.filter((row) => {
       const waitingList =
-        row[waitingListKey] !== undefined && row[waitingListKey] == true;
+        row.data[waitingListKey] !== undefined &&
+        row.data[waitingListKey] == true;
       const counselor =
-        row[counselorsKey] !== undefined && row[counselorsKey] == true;
+        row.data[counselorsKey] !== undefined &&
+        row.data[counselorsKey] == true;
 
       return waitingList || counselor;
     });
@@ -284,11 +294,28 @@ const countries = computed<string[]>(() => {
 });
 
 const templates = computed<TableTemplate[]>(() => {
-  const templates = [...props.templates];
+  const templates: TableTemplate[] = props.templates.map((template) => ({
+    ...template,
+    // Map the columns to access the data with dot notation
+    columns: template.columns.map((column) => ({
+      ...column,
+      field: (row: unknown) => objectValueByPath(column.field as string, row),
+    })),
+  }));
+
+  // Default template to show all information
+  const columns = props.questions.map((column) => {
+    return {
+      ...column,
+      field: (row: unknown) =>
+        objectValueByPath(('data.' + column.field) as string, row),
+    };
+  });
+
   templates.push({
     id: '-1',
     title: 'Original (Plain)',
-    columns: props.questions,
+    columns,
     order: 99,
     generated: true,
   });
@@ -462,7 +489,7 @@ function editTemplates() {
     .dialog({
       component: EditResultTemplatesDialog,
       componentProps: {
-        templates: templates.value,
+        templates: props.templates,
         camp: props.camp,
       },
     })

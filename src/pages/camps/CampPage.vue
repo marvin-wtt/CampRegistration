@@ -25,9 +25,11 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
 import { useSurveyTools } from 'src/composables/survey';
-import {useMeta, useQuasar} from 'quasar';
+import { useMeta, useQuasar } from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store';
-import {useObjectTranslation} from 'src/composables/objectTranslation';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+
+type FileStorage = Map<string, File>;
 
 const { to } = useObjectTranslation();
 const { locale } = useI18n();
@@ -37,7 +39,7 @@ const registrationStore = useRegistrationsStore();
 
 const markdownConverter = new showdown.Converter();
 const campDetailsStore = useCampDetailsStore();
-const temporaryFilesStorage: Record<string, File[]> = {};
+const filesStorage: FileStorage = new Map<string, File>();
 
 useMeta(() => {
   return {
@@ -100,40 +102,44 @@ function createModel(id: string, form: object): SurveyModel {
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
-    // Add files to the temporary storage
-    if (options.name in temporaryFilesStorage) {
-      temporaryFilesStorage[options.name].push(...options.files);
-    } else {
-      temporaryFilesStorage[options.name] = options.files;
-    }
+    const fileOptions: {
+      file: Pick<File, 'name' | 'type' | 'size'>;
+      content?: unknown;
+    }[] = [];
 
-    // FIXME Files not uploaded correctly
-    const fileOptions = options.files.map((value) => {
-      return {
-        file: value,
-        //content: 'uuid',
-      };
+    options.files.forEach((file) => {
+      const uuid = crypto.randomUUID();
+
+      filesStorage.set(uuid, file);
+
+      fileOptions.push({
+        file: { name: uuid, type: file.type, size: file.size },
+        // content: 'http://localhost/uuid', // TODO
+      });
     });
 
     options.callback('success', fileOptions);
   });
   // Remove file from storage
   survey.onClearFiles.add((_, options) => {
-    // Filename is null if clear all button is pressed
-    if (options.fileName === null) {
-      temporaryFilesStorage[options.name] = [];
+    // Undefined if no question was actually removed
+    if (options.fileName === undefined) {
       options.callback('success');
       return;
     }
 
-    const tempFiles = temporaryFilesStorage[options.name] || [];
-    const fileInfoToRemove = tempFiles.find(
-      (file) => file.name === options.fileName,
-    );
+    // Clear single
+    if (options.fileName) {
+      filesStorage.delete(options.fileName);
+      options.callback('success');
+      return;
+    }
 
-    if (fileInfoToRemove !== undefined) {
-      const index = tempFiles.indexOf(fileInfoToRemove);
-      tempFiles.splice(index, 1);
+    // Clear all
+    if (Array.isArray(options.value)) {
+      options.value.forEach((value) => {
+        filesStorage.delete(value);
+      });
     }
 
     options.callback('success');
@@ -156,9 +162,12 @@ function createModel(id: string, form: object): SurveyModel {
   survey.onComplete.add(async (sender, options) => {
     options.showSaveInProgress();
 
+    mapFileQuestionValues(sender);
+
     const campId = sender.surveyId;
-    let data = sender.data;
-    const registration = { ...data, ...temporaryFilesStorage };
+    const data = sender.data;
+    const files = Object.fromEntries(filesStorage.entries());
+    const registration = { data, files };
 
     try {
       await registrationStore.storeData(campId, registration);
@@ -169,5 +178,28 @@ function createModel(id: string, form: object): SurveyModel {
   });
 
   return survey;
+}
+
+function mapFileQuestionValues(survey: SurveyModel) {
+  const questions = survey.getAllQuestions(false, undefined, true);
+  questions.forEach((question) => {
+    if (question.getType() !== 'file') {
+      return;
+    }
+
+    if (Array.isArray(question.value)) {
+      question.value = question.value.map((value) => {
+        return isFile(value) ? value.name : value;
+      });
+    } else {
+      question.value = isFile(question.value)
+        ? question.value.name
+        : question.value;
+    }
+  });
+}
+
+function isFile(file: unknown): file is Pick<File, 'name'> {
+  return file != null && typeof file === 'object' && 'name' in file;
 }
 </script>

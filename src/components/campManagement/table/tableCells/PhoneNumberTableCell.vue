@@ -13,6 +13,18 @@ import { TableCellProps } from 'components/campManagement/table/tableCells/Table
 
 const props = defineProps<TableCellProps>();
 
+const data = computed<object>(() => {
+  if (
+    'data' in props.props.row &&
+    typeof props.props.row.data === 'object' &&
+    props.props.row.data
+  ) {
+    return props.props.row.data;
+  }
+
+  return {};
+});
+
 const formattedPhoneNumber = computed<string | unknown>(() => {
   const value = props.props.value;
 
@@ -20,9 +32,10 @@ const formattedPhoneNumber = computed<string | unknown>(() => {
     return value;
   }
 
+  // TODO Use accessor instead!!!
   const country =
-    'country' in props.props.row && typeof props.props.row.country === 'string'
-      ? props.props.row.country
+    'country' in data.value && typeof data.value.country === 'string'
+      ? data.value.country
       : undefined;
 
   return value

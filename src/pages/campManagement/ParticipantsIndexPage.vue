@@ -97,8 +97,8 @@ const results = computed<Registration[]>(() => {
 
   DataProviderRegistry.INSTANCE.providers.forEach((provider) => {
     results.forEach((registration) => {
-      if (provider.isFit(registration)) {
-        registration[provider.name] = provider.generate(registration);
+      if (provider.isFit(registration.data)) {
+        registration.data[provider.name] = provider.generate(registration);
       }
     });
   });
