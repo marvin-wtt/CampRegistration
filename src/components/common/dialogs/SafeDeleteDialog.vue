@@ -107,7 +107,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-texte:
+text:
   confirm: 'Veuillez entrer {label} pour confirmer :'
 
 action:
