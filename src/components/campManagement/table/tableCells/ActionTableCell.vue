@@ -22,6 +22,7 @@
         v-if="waitingList"
         v-close-popup
         clickable
+        disable
         @click="accept"
       >
         <q-item-section>
@@ -97,8 +98,13 @@ function deleteItem(): void {
 }
 
 function accept(): void {
-  // TODO
-  quasar.dialog({});
+  // TODO Create dialog and update registration
+  quasar.dialog({}).onOk(async () => {
+    const id = registration.value.id;
+    await registrationStore.updateData(id, {
+      // TODO Does PATCH work here or is PUT required? The key must be accessed from helper as well.
+    });
+  });
 }
 
 function editItem(): void {
