@@ -184,4 +184,22 @@ language: 'Language'
 dark_mode: 'Dark Mode'
 </i18n>
 
-<!-- TODO Add translations -->
+<i18n lang="yaml" locale="de">
+username: 'Angemeldet als'
+camps: 'Meine Camps'
+login: 'Anmelden'
+logout: 'Abmelden'
+profile: 'Profil'
+language: 'Sprache'
+dark_mode: 'Dunkelmodus'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+username: 'Connecté en tant que'
+camps: 'Mes camps'
+login: 'Connexion'
+logout: 'Déconnexion'
+profile: 'Profil'
+language: 'Langue'
+dark_mode: 'Mode sombre'
+</i18n>

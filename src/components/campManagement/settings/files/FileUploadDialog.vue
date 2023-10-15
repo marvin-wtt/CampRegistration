@@ -148,7 +148,7 @@ function onCancelClick() {
 </script>
 
 <style scoped></style>
-<!-- TODO Translate -->
+
 <i18n lang="yaml" locale="en">
 title: 'Upload file'
 

@@ -137,7 +137,7 @@ function register() {
   authStore.register(name.value, email.value, password.value);
 }
 </script>
-<!-- TODO Add translations -->
+
 <i18n lang="yaml" locale="en">
 title: 'Register'
 
@@ -162,4 +162,56 @@ fields:
 actions:
   login: 'Login'
   register: 'Register'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Registrieren'
+
+fields:
+  name:
+    label: 'Name'
+    rules:
+      required: 'Sie müssen einen Namen angeben'
+  email:
+    label: 'E-Mail'
+    rules:
+      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+  password:
+    label: 'Passwort'
+    rules:
+      required: 'Sie müssen ein gültiges Passwort angeben'
+  confirm-password:
+    label: 'Passwort bestätigen'
+    rules:
+      identical: 'Passwörter stimmen nicht überein'
+
+actions:
+  login: 'Anmelden'
+  register: 'Registrieren'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Inscription'
+
+fields:
+  name:
+    label: 'Nom'
+    rules:
+      required: 'Vous devez fournir un nom'
+  email:
+    label: 'E-mail'
+    rules:
+      required: 'Vous devez fournir une adresse e-mail valide'
+  password:
+    label: 'Mot de passe'
+    rules:
+      required: 'Vous devez fournir un mot de passe valide'
+  confirm-password:
+    label: 'Confirmer le mot de passe'
+    rules:
+      identical: 'Les mots de passe ne correspondent pas'
+
+actions:
+  login: 'Connexion'
+  register: "S'inscrire"
 </i18n>

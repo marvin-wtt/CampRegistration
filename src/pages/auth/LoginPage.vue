@@ -123,7 +123,7 @@ function login() {
   authStore.login(email.value, password.value, remember.value);
 }
 </script>
-<!-- TODO Add translations -->
+
 <i18n lang="yaml" locale="en">
 title: 'Login'
 
@@ -142,4 +142,44 @@ actions:
   login: 'Login'
   register: 'Register'
   forgot_password: 'Forgot password ?'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Anmelden'
+
+fields:
+  email:
+    label: 'E-Mail'
+    rules:
+      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+  password:
+    label: 'Passwort'
+    rules:
+      required: 'Sie müssen ein gültiges Passwort angeben'
+  remember: 'Angemeldet bleiben'
+
+actions:
+  login: 'Anmelden'
+  register: 'Registrieren'
+  forgot_password: 'Passwort vergessen?'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Connexion'
+
+fields:
+  email:
+    label: 'E-mail'
+    rules:
+      required: 'Vous devez fournir une adresse e-mail valide'
+  password:
+    label: 'Mot de passe'
+    rules:
+      required: 'Vous devez fournir un mot de passe valide'
+  remember: 'Rester connecté'
+
+actions:
+  login: 'Connexion'
+  register: "S'inscrire"
+  forgot_password: 'Mot de passe oublié ?'
 </i18n>

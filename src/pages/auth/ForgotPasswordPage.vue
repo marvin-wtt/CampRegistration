@@ -76,7 +76,7 @@ function resetPassword() {
   authStore.forgotPassword(email.value);
 }
 </script>
-<!-- TODO Add translations -->
+
 <i18n lang="yaml" locale="en">
 title: 'Forgot Password'
 
@@ -88,4 +88,30 @@ fields:
 
 actions:
   register: 'Reset password'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Passwort vergessen'
+
+fields:
+  email:
+    label: 'E-Mail'
+    rules:
+      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+
+actions:
+  register: 'Passwort zurücksetzen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Mot de passe oublié'
+
+fields:
+  email:
+    label: 'E-mail'
+    rules:
+      required: 'Vous devez fournir une adresse e-mail valide'
+
+actions:
+  register: 'Réinitialiser le mot de passe'
 </i18n>
