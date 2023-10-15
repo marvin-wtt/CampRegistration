@@ -59,7 +59,11 @@ export const useCampManagerStore = defineStore('campManager', () => {
     checkNotNullWithNotification(managerId);
     checkNotNullWithNotification(role);
 
-    // TODO Call service
+    await withProgressNotification('delete', async () => {
+      await api.updateCampManager(campId, managerId, {
+        role,
+      });
+    });
   }
 
   async function deleteData(managerId: string) {
