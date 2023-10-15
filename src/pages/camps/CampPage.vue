@@ -67,6 +67,14 @@ watch(
   },
 );
 
+watch(locale, (value) => {
+  if (!model.value) {
+    return;
+  }
+
+  model.value.locale = value;
+});
+
 onMounted(async () => {
   await campDetailsStore.fetchData();
 
