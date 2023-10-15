@@ -95,7 +95,7 @@ function resetPassword() {
   authStore.resetPassword(password.value);
 }
 </script>
-<!-- TODO Add translations -->
+
 <i18n lang="yaml" locale="en">
 title: 'Reset Password'
 
@@ -111,4 +111,38 @@ fields:
 
 actions:
   register: 'Reset Password'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Passwort zurücksetzen'
+
+fields:
+  password:
+    label: 'Passwort'
+    rules:
+      required: 'Sie müssen ein gültiges Passwort angeben'
+  confirm-password:
+    label: 'Passwort bestätigen'
+    rules:
+      identical: 'Passwort stimmt nicht überein'
+
+actions:
+  register: 'Passwort zurücksetzen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Réinitialiser le mot de passe'
+
+fields:
+  password:
+    label: 'Mot de passe'
+    rules:
+      required: 'Vous devez fournir un mot de passe valide'
+  confirm-password:
+    label: 'Confirmer le mot de passe'
+    rules:
+      identical: 'Les mots de passe ne correspondent pas'
+
+actions:
+  register: 'Réinitialiser le mot de passe'
 </i18n>

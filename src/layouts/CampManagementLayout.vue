@@ -116,11 +116,10 @@ import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useQuasar } from 'quasar';
+import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useMeta } from 'quasar';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -150,7 +149,7 @@ const title = computed(() => {
 useMeta(() => {
   return {
     title: to(title.value),
-    titleTemplate: title => `${title} | ${t('app_name')}`,
+    titleTemplate: (title) => `${title} | ${t('app_name')}`,
   };
 });
 
@@ -260,7 +259,6 @@ const filteredItems = computed<NavigationItem[]>(() => {
 });
 
 const dev = computed<boolean>(() => {
-  // TODO Maybe add feature flag
   return process.env.NODE_ENV === 'development';
 });
 </script>

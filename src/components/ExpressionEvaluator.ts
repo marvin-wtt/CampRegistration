@@ -10,8 +10,7 @@ export class ExpressionEvaluator {
   > = {};
 
   constructor(expression: string) {
-    // TODO Is the replacement still needed?
-    // Replace surveyJS style variables
+    // Replace surveyJS style variables (DynamicFormInput.vue)
     expression = expression.replace(/{(.*?)}/g, '_$1');
     jsep.addBinaryOp('=', 0);
     this._node = jsep(expression);
