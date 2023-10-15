@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@joi/date": "^2.1.0",
-    "@prisma/client": "^4.15.0",
+    "@prisma/client": "^5.4.2",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
@@ -94,7 +94,7 @@
     "module-alias": "^2.2.3",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
-    "prisma": "^4.15.0",
+    "prisma": "^5.4.2",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
