@@ -33,7 +33,7 @@ export const registrationData: Joi.CustomValidator<object> = (
 
 const index = {
   params: Joi.object({
-    campId: Joi.string(),
+    campId: Joi.string().required(),
   }),
 };
 
