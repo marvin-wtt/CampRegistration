@@ -4,6 +4,7 @@ const campResource = (camp: Camp) => {
   return {
     id: camp.id,
     public: camp.public,
+    active: camp.active,
     countries: camp.countries,
     name: camp.name,
     organization: camp.organization,

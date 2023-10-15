@@ -30,6 +30,7 @@ enum Role {
 
 model Camp {
   id              String         @id @unique(map: "camps_id_unique") @db.Char(26)
+  active          Boolean
   public          Boolean
   countries       Json           @db.Json
   name            Json           @db.Json

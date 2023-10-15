@@ -13,7 +13,8 @@ const index = {
   query: Joi.object({
     // Filter
     name: Joi.string(),
-    private: Joi.boolean(),
+    active: Joi.boolean(),
+    public: Joi.boolean(),
     startAt: Joi.date(),
     endAt: Joi.date(),
     minAge: Joi.number(),
@@ -28,6 +29,7 @@ const index = {
 
 const store = {
   body: Joi.object({
+    active: Joi.boolean().default(false),
     public: Joi.boolean().default(false),
     countries: Joi.array()
       .items(Joi.string().lowercase().length(2))
@@ -70,6 +72,7 @@ const update = {
     campId: Joi.string().required(),
   }),
   body: Joi.object({
+    active: Joi.boolean(),
     public: Joi.boolean(),
     countries: Joi.array().items(Joi.string().lowercase().length(2)).min(1),
     name: Joi.alternatives().try(

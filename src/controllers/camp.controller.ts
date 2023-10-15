@@ -16,8 +16,12 @@ const show = catchRequestAsync(async (req, res) => {
 
 const index = catchRequestAsync(async (req, res) => {
   const filter = exclude(req.query, ["sortBy", "limit", "page"]);
-  // Set user id if private camps should be included filter for camp manager
-  filter.userId = filter.private ? authUserId(req) : undefined;
+  // Set user id if private or inactive camps should be included filter for camp manager
+  filter.userId =
+    filter.public == "false" || filter.active === "false"
+      ? authUserId(req)
+      : undefined;
+
   const options = pick(req.query, ["sortBy", "limit", "page"]);
   // TODO Add default options, make sure validation is correct and add pagination meta
   const camps = await campService.queryPublicCamps(filter, options);
@@ -33,7 +37,8 @@ const store = catchRequestAsync(async (req, res) => {
     countries: data.countries,
     name: data.name,
     organization: data.organization,
-    public: false,
+    active: false,
+    public: data.public,
     maxParticipants: data.maxParticipants,
     startAt: data.startAt,
     endAt: data.endAt,
@@ -54,6 +59,7 @@ const update = catchRequestAsync(async (req, res) => {
     countries: data.countries,
     name: data.name,
     organization: data.organization,
+    active: data.active,
     public: data.public,
     maxParticipants: data.maxParticipants,
     startAt: data.startAt,

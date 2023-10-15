@@ -4,6 +4,7 @@ import { ulid } from "@/utils/ulid";
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
+  "active",
   "public",
   "name",
   "countries",
@@ -39,7 +40,8 @@ const getCampsByUserId = async (userId: string) => {
 const queryPublicCamps = async <Key extends keyof Camp>(
   filter: {
     userId?: string;
-    private?: boolean;
+    active?: boolean;
+    public?: boolean;
     name?: string;
     age?: number;
     startAt?: Date | string;
@@ -60,11 +62,10 @@ const queryPublicCamps = async <Key extends keyof Camp>(
   const sortType = options.sortType ?? "desc";
 
   const where: Prisma.CampWhereInput = {
-    // Only show public camps by default
-    public: filter.private ? undefined : true,
-    campManager: filter.private
-      ? { every: { userId: filter.userId } }
-      : undefined,
+    // Only show active, public camps by default
+    public: filter.public == false ? undefined : true,
+    active: filter.active == false ? undefined : true,
+    campManager: { every: { userId: filter.userId } },
     minAge: { lte: filter.age },
     maxAge: { gte: filter.age },
     startAt: { gte: filter.startAt },

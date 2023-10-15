@@ -1,6 +1,6 @@
 import express from "express";
 import { auth, guard, validate } from "@/middlewares";
-import { campManager, campPublic } from "@/guards";
+import { campActive, campManager } from "@/guards";
 import { verifyModelExists } from "@/utils/verifyModel";
 import { catchParamAsync } from "@/utils/catchAsync";
 import { campController } from "@/controllers";
@@ -32,7 +32,7 @@ router.use("/:campId/files", campFileRoutes);
 router.get("/", validate(campValidation.index), campController.index);
 router.get(
   "/:campId",
-  guard([campManager, campPublic]),
+  guard([campManager, campActive]),
   validate(campValidation.show),
   campController.show,
 );

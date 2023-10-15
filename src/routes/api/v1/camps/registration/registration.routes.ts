@@ -1,6 +1,6 @@
 import { registrationController } from "@/controllers";
 import { auth, guard, multipart, validate } from "@/middlewares";
-import { campManager, campPublic } from "@/guards";
+import { campActive, campManager } from "@/guards";
 import express from "express";
 import { registrationValidation } from "@/validations";
 import { registrationService } from "@/services";
@@ -41,7 +41,7 @@ router.get(
 );
 router.post(
   "/",
-  guard([campPublic]),
+  guard([campActive]),
   multipart(undefined),
   validate(registrationValidation.store),
   registrationController.store,
