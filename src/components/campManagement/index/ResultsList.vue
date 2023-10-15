@@ -4,7 +4,6 @@
       <results-item-skeleton
         v-for="index in 3"
         :key="index"
-        :public="props.public"
       />
     </template>
 
@@ -22,7 +21,7 @@
       v-else
       :key="camp.id"
       :camp="camp"
-      :public="props.public"
+      :active="props.active"
     />
   </q-list>
 </template>
@@ -37,19 +36,26 @@ const { t } = useI18n();
 
 interface Props {
   camps: Camp[];
-  public?: boolean;
+  active?: boolean;
   loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  public: false,
+  active: false,
   loading: false,
 });
 </script>
 
 <style scoped></style>
 
-<!-- TODO Translate -->
 <i18n lang="yaml" locale="en">
 no_data: 'No data found'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+no_data: 'Keine Daten gefunden'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+no_data: 'Aucune donnée trouvée'
 </i18n>

@@ -10,7 +10,7 @@
         <q-btn-toggle
           v-model="menu"
           :options="[
-            { label: t('menu.public'), value: 'public' },
+            { label: t('menu.active'), value: 'active' },
             { label: t('menu.draft'), value: 'draft' },
           ]"
           class="my-custom-toggle"
@@ -60,13 +60,13 @@
             style="background-color: inherit"
           >
             <q-tab-panel
-              name="public"
+              name="active"
               class="q-pa-none"
             >
               <results-list
-                :camps="publicCamps"
+                :camps="activeCamps"
                 :loading="loading"
-                public
+                active
               />
             </q-tab-panel>
 
@@ -101,18 +101,18 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-type MenuState = 'public' | 'draft';
+type MenuState = 'active' | 'draft';
 
 const { user, loading, error } = storeToRefs(authStore);
 
 const menu = ref<MenuState>(getMenuStateFromQueryParameter());
 
 function getMenuStateFromQueryParameter(): MenuState {
-  if ('public' in route.query) {
-    return route.query.public === '0' ? 'draft' : 'public';
+  if ('active' in route.query) {
+    return route.query.active === '0' ? 'draft' : 'active';
   }
 
-  return 'public';
+  return 'active';
 }
 
 function addAction() {
@@ -121,13 +121,13 @@ function addAction() {
   });
 }
 
-const publicCamps = computed<Camp[]>(() => {
+const activeCamps = computed<Camp[]>(() => {
   if (user.value == undefined) {
     return [];
   }
 
   const camps = user.value.camps as Camp[];
-  return camps.filter((value) => value.public).sort(sortCamps);
+  return camps.filter((value) => value.active).sort(sortCamps);
 });
 
 const draftCamps = computed<Camp[]>(() => {
@@ -136,7 +136,7 @@ const draftCamps = computed<Camp[]>(() => {
   }
 
   const camps = user.value.camps as Camp[];
-  return camps.filter((value) => !value.public).sort(sortCamps);
+  return camps.filter((value) => !value.active).sort(sortCamps);
 });
 
 function sortCamps(a: Camp, b: Camp) {
@@ -155,7 +155,7 @@ actions:
 
 menu:
   draft: 'Draft'
-  public: 'Public'
+  active: 'Active'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -166,7 +166,7 @@ actions:
 
 menu:
   draft: 'Entwurf'
-  public: 'Öffentlich'
+  active: 'Aktiv'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -177,7 +177,7 @@ actions:
 
 menu:
   draft: 'Brouillon'
-  public: 'Public'
+  active: 'Active'
 </i18n>
 
 <style scoped></style>

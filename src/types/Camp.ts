@@ -2,7 +2,8 @@ import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { Identifiable } from 'src/types/Identifiable';
 
 export interface Camp extends Identifiable {
-  public?: boolean;
+  public: boolean;
+  active: boolean;
   countries: string[];
   name: string | Record<string, string>;
   organization: string | Record<string, string>;

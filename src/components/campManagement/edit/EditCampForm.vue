@@ -17,7 +17,8 @@
       :label="t('field.countries')"
       :countries="['de', 'fr', 'pl']"
       :rules="[
-        (val?: string[]) => (val && val.length > 0) || t('validation.countries.empty'),
+        (val?: string[]) =>
+          (val && val.length > 0) || t('validation.countries.empty'),
       ]"
       hide-bottom-space
       outlined
@@ -39,7 +40,7 @@
       :rules="[
         (val?: string) => !!val || t('validation.name.empty'),
         (val: string) => val.length <= 255 || t('validation.name.length'),
-        ]"
+      ]"
       hide-bottom-space
       outlined
       rounded
@@ -57,8 +58,9 @@
       :locales="data.countries"
       :rules="[
         (val?: string) => !!val || t('validation.organization.empty'),
-        (val: string) => val.length <= 255 || t('validation.organization.length'),
-        ]"
+        (val: string) =>
+          val.length <= 255 || t('validation.organization.length'),
+      ]"
       hide-bottom-space
       outlined
       rounded
@@ -127,7 +129,7 @@
       :rules="[
         (val?: number) => !!val || t('validation.maxParticipants.empty'),
         (val: number) => val >= 0 || t('validation.maxParticipants.positive'),
-        ]"
+      ]"
       always
       hide-bottom-space
       outlined
@@ -190,7 +192,7 @@
       :rules="[
         (val?: string) => !!val || t('validation.location.empty'),
         (val: string) => val.length < 255 || t('validation.location.length'),
-        ]"
+      ]"
       hide-bottom-space
       outlined
       rounded
@@ -220,6 +222,14 @@
         <q-icon name="euro" />
       </template>
     </q-input>
+
+    <!-- Public -->
+    <q-toggle
+      v-model="data.public"
+      :label="t('field.public')"
+      :true-value="false"
+      :false-value="true"
+    />
 
     <!-- action -->
     <div class="row justify-end">
@@ -286,7 +296,9 @@ const submitLabel = computed<string>(() => {
 });
 
 function initialValue(): Partial<Camp> {
-  return structuredClone(toRaw(props.modelValue));
+  const camp = structuredClone(toRaw(props.modelValue));
+  camp.public = camp.public ?? true;
+  return camp;
 }
 
 function onSubmit() {
@@ -299,7 +311,6 @@ function onReset() {
 }
 </script>
 
-<!-- TODO Add validation translations -->
 <i18n lang="yaml" locale="en">
 title:
   create: 'Create new camp'
@@ -317,6 +328,7 @@ field:
   maxAge: 'Maximum age'
   location: 'Location'
   price: 'Price'
+  public: 'Enable access via link only, if enabled'
 
 validation:
   countries:
@@ -374,6 +386,7 @@ field:
   maxAge: 'Maximalalter'
   location: 'Ort'
   price: 'Preis'
+  public: 'Zugriff nur über Link ermöglichen, wenn aktiviert'
 
 validation:
   countries:
@@ -431,6 +444,7 @@ field:
   maxAge: 'Âge maximum'
   location: 'Emplacement'
   price: 'Prix'
+  public: "Autoriser l'accès uniquement via un lien, si activé"
 
 validation:
   countries:
@@ -471,7 +485,6 @@ action:
     edit: 'Sauver'
 </i18n>
 
-<!-- TODO -->
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

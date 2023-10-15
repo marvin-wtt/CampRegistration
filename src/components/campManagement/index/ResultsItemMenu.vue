@@ -2,7 +2,7 @@
   <q-menu>
     <q-list style="min-width: 100px">
       <q-item
-        v-if="props.public"
+        v-if="props.active"
         v-close-popup
         clickable
         @click="emit('share')"
@@ -52,37 +52,37 @@
       </q-item>
 
       <q-item
-        v-if="props.public"
+        v-if="props.active"
         v-close-popup
         v-ripple
         class="text-warning"
         clickable
-        @click="emit('unpublish')"
+        @click="emit('enable')"
       >
         <q-item-section avatar>
           <q-icon name="unpublished" />
         </q-item-section>
         <q-item-section>
           <q-item-label>
-            {{ t('action.unpublish') }}
+            {{ t('action.disable') }}
           </q-item-label>
         </q-item-section>
       </q-item>
 
       <q-item
-        v-if="!props.public"
+        v-if="!props.active"
         v-close-popup
         v-ripple
         class="text-warning"
         clickable
-        @click="emit('publish')"
+        @click="emit('enable')"
       >
         <q-item-section avatar>
           <q-icon name="publish" />
         </q-item-section>
         <q-item-section>
           <q-item-label>
-            {{ t('action.publish') }}
+            {{ t('action.enable') }}
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -90,7 +90,7 @@
       <q-separator />
 
       <q-item
-        v-if="!props.camp.public"
+        v-if="!props.camp.active"
         v-close-popup
         class="text-negative"
         clickable
@@ -116,31 +116,52 @@ const { t } = useI18n();
 
 interface Props {
   camp: Camp;
-  public?: boolean;
+  active?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  public: false,
+  active: false,
 });
 
 const emit = defineEmits<{
   (e: 'share'): void;
   (e: 'results'): void;
   (e: 'edit'): void;
-  (e: 'publish'): void;
-  (e: 'unpublish'): void;
+  (e: 'enable'): void;
+  (e: 'disable'): void;
   (e: 'delete'): void;
 }>();
 </script>
 
-<!-- TODO Translate -->
 <i18n lang="yaml" locale="en">
 action:
   create: 'Create new'
   delete: 'Delete'
   edit: 'Edit'
-  publish: 'Publish'
+  enable: 'Enable'
   campManagement: 'Manage'
   share: 'Share'
-  unpublish: 'Unpublish'
+  disable: 'Disable'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+action:
+  create: 'Neu erstellen'
+  delete: 'Löschen'
+  edit: 'Bearbeiten'
+  enable: 'Aktivieren'
+  campManagement: 'Verwalten'
+  share: 'Teilen'
+  disable: 'Deaktivieren'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+action:
+  create: 'Créer'
+  delete: 'Supprimer'
+  edit: 'Éditer'
+  enable: 'Activer'
+  campManagement: 'Gérer'
+  share: 'Partager'
+  disable: 'Désactiver'
 </i18n>

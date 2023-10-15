@@ -9,7 +9,7 @@
     <q-item-section side>
       <div class="q-gutter-xs">
         <q-btn
-          v-if="props.public"
+          v-if="props.active"
           :label="t('action.share')"
           class="gt-xs"
           dense
@@ -21,17 +21,17 @@
         />
 
         <q-btn
-          v-if="!props.public"
-          :label="t('action.publish')"
+          v-if="!props.active"
+          :label="t('action.enable')"
           class="gt-sm"
           color="warning"
           dense
           flat
           icon="publish"
           rounded
-          :loading="publishLoading"
-          :disable="actionLoading && !unpublishLoading"
-          @click="publishAction"
+          :loading="enableLoading"
+          :disable="actionLoading && !disableLoading"
+          @click="enableAction"
         />
 
         <q-btn
@@ -58,21 +58,21 @@
         />
 
         <q-btn
-          v-if="props.public"
-          :label="t('action.unpublish')"
+          v-if="props.active"
+          :label="t('action.disable')"
           class="gt-sm"
           color="warning"
           dense
           flat
           icon="unpublished"
           rounded
-          :loading="unpublishLoading"
-          :disable="actionLoading && !unpublishLoading"
-          @click="unpublishAction"
+          :loading="disableLoading"
+          :disable="actionLoading && !disableLoading"
+          @click="disableAction"
         />
 
         <q-btn
-          v-if="!props.public"
+          v-if="!props.active"
           :label="t('action.delete')"
           class="gt-sm"
           color="negative"
@@ -95,13 +95,13 @@
         >
           <results-item-menu
             :camp="props.camp"
-            :public="props.public"
+            :active="props.active"
             @edit="editAction"
             @delete="deleteAction"
             @share="shareAction"
             @results="resultsAction"
-            @publish="publishAction"
-            @unpublish="unpublishAction"
+            @enable="enableAction"
+            @disable="disableAction"
           />
         </q-btn>
       </div>
@@ -130,21 +130,21 @@ const { to } = useObjectTranslation();
 
 interface Props {
   camp: Camp;
-  public?: boolean;
+  active?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  public: false,
+  active: false,
 });
 
 const resultLoading = ref<boolean>(false);
-const publishLoading = ref<boolean>(false);
-const unpublishLoading = ref<boolean>(false);
+const enableLoading = ref<boolean>(false);
+const disableLoading = ref<boolean>(false);
 const editLoading = ref<boolean>(false);
 const deleteLoading = ref<boolean>(false);
 
 const actionLoading = computed<boolean>(() => {
-  return publishLoading.value || unpublishLoading.value || deleteLoading.value;
+  return enableLoading.value || disableLoading.value || deleteLoading.value;
 });
 
 function resultsAction() {
@@ -198,7 +198,6 @@ function editAction() {
 }
 
 function deleteAction() {
-  // TODO Maybe use explicit confirm with camp name
   quasar
     .dialog({
       component: SafeDeleteDialog,
@@ -217,19 +216,19 @@ function deleteAction() {
     });
 }
 
-function publishAction() {
-  withLoading(publishLoading, async () => {
+function enableAction() {
+  withLoading(enableLoading, async () => {
     await capsStore.updateEntry(props.camp.id, {
-      public: true,
+      active: true,
     });
     await authStore.fetchUser();
   });
 }
 
-function unpublishAction() {
-  withLoading(unpublishLoading, async () => {
+function disableAction() {
+  withLoading(disableLoading, async () => {
     await capsStore.updateEntry(props.camp.id, {
-      public: false,
+      active: false,
     });
     await authStore.fetchUser();
   });
@@ -249,10 +248,10 @@ action:
   create: 'Create new'
   delete: 'Delete'
   edit: 'Edit'
-  publish: 'Publish'
+  enable: 'Enable'
   results: 'Results'
   share: 'Share'
-  unpublish: 'Unpublish'
+  disable: 'Disable'
 
 dialog:
   delete:
@@ -270,10 +269,10 @@ action:
   create: 'Neu erstellen'
   delete: 'Löschen'
   edit: 'Bearbeiten'
-  publish: 'Veröffentlichen'
+  enable: 'Aktivieren'
   results: 'Ergebnisse'
   share: 'Teilen'
-  unpublish: 'Nicht veröffentlichen'
+  disable: 'Deaktivieren'
 
 dialog:
   delete:
@@ -291,10 +290,10 @@ action:
   create: 'Créer un nouveau'
   delete: 'Supprimer'
   edit: 'Modifier'
-  publish: 'Publier'
+  enable: 'Activer'
   results: 'Résultats'
   share: 'Partager'
-  unpublish: 'Ne pas publier'
+  disable: 'Désactiver'
 
 dialog:
   delete:
