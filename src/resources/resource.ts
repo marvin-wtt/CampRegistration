@@ -10,8 +10,8 @@ export interface JsonCollection<T> {
 
 export const resource = <T>(data: T, meta: object = {}): JsonResource<T> => {
   return {
-    meta: meta,
-    data: data,
+    meta,
+    data,
   };
 };
 
@@ -20,7 +20,7 @@ export const collection = <T>(
   meta: object = {},
 ): JsonCollection<T> => {
   return {
-    meta: meta,
-    data: data,
+    meta,
+    data,
   };
 };
