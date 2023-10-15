@@ -103,14 +103,14 @@ onMounted(async () => {
 
   creator.saveSurveyFunc = (
     saveNo: number,
-    callback: (saveNo: number, success: boolean) => void
+    callback: (saveNo: number, success: boolean) => void,
   ) => {
     campDetailsStore
       .updateData(
         {
           form: creator.JSON,
         },
-        'none'
+        'none',
       )
       .then(() => {
         callback(saveNo, true);

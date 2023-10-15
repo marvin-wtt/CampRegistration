@@ -23,7 +23,7 @@ export function useAPIService() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isAPIServiceError = <T = any, D = any>(
-  error: unknown
+  error: unknown,
 ): error is AxiosError<T, D> => {
   return axios.isAxiosError(error);
 };

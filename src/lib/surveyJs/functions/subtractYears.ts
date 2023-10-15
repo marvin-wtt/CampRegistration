@@ -1,4 +1,3 @@
-
 const subtractYears = (params: unknown[]): Date | string => {
   if (params.length !== 2) {
     return 'Error';
@@ -23,6 +22,6 @@ const subtractYears = (params: unknown[]): Date | string => {
   newDate.setFullYear(newDate.getFullYear() - years);
 
   return newDate;
-}
+};
 
 export default subtractYears;

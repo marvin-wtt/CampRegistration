@@ -141,7 +141,7 @@ function combineDateWithTime(date?: string, time?: string): string | undefined {
       timeDate.getUTCHours(),
       timeDate.getUTCMinutes(),
       0,
-      0
+      0,
     );
   } else {
     combinedDateTime.setHours(0, 0, 0, 0);

@@ -8,5 +8,4 @@ export function formatUtcDateTime(timestamp: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
-
 }

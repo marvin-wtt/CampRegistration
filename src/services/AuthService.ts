@@ -7,7 +7,7 @@ export function useAuthService() {
   async function login(
     email: string,
     password: string,
-    remember = false
+    remember = false,
   ): Promise<LoginResponse> {
     const response = await api.post('auth/login', {
       email: email,
@@ -33,7 +33,7 @@ export function useAuthService() {
   async function register(
     name: string,
     email: string,
-    password: string
+    password: string,
   ): Promise<void> {
     const response = await api.post('auth/register', {
       name,
@@ -55,7 +55,7 @@ export function useAuthService() {
   async function resetPassword(
     token: string,
     email: string,
-    password: string
+    password: string,
   ): Promise<void> {
     const response = await api.post('auth/reset-password', {
       token: token,

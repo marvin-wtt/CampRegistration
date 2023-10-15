@@ -15,7 +15,7 @@ export function hasMessage(e: unknown): e is { message: string } {
 }
 
 export function hasResponseStatusText(
-  e: unknown
+  e: unknown,
 ): e is { response: { statusText: string } } {
   return (
     hasResponse(e) &&
@@ -26,7 +26,7 @@ export function hasResponseStatusText(
 }
 
 export function hasResponseData(
-  e: unknown
+  e: unknown,
 ): e is { response: { data: object } } {
   return (
     hasResponse(e) &&
@@ -36,7 +36,7 @@ export function hasResponseData(
 }
 
 export function hasResponseDataErrors(
-  e: unknown
+  e: unknown,
 ): e is { response: { data: { errors: object } } } {
   return (
     hasResponseData(e) &&

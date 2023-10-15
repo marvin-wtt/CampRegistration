@@ -55,7 +55,7 @@ import {
   parsed,
   parseTime,
   QCalendar,
-  Timestamp
+  Timestamp,
 } from '@quasar/quasar-ui-qcalendar';
 import { computed, CSSProperties, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -135,7 +135,7 @@ const maxDays = computed<number>(() => {
 
   return calculateDaysBetween(
     campDetailsStore.data.startAt,
-    campDetailsStore.data.endAt
+    campDetailsStore.data.endAt,
   );
 });
 
@@ -157,11 +157,17 @@ function badgeClasses(event: ProgramEvent, type: string) {
   };
 }
 
-function badgeStyles(event: ProgramEvent, type: string, timeStartPos?, timeDurationHeight?) {
+function badgeStyles(
+  event: ProgramEvent,
+  type: string,
+  timeStartPos?,
+  timeDurationHeight?,
+) {
   const s: CSSProperties = {};
   if (isCssColor(event.backgroundColor)) {
     s.backgroundColor = event.backgroundColor;
-    s.color = colors.luminosity(event.backgroundColor) > 0.5 ? 'black' : 'white';
+    s.color =
+      colors.luminosity(event.backgroundColor) > 0.5 ? 'black' : 'white';
   }
   if (timeStartPos) {
     // don't clamp position to 0px
@@ -183,7 +189,7 @@ function badgeStyles(event: ProgramEvent, type: string, timeStartPos?, timeDurat
   return s;
 }
 
-function showEvent (event: ProgramEvent) {
+function showEvent(event: ProgramEvent) {
   // TODO Open dialog
 }
 
@@ -382,13 +388,13 @@ function getEvents(date: string): ProgramEvent[] {
           eventTimes[j].start,
           eventTimes[i].start,
           eventTimes[i].end,
-          true
+          true,
         ) ||
         isBetweenDates(
           eventTimes[j].end,
           eventTimes[i].start,
           eventTimes[i].end,
-          true
+          true,
         );
       // Check if start and end are equal. This is considered as between but
       //  should be ignored here.

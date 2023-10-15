@@ -23,7 +23,7 @@ export interface Dimension {
 export function scaleImage(
   input: Dimension,
   output: Dimension,
-  orientation: 'portrait' | 'landscape'
+  orientation: 'portrait' | 'landscape',
 ): Dimension {
   let dim;
   if (orientation === 'portrait') {
@@ -83,7 +83,7 @@ function normalizeMargin(margin: number | number[]): number[] {
 
 export async function createPDF(
   node: HTMLElement,
-  exportOptions?: ExportOptions
+  exportOptions?: ExportOptions,
 ) {
   // Assign default parameters
   exportOptions ??= {};
@@ -151,7 +151,7 @@ export async function createPDF(
 
 export async function createImage(
   node: Node,
-  options: ExportOptions
+  options: ExportOptions,
 ): Promise<HTMLImageElement> {
   const width = options.captureWidth ?? 0;
   const height = options.captureHeight ?? 0;

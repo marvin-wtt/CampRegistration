@@ -21,7 +21,7 @@ const value = computed(() => {
 });
 
 function isStringOrRecord(
-  value: unknown
+  value: unknown,
 ): value is string | Record<string, string> {
   return (
     typeof value === 'string' || (typeof value === 'object' && value !== null)

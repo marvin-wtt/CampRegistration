@@ -5,7 +5,10 @@ interface SelectData {
   label: string;
   value: string;
 }
-function showPlainData(data: IQuestionPlainData[], parentName = ''): SelectData[] {
+function showPlainData(
+  data: IQuestionPlainData[],
+  parentName = '',
+): SelectData[] {
   return data.flatMap((value) => {
     if (value.questionType === 'expression') {
       return [];
@@ -51,9 +54,9 @@ export function extractFormFields(form: object): SelectData[] {
     includeValues: false,
     calculations: [
       {
-        propertyName: 'valueName'
-      }
-    ]
+        propertyName: 'valueName',
+      },
+    ],
   });
 
   return showPlainData(data);

@@ -151,7 +151,7 @@ const components = () => {
   TableComponentRegistry.register(
     'permission_leave',
     PermissionLeaveTableCell,
-    {}
+    {},
   );
   TableComponentRegistry.register('phone_number', PhoneNumberTableCell, {
     label: {
@@ -189,7 +189,7 @@ const components = () => {
         de: 'Übersetzter Wert',
         fr: 'Valeur traduite',
       },
-    }
+    },
   );
 };
 

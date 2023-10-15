@@ -199,7 +199,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const template = reactive<TableTemplate>(
-  structuredClone(toRaw(props.template))
+  structuredClone(toRaw(props.template)),
 );
 
 const sortByOptions = computed(() => {

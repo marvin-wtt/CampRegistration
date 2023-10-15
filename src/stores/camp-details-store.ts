@@ -58,7 +58,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
   async function updateData(
     newData: Partial<Camp>,
-    notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress'
+    notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress',
   ) {
     const campId =
       newData.id ?? data.value?.id ?? (route.params.camp as string);

@@ -24,4 +24,3 @@ export interface ResponseRoom extends Identifiable {
 export type RoomCreateData = Pick<Room, 'name' | 'capacity'>;
 
 export type RoomUpdateData = Partial<RoomCreateData>;
-

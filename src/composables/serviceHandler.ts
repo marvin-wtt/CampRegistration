@@ -32,7 +32,7 @@ export function useServiceHandler<T>(storeName: string) {
 
   function defaultProgressOptions(
     operation: string,
-    options?: ProgressOptions
+    options?: ProgressOptions,
   ): Required<ProgressOptions> {
     // Set defaults
     options = options ?? {};
@@ -79,7 +79,7 @@ export function useServiceHandler<T>(storeName: string) {
 
   function defaultSuccessOptions(
     operation: string,
-    options?: QNotifyCreateOptions
+    options?: QNotifyCreateOptions,
   ): QNotifyCreateOptions {
     //
     const successOptions = options ?? {};
@@ -93,7 +93,7 @@ export function useServiceHandler<T>(storeName: string) {
 
   function defaultErrorOptions(
     operation: string,
-    options?: QNotifyCreateOptions
+    options?: QNotifyCreateOptions,
   ): QNotifyCreateOptions {
     //
     const errorOptions = options ?? {};
@@ -108,7 +108,7 @@ export function useServiceHandler<T>(storeName: string) {
   async function withProgressNotification<T>(
     operation: string,
     fn: (notify: (props?: QNotifyUpdateOptions) => void) => Promise<T>,
-    options?: ProgressOptions
+    options?: ProgressOptions,
   ): Promise<boolean> {
     // Set defaults
     const opt = defaultProgressOptions(operation, options);
@@ -132,7 +132,7 @@ export function useServiceHandler<T>(storeName: string) {
   function withMultiProgressNotification<T>(
     promises: Promise<T>[],
     operation: string,
-    options?: ProgressOptions
+    options?: ProgressOptions,
   ): Promise<boolean> {
     return withProgressNotification(
       operation,
@@ -142,7 +142,7 @@ export function useServiceHandler<T>(storeName: string) {
           promise.then(() => {
             doneCounter++;
             const percentage = Math.floor(
-              (doneCounter / promises.length) * 100
+              (doneCounter / promises.length) * 100,
             );
 
             notify({
@@ -153,14 +153,14 @@ export function useServiceHandler<T>(storeName: string) {
 
         await Promise.all(promises);
       },
-      options
+      options,
     );
   }
 
   async function withResultNotification<T>(
     operation: string,
     fn: () => Promise<T>,
-    options?: ResultOptions
+    options?: ResultOptions,
   ): Promise<boolean> {
     const opt = defaultResultOptions(operation, options);
 
@@ -182,7 +182,7 @@ export function useServiceHandler<T>(storeName: string) {
   async function withErrorNotification<T>(
     operation: string,
     fn: () => Promise<T>,
-    options?: QNotifyCreateOptions
+    options?: QNotifyCreateOptions,
   ): Promise<boolean> {
     const opt = defaultErrorOptions(operation, options);
 
@@ -199,27 +199,37 @@ export function useServiceHandler<T>(storeName: string) {
     }
   }
 
-  function showErrorNotification(operation: string, options?: QNotifyCreateOptions) {
+  function showErrorNotification(
+    operation: string,
+    options?: QNotifyCreateOptions,
+  ) {
     const opt = defaultErrorOptions(operation, options);
     quasar.notify(opt);
   }
 
-  function showSuccessNotification(operation: string, options?: QNotifyCreateOptions) {
+  function showSuccessNotification(
+    operation: string,
+    options?: QNotifyCreateOptions,
+  ) {
     const opt = defaultSuccessOptions(operation, options);
     quasar.notify(opt);
   }
 
-  async function forceFetch(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
+  async function forceFetch(
+    fn: () => Promise<T> | Promise<undefined>,
+  ): Promise<void> {
     await errorOnFailure(fn);
     needsUpdate.value = false;
   }
 
   function asyncUpdate(fn: () => Promise<unknown>) {
-   pendingRequests.value++;
-   fn().finally(() => pendingRequests.value--);
+    pendingRequests.value++;
+    fn().finally(() => pendingRequests.value--);
   }
 
-  async function errorOnFailure(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
+  async function errorOnFailure(
+    fn: () => Promise<T> | Promise<undefined>,
+  ): Promise<void> {
     isLoading.value = true;
     error.value = null;
     data.value = undefined;
@@ -233,7 +243,9 @@ export function useServiceHandler<T>(storeName: string) {
     }
   }
 
-  async function lazyFetch(fn: () => Promise<T> | Promise<undefined>): Promise<void> {
+  async function lazyFetch(
+    fn: () => Promise<T> | Promise<undefined>,
+  ): Promise<void> {
     if (!needsUpdate.value) {
       return;
     }
@@ -242,7 +254,7 @@ export function useServiceHandler<T>(storeName: string) {
   }
 
   function checkNotNullWithError(
-    param: string | undefined | null
+    param: string | undefined | null,
   ): string | never {
     if (param && param.length > 0) {
       return param;
@@ -251,14 +263,14 @@ export function useServiceHandler<T>(storeName: string) {
       defaultErrorOptions('', {
         message: 'Internal error',
         caption: 'Invalid parameter(s).',
-      })
+      }),
     );
 
     throw new Error(`Invalid parameter(s) at ${storeName} store.`);
   }
 
   function checkNotNullWithNotification(
-    param: string | undefined | null
+    param: string | undefined | null,
   ): string | never {
     if (param && param.length > 0) {
       return param;
@@ -271,7 +283,9 @@ export function useServiceHandler<T>(storeName: string) {
   function extractErrorText(err: unknown): string {
     if (!isAPIServiceError(err)) {
       // TODO Translate
-      return hasMessage(err) ? err.message : 'Service temporary unavailable. Please try again later.';
+      return hasMessage(err)
+        ? err.message
+        : 'Service temporary unavailable. Please try again later.';
     }
 
     if (err.response) {
@@ -292,7 +306,7 @@ export function useServiceHandler<T>(storeName: string) {
   }
 
   function handlerByType(
-    type: 'progress' | 'result' | 'error' | 'none'
+    type: 'progress' | 'result' | 'error' | 'none',
   ): (operation: string, fn: () => Promise<void>) => Promise<boolean> {
     switch (type) {
       case 'progress':
@@ -310,7 +324,7 @@ export function useServiceHandler<T>(storeName: string) {
           } catch (ignored: unknown) {
             return false;
           }
-        }
+        };
     }
   }
 

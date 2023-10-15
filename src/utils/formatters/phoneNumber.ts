@@ -1,6 +1,6 @@
 export function formatPhoneNumber(
   phoneNumber: string,
-  country?: string
+  country?: string,
 ): string {
   if (
     !phoneNumber.match(/^([+0])\d[\d\-\/\s]+$/g) ||
@@ -15,14 +15,14 @@ export function formatPhoneNumber(
   if (phoneNumber.startsWith('+')) {
     return formatForCountry(
       phoneNumber.substring(3),
-      phoneNumber.substring(1, 3)
+      phoneNumber.substring(1, 3),
     );
   }
 
   if (phoneNumber.startsWith('00')) {
     return formatForCountry(
       phoneNumber.substring(4),
-      phoneNumber.substring(2, 4)
+      phoneNumber.substring(2, 4),
     );
   }
 
@@ -31,7 +31,7 @@ export function formatPhoneNumber(
 
 function formatForCountry(
   phoneNumber: string,
-  countryCode: string | undefined
+  countryCode: string | undefined,
 ): string {
   let start = '';
   let end = phoneNumber;

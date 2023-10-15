@@ -1,6 +1,6 @@
 export function formatBytes(bytes: number, decimals?: number) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  if(bytes == 0) {
+  if (bytes == 0) {
     return `${bytes} ${sizes[0]}`;
   }
   const k = 1024;

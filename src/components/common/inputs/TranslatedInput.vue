@@ -109,7 +109,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (
     e: 'update:modelValue',
-    value: string | number | Translations | undefined
+    value: string | number | Translations | undefined,
   ): void;
 }>();
 
@@ -149,7 +149,7 @@ watch(
       useTranslations.value && enabled.value ? translations.value : value.value;
     emit('update:modelValue', v);
   },
-  { deep: true }
+  { deep: true },
 );
 
 function clearTranslation(locale: string) {
@@ -168,7 +168,7 @@ watch(
       translations.value = newValue;
       useTranslations.value = true;
     }
-  }
+  },
 );
 </script>
 

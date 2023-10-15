@@ -27,7 +27,7 @@ const props = defineProps<Props>();
 const series = computed<number[]>(() => {
   return props.countries.map(
     (country) =>
-      props.participants.filter((value) => value.country === country).length
+      props.participants.filter((value) => value.country === country).length,
   );
 });
 

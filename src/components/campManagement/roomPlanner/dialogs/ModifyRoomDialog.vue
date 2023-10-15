@@ -31,7 +31,10 @@
             v-model.number="modifiedRoom.capacity"
             type="number"
             :label="t('fields.capacity.label')"
-            :rules="[(val: number | undefined) => !!val || t('fields.capacity.rules.required')]"
+            :rules="[
+              (val: number | undefined) =>
+                !!val || t('fields.capacity.rules.required'),
+            ]"
             outlined
             rounded
           />

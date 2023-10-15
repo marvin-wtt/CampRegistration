@@ -54,7 +54,7 @@ const maxAge = computed<number>(() => {
 const categories = computed<number[]>(() => {
   return Array.from(
     { length: maxAge.value - minAge.value + 1 },
-    (_, index) => index + minAge.value
+    (_, index) => index + minAge.value,
   );
 });
 
@@ -85,8 +85,8 @@ const series = computed<SeriesEntry[]>(() => {
     categories.value.forEach((age) => {
       data.push(
         props.participants.filter(
-          (value) => value.age === age && value.country === country
-        ).length
+          (value) => value.age === age && value.country === country,
+        ).length,
       );
     });
 

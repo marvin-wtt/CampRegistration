@@ -17,7 +17,7 @@ const date = computed(() => {
   }
 
   return d(value, {
-    dateStyle: 'medium'
+    dateStyle: 'medium',
   });
 });
 </script>
