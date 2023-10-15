@@ -110,21 +110,23 @@ function createModel(id: string, form: object): SurveyModel {
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
-    const fileOptions: {
+    interface FileOption {
       file: Pick<File, 'name' | 'type' | 'size'>;
       content?: unknown;
-    }[] = [];
+    }
 
-    options.files.forEach((file) => {
+    const readFileAsync = async (file: File): Promise<FileOption> => {
       const uuid = crypto.randomUUID();
-
-      filesStorage.set(uuid, file);
-
-      fileOptions.push({
+      const textContent = await readFile(file);
+      return {
         file: { name: uuid, type: file.type, size: file.size },
-        // content: 'http://localhost/uuid', // TODO
-      });
-    });
+        content: textContent,
+      };
+    };
+
+    const fileOptions: FileOption[] = await Promise.all<FileOption>(
+      options.files.map((file) => readFileAsync(file)),
+    );
 
     options.callback('success', fileOptions);
   });
@@ -186,6 +188,17 @@ function createModel(id: string, form: object): SurveyModel {
   });
 
   return survey;
+}
+
+function readFile(file: File) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => {
+      resolve(fileReader.result);
+    };
+    fileReader.onerror = reject;
+    fileReader.readAsDataURL(file);
+  });
 }
 
 function mapFileQuestionValues(survey: SurveyModel) {
