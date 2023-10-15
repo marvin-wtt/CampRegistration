@@ -1,4 +1,8 @@
-import { Registration } from 'src/types/Registration';
+import {
+  Registration,
+  RegistrationCreateData,
+  RegistrationUpdateData,
+} from 'src/types/Registration';
 import { api } from 'boot/axios';
 
 export function useRegistrationService() {
@@ -21,7 +25,7 @@ export function useRegistrationService() {
 
   async function createRegistration(
     campId: string,
-    data: unknown,
+    data: RegistrationCreateData,
   ): Promise<Registration> {
     const headers = {
       'Content-Type': 'multipart/form-data',
@@ -37,7 +41,7 @@ export function useRegistrationService() {
   async function updateRegistration(
     campId: string,
     registrationId: string,
-    data: Partial<Registration>,
+    data: RegistrationUpdateData,
   ): Promise<Registration> {
     const response = await api.put(
       `camps/${campId}/registrations/${registrationId}/`,

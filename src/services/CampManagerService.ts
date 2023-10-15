@@ -1,5 +1,6 @@
 import { api } from 'boot/axios';
-import { CampManager } from 'src/types/CampManager';
+import { CampManager, CampManagerUpdateData } from 'src/types/CampManager';
+import { Camp } from 'src/types/Camp';
 
 export function useCampManagerService() {
   async function fetchCampManagers(campId: string): Promise<CampManager[]> {
@@ -10,7 +11,7 @@ export function useCampManagerService() {
 
   async function createCampManager(
     campId: string,
-    email: string
+    email: string,
   ): Promise<CampManager> {
     const response = await api.post(`camps/${campId}/managers/`, {
       email,
@@ -19,16 +20,24 @@ export function useCampManagerService() {
     return response.data.data;
   }
 
-  async function deleteCampManager(
+  async function updateCampManager(
     campId: string,
-    userId: string
-  ): Promise<void> {
-    await api.delete(`camps/${campId}/managers/${userId}/`);
+    id: string,
+    data: CampManagerUpdateData,
+  ): Promise<Camp> {
+    const response = await api.patch(`camps/${campId}/managers/${id}/`, data);
+
+    return response.data.data;
+  }
+
+  async function deleteCampManager(campId: string, id: string): Promise<void> {
+    await api.delete(`camps/${campId}/managers/${id}/`);
   }
 
   return {
     fetchCampManagers,
     createCampManager,
+    updateCampManager,
     deleteCampManager,
   };
 }

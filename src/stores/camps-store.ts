@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { Camp } from 'src/types/Camp';
+import { Camp, CampCreateData } from 'src/types/Camp';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
@@ -30,7 +30,7 @@ export const useCampsStore = defineStore('camps', () => {
     });
   }
 
-  async function createEntry(createData: Camp): Promise<void> {
+  async function createEntry(createData: CampCreateData): Promise<void> {
     const success = await withProgressNotification('update', async () => {
       const newCamp = await apiService.createCamp(createData);
 

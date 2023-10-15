@@ -1,4 +1,4 @@
-import { Camp } from 'src/types/Camp';
+import { Camp, CampCreateData, CampUpdateData } from 'src/types/Camp';
 import { api } from 'boot/axios';
 
 export function useCampService() {
@@ -14,13 +14,13 @@ export function useCampService() {
     return response.data.data;
   }
 
-  async function createCamp(data: Camp): Promise<Camp> {
+  async function createCamp(data: CampCreateData): Promise<Camp> {
     const response = await api.post('camps/', data);
 
     return response.data.data;
   }
 
-  async function updateCamp(id: string, data: Partial<Camp>): Promise<Camp> {
+  async function updateCamp(id: string, data: CampUpdateData): Promise<Camp> {
     const response = await api.patch(`camps/${id}/`, data);
 
     return response.data.data;

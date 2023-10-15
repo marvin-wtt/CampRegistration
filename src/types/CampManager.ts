@@ -6,3 +6,7 @@ export interface CampManager extends Identifiable {
   role: string;
   status: string;
 }
+
+export type CampManagerCreateData = Pick<CampManager, 'role'>;
+
+export type CampManagerUpdateData = Partial<CampManagerCreateData>;

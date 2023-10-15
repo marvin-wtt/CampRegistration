@@ -1,5 +1,5 @@
 import { api } from 'boot/axios';
-import { User } from 'src/types/User';
+import { User, UserCreateData, UserUpdateData } from 'src/types/User';
 
 export function useUserService() {
   async function fetchUsers(): Promise<User[]> {
@@ -14,11 +14,11 @@ export function useUserService() {
     return response.data.data;
   }
 
-  async function createUser(data: User): Promise<void> {
+  async function createUser(data: UserCreateData): Promise<void> {
     await api.post('users/', data);
   }
 
-  async function updateUser(id: string, data: Partial<User>): Promise<void> {
+  async function updateUser(id: string, data: UserUpdateData): Promise<void> {
     await api.patch(`users/${id}/`, data);
   }
 

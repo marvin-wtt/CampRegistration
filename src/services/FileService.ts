@@ -26,7 +26,7 @@ export function useFileService() {
   }
 
   async function downloadCampFile(campId: string, id: string) {
-    // TODO
+    // TODO How to start a browser download in the same tab?
   }
 
   function getCampFileUrl(campId: string, id: string): string {

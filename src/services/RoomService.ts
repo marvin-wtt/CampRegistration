@@ -1,5 +1,10 @@
 import { api } from 'boot/axios';
-import { ResponseRoom, Room } from 'src/types/Room';
+import {
+  ResponseRoom,
+  Room,
+  RoomCreateData,
+  RoomUpdateData,
+} from 'src/types/Room';
 
 export function useRoomService() {
   async function fetchRooms(campId: string): Promise<ResponseRoom[]> {
@@ -16,7 +21,7 @@ export function useRoomService() {
 
   async function createRoom(
     campId: string,
-    data: Pick<Room, 'name' | 'capacity'>
+    data: RoomCreateData,
   ): Promise<ResponseRoom> {
     const response = await api.post(`camps/${campId}/rooms/`, {
       name: data.name,
@@ -29,7 +34,7 @@ export function useRoomService() {
   async function updateRoom(
     campId: string,
     id: string,
-    data: Partial<Room>
+    data: RoomUpdateData,
   ): Promise<Room> {
     const response = await api.patch(`camps/${campId}/rooms/${id}/`, data);
 
@@ -44,7 +49,7 @@ export function useRoomService() {
     campId: string,
     roomId: string,
     bedId: string,
-    registrationId: string | null
+    registrationId: string | null,
   ) {
     await api.put(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`, {
       registrationId,

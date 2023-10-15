@@ -16,3 +16,7 @@ export interface Camp extends Identifiable {
   price: string;
   form: SurveyJSCampData;
 }
+
+export type CampCreateData = Omit<Camp, 'id'>;
+
+export type CampUpdateData = Partial<CampCreateData>;

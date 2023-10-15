@@ -18,3 +18,7 @@ export interface TableTemplate extends Identifiable {
   sortDirection?: 'asc' | 'desc';
   generated?: boolean;
 }
+
+export type TemplateCreateData = Omit<TableTemplate, 'id'>;
+
+export type TemplateUpdateData = Partial<TemplateCreateData>;

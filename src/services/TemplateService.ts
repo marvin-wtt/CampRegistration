@@ -1,9 +1,13 @@
-import { TableTemplate } from 'src/types/TableTemplate';
+import {
+  TableTemplate,
+  TemplateCreateData,
+  TemplateUpdateData,
+} from 'src/types/TableTemplate';
 import { api } from 'boot/axios';
 
 export function useTemplateService() {
   async function fetchResultTemplates(
-    campId: string
+    campId: string,
   ): Promise<TableTemplate[]> {
     const response = await api.get(`camps/${campId}/templates/`);
 
@@ -12,7 +16,7 @@ export function useTemplateService() {
 
   async function fetchResultTemplate(
     campId: string,
-    templateId: string
+    templateId: string,
   ): Promise<TableTemplate[]> {
     const response = await api.get(`camps/${campId}/templates/${templateId}/`);
 
@@ -21,7 +25,7 @@ export function useTemplateService() {
 
   async function createResultTemplate(
     campId: string,
-    data: TableTemplate
+    data: TemplateCreateData,
   ): Promise<void> {
     await api.post(`camps/${campId}/templates/`, data);
   }
@@ -29,14 +33,14 @@ export function useTemplateService() {
   async function updateResultTemplate(
     campId: string,
     templateId: string,
-    data: Partial<TableTemplate>
+    data: TemplateUpdateData,
   ): Promise<void> {
     await api.put(`camps/${campId}/templates/${templateId}/`, data);
   }
 
   async function deleteResultTemplate(
     campId: string,
-    templateId: string
+    templateId: string,
   ): Promise<void> {
     await api.delete(`camps/${campId}/templates/${templateId}/`);
   }
