@@ -21,7 +21,7 @@ const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
     Object.entries(groupBy(registration.files, (i) => i.field ?? "files")).map(
       ([field, files]) => [
         field,
-        files.map((file) => fileUrl + file.name).join(";"),
+        files.map((file) => fileUrl + file.id).join(";"),
       ],
     ),
   );
@@ -30,13 +30,13 @@ const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
 const registrationResource = (registration: RegistrationWithBedAndFiles) => {
   const data = typeof registration.data === "object" ? registration.data : {};
 
-  const fileData = extractFiles(registration);
+  const files = extractFiles(registration);
   const room = registration.bed ? registration.bed.room.name : null;
 
   return {
-    ...data,
-    ...fileData,
     id: registration.id,
+    data,
+    files,
     room,
     // Use snake case because form keys should be snake case too
     updated_at: registration.updatedAt,

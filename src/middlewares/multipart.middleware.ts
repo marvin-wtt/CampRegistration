@@ -6,7 +6,6 @@ import dynamicMiddleware from "@/middlewares/dynamic.middleware";
 import { randomUUID } from "crypto";
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
-type FileFormat = Record<string, Express.Multer.File[]>;
 
 const multiPart = (fields: ParameterType) => {
   return dynamicMiddleware([upload(fields), formatterMiddleware]);
@@ -74,60 +73,12 @@ const formatterMiddleware = (
   // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
   req.body = removePrototype(req.body);
 
-  // Format files so that they are always grouped by the field name
-  req.files = Array.isArray(req.files)
-    ? formatFileArray(req.files)
-    : typeof req.files === "object"
-    ? formatFileGroup(req.files)
-    : req.files;
-
   next();
 };
 
 const removePrototype = <T>(obj: T): T => {
-  if (obj === null || typeof obj !== "object") {
-    return obj;
-  }
-
-  const newObj = {} as T;
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      newObj[key] = removePrototype(obj[key]);
-    }
-  }
-
-  return newObj;
-};
-
-const formatFieldName = (name: string): string => {
-  // Remove brackets if they exist
-  return name.replace(/\[]$/, "");
-};
-
-const formatFileArray = (files: Express.Multer.File[]): FileFormat => {
-  const groupedFiles: FileFormat = {};
-  files.forEach((file) => {
-    const fieldName = formatFieldName(file.fieldname);
-    file.fieldname = fieldName;
-    // Group files by field name
-    if (!groupedFiles[fieldName]) {
-      groupedFiles[fieldName] = [];
-    }
-    groupedFiles[fieldName].push(file);
-  });
-
-  return groupedFiles;
-};
-
-const formatFileGroup = (filesObject: FileFormat): FileFormat => {
-  return Object.keys(filesObject).reduce((acc, key) => {
-    const files = filesObject[key];
-    acc[key] = files.map((file: Express.Multer.File) => {
-      file.fieldname = formatFieldName(file.fieldname);
-      return file;
-    });
-    return acc;
-  }, {} as FileFormat);
+  // TODO How to improve? Maybe use parser? Or should only a null object be used?
+  return JSON.parse(JSON.stringify(obj));
 };
 
 export default multiPart;

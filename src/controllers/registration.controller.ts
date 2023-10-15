@@ -26,16 +26,17 @@ const index = catchRequestAsync(async (req, res) => {
 
 const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
-  const data = req.body;
+  const { data } = req.body;
+  const files = req.files;
 
   let registration = await registrationService.createRegistration(campId, data);
 
   // Store related files
   // Uploaded files for this request may only be in req.files
-  if (req.files) {
+  if (files) {
     registration = await fileService.saveRegistrationFiles(
       registration.id,
-      req.files,
+      files,
     );
   }
 

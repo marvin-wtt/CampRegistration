@@ -48,7 +48,10 @@ const store = {
   params: Joi.object({
     campId: Joi.string().required(),
   }),
-  body: Joi.object().custom(registrationData, "registration data").required(),
+  body: Joi.object({
+    data: Joi.object().custom(registrationData, "registration data").required(),
+    // files
+  }),
 };
 
 const update = {

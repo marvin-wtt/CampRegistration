@@ -1,24 +1,62 @@
 import { Serializer, SurveyModel } from "survey-core";
 import { IQuestionPlainData } from "survey-core/typings/question";
 
-type File = Express.Multer.File;
-type FileType = File[] | Record<string, File[]>;
-type FileOptions = Record<
-  string,
-  {
-    type: string;
-    name: string;
-  }[]
->;
+type RequestFile = Express.Multer.File;
+type FileType = RequestFile[] | Record<string, RequestFile[]>;
+type FormFile = Pick<File, "name" | "type" | "size">;
 
 export const formUtils = (formJson: unknown) => {
   const survey = new SurveyModel(formJson);
 
   const updateData = (data?: unknown, files?: FileType) => {
-    const surveyData = typeof data !== "object" ? {} : data;
-    const surveyFiles = !files ? {} : mapFileFields(files);
+    survey.data = typeof data !== "object" ? {} : data;
 
-    survey.data = { ...surveyData, ...surveyFiles };
+    if (files) {
+      mapFileQuestions(files);
+    }
+  };
+
+  const mapFileQuestions = (files: FileType) => {
+    const fileMap = createFileMap(files);
+    const questions = survey.getAllQuestions(false, undefined, true);
+    questions.forEach((question) => {
+      if (question.getType() !== "file") {
+        return;
+      }
+
+      if (Array.isArray(question.value)) {
+        question.value = question.value.map((value) => {
+          return {
+            file: fileMap.get(value),
+          };
+        });
+      } else {
+        question.value = {
+          file: fileMap.get(question.value),
+        };
+      }
+    });
+  };
+
+  const createFileMap = (files: FileType) => {
+    const fileArray = Array.isArray(files)
+      ? files
+      : Object.values(files).flat();
+
+    const fileMap = new Map<string, FormFile>();
+    fileArray.forEach((file) => {
+      const { originalname, size, mimetype, fieldname } = file;
+      const key = extractKeyFromFieldName(fieldname);
+      fileMap.set(key, { name: originalname, size, type: mimetype });
+    });
+
+    return fileMap;
+  };
+
+  const extractKeyFromFieldName = (fieldName: string): string => {
+    const pattern = /^files\[(.+)]$/;
+    const match = pattern.exec(fieldName);
+    return match ? match[1] : fieldName;
   };
 
   const hasDataErrors = (): boolean => {
@@ -40,22 +78,6 @@ export const formUtils = (formJson: unknown) => {
   };
 };
 
-export const hasUnknownFields = (survey: SurveyModel): boolean => {
-  const data = survey.getPlainData({
-    includeEmpty: false,
-    includeValues: true,
-    calculations: [
-      {
-        propertyName: "valueName",
-      },
-    ],
-  });
-
-  console.log(data);
-
-  return false;
-};
-
 // TODO Is this needed? Otherwise remove
 Serializer.addProperty("question", {
   name: "campData",
@@ -67,7 +89,7 @@ Serializer.addProperty("question", {
 });
 
 const showPlainData = (data: IQuestionPlainData[], name = "") => {
-  // TODO
+  // TODO This is needed to create the accessors
   data.forEach((value) => {
     const valueName = value["valueName"];
 
@@ -78,25 +100,4 @@ const showPlainData = (data: IQuestionPlainData[], name = "") => {
       console.log(elementName, value["campData"]);
     }
   });
-};
-
-const mapFileFields = (files: FileType): FileOptions => {
-  const mapFileToSurveyData = (file: File) => {
-    return {
-      type: file.mimetype,
-      name: file.originalname,
-    };
-  };
-
-  // Array should already be formatted
-  if (!files || Array.isArray(files) || typeof files !== "object") {
-    return {};
-  }
-
-  const requestFiles = files;
-  return Object.keys(requestFiles).reduce((acc, key) => {
-    const files = requestFiles[key];
-    acc[key] = files.map((file) => mapFileToSurveyData(file));
-    return acc;
-  }, {} as FileOptions);
 };

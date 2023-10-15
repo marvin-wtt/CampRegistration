@@ -107,6 +107,8 @@ const updateCampById = async (
 };
 
 const deleteCampById = async (id: string): Promise<void> => {
+  // TODO All files need to be deleted
+
   await prisma.camp.delete({ where: { id } });
 };
 
