@@ -10,10 +10,10 @@ export function useRegistrationService() {
 
   async function fetchRegistration(
     campId: string,
-    registrationId: string
+    registrationId: string,
   ): Promise<Registration> {
     const response = await api.get(
-      `camps/${campId}/registrations/${registrationId}/`
+      `camps/${campId}/registrations/${registrationId}/`,
     );
 
     return response.data.data;
@@ -21,7 +21,7 @@ export function useRegistrationService() {
 
   async function createRegistration(
     campId: string,
-    data: Omit<Registration, 'id'>
+    data: unknown,
   ): Promise<Registration> {
     const headers = {
       'Content-Type': 'multipart/form-data',
@@ -37,11 +37,11 @@ export function useRegistrationService() {
   async function updateRegistration(
     campId: string,
     registrationId: string,
-    data: Partial<Registration>
+    data: Partial<Registration>,
   ): Promise<Registration> {
     const response = await api.put(
       `camps/${campId}/registrations/${registrationId}/`,
-      data
+      data,
     );
 
     return response.data.data;
@@ -49,7 +49,7 @@ export function useRegistrationService() {
 
   async function deleteRegistration(
     campId: string,
-    registrationId: string
+    registrationId: string,
   ): Promise<void> {
     await api.delete(`camps/${campId}/registrations/${registrationId}/`);
   }

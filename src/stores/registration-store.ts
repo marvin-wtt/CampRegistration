@@ -44,10 +44,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
-  async function storeData(
-    campId: string,
-    registration: Omit<Registration, 'id'>
-  ) {
+  async function storeData(campId: string, registration: unknown) {
     checkNotNullWithError(campId);
 
     await apiService.createRegistration(campId, registration);
@@ -55,7 +52,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
   async function updateData(
     registrationId: string | undefined,
-    updateData: Partial<Registration>
+    updateData: Partial<Registration>,
   ) {
     const campId = route.params.camp as string;
 
@@ -65,12 +62,12 @@ export const useRegistrationsStore = defineStore('registrations', () => {
       const updatedRegistration = await apiService.updateRegistration(
         cid,
         rid,
-        updateData
+        updateData,
       );
 
       // Replace the registration with a new one
       data.value = data.value?.map((registration) =>
-        registration.id === registrationId ? updatedRegistration : registration
+        registration.id === registrationId ? updatedRegistration : registration,
       );
 
       bus.emit('update', updatedRegistration);
@@ -87,7 +84,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
       // Replace the registration with a new one
       data.value = data.value?.filter(
-        (registration) => registration.id !== registrationId
+        (registration) => registration.id !== registrationId,
       );
 
       bus.emit('delete', rid);
