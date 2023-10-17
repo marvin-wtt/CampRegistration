@@ -1,0 +1,80 @@
+<template>
+  <!-- TODO Open expansion-item if route is matched -->
+  <q-separator v-if="props.separated" />
+
+  <q-item
+    v-if="!props.children || props.children.length === 0"
+    v-ripple
+    :inset-level="props.insertLevel"
+    :to="props.to"
+    clickable
+    :disable="disabled"
+  >
+    <q-item-section
+      v-if="props.icon"
+      avatar
+    >
+      <q-icon :name="props.icon" />
+    </q-item-section>
+
+    <q-item-section>
+      <q-badge
+        v-if="props.preview"
+        align="top"
+        floating
+        rounded
+      >
+        Preview
+      </q-badge>
+      {{ props.label }}
+    </q-item-section>
+  </q-item>
+
+  <q-expansion-item
+    v-else
+    v-model="expanded"
+    expand-separator
+    :icon="props.icon"
+    :label="props.label"
+    :to="props.to"
+    @click.prevent="expanded = !expanded"
+  >
+    <navigation-item
+      v-for="child in props.children"
+      :key="child.name"
+      :name="child.name"
+      :label="child.label"
+      :icon="child.icon"
+      :to="child.to"
+      :separated="child.separated"
+      :children="child.children"
+      :insert-level="0.2"
+      :preview="child.preview"
+    />
+  </q-expansion-item>
+</template>
+
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
+
+interface Props {
+  name: string;
+  to?: string | object;
+  label?: string;
+  icon?: string;
+  separated?: boolean;
+  insertLevel?: number;
+  preview?: boolean;
+  children?: Props[];
+}
+
+const props = defineProps<Props>();
+
+const disabled = computed<boolean>(() => {
+  return props.to === undefined;
+});
+
+const expanded = ref<boolean>();
+</script>
+
+<style scoped></style>
