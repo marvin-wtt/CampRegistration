@@ -1,4 +1,9 @@
-export function formatPersonName(name: string): string {
+export function formatPersonName(name: string | undefined): string {
+  if (!name) {
+    return 'Undefined';
+  }
+
+  // TODO Take specials into account (e.g.
   return name
     .toLowerCase()
     .replace(/(^|\s|-)(\w)/g, (match: string, p1: string, p2: string) => {

@@ -14,6 +14,7 @@ import { Registration } from 'src/types/Registration';
 import { Roommate } from 'src/types/Roommate';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { useSettingsStore } from 'stores/settings-store';
+import { formatPersonName } from 'src/utils/formatters';
 
 export const useRoomPlannerStore = defineStore('room-planner', () => {
   const apiService = useAPIService();
@@ -160,27 +161,8 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     return mapRegistrationRoommate(registration);
   }
 
-  // TODO This should be done in a utility function
-  function uniqueName(registration: Registration): string {
-    // TODO Use unique names
-    const firstName = registrationHelper.firstName(registration);
-    const lastName = registrationHelper.lastName(registration);
-
-    return `${firstName} ${lastName}`;
-
-    // const firstNameKey = settingsStore.getKey('firstName');
-    // const lastNameKey = settingsStore.getKey('lastName');
-    // const others = registrationsStore.data;
-    //
-    // if (!firstNameKey || others === undefined) {
-    //   return 'Undefined';
-    // }
-    //
-    // return formatUniqueName(registration, others, firstNameKey, lastNameKey);
-  }
-
   function mapRegistrationRoommate(registration: Registration): Roommate {
-    const name = uniqueName(registration);
+    const name = formatPersonName(registrationHelper.uniqueName(registration));
     const age = registrationHelper.age(registration);
     const gender = registrationHelper.gender(registration);
     const country = registrationHelper.country(registration);

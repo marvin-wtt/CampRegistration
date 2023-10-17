@@ -1,10 +1,12 @@
 import { useSettingsStore } from 'stores/settings-store';
 import { Registration } from 'src/types/Registration';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useRegistrationsStore } from 'stores/registration-store';
 
 export function useRegistrationHelper() {
   const settingsStore = useSettingsStore();
   const campDetailsStore = useCampDetailsStore();
+  const registrationStore = useRegistrationsStore();
 
   function stringValue(
     registration: Registration,
@@ -55,6 +57,49 @@ export function useRegistrationHelper() {
     return firstNameValue || lastNameValue
       ? `${firstNameValue} ${lastNameValue}`.trim()
       : undefined;
+  }
+
+  function uniqueName(registration: Registration): string | undefined {
+    const others = registrationStore.data;
+
+    const firstNameValue = firstName(registration);
+    const lastNameValue = lastName(registration);
+
+    // If no first name is found, try the full name
+    if (!firstNameValue) {
+      return fullName(registration);
+    }
+
+    // No formatting is needed if no last name is defined or there are no others
+    if (lastNameValue === undefined || others === undefined) {
+      return firstNameValue;
+    }
+
+    // Search for people with same name
+    const sameFirstName = others.filter((value) => {
+      return (
+        value !== registration &&
+        firstName(value)?.toLowerCase() === firstNameValue.toLowerCase()
+      );
+    });
+
+    // If no match was found, this can be ignored.
+    if (sameFirstName.length === 0) {
+      return firstNameValue;
+    }
+
+    // Search for people who's last name starts with the same letter
+    const sameLastNameStart = sameFirstName.filter((value) => {
+      return (
+        lastName(value)?.toLowerCase().charAt(0) ===
+        lastNameValue.toLowerCase().charAt(0)
+      );
+    });
+
+    // If only one match was found, use the first letter of the last name as abbreviation.
+    return sameLastNameStart.length > 0
+      ? `${firstNameValue} ${lastNameValue}`
+      : `${firstNameValue} ${lastNameValue[0]}.`;
   }
 
   function dateOfBirth(registration: Registration): Date | undefined {
@@ -142,6 +187,7 @@ export function useRegistrationHelper() {
     firstName,
     lastName,
     fullName,
+    uniqueName,
     dateOfBirth,
     age,
     gender,
