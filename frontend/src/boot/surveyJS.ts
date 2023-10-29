@@ -2,52 +2,27 @@ import { boot } from 'quasar/wrappers';
 import { surveyPlugin } from 'survey-vue3-ui';
 import 'survey-core/survey.i18n';
 import { ComponentCollection, FunctionFactory, Serializer } from 'survey-core';
-import { address, country, dateOfBirth, role } from 'src/lib/surveyJs/questions';
-import { htmlDate, isAdult, isMinor, subtractYears } from 'src/lib/surveyJs/functions';
+import {
+  Components,
+  Functions,
+  Properties,
+} from '@camp-registration/common/form';
 
 export default boot(({ app }) => {
   app.use(surveyPlugin);
 });
 
-// Custom question types
-ComponentCollection.Instance.add(address);
-ComponentCollection.Instance.add(country);
-ComponentCollection.Instance.add(dateOfBirth);
-ComponentCollection.Instance.add(role);
+for (const component of Components) {
+  ComponentCollection.Instance.add(component);
+}
 
-// Custom functions
-FunctionFactory.Instance.register('isMinor', isMinor);
-FunctionFactory.Instance.register('isAdult', isAdult);
-FunctionFactory.Instance.register('subtractYearsFromDate', subtractYears);
-FunctionFactory.Instance.register('htmlDate', htmlDate);
+for (const fn of Functions) {
+  FunctionFactory.Instance.register(fn.name, fn.func, fn.isAsync);
+}
 
-// Files should always be uploaded as a file instead of a base64 encoded string.
+for (const property of Properties) {
+  Serializer.addProperty(property.classname, property.propertyInfo);
+}
+
 Serializer.getProperty('file', 'storeDataAsText').visible = false;
 Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
-
-// Custom widgets
-// CustomWidgetCollection.Instance.add()
-
-// Properties
-Serializer.addProperty('question', {
-  name: 'campData',
-  type: 'campDataMapping',
-  default: undefined,
-  isRequired: false,
-  category: 'general',
-  visibleIndex: 3,
-});
-Serializer.addProperty('text', {
-  name: 'contact_email',
-  displayName: 'Contact email',
-  type: 'boolean',
-  default: false,
-  isRequired: true,
-  category: 'camp',
-  categoryIndex: 1,
-  visibleIndex: 0,
-  dependsOn: ['inputType'],
-  visibleIf: (obj: { inputType: string }) => {
-    return obj.inputType === 'email';
-  },
-});

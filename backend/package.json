@@ -1,7 +1,7 @@
 {
-  "name": "campregistration",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@camp-registration/api",
+  "version": "0.0.1",
+  "description": "An API for camp registrations",
   "main": "index.js",
   "scripts": {
     "test:unit": "vitest -c ./vitest.config.unit.ts",
@@ -23,15 +23,18 @@
     "@": "./src"
   },
   "keywords": [],
-  "author": "",
+  "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
+  "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/marvin-wtt/CampRegistration",
+    "directory": "backend"
   },
   "dependencies": {
+    "@camp-registration/common": "file:../common",
     "@joi/date": "^2.1.0",
-    "@prisma/client": "^5.4.2",
+    "@prisma/client": "^5.5.2",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
@@ -58,7 +61,7 @@
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.1",
     "qs": "^6.11.2",
-    "survey-core": "^1.9.90",
+    "survey-core": "^1.9.114",
     "ulidx": "^2.0.0",
     "winston": "^3.9.0"
   },
@@ -94,7 +97,7 @@
     "module-alias": "^2.2.3",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
-    "prisma": "^5.4.2",
+    "prisma": "^5.5.2",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",

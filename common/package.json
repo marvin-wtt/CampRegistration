@@ -1,0 +1,33 @@
+{
+  "name": "@camp-registration/common",
+  "version": "0.0.1",
+  "description": "Common utils for camp registration",
+  "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marvin-wtt/CampRegistration",
+    "directory": "common"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint --ext .js,.ts,.vue ./",
+    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "survey-core": "^1.9.101"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.6",
+    "eslint": "^8.37.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.0.3"
+  },
+  "engines": {
+    "node": "^18 || ^16 || ^14.19",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
+}

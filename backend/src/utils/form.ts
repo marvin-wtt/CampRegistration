@@ -1,9 +1,31 @@
-import { Serializer, SurveyModel } from "survey-core";
+import {
+  ComponentCollection,
+  FunctionFactory,
+  Serializer,
+  SurveyModel,
+} from "survey-core";
 import { IQuestionPlainData } from "survey-core/typings/question";
+import {
+  Components,
+  Functions,
+  Properties,
+} from "@camp-registration/common/form";
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
 type FormFile = Pick<File, "name" | "type" | "size">;
+
+for (const component of Components) {
+  ComponentCollection.Instance.add(component);
+}
+
+for (const fn of Functions) {
+  FunctionFactory.Instance.register(fn.name, fn.func, fn.isAsync);
+}
+
+for (const property of Properties) {
+  Serializer.addProperty(property.classname, property.propertyInfo);
+}
 
 export const formUtils = (formJson: unknown) => {
   const survey = new SurveyModel(formJson);
