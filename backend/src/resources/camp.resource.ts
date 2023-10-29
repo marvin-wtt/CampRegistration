@@ -22,6 +22,7 @@ export const detailedCampResource = (camp: Camp) => {
   return {
     ...campResource(camp),
     form: camp.form,
+    themes: camp.themes,
   };
 };
 

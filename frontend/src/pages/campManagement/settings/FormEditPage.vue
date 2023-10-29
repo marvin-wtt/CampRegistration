@@ -19,7 +19,10 @@ import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { PropertyGridEditorCollection, SurveyCreator } from 'survey-creator-knockout';
+import {
+  PropertyGridEditorCollection,
+  SurveyCreator,
+} from 'survey-creator-knockout';
 import { computed, onMounted } from 'vue';
 import { localization } from 'survey-creator-core';
 import { useI18n } from 'vue-i18n';
@@ -69,7 +72,7 @@ const creatorOptions = {
   showEmbeddedSurveyTab: false,
   isAutoSave: true, // Survey is currently only saved when pressing the button.
   themeForPreview: 'defaultV2', // TODO Which should be the default?
-  showThemeTab: false, // TODO Enable when ready to store themes
+  showThemeTab: true,
 };
 
 onMounted(async () => {
@@ -102,13 +105,36 @@ onMounted(async () => {
     saveNo: number,
     callback: (saveNo: number, success: boolean) => void,
   ) => {
+    const data = {
+      form: creator.JSON,
+    };
+
     campDetailsStore
-      .updateData(
-        {
-          form: creator.JSON,
-        },
-        'none',
-      )
+      .updateData(data, 'none')
+      .then(() => {
+        callback(saveNo, true);
+      })
+      .catch(() => {
+        callback(saveNo, false);
+      });
+  };
+
+  creator.saveThemeFunc = (
+    saveNo: number,
+    callback: (saveNo: number, success: boolean) => void,
+  ) => {
+    const theme = creator.theme;
+    const colorPlatte = theme.colorPalette ?? 'light';
+
+    const data = {
+      themes: {
+        ...campDetailsStore.data?.themes,
+        [colorPlatte]: theme,
+      },
+    };
+
+    campDetailsStore
+      .updateData(data, 'none')
       .then(() => {
         callback(saveNo, true);
       })
@@ -118,7 +144,7 @@ onMounted(async () => {
   };
 
   creator.onPreviewSurveyCreated.add((sender, options) => {
-    setCampVariables(options.survey, campDetailsStore.data);
+    setCampVariables(options.survey, campDetailsStore.data ?? {});
 
     // TODO Add functions
   });

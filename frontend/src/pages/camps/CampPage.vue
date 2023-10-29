@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts" setup>
-import { SurveyModel } from 'survey-core';
+import { ITheme, SurveyModel } from 'survey-core';
 import 'survey-core/defaultV2.min.css';
 import { PlainLight } from 'survey-core/themes/plain-light';
 import { PlainDark } from 'survey-core/themes/plain-dark';
@@ -62,8 +62,11 @@ const bgColor = ref<string>();
 
 watch(
   () => quasar.dark.isActive,
-  (val) => {
-    applyTheme(val);
+  () => {
+    const themes = campDetailsStore.data?.themes;
+    if (themes) {
+      applyTheme(themes);
+    }
   },
 );
 
@@ -82,16 +85,28 @@ onMounted(async () => {
     return;
   }
 
-  const form = campDetailsStore.data.form;
-  const id = campDetailsStore.data.id;
+  const camp = campDetailsStore.data;
+
+  const form = camp.form;
+  const id = camp.id;
   model.value = createModel(id, form);
-  applyTheme();
-  setCampVariables(model.value, campDetailsStore.data);
+  applyTheme(camp.themes);
+  setCampVariables(model.value, camp);
 });
 
-function applyTheme(dark?: boolean) {
-  dark ??= quasar.dark.isActive;
-  const theme = dark ? PlainDark : PlainLight;
+function applyTheme(themes: Record<string, ITheme>) {
+  const colorPlatte = quasar.dark.isActive ? 'dark' : 'light';
+
+  let theme: ITheme;
+  if (colorPlatte in themes) {
+    theme = themes[colorPlatte];
+  } else if (colorPlatte === 'dark' && 'light' in themes) {
+    // Try light mode first
+    theme = themes.light;
+  } else {
+    // Apply default theme
+    theme = colorPlatte === 'dark' ? PlainDark : PlainLight;
+  }
 
   model.value?.applyTheme(theme);
 

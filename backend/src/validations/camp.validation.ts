@@ -64,6 +64,7 @@ const store = {
       .required(),
     price: Joi.number().min(0).required(),
     form: Joi.object().required(),
+    themes: Joi.object().pattern(Joi.string(), Joi.object()),
   }),
 };
 
@@ -97,6 +98,7 @@ const update = {
     ),
     price: Joi.number().min(0),
     form: Joi.object(),
+    themes: Joi.object().pattern(Joi.string(), Joi.object()),
   }),
 };
 

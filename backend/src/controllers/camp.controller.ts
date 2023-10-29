@@ -47,6 +47,7 @@ const store = catchRequestAsync(async (req, res) => {
     price: data.price,
     location: data.location,
     form: data.form,
+    themes: data.themes,
   });
 
   res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
@@ -69,6 +70,7 @@ const update = catchRequestAsync(async (req, res) => {
     price: data.price,
     location: data.location,
     form: data.form,
+    themes: data.themes,
   });
 
   res.json(resource(detailedCampResource(camp)));

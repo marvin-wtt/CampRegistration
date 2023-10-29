@@ -16,7 +16,6 @@ const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "endAt",
   "price",
   "location",
-  "form",
   "createdAt",
   "updatedAt",
 ];

@@ -1,5 +1,6 @@
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { Identifiable } from 'src/types/Identifiable';
+import { ITheme } from 'survey-core/typings/themes';
 
 export interface Camp extends Identifiable {
   public: boolean;
@@ -15,6 +16,7 @@ export interface Camp extends Identifiable {
   location: string | Record<string, string>;
   price: string;
   form: SurveyJSCampData;
+  themes: Record<string, ITheme>;
 }
 
 export type CampCreateData = Omit<Camp, 'id'>;
