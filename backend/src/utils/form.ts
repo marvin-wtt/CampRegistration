@@ -93,33 +93,49 @@ export const formUtils = (formJson: unknown) => {
     });
   };
 
+  const extractAccessors = () => {
+    const data = survey.getPlainData({
+      includeEmpty: true,
+      includeQuestionTypes: true,
+      includeValues: false,
+      calculations: [
+        { propertyName: "valueName" },
+        { propertyName: "campData" },
+      ],
+    });
+
+    return getCampDataPaths(data);
+  };
+
   return {
     updateData,
     hasDataErrors,
     unknownDataFields,
+    extractAccessors,
   };
 };
 
-// TODO Is this needed? Otherwise remove
-Serializer.addProperty("question", {
-  name: "campData",
-  type: "campDataMapping",
-  default: undefined,
-  isRequired: false,
-  category: "general",
-  visibleIndex: 3,
-});
+type FieldAccessor = Record<string, string[][]>;
 
-const showPlainData = (data: IQuestionPlainData[], name = "") => {
-  // TODO This is needed to create the accessors
-  data.forEach((value) => {
-    const valueName = value["valueName"];
+const getCampDataPaths = (
+  data: IQuestionPlainData[],
+  parentPath: string[] = [],
+  accessors: FieldAccessor = {},
+): FieldAccessor => {
+  data.forEach((question) => {
+    const valueName = question["valueName"];
+    const elementName = valueName ? valueName : question.name;
+    const path = [...parentPath, elementName];
 
-    const elementName = name + (valueName ? valueName : value.name);
-    if (value.isNode && value.data) {
-      showPlainData(value.data, elementName + ".");
-    } else {
-      console.log(elementName, value["campData"]);
+    if ("campData" in question && question.campData) {
+      accessors[question.campData] ??= [];
+      accessors[question.campData].push(path);
+    }
+
+    if (question.isNode && question.data) {
+      getCampDataPaths(question.data, path);
     }
   });
+
+  return accessors;
 };
