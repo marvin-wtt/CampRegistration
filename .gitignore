@@ -1,0 +1,15 @@
+# JS
+dist/
+node_modules/
+.env
+
+# Logs
+*.log
+
+# Editors
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
