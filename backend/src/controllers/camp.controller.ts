@@ -7,11 +7,12 @@ import exclude from "@/utils/exclude";
 import { collection, resource } from "@/resources/resource";
 import authUserId from "@/utils/authUserId";
 import { routeModel } from "@/utils/verifyModel";
+import { Camp } from "@prisma/client";
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
 
-  res.json(resource(detailedCampResource(camp)));
+  res.json(resource(detailedCampResource(await withFreePlaces(camp))));
 });
 
 const index = catchRequestAsync(async (req, res) => {
@@ -26,7 +27,9 @@ const index = catchRequestAsync(async (req, res) => {
   // TODO Add default options, make sure validation is correct and add pagination meta
   const camps = await campService.queryPublicCamps(filter, options);
 
-  const resources = camps.map((value) => campResource(value));
+  const resources = await Promise.all(
+    camps.map(async (value) => campResource(await withFreePlaces(value))),
+  );
   res.json(collection(resources));
 });
 
@@ -82,6 +85,15 @@ const destroy = catchRequestAsync(async (req, res) => {
 
   res.status(httpStatus.NO_CONTENT).send();
 });
+
+const withFreePlaces = async (camp: Camp) => {
+  const freePlaces = await campService.getCampFreePlaces(camp);
+
+  return {
+    ...camp,
+    freePlaces,
+  };
+};
 
 export default {
   index,

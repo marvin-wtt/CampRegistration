@@ -1,6 +1,10 @@
 import { Camp } from "@prisma/client";
 
-const campResource = (camp: Camp) => {
+type CampWithFreePlaces = Camp & {
+  freePlaces?: Record<string, number> | number;
+};
+
+const campResource = (camp: CampWithFreePlaces) => {
   return {
     id: camp.id,
     public: camp.public,
@@ -15,10 +19,11 @@ const campResource = (camp: Camp) => {
     endAt: camp.endAt,
     price: camp.price ?? null,
     location: camp.location ?? null,
+    freePlaces: camp.freePlaces,
   };
 };
 
-export const detailedCampResource = (camp: Camp) => {
+export const detailedCampResource = (camp: CampWithFreePlaces) => {
   return {
     ...campResource(camp),
     form: camp.form,
