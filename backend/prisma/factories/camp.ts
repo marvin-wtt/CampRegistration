@@ -23,6 +23,7 @@ export const CampFactory = {
     return {
       id: ulid(),
       public: faker.datatype.boolean(),
+      active: faker.datatype.boolean(),
       countries: ["de"],
       name: faker.lorem.word(),
       organization: faker.company.name(),
@@ -33,7 +34,8 @@ export const CampFactory = {
       endAt,
       price: faker.number.int({ min: 0, max: 1000 }),
       location: faker.location.city(),
-      form: {}, // TODO
+      form: {}, // TODO Add dummy form
+      themes: {},
       createdAt,
       updatedAt,
       ...data,
