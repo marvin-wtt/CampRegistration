@@ -16,7 +16,8 @@ export const useCampsStore = defineStore('camps', () => {
     error,
     reset,
     withProgressNotification,
-    errorOnFailure,
+    forceFetch,
+    lazyFetch,
     checkNotNullWithNotification,
   } = useServiceHandler<Camp[]>('camp');
 
@@ -25,9 +26,7 @@ export const useCampsStore = defineStore('camps', () => {
   });
 
   async function fetchData() {
-    await errorOnFailure(async () => {
-      return await apiService.fetchCamps();
-    });
+    return lazyFetch(async () => await apiService.fetchCamps());
   }
 
   async function createEntry(createData: CampCreateData): Promise<void> {
@@ -38,7 +37,7 @@ export const useCampsStore = defineStore('camps', () => {
     });
 
     if (success) {
-      await fetchData();
+      await forceFetch(async () => await apiService.fetchCamps());
     }
   }
 
@@ -51,7 +50,7 @@ export const useCampsStore = defineStore('camps', () => {
     });
 
     if (success) {
-      await fetchData();
+      await forceFetch(async () => await apiService.fetchCamps());
     }
   }
 
