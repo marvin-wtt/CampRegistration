@@ -115,7 +115,7 @@ export const formUtils = (formJson: unknown) => {
   };
 };
 
-type FieldAccessor = Record<string, string[][]>;
+type FieldAccessor = Record<string, (string | number)[][]>;
 
 const getCampDataPaths = (
   data: IQuestionPlainData[],
