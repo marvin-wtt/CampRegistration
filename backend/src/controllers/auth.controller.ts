@@ -6,12 +6,11 @@ import {
   tokenService,
   notificationService,
 } from "@/services";
-import exclude from "@/utils/exclude";
 import { User } from "@prisma/client";
 import { Request, Response } from "express";
 import { AuthTokensResponse } from "@/types/response";
 import config from "@/config";
-import { userCampResource } from "@/resources";
+import { userCampResource, userResource } from "@/resources";
 import ApiError from "@/utils/ApiError";
 import managerService from "@/services/manager.service";
 
@@ -28,15 +27,7 @@ const register = catchRequestAsync(async (req, res) => {
 
   await managerService.resolveManagerInvitations(user.email, user.id);
 
-  // TODO Use resource instead
-  const userWithoutPassword = exclude(user, [
-    "password",
-    "createdAt",
-    "updatedAt",
-  ]);
-  res.status(httpStatus.CREATED).json({
-    user: userWithoutPassword,
-  });
+  res.status(httpStatus.CREATED).json(userResource(user));
 });
 
 const login = catchRequestAsync(async (req, res) => {
@@ -51,7 +42,7 @@ const login = catchRequestAsync(async (req, res) => {
   });
 
   const response = userCampResource(user, camps);
-  // TODO Use resource instead
+
   res.json({ user: response, tokens });
 });
 
