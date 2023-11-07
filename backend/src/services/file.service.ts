@@ -7,6 +7,7 @@ import ApiError from "@/utils/ApiError";
 import path from "path";
 import fse from "fs-extra";
 import httpStatus from "http-status";
+import { extractKeyFromFieldName } from "@/utils/form";
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
@@ -34,7 +35,7 @@ const mapFields = (
     originalName: name ?? file.originalname,
     name: file.filename,
     size: file.size,
-    field: field ?? file.fieldname,
+    field: extractKeyFromFieldName(field ?? file.fieldname),
     storageLocation: config.storage.location,
     accessLevel,
   };

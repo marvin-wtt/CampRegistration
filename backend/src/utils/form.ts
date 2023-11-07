@@ -30,6 +30,8 @@ for (const property of Properties) {
 export const formUtils = (formJson: unknown) => {
   const survey = new SurveyModel(formJson);
 
+  // TODO Set camp variables for
+
   const updateData = (data?: unknown, files?: FileType) => {
     survey.data = typeof data !== "object" ? {} : data;
 
@@ -75,12 +77,6 @@ export const formUtils = (formJson: unknown) => {
     return fileMap;
   };
 
-  const extractKeyFromFieldName = (fieldName: string): string => {
-    const pattern = /^files\[(.+)]$/;
-    const match = pattern.exec(fieldName);
-    return match ? match[1] : fieldName;
-  };
-
   const hasDataErrors = (): boolean => {
     return survey.pages.some((p) => p.hasErrors(false, false));
   };
@@ -113,6 +109,12 @@ export const formUtils = (formJson: unknown) => {
     unknownDataFields,
     extractAccessors,
   };
+};
+
+export const extractKeyFromFieldName = (fieldName: string): string => {
+  const pattern = /^files\[(.+)]$/;
+  const match = pattern.exec(fieldName);
+  return match ? match[1] : fieldName;
 };
 
 type FieldAccessor = Record<string, (string | number)[][]>;
