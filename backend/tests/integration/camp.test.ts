@@ -19,6 +19,7 @@ export interface CampTestContext {
   otherAccessToken: string;
   publicCamp: Camp;
   privateCamp: Camp;
+  inactiveCamp: Camp;
 }
 
 const assertCampModel = async (
@@ -34,6 +35,7 @@ const assertCampModel = async (
 
   expect(camp).toEqual({
     id: data.id ?? expect.anything(),
+    active: data.active,
     public: data.public,
     countries: data.countries,
     name: data.name,
@@ -46,10 +48,19 @@ const assertCampModel = async (
     price: data.price,
     location: data.location,
     form: data.form,
+    themes: data.themes,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
 };
+
+// const assertDetailedResponseBody = (
+//   body: any,
+//   data: PartialBy<Prisma.CampCreateInput, "id">,
+// ) => {
+//   assertCampResponseBody(body, data);
+//
+// };
 
 const assertCampResponseBody = (
   body: any,
@@ -58,6 +69,7 @@ const assertCampResponseBody = (
   expect(body).toHaveProperty("data");
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
+    active: data.active,
     public: data.public,
     countries: data.countries,
     name: data.name,
@@ -70,6 +82,7 @@ const assertCampResponseBody = (
     price: data.price,
     location: data.location,
     form: data.form,
+    themes: data.themes,
   });
 };
 
@@ -79,6 +92,7 @@ describe("/api/v1/camps", () => {
     context.otherUser = await UserFactory.create();
     context.publicCamp = await CampFactory.create({
       public: true,
+      active: true,
       campManager: {
         create: {
           id: ulid(),
@@ -88,6 +102,17 @@ describe("/api/v1/camps", () => {
     });
     context.privateCamp = await CampFactory.create({
       public: false,
+      active: true,
+      campManager: {
+        create: {
+          id: ulid(),
+          userId: context.user.id,
+        },
+      },
+    });
+    context.inactiveCamp = await CampFactory.create({
+      public: true,
+      active: false,
       campManager: {
         create: {
           id: ulid(),
@@ -116,9 +141,12 @@ describe("/api/v1/camps", () => {
       // TODO Test properties
     });
 
-    it.todo("should not show private camps to users");
+    it<CampTestContext>("should only include active camps", async () => {
+      const { body } = await request(app).get(`/api/v1/camps/`).send();
 
-    it.todo("should not show private camps to guests");
+      expect(body.data.length).toBe(1);
+      // TODO Test properties
+    });
   });
 
   describe("GET /api/v1/camps/:campId", () => {
@@ -133,6 +161,7 @@ describe("/api/v1/camps", () => {
       // TODO Use common assertion method
       expect(body.data).toEqual({
         id: camp.id,
+        active: camp.active,
         public: camp.public,
         countries: camp.countries,
         name: camp.name,
@@ -145,29 +174,39 @@ describe("/api/v1/camps", () => {
         price: camp.price,
         location: camp.location,
         form: camp.form,
+        themes: camp.themes,
+        freePlaces: expect.anything(),
       });
     });
 
-    it<CampTestContext>("should respond with `200` status code when camp is private and user is camp manager", async (context) => {
+    it<CampTestContext>("should respond with `200` status code when camp is private", async (context) => {
       const { status } = await request(app)
         .get(`/api/v1/camps/${context.privateCamp.id}`)
+        .send();
+
+      expect(status).toBe(200);
+    });
+
+    it<CampTestContext>("should respond with `200` status code when camp is not active and user is camp manager", async (context) => {
+      const { status } = await request(app)
+        .get(`/api/v1/camps/${context.inactiveCamp.id}`)
         .send()
         .set("Authorization", `Bearer ${context.accessToken}`);
 
       expect(status).toBe(200);
     });
 
-    it<CampTestContext>("should respond with `401` status code when camp is private", async (context) => {
+    it<CampTestContext>("should respond with `401` status code when camp is not active", async (context) => {
       const { status } = await request(app)
-        .get(`/api/v1/camps/${context.privateCamp.id}`)
+        .get(`/api/v1/camps/${context.inactiveCamp.id}`)
         .send();
 
       expect(status).toBe(401);
     });
 
-    it<CampTestContext>("should respond with `403` status code when camp is private and user is not a manager", async (context) => {
+    it<CampTestContext>("should respond with `403` status code when camp is not active and user is not a manager", async (context) => {
       const { status } = await request(app)
-        .get(`/api/v1/camps/${context.privateCamp.id}`)
+        .get(`/api/v1/camps/${context.inactiveCamp.id}`)
         .send()
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
@@ -183,10 +222,6 @@ describe("/api/v1/camps", () => {
 
       expect(status).toBe(404);
     });
-
-    it.todo(
-      "should respond with `400` status code when query parameters are invalid",
-    );
   });
 
   describe("POST /api/v1/camps", () => {
@@ -204,6 +239,7 @@ describe("/api/v1/camps", () => {
         price: 100.0,
         location: "Somewhere",
         form: {},
+        themes: {},
       };
 
       const { status, body } = await request(app)
@@ -213,14 +249,19 @@ describe("/api/v1/camps", () => {
 
       expect(status).toBe(201);
 
+      const expectedData = {
+        ...data,
+        active: false,
+      };
+
       // Test response
-      assertCampResponseBody(body, data);
+      assertCampResponseBody(body, expectedData);
 
       // Test model
       const campCount = await prisma.camp.count();
-      expect(campCount).toBe(3);
+      expect(campCount).toBe(4);
 
-      await assertCampModel(body.data.id, data);
+      await assertCampModel(body.data.id, expectedData);
     });
 
     it<CampTestContext>("should respond with `401` status code when unauthenticated", async () => {
@@ -244,6 +285,7 @@ describe("/api/v1/camps", () => {
   describe("PATCH /api/v1/camps/:campId", () => {
     it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context) => {
       const data = {
+        active: true,
         public: false,
         countries: ["de"],
         name: "Test Camp",
@@ -256,6 +298,7 @@ describe("/api/v1/camps", () => {
         price: 100.0,
         location: "Somewhere",
         form: {},
+        themes: {},
       };
 
       const id = context.publicCamp.id;
@@ -325,7 +368,7 @@ describe("/api/v1/camps", () => {
       const campCount = await prisma.camp.count();
 
       expect(status).toBe(204);
-      expect(campCount).toBe(1);
+      expect(campCount).toBe(2);
     });
 
     it<CampTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
@@ -337,7 +380,7 @@ describe("/api/v1/camps", () => {
       const campCount = await prisma.camp.count();
 
       expect(status).toBe(403);
-      expect(campCount).toBe(2);
+      expect(campCount).toBe(3);
     });
 
     it<CampTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
@@ -348,7 +391,7 @@ describe("/api/v1/camps", () => {
       const campCount = await prisma.camp.count();
 
       expect(status).toBe(401);
-      expect(campCount).toBe(2);
+      expect(campCount).toBe(3);
     });
 
     it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {

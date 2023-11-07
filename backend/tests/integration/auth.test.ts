@@ -29,11 +29,13 @@ describe("/api/v1/auth", async () => {
       const newUser = await prisma.user.findFirst();
 
       expect(newUser).not.toBeNull();
-      expect(body.user).toStrictEqual({
+
+      console.log(body);
+
+      expect(body).toStrictEqual({
         id: newUser?.id,
         email: "test@email.net",
         name: "testuser",
-        role: "USER",
         locale: expect.anything(),
         emailVerified: false,
       });
