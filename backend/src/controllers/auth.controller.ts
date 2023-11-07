@@ -10,7 +10,7 @@ import { User } from "@prisma/client";
 import { Request, Response } from "express";
 import { AuthTokensResponse } from "@/types/response";
 import config from "@/config";
-import { userCampResource, userResource } from "@/resources";
+import { userCampResource, userDetailedResource } from "@/resources";
 import ApiError from "@/utils/ApiError";
 import managerService from "@/services/manager.service";
 
@@ -27,7 +27,7 @@ const register = catchRequestAsync(async (req, res) => {
 
   await managerService.resolveManagerInvitations(user.email, user.id);
 
-  res.status(httpStatus.CREATED).json(userResource(user));
+  res.status(httpStatus.CREATED).json(userDetailedResource(user));
 });
 
 const login = catchRequestAsync(async (req, res) => {
