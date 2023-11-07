@@ -9,7 +9,7 @@ docker-compose up -d
 echo '🟡 - Waiting for database to be ready...'
 sleep 1
 host_port=$(echo "$DATABASE_URL" | sed -E 's/^[^@]+@([^/]+)\/.*/\1/')
-if ! $DIR/wait-for-it.sh "${host_port}" -- echo '🟢 - Database is ready!'; then
+if ! $DIR/wait-for-it.sh "${host_port}"  --strict -- echo '🟢 - Database is ready!'; then
   echo '🔴 - Database is not ready. Exiting...'
   exit 1
 fi
