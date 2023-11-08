@@ -7,8 +7,11 @@
   >
     <TransitionGroup name="list">
       <q-item
-        v-for="item in modelValue"
-        :key="item[props.keyName] ?? item"
+        v-for="(item, index) in modelValue"
+        :key="
+          (item[props.keyName as keyof typeof item] as string | undefined) ??
+          index
+        "
       >
         <slot :item="item" />
         <!-- Sorting arrows -->
@@ -19,7 +22,7 @@
             flat
             icon="arrow_upward"
             size="xs"
-            @click.stop="orderUpwards(item as TableTemplate)"
+            @click.stop="orderUpwards(item)"
           />
           <q-btn
             dense
@@ -27,7 +30,7 @@
             flat
             icon="arrow_downward"
             size="xs"
-            @click.stop="orderDownwards(item as TableTemplate)"
+            @click.stop="orderDownwards(item)"
           />
         </q-item-section>
         <!-- Edit -->
@@ -71,8 +74,7 @@
   </q-list>
 </template>
 
-<script lang="ts" generic="T" setup>
-import { TableTemplate } from 'src/types/TableTemplate';
+<script lang="ts" generic="T extends object" setup>
 import { computed } from 'vue';
 
 interface Props {
@@ -128,33 +130,37 @@ function deleteItem(item: T) {
   updateOrder();
 }
 
-function orderUpwards(template: TableTemplate) {
+function orderUpwards(item: T) {
   if (!modelValue.value) {
     return;
   }
 
-  const index = modelValue.value.indexOf(template);
+  const index = modelValue.value.indexOf(item);
   if (index == 0) {
     return;
   }
   const previous = modelValue.value[index - 1];
+  if (!('order' in item) || !('order' in previous)) {
+    return;
+  }
+
   const previousOrder = previous.order;
 
   // Swap orders
-  previous.order = template.order;
-  template.order = previousOrder;
+  previous.order = item.order;
+  item.order = previousOrder;
 
   // Swap position for animation
   modelValue.value.splice(index, 1, previous);
-  modelValue.value.splice(index - 1, 1, template);
+  modelValue.value.splice(index - 1, 1, item);
 }
 
-function orderDownwards(template: TableTemplate) {
+function orderDownwards(item: T) {
   if (!modelValue.value) {
     return;
   }
 
-  const index = modelValue.value.indexOf(template);
+  const index = modelValue.value.indexOf(item);
   if (index == modelValue.value.length - 1) {
     return;
   }
@@ -162,7 +168,7 @@ function orderDownwards(template: TableTemplate) {
 
   // Swap position for animation
   modelValue.value.splice(index, 1, next);
-  modelValue.value.splice(index + 1, 1, template);
+  modelValue.value.splice(index + 1, 1, item);
 
   // Update order of all items. This is more robust against errors than swapping
   updateOrder();
@@ -170,6 +176,9 @@ function orderDownwards(template: TableTemplate) {
 
 function updateOrder() {
   modelValue.value.forEach((item, index) => {
+    if (!('order' in item)) {
+      return;
+    }
     item.order = index;
   });
 }
