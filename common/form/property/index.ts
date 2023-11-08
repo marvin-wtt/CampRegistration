@@ -1,1 +1,1 @@
-export { default as campData } from './campData';
+export { default as campDataType } from './campDataType';

@@ -96,7 +96,7 @@ export const formUtils = (formJson: unknown) => {
       includeValues: false,
       calculations: [
         { propertyName: "valueName" },
-        { propertyName: "campData" },
+        { propertyName: "campDataType" },
       ],
     });
 
@@ -129,9 +129,9 @@ const getCampDataPaths = (
     const elementName = valueName ? valueName : question.name;
     const path = [...parentPath, elementName];
 
-    if ("campData" in question && question.campData) {
-      accessors[question.campData] ??= [];
-      accessors[question.campData].push(path);
+    if ("campDataType" in question && question.campData) {
+      accessors[question.campDataType] ??= [];
+      accessors[question.campDataType].push(path);
     }
 
     if (question.isNode && question.data) {

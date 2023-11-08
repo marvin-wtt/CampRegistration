@@ -1,7 +1,7 @@
 import { ICustomQuestionTypeConfiguration } from 'survey-core';
 import { address, country, dateOfBirth, role } from './questions';
 import { htmlDate, isAdult, isMinor, subtractYears } from './functions';
-import { campData } from './property';
+import { campDataType } from './property';
 
 export const Components: ICustomQuestionTypeConfiguration[] = [
   address,
@@ -43,6 +43,6 @@ type AddPropertyParams = {
 export const Properties: AddPropertyParams[] = [
   {
     classname: 'question',
-    propertyInfo: campData,
+    propertyInfo: campDataType,
   },
 ];
