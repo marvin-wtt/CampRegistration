@@ -1,5 +1,8 @@
-export function objectValueByPath(path: string, obj: unknown) {
-  const keys = path.split('.');
+export function objectValueByPath(
+  path: string | (string | number)[],
+  obj: unknown,
+) {
+  const keys = Array.isArray(path) ? path : path.split('.');
   let result: unknown = obj;
 
   for (const key of keys) {
