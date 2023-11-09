@@ -236,7 +236,7 @@ const rows = computed<Registration[]>(() => {
   // Waiting list
   if (template.value.filterWaitingList) {
     rows = rows.filter((row) => {
-      return !row.accepted;
+      return row.waitingList;
     });
   }
 
@@ -255,7 +255,7 @@ const rows = computed<Registration[]>(() => {
   // TODO Refactor to filterRoles
   if (template.value.filterParticipants) {
     rows = rows.filter((row) => {
-      const waitingList = !row.accepted;
+      const waitingList = row.waitingList;
       const counselor =
         row.data[counselorsKey] !== undefined &&
         row.data[counselorsKey] == true;

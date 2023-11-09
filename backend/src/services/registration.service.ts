@@ -27,7 +27,7 @@ const queryRegistrations = async (campId: string) => {
 
 const createRegistration = async (
   campId: string,
-  data: Pick<Prisma.RegistrationCreateInput, "accepted" | "data">,
+  data: Pick<Prisma.RegistrationCreateInput, "waitingList" | "data">,
 ) => {
   const camp = await campService.getCampById(campId);
   if (!camp) {
@@ -45,7 +45,7 @@ const createRegistration = async (
 
 const updateRegistrationById = async (
   registrationId: string,
-  data: Pick<Prisma.RegistrationUpdateInput, "accepted" | "data">,
+  data: Pick<Prisma.RegistrationUpdateInput, "waitingList" | "data">,
 ) => {
   return prisma.registration.update({
     where: { id: registrationId },

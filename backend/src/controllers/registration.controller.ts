@@ -30,10 +30,10 @@ const store = catchRequestAsync(async (req, res) => {
   const files = req.files;
 
   // TODO Check if already full
-  const accepted = true;
+  const waitingList = true;
   let registration = await registrationService.createRegistration(campId, {
     data,
-    accepted,
+    waitingList,
   });
 
   // Store related files
@@ -58,7 +58,7 @@ const update = catchRequestAsync(async (req, res) => {
     registrationId,
     {
       data: data.data,
-      accepted: data.accepted,
+      waitingList: data.waitingList,
     },
   );
   if (registration == null) {

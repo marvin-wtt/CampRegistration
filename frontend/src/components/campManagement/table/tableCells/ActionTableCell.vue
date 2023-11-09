@@ -75,7 +75,7 @@ const registration = computed<Registration>(() => {
 });
 
 const waitingList = computed<boolean>(() => {
-  return !registration.value.accepted;
+  return registration.value.waitingList;
 });
 
 function deleteItem(): void {
@@ -102,7 +102,7 @@ function accept(): void {
   quasar.dialog({}).onOk(async () => {
     const id = registration.value.id;
     await registrationStore.updateData(id, {
-      accepted: true,
+      waitingList: true,
     });
   });
 }

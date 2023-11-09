@@ -61,7 +61,7 @@ const update = {
   }),
   body: Joi.object({
     data: Joi.object().required(),
-    accepted: Joi.boolean(),
+    waitingList: Joi.boolean(),
   }),
 };
 
