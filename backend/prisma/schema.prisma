@@ -44,6 +44,7 @@ model Camp {
   location        Json?          @db.Json
   form            Json           @db.Json
   themes          Json           @default("{}") @db.Json
+  accessors       Json           @default("{}") @db.Json
   createdAt       DateTime?      @default(now()) @map("created_at")
   updatedAt       DateTime?      @updatedAt @map("updated_at")
   campManager     CampManager[]

@@ -1,24 +1,48 @@
-import { useSettingsStore } from 'stores/settings-store';
 import { Registration } from 'src/types/Registration';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
+import { objectValueByPath } from 'src/utils/objectValueByPath';
 
 export function useRegistrationHelper() {
-  const settingsStore = useSettingsStore();
   const campDetailsStore = useCampDetailsStore();
   const registrationStore = useRegistrationsStore();
+
+  function unknownValue(
+    registration: Registration,
+    keyName: string,
+    index = 0,
+  ): unknown {
+    const accessors = campDetailsStore.data?.accessors;
+    if (!accessors) {
+      return undefined;
+    }
+
+    if (!(keyName in accessors) || accessors[keyName].length < index + 1) {
+      return undefined;
+    }
+
+    const path = accessors[keyName][index];
+    return objectValueByPath(path, registration);
+  }
 
   function stringValue(
     registration: Registration,
     keyName: string,
   ): string | undefined {
-    const key = settingsStore.getKey(keyName);
-    if (!key || !(key in registration.data)) {
+    const value = objectValueByPath(keyName, registration.data);
+    if (typeof value !== 'string') {
       return undefined;
     }
 
-    const value = registration.data[key];
-    if (typeof value !== 'string') {
+    return value;
+  }
+
+  function numericValue(
+    registration: Registration,
+    keyName: string,
+  ): number | undefined {
+    const value = unknownValue(registration, keyName);
+    if (typeof value !== 'number') {
       return undefined;
     }
 
@@ -29,17 +53,29 @@ export function useRegistrationHelper() {
     registration: Registration,
     keyName: string,
   ): boolean | undefined {
-    const key = settingsStore.getKey(keyName);
-    if (!key || !(key in registration)) {
-      return undefined;
-    }
-
-    const value = registration.data[key];
+    const value = unknownValue(registration, keyName);
     if (typeof value !== 'boolean') {
       return undefined;
     }
 
     return value;
+  }
+
+  function dateValue(
+    registration: Registration,
+    keyName: string,
+  ): Date | undefined {
+    const value = stringValue(registration, keyName);
+    if (!value) {
+      return undefined;
+    }
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return undefined;
+    }
+
+    return date;
   }
 
   function firstName(registration: Registration): string | undefined {
@@ -103,34 +139,13 @@ export function useRegistrationHelper() {
   }
 
   function dateOfBirth(registration: Registration): Date | undefined {
-    const key = settingsStore.getKey('dateOfBirth');
-    if (!key || !(key in registration)) {
-      return undefined;
-    }
-
-    const dateOfBirth = registration.data[key];
-    if (typeof dateOfBirth !== 'string') {
-      return undefined;
-    }
-
-    const date = new Date(dateOfBirth);
-    if (isNaN(date.getTime())) {
-      return undefined;
-    }
-
-    return date;
+    return dateValue(registration, 'dateOfBirth');
   }
 
   function age(registration: Registration): number | undefined {
     // Try to use age key first
-    const ageKey = settingsStore.getKey('age');
-    if (ageKey && ageKey in registration) {
-      // Type check
-      const age = registration.data[ageKey];
-      if (typeof age !== 'number') {
-        return undefined;
-      }
-
+    const age = numericValue(registration, 'age');
+    if (age) {
       return age;
     }
 
@@ -198,5 +213,10 @@ export function useRegistrationHelper() {
     email,
     secondaryEmail,
     emails,
+    unknownValue,
+    stringValue,
+    numericValue,
+    booleanValue,
+    dateValue,
   };
 }

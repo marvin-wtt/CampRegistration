@@ -87,12 +87,16 @@ const queryPublicCamps = async <Key extends keyof Camp>(
 
 const createCamp = async (
   userId: string,
-  data: Omit<Prisma.CampCreateInput, "id">,
+  data: Omit<Prisma.CampCreateInput, "id" | "accessors">,
 ) => {
+  // TODO This was already done in validation. How to cache / reuse it?
+  const form = formUtils(data.form);
+
   return prisma.camp.create({
     data: {
       id: ulid(),
       ...data,
+      accessors: form.extractAccessors(),
       campManager: { create: { userId, id: ulid() } },
     },
   });
@@ -102,9 +106,15 @@ const updateCampById = async (
   id: string,
   data: Omit<Prisma.CampUpdateInput, "id">,
 ) => {
+  // TODO This was already done in validation. How to cache / reuse it?
+  const form = formUtils(data.form);
+
   return prisma.camp.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      accessors: form.extractAccessors(),
+    },
   });
 };
 
