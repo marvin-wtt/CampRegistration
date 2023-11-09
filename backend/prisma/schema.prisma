@@ -83,6 +83,7 @@ model Registration {
   id        String    @id @unique(map: "registrations_id_unique") @db.Char(26)
   campId    String?   @map("camp_id") @db.Char(26)
   data      Json      @db.Json
+  accepted  Boolean   @default(false)
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
   camp      Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")

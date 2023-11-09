@@ -35,6 +35,7 @@ const registrationResource = (registration: RegistrationWithBedAndFiles) => {
 
   return {
     id: registration.id,
+    accepted: registration.accepted,
     data,
     files,
     room,

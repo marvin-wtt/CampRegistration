@@ -171,7 +171,10 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { TableTemplate } from 'src/types/TableTemplate';
 import { useQuasar } from 'quasar';
-import { createPDF, Dimension } from 'components/campManagement/table/export/tableToPdf';
+import {
+  createPDF,
+  Dimension,
+} from 'components/campManagement/table/export/tableToPdf';
 
 import { useRoute, useRouter } from 'vue-router';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
@@ -182,6 +185,7 @@ import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/t
 import { Camp } from 'src/types/Camp';
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
+import { useRegistrationHelper } from 'src/composables/registrationHelper';
 
 interface Props {
   questions: QTableColumn[];
@@ -200,6 +204,7 @@ const { to } = useObjectTranslation();
 
 // TODO emit instead
 const templateStore = useTemplateStore();
+const registrationAccessor = useRegistrationHelper();
 
 interface Pagination {
   rowsPerPage?: number;
@@ -226,20 +231,17 @@ const rows = computed<Registration[]>(() => {
   }
 
   // TODO Get keys from setting store or use accessors
-  const waitingListKey = 'waiting_list';
   const counselorsKey = 'counselor';
 
   // Waiting list
   if (template.value.filterWaitingList) {
     rows = rows.filter((row) => {
-      return (
-        row.data[waitingListKey] === undefined ||
-        row.data[waitingListKey] == false
-      );
+      return !row.accepted;
     });
   }
 
   // Counselors
+  // TODO Refactor to filterRoles
   if (template.value.filterCounselors) {
     rows = rows.filter((row) => {
       return (
@@ -250,11 +252,10 @@ const rows = computed<Registration[]>(() => {
   }
 
   // Participants
+  // TODO Refactor to filterRoles
   if (template.value.filterParticipants) {
     rows = rows.filter((row) => {
-      const waitingList =
-        row.data[waitingListKey] !== undefined &&
-        row.data[waitingListKey] == true;
+      const waitingList = !row.accepted;
       const counselor =
         row.data[counselorsKey] !== undefined &&
         row.data[counselorsKey] == true;
@@ -266,12 +267,8 @@ const rows = computed<Registration[]>(() => {
   // Select filter
   if (Array.isArray(countryFilter.value) && countryFilter.value.length > 0) {
     rows = rows.filter((value) => {
-      return (
-        'country' in value &&
-        typeof value.country === 'string' &&
-        countryFilter.value !== undefined &&
-        countryFilter.value?.includes(value.country)
-      );
+      const country = registrationAccessor.country(value);
+      return country && countryFilter.value?.includes(country);
     });
   }
 
@@ -284,7 +281,7 @@ const countries = computed<string[]>(() => {
   return [
     ...new Set(
       props.results.map((value) => {
-        return 'country' in value ? (value.country as string) : '';
+        return registrationAccessor.country(value) ?? '';
       }),
     ),
   ];

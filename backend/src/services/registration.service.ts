@@ -3,6 +3,7 @@ import { ulid } from "@/utils/ulid";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { campService } from "./index";
+import { Prisma } from "@prisma/client";
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -24,16 +25,19 @@ const queryRegistrations = async (campId: string) => {
   });
 };
 
-const createRegistration = async (campId: string, data: object) => {
+const createRegistration = async (
+  campId: string,
+  data: Pick<Prisma.RegistrationCreateInput, "accepted" | "data">,
+) => {
   const camp = await campService.getCampById(campId);
   if (!camp) {
     throw new ApiError(httpStatus.NOT_FOUND, "Camp not found");
   }
   return prisma.registration.create({
     data: {
+      ...data,
       id: ulid(),
-      data: data,
-      campId: campId,
+      campId,
     },
     include: { files: true },
   });
@@ -41,11 +45,11 @@ const createRegistration = async (campId: string, data: object) => {
 
 const updateRegistrationById = async (
   registrationId: string,
-  updateBody: object,
+  data: Pick<Prisma.RegistrationUpdateInput, "accepted" | "data">,
 ) => {
   return prisma.registration.update({
     where: { id: registrationId },
-    data: { data: updateBody },
+    data,
     include: {
       files: true,
       bed: { include: { room: true } },

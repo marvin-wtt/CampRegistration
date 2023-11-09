@@ -30,12 +30,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 const series = computed<number[]>(() => {
   // TODO Filter counselors
+  // TODO Use accessors
   return [
-    props.participants.filter((value) => {
-      return (
-        value['waiting_list'] !== true && value['country'] === props.country
-      );
-    }).length,
+    // props.participants.filter((value) => {
+    //   return (
+    //     value['waiting_list'] !== true && value['country'] === props.country
+    //   );
+    // }).length,
   ];
 });
 

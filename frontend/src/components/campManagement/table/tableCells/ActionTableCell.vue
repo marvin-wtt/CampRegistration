@@ -75,7 +75,7 @@ const registration = computed<Registration>(() => {
 });
 
 const waitingList = computed<boolean>(() => {
-  return registrationHelper.waitingList(registration.value);
+  return !registration.value.accepted;
 });
 
 function deleteItem(): void {
@@ -102,7 +102,7 @@ function accept(): void {
   quasar.dialog({}).onOk(async () => {
     const id = registration.value.id;
     await registrationStore.updateData(id, {
-      // TODO Does PATCH work here or is PUT required? The key must be accessed from helper as well.
+      accepted: true,
     });
   });
 }

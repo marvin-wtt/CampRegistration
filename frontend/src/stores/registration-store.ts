@@ -1,9 +1,13 @@
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
-import { Registration } from 'src/types/Registration';
+import { Registration, RegistrationUpdateData } from 'src/types/Registration';
 import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus, useRegistrationBus } from 'src/composables/bus';
+import {
+  useAuthBus,
+  useCampBus,
+  useRegistrationBus,
+} from 'src/composables/bus';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -48,7 +52,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
   async function updateData(
     registrationId: string | undefined,
-    updateData: Partial<Registration>,
+    updateData: RegistrationUpdateData,
   ) {
     const campId = route.params.camp as string;
 

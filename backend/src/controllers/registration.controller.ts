@@ -29,7 +29,12 @@ const store = catchRequestAsync(async (req, res) => {
   const { data } = req.body;
   const files = req.files;
 
-  let registration = await registrationService.createRegistration(campId, data);
+  // TODO Check if already full
+  const accepted = true;
+  let registration = await registrationService.createRegistration(campId, {
+    data,
+    accepted,
+  });
 
   // Store related files
   // Uploaded files for this request may only be in req.files
@@ -51,7 +56,10 @@ const update = catchRequestAsync(async (req, res) => {
 
   const registration = await registrationService.updateRegistrationById(
     registrationId,
-    data,
+    {
+      data: data.data,
+      accepted: data.accepted,
+    },
   );
   if (registration == null) {
     throw new ApiError(

@@ -10,19 +10,14 @@
 import { computed } from 'vue';
 import { formatPhoneNumber } from 'src/utils/formatters';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { Registration } from 'src/types/Registration';
 
 const props = defineProps<TableCellProps>();
+const registrationHelper = useRegistrationHelper();
 
-const data = computed<object>(() => {
-  if (
-    'data' in props.props.row &&
-    typeof props.props.row.data === 'object' &&
-    props.props.row.data
-  ) {
-    return props.props.row.data;
-  }
-
-  return {};
+const registration = computed<Registration>(() => {
+  return props.props.row as Registration;
 });
 
 const formattedPhoneNumber = computed<string | unknown>(() => {
@@ -32,11 +27,7 @@ const formattedPhoneNumber = computed<string | unknown>(() => {
     return value;
   }
 
-  // TODO Use accessor instead!!!
-  const country =
-    'country' in data.value && typeof data.value.country === 'string'
-      ? data.value.country
-      : undefined;
+  const country = registrationHelper.country(registration.value);
 
   return value
     .toString()

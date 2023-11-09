@@ -59,7 +59,10 @@ const update = {
     campId: Joi.string().required(),
     registrationId: Joi.string().required(),
   }),
-  body: Joi.object().required(), // TODO Validate against form or template fields
+  body: Joi.object({
+    data: Joi.object().required(),
+    accepted: Joi.boolean(),
+  }),
 };
 
 const destroy = {

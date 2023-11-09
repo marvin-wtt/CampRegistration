@@ -66,10 +66,11 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRegistrationsStore } from 'stores/registration-store';
 import DynamicFromInput from 'components/common/inputs/DynamicFromInput.vue';
+import { Registration } from 'src/types/Registration';
 
 interface Props {
   questions: SurveyJSCampData;
-  result: unknown;
+  result: Registration['data'];
 }
 
 const props = defineProps<Props>();
@@ -96,7 +97,9 @@ async function onOKClick() {
 
   loading.value = true;
   const id = isIdentifiable(result) ? result.id : undefined;
-  await registrationStore.updateData(id, toRaw(data));
+  await registrationStore.updateData(id, {
+    data: toRaw(data),
+  });
 
   onDialogOK();
 }
