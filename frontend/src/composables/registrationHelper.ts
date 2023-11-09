@@ -1,3 +1,4 @@
+import { Registration } from 'src/types/Registration';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
@@ -7,7 +8,7 @@ export function useRegistrationHelper() {
   const registrationStore = useRegistrationsStore();
 
   function unknownValue(
-    registration: unknown,
+    registration: Registration,
     keyName: string,
     index = 0,
   ): unknown {
@@ -25,10 +26,10 @@ export function useRegistrationHelper() {
   }
 
   function stringValue(
-    registration: unknown,
+    registration: Registration,
     keyName: string,
   ): string | undefined {
-    const value = unknownValue(registration, keyName);
+    const value = objectValueByPath(keyName, registration.data);
     if (typeof value !== 'string') {
       return undefined;
     }
@@ -37,7 +38,7 @@ export function useRegistrationHelper() {
   }
 
   function numericValue(
-    registration: unknown,
+    registration: Registration,
     keyName: string,
   ): number | undefined {
     const value = unknownValue(registration, keyName);
@@ -49,7 +50,7 @@ export function useRegistrationHelper() {
   }
 
   function booleanValue(
-    registration: unknown,
+    registration: Registration,
     keyName: string,
   ): boolean | undefined {
     const value = unknownValue(registration, keyName);
@@ -60,7 +61,10 @@ export function useRegistrationHelper() {
     return value;
   }
 
-  function dateValue(registration: unknown, keyName: string): Date | undefined {
+  function dateValue(
+    registration: Registration,
+    keyName: string,
+  ): Date | undefined {
     const value = stringValue(registration, keyName);
     if (!value) {
       return undefined;
@@ -74,15 +78,15 @@ export function useRegistrationHelper() {
     return date;
   }
 
-  function firstName(registration: unknown): string | undefined {
+  function firstName(registration: Registration): string | undefined {
     return stringValue(registration, 'firstName');
   }
 
-  function lastName(registration: unknown): string | undefined {
+  function lastName(registration: Registration): string | undefined {
     return stringValue(registration, 'lastName');
   }
 
-  function fullName(registration: unknown): string | undefined {
+  function fullName(registration: Registration): string | undefined {
     const firstNameValue = firstName(registration);
     const lastNameValue = lastName(registration);
 
@@ -91,7 +95,7 @@ export function useRegistrationHelper() {
       : undefined;
   }
 
-  function uniqueName(registration: unknown): string | undefined {
+  function uniqueName(registration: Registration): string | undefined {
     const others = registrationStore.data;
 
     const firstNameValue = firstName(registration);
@@ -134,11 +138,11 @@ export function useRegistrationHelper() {
       : `${firstNameValue} ${lastNameValue[0]}.`;
   }
 
-  function dateOfBirth(registration: unknown): Date | undefined {
+  function dateOfBirth(registration: Registration): Date | undefined {
     return dateValue(registration, 'dateOfBirth');
   }
 
-  function age(registration: unknown): number | undefined {
+  function age(registration: Registration): number | undefined {
     // Try to use age key first
     const age = numericValue(registration, 'age');
     if (age) {
@@ -159,35 +163,35 @@ export function useRegistrationHelper() {
     return Math.floor(ageInYears);
   }
 
-  function gender(registration: unknown): string | undefined {
+  function gender(registration: Registration): string | undefined {
     return stringValue(registration, 'gender');
   }
 
-  function country(registration: unknown): string | undefined {
+  function country(registration: Registration): string | undefined {
     return stringValue(registration, 'country');
   }
 
-  function counselor(registration: unknown): boolean {
+  function counselor(registration: Registration): boolean {
     return booleanValue(registration, 'counselor') ?? false;
   }
 
-  function participant(registration: unknown): boolean {
+  function participant(registration: Registration): boolean {
     return booleanValue(registration, 'participant') ?? true;
   }
 
-  function waitingList(registration: unknown): boolean {
+  function waitingList(registration: Registration): boolean {
     return booleanValue(registration, 'waitingList') ?? false;
   }
 
-  function email(registration: unknown): string | undefined {
+  function email(registration: Registration): string | undefined {
     return stringValue(registration, 'email');
   }
 
-  function secondaryEmail(registration: unknown): string | undefined {
+  function secondaryEmail(registration: Registration): string | undefined {
     return stringValue(registration, 'secondaryEmail');
   }
 
-  function emails(registration: unknown): string[] {
+  function emails(registration: Registration): string[] {
     const primary = email(registration);
     const secondary = email(registration);
 
