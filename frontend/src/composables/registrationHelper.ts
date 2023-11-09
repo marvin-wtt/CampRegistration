@@ -29,7 +29,7 @@ export function useRegistrationHelper() {
     registration: Registration,
     keyName: string,
   ): string | undefined {
-    const value = objectValueByPath(keyName, registration.data);
+    const value = unknownValue(registration, keyName);
     if (typeof value !== 'string') {
       return undefined;
     }
