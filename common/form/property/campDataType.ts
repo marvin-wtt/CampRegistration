@@ -1,5 +1,5 @@
 export default {
-  name: 'campData',
+  name: 'campDataType',
   type: 'campDataMapping',
   default: undefined,
   isRequired: false,
