@@ -278,13 +278,7 @@ const rows = computed<Registration[]>(() => {
 const countryFilter = ref<string[] | undefined>([]);
 
 const countries = computed<string[]>(() => {
-  return [
-    ...new Set(
-      props.results.map((value) => {
-        return registrationAccessor.country(value) ?? '';
-      }),
-    ),
-  ];
+  return props.camp.countries;
 });
 
 const templates = computed<TableTemplate[]>(() => {
