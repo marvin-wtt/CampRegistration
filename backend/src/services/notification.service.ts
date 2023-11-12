@@ -6,7 +6,12 @@ import Mail from "nodemailer/lib/mailer";
 
 const t = i18n.t;
 
-type Options = Exclude<Mail.Options, "to" | "subject" | "template" | "context">;
+type Options = Exclude<
+  Mail.Options,
+  "to" | "subject" | "template" | "context"
+> & {
+  replyTo?: string | string[];
+};
 
 const sendEmail = async (
   to: string,
@@ -15,7 +20,7 @@ const sendEmail = async (
   context: object,
   options: Options = {},
 ) => {
-  const { from, replyTo } = config.email;
+  const { from } = config.email;
   const appName = t("app-name");
 
   subject = `${subject} | ${appName}`;
@@ -23,6 +28,11 @@ const sendEmail = async (
   context = {
     ...context,
   };
+
+  const replyTo =
+    options.replyTo && Array.isArray(options.replyTo)
+      ? options.replyTo.join(";")
+      : options.replyTo;
 
   // TODO attachments
   // TODO alternatives
@@ -47,7 +57,11 @@ const generateUrl = (
   return `${origin}/${path}?${query}`;
 };
 
-const sendResetPasswordEmail = async (to: string, token: string) => {
+const sendResetPasswordEmail = async (
+  to: string,
+  replyTo: string,
+  token: string,
+) => {
   const template = "reset-password";
   const subject = t("email:auth.reset-password.subject");
   const url = generateUrl("reset-password", {
@@ -55,9 +69,15 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
     token,
   });
 
-  return sendEmail(to, subject, template, {
+  const context = {
     url,
-  });
+  };
+
+  const options = {
+    replyTo,
+  };
+
+  return sendEmail(to, subject, template, context, options);
 };
 
 const sendVerificationEmail = async (to: string, token: string) => {
