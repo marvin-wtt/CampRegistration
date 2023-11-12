@@ -8,6 +8,7 @@ export interface Camp extends Identifiable {
   countries: string[];
   name: string | Record<string, string>;
   organization: string | Record<string, string>;
+  contactEmail: string | Record<string, string>;
   maxParticipants: number | Record<string, number>;
   startAt: string;
   endAt: string;

@@ -35,6 +35,7 @@ model Camp {
   countries       Json           @db.Json
   name            Json           @db.Json
   organization    Json           @db.Json
+  contactEmail    Json           @map("contact_email") @db.Json
   maxParticipants Json           @map("max_participants") @db.Json
   minAge          Int            @map("min_age") @db.UnsignedInt
   maxAge          Int            @map("max_age") @db.UnsignedInt

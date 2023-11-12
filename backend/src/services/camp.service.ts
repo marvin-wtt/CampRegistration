@@ -11,6 +11,7 @@ const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "name",
   "countries",
   "organization",
+  "contactEmail",
   "maxParticipants",
   "minAge",
   "maxAge",

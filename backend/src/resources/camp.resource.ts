@@ -12,6 +12,7 @@ const campResource = (camp: CampWithFreePlaces) => {
     countries: camp.countries,
     name: camp.name,
     organization: camp.organization,
+    contactEmail: camp.contactEmail,
     maxParticipants: camp.maxParticipants,
     minAge: camp.minAge,
     maxAge: camp.maxAge,
