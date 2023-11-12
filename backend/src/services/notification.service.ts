@@ -1,26 +1,39 @@
 import config from "@/config";
 import transport from "@/config/mail";
-import { render } from "@/utils/render";
 import { generateQueryString } from "@/utils/uri";
+import i18n from "@/config/i18n";
+import Mail from "nodemailer/lib/mailer";
+
+const t = i18n.t;
+
+type Options = Exclude<Mail.Options, "to" | "subject" | "template" | "context">;
 
 const sendEmail = async (
   to: string,
   subject: string,
-  text: string,
-  html: string,
+  template: string,
+  context: object,
+  options: Options = {},
 ) => {
   const { from, replyTo } = config.email;
-  const { appName } = config;
+  const appName = t("app-name");
 
   subject = `${subject} | ${appName}`;
 
+  context = {
+    ...context,
+  };
+
+  // TODO attachments
+  // TODO alternatives
   await transport.sendMail({
+    ...options,
+    to,
     from,
     replyTo,
-    to,
     subject,
-    text,
-    html,
+    template,
+    context,
   });
 };
 
@@ -35,22 +48,20 @@ const generateUrl = (
 };
 
 const sendResetPasswordEmail = async (to: string, token: string) => {
-  const subject = "Reset password ";
+  const template = "reset-password";
+  const subject = t("email:auth.reset-password.subject");
   const url = generateUrl("reset-password", {
     email: to,
     token,
   });
 
-  const text = ""; // TODO
-  const html = await render("emails/forgot_password", {
+  return sendEmail(to, subject, template, {
     url,
   });
-
-  await sendEmail(to, subject, text, html);
 };
 
 const sendVerificationEmail = async (to: string, token: string) => {
-  const subject = "Email Verification";
+  const subject = t("email:auth.email-verification.subject");
 
   const url = generateUrl("verify-email", {
     email: to,
@@ -58,11 +69,9 @@ const sendVerificationEmail = async (to: string, token: string) => {
   });
 
   const text = ""; // TODO
-  const html = await render("emails/verify_email", {
-    url,
-  });
+  const template = "verify-email";
 
-  await sendEmail(to, subject, text, html);
+  return sendEmail(to, subject, template, {});
 };
 
 const sendCampManagerInvitation = async (
@@ -70,16 +79,11 @@ const sendCampManagerInvitation = async (
   campId: string,
   managerId: string,
 ) => {
-  const subject = "Camp Invitation";
+  const subject = t("email:camp.invitation");
 
   const url = generateUrl(`camp-management/`);
 
-  const text = ""; // TODO
-  const html = await render("emails/camp_manager_invitation", {
-    url,
-  });
-
-  await sendEmail(to, subject, text, html);
+  return sendEmail(to, subject, "", {});
 };
 
 export default {
