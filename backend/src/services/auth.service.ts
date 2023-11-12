@@ -93,7 +93,22 @@ const resetPassword = async (
     emailVerified: true,
   });
   await prisma.token.deleteMany({
-    where: { userId: user.id, type: TokenType.RESET_PASSWORD },
+    where: {
+      OR: [
+        {
+          userId: user.id,
+          type: TokenType.RESET_PASSWORD,
+        },
+        {
+          userId: user.id,
+          type: TokenType.ACCESS,
+        },
+        {
+          userId: user.id,
+          type: TokenType.REFRESH,
+        },
+      ],
+    },
   });
 };
 
