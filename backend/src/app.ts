@@ -11,6 +11,7 @@ import ApiError from "./utils/ApiError";
 import httpStatus from "http-status";
 import { anonymousStrategy, jwtStrategy } from "./config/passport";
 import cookieParser from "cookie-parser";
+import { initI18n } from "@/config/i18n";
 
 // TODO https://expressjs.com/en/advanced/best-practice-security.html#use-tls
 
@@ -55,8 +56,8 @@ app.use(passport.initialize());
 passport.use(jwtStrategy);
 passport.use(anonymousStrategy);
 
-// view engine
-app.set("view engine", "ejs");
+// localization
+initI18n();
 
 // api routes
 app.use("/api", apiRoutes);
