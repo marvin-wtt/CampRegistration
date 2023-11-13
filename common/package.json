@@ -13,16 +13,14 @@
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore"
   },
-  "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.9.0",
-    "@typescript-eslint/parser": "^6.9.0",
-    "survey-core": "^1.9.101"
-  },
   "devDependencies": {
     "@types/node": "^20.8.6",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
+    "@typescript-eslint/parser": "^6.11.0",
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.3",
+    "survey-core": "^1.9.116",
     "typescript": "^5.0.3"
   },
   "engines": {

@@ -1,48 +1,19 @@
-import { ICustomQuestionTypeConfiguration } from 'survey-core';
+import { ComponentCollection, FunctionFactory, Serializer } from 'survey-core';
 import { address, country, dateOfBirth, role } from './questions';
 import { htmlDate, isAdult, isMinor, subtractYears } from './functions';
 import { campDataType } from './property';
 
-export const Components: ICustomQuestionTypeConfiguration[] = [
-  address,
-  country,
-  dateOfBirth,
-  role,
-];
+ComponentCollection.Instance.add(address);
+ComponentCollection.Instance.add(country);
+ComponentCollection.Instance.add(dateOfBirth);
+ComponentCollection.Instance.add(role);
 
-type RegisterFunctionParams = {
-  name: string;
-  func: (params: unknown[]) => unknown;
-  isAsync?: boolean;
-};
+FunctionFactory.Instance.register('isMinor', isMinor, false);
+FunctionFactory.Instance.register('isAdult', isAdult, false);
+FunctionFactory.Instance.register('subtractYears', subtractYears, false);
+FunctionFactory.Instance.register('htmlDate', htmlDate, false);
 
-export const Functions: RegisterFunctionParams[] = [
-  {
-    name: 'isMinor',
-    func: isMinor,
-  },
-  {
-    name: 'isAdult',
-    func: isAdult,
-  },
-  {
-    name: 'subtractYears',
-    func: subtractYears,
-  },
-  {
-    name: 'htmlDate',
-    func: htmlDate,
-  },
-];
+Serializer.addProperty('question', campDataType);
 
-type AddPropertyParams = {
-  classname: string;
-  propertyInfo: unknown;
-};
-
-export const Properties: AddPropertyParams[] = [
-  {
-    classname: 'question',
-    propertyInfo: campDataType,
-  },
-];
+Serializer.getProperty('file', 'storeDataAsText').visible = false;
+Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
