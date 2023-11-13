@@ -29,11 +29,8 @@ const store = catchRequestAsync(async (req, res) => {
   const { data } = req.body;
   const files = req.files;
 
-  // TODO Check if already full
-  const waitingList = true;
   let registration = await registrationService.createRegistration(campId, {
     data,
-    waitingList,
   });
 
   // Store related files
@@ -44,6 +41,9 @@ const store = catchRequestAsync(async (req, res) => {
       files,
     );
   }
+
+  // TODO Send notification to participant
+  // TODO Send notifications to contact email(s)
 
   res
     .status(httpStatus.CREATED)
@@ -71,6 +71,8 @@ const update = catchRequestAsync(async (req, res) => {
   if (req.files) {
     await fileService.saveRegistrationFiles(registration.id, req.files);
   }
+
+  // TODO Send notification to participant
 
   res.json(resource(registrationResource(registration)));
 });
