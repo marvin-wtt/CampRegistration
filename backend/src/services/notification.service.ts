@@ -57,11 +57,7 @@ const generateUrl = (
   return `${origin}/${path}?${query}`;
 };
 
-const sendResetPasswordEmail = async (
-  to: string,
-  replyTo: string,
-  token: string,
-) => {
+const sendResetPasswordEmail = async (to: string, token: string) => {
   const template = "reset-password";
   const subject = t("email:auth.reset-password.subject");
   const url = generateUrl("reset-password", {
@@ -73,9 +69,7 @@ const sendResetPasswordEmail = async (
     url,
   };
 
-  const options = {
-    replyTo,
-  };
+  const options = {};
 
   return sendEmail(to, subject, template, context, options);
 };
