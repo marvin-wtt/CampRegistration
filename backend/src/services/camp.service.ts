@@ -3,6 +3,7 @@ import prisma from "../client";
 import { ulid } from "@/utils/ulid";
 import { objectValueByPath } from "@/utils/objectValueByPath";
 import { formUtils } from "@/utils/form";
+import dbJsonPath from "@/utils/dbJsonPath";
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
@@ -129,14 +130,13 @@ const getCampFreePlaces = async (
   camp: Camp,
 ): Promise<number | Record<string, number>> => {
   const countries = Array.isArray(camp.countries) ? camp.countries : [];
+  const campAccessors = camp.accessors as Record<string, (string | number)[]>;
   const freeSpaces = camp.maxParticipants as Record<string, number> | number;
 
-  const whereRole = undefined;
-  // const whereRole = {
-  //   // TODO Filter by role value
-  //   path: "",
-  //   equals: "",
-  // };
+  const rolePath = dbJsonPath("role", campAccessors);
+  const whereRole = rolePath
+    ? { path: rolePath, equals: "participant" }
+    : undefined;
 
   const where = {
     campId: camp.id,
