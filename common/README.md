@@ -42,7 +42,7 @@ information type for each field.
 The value can be set by the specified field types or by an expression.
 
 | Type          | Value           | Field                        |     Required      | Alternative     | Description                                                                               |
-| ------------- | --------------- | ---------------------------- | :---------------: | --------------- | ----------------------------------------------------------------------------------------- |
+|---------------|-----------------|------------------------------|:-----------------:|-----------------|-------------------------------------------------------------------------------------------|
 | Address       | addressQuestion | addressQuestion              |        Yes        | countryQuestion | The countryQuestion of the person                                                         |
 | Country       | countryQuestion | dropdown                     | If international  | addressQuestion | The countryQuestion of the person                                                         |
 | Date of Birth | date_of_birth   | date_of_birth \| text + date | If age restricted |                 | The date of birth of the person                                                           |
@@ -58,7 +58,7 @@ Camp data can be accessed in the title, description or in expressions of each el
 If the element contains translations, the translation for the current user locale is returned.
 
 | Name              | Translated | Description                                           |
-| ----------------- | :--------: | ----------------------------------------------------- |
+|-------------------|:----------:|-------------------------------------------------------|
 | camp.name         |            | Name of the camp                                      |
 | camp.organization |     X      | Name of the organization                              |
 | camp.startAt      |            | Timestamp of the camp start in UTC format             |
@@ -86,7 +86,7 @@ found [here](https://surveyjs.io/form-library/documentation/design-survey/condit
 Functions can also be used in expression fields.
 
 | Name                  | Parameter                   | Return  | Description                                         |
-| --------------------- | --------------------------- | ------- | --------------------------------------------------- |
+|-----------------------|-----------------------------|---------|-----------------------------------------------------|
 | isMinor               | dateOfBirthQuestion: string | boolean | Wherever the age is less than 18 at camp start      |
 | isAdult               | dateOfBirthQuestion: string | boolean | Wherever the age above 18 at camp start             |
 | subtractYearsFromDate | date: string, years: number | Date    | Subtracts years from a given date                   |
