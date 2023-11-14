@@ -1,12 +1,13 @@
 import {
   ICustomQuestionTypeConfiguration,
+  ItemValue,
   Question,
   Serializer,
 } from 'survey-core';
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
-  initialChoices: unknown[];
-  updateChoices: (question: Question, value: unknown[]) => void;
+  initialChoices: ItemValue[];
+  updateChoices: (question: Question, value: ItemValue[]) => void;
 };
 
 const roleQuestion: RoleQuestionConfiguration = {
@@ -52,7 +53,7 @@ const roleQuestion: RoleQuestionConfiguration = {
   onLoaded(question) {
     this.initialChoices = question.customQuestion.json.questionJSON.choices;
 
-    this.updateChoices(question, question.roleChoices as unknown[]);
+    this.updateChoices(question, question.roleChoices as ItemValue[]);
   },
   onPropertyChanged(question, propertyName, newValue) {
     if (propertyName === 'roleChoices') {
@@ -60,8 +61,12 @@ const roleQuestion: RoleQuestionConfiguration = {
     }
   },
   updateChoices(question, value) {
+    // Allow user to override the initial value with custom labels
+    const defaultValues = this.initialChoices.filter(
+      (item) => !value?.some((it) => it.value === item.value) ?? true,
+    );
     question.customQuestion.json.questionJSON.choices = [
-      ...this.initialChoices,
+      ...defaultValues,
       ...value,
     ];
   },
