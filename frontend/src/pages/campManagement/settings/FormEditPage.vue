@@ -71,7 +71,7 @@ const creatorOptions = {
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
   isAutoSave: true, // Survey is currently only saved when pressing the button.
-  themeForPreview: 'defaultV2', // TODO Which should be the default?
+  themeForPreview: 'defaultV2',
   showThemeTab: true,
 };
 
@@ -145,8 +145,6 @@ onMounted(async () => {
 
   creator.onPreviewSurveyCreated.add((sender, options) => {
     setCampVariables(options.survey, campDetailsStore.data ?? {});
-
-    // TODO Add functions
   });
 
   setTimeout(() => {
