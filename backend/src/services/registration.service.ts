@@ -61,7 +61,7 @@ const isWaitingList = async (
   data: RegistrationCreateData,
 ) => {
   let maxParticipants = camp.maxParticipants as number | Record<string, number>;
-  const campAccessors = camp.accessors as Record<string, (string | number)[]>;
+  const campAccessors = camp.accessors as Record<string, (string | number)[][]>;
 
   const filter: Prisma.RegistrationWhereInput[] = [
     {
@@ -83,9 +83,17 @@ const isWaitingList = async (
   if (typeof maxParticipants !== "number") {
     const countryPath = dbJsonPath("country", campAccessors);
     const countryValue = objectValueByPath(
-      campAccessors["country"],
-      data,
+      campAccessors["country"][0],
+      data.data,
     ) as string;
+
+    if (!countryPath || !countryValue) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Missing country data.",
+      );
+    }
+
     // Add filter criteria for country
     filter.push({
       data: {
