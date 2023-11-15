@@ -141,8 +141,6 @@ describe("/api/v1/camps", () => {
     it<CampTestContext>("should respond with `200` status code", async () => {
       const { status, body } = await request(app).get(`/api/v1/camps/`).send();
 
-      console.log(body);
-
       expect(status).toBe(200);
       expect(body).toHaveProperty("data");
       expectTypeOf(body.data).toBeArray();
@@ -337,6 +335,8 @@ describe("/api/v1/camps", () => {
 
       expect(status).toBe(400);
     });
+
+    describe.todo("generate data accessors");
   });
 
   describe("PATCH /api/v1/camps/:campId", () => {
@@ -365,8 +365,6 @@ describe("/api/v1/camps", () => {
         .patch(`/api/v1/camps/${id}`)
         .send(data)
         .set("Authorization", `Bearer ${context.accessToken}`);
-
-      console.log(body);
 
       expect(status).toBe(200);
 

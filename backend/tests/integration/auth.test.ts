@@ -30,8 +30,6 @@ describe("/api/v1/auth", async () => {
 
       expect(newUser).not.toBeNull();
 
-      console.log(body);
-
       expect(body).toStrictEqual({
         id: newUser?.id,
         email: "test@email.net",
