@@ -130,7 +130,7 @@ const getCampFreePlaces = async (
   camp: Camp,
 ): Promise<number | Record<string, number>> => {
   const countries = Array.isArray(camp.countries) ? camp.countries : [];
-  const campAccessors = camp.accessors as Record<string, (string | number)[]>;
+  const campAccessors = camp.accessors as Record<string, (string | number)[][]>;
   const freeSpaces = camp.maxParticipants as Record<string, number> | number;
 
   const rolePath = dbJsonPath("role", campAccessors);
