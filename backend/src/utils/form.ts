@@ -8,6 +8,11 @@ type FormFile = Pick<File, "name" | "type" | "size">;
 
 export const formUtils = (formJson: unknown) => {
   const survey = new SurveyModel(formJson);
+  const fileQuestions = survey
+    .getAllQuestions(false, undefined, true)
+    .filter((question) => question.getType() === "file");
+
+  let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
   // TODO Set camp variables for
 
@@ -15,30 +20,33 @@ export const formUtils = (formJson: unknown) => {
     survey.data = typeof data !== "object" ? {} : data;
 
     if (files) {
-      mapFileQuestions(files);
+      fileMap = createFileMap(files);
+      mapFileQuestions();
     }
   };
 
-  const mapFileQuestions = (files: FileType) => {
-    const fileMap = createFileMap(files);
-    const questions = survey.getAllQuestions(false, undefined, true);
-    questions.forEach((question) => {
-      if (question.getType() !== "file") {
-        return;
-      }
+  const mapFileQuestions = () => {
+    const mapValueToFile = (value: string) => ({ file: fileMap.get(value) });
 
-      if (Array.isArray(question.value)) {
-        question.value = question.value.map((value) => {
-          return {
-            file: fileMap.get(value),
-          };
-        });
-      } else {
-        question.value = {
-          file: fileMap.get(question.value),
-        };
-      }
+    fileQuestions.forEach((question) => {
+      question.value = Array.isArray(question.value)
+        ? (question.value = question.value.map(mapValueToFile))
+        : (question.value = mapValueToFile(question.value));
     });
+  };
+
+  const hasUnknownFiles = (): boolean => {
+    const count = fileQuestions.reduce((count, question) => {
+      if (Array.isArray(question.value)) {
+        return count + question.value.length;
+      }
+      if (question.value?.file) {
+        return count + 1;
+      }
+      return count;
+    }, 0);
+
+    return count != fileMap.size;
   };
 
   const createFileMap = (files: FileType) => {
@@ -85,6 +93,7 @@ export const formUtils = (formJson: unknown) => {
   return {
     updateData,
     hasDataErrors,
+    hasUnknownFiles,
     unknownDataFields,
     extractAccessors,
   };

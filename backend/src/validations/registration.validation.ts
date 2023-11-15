@@ -28,6 +28,12 @@ export const registrationData: Joi.CustomValidator<object> = (
     });
   }
 
+  if (formHelper.hasUnknownFiles()) {
+    return helpers.message({
+      custom: `Too many files provided.`,
+    });
+  }
+
   return value;
 };
 
