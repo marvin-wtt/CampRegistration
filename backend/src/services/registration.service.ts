@@ -70,13 +70,11 @@ const isWaitingList = async (
   ];
 
   const rolePath = dbJsonPath("role", campAccessors);
-  // TODO What should that value be?
-  const roleValue = "participant";
-  if (rolePath && roleValue) {
+  if (rolePath) {
     filter.push({
       data: {
         path: rolePath,
-        equals: roleValue,
+        equals: "participant",
       },
     });
   }
@@ -104,7 +102,7 @@ const isWaitingList = async (
     where: { AND: filter },
   });
 
-  return maxParticipants < count;
+  return count >= maxParticipants;
 };
 
 const updateRegistrationById = async (
