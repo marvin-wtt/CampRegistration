@@ -7,6 +7,14 @@ import { CampFactory, UserFactory } from "../../prisma/factories";
 import { Camp, Prisma, User } from "@prisma/client";
 import moment from "moment";
 import { ulid } from "ulidx";
+import {
+  campCreateInternational,
+  campCreateMissingPartialMaxParticipants,
+  campCreateMissingPartialName,
+  campCreateMissingUntranslatedMaxParticipants,
+  campCreateMissingUntranslatedNames,
+  campCreateNational,
+} from "../fixtures/camp.fixtures";
 
 // test.todo("Camp manager invitation");
 
@@ -40,6 +48,7 @@ const assertCampModel = async (
     countries: data.countries,
     name: data.name,
     organization: data.organization,
+    contactEmail: data.contactEmail,
     maxParticipants: data.maxParticipants,
     minAge: data.minAge,
     maxAge: data.maxAge,
@@ -51,6 +60,7 @@ const assertCampModel = async (
     themes: data.themes,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
+    accessors: expect.anything(),
   });
 };
 
@@ -63,8 +73,8 @@ const assertCampModel = async (
 // };
 
 const assertCampResponseBody = (
-  body: any,
   data: PartialBy<Prisma.CampCreateInput, "id">,
+  body: any,
 ) => {
   expect(body).toHaveProperty("data");
   expect(body.data).toEqual({
@@ -74,6 +84,7 @@ const assertCampResponseBody = (
     countries: data.countries,
     name: data.name,
     organization: data.organization,
+    contactEmail: data.contactEmail,
     maxParticipants: data.maxParticipants,
     minAge: data.minAge,
     maxAge: data.maxAge,
@@ -83,6 +94,7 @@ const assertCampResponseBody = (
     location: data.location,
     form: data.form,
     themes: data.themes,
+    accessors: data.accessors,
   });
 };
 
@@ -129,6 +141,8 @@ describe("/api/v1/camps", () => {
     it<CampTestContext>("should respond with `200` status code", async () => {
       const { status, body } = await request(app).get(`/api/v1/camps/`).send();
 
+      console.log(body);
+
       expect(status).toBe(200);
       expect(body).toHaveProperty("data");
       expectTypeOf(body.data).toBeArray();
@@ -166,6 +180,7 @@ describe("/api/v1/camps", () => {
         countries: camp.countries,
         name: camp.name,
         organization: camp.organization,
+        contactEmail: camp.contactEmail,
         maxParticipants: camp.maxParticipants,
         minAge: camp.minAge,
         maxAge: camp.maxAge,
@@ -175,6 +190,7 @@ describe("/api/v1/camps", () => {
         location: camp.location,
         form: camp.form,
         themes: camp.themes,
+        accessors: camp.accessors,
         freePlaces: expect.anything(),
       });
     });
@@ -225,44 +241,85 @@ describe("/api/v1/camps", () => {
   });
 
   describe("POST /api/v1/camps", () => {
-    it<CampTestContext>("should respond with `201` status code when user is authenticated", async (context) => {
-      const data = {
-        public: false,
-        countries: ["de"],
-        name: "Test Camp",
-        organization: "Test Org",
-        maxParticipants: 10,
-        minAge: 10,
-        maxAge: 15,
-        startAt: moment().add("20 days").startOf("hour").toDate().toISOString(),
-        endAt: moment().add("22 days").startOf("hour").toDate().toISOString(),
-        price: 100.0,
-        location: "Somewhere",
-        form: {},
-        themes: {},
-      };
-
-      const { status, body } = await request(app)
+    const createCamp = async (
+      data: PartialBy<Prisma.CampCreateInput, "id">,
+      accessToken: string,
+    ) => {
+      return request(app)
         .post(`/api/v1/camps/`)
         .send(data)
-        .set("Authorization", `Bearer ${context.otherAccessToken}`);
+        .set("Authorization", `Bearer ${accessToken}`);
+    };
+    const assertCampCreated = async (
+      expected: PartialBy<Prisma.CampCreateInput, "id">,
+      actual: unknown,
+    ) => {
+      // Test response
+      assertCampResponseBody(expected, actual);
+
+      const id = (actual as { data: { id: string } }).data.id;
+      await assertCampModel(id, expected);
+    };
+
+    it<CampTestContext>("should respond with `201` status code when user is authenticated", async (context) => {
+      const data = campCreateNational;
+
+      const { status, body } = await createCamp(data, context.otherAccessToken);
 
       expect(status).toBe(201);
 
-      const expectedData = {
-        ...data,
-        active: false,
-      };
+      // Test response
+      await assertCampCreated(data, body);
+    });
+
+    it<CampTestContext>("should respond with `201` status code with international camp", async (context) => {
+      const data = campCreateInternational;
+
+      const { status, body } = await createCamp(data, context.otherAccessToken);
+
+      expect(status).toBe(201);
 
       // Test response
-      assertCampResponseBody(body, expectedData);
-
-      // Test model
-      const campCount = await prisma.camp.count();
-      expect(campCount).toBe(4);
-
-      await assertCampModel(body.data.id, expectedData);
+      await assertCampCreated(data, body);
     });
+
+    it<CampTestContext>("should respond with `201` status code without translation", async (context) => {
+      // TODO Use it.each instead
+      const datasets = [
+        campCreateMissingUntranslatedMaxParticipants,
+        campCreateMissingUntranslatedNames,
+      ];
+
+      for (const data of datasets) {
+        const { status, body } = await createCamp(
+          data,
+          context.otherAccessToken,
+        );
+
+        expect(status).toBe(201);
+
+        // Test response
+        await assertCampCreated(data, body);
+      }
+    });
+
+    it<CampTestContext>("should respond with `400` status code with partial value is missing", async (context) => {
+      // TODO Use it.each instead
+      const datasets = [
+        campCreateMissingPartialMaxParticipants,
+        campCreateMissingPartialName,
+      ];
+
+      for (const data of datasets) {
+        const { status } = await createCamp(data, context.otherAccessToken);
+
+        expect(status).toBe(400);
+      }
+    });
+
+    it<CampTestContext>("should be inactive by default", () => {});
+
+    it<CampTestContext>("should generate accessors for form fields", async () => {});
 
     it<CampTestContext>("should respond with `401` status code when unauthenticated", async () => {
       const { status } = await request(app).post(`/api/v1/camps/`).send();
@@ -284,6 +341,7 @@ describe("/api/v1/camps", () => {
 
   describe("PATCH /api/v1/camps/:campId", () => {
     it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context) => {
+      // TODO Test each attribute individually
       const data = {
         active: true,
         public: false,
@@ -307,10 +365,12 @@ describe("/api/v1/camps", () => {
         .send(data)
         .set("Authorization", `Bearer ${context.accessToken}`);
 
+      console.log(body);
+
       expect(status).toBe(200);
 
       // Test response
-      assertCampResponseBody(body, data);
+      assertCampResponseBody(data, body);
 
       // Test model
       await assertCampModel(id, data);
@@ -403,5 +463,7 @@ describe("/api/v1/camps", () => {
 
       expect(status).toBe(404);
     });
+
+    it.todo("should delete all files");
   });
 });
