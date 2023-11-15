@@ -73,6 +73,8 @@ const update = {
     campId: Joi.string().required(),
   }),
   body: Joi.object({
+    // TODO If countries changes, the translated values might be required if they are translated
+    // FIXME translated values will if countries field is missing
     active: Joi.boolean(),
     public: Joi.boolean(),
     countries: Joi.array()
