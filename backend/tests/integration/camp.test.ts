@@ -14,7 +14,7 @@ import {
   campCreateMissingUntranslatedMaxParticipants,
   campCreateMissingUntranslatedNames,
   campCreateNational,
-} from "../fixtures/camp.fixtures";
+} from "../fixtures/camp/camp.fixtures";
 
 // test.todo("Camp manager invitation");
 
@@ -348,6 +348,7 @@ describe("/api/v1/camps", () => {
         countries: ["de"],
         name: "Test Camp",
         organization: "Test Org",
+        contactEmail: "test@example.com",
         maxParticipants: 10,
         minAge: 10,
         maxAge: 15,
