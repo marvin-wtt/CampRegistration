@@ -60,8 +60,14 @@ const isWaitingList = async (
   camp: Camp,
   data: RegistrationCreateData,
 ) => {
-  let maxParticipants = camp.maxParticipants as number | Record<string, number>;
   const campAccessors = camp.accessors as Record<string, (string | number)[][]>;
+
+  // Waiting list only applies to participants
+  if (!isParticipant(campAccessors, data)) {
+    return false;
+  }
+
+  let maxParticipants = camp.maxParticipants as number | Record<string, number>;
 
   const filter: Prisma.RegistrationWhereInput[] = [
     {
@@ -111,6 +117,28 @@ const isWaitingList = async (
   });
 
   return count >= maxParticipants;
+};
+
+const isParticipant = (
+  accessors: Record<string, (string | number)[][]>,
+  data: RegistrationCreateData,
+): boolean => {
+  // If no role is set, it is considered to be participant
+  if (!("role" in accessors)) {
+    return true;
+  }
+
+  for (const accessor of accessors["role"]) {
+    const roleValue = objectValueByPath(accessor, data.data);
+    console.log(roleValue);
+    if (roleValue === "participant") {
+      return true;
+    }
+  }
+
+  return accessors["role"].every(
+    (accessor) => !objectValueByPath(accessor, data.data),
+  );
 };
 
 const updateRegistrationById = async (
