@@ -309,10 +309,6 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(status).toBe(400);
     });
 
-    it.todo(
-      "should respond with `400` status code when additional files are provided",
-    );
-
     describe("registration with files", () => {
       it("should respond with `201` status code when form has file", async () => {
         const camp = await CampFactory.create(campWithFileRequired);
@@ -384,6 +380,26 @@ describe("/api/v1/camps/:campId/registrations", () => {
             ["data[some_file]"]: fileUuid,
           })
           .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`);
+
+        expect(status).toBe(400);
+      });
+
+      it("should respond with `400` status code when additional files are provided", async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+
+        const fileUuid = crypto.randomUUID();
+        const otherFileUuid = crypto.randomUUID();
+        const { status } = await request(app)
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .field({
+            ["data[some_field]"]: "Some value",
+            ["data[some_file]"]: fileUuid,
+          })
+          .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`)
+          .attach(
+            `files[${otherFileUuid}]`,
+            `${__dirname}/resources/blank.pdf`,
+          );
 
         expect(status).toBe(400);
       });
@@ -605,6 +621,16 @@ describe("/api/v1/camps/:campId/registrations", () => {
         expect(status).toBe(400);
       });
     });
+
+    describe("sends notification", () => {
+      it.todo("should send a confirmation email to the user");
+      it.todo("should send a copy to the contact email for national camp");
+      it.todo(
+        "should send a copy to the contact emails for international camp",
+      );
+      it.todo("should send a confirmation email to multiple addresses");
+      it.todo("should send a waiting list information to the user");
+    });
   });
 
   describe("PUT /api/v1/camps/:campId/registrations/:registrationId", () => {
@@ -653,6 +679,10 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
       expect(status).toBe(404);
     });
+
+    it.todo(
+      "should send a confirmation to the user if the waiting list status chnages",
+    );
   });
 
   describe("DELETE /api/v1/camps/:campId/registrations/:registrationId", () => {
