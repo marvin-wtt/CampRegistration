@@ -27,6 +27,7 @@ export const CampFactory = {
       countries: ["de"],
       name: faker.lorem.word(),
       organization: faker.company.name(),
+      contactEmail: faker.internet.email(),
       maxParticipants: faker.number.int({ min: 1, max: 100 }),
       minAge,
       maxAge,
@@ -36,6 +37,7 @@ export const CampFactory = {
       location: faker.location.city(),
       form: {}, // TODO Add dummy form
       themes: {},
+      accessors: {},
       createdAt,
       updatedAt,
       ...data,

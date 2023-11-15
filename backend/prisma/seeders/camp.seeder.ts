@@ -9,11 +9,13 @@ const run = (prisma: PrismaClient) => {
     data: {
       id: "01H4BK6DFQAVVB5TDS5BJ1AB95 ",
       public: true,
+      active: true,
       countries: ["de", "fr"],
       organization: {
         de: "Luftsportjugend des DAeC",
         fr: "Fédération Française d'Aérostation",
       },
+      contactEmail: "jugendleiter@ballaeron.de",
       name: {
         de: "DFJW Ballonsommercamp 2023",
         fr: "OFAJ Camp d'été en montgolfière 2023",
@@ -32,6 +34,8 @@ const run = (prisma: PrismaClient) => {
       },
       price: 250.0,
       form: form,
+      themes: {},
+      accessors: {},
       campManager: {
         create: {
           id: ulid(),
