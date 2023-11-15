@@ -130,7 +130,6 @@ const isParticipant = (
 
   for (const accessor of accessors["role"]) {
     const roleValue = objectValueByPath(accessor, data.data);
-    console.log(roleValue);
     if (roleValue === "participant") {
       return true;
     }
