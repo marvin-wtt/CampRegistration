@@ -24,6 +24,22 @@ export const campWithFileRequired = {
   ]),
 };
 
+export const campWithCustomFields = {
+  active: true,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+    {
+      name: "role",
+      type: "role",
+      isRequired: true,
+    },
+  ]),
+};
+
 export const campWithFileOptional = {
   active: true,
   form: createForm([

@@ -13,6 +13,7 @@ import { Camp, Registration, User } from "@prisma/client";
 import { ulid } from "ulidx";
 import crypto from "crypto";
 import {
+  campWithCustomFields,
   campWithFileOptional,
   campWithFileRequired,
   campWithMaxParticipantsInternational,
@@ -264,7 +265,21 @@ describe("/api/v1/camps/:campId/registrations", () => {
       "should respond with `201` status code when camp is full and waiting list is enabled",
     );
 
-    it.todo("accepts custom question types");
+    it("should respond with `201` status code when form has custom questions", async () => {
+      const camp = await CampFactory.create(campWithCustomFields);
+
+      const data = {
+        first_name: "Jhon",
+        role: "participant",
+      };
+
+      const { status, body } = await request(app)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data });
+
+      expect(status).toBe(201);
+      expect(body).toHaveProperty("data.data.role", data.role);
+    });
 
     it<RegistrationTestContext>("should respond with `401` status code when camp is not active", async () => {
       const privateCamp = await CampFactory.create({
