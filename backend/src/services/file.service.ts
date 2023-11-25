@@ -225,6 +225,10 @@ const LocalStorage: StorageStrategy = {
   },
   stream: (file: File) => {
     const filePath = path.join(config.storage.uploadDir, file.name);
+    if (!fse.existsSync(filePath)) {
+      throw new ApiError(httpStatus.NOT_FOUND, "File is missing in storage.");
+    }
+
     return fse.createReadStream(filePath);
   },
 };
