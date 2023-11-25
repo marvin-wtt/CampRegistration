@@ -117,7 +117,7 @@ const getCampDataPaths = (
     const elementName = valueName ? valueName : question.name;
     const path = [...parentPath, elementName];
 
-    if ("campDataType" in question && question.campData) {
+    if ("campDataType" in question && question.campDataType) {
       accessors[question.campDataType] ??= [];
       accessors[question.campDataType].push(path);
     }
