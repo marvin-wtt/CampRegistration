@@ -1,4 +1,5 @@
 import moment from "moment/moment";
+import { createForm } from "../../utils/form";
 
 export const campCreateNational = {
   active: false,
@@ -65,4 +66,74 @@ export const campCreateMissingUntranslatedMaxParticipants = {
 export const campCreateMissingUntranslatedNames = {
   ...campCreateInternational,
   name: "Example Camp",
+};
+
+export const campCreateAccessorsSingleType = {
+  ...campCreateNational,
+  form: createForm([
+    {
+      name: "email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+  ]),
+};
+
+export const campCreateAccessorsSingleTypeAndValueName = {
+  ...campCreateNational,
+  form: createForm([
+    {
+      name: "email",
+      valueName: "my-email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+  ]),
+};
+
+export const campCreateAccessorsSingleTypeMultipleFields = {
+  ...campCreateNational,
+  form: createForm([
+    {
+      name: "email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+    {
+      name: "other-email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+  ]),
+};
+
+export const campCreateAccessorsNestedName = {
+  ...campCreateNational,
+  form: createForm([
+    {
+      type: "panel",
+      name: "personal-information",
+      elements: [
+        {
+          name: "email",
+          type: "text",
+          campDataType: "email-primary",
+        },
+      ],
+    },
+  ]),
+};
+
+export const campCreateAccessorsMultipleTypes = {
+  ...campCreateNational,
+  form: createForm([
+    {
+      name: "email",
+      campDataType: "email-primary",
+    },
+    {
+      name: "other-email",
+      campDataType: "email-secondary",
+    },
+  ]),
 };

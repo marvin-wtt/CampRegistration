@@ -1,11 +1,15 @@
-const createForm = (elements: object[]) => {
-  return {
-    pages: [
-      {
-        elements,
-      },
-    ],
-  };
+import { createForm } from "../../utils/form";
+
+export const campPrivate = {
+  active: true,
+  public: false,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+  ]),
 };
 
 export const campWithFileRequired = {

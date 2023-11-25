@@ -13,6 +13,7 @@ import { Camp, Registration, User } from "@prisma/client";
 import { ulid } from "ulidx";
 import crypto from "crypto";
 import {
+  campPrivate,
   campWithCustomFields,
   campWithFileOptional,
   campWithFileRequired,
@@ -259,11 +260,19 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body).toHaveProperty("data.updated_at");
     });
 
-    it.todo("should respond with `201` status code for private camps");
+    it("should respond with `201` status code for private camps", async () => {
+      const camp = await CampFactory.create(campPrivate);
 
-    it.todo(
-      "should respond with `201` status code when camp is full and waiting list is enabled",
-    );
+      const data = {
+        first_name: "Jhon",
+      };
+
+      const { status } = await request(app)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data });
+
+      expect(status).toBe(201);
+    });
 
     it("should respond with `201` status code when form has custom questions", async () => {
       const camp = await CampFactory.create(campWithCustomFields);
@@ -281,13 +290,15 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body).toHaveProperty("data.data.role", data.role);
     });
 
+    it.todo("should work with camp variables");
+
     it<RegistrationTestContext>("should respond with `401` status code when camp is not active", async () => {
-      const privateCamp = await CampFactory.create({
+      const camp = await CampFactory.create({
         active: false,
       });
 
       const { status } = await request(app)
-        .post(`/api/v1/camps/${privateCamp.id}/registrations`)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
         .send();
 
       expect(status).toBe(401);
