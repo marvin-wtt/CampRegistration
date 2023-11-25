@@ -29,6 +29,7 @@ export const detailedCampResource = (camp: CampWithFreePlaces) => {
     ...campResource(camp),
     form: camp.form,
     themes: camp.themes,
+    accessors: camp.accessors,
   };
 };
 
