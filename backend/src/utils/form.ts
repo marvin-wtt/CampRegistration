@@ -1,6 +1,6 @@
 import { SurveyModel } from "survey-core";
 import { IQuestionPlainData } from "survey-core/typings/question";
-import "@camp-registration/common/form";
+import "./formRegistration"; // TODO Why can't I just import the common package here???
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
@@ -86,6 +86,10 @@ export const formUtils = (formJson: unknown) => {
         { propertyName: "campDataType" },
       ],
     });
+
+    // TODO Panels are not actually listed here
+    //  Maybe just iterate all questions instead?
+    //  Questions have access to the panels
 
     return getCampDataPaths(data);
   };
