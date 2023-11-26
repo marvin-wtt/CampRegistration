@@ -2,7 +2,7 @@
   "name": "@camp-registration/web",
   "version": "0.0.1",
   "description": "A frontend for camp registrations",
-  "productName": "Camp Registration",
+  "productName": "Camp Registration Frontent",
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
   "repository": {
@@ -28,9 +28,10 @@
     "pinia": "^2.0.33",
     "quasar": "^2.12.0",
     "showdown": "^2.1.0",
-    "survey-core": "^1.9.117",
-    "survey-creator-knockout": "^1.9.117",
-    "survey-vue3-ui": "^1.9.117",
+    "survey-core": "^1.9.118",
+    "survey-vue3-ui": "^1.9.118",
+    "survey-creator-core": "^1.9.118",
+    "survey-creator-knockout": "^1.9.118",
     "vue": "^3.3.1",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.1.6",
@@ -55,10 +56,5 @@
     "prettier": "^3.0.3",
     "typescript": "^5.0.3",
     "vitest": "^0.34.5"
-  },
-  "engines": {
-    "node": "^18 || ^16 || ^14.19",
-    "npm": ">= 6.13.4",
-    "yarn": ">= 1.21.1"
   }
 }

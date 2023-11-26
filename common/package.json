@@ -20,11 +20,11 @@
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.3",
-    "survey-core": "^1.9.117",
+    "survey-core": "^1.9.118",
     "typescript": "^5.0.3"
   },
   "engines": {
-    "node": "^18 || ^16 || ^14.19",
+    "node": "^20 || ^18 || ^16 || ^14.19",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
   }
