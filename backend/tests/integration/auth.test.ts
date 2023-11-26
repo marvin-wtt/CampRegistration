@@ -123,7 +123,36 @@ describe("/api/v1/auth", async () => {
       expect(user.role).toEqual("USER");
     });
 
-    it.todo("should store user preferred locale when successful");
+    it("should store user preferred locale when successful", async () => {
+      const data = {
+        name: "testuser",
+        email: "test@email.net",
+        password: "Password1",
+      };
+
+      const { status, body } = await request(app)
+        .post("/api/v1/auth/register")
+        .set("Accept-Language", "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")
+        .send(data);
+
+      expect(status).toBe(201);
+      expect(body).toHaveProperty("locale", "fr-CH");
+    });
+
+    it("should use en-US as default locale", async () => {
+      const data = {
+        name: "testuser",
+        email: "test@email.net",
+        password: "Password1",
+      };
+
+      const { status, body } = await request(app)
+        .post("/api/v1/auth/register")
+        .send(data);
+
+      expect(status).toBe(201);
+      expect(body).toHaveProperty("locale", "en-US");
+    });
   });
 
   describe("POST /api/v1/auth/login", () => {
