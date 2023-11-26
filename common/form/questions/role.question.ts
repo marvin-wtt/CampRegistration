@@ -61,6 +61,10 @@ const roleQuestion: RoleQuestionConfiguration = {
     }
   },
   updateChoices(question, value) {
+        if (!value) {
+          return;
+        }
+
     // Allow user to override the initial value with custom labels
     const defaultValues = this.initialChoices.filter(
       (item) => !value?.some((it) => it.value === item.value) ?? true,
