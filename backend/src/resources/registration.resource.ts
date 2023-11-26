@@ -28,15 +28,14 @@ const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
 };
 
 const registrationResource = (registration: RegistrationWithBedAndFiles) => {
-  const data = typeof registration.data === "object" ? registration.data : {};
-
   const files = extractFiles(registration);
   const room = registration.bed ? registration.bed.room.name : null;
 
   return {
     id: registration.id,
     waitingList: registration.waitingList,
-    data,
+    data: registration.data,
+    campData: registration.campData,
     files,
     room,
     // Use snake case because form keys should be snake case too

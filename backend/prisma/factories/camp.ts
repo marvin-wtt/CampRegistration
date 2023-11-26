@@ -35,9 +35,8 @@ export const CampFactory = {
       endAt,
       price: faker.number.int({ min: 0, max: 1000 }),
       location: faker.location.city(),
-      form: {}, // TODO Add dummy form
+      form: {},
       themes: {},
-      accessors: {},
       createdAt,
       updatedAt,
       ...data,

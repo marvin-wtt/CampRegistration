@@ -1,7 +1,6 @@
 import { Registration } from 'src/types/Registration';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { objectValueByPath } from 'src/utils/objectValueByPath';
 
 export function useRegistrationHelper() {
   const campDetailsStore = useCampDetailsStore();
@@ -12,17 +11,13 @@ export function useRegistrationHelper() {
     keyName: string,
     index = 0,
   ): unknown {
-    const accessors = campDetailsStore.data?.accessors;
-    if (!accessors) {
+    const campData = registration.campData;
+
+    if (!(keyName in campData) || campData[keyName].length < index + 1) {
       return undefined;
     }
 
-    if (!(keyName in accessors) || accessors[keyName].length < index + 1) {
-      return undefined;
-    }
-
-    const path = accessors[keyName][index];
-    return objectValueByPath(path, registration);
+    return campData[keyName][index];
   }
 
   function stringValue(

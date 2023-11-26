@@ -1,5 +1,4 @@
 import { SurveyModel } from "survey-core";
-import { IQuestionPlainData } from "survey-core/typings/question";
 import "./formRegistration"; // TODO Why can't I just import the common package here???
 
 type RequestFile = Express.Multer.File;
@@ -76,22 +75,34 @@ export const formUtils = (formJson: unknown) => {
     });
   };
 
-  const extractAccessors = () => {
+  const extractCampData = (): Record<string, unknown[]> => {
     const data = survey.getPlainData({
       includeEmpty: true,
       includeQuestionTypes: true,
-      includeValues: false,
-      calculations: [
-        { propertyName: "valueName" },
-        { propertyName: "campDataType" },
-      ],
+      includeValues: true,
+      calculations: [{ propertyName: "campDataType" }],
     });
 
-    // TODO Panels are not actually listed here
-    //  Maybe just iterate all questions instead?
-    //  Questions have access to the panels
+    return data
+      .filter((value) => value.campDataType)
+      .map((value) => {
+        // Undefined is not accepted by prisma and must be replaced with null
+        value.value ??= null;
+        return value;
+      })
+      .reduce(
+        (campData, value) => {
+          const type = value.campDataType;
+          // Create a new entry for the camp data type if it does not exist
+          if (!(type in campData)) {
+            campData[type] = [];
+          }
+          campData[type].push(value.value);
 
-    return getCampDataPaths(data);
+          return campData;
+        },
+        {} as Record<string, unknown[]>,
+      );
   };
 
   return {
@@ -99,7 +110,7 @@ export const formUtils = (formJson: unknown) => {
     hasDataErrors,
     hasUnknownFiles,
     unknownDataFields,
-    extractAccessors,
+    extractCampData,
   };
 };
 
@@ -107,29 +118,4 @@ export const extractKeyFromFieldName = (fieldName: string): string => {
   const pattern = /^files\[(.+)]$/;
   const match = pattern.exec(fieldName);
   return match ? match[1] : fieldName;
-};
-
-type FieldAccessor = Record<string, (string | number)[][]>;
-
-const getCampDataPaths = (
-  data: IQuestionPlainData[],
-  parentPath: string[] = [],
-  accessors: FieldAccessor = {},
-): FieldAccessor => {
-  data.forEach((question) => {
-    const valueName = question["valueName"];
-    const elementName = valueName ? valueName : question.name;
-    const path = [...parentPath, elementName];
-
-    if ("campDataType" in question && question.campDataType) {
-      accessors[question.campDataType] ??= [];
-      accessors[question.campDataType].push(path);
-    }
-
-    if (question.isNode && question.data) {
-      getCampDataPaths(question.data, path);
-    }
-  });
-
-  return accessors;
 };

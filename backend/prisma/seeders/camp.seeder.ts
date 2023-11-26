@@ -35,7 +35,6 @@ const run = (prisma: PrismaClient) => {
       price: 250.0,
       form: form,
       themes: {},
-      accessors: {},
       campManager: {
         create: {
           id: ulid(),

@@ -8,17 +8,12 @@ import { Camp, Prisma, User } from "@prisma/client";
 import moment from "moment";
 import { ulid } from "ulidx";
 import {
-  campCreateAccessorsSingleTypeMultipleFields,
-  campCreateAccessorsNestedName,
-  campCreateAccessorsSingleType,
-  campCreateAccessorsSingleTypeAndValueName,
   campCreateInternational,
   campCreateMissingPartialMaxParticipants,
   campCreateMissingPartialName,
   campCreateMissingUntranslatedMaxParticipants,
   campCreateMissingUntranslatedNames,
   campCreateNational,
-  campCreateAccessorsMultipleTypes,
 } from "../fixtures/camp/camp.fixtures";
 
 // test.todo("Camp manager invitation");
@@ -65,7 +60,6 @@ const assertCampModel = async (
     themes: data.themes,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
-    accessors: expect.anything(),
   });
 };
 
@@ -91,7 +85,6 @@ const assertCampResponseBody = (
     location: data.location,
     form: data.form,
     themes: data.themes,
-    accessors: expect.anything(),
   });
 };
 
@@ -182,7 +175,6 @@ describe("/api/v1/camps", () => {
         location: camp.location,
         form: camp.form,
         themes: camp.themes,
-        accessors: camp.accessors,
         freePlaces: expect.anything(),
       });
     });
@@ -311,8 +303,6 @@ describe("/api/v1/camps", () => {
 
     it<CampTestContext>("should be inactive by default", () => {});
 
-    it<CampTestContext>("should generate accessors for form fields", async () => {});
-
     it<CampTestContext>("should respond with `401` status code when unauthenticated", async () => {
       const { status } = await request(app).post(`/api/v1/camps/`).send();
 
@@ -328,79 +318,6 @@ describe("/api/v1/camps", () => {
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
 
       expect(status).toBe(400);
-    });
-
-    describe("generate data accessors", () => {
-      it<CampTestContext>("should add an data accessor for a single type", async (context) => {
-        const { status, body } = await request(app)
-          .post(`/api/v1/camps/`)
-          .send(campCreateAccessorsSingleType)
-          .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-        expect(status).toBe(201);
-
-        expect(body).toHaveProperty("data.accessors");
-        expect(body.data.accessors).toEqual({
-          "email-primary": [["email"]],
-        });
-      });
-
-      it.only<CampTestContext>("should add an data accessor with a nested path", async (context) => {
-        const { status, body } = await request(app)
-          .post(`/api/v1/camps/`)
-          .send(campCreateAccessorsNestedName)
-          .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-        expect(status).toBe(201);
-
-        expect(body).toHaveProperty("data.accessors");
-        expect(body.data.accessors).toEqual({
-          "email-primary": [["personal-information", "email"]],
-        });
-      });
-
-      it<CampTestContext>("should add an data accessor with the value name", async (context) => {
-        const { status, body } = await request(app)
-          .post(`/api/v1/camps/`)
-          .send(campCreateAccessorsSingleTypeAndValueName)
-          .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-        expect(status).toBe(201);
-
-        expect(body).toHaveProperty("data.accessors");
-        expect(body.data.accessors).toEqual({
-          "email-primary": [["my-email"]],
-        });
-      });
-
-      it<CampTestContext>("should add data accessors for multiple types", async (context) => {
-        const { status, body } = await request(app)
-          .post(`/api/v1/camps/`)
-          .send(campCreateAccessorsMultipleTypes)
-          .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-        expect(status).toBe(201);
-
-        expect(body).toHaveProperty("data.accessors");
-        expect(body.data.accessors).toEqual({
-          "email-primary": [["email"]],
-          "email-secondary": [["other-email"]],
-        });
-      });
-
-      it<CampTestContext>("should add multiple fields to data accessor for a field", async (context) => {
-        const { status, body } = await request(app)
-          .post(`/api/v1/camps/`)
-          .send(campCreateAccessorsSingleTypeMultipleFields)
-          .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-        expect(status).toBe(201);
-
-        expect(body).toHaveProperty("data.accessors");
-        expect(body.data.accessors).toEqual({
-          "email-primary": [["email"], ["other-email"]],
-        });
-      });
     });
   });
 
@@ -480,8 +397,6 @@ describe("/api/v1/camps", () => {
 
       expect(status).toBe(404);
     });
-
-    describe.todo("should update data accessors");
   });
 
   describe("DELETE /api/v1/camps/:campId", () => {

@@ -18,7 +18,6 @@ export interface Camp extends Identifiable {
   price: string;
   form: SurveyJSCampData;
   themes: Record<string, ITheme>;
-  accessors: Record<string, (string | number)[][]>;
 }
 
 export type CampCreateData = Omit<Camp, 'id'>;

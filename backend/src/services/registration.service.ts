@@ -2,10 +2,9 @@ import prisma from "../client";
 import { ulid } from "@/utils/ulid";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import { campService } from "./index";
 import { Camp, Prisma } from "@prisma/client";
-import { objectValueByPath } from "@/utils/objectValueByPath";
 import dbJsonPath from "@/utils/dbJsonPath";
+import { formUtils } from "@/utils/form";
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -31,24 +30,22 @@ type RegistrationCreateData = Pick<
   Prisma.RegistrationCreateInput,
   "waitingList" | "data"
 >;
-const createRegistration = async (
-  campId: string,
-  data: RegistrationCreateData,
-) => {
-  const camp = await campService.getCampById(campId);
-  if (!camp) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Camp not found");
-  }
+const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
+  // TODO The utils was already initialized during validation. Attach it to the request body
+  const form = formUtils(camp.form);
+  form.updateData(data.data);
+  const campData = form.extractCampData();
 
   return prisma.$transaction(async (transaction) => {
     const waitingList =
-      data.waitingList ?? (await isWaitingList(transaction, camp, data));
+      data.waitingList ?? (await isWaitingList(transaction, camp, campData));
     return transaction.registration.create({
       data: {
         ...data,
         id: ulid(),
-        campId,
+        campId: camp.id,
         waitingList,
+        campData,
       },
       include: { files: true },
     });
@@ -58,58 +55,49 @@ const createRegistration = async (
 const isWaitingList = async (
   transaction: Partial<typeof prisma>,
   camp: Camp,
-  data: RegistrationCreateData,
+  campData: Record<string, unknown[]>,
 ) => {
-  const campAccessors = camp.accessors as Record<string, (string | number)[][]>;
-
   // Waiting list only applies to participants
-  if (!isParticipant(campAccessors, data)) {
+  if (!isParticipant(campData)) {
     return false;
   }
-
-  let maxParticipants = camp.maxParticipants;
 
   const filter: Prisma.RegistrationWhereInput[] = [
     {
       campId: camp.id,
     },
+    {
+      OR: [
+        {
+          campData: {
+            path: dbJsonPath("role"),
+            equals: Prisma.DbNull,
+          },
+        },
+        {
+          campData: {
+            path: dbJsonPath("role"),
+            array_contains: ["participant"],
+          },
+        },
+      ],
+    },
   ];
 
-  const rolePath = dbJsonPath("role", campAccessors);
-  if (rolePath) {
-    filter.push({
-      data: {
-        path: rolePath,
-        equals: "participant",
-      },
-    });
-  }
-
+  let maxParticipants = camp.maxParticipants as Record<string, number> | number;
   // Add country filter
   if (typeof maxParticipants !== "number") {
-    const countryPath = dbJsonPath("country", campAccessors);
-    const countryValue = objectValueByPath(
-      campAccessors["country"][0],
-      data.data,
-    ) as string;
-
-    if (!countryPath || !countryValue) {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        "Missing country data.",
-      );
-    }
-
+    const country = findCampDataCountry(campData);
     // Add filter criteria for country
     filter.push({
-      data: {
-        path: countryPath,
-        equals: countryValue,
+      campData: {
+        path: dbJsonPath("country"),
+        array_contains: [country],
       },
     });
 
     // Set country based value as maximum
-    maxParticipants = maxParticipants[countryValue];
+    maxParticipants = maxParticipants[country];
   }
 
   const count = await transaction.registration!.count({
@@ -119,34 +107,43 @@ const isWaitingList = async (
   return count >= maxParticipants;
 };
 
-const isParticipant = (
-  accessors: Record<string, (string | number)[][]>,
-  data: RegistrationCreateData,
-): boolean => {
+const isParticipant = (campData: Record<string, unknown[]>): boolean => {
   // If no role is set, it is considered to be participant
-  if (!("role" in accessors)) {
+  if (!("role" in campData) || campData["role"].length === 0) {
     return true;
   }
 
-  for (const accessor of accessors["role"]) {
-    const roleValue = objectValueByPath(accessor, data.data);
-    if (roleValue === "participant") {
-      return true;
-    }
+  return campData["role"].some((role) => role === "participant");
+};
+
+const findCampDataCountry = (campData: Record<string, unknown[]>): string => {
+  const country = campData["country"].find((value) => !!value);
+  if (!country || typeof country !== "string") {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Missing country data.",
+    );
   }
 
-  return accessors["role"].every(
-    (accessor) => !objectValueByPath(accessor, data.data),
-  );
+  return country;
 };
 
 const updateRegistrationById = async (
+  camp: Camp,
   registrationId: string,
   data: Pick<Prisma.RegistrationUpdateInput, "waitingList" | "data">,
 ) => {
+  // TODO The utils was already initialized during validation. Attach it to the request body
+  const form = formUtils(camp.form);
+  form.updateData(data.data);
+  const campData = form.extractCampData();
+
   return prisma.registration.update({
     where: { id: registrationId },
-    data,
+    data: {
+      ...data,
+      campData,
+    },
     include: {
       files: true,
       bed: { include: { room: true } },

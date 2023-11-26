@@ -70,7 +70,6 @@ export const campWithMaxParticipantsNational = {
       isRequired: true,
     },
   ]),
-  accessors: {},
 };
 
 export const campWithMaxParticipantsInternational = {
@@ -93,9 +92,6 @@ export const campWithMaxParticipantsInternational = {
       isRequired: true,
     },
   ]),
-  accessors: {
-    country: [["country"]],
-  },
 };
 
 export const campWithMaxParticipantsRolesNational = {
@@ -114,9 +110,6 @@ export const campWithMaxParticipantsRolesNational = {
       isRequired: true,
     },
   ]),
-  accessors: {
-    role: [["role"]],
-  },
 };
 
 export const campWithMaxParticipantsRolesInternational = {
@@ -145,8 +138,62 @@ export const campWithMaxParticipantsRolesInternational = {
       isRequired: true,
     },
   ]),
-  accessors: {
-    role: [["role"]],
-    country: [["country"]],
-  },
+};
+
+export const campWithSingleCampDataType = {
+  active: true,
+  form: createForm([
+    {
+      name: "email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+    {
+      name: "other",
+      type: "text",
+      isRequired: true,
+    },
+  ]),
+};
+
+export const campWithMultipleCampDataValues = {
+  active: true,
+  form: createForm([
+    {
+      name: "email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+    {
+      name: "otherEmail",
+      type: "text",
+      campDataType: "email-primary",
+    },
+    {
+      name: "other",
+      type: "text",
+      isRequired: true,
+    },
+  ]),
+};
+
+export const campWithMultipleCampDataTypes = {
+  active: true,
+  form: createForm([
+    {
+      name: "email",
+      type: "text",
+      campDataType: "email-primary",
+    },
+    {
+      name: "country",
+      type: "text",
+      campDataType: "country",
+    },
+    {
+      name: "other",
+      type: "text",
+      isRequired: true,
+    },
+  ]),
 };

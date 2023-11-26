@@ -21,6 +21,9 @@ import {
   campWithMaxParticipantsNational,
   campWithMaxParticipantsRolesInternational,
   campWithMaxParticipantsRolesNational,
+  campWithMultipleCampDataTypes,
+  campWithMultipleCampDataValues,
+  campWithSingleCampDataType,
 } from "../fixtures/registration/camp.fixtures";
 
 export interface RegistrationTestContext {
@@ -108,8 +111,6 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body.data[0]).toHaveProperty("id");
       expect(body.data[0]).toHaveProperty("room");
     });
-
-    it.todo("should set the users preferred locale");
 
     it.todo<RegistrationTestContext>(
       "should include files in the response body ",
@@ -292,7 +293,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
     it.todo("should work with camp variables");
 
-    it<RegistrationTestContext>("should respond with `401` status code when camp is not active", async () => {
+    it("should respond with `401` status code when camp is not active", async () => {
       const camp = await CampFactory.create({
         active: false,
       });
@@ -335,7 +336,9 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(status).toBe(400);
     });
 
-    describe("registration with files", () => {
+    it.todo("should set the users preferred locale");
+
+    describe("files", () => {
       it("should respond with `201` status code when form has file", async () => {
         const camp = await CampFactory.create(campWithFileRequired);
 
@@ -440,6 +443,90 @@ describe("/api/v1/camps/:campId/registrations", () => {
           });
 
         expect(status).toBe(201);
+      });
+    });
+
+    describe("generate camp data", () => {
+      it("should add entry with single value", async () => {
+        const camp = await CampFactory.create(campWithSingleCampDataType);
+
+        const data = {
+          email: "test@example.com",
+          other: "dummy",
+        };
+
+        const { status, body } = await request(app)
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data });
+
+        expect(status).toBe(201);
+
+        expect(body).toHaveProperty("data.campData");
+        expect(body.data.campData).toEqual({
+          "email-primary": ["test@example.com"],
+        });
+      });
+
+      it("should add entry without values", async () => {
+        const camp = await CampFactory.create(campWithSingleCampDataType);
+
+        const data = {
+          other: "dummy",
+        };
+
+        const { status, body } = await request(app)
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data });
+
+        expect(status).toBe(201);
+
+        expect(body).toHaveProperty("data.campData");
+        expect(body.data.campData).toEqual({
+          "email-primary": [null],
+        });
+      });
+
+      it("should add entry with multiple values", async () => {
+        const camp = await CampFactory.create(campWithMultipleCampDataValues);
+
+        const data = {
+          email: "test@example.com",
+          otherEmail: "other@example.com",
+          other: "dummy",
+        };
+
+        const { status, body } = await request(app)
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data });
+
+        expect(status).toBe(201);
+
+        expect(body).toHaveProperty("data.campData");
+        expect(body.data.campData).toEqual({
+          "email-primary": ["test@example.com", "other@example.com"],
+        });
+      });
+
+      it("should add multiple entries", async () => {
+        const camp = await CampFactory.create(campWithMultipleCampDataTypes);
+
+        const data = {
+          email: "test@example.com",
+          country: "de",
+          other: "dummy",
+        };
+
+        const { status, body } = await request(app)
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data });
+
+        expect(status).toBe(201);
+
+        expect(body).toHaveProperty("data.campData");
+        expect(body.data.campData).toEqual({
+          "email-primary": ["test@example.com"],
+          country: ["de"],
+        });
       });
     });
 
@@ -709,6 +796,8 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it.todo(
       "should send a confirmation to the user if the waiting list status chnages",
     );
+
+    describe.todo("update camp data");
   });
 
   describe("DELETE /api/v1/camps/:campId/registrations/:registrationId", () => {

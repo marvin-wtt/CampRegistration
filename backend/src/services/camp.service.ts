@@ -2,8 +2,6 @@ import { Camp, type Prisma } from "@prisma/client";
 import prisma from "../client";
 import { ulid } from "@/utils/ulid";
 import { objectValueByPath } from "@/utils/objectValueByPath";
-import { formUtils } from "@/utils/form";
-import dbJsonPath from "@/utils/dbJsonPath";
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
@@ -89,16 +87,12 @@ const queryPublicCamps = async <Key extends keyof Camp>(
 
 const createCamp = async (
   userId: string,
-  data: Omit<Prisma.CampCreateInput, "id" | "accessors">,
+  data: Omit<Prisma.CampCreateInput, "id">,
 ) => {
-  // TODO This was already done in validation. How to cache / reuse it?
-  const form = formUtils(data.form);
-
   return prisma.camp.create({
     data: {
       id: ulid(),
       ...data,
-      accessors: form.extractAccessors(),
       campManager: { create: { userId, id: ulid() } },
     },
   });
@@ -108,14 +102,10 @@ const updateCampById = async (
   id: string,
   data: Omit<Prisma.CampUpdateInput, "id">,
 ) => {
-  // TODO This was already done in validation. How to cache / reuse it?
-  const form = formUtils(data.form);
-
   return prisma.camp.update({
     where: { id },
     data: {
       ...data,
-      accessors: form.extractAccessors(),
     },
   });
 };
@@ -130,10 +120,10 @@ const getCampFreePlaces = async (
   camp: Camp,
 ): Promise<number | Record<string, number>> => {
   const countries = Array.isArray(camp.countries) ? camp.countries : [];
-  const campAccessors = camp.accessors as Record<string, (string | number)[][]>;
   const freeSpaces = camp.maxParticipants as Record<string, number> | number;
 
-  const rolePath = dbJsonPath("role", campAccessors);
+  // TODO With camp data, it should check for anymatch in the array
+  const rolePath = "";
   const whereRole = rolePath
     ? { path: rolePath, equals: "participant" }
     : undefined;

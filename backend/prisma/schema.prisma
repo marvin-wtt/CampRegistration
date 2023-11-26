@@ -58,7 +58,6 @@ model Camp {
   form            Json           @db.Json
   /// [GenericObject]
   themes          Json           @default("{}") @db.Json
-  accessors       Json           @default("{}") @db.Json
   createdAt       DateTime?      @default(now()) @map("created_at")
   updatedAt       DateTime?      @updatedAt @map("updated_at")
   campManager     CampManager[]
@@ -102,6 +101,8 @@ model Registration {
   createdAt   DateTime? @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
   camp        Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  /// [RegistrationCampData]
+  campData    Json      @default("{}") @db.Json
   bed         Bed?
   files       File[]
 

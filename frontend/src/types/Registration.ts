@@ -2,6 +2,7 @@ import { Identifiable } from 'src/types/Identifiable';
 
 export interface Registration extends Identifiable {
   data: Record<string, unknown>;
+  campData: Record<string, unknown[]>;
   waitingList: boolean;
   room?: Record<string, string>;
   created_at: string;

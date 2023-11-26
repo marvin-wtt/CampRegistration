@@ -25,11 +25,11 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  const camp = routeModel(req.models.camp);
   const { data } = req.body;
   const files = req.files;
 
-  let registration = await registrationService.createRegistration(campId, {
+  let registration = await registrationService.createRegistration(camp, {
     data,
   });
 
@@ -51,10 +51,12 @@ const store = catchRequestAsync(async (req, res) => {
 });
 
 const update = catchRequestAsync(async (req, res) => {
+  const camp = routeModel(req.models.camp);
   const { registrationId } = req.params;
   const data = req.body;
 
   const registration = await registrationService.updateRegistrationById(
+    camp,
     registrationId,
     {
       data: data.data,
