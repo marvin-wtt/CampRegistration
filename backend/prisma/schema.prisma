@@ -2,6 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// TODO This is a workaround due to https://github.com/prisma/prisma/issues/3219
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -32,18 +37,26 @@ model Camp {
   id              String         @id @unique(map: "camps_id_unique") @db.Char(26)
   active          Boolean
   public          Boolean
+  /// ![string[]]
   countries       Json           @db.Json
+  /// [StringOrTranslation]
   name            Json           @db.Json
+  /// [StringOrTranslation]
   organization    Json           @db.Json
+  /// [StringOrTranslation]
   contactEmail    Json           @map("contact_email") @db.Json
+  /// [NumberOrTranslation]
   maxParticipants Json           @map("max_participants") @db.Json
   minAge          Int            @map("min_age") @db.UnsignedInt
   maxAge          Int            @map("max_age") @db.UnsignedInt
   startAt         DateTime       @map("start_at") @db.DateTime(0)
   endAt           DateTime       @map("end_at") @db.DateTime(0)
   price           Float
+  /// [StringOrTranslation]
   location        Json?          @db.Json
+  /// [GenericObject]
   form            Json           @db.Json
+  /// [GenericObject]
   themes          Json           @default("{}") @db.Json
   accessors       Json           @default("{}") @db.Json
   createdAt       DateTime?      @default(now()) @map("created_at")
@@ -83,6 +96,7 @@ model Invitation {
 model Registration {
   id          String    @id @unique(map: "registrations_id_unique") @db.Char(26)
   campId      String?   @map("camp_id") @db.Char(26)
+  /// [GenericObject]
   data        Json      @db.Json
   waitingList Boolean   @default(true)
   createdAt   DateTime? @default(now()) @map("created_at")
@@ -97,6 +111,7 @@ model Registration {
 model Room {
   id       String @id @unique(map: "rooms_id_unique") @db.Char(26)
   campId   String @map("camp_id") @db.Char(26)
+  /// [StringOrTranslation]
   name     Json   @db.Json
   capacity Int    @db.UnsignedInt
   camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
@@ -118,6 +133,7 @@ model Bed {
 model Template {
   id     String @id @unique(map: "templates_id_unique") @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
+  /// [GenericObject]
   data   Json   @db.Json
   camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "templates_camp_id_foreign")
 

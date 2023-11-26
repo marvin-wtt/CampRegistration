@@ -67,7 +67,7 @@ const isWaitingList = async (
     return false;
   }
 
-  let maxParticipants = camp.maxParticipants as number | Record<string, number>;
+  let maxParticipants = camp.maxParticipants;
 
   const filter: Prisma.RegistrationWhereInput[] = [
     {
