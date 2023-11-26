@@ -56,6 +56,7 @@ const store = {
   }),
   body: Joi.object({
     data: Joi.object().custom(registrationData, "registration data").required(),
+    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     // files
   }),
 };

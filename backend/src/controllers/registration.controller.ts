@@ -27,8 +27,8 @@ const index = catchRequestAsync(async (req, res) => {
 
 const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
-  const locale = requestLocale(req);
-  const { data } = req.body;
+  const { data, locale: bodyLocale } = req.body;
+  const locale = bodyLocale ?? requestLocale(req);
   const files = req.files;
 
   let registration = await registrationService.createRegistration(camp, {
