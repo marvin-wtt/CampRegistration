@@ -1,14 +1,11 @@
 import prisma from "../client";
-import { randomUUID } from "crypto";
 import { ulid } from "@/utils/ulid";
-import { userService } from "@/services/index";
-import { as } from "vitest/dist/reporters-5f784f42";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
   userId: string,
 ): Promise<boolean> => {
-  return await prisma.campManager
+  return prisma.campManager
     .findFirst({
       where: { campId, userId },
     })
