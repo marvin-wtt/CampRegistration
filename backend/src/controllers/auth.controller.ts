@@ -13,10 +13,11 @@ import config from "@/config";
 import { userCampResource, userDetailedResource } from "@/resources";
 import ApiError from "@/utils/ApiError";
 import managerService from "@/services/manager.service";
+import { requestLocale } from "@/utils/requestLocale";
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;
-  const locale = req.headers["accept-language"];
+  const locale = requestLocale(req);
 
   const user = await userService.createUser({
     name,
