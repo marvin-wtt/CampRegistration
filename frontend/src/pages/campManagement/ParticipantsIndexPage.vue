@@ -4,12 +4,13 @@
     :loading="loading"
   >
     <result-table
+      v-if="camp.data.value !== undefined"
       ref="table"
       class="absolute fit"
       :questions="columns"
       :results="results"
       :templates="templates.data.value ?? []"
-      :camp="camp.data.value as Camp"
+      :camp="camp.data.value"
     />
   </page-state-handler>
 </template>
