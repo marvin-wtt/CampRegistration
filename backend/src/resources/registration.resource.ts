@@ -36,6 +36,7 @@ const registrationResource = (registration: RegistrationWithBedAndFiles) => {
     waitingList: registration.waitingList,
     data: registration.data,
     campData: registration.campData,
+    locale: registration.locale,
     files,
     room,
     // Use snake case because form keys should be snake case too

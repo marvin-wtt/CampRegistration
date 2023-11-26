@@ -28,7 +28,7 @@ const queryRegistrations = async (campId: string) => {
 
 type RegistrationCreateData = Pick<
   Prisma.RegistrationCreateInput,
-  "waitingList" | "data"
+  "waitingList" | "data" | "locale"
 >;
 const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   // TODO The utils was already initialized during validation. Attach it to the request body

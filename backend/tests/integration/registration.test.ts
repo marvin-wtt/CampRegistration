@@ -14,6 +14,7 @@ import { ulid } from "ulidx";
 import crypto from "crypto";
 import {
   campPrivate,
+  campPublic,
   campWithCustomFields,
   campWithFileOptional,
   campWithFileRequired,
@@ -237,17 +238,18 @@ describe("/api/v1/camps/:campId/registrations", () => {
   });
 
   describe("POST /api/v1/camps/:campId/registrations/", () => {
-    it<RegistrationTestContext>("should respond with `201` status code", async (context) => {
+    it("should respond with `201` status code", async () => {
+      const camp = await CampFactory.create(campPublic);
+
       const data = {
         data: {
           first_name: "Jhon",
           last_name: "Doe",
         },
       };
-      await CampFactory.create();
 
       const { status, body } = await request(app)
-        .post(`/api/v1/camps/${context.camp.id}/registrations`)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
         .send(data);
 
       expect(status).toBe(201);
@@ -336,7 +338,25 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(status).toBe(400);
     });
 
-    it.todo("should set the users preferred locale");
+    it("should set the users preferred locale", async () => {
+      const camp = await CampFactory.create(campPublic);
+
+      const data = {
+        data: {
+          first_name: "Jhon",
+        },
+      };
+
+      const { status, body } = await request(app)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .set("Accept-Language", "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")
+        .send(data);
+
+      expect(status).toBe(201);
+
+      expect(body).toHaveProperty("data");
+      expect(body).toHaveProperty("data.locale", "fr-CH");
+    });
 
     describe("files", () => {
       it("should respond with `201` status code when form has file", async () => {

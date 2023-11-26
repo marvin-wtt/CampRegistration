@@ -99,6 +99,7 @@ model Registration {
   data        Json      @db.Json
   /// [RegistrationCampData]
   campData    Json      @default("{}") @db.Json
+  locale      String    @default("en-US") @db.VarChar(5)
   waitingList Boolean   @default(true)
   createdAt   DateTime? @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")

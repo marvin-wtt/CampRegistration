@@ -5,6 +5,7 @@ import { collection, resource } from "@/resources/resource";
 import { fileService, registrationService } from "@/services";
 import { registrationResource } from "@/resources";
 import { routeModel } from "@/utils/verifyModel";
+import { requestLocale } from "@/utils/requestLocale";
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
@@ -26,11 +27,13 @@ const index = catchRequestAsync(async (req, res) => {
 
 const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
+  const locale = requestLocale(req);
   const { data } = req.body;
   const files = req.files;
 
   let registration = await registrationService.createRegistration(camp, {
     data,
+    locale,
   });
 
   // Store related files

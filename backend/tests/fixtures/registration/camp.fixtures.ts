@@ -12,6 +12,22 @@ export const campPrivate = {
   ]),
 };
 
+export const campPublic = {
+  active: true,
+  public: false,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+    {
+      name: "last_name",
+      type: "text",
+    },
+  ]),
+};
+
 export const campWithFileRequired = {
   active: true,
   form: createForm([
