@@ -502,7 +502,7 @@ describe("/api/v1/auth", async () => {
     );
 
     it.todo(
-      "should respond with `400` status code when provided with without token",
+      "should respond with `400` status code when provided without token",
     );
   });
 });
