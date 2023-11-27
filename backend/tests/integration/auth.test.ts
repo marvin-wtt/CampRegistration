@@ -426,59 +426,57 @@ describe("/api/v1/auth", async () => {
     });
 
     it<ResetPasswordContext>("should respond with `204` status code when provided with valid token and email", async (context) => {
-      const query = generateQueryString({
+      const data = {
         token: context.token,
         email: context.email,
-      });
+        password: "Test1234",
+      };
+
       const { status } = await request(app)
-        .post(`/api/v1/auth/reset-password/?${query}`)
-        .send({
-          password: "Test1234",
-        });
+        .post(`/api/v1/auth/reset-password/`)
+        .send(data);
 
       expect(status).toBe(204);
     });
 
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid token", async (context) => {
-      const query = generateQueryString({
+      const data = {
         token: "SomeInvalidToken",
         email: context.email,
-      });
+        password: "Test1234",
+      };
+
       const { status } = await request(app)
-        .post(`/api/v1/auth/reset-password/?${query}`)
-        .send({
-          password: "Test1234",
-        });
+        .post(`/api/v1/auth/reset-password/`)
+        .send(data);
 
       expect(status).toBe(400);
     });
 
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid email", async (context) => {
-      const query = generateQueryString({
+      const data = {
         token: context.token,
         email: context.email,
-      });
+        password: "123",
+      };
+
       const { status } = await request(app)
-        .post(`/api/v1/auth/reset-password/?${query}`)
-        .send({
-          password: "123",
-        });
+        .post(`/api/v1/auth/reset-password/`)
+        .send(data);
 
       expect(status).toBe(400);
     });
 
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid password", async (context) => {
-      const query = generateQueryString({
+      const data = {
         token: context.token,
         email: "invalid@email.net",
-      });
-      const { status, body } = await request(app)
-        .post(`/api/v1/auth/reset-password/?${query}`)
-        .send({
-          password: "Test1234",
-        });
+        password: "Test1234",
+      };
 
-      console.log(body);
+      const { status } = await request(app)
+        .post(`/api/v1/auth/reset-password/`)
+        .send(data);
 
       expect(status).toBe(400);
     });
