@@ -57,7 +57,12 @@ const revokeTokens = async (userId: string, type?: TokenType) => {
  * @returns {Promise<Token>}
  */
 const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
-  const payload = jwt.verify(token, config.jwt.secret);
+  let payload;
+  try {
+    payload = jwt.verify(token, config.jwt.secret);
+  } catch (ignored) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
+  }
 
   if (payload.sub === undefined || typeof payload.sub !== "string") {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
