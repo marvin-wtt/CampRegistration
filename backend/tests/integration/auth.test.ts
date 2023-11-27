@@ -6,6 +6,7 @@ import prisma from "../utils/prisma";
 import app from "../../src/app";
 import { TokenType, User } from "@prisma/client";
 import { UserFactory } from "../../prisma/factories";
+import { generateQueryString } from "../utils/url";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -351,35 +352,136 @@ describe("/api/v1/auth", async () => {
   });
 
   describe("POST /api/v1/auth/forgot-password", () => {
-    it.todo(
-      "should respond with `200` status code when provided with valid email",
-    );
+    it("should respond with `204` status code when provided with valid email", async () => {
+      await UserFactory.create({
+        email: "test@email.net",
+      });
 
-    it.todo(
-      "should respond with `200` status code when provided with invalid email",
-    );
+      const { status } = await request(app)
+        .post("/api/v1/auth/forgot-password")
+        .send({
+          email: "test@email.net",
+        });
 
-    it.todo("should store a token for the user when successful");
+      expect(status).toBe(204);
+    });
+
+    it("should respond with `204` status code when provided with invalid email", async () => {
+      const { status } = await request(app)
+        .post("/api/v1/auth/forgot-password")
+        .send({
+          email: "unknown@email.net",
+        });
+
+      expect(status).toBe(204);
+    });
+
+    it("should store a token for the user when successful", async () => {
+      const user = await UserFactory.create({
+        email: "test@email.net",
+      });
+
+      await request(app).post("/api/v1/auth/forgot-password").send({
+        email: "test@email.net",
+      });
+
+      const count = await prisma.token.count({
+        where: {
+          userId: user.id,
+          type: TokenType.RESET_PASSWORD,
+        },
+      });
+
+      expect(count).toBe(1);
+    });
 
     it.todo("should send an email to the user when successful");
   });
 
   describe("POST /api/v1/auth/reset-password", () => {
-    it.todo(
-      "should respond with `200` status code when provided with valid token and email",
-    );
+    type ResetPasswordContext = {
+      email: string;
+      token: string;
+    };
 
-    it.todo(
-      "should respond with `400` status code when provided with invalid token and email",
-    );
+    beforeEach<ResetPasswordContext>(async (context) => {
+      const email = "test@email.net";
+      const user = await UserFactory.create({ email });
 
-    it.todo(
-      "should respond with `400` status code when provided with without token",
-    );
+      // Request a token first
+      await request(app).post("/api/v1/auth/forgot-password").send({
+        email,
+      });
 
-    it.todo(
-      "should respond with `400` status code when provided with without email",
-    );
+      const token = (
+        await prisma.token.findFirst({
+          where: { userId: user.id },
+        })
+      )?.token as string;
+
+      expect(token).toBeDefined();
+
+      context.email = email;
+      context.token = token;
+    });
+
+    it<ResetPasswordContext>("should respond with `204` status code when provided with valid token and email", async (context) => {
+      const query = generateQueryString({
+        token: context.token,
+        email: context.email,
+      });
+      const { status } = await request(app)
+        .post(`/api/v1/auth/reset-password/?${query}`)
+        .send({
+          password: "Test1234",
+        });
+
+      expect(status).toBe(204);
+    });
+
+    it<ResetPasswordContext>("should respond with `400` status code when provided with invalid token", async (context) => {
+      const query = generateQueryString({
+        token: "SomeInvalidToken",
+        email: context.email,
+      });
+      const { status } = await request(app)
+        .post(`/api/v1/auth/reset-password/?${query}`)
+        .send({
+          password: "Test1234",
+        });
+
+      expect(status).toBe(400);
+    });
+
+    it<ResetPasswordContext>("should respond with `400` status code when provided with invalid email", async (context) => {
+      const query = generateQueryString({
+        token: context.token,
+        email: context.email,
+      });
+      const { status } = await request(app)
+        .post(`/api/v1/auth/reset-password/?${query}`)
+        .send({
+          password: "123",
+        });
+
+      expect(status).toBe(400);
+    });
+
+    it<ResetPasswordContext>("should respond with `400` status code when provided with invalid password", async (context) => {
+      const query = generateQueryString({
+        token: context.token,
+        email: "invalid@email.net",
+      });
+      const { status, body } = await request(app)
+        .post(`/api/v1/auth/reset-password/?${query}`)
+        .send({
+          password: "Test1234",
+        });
+
+      console.log(body);
+
+      expect(status).toBe(400);
+    });
 
     it.todo("should send an email to the user when successful");
   });
