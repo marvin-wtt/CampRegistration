@@ -19,8 +19,7 @@ if (config.env !== "test") {
     );
 }
 
-const viewsPath = __dirname + "/../views/emails";
-// const viewsPath = path.join(__dirname, "..", "views", "emails");
+const viewsPath = path.join(__dirname, "..", "views", "emails");
 
 const options = {
   extName: ".hbs",

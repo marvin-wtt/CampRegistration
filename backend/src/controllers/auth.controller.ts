@@ -87,7 +87,7 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
     res.status(httpStatus.NO_CONTENT).send();
     return;
   }
-  await notificationService.sendResetPasswordEmail(email, resetPasswordToken);
+  notificationService.sendResetPasswordEmail(email, resetPasswordToken);
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
@@ -99,7 +99,7 @@ const resetPassword = catchRequestAsync(async (req, res) => {
 const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   const user = req.user as User;
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  await notificationService.sendVerificationEmail(user.email, verifyEmailToken);
+  notificationService.sendVerificationEmail(user.email, verifyEmailToken);
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 

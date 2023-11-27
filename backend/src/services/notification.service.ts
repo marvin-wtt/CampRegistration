@@ -13,7 +13,7 @@ type Options = Exclude<
   replyTo?: string | string[];
 };
 
-const sendEmail = async (
+const sendEmail = (
   to: string,
   subject: string,
   template: string,
@@ -36,15 +36,19 @@ const sendEmail = async (
 
   // TODO attachments
   // TODO alternatives
-  await transport.sendMail({
-    ...options,
-    to,
-    from,
-    replyTo,
-    subject,
-    template,
-    context,
-  });
+  transport
+    .sendMail({
+      ...options,
+      to,
+      from,
+      replyTo,
+      subject,
+      template,
+      context,
+    })
+    .catch((reason) => {
+      console.error("Failed to send email: " + reason);
+    });
 };
 
 const generateUrl = (
@@ -57,7 +61,7 @@ const generateUrl = (
   return `${origin}/${path}?${query}`;
 };
 
-const sendResetPasswordEmail = async (to: string, token: string) => {
+const sendResetPasswordEmail = (to: string, token: string) => {
   const template = "reset-password";
   const subject = t("email:auth.reset-password.subject");
   const url = generateUrl("reset-password", {
@@ -71,10 +75,10 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
 
   const options = {};
 
-  return sendEmail(to, subject, template, context, options);
+  sendEmail(to, subject, template, context, options);
 };
 
-const sendVerificationEmail = async (to: string, token: string) => {
+const sendVerificationEmail = (to: string, token: string) => {
   const subject = t("email:auth.email-verification.subject");
 
   const url = generateUrl("verify-email", {
@@ -85,10 +89,10 @@ const sendVerificationEmail = async (to: string, token: string) => {
   const text = ""; // TODO
   const template = "verify-email";
 
-  return sendEmail(to, subject, template, {});
+  sendEmail(to, subject, template, {});
 };
 
-const sendCampManagerInvitation = async (
+const sendCampManagerInvitation = (
   to: string,
   campId: string,
   managerId: string,
@@ -97,7 +101,7 @@ const sendCampManagerInvitation = async (
 
   const url = generateUrl(`camp-management/`);
 
-  return sendEmail(to, subject, "", {});
+  sendEmail(to, subject, "", {});
 };
 
 export default {

@@ -1,4 +1,4 @@
-import { catchRequestAsync, catchSilent } from "@/utils/catchAsync";
+import { catchRequestAsync } from "@/utils/catchAsync";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
@@ -36,9 +36,7 @@ const store = catchRequestAsync(async (req, res) => {
       ? await managerService.inviteManager(campId, email)
       : await managerService.addManager(campId, user.id);
 
-  await catchSilent(() =>
-    notificationService.sendCampManagerInvitation(email, campId, manager.id),
-  );
+  notificationService.sendCampManagerInvitation(email, campId, manager.id);
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
 });
