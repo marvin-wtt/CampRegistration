@@ -32,6 +32,7 @@ const forgotPassword = {
 const resetPassword = {
   query: Joi.object().keys({
     token: Joi.string().required(),
+    email: Joi.string().email().required(),
   }),
   body: Joi.object().keys({
     password: PasswordSchema,

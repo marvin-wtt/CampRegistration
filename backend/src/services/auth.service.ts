@@ -28,11 +28,6 @@ const loginUserWithEmailAndPassword = async (
   return exclude(user, ["password"]);
 };
 
-/**
- * Logout
- * @param {string} refreshToken
- * @returns {Promise<void>}
- */
 const logout = async (refreshToken: string): Promise<void> => {
   const refreshTokenData = await prisma.token.findFirst({
     where: {
@@ -47,11 +42,6 @@ const logout = async (refreshToken: string): Promise<void> => {
   await prisma.token.delete({ where: { id: refreshTokenData.id } });
 };
 
-/**
- * Refresh auth tokens
- * @param {string} refreshToken
- * @returns {Promise<AuthTokensResponse>}
- */
 const refreshAuth = async (
   refreshToken: string,
 ): Promise<AuthTokensResponse> => {
@@ -69,14 +59,9 @@ const refreshAuth = async (
   }
 };
 
-/**
- * Reset password
- * @param {string} token
- * @param {string} password
- * @returns {Promise<void>}
- */
 const resetPassword = async (
   token: string,
+  email: string,
   password: string,
 ): Promise<void> => {
   const resetPasswordTokenData = await tokenService.verifyToken(
@@ -84,7 +69,7 @@ const resetPassword = async (
     TokenType.RESET_PASSWORD,
   );
   const user = await userService.getUserById(resetPasswordTokenData.userId);
-  if (!user) {
+  if (!user || user.email !== email) {
     throw new ApiError(httpStatus.NOT_FOUND, "Invalid reset token");
   }
   const encryptedPassword = await encryptPassword(password);
@@ -117,11 +102,6 @@ const logoutAllDevices = async (userId: string) => {
   });
 };
 
-/**
- * Verify email
- * @param {string} verifyEmailToken
- * @returns {Promise<void>}
- */
 const verifyEmail = async (verifyEmailToken: string): Promise<void> => {
   try {
     const verifyEmailTokenData = await tokenService.verifyToken(
