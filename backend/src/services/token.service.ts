@@ -60,7 +60,7 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   const payload = jwt.verify(token, config.jwt.secret);
 
   if (payload.sub === undefined || typeof payload.sub !== "string") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token sub");
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
   }
 
   const userId = payload.sub;
@@ -69,7 +69,7 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   });
 
   if (!tokenData) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Invalid token sub");
+    throw new ApiError(httpStatus.NOT_FOUND, "Invalid token");
   }
 
   return tokenData;
