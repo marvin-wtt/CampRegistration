@@ -98,9 +98,9 @@ model Registration {
   /// [GenericObject]
   data        Json      @db.Json
   /// [RegistrationCampData]
-  campData    Json      @default("{}") @db.Json
+  campData    Json      @default("{}") @map("camp_data") @db.Json
   locale      String    @default("en-US") @db.VarChar(5)
-  waitingList Boolean   @default(true)
+  waitingList Boolean   @default(true) @map("waiting_list")
   createdAt   DateTime? @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
   camp        Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
@@ -125,7 +125,7 @@ model Room {
 model Bed {
   id             String        @id @unique @db.Char(26)
   roomId         String        @map("room_id") @db.Char(26)
-  registrationId String?       @unique(map: "beds_registration_id_unique") @db.Char(26)
+  registrationId String?       @unique(map: "beds_registration_id_unique") @map("registration_id") @db.Char(26)
   room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_room_id_foreign")
   registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_registration_id_foreign")
 
@@ -171,8 +171,8 @@ model File {
   originalName    String        @map("original_name")
   field           String?
   type            String
-  size            Int           @map("access_level")
-  accessLevel     String?
+  size            Int
+  accessLevel     String?       @map("access_level")
   storageLocation String        @map("storage_location")
   createdAt       DateTime      @default(now()) @map("created_at")
   camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
