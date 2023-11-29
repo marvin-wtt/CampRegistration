@@ -20,7 +20,7 @@
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.3",
-    "survey-core": "^1.9.118",
+    "survey-core": "^1.9.119",
     "typescript": "^5.0.3"
   },
   "engines": {

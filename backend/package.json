@@ -65,7 +65,7 @@
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.1",
     "qs": "^6.11.2",
-    "survey-core": "^1.9.118",
+    "survey-core": "^1.9.119",
     "ulidx": "^2.0.0",
     "winston": "^3.9.0"
   },
