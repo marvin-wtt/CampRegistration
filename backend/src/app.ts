@@ -23,12 +23,7 @@ if (config.env !== "test") {
 }
 
 // set security HTTP headers
-app.use(
-  helmet({
-    // TODO This is required for SurveyJS Creator
-    contentSecurityPolicy: false,
-  }),
-);
+app.use(helmet());
 
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
