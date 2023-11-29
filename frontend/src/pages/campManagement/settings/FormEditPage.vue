@@ -172,4 +172,8 @@ creator.onUploadFile.add((_, options) => {
 .svc-creator {
   position: absolute;
 }
+/* Creator popups should be over navigation bar */
+.sv-popup {
+  z-index: 5000;
+}
 </style>
