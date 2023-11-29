@@ -1,4 +1,8 @@
-import { Registration, RegistrationCreateData, RegistrationUpdateData } from 'src/types/Registration';
+import {
+  Registration,
+  RegistrationCreateData,
+  RegistrationUpdateData,
+} from 'src/types/Registration';
 import { api } from 'boot/axios';
 
 export function useRegistrationService() {

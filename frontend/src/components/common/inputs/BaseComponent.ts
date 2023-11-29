@@ -5,7 +5,7 @@ import {
   QRadioProps,
   QSelectProps,
   QSliderProps,
-  QToggleProps
+  QToggleProps,
 } from 'quasar';
 
 interface ComponentWrapper {

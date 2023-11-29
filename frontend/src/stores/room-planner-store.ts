@@ -4,7 +4,11 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { ResponseRoom, Room } from 'src/types/Room';
 import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus, useRegistrationBus } from 'src/composables/bus';
+import {
+  useAuthBus,
+  useCampBus,
+  useRegistrationBus,
+} from 'src/composables/bus';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { Registration } from 'src/types/Registration';
 import { Roommate } from 'src/types/Roommate';

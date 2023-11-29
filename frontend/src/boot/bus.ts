@@ -1,6 +1,11 @@
 import { EventBus } from 'quasar';
 import { boot } from 'quasar/wrappers';
-import { AUTH_BUS, CAMP_BUS, REGISTRATION_BUS, TEMPLATE_BUS } from 'src/utils/keys';
+import {
+  AUTH_BUS,
+  CAMP_BUS,
+  REGISTRATION_BUS,
+  TEMPLATE_BUS,
+} from 'src/utils/keys';
 
 export default boot(({ app }) => {
   const busses = [AUTH_BUS, CAMP_BUS, REGISTRATION_BUS, TEMPLATE_BUS];

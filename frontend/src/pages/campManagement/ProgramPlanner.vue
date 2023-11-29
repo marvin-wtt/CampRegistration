@@ -55,7 +55,7 @@ import {
   parsed,
   parseTime,
   QCalendar,
-  Timestamp
+  Timestamp,
 } from '@quasar/quasar-ui-qcalendar';
 import { computed, CSSProperties, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

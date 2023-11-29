@@ -11,7 +11,15 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { BaseComponent } from 'components/common/inputs/BaseComponent';
-import { QCheckbox, QInput, QOptionGroup, QRadio, QSelect, QSlider, QToggle } from 'quasar';
+import {
+  QCheckbox,
+  QInput,
+  QOptionGroup,
+  QRadio,
+  QSelect,
+  QSlider,
+  QToggle,
+} from 'quasar';
 
 const component = computed(() => {
   switch (props.element.componentType) {

@@ -1,4 +1,4 @@
-# Camp Registration Frontend 
+# Camp Registration Frontend
 
 A web service that allows users to register for a youth camp and counselors to manage the camp.
 

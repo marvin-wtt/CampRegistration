@@ -173,8 +173,7 @@ import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, toRaw } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
-import EditResultColumnTemplateDialog
-  from 'components/campManagement/table/dialogs/template/EditResultColumnTemplateDialog.vue';
+import EditResultColumnTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultColumnTemplateDialog.vue';
 import { Camp } from 'src/types/Camp';
 
 interface Props {

@@ -1,5 +1,10 @@
 import { api } from 'boot/axios';
-import { ResponseRoom, Room, RoomCreateData, RoomUpdateData } from 'src/types/Room';
+import {
+  ResponseRoom,
+  Room,
+  RoomCreateData,
+  RoomUpdateData,
+} from 'src/types/Room';
 
 export function useRoomService() {
   async function fetchRooms(campId: string): Promise<ResponseRoom[]> {

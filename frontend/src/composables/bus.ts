@@ -1,6 +1,11 @@
 import { inject } from 'vue';
 import { EventBus } from 'quasar';
-import { AUTH_BUS, CAMP_BUS, REGISTRATION_BUS, TEMPLATE_BUS } from 'src/utils/keys';
+import {
+  AUTH_BUS,
+  CAMP_BUS,
+  REGISTRATION_BUS,
+  TEMPLATE_BUS,
+} from 'src/utils/keys';
 import { User } from 'src/types/User';
 import { Registration } from 'src/types/Registration';
 import { Camp } from 'src/types/Camp';

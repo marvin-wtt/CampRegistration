@@ -1,4 +1,8 @@
-import { TableTemplate, TemplateCreateData, TemplateUpdateData } from 'src/types/TableTemplate';
+import {
+  TableTemplate,
+  TemplateCreateData,
+  TemplateUpdateData,
+} from 'src/types/TableTemplate';
 import { api } from 'boot/axios';
 
 export function useTemplateService() {
