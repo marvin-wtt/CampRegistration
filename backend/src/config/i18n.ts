@@ -9,7 +9,6 @@ export const initI18n = async () => {
   });
 
   await i18next.changeLanguage("en");
-  console.log(i18next.t("app-name"));
 };
 
 export default i18next;
