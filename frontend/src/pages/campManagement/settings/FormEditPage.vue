@@ -26,8 +26,10 @@ import { useI18n } from 'vue-i18n';
 import { useSurveyTools } from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
+import { useCampFilesStore } from 'stores/camp-files-store';
 
 const campDetailsStore = useCampDetailsStore();
+const campFileStore = useCampFilesStore();
 const { locale } = useI18n();
 const { setCampVariables } = useSurveyTools();
 
@@ -85,7 +87,7 @@ onMounted(async () => {
   creator.JSON = campDetailsStore.data.form;
 });
 
-creator.onPropertyValidationCustomError.add((sender, options) => {
+creator.onPropertyValidationCustomError.add((_, options) => {
   if (!['name', 'valueName'].includes(options.propertyName)) {
     return;
   }
@@ -141,13 +143,29 @@ creator.saveThemeFunc = (
     });
 };
 
-creator.onPreviewSurveyCreated.add((sender, options) => {
+creator.onPreviewSurveyCreated.add((_, options) => {
   setCampVariables(options.survey, campDetailsStore.data ?? {});
 });
 
-creator.onUploadFile.add((sender, options) => {
-  // TODO Upload public file
+creator.onUploadFile.add((_, options) => {
+  campFileStore
+    .createEntry({
+      name: '',
+      field: '',
+      file: options.file,
+      accessLevel: 'public',
+    })
+    .then(() => {
+      // TODO Get url
+      const url = '';
+      options.callback('success', url);
+    })
+    .catch(() => {
+      options.callback('error');
+    });
 });
+
+// TODO Files need to be deleted as well
 </script>
 
 <style>
