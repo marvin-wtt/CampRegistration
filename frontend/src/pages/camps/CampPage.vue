@@ -14,17 +14,18 @@
 </template>
 
 <script lang="ts" setup>
-import { ITheme, SurveyModel } from 'survey-core';
+import { SurveyModel } from 'survey-core';
 import 'survey-core/defaultV2.min.css';
-import { PlainLight } from 'survey-core/themes/plain-light';
-import { PlainDark } from 'survey-core/themes/plain-dark';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
-import { startAutoDataUpdate } from 'src/composables/survey';
+import {
+  startAutoDataUpdate,
+  startAutoThemeUpdate,
+} from 'src/composables/survey';
 import { useMeta, useQuasar } from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -63,16 +64,7 @@ const bgColor = ref<string>();
 
 // Auto variables update on locale change
 startAutoDataUpdate(model, campData);
-
-watch(
-  () => quasar.dark.isActive,
-  () => {
-    const themes = campDetailsStore.data?.themes;
-    if (themes) {
-      applyTheme(themes);
-    }
-  },
-);
+startAutoThemeUpdate(model, campData, bgColor);
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
@@ -86,32 +78,7 @@ onMounted(async () => {
   const form = camp.form;
   const id = camp.id;
   model.value = createModel(id, form);
-  applyTheme(camp.themes);
 });
-
-function applyTheme(themes: Record<string, ITheme>) {
-  const colorPlatte = quasar.dark.isActive ? 'dark' : 'light';
-
-  let theme: ITheme;
-  if (colorPlatte in themes) {
-    theme = themes[colorPlatte];
-  } else if (colorPlatte === 'dark' && 'light' in themes) {
-    // Try light mode first
-    theme = themes.light;
-  } else {
-    // Apply default theme
-    theme = colorPlatte === 'dark' ? PlainDark : PlainLight;
-  }
-
-  model.value?.applyTheme(theme);
-
-  nextTick(() => {
-    const element = document.getElementById('survey');
-    if (element) {
-      bgColor.value = window.getComputedStyle(element).backgroundColor;
-    }
-  });
-}
 
 function createModel(id: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);

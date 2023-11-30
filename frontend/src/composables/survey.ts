@@ -1,8 +1,12 @@
-import { SurveyModel } from 'survey-core';
+import { ITheme, SurveyModel } from 'survey-core';
 import { Camp } from 'src/types/Camp';
 import { useI18n } from 'vue-i18n';
-import { Ref, watch } from 'vue';
+import { nextTick, Ref, watch } from 'vue';
 import { setVariables } from '@camp-registration/common/form/variables';
+import { useQuasar } from 'quasar';
+
+import { PlainLight } from 'survey-core/themes/plain-light';
+import { PlainDark } from 'survey-core/themes/plain-dark';
 
 export function startAutoDataUpdate(
   model: Ref<SurveyModel | undefined>,
@@ -37,3 +41,63 @@ export function startAutoDataUpdate(
 
   return {};
 }
+
+export const startAutoThemeUpdate = (
+  model: Ref<SurveyModel | undefined>,
+  data: Ref<Camp | undefined>,
+  bgColor?: Ref<string | undefined> | undefined,
+) => {
+  const quasar = useQuasar();
+
+  watch(
+    () => quasar.dark.isActive,
+    (value) => {
+      applyTheme(model.value, data.value, value);
+    },
+  );
+
+  watch(data, (value) => {
+    applyTheme(model.value, value, quasar.dark.isActive);
+  });
+
+  watch(model, (value) => {
+    applyTheme(value, data.value, quasar.dark.isActive);
+  });
+
+  const applyTheme = (
+    model: SurveyModel | undefined,
+    data: Camp | undefined,
+    dark: boolean,
+  ) => {
+    if (!model || !data) {
+      return;
+    }
+
+    const themes = data?.themes;
+    const colorPlatte = dark ? 'dark' : 'light';
+
+    let theme: ITheme;
+    if (colorPlatte in themes) {
+      theme = themes[colorPlatte];
+    } else if (colorPlatte === 'dark' && 'light' in themes) {
+      // Try light mode first
+      theme = themes.light;
+    } else {
+      // Apply default theme
+      theme = colorPlatte === 'dark' ? PlainDark : PlainLight;
+    }
+
+    model.applyTheme(theme);
+
+    // Update background color of entire page if reference is provided
+    if (!bgColor) {
+      return;
+    }
+    nextTick(() => {
+      const element = document.getElementById('survey');
+      if (element) {
+        bgColor.value = window.getComputedStyle(element).backgroundColor;
+      }
+    });
+  };
+};
