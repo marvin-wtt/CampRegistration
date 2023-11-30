@@ -85,9 +85,10 @@ found [here](https://surveyjs.io/form-library/documentation/design-survey/condit
 
 Functions can also be used in expression fields.
 
-| Name                  | Parameter                   | Return  | Description                                         |
-|-----------------------|-----------------------------|---------|-----------------------------------------------------|
-| isMinor               | dateOfBirthQuestion: string | boolean | Wherever the age is less than 18 at camp start      |
-| isAdult               | dateOfBirthQuestion: string | boolean | Wherever the age above 18 at camp start             |
-| subtractYearsFromDate | date: string, years: number | Date    | Subtracts years from a given date                   |
-| htmlDate              | date: string                | string  | Formats a date to the html date format (YYYY-MM-DD) |
+| Name                  | Parameter                                                   | Return         | Description                                         |
+|-----------------------|-------------------------------------------------------------|----------------|-----------------------------------------------------|
+| isMinor               | dateOfBirthQuestion: string                                 | boolean        | Wherever the age is less than 18 at camp start      |
+| isAdult               | dateOfBirthQuestion: string                                 | boolean        | Wherever the age above 18 at camp start             |
+| subtractYearsFromDate | date: string, years: number                                 | Date           | Subtracts years from a given date                   |
+| htmlDate              | date: string                                                | string         | Formats a date to the html date format (YYYY-MM-DD) |
+| translate \| t        | value: string \| object, locale?: string, fallback?: string | string \| null | Searches for a translation in an object             |
