@@ -1,3 +1,7 @@
+/**
+ * TODO Can this be interface be removed?
+ * @deprecated Accessor should be used instead.
+ */
 export interface RegistrationSettings {
   fullNameKey?: string;
   firstNameKey?: string;

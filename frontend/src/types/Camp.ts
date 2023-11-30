@@ -1,20 +1,21 @@
 import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
 import { Identifiable } from 'src/types/Identifiable';
 import { ITheme } from 'survey-core/typings/themes';
+import { Translatable } from 'src/types/Translatable';
 
 export interface Camp extends Identifiable {
   public: boolean;
   active: boolean;
   countries: string[];
-  name: string | Record<string, string>;
-  organization: string | Record<string, string>;
-  contactEmail: string | Record<string, string>;
-  maxParticipants: number | Record<string, number>;
+  name: Translatable;
+  organization: Translatable;
+  contactEmail: Translatable;
+  maxParticipants: Translatable<number>;
   startAt: string;
   endAt: string;
   minAge: number;
   maxAge: number;
-  location: string | Record<string, string>;
+  location: Translatable;
   price: string;
   form: SurveyJSCampData;
   themes: Record<string, ITheme>;
