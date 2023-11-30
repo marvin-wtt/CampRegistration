@@ -23,7 +23,10 @@ import {
   SurveyCreatorModel,
 } from 'survey-creator-core';
 import { useI18n } from 'vue-i18n';
-import { startAutoDataUpdate } from 'src/composables/survey';
+import {
+  startAutoDataUpdate,
+  startAutoThemeUpdate,
+} from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
@@ -81,6 +84,7 @@ const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
 
 startAutoDataUpdate(previewModel, campData);
+startAutoThemeUpdate(previewModel, campData);
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
