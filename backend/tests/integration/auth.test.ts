@@ -38,6 +38,10 @@ describe("/api/v1/auth", async () => {
       });
     });
 
+    it.todo(
+      "should make the user camp manager if the user has pending invitations",
+    );
+
     it("should respond with a `400` status code if an invalid email body is provided", async () => {
       const { status } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
