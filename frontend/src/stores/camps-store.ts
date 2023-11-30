@@ -30,43 +30,39 @@ export const useCampsStore = defineStore('camps', () => {
   }
 
   async function createEntry(createData: CampCreateData): Promise<void> {
-    const success = await withProgressNotification('update', async () => {
+    await withProgressNotification('update', async () => {
       const newCamp = await apiService.createCamp(createData);
+
+      await forceFetch(async () => await apiService.fetchCamps());
 
       bus.emit('create', newCamp);
     });
-
-    if (success) {
-      await forceFetch(async () => await apiService.fetchCamps());
-    }
   }
 
   async function updateEntry(id: string, updateData: Partial<Camp>) {
     checkNotNullWithNotification(id);
-    const success = await withProgressNotification('update', async () => {
+    await withProgressNotification('update', async () => {
       const updatedCamp = await apiService.updateCamp(id, updateData);
+
+      await forceFetch(async () => await apiService.fetchCamps());
 
       bus.emit('update', updatedCamp);
     });
-
-    if (success) {
-      await forceFetch(async () => await apiService.fetchCamps());
-    }
   }
 
   async function deleteEntry(id: string) {
     checkNotNullWithNotification(id);
-    const success = await withProgressNotification('delete', async () => {
+    await withProgressNotification('delete', async () => {
       await apiService.deleteCamp(id);
-    });
 
-    if (success) {
       data.value = data.value?.filter((camp) => camp.id !== id);
 
       if (campStore.data?.id === id) {
         campStore.reset();
       }
-    }
+
+      bus.emit('delete', id);
+    });
   }
 
   return {

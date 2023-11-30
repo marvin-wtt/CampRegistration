@@ -43,14 +43,16 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   async function createEntry(
     createData: FileUploadPayload,
     campId?: string,
-  ): Promise<void> {
+  ): Promise<ServiceFile | undefined> {
     campId = campId ?? (route.params.camp as string);
     const cid = checkNotNullWithNotification(campId);
 
-    await withProgressNotification('create', async () => {
+    return withProgressNotification('create', async () => {
       const file = await apiService.createCampFile(cid, createData);
 
       data.value?.push(file);
+
+      return file;
     });
   }
 
@@ -58,17 +60,15 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     campId = campId ?? (route.params.camp as string);
     const cid = checkNotNullWithNotification(campId);
     checkNotNullWithNotification(id);
-    const success = await withProgressNotification('delete', async () => {
+    await withProgressNotification('delete', async () => {
       await apiService.deleteCampFile(cid, id);
-    });
 
-    if (success) {
       data.value = data.value?.filter((file) => file.id !== id);
 
       if (campStore.data?.id === id) {
         campStore.reset();
       }
-    }
+    });
   }
 
   async function downloadData(id: string, campId?: string) {

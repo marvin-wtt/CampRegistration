@@ -26,16 +26,23 @@ export function useTemplateService() {
   async function createResultTemplate(
     campId: string,
     data: TemplateCreateData,
-  ): Promise<void> {
-    await api.post(`camps/${campId}/templates/`, data);
+  ): Promise<TableTemplate> {
+    const response = await api.post(`camps/${campId}/templates/`, data);
+
+    return response.data.data;
   }
 
   async function updateResultTemplate(
     campId: string,
     templateId: string,
     data: TemplateUpdateData,
-  ): Promise<void> {
-    await api.put(`camps/${campId}/templates/${templateId}/`, data);
+  ): Promise<TableTemplate> {
+    const response = await api.put(
+      `camps/${campId}/templates/${templateId}/`,
+      data,
+    );
+
+    return response.data.data;
   }
 
   async function deleteResultTemplate(

@@ -109,7 +109,7 @@ export function useServiceHandler<T>(storeName: string) {
     operation: string,
     fn: (notify: (props?: QNotifyUpdateOptions) => void) => Promise<T>,
     options?: ProgressOptions,
-  ): Promise<boolean> {
+  ): Promise<T | undefined> {
     // Set defaults
     const opt = defaultProgressOptions(operation, options);
 
@@ -117,86 +117,83 @@ export function useServiceHandler<T>(storeName: string) {
     const notify = quasar.notify(opt.progress);
 
     try {
-      await fn(notify);
+      const result = await fn(notify);
 
       notify(opt.success);
 
-      return true;
+      return result;
     } catch (error: unknown) {
       opt.error.caption = extractErrorText(error);
       notify(opt.error);
-      return false;
     }
+
+    return undefined;
   }
 
   function withMultiProgressNotification<T>(
     promises: Promise<T>[],
     operation: string,
     options?: ProgressOptions,
-  ): Promise<boolean> {
-    return withProgressNotification(
-      operation,
-      async (notify) => {
-        let doneCounter = 0;
-        for (const promise of promises) {
-          promise.then(() => {
-            doneCounter++;
-            const percentage = Math.floor(
-              (doneCounter / promises.length) * 100,
-            );
+  ): Promise<T[] | undefined> {
+    const func = async (
+      notify: (props?: QNotifyUpdateOptions) => void,
+    ): Promise<T[]> => {
+      let doneCounter = 0;
+      for (const promise of promises) {
+        promise.then(() => {
+          doneCounter++;
+          const percentage = Math.floor((doneCounter / promises.length) * 100);
 
-            notify({
-              caption: `${percentage} %`,
-            });
+          notify({
+            caption: `${percentage} %`,
           });
-        }
+        });
+      }
 
-        await Promise.all(promises);
-      },
-      options,
-    );
+      return Promise.all(promises);
+    };
+
+    return withProgressNotification(operation, func, options);
   }
 
   async function withResultNotification<T>(
     operation: string,
     fn: () => Promise<T>,
     options?: ResultOptions,
-  ): Promise<boolean> {
+  ): Promise<T | undefined> {
     const opt = defaultResultOptions(operation, options);
 
     // Set defaults
     try {
-      await fn();
+      const result = await fn();
 
       quasar.notify(opt.success);
 
-      return true;
+      return result;
     } catch (error: unknown) {
       opt.error.caption = extractErrorText(error);
       quasar.notify(opt.error);
-
-      return false;
     }
+
+    return undefined;
   }
 
   async function withErrorNotification<T>(
     operation: string,
     fn: () => Promise<T>,
     options?: QNotifyCreateOptions,
-  ): Promise<boolean> {
+  ): Promise<T | undefined> {
     const opt = defaultErrorOptions(operation, options);
 
     // Set defaults
     try {
-      await fn();
-
-      return true;
+      return await fn();
     } catch (error: unknown) {
       opt.caption = extractErrorText(error);
       quasar.notify(opt);
-
-      return false;
     }
+
+    return undefined;
   }
 
   function showErrorNotification(
@@ -305,9 +302,9 @@ export function useServiceHandler<T>(storeName: string) {
     error.value = null;
   }
 
-  function handlerByType(
+  function handlerByType<T>(
     type: 'progress' | 'result' | 'error' | 'none',
-  ): (operation: string, fn: () => Promise<void>) => Promise<boolean> {
+  ): (operation: string, fn: () => Promise<T>) => Promise<T | undefined> {
     switch (type) {
       case 'progress':
         return withProgressNotification;
@@ -316,13 +313,11 @@ export function useServiceHandler<T>(storeName: string) {
       case 'error':
         return withErrorNotification;
       case 'none':
-        return async (operation: string, fn: () => Promise<void>) => {
+        return async (_: string, fn: () => Promise<T>) => {
           try {
-            await fn();
-
-            return true;
+            return await fn();
           } catch (ignored: unknown) {
-            return false;
+            return undefined;
           }
         };
     }

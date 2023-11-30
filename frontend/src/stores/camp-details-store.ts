@@ -84,6 +84,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     const success = await withProgressNotification('delete', async () => {
       await api.deleteCamp(cid);
       bus.emit('delete', cid);
+      return true;
     });
 
     if (success) {

@@ -94,7 +94,7 @@ export const useTemplateStore = defineStore('templates', () => {
       );
     });
 
-    const results: Promise<void>[] = [];
+    const results: Promise<TableTemplate | void>[] = [];
 
     for (const t of added) {
       results.push(apiService.createResultTemplate(cid, t));
@@ -108,40 +108,44 @@ export const useTemplateStore = defineStore('templates', () => {
       results.push(apiService.deleteResultTemplate(cid, t.id));
     }
 
-    const success = await withMultiProgressNotification(results, 'update');
+    await withMultiProgressNotification(results, 'update');
 
-    if (success) {
-      // Always update store because of partial updates
-      await forceFetchData();
-    }
+    // Always force update because a partial update could happen
+    await forceFetchData();
   }
 
   async function createEntry(template: TableTemplate) {
     const campId = route.params.camp as string | undefined;
 
     const cid = checkNotNullWithError(campId);
-    const success = await withProgressNotification('create', async () => {
-      await apiService.createResultTemplate(cid, template);
-    });
+    return await withProgressNotification('create', async () => {
+      const result = await apiService.createResultTemplate(cid, template);
 
-    // Fetch data again because it updated
-    if (success) {
-      await forceFetchData();
-    }
+      // Add item to data
+      data.value?.push(result);
+
+      return result;
+    });
   }
 
   async function updateEntry(template: TableTemplate) {
     const campId = route.params.camp as string | undefined;
 
     const cid = checkNotNullWithError(campId);
-    const success = await withProgressNotification('update', async () => {
-      await apiService.updateResultTemplate(cid, template.id, template);
-    });
+    return await withProgressNotification('update', async () => {
+      const result = await apiService.updateResultTemplate(
+        cid,
+        template.id,
+        template,
+      );
 
-    // Fetch data again because it updated
-    if (success) {
-      await forceFetchData(template.id);
-    }
+      // Replace item in data
+      data.value = data.value?.map((value) =>
+        value.id === template.id ? result : value,
+      );
+
+      return result;
+    });
   }
 
   async function deleteEntry(id: string) {
@@ -149,14 +153,14 @@ export const useTemplateStore = defineStore('templates', () => {
 
     const cid = checkNotNullWithError(campId);
     const tid = checkNotNullWithNotification(id);
-    const success = await withProgressNotification('delete', async () => {
-      await apiService.deleteResultTemplate(cid, tid);
-    });
+    return await withProgressNotification('delete', async () => {
+      const result = apiService.deleteResultTemplate(cid, tid);
 
-    // Fetch data again because it updated
-    if (success) {
-      await forceFetchData();
-    }
+      // Remove item from data
+      data.value = data.value?.filter((value) => value.id === id);
+
+      return result;
+    });
   }
 
   return {
