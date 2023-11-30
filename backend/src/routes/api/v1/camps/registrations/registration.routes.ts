@@ -6,7 +6,7 @@ import { registrationValidation } from "@/validations";
 import { registrationService } from "@/services";
 import { routeModel, verifyModelExists } from "@/utils/verifyModel";
 import { catchParamAsync } from "@/utils/catchAsync";
-import registrationFiles from "@/routes/api/v1/camps/registration/registration.files.routes";
+import registrationFiles from "@/routes/api/v1/camps/registrations/registration.files.routes";
 
 const router = express.Router({ mergeParams: true });
 
