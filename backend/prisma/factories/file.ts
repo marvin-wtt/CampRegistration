@@ -4,7 +4,9 @@ import prisma from "../../tests/utils/prisma";
 import { ulid } from "ulidx";
 
 export const FileFactory = {
-  build: (data: Partial<Prisma.FileCreateInput>): Prisma.FileCreateInput => {
+  build: (
+    data: Partial<Prisma.FileCreateInput> = {},
+  ): Prisma.FileCreateInput => {
     return {
       id: ulid(),
       accessLevel: "public",

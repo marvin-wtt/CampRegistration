@@ -4,7 +4,9 @@ import prisma from "../../tests/utils/prisma";
 import { ulid } from "ulidx";
 
 export const UserFactory = {
-  build: (data: Partial<Prisma.UserCreateInput>): Prisma.UserCreateInput => {
+  build: (
+    data: Partial<Prisma.UserCreateInput> = {},
+  ): Prisma.UserCreateInput => {
     return {
       id: ulid(),
       name: faker.person.fullName(),

@@ -3,7 +3,9 @@ import { Prisma, TokenType } from "@prisma/client";
 import prisma from "../../tests/utils/prisma";
 
 export const TokenFactory = {
-  build: (data: Partial<Prisma.TokenCreateInput>): Prisma.TokenCreateInput => {
+  build: (
+    data: Partial<Prisma.TokenCreateInput> = {},
+  ): Prisma.TokenCreateInput => {
     return {
       expiresAt: faker.date.future({
         years: 1,

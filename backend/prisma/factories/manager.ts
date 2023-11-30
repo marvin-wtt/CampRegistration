@@ -4,7 +4,7 @@ import { ulid } from "ulidx";
 
 export const CampManagerFactory = {
   build: (
-    data: Partial<Prisma.CampManagerCreateInput>,
+    data: Partial<Prisma.CampManagerCreateInput> = {},
   ): Prisma.CampManagerCreateInput => {
     return {
       id: ulid(),

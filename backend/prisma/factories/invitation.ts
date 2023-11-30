@@ -5,7 +5,7 @@ import { faker } from "@faker-js/faker/locale/de";
 
 export const InvitationFactory = {
   build: (
-    data: Partial<Prisma.InvitationCreateInput>,
+    data: Partial<Prisma.InvitationCreateInput> = {},
   ): Prisma.InvitationCreateInput => {
     return {
       id: ulid(),

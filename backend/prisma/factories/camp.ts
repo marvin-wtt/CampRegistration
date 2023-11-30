@@ -4,7 +4,9 @@ import prisma from "../../tests/utils/prisma";
 import { ulid } from "ulidx";
 
 export const CampFactory = {
-  build: (data: Partial<Prisma.CampCreateInput>): Prisma.CampCreateInput => {
+  build: (
+    data: Partial<Prisma.CampCreateInput> = {},
+  ): Prisma.CampCreateInput => {
     const minAge = faker.number.int({ min: 1, max: 20 });
     const maxAge = faker.number.int({ min: minAge, max: 21 });
 
