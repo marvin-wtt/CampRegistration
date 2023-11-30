@@ -30,6 +30,7 @@ export const setVariables = (
   model.setVariable('camp.countries', data.countries);
   model.setVariable('camp.name', t(data.name));
   model.setVariable('camp.organization', t(data.organization));
+  model.setVariable('camp.contactEmail', t(data.contactEmail));
   model.setVariable('camp.startAt', data.startAt);
   model.setVariable('camp.startAtDate', toDate(data.startAt));
   model.setVariable('camp.startAtTime', toTime(data.startAt));

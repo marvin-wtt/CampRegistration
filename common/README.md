@@ -16,16 +16,15 @@ The country question is a drop down including all allowed countries for a camp.
 
 #### Date of Birth
 
-The role question accepts a date that is within the given minimum and maximum age of camp participants. 
+The role question accepts a date that is within the given minimum and maximum age of camp participants.
 The limits are applied relative to the first and last day of the camp.
 
 #### Role
 
-The role question is a dropdown to choose the role of the user who registers. 
+The role question is a dropdown to choose the role of the user who registers.
 By default, there are two roles: Participant and Counselor.
 Additional items can be added in the form editor.
 To change the name of a default item, create a new item with the same value as the default key.
-
 
 ### Fields
 
@@ -59,8 +58,10 @@ If the element contains translations, the translation for the current user local
 
 | Name              | Translated | Description                                           |
 |-------------------|:----------:|-------------------------------------------------------|
+| camp.countries    |            | List of all countries                                 |
 | camp.name         |            | Name of the camp                                      |
 | camp.organization |     X      | Name of the organization                              |
+| camp.contactEmail |     X      | Email address of the responsible person               |
 | camp.startAt      |            | Timestamp of the camp start in UTC format             |
 | camp.startAtDate  |            | Date of the camp start formatted based on user locale |
 | camp.startAtTime  |            | Time of the camp start formatted based on user locale |
