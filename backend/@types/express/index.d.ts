@@ -1,17 +1,28 @@
 import express from "express";
+import {
+  User as UserModel,
+  Camp,
+  Registration,
+  Template,
+  CampManager,
+  Bed,
+  Room,
+  File,
+} from "@prisma/client";
 
 declare global {
   namespace Express {
     interface Request {
+      user: UserModel | undefined;
       models: {
-        user?: import("@prisma/client").User;
-        camp?: import("@prisma/client").Camp;
-        registration?: import("@prisma/client").Registration;
-        template?: import("@prisma/client").Template;
-        manager?: import("@prisma/client").CampManager;
-        room?: import("@prisma/client").Room;
-        bed?: import("@prisma/client").Bed;
-        file?: import("@prisma/client").File;
+        user?: UserModel;
+        camp?: Camp;
+        registration?: Registration;
+        template?: Template;
+        manager?: CampManager;
+        room?: Room & { beds: Bed[] };
+        bed?: Bed;
+        file?: File;
       };
     }
   }

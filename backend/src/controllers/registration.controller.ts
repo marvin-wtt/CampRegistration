@@ -1,5 +1,4 @@
 import { catchRequestAsync } from "@/utils/catchAsync";
-import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
 import { fileService, registrationService } from "@/services";
@@ -9,10 +8,6 @@ import { requestLocale } from "@/utils/requestLocale";
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
-
-  if (registration == null) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Registration does not exist");
-  }
 
   res.json(resource(registrationResource(registration)));
 });
@@ -66,12 +61,6 @@ const update = catchRequestAsync(async (req, res) => {
       waitingList: data.waitingList,
     },
   );
-  if (registration == null) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      "Update without response.",
-    );
-  }
 
   if (req.files) {
     await fileService.saveRegistrationFiles(registration.id, req.files);

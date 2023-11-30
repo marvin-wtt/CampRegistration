@@ -5,7 +5,7 @@ import { catchRequestAsync } from "@/utils/catchAsync";
 import pick from "@/utils/pick";
 import exclude from "@/utils/exclude";
 import { collection, resource } from "@/resources/resource";
-import authUserId from "@/utils/authUserId";
+import { authUserId } from "@/utils/authUserId";
 import { routeModel } from "@/utils/verifyModel";
 import { Camp } from "@prisma/client";
 

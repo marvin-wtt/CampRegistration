@@ -2,7 +2,7 @@ import { catchRequestAsync } from "@/utils/catchAsync";
 import { userService } from "@/services";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import authUserId from "@/utils/authUserId";
+import { authUserId } from "@/utils/authUserId";
 import { resource } from "@/resources/resource";
 import { userCampResource } from "@/resources";
 
@@ -22,9 +22,6 @@ const show = catchRequestAsync(async (req, res) => {
 const update = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   const user = await userService.updateUserByIdWithCamps(userId, req.body);
-  if (!user) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
-  }
 
   const camps = user.camps.map((value) => {
     return value.camp;

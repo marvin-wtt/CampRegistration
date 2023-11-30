@@ -1,9 +1,9 @@
 import httpStatus from "http-status";
 import pick from "@/utils/pick";
-import ApiError from "@/utils/ApiError";
 import { catchRequestAsync } from "@/utils/catchAsync";
 import { userService } from "@/services";
 import exclude from "@/utils/exclude";
+import { routeModel } from "@/utils/verifyModel";
 
 const index = catchRequestAsync(async (req, res) => {
   const filter = exclude(req.query, ["sortBy", "limit", "page"]);
@@ -13,11 +13,7 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const show = catchRequestAsync(async (req, res) => {
-  const { userId } = req.params;
-  const user = await userService.getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
-  }
+  const user = routeModel(req.models.user);
   res.json(user);
 });
 

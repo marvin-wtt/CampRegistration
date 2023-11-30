@@ -1,7 +1,7 @@
 import { managerService } from "../services";
 import { Request } from "express";
 import { routeModel } from "@/utils/verifyModel";
-import authUserId from "@/utils/authUserId";
+import { authUserId } from "@/utils/authUserId";
 
 export const campManager = async (req: Request): Promise<boolean | string> => {
   const userId = authUserId(req);

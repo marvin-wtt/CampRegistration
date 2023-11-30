@@ -1,17 +1,12 @@
 import { catchRequestAsync } from "@/utils/catchAsync";
-import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
 import { templateService } from "@/services";
 import { templateResource } from "@/resources";
+import { routeModel } from "@/utils/verifyModel";
 
 const show = catchRequestAsync(async (req, res) => {
-  const { campId, templateId } = req.params;
-  const template = await templateService.getTemplateById(campId, templateId);
-
-  if (template == null) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template does not exist");
-  }
+  const template = routeModel(req.models.template);
 
   res.json(resource(templateResource(template)));
 });
@@ -35,12 +30,6 @@ const update = catchRequestAsync(async (req, res) => {
   const { templateId } = req.params;
   const data = req.body;
   const template = await templateService.updateTemplateById(templateId, data);
-  if (template == null) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      "Update without response.",
-    );
-  }
   res.json(resource(templateResource(template)));
 });
 

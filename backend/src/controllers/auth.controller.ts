@@ -6,7 +6,6 @@ import {
   tokenService,
   notificationService,
 } from "@/services";
-import { User } from "@prisma/client";
 import { Request, Response } from "express";
 import { AuthTokensResponse } from "@/types/response";
 import config from "@/config";
@@ -14,6 +13,7 @@ import { userCampResource, userDetailedResource } from "@/resources";
 import ApiError from "@/utils/ApiError";
 import managerService from "@/services/manager.service";
 import { requestLocale } from "@/utils/requestLocale";
+import { authUser } from "@/utils/authUserId";
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;
@@ -98,7 +98,7 @@ const resetPassword = catchRequestAsync(async (req, res) => {
 });
 
 const sendVerificationEmail = catchRequestAsync(async (req, res) => {
-  const user = req.user as User;
+  const user = authUser(req);
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
   notificationService.sendVerificationEmail(user.email, verifyEmailToken);
   res.sendStatus(httpStatus.NO_CONTENT);
