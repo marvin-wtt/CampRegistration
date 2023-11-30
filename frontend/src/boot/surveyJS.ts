@@ -13,6 +13,7 @@ import {
   isAdult,
   isMinor,
   subtractYears,
+  translate,
 } from '@camp-registration/common/form/functions';
 import { campDataType } from '@camp-registration/common/form/property';
 import { ComponentCollection, FunctionFactory, Serializer } from 'survey-core';
@@ -23,6 +24,8 @@ ComponentCollection.Instance.add(country);
 ComponentCollection.Instance.add(dateOfBirth);
 ComponentCollection.Instance.add(role);
 
+FunctionFactory.Instance.register('translate', translate, false);
+FunctionFactory.Instance.register('t', translate, false);
 FunctionFactory.Instance.register('isMinor', isMinor, false);
 FunctionFactory.Instance.register('isAdult', isAdult, false);
 FunctionFactory.Instance.register('subtractYears', subtractYears, false);

@@ -16,22 +16,24 @@ import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import {
   localization,
   PropertyGridEditorCollection,
   SurveyCreatorModel,
 } from 'survey-creator-core';
 import { useI18n } from 'vue-i18n';
-import { useSurveyTools } from 'src/composables/survey';
+import { startAutoDataUpdate } from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
+import { SurveyModel } from 'survey-core';
+import { storeToRefs } from 'pinia';
 
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
+const { data: campData } = storeToRefs(campDetailsStore);
 const { locale } = useI18n();
-const { setCampVariables } = useSurveyTools();
 
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
@@ -76,6 +78,9 @@ const creatorOptions = {
 
 localization.currentLocale = locale.value.split(/[-_]/)[0];
 const creator = new SurveyCreatorModel(creatorOptions);
+const previewModel = ref<SurveyModel>();
+
+startAutoDataUpdate(previewModel, campData);
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
@@ -144,7 +149,7 @@ creator.saveThemeFunc = (
 };
 
 creator.onPreviewSurveyCreated.add((_, options) => {
-  setCampVariables(options.survey, campDetailsStore.data ?? {});
+  previewModel.value = options.survey;
 });
 
 creator.onUploadFile.add((_, options) => {

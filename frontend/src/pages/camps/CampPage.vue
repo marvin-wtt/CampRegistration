@@ -24,21 +24,22 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
-import { useSurveyTools } from 'src/composables/survey';
+import { startAutoDataUpdate } from 'src/composables/survey';
 import { useMeta, useQuasar } from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { storeToRefs } from 'pinia';
 
 type FileStorage = Map<string, File>;
 
 const { to } = useObjectTranslation();
 const { locale } = useI18n();
-const { setCampVariables } = useSurveyTools();
 const quasar = useQuasar();
 const registrationStore = useRegistrationsStore();
+const campDetailsStore = useCampDetailsStore();
+const { data: campData } = storeToRefs(campDetailsStore);
 
 const markdownConverter = new showdown.Converter();
-const campDetailsStore = useCampDetailsStore();
 const filesStorage: FileStorage = new Map<string, File>();
 
 useMeta(() => {
@@ -60,6 +61,9 @@ const error = computed(() => {
 const model = ref<SurveyModel>();
 const bgColor = ref<string>();
 
+// Auto variables update on locale change
+startAutoDataUpdate(model, campData);
+
 watch(
   () => quasar.dark.isActive,
   () => {
@@ -69,14 +73,6 @@ watch(
     }
   },
 );
-
-watch(locale, (value) => {
-  if (!model.value) {
-    return;
-  }
-
-  model.value.locale = value;
-});
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
@@ -91,7 +87,6 @@ onMounted(async () => {
   const id = camp.id;
   model.value = createModel(id, form);
   applyTheme(camp.themes);
-  setCampVariables(model.value, camp);
 });
 
 function applyTheme(themes: Record<string, ITheme>) {
