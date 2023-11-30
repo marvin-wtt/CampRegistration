@@ -28,6 +28,39 @@ export const campPublic = {
   ]),
 };
 
+export const campWithAdditionalFields = {
+  active: true,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+    {
+      name: "invisible_field",
+      type: "text",
+      isRequired: true,
+      visible: false,
+    },
+  ]),
+};
+
+export const campWithRequiredField = {
+  active: true,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+    {
+      name: "last_name",
+      type: "text",
+      isRequired: true,
+    },
+  ]),
+};
+
 export const campWithFileRequired = {
   active: true,
   form: createForm([
