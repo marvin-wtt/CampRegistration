@@ -13,7 +13,6 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { Registration } from 'src/types/Registration';
 import { Roommate } from 'src/types/Roommate';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { useSettingsStore } from 'stores/settings-store';
 import { formatPersonName } from 'src/utils/formatters';
 
 export const useRoomPlannerStore = defineStore('room-planner', () => {
@@ -33,7 +32,6 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Room[]>('roomPlanner');
-  const settingsStore = useSettingsStore();
   const registrationsStore = useRegistrationsStore();
   const campBus = useCampBus();
   const authBus = useAuthBus();
