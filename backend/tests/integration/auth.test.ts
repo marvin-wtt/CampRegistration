@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 import prisma from "../utils/prisma";
 import { TokenType, User } from "@prisma/client";
 import { UserFactory } from "../../prisma/factories";
-import { generateToken, verifyToken } from "../utils/token";
+import { generateResetPasswordToken, verifyToken } from "../utils/token";
 import { request } from "../utils/request";
+import { TokenFactory } from "../../prisma/factories/token";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -405,7 +406,20 @@ describe("/api/v1/auth", async () => {
       const user = await UserFactory.create({ email });
 
       context.email = email;
-      context.token = generateToken(user);
+      context.token = generateResetPasswordToken(user);
+
+      console.log(user.id);
+
+      await TokenFactory.create({
+        user: {
+          connect: {
+            id: user.id,
+          },
+        },
+        token: context.token,
+        type: TokenType.RESET_PASSWORD,
+        blacklisted: false,
+      });
     });
 
     it<ResetPasswordContext>("should respond with `204` status code when provided with valid token and email", async (context) => {

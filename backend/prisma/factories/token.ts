@@ -11,8 +11,8 @@ export const TokenFactory = {
       blacklisted: false,
       token: "",
       type: faker.helpers.enumValue(TokenType),
-      ...data,
       user: {},
+      ...data,
     };
   },
 
