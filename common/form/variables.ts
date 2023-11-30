@@ -8,12 +8,12 @@ type Data = {
   organization: Translatable;
   contactEmail: Translatable;
   maxParticipants: Translatable<number>;
-  startAt: string;
-  endAt: string;
+  startAt: Date | string;
+  endAt: Date | string;
   minAge: number;
   maxAge: number;
   location: Translatable;
-  price: string;
+  price: number;
 };
 
 export const setVariables = (
@@ -43,8 +43,9 @@ export const setVariables = (
 };
 
 const converter = (locale: string) => {
-  function toDate(timestamp: string): string | undefined {
-    const date = new Date(timestamp);
+  function toDate(timestamp: Date | string): string | undefined {
+    const date =
+      typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
     return date.toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
@@ -52,8 +53,9 @@ const converter = (locale: string) => {
     });
   }
 
-  function toTime(timestamp: string): string | undefined {
-    const date = new Date(timestamp);
+  function toTime(timestamp: Date | string): string | undefined {
+    const date =
+      typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
     return date.toLocaleTimeString(locale, {
       hour12: false,
       hour: '2-digit',

@@ -32,7 +32,7 @@ type RegistrationCreateData = Pick<
 >;
 const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   // TODO The utils was already initialized during validation. Attach it to the request body
-  const form = formUtils(camp.form);
+  const form = formUtils(camp);
   form.updateData(data.data);
   const campData = form.extractCampData();
 
@@ -134,7 +134,7 @@ const updateRegistrationById = async (
   data: Pick<Prisma.RegistrationUpdateInput, "waitingList" | "data">,
 ) => {
   // TODO The utils was already initialized during validation. Attach it to the request body
-  const form = formUtils(camp.form);
+  const form = formUtils(camp);
   form.updateData(data.data);
   const campData = form.extractCampData();
 

@@ -60,6 +60,27 @@ export const campWithCustomFields = {
   ]),
 };
 
+export const campWithCampVariable = {
+  active: true,
+  minAge: 10,
+  maxAge: 15,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+    {
+      name: "age",
+      type: "text",
+      inputType: "number",
+      minValueExpression: "{camp.minAge}",
+      maxValueExpression: "{camp.maxAge}",
+      isRequired: true,
+    },
+  ]),
+};
+
 export const campWithFileOptional = {
   active: true,
   form: createForm([

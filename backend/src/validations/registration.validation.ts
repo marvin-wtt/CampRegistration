@@ -12,9 +12,9 @@ export const registrationData: Joi.CustomValidator<object> = (
   }
 
   const req = helpers.prefs.context as Request;
-  const surveyJson = routeModel(req.models.camp).form;
+  const camp = routeModel(req.models.camp);
 
-  const formHelper = formUtils(surveyJson);
+  const formHelper = formUtils(camp);
   formHelper.updateData(value, req.files);
 
   if (formHelper.hasDataErrors()) {

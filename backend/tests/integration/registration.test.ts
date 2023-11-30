@@ -15,6 +15,7 @@ import crypto from "crypto";
 import {
   campPrivate,
   campPublic,
+  campWithCampVariable,
   campWithCustomFields,
   campWithFileOptional,
   campWithFileRequired,
@@ -293,8 +294,6 @@ describe("/api/v1/camps/:campId/registrations", () => {
       expect(body).toHaveProperty("data.data.role", data.role);
     });
 
-    it.todo("should work with camp variables");
-
     it("should respond with `401` status code when camp is not active", async () => {
       const camp = await CampFactory.create({
         active: false,
@@ -356,6 +355,30 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
       expect(body).toHaveProperty("data");
       expect(body).toHaveProperty("data.locale", "fr-CH");
+    });
+
+    it("should work with camp variables", async () => {
+      const camp = await CampFactory.create(campWithCampVariable);
+
+      const validData = {
+        first_name: "Jhon",
+        age: 11,
+      };
+
+      await request(app)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: validData })
+        .expect(201);
+
+      const invalidData = {
+        first_name: "Jhon",
+        age: 5,
+      };
+
+      await request(app)
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: invalidData })
+        .expect(400);
     });
 
     describe("files", () => {

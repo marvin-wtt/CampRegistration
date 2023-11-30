@@ -1,19 +1,21 @@
 import { SurveyModel } from "survey-core";
-import "./formRegistration"; // TODO Why can't I just import the common package here???
+import { setVariables } from "@camp-registration/common/form/variables";
+import "./formRegistration";
+import { Camp } from "@prisma/client"; // TODO Why can't I just import the common package here???
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
 type FormFile = Pick<File, "name" | "type" | "size">;
 
-export const formUtils = (formJson: unknown) => {
-  const survey = new SurveyModel(formJson);
+export const formUtils = (camp: Camp) => {
+  const survey = new SurveyModel(camp.form);
   const fileQuestions = survey
     .getAllQuestions(false, undefined, true)
     .filter((question) => question.getType() === "file");
 
   let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
-  // TODO Set camp variables for
+  setVariables(survey, camp, "en-US");
 
   const updateData = (data?: unknown, files?: FileType) => {
     survey.data = typeof data !== "object" ? {} : data;
