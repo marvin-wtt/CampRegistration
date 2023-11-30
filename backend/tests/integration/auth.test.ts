@@ -6,7 +6,7 @@ import prisma from "../utils/prisma";
 import app from "../../src/app";
 import { TokenType, User } from "@prisma/client";
 import { UserFactory } from "../../prisma/factories";
-import { generateQueryString } from "../utils/url";
+import { generateToken, verifyToken } from "../utils/token";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -200,9 +200,8 @@ describe("/api/v1/auth", async () => {
       expect(body).toHaveProperty("tokens.access.token");
       expect(body).toHaveProperty("tokens.access.expires");
 
-      expect(
-        jwt.verify(body.tokens.access.token, process.env.JWT_SECRET as string),
-      );
+      // TODO Add assertion here
+      expect(verifyToken(body.tokens.access.token));
     });
 
     it("should set access token as cookie when successful", async () => {
@@ -239,9 +238,8 @@ describe("/api/v1/auth", async () => {
       expect(body).toHaveProperty("tokens.refresh.token");
       expect(body).toHaveProperty("tokens.refresh.expires");
 
-      expect(
-        jwt.verify(body.tokens.refresh.token, process.env.JWT_SECRET as string),
-      );
+      // TODO Add assertion here
+      expect(verifyToken(body.tokens.refresh.token));
     });
 
     it("should set access token and refresh token as cookie with remember when successful", async () => {
@@ -408,21 +406,8 @@ describe("/api/v1/auth", async () => {
       const email = "test@email.net";
       const user = await UserFactory.create({ email });
 
-      // Request a token first
-      await request(app).post("/api/v1/auth/forgot-password").send({
-        email,
-      });
-
-      const token = (
-        await prisma.token.findFirst({
-          where: { userId: user.id },
-        })
-      )?.token as string;
-
-      expect(token).toBeDefined();
-
       context.email = email;
-      context.token = token;
+      context.token = generateToken(user);
     });
 
     it<ResetPasswordContext>("should respond with `204` status code when provided with valid token and email", async (context) => {
