@@ -1,8 +1,5 @@
 <template>
-  <q-card
-    v-ripple
-    class="camp-card"
-  >
+  <q-card>
     <!-- Image -->
     <q-card-section class="col q-pa-none">
       <q-skeleton height="200px" />
@@ -37,16 +34,6 @@
         </div>
         <div class="row">
           <q-icon
-            name="attach_money"
-            size="sm"
-          />
-          <q-skeleton
-            type="text"
-            width="20px"
-          />
-        </div>
-        <div class="row">
-          <q-icon
             name="person"
             size="sm"
           />
@@ -57,12 +44,22 @@
         </div>
         <div class="col q-col-gutter-sm row">
           <q-icon
-            name="flag"
+            name="language"
             size="sm"
           />
           <q-skeleton
             type="text"
             width="50px"
+          />
+        </div>
+        <div class="row">
+          <q-icon
+            name="attach_money"
+            size="sm"
+          />
+          <q-skeleton
+            type="text"
+            width="20px"
           />
         </div>
       </q-card-section>
@@ -75,6 +72,7 @@
 <style scoped>
 .camp-card {
   width: 100%;
+  min-width: 300px;
   max-width: 300px;
 }
 </style>

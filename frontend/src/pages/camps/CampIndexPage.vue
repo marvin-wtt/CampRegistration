@@ -13,16 +13,15 @@
       </div>
     </div>
 
-    <div class="col-12 col-md-10 col-lg-8 col-xl-8">
-      <div class="q-pa-md row items-start q-gutter-md">
+    <div class="column col-12 col-xl-8">
+      <div class="q-pa-md row justify-evenly q-gutter-lg">
         <template v-if="loading">
-          <div
-            v-for="n in 5"
+          <camp-card-skeleton
+            v-for="n in 6"
             :key="n"
-            class="col"
-          >
-            <camp-card-skeleton />
-          </div>
+            class="col-3"
+          />
+          <!-- class="col-xs-12 col-sm-6 col-md-4 col-lg-5 col-xl-2         -->
         </template>
         <template v-else>
           <div

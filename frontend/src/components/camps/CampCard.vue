@@ -38,13 +38,6 @@
         </div>
         <div>
           <q-icon
-            name="attach_money"
-            size="sm"
-          />
-          {{ props.camp.price }} €
-        </div>
-        <div>
-          <q-icon
             name="person"
             size="sm"
           />
@@ -52,7 +45,7 @@
         </div>
         <div class="col q-col-gutter-sm">
           <q-icon
-            name="flag"
+            name="language"
             size="sm"
           />
           <country-icon
@@ -60,6 +53,13 @@
             :key="locale"
             :locale="locale"
           />
+        </div>
+        <div>
+          <q-icon
+            name="attach_money"
+            size="sm"
+          />
+          {{ props.camp.price }} €
         </div>
       </q-card-section>
     </div>
