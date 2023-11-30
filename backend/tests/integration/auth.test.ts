@@ -1,17 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import request from "supertest";
 import prisma from "../utils/prisma";
-import app from "../../src/app";
 import { TokenType, User } from "@prisma/client";
 import { UserFactory } from "../../prisma/factories";
 import { generateToken, verifyToken } from "../utils/token";
+import { request } from "../utils/request";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
     it("should respond with a `201` status code when provided with details", async () => {
-      const { status } = await request(app).post("/api/v1/auth/register").send({
+      const { status } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "Password1",
@@ -21,7 +19,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with the user details when successful", async () => {
-      const { body } = await request(app).post("/api/v1/auth/register").send({
+      const { body } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "Password1",
@@ -41,7 +39,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code if an invalid email body is provided", async () => {
-      const { status } = await request(app).post("/api/v1/auth/register").send({
+      const { status } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test(at)email.net",
         password: "Password1",
@@ -54,7 +52,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code if an invalid password is provided", async () => {
-      const { status } = await request(app).post("/api/v1/auth/register").send({
+      const { status } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "invalid",
@@ -73,7 +71,7 @@ describe("/api/v1/auth", async () => {
         password: "",
       });
 
-      const { status } = await request(app).post("/api/v1/auth/register").send({
+      const { status } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "Password1",
@@ -86,7 +84,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code if the role is set in request body", async () => {
-      const { status } = await request(app).post("/api/v1/auth/register").send({
+      const { status } = await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "Password1",
@@ -100,7 +98,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should encode the user password", async () => {
-      await request(app).post("/api/v1/auth/register").send({
+      await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "Password1",
@@ -113,7 +111,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should set USER role as default", async () => {
-      await request(app).post("/api/v1/auth/register").send({
+      await request().post("/api/v1/auth/register").send({
         name: "testuser",
         email: "test@email.net",
         password: "Password1",
@@ -131,7 +129,7 @@ describe("/api/v1/auth", async () => {
         password: "Password1",
       };
 
-      const { status, body } = await request(app)
+      const { status, body } = await request()
         .post("/api/v1/auth/register")
         .set("Accept-Language", "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")
         .send(data);
@@ -147,7 +145,7 @@ describe("/api/v1/auth", async () => {
         password: "Password1",
       };
 
-      const { status, body } = await request(app)
+      const { status, body } = await request()
         .post("/api/v1/auth/register")
         .send(data);
 
@@ -166,7 +164,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `200` status code when provided valid credentials", async () => {
-      const { status } = await request(app).post("/api/v1/auth/login").send({
+      const { status } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
       });
@@ -174,7 +172,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `200` status code when provided valid credentials and remember", async () => {
-      const { status } = await request(app).post("/api/v1/auth/login").send({
+      const { status } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
         remember: true,
@@ -183,7 +181,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with the user details when successful", async () => {
-      const { body } = await request(app).post("/api/v1/auth/login").send({
+      const { body } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
       });
@@ -192,7 +190,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with access token", async () => {
-      const { body } = await request(app).post("/api/v1/auth/login").send({
+      const { body } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
       });
@@ -205,7 +203,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should set access token as cookie when successful", async () => {
-      const { headers } = await request(app).post("/api/v1/auth/login").send({
+      const { headers } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
       });
@@ -216,7 +214,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should not set refresh token as cookie without remember", async () => {
-      const { headers } = await request(app).post("/api/v1/auth/login").send({
+      const { headers } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
       });
@@ -229,7 +227,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with refresh token when remember is set when successful", async () => {
-      const { body } = await request(app).post("/api/v1/auth/login").send({
+      const { body } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
         remember: true,
@@ -243,7 +241,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should set access token and refresh token as cookie with remember when successful", async () => {
-      const { headers } = await request(app).post("/api/v1/auth/login").send({
+      const { headers } = await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
         remember: true,
@@ -264,7 +262,7 @@ describe("/api/v1/auth", async () => {
         password: bcrypt.hashSync("password", 8),
       });
 
-      const { status } = await request(app).post("/api/v1/auth/login").send({
+      const { status } = await request().post("/api/v1/auth/login").send({
         email: "test2@email.net",
         password: "password",
         remember: true,
@@ -273,12 +271,10 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code when given invalid credentials", async () => {
-      const { body, status } = await request(app)
-        .post("/api/v1/auth/login")
-        .send({
-          email: "test@email.net",
-          password: "wrongpassword",
-        });
+      const { body, status } = await request().post("/api/v1/auth/login").send({
+        email: "test@email.net",
+        password: "wrongpassword",
+      });
 
       expect(status).toBe(400);
       expect(body).not.toHaveProperty("tokens");
@@ -286,18 +282,16 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code when the user cannot be found", async () => {
-      const { body, status } = await request(app)
-        .post("/api/v1/auth/login")
-        .send({
-          email: "test@email.net",
-          password: "testpassword",
-        });
+      const { body, status } = await request().post("/api/v1/auth/login").send({
+        email: "test@email.net",
+        password: "testpassword",
+      });
       expect(status).toBe(400);
       expect(body).not.toHaveProperty("token");
     });
 
     it("should store the refresh token when remember is set when successful", async () => {
-      await request(app).post("/api/v1/auth/login").send({
+      await request().post("/api/v1/auth/login").send({
         email: "test@email.net",
         password: "password",
         remember: true,
@@ -355,7 +349,7 @@ describe("/api/v1/auth", async () => {
         email: "test@email.net",
       });
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post("/api/v1/auth/forgot-password")
         .send({
           email: "test@email.net",
@@ -365,7 +359,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with `204` status code when provided with invalid email", async () => {
-      const { status } = await request(app)
+      const { status } = await request()
         .post("/api/v1/auth/forgot-password")
         .send({
           email: "unknown@email.net",
@@ -379,7 +373,7 @@ describe("/api/v1/auth", async () => {
         email: "test@email.net",
       });
 
-      await request(app).post("/api/v1/auth/forgot-password").send({
+      await request().post("/api/v1/auth/forgot-password").send({
         email: "test@email.net",
       });
 
@@ -417,7 +411,7 @@ describe("/api/v1/auth", async () => {
         password: "Test1234",
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/auth/reset-password/`)
         .send(data);
 
@@ -431,7 +425,7 @@ describe("/api/v1/auth", async () => {
         password: "Test1234",
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/auth/reset-password/`)
         .send(data);
 
@@ -445,7 +439,7 @@ describe("/api/v1/auth", async () => {
         password: "123",
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/auth/reset-password/`)
         .send(data);
 
@@ -459,7 +453,7 @@ describe("/api/v1/auth", async () => {
         password: "Test1234",
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/auth/reset-password/`)
         .send(data);
 

@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import prisma from "../utils/prisma";
 import { generateAccessToken } from "../utils/token";
-import request from "supertest";
-import app from "../../src/app";
 import {
   CampFactory,
   FileFactory,
@@ -27,6 +25,7 @@ import {
   campWithMultipleCampDataValues,
   campWithSingleCampDataType,
 } from "../fixtures/registration/camp.fixtures";
+import { request } from "../utils/request";
 
 export interface RegistrationTestContext {
   user: User;
@@ -102,7 +101,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
   describe("GET /api/v1/camps/:campId/registrations/", () => {
     it<RegistrationTestContext>("should respond with `200` status code when user is camp manager", async (context) => {
-      const { status, body } = await request(app)
+      const { status, body } = await request()
         .get(`/api/v1/camps/${context.camp.id}/registrations`)
         .send()
         .set("Authorization", `Bearer ${context.accessToken}`);
@@ -157,7 +156,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         });
 
         // TODO Create new registration with files
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .get(`/api/v1/camps/${context.camp.id}/registrations`)
           .send()
           .set("Authorization", `Bearer ${context.accessToken}`);
@@ -180,7 +179,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     );
 
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .get(`/api/v1/camps/${context.camp.id}/registrations`)
         .send()
         .set("Authorization", `Bearer ${context.otherAccessToken}`);
@@ -189,7 +188,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .get(`/api/v1/camps/${context.camp.id}/registrations`)
         .send();
 
@@ -207,7 +206,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it.todo("should include files in the response body ");
 
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .get(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
@@ -218,7 +217,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .get(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
@@ -229,7 +228,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
     it<RegistrationTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
       const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
-      const { status } = await request(app)
+      const { status } = await request()
         .get(`/api/v1/camps/${context.camp.id}/registrations/${id}`)
         .send()
         .set("Authorization", `Bearer ${context.accessToken}`);
@@ -249,7 +248,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         },
       };
 
-      const { status, body } = await request(app)
+      const { status, body } = await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send(data);
 
@@ -271,7 +270,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         first_name: "Jhon",
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data });
 
@@ -286,7 +285,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         role: "participant",
       };
 
-      const { status, body } = await request(app)
+      const { status, body } = await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data });
 
@@ -299,7 +298,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         active: false,
       });
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send();
 
@@ -316,7 +315,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         },
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/camps/${context.camp.id}/registrations`)
         .send(data);
 
@@ -330,7 +329,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         },
       };
 
-      const { status } = await request(app)
+      const { status } = await request()
         .post(`/api/v1/camps/${context.camp.id}/registrations`)
         .send(data);
 
@@ -346,7 +345,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         },
       };
 
-      const { status, body } = await request(app)
+      const { status, body } = await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .set("Accept-Language", "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")
         .send(data);
@@ -365,7 +364,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         age: 11,
       };
 
-      await request(app)
+      await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data: validData })
         .expect(201);
@@ -375,7 +374,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         age: 5,
       };
 
-      await request(app)
+      await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data: invalidData })
         .expect(400);
@@ -386,7 +385,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         const camp = await CampFactory.create(campWithFileRequired);
 
         const fileUuid = crypto.randomUUID();
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_field]"]: "Some value",
@@ -402,7 +401,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         const camp = await CampFactory.create(campWithFileRequired);
 
         const fileUuid = crypto.randomUUID();
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_field]"]: "Some value",
@@ -417,7 +416,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
         const fileUuid = crypto.randomUUID();
         const wrongFileUuid = crypto.randomUUID();
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_field]"]: "Some value",
@@ -432,7 +431,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         const camp = await CampFactory.create(campWithFileRequired);
 
         const fileUuid = crypto.randomUUID();
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_field]"]: "Some value",
@@ -446,7 +445,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         const camp = await CampFactory.create(campWithFileRequired);
 
         const fileUuid = crypto.randomUUID();
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_file]"]: fileUuid,
@@ -461,7 +460,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
         const fileUuid = crypto.randomUUID();
         const otherFileUuid = crypto.randomUUID();
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_field]"]: "Some value",
@@ -479,7 +478,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       it("should respond with `201` status code when file is optional", async () => {
         const camp = await CampFactory.create(campWithFileOptional);
 
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .field({
             ["data[some_field]"]: "Some value",
@@ -498,7 +497,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
           other: "dummy",
         };
 
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data });
 
@@ -517,7 +516,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
           other: "dummy",
         };
 
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data });
 
@@ -538,7 +537,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
           other: "dummy",
         };
 
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data });
 
@@ -559,7 +558,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
           other: "dummy",
         };
 
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data });
 
@@ -579,7 +578,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         data: unknown,
         expected: boolean,
       ) => {
-        const { status, body } = await request(app)
+        const { status, body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data });
 
@@ -770,7 +769,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
           waitingList: false,
         };
 
-        const { status } = await request(app)
+        const { status } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data);
 
@@ -797,7 +796,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     it.todo("should upload files if attached");
 
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .put(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
@@ -810,7 +809,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .put(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
@@ -828,7 +827,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
           public: true,
         },
       };
-      const { status } = await request(app)
+      const { status } = await request()
         .patch(`/api/v1/camps/${context.camp.id}/registrations/${id}`)
         .send(data)
         .set("Authorization", `Bearer ${context.accessToken}`);
@@ -845,7 +844,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
 
   describe("DELETE /api/v1/camps/:campId/registrations/:registrationId", () => {
     it<RegistrationTestContext>("should respond with `204` status code when user is camp manager", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .delete(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
@@ -859,7 +858,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it<RegistrationTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .delete(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
@@ -873,7 +872,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     it<RegistrationTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
-      const { status } = await request(app)
+      const { status } = await request()
         .delete(
           `/api/v1/camps/${context.camp.id}/registrations/${context.registration.id}`,
         )
