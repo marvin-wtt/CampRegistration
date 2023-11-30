@@ -16,4 +16,6 @@ export default async () => {
       throw e;
     }
   }
+
+  prisma.$disconnect();
 };
