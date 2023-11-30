@@ -5,57 +5,41 @@ import { generateAccessToken } from "../utils/token";
 import { request } from "../utils/request";
 import { CampManagerFactory } from "../../prisma/factories/manager";
 import { InvitationFactory } from "../../prisma/factories/invitation";
+import prisma from "../utils/prisma";
+import { ulid } from "ulidx";
 
 describe("/api/v1/camps/:campId/managers", () => {
-  type ManagerTestContext = {
-    camp: Camp;
-    manager: CampManager;
-    user: User;
-    otherUser: User;
-    accessToken: string;
-    otherAccessToken: string;
+  const createCampWithManagerAndToken = async () => {
+    const camp = await CampFactory.create();
+    const user = await UserFactory.create();
+    const manager = await CampManagerFactory.create({
+      camp: { connect: { id: camp.id } },
+      user: { connect: { id: user.id } },
+    });
+    const accessToken = generateAccessToken(user);
+
+    return {
+      camp,
+      user,
+      manager,
+      accessToken,
+    };
   };
 
-  beforeEach<ManagerTestContext>(async (context) => {
-    context.user = await UserFactory.create();
-    context.otherUser = await UserFactory.create();
-    context.camp = await CampFactory.create();
-    context.manager = await CampManagerFactory.create({
-      camp: {
-        connect: {
-          id: context.camp.id,
-        },
-      },
-      user: {
-        connect: {
-          id: context.user.id,
-        },
-      },
-    });
-    context.accessToken = generateAccessToken(context.user);
-    context.otherAccessToken = generateAccessToken(context.otherUser);
-  });
-
   describe("GET /api/v1/camps/:campId/managers/", () => {
-    it<ManagerTestContext>("should respond with `200` status code when user is camp manager and invited user exists", async (context) => {
+    it("should respond with `200` status code when user is camp manager", async () => {
+      const { camp, accessToken, user } = await createCampWithManagerAndToken();
+
       const invitation = await InvitationFactory.create();
       await CampManagerFactory.create({
-        camp: {
-          connect: {
-            id: context.camp.id,
-          },
-        },
-        invitation: {
-          connect: {
-            id: invitation.id,
-          },
-        },
+        camp: { connect: { id: camp.id } },
+        invitation: { connect: { id: invitation.id } },
       });
 
       const { status, body } = await request()
-        .get(`/api/v1/camps/${context.camp.id}/managers`)
+        .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
-        .set("Authorization", `Bearer ${context.accessToken}`);
+        .set("Authorization", `Bearer ${accessToken}`);
 
       expect(status).toBe(200);
 
@@ -64,12 +48,12 @@ describe("/api/v1/camps/:campId/managers", () => {
       expect(body.data.length).toBe(2);
       expect(body.data[0]).toEqual({
         id: expect.anything(),
-        name: context.user.name,
-        email: context.user.email,
+        name: user.name,
+        email: user.email,
         status: "accepted",
         role: "manager",
       });
-      expect(body.data[0]).toEqual({
+      expect(body.data[1]).toEqual({
         id: expect.anything(),
         name: null,
         email: invitation.email,
@@ -78,47 +62,249 @@ describe("/api/v1/camps/:campId/managers", () => {
       });
     });
 
-    it.todo(
-      "should respond with `200` status code when user is camp manager and invited user does not exists",
-    );
+    it("should respond with `403` status code when user is not camp manager", async () => {
+      const camp = await CampFactory.create();
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
 
-    it.todo(
-      "should respond with `403` status code when user is not camp manager",
-    );
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(403);
+    });
 
-    it.todo("should respond with `401` status code when unauthenticated");
+    it("should respond with `401` status code when unauthenticated", async () => {
+      const camp = await CampFactory.create();
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers`)
+        .send()
+        .expect(401);
+    });
   });
 
   describe("POST /api/v1/camps/:campId/managers/", () => {
-    it.todo(
-      "should respond with `201` status code when user is camp manager and invited user is registered",
-    );
+    it("should respond with `201` status code when user is camp manager and invited user is registered", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const invited = await UserFactory.create({
+        name: "Jhon Doe",
+        email: "invited@email.net",
+      });
 
-    it.todo(
-      "should respond with `201` status code when user is camp manager and invited user is not registered",
-    );
+      const data = {
+        email: "invited@email.net",
+      };
 
-    it.todo(
-      "should respond with `400` status code when data is invalid",
-      () => {
-        // TODO Invalid email address, no email address
-      },
-    );
+      const { status, body } = await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`);
 
-    it.todo(
-      "should respond with `403` status code when user is not camp manager",
-    );
+      expect(status).toBe(201);
+      expect(body).toHaveProperty("data");
+      expect(body.data).toEqual({
+        id: expect.anything(),
+        email: "invited@email.net",
+        name: "Jhon Doe",
+        status: "accepted",
+        role: "manager",
+      });
 
-    it.todo("should respond with `401` status code when unauthenticated");
+      // Expect manager with user and without invitation
+      const count = await prisma.campManager.count({
+        where: {
+          campId: camp.id,
+          userId: invited.id,
+          invitationId: null,
+        },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should respond with `201` status code when user is camp manager and invited user is not registered", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      const data = {
+        email: "invited@email.net",
+      };
+
+      const { status, body } = await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`);
+
+      expect(status).toBe(201);
+      expect(body).toHaveProperty("data");
+      expect(body.data).toEqual({
+        id: expect.anything(),
+        email: "invited@email.net",
+        name: null,
+        status: "pending",
+        role: "manager",
+      });
+
+      // Expect manager without user and with invitation
+      const count = await prisma.campManager.count({
+        where: {
+          campId: camp.id,
+          invitation: {
+            email: "invited@email.net",
+          },
+          userId: null,
+        },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should respond with `400` status code when data is invalid", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      // Invalid email
+      await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send({
+          email: "invalid-email",
+        })
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(400);
+
+      // No email
+      await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(400);
+    });
+
+    it("should respond with `403` status code when user is not camp manager", async () => {
+      const camp = await CampFactory.create();
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      const data = {
+        email: "invited@email.net",
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(403);
+    });
+
+    it("should respond with `401` status code when unauthenticated", async () => {
+      const camp = await CampFactory.create();
+
+      const data = {
+        email: "invited@email.net",
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send(data)
+        .expect(401);
+    });
   });
 
   describe("DELETE /api/v1/camps/:campId/managers/:managerId", () => {
-    it.todo("should respond with `204` status code when user is camp manager");
+    it("should respond with `204` status code when user is camp manager and status is accepted", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { create: UserFactory.build() },
+      });
 
-    it.todo(
-      "should respond with `403` status code when user is not camp manager",
-    );
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
 
-    it.todo("should respond with `401` status code when unauthenticated");
+      const count = await prisma.campManager.count({
+        where: { campId: camp.id },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should respond with `204` status code when user is camp manager and status is pending", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
+
+      const count = await prisma.campManager.count({
+        where: { campId: camp.id },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should respond with `400` status code when user is the last manager of a camp", async () => {
+      const { camp, accessToken, manager } =
+        await createCampWithManagerAndToken();
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(400);
+
+      const count = await prisma.campManager.count({
+        where: { campId: camp.id },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should respond with `403` status code when user is not camp manager", async () => {
+      const camp = await CampFactory.create();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(403);
+    });
+
+    it("should respond with `401` status code when unauthenticated", async () => {
+      const camp = await CampFactory.create();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .expect(401);
+    });
+
+    it("should respond with `404` status code when manager does not exist", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const managerId = ulid();
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${managerId}`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(404);
+    });
   });
 });
