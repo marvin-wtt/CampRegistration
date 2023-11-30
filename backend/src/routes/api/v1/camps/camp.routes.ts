@@ -6,7 +6,7 @@ import { catchParamAsync } from "@/utils/catchAsync";
 import { campController } from "@/controllers";
 import { campValidation } from "@/validations";
 import { campService } from "@/services";
-import registrationRoutes from "./registration/registration.routes";
+import registrationRoutes from "@/routes/api/v1/camps/registrations/registrations.routes";
 import templateRoutes from "./template.routes";
 import roomRoutes from "./rooms/room.routes";
 import managerRoutes from "./manager.routes";
