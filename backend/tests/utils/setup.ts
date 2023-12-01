@@ -1,9 +1,9 @@
 import resetDb from "./reset-db";
-import { afterEach, beforeEach } from "vitest";
+import { afterEach, afterAll, beforeEach } from "vitest";
 import fse from "fs-extra";
 import config from "@/config";
 import path from "path";
-import { resetMailServer } from "./mail-server";
+import { resetMailServer, stopMailServer } from "./mail-server";
 
 beforeEach(async () => {
   await resetDb();
@@ -11,6 +11,10 @@ beforeEach(async () => {
 
   await clearDirectory(config.storage.tmpDir);
   await clearDirectory(config.storage.uploadDir);
+});
+
+afterAll(async () => {
+  stopMailServer();
 });
 
 const clearDirectory = async (dir: string) => {

@@ -12,4 +12,8 @@ export const resetMailServer = () => {
   mailServer.removeAll();
 };
 
+export const stopMailServer = () => {
+  mailServer.stop(() => {});
+};
+
 export default mailServer;
