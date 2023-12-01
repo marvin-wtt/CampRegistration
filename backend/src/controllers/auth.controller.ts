@@ -28,6 +28,9 @@ const register = catchRequestAsync(async (req, res) => {
 
   await managerService.resolveManagerInvitations(user.email, user.id);
 
+  const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
+  notificationService.sendVerificationEmail(user.email, verifyEmailToken);
+
   res.status(httpStatus.CREATED).json(userDetailedResource(user));
 });
 
