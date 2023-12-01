@@ -36,12 +36,18 @@ const index = catchRequestAsync(async (req, res) => {
 const store = catchRequestAsync(async (req, res) => {
   const data = req.body;
   const userId = authUserId(req);
+
+  // TODO Set default form
+  const form = {};
+  // TODO Set themes
+  const themes = {};
+
   const camp = await campService.createCamp(userId, {
     countries: data.countries,
     name: data.name,
     organization: data.organization,
     contactEmail: data.contactEmail,
-    active: false,
+    active: data.active ?? false,
     public: data.public,
     maxParticipants: data.maxParticipants,
     startAt: data.startAt,
@@ -50,9 +56,11 @@ const store = catchRequestAsync(async (req, res) => {
     maxAge: data.maxAge,
     price: data.price,
     location: data.location,
-    form: data.form,
-    themes: data.themes,
+    form: form,
+    themes: themes,
   });
+
+  // TODO Add default templates
 
   res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
 });
