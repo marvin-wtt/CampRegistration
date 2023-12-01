@@ -2,16 +2,13 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import prisma from "../utils/prisma";
 import { generateAccessToken } from "../utils/token";
 import { CampFactory, UserFactory } from "../../prisma/factories";
-import { Camp, Prisma, User } from "@prisma/client";
+import { Camp, Prisma } from "@prisma/client";
 import moment from "moment";
 import { ulid } from "ulidx";
 import {
   campActivePublic,
   campCreateInternational,
-  campCreateMissingPartialMaxParticipants,
-  campCreateMissingPartialName,
-  campCreateMissingUntranslatedMaxParticipants,
-  campCreateMissingUntranslatedNames,
+  campCreateInvalidBody,
   campCreateNational,
   campInactive,
 } from "../fixtures/camp/camp.fixtures";
@@ -22,7 +19,7 @@ type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 const assertCampModel = async (
   id: string,
-  data: PartialBy<Prisma.CampCreateInput, "id">,
+  data: PartialBy<Prisma.CampCreateInput, "id" | "form" | "themes">,
 ) => {
   const camp = (await prisma.camp.findFirst({
     where: {
@@ -46,15 +43,15 @@ const assertCampModel = async (
     endAt: new Date(data.endAt),
     price: data.price,
     location: data.location,
-    form: data.form,
-    themes: data.themes,
+    form: data.form ?? expect.anything(),
+    themes: data.themes ?? expect.anything(),
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
 };
 
 const assertCampResponseBody = (
-  data: PartialBy<Prisma.CampCreateInput, "id">,
+  data: PartialBy<Prisma.CampCreateInput, "id" | "form" | "themes">,
   body: any,
 ) => {
   expect(body).toHaveProperty("data");
@@ -73,8 +70,8 @@ const assertCampResponseBody = (
     endAt: data.endAt,
     price: data.price,
     location: data.location,
-    form: data.form,
-    themes: data.themes,
+    form: data.form ?? expect.anything(),
+    themes: data.themes ?? expect.anything(),
   });
 };
 
@@ -217,7 +214,7 @@ describe("/api/v1/camps", () => {
 
   describe("POST /api/v1/camps", () => {
     const assertCampCreated = async (
-      expected: PartialBy<Prisma.CampCreateInput, "id">,
+      expected: PartialBy<Prisma.CampCreateInput, "id" | "form" | "themes">,
       actual: unknown,
     ) => {
       // Test response
@@ -256,69 +253,41 @@ describe("/api/v1/camps", () => {
       await assertCampCreated(data, body);
     });
 
-    it.todo(
-      "should respond with `201` status code without translation",
-      async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        // TODO Use it.each instead
-        const datasets = [
-          campCreateMissingUntranslatedMaxParticipants,
-          campCreateMissingUntranslatedNames,
-        ];
-
-        for (const data of datasets) {
-          const { body } = await request()
-            .post(`/api/v1/camps/`)
-            .send(data)
-            .set("Authorization", `Bearer ${accessToken}`)
-            .expect(201);
-
-          // Test response
-          await assertCampCreated(data, body);
-        }
-      },
-    );
-
-    it.todo("should be inactive by default", () => {});
-
     it("should respond with `401` status code when unauthenticated", async () => {
       await request().post(`/api/v1/camps/`).send().expect(401);
     });
 
-    it.todo(
-      "should respond with `400` status code with partial value is missing",
-      async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-        // TODO Use it.each instead
-        const datasets = [
-          campCreateMissingPartialMaxParticipants,
-          campCreateMissingPartialName,
-        ];
+    it("should be inactive by default", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
+      const data = {
+        ...campCreateNational,
+        active: undefined,
+      };
 
-        for (const data of datasets) {
+      const { body } = await request()
+        .post(`/api/v1/camps/`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(201);
+
+      expect(body).toHaveProperty("data.active", false);
+    });
+
+    describe("invalid request body", () => {
+      it.each(campCreateInvalidBody)(
+        "should validate the request body | $name",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        async ({ name, data, expected }) => {
+          const accessToken = generateAccessToken(await UserFactory.create());
+
           await request()
             .post(`/api/v1/camps/`)
             .send(data)
             .set("Authorization", `Bearer ${accessToken}`)
-            .expect(400);
-        }
-      },
-    );
-
-    it.todo(
-      "should respond with `400` status code when body is invalid",
-      async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-        // TODO Test all fields
-
-        await request()
-          .post(`/api/v1/camps/`)
-          .send()
-          .set("Authorization", `Bearer ${accessToken}`)
-          .expect(400);
-      },
-    );
+            .expect(expected);
+        },
+      );
+    });
   });
 
   describe("PATCH /api/v1/camps/:campId", () => {
