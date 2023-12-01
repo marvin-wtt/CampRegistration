@@ -102,10 +102,10 @@ const logoutAllDevices = async (userId: string) => {
   });
 };
 
-const verifyEmail = async (verifyEmailToken: string): Promise<void> => {
+const verifyEmail = async (token: string): Promise<void> => {
   try {
     const verifyEmailTokenData = await tokenService.verifyToken(
-      verifyEmailToken,
+      token,
       TokenType.VERIFY_EMAIL,
     );
     await prisma.token.deleteMany({

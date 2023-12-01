@@ -108,7 +108,9 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
 });
 
 const verifyEmail = catchRequestAsync(async (req, res) => {
-  await authService.verifyEmail(req.query.token as string);
+  const { token } = req.body;
+
+  await authService.verifyEmail(token);
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
