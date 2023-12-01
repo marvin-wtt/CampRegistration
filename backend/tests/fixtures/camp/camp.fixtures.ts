@@ -1,5 +1,18 @@
 import moment from "moment/moment";
-import { createForm } from "../../utils/form";
+
+export const campActivePublic = {
+  active: true,
+  public: true,
+};
+
+export const campActivePrivate = {
+  active: true,
+  public: true,
+};
+
+export const campInactive = {
+  active: false,
+};
 
 export const campCreateNational = {
   active: false,

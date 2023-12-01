@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import prisma from "../utils/prisma";
 import { generateAccessToken } from "../utils/token";
 import { CampFactory, UserFactory } from "../../prisma/factories";
@@ -6,28 +6,19 @@ import { Camp, Prisma, User } from "@prisma/client";
 import moment from "moment";
 import { ulid } from "ulidx";
 import {
+  campActivePublic,
   campCreateInternational,
   campCreateMissingPartialMaxParticipants,
   campCreateMissingPartialName,
   campCreateMissingUntranslatedMaxParticipants,
   campCreateMissingUntranslatedNames,
   campCreateNational,
+  campInactive,
 } from "../fixtures/camp/camp.fixtures";
 import { request } from "../utils/request";
-
-// test.todo("Camp manager invitation");
+import { CampManagerFactory } from "../../prisma/factories/manager";
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-
-export interface CampTestContext {
-  user: User;
-  otherUser: User;
-  accessToken: string;
-  otherAccessToken: string;
-  publicCamp: Camp;
-  privateCamp: Camp;
-  inactiveCamp: Camp;
-}
 
 const assertCampModel = async (
   id: string,
@@ -88,74 +79,65 @@ const assertCampResponseBody = (
 };
 
 describe("/api/v1/camps", () => {
-  beforeEach<CampTestContext>(async (context) => {
-    context.user = await UserFactory.create();
-    context.otherUser = await UserFactory.create();
-    context.publicCamp = await CampFactory.create({
-      public: true,
-      active: true,
-      campManager: {
-        create: {
-          id: ulid(),
-          userId: context.user.id,
-        },
-      },
+  const createCampWithManagerAndToken = async () => {
+    const camp = await CampFactory.create();
+    const user = await UserFactory.create();
+    const manager = await CampManagerFactory.create({
+      camp: { connect: { id: camp.id } },
+      user: { connect: { id: user.id } },
     });
-    context.privateCamp = await CampFactory.create({
-      public: false,
-      active: true,
-      campManager: {
-        create: {
-          id: ulid(),
-          userId: context.user.id,
-        },
-      },
-    });
-    context.inactiveCamp = await CampFactory.create({
-      public: true,
-      active: false,
-      campManager: {
-        create: {
-          id: ulid(),
-          userId: context.user.id,
-        },
-      },
-    });
+    const accessToken = generateAccessToken(user);
 
-    context.accessToken = generateAccessToken(context.user);
-    context.otherAccessToken = generateAccessToken(context.otherUser);
-  });
+    return {
+      camp,
+      user,
+      manager,
+      accessToken,
+    };
+  };
 
   describe("GET /api/v1/camps", () => {
-    it<CampTestContext>("should respond with `200` status code", async () => {
-      const { status, body } = await request().get(`/api/v1/camps/`).send();
+    it("should respond with `200` status code", async () => {
+      await CampFactory.create(campActivePublic);
 
-      expect(status).toBe(200);
+      await request().get(`/api/v1/camps/`).send().expect(200);
+    });
+
+    it("should show all public camps", async () => {
+      await CampFactory.create(campActivePublic);
+      await CampFactory.create(campActivePublic);
+
+      const { body } = await request().get(`/api/v1/camps/`).send().expect(200);
+
       expect(body).toHaveProperty("data");
       expectTypeOf(body.data).toBeArray();
+      expect(body.data.length).toBe(2);
     });
 
-    it<CampTestContext>("should show all public camps", async () => {
+    it("should only include active camps", async () => {
+      await CampFactory.create(campActivePublic);
+      await CampFactory.create(campInactive);
+
       const { body } = await request().get(`/api/v1/camps/`).send();
 
-      expect(body.data.length).toBe(1);
-    });
-
-    it<CampTestContext>("should only include active camps", async () => {
-      const { body } = await request().get(`/api/v1/camps/`).send();
-
+      expect(body).toHaveProperty("data");
+      expectTypeOf(body.data).toBeArray();
       expect(body.data.length).toBe(1);
     });
   });
 
   describe("GET /api/v1/camps/:campId", () => {
-    it<CampTestContext>("should respond with `200` status code when camp is public", async (context) => {
-      const camp = context.publicCamp;
-      const { status, body } = await request()
-        .get(`/api/v1/camps/${context.publicCamp.id}`)
-        .send();
+    it("should respond with `200` status code when camp is public", async () => {
+      const camp = await CampFactory.create({
+        active: true,
+        public: true,
+      });
 
-      expect(status).toBe(200);
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}`)
+        .send()
+        .expect(200);
+
       expect(body).toHaveProperty("data");
       expect(body.data).toEqual({
         id: camp.id,
@@ -178,61 +160,62 @@ describe("/api/v1/camps", () => {
       });
     });
 
-    it<CampTestContext>("should respond with `200` status code when camp is private", async (context) => {
-      const { status } = await request()
-        .get(`/api/v1/camps/${context.privateCamp.id}`)
-        .send();
+    it("should respond with `200` status code when camp is private", async () => {
+      const camp = await CampFactory.create({
+        active: true,
+        public: false,
+      });
 
-      expect(status).toBe(200);
+      await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
     });
 
-    it<CampTestContext>("should respond with `200` status code when camp is not active and user is camp manager", async (context) => {
-      const { status } = await request()
-        .get(`/api/v1/camps/${context.inactiveCamp.id}`)
+    it("should respond with `200` status code when camp is not active and user is camp manager", async () => {
+      const camp = await CampFactory.create({
+        active: false,
+      });
+      const user = await UserFactory.create();
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { connect: { id: user.id } },
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}`)
         .send()
-        .set("Authorization", `Bearer ${context.accessToken}`);
-
-      expect(status).toBe(200);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(200);
     });
 
-    it<CampTestContext>("should respond with `401` status code when camp is not active", async (context) => {
-      const { status } = await request()
-        .get(`/api/v1/camps/${context.inactiveCamp.id}`)
-        .send();
+    it("should respond with `401` status code when camp is not active and user is unauthenticated", async () => {
+      const camp = await CampFactory.create({
+        active: false,
+      });
 
-      expect(status).toBe(401);
+      await request().get(`/api/v1/camps/${camp.id}`).send().expect(401);
     });
 
-    it<CampTestContext>("should respond with `403` status code when camp is not active and user is not a manager", async (context) => {
-      const { status } = await request()
-        .get(`/api/v1/camps/${context.inactiveCamp.id}`)
+    it("should respond with `403` status code when camp is not active and user is not a manager", async () => {
+      const camp = await CampFactory.create({
+        active: false,
+      });
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}`)
         .send()
-        .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-      expect(status).toBe(403);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(403);
     });
 
-    it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
-      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
-      const { status } = await request()
-        .get(`/api/v1/camps/${id}`)
-        .send()
-        .set("Authorization", `Bearer ${context.accessToken}`);
+    it("should respond with `404` status code when camp id does not exists", async () => {
+      const campId = ulid();
 
-      expect(status).toBe(404);
+      await request().get(`/api/v1/camps/${campId}`).send().expect(404);
     });
   });
 
   describe("POST /api/v1/camps", () => {
-    const createCamp = async (
-      data: PartialBy<Prisma.CampCreateInput, "id">,
-      accessToken: string,
-    ) => {
-      return request()
-        .post(`/api/v1/camps/`)
-        .send(data)
-        .set("Authorization", `Bearer ${accessToken}`);
-    };
     const assertCampCreated = async (
       expected: PartialBy<Prisma.CampCreateInput, "id">,
       actual: unknown,
@@ -244,207 +227,239 @@ describe("/api/v1/camps", () => {
       await assertCampModel(id, expected);
     };
 
-    it<CampTestContext>("should respond with `201` status code when user is authenticated", async (context) => {
+    it("should respond with `201` status code when user is authenticated", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
       const data = campCreateNational;
 
-      const { status, body } = await createCamp(data, context.otherAccessToken);
-
-      expect(status).toBe(201);
+      const { body } = await request()
+        .post(`/api/v1/camps/`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(201);
 
       // Test response
       await assertCampCreated(data, body);
     });
 
-    it<CampTestContext>("should respond with `201` status code with international camp", async (context) => {
+    it("should respond with `201` status code with international camp", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
+
       const data = campCreateInternational;
 
-      const { status, body } = await createCamp(data, context.otherAccessToken);
-
-      expect(status).toBe(201);
+      const { body } = await request()
+        .post(`/api/v1/camps/`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(201);
 
       // Test response
       await assertCampCreated(data, body);
     });
 
-    it<CampTestContext>("should respond with `201` status code without translation", async (context) => {
-      // TODO Use it.each instead
-      const datasets = [
-        campCreateMissingUntranslatedMaxParticipants,
-        campCreateMissingUntranslatedNames,
-      ];
+    it.todo(
+      "should respond with `201` status code without translation",
+      async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
 
-      for (const data of datasets) {
-        const { status, body } = await createCamp(
-          data,
-          context.otherAccessToken,
-        );
+        // TODO Use it.each instead
+        const datasets = [
+          campCreateMissingUntranslatedMaxParticipants,
+          campCreateMissingUntranslatedNames,
+        ];
 
-        expect(status).toBe(201);
+        for (const data of datasets) {
+          const { body } = await request()
+            .post(`/api/v1/camps/`)
+            .send(data)
+            .set("Authorization", `Bearer ${accessToken}`)
+            .expect(201);
 
-        // Test response
-        await assertCampCreated(data, body);
-      }
+          // Test response
+          await assertCampCreated(data, body);
+        }
+      },
+    );
+
+    it.todo("should be inactive by default", () => {});
+
+    it("should respond with `401` status code when unauthenticated", async () => {
+      await request().post(`/api/v1/camps/`).send().expect(401);
     });
 
-    it<CampTestContext>("should respond with `400` status code with partial value is missing", async (context) => {
-      // TODO Use it.each instead
-      const datasets = [
-        campCreateMissingPartialMaxParticipants,
-        campCreateMissingPartialName,
-      ];
+    it.todo(
+      "should respond with `400` status code with partial value is missing",
+      async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+        // TODO Use it.each instead
+        const datasets = [
+          campCreateMissingPartialMaxParticipants,
+          campCreateMissingPartialName,
+        ];
 
-      for (const data of datasets) {
-        const { status } = await createCamp(data, context.otherAccessToken);
+        for (const data of datasets) {
+          await request()
+            .post(`/api/v1/camps/`)
+            .send(data)
+            .set("Authorization", `Bearer ${accessToken}`)
+            .expect(400);
+        }
+      },
+    );
 
-        expect(status).toBe(400);
-      }
-    });
-
-    it<CampTestContext>("should be inactive by default", () => {});
-
-    it<CampTestContext>("should respond with `401` status code when unauthenticated", async () => {
-      const { status } = await request().post(`/api/v1/camps/`).send();
-
-      expect(status).toBe(401);
-    });
-
-    it.todo<CampTestContext>(
+    it.todo(
       "should respond with `400` status code when body is invalid",
-      async (context) => {
+      async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
         // TODO Test all fields
 
-        const { status } = await request()
+        await request()
           .post(`/api/v1/camps/`)
           .send()
-          .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-        expect(status).toBe(400);
+          .set("Authorization", `Bearer ${accessToken}`)
+          .expect(400);
       },
     );
   });
 
   describe("PATCH /api/v1/camps/:campId", () => {
-    it<CampTestContext>("should respond with `200` status code when user is camp manager", async (context) => {
-      // TODO Test each attribute individually
-      const data = {
-        active: true,
-        public: false,
-        countries: ["de"],
-        name: "Test Camp",
-        organization: "Test Org",
-        contactEmail: "test@example.com",
-        maxParticipants: 10,
-        minAge: 10,
-        maxAge: 15,
-        startAt: moment().add("20 days").startOf("hour").toDate().toISOString(),
-        endAt: moment().add("22 days").startOf("hour").toDate().toISOString(),
-        price: 100.0,
-        location: "Somewhere",
-        form: {},
-        themes: {},
-      };
+    it.todo(
+      "should respond with `200` status code when user is camp manager",
+      async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
 
-      const id = context.publicCamp.id;
-      const { status, body } = await request()
-        .patch(`/api/v1/camps/${id}`)
-        .send(data)
-        .set("Authorization", `Bearer ${context.accessToken}`);
+        // TODO Test each attribute individually
+        const data = {
+          active: true,
+          public: false,
+          countries: ["de"],
+          name: "Test Camp",
+          organization: "Test Org",
+          contactEmail: "test@example.com",
+          maxParticipants: 10,
+          minAge: 10,
+          maxAge: 15,
+          startAt: moment()
+            .add("20 days")
+            .startOf("hour")
+            .toDate()
+            .toISOString(),
+          endAt: moment().add("22 days").startOf("hour").toDate().toISOString(),
+          price: 100.0,
+          location: "Somewhere",
+          form: {},
+          themes: {},
+        };
 
-      expect(status).toBe(200);
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}`)
+          .send(data)
+          .set("Authorization", `Bearer ${accessToken}`)
+          .expect(200);
 
-      // Test response
-      assertCampResponseBody(data, body);
+        // Test response
+        assertCampResponseBody(data, body);
 
-      // Test model
-      await assertCampModel(id, data);
-    });
+        // Test model
+        await assertCampModel(camp.id, data);
+      },
+    );
 
-    it<CampTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
-      const { status } = await request()
-        .patch(`/api/v1/camps/${context.privateCamp.id}`)
+    it("should respond with `403` status code when user is not camp manager", async () => {
+      const camp = await CampFactory.create();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}`)
         .send()
-        .set("Authorization", `Bearer ${context.otherAccessToken}`);
-
-      expect(status).toBe(403);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(403);
     });
 
-    it<CampTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
-      const { status } = await request()
-        .patch(`/api/v1/camps/${context.privateCamp.id}`)
-        .send();
+    it("should respond with `401` status code when unauthenticated", async () => {
+      const camp = await CampFactory.create();
 
-      expect(status).toBe(401);
+      await request().patch(`/api/v1/camps/${camp.id}`).send().expect(401);
     });
 
-    it<CampTestContext>("should respond with `400` status code when body is invalid", async (context) => {
-      // TODO Test all fields
+    it.todo(
+      "should respond with `400` status code when body is invalid",
+      async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        // TODO Test all fields
 
-      const { status } = await request()
-        .patch(`/api/v1/camps/${context.privateCamp.id}`)
-        .send()
-        .set("Authorization", `Bearer ${context.otherAccessToken}`);
+        await request()
+          .patch(`/api/v1/camps/${camp.id}`)
+          .send()
+          .set("Authorization", `Bearer ${accessToken}`)
+          .expect(400);
+      },
+    );
 
-      expect(status).toBe(403);
-    });
-
-    it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
-      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
+    it("should respond with `404` status code when camp id does not exists", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
+      const campId = ulid();
       const data = {
         public: true,
       };
-      const { status } = await request()
-        .patch(`/api/v1/camps/${id}`)
-        .send(data)
-        .set("Authorization", `Bearer ${context.accessToken}`);
 
-      expect(status).toBe(404);
+      await request()
+        .patch(`/api/v1/camps/${campId}`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(404);
     });
   });
 
   describe("DELETE /api/v1/camps/:campId", () => {
-    it<CampTestContext>("should respond with `204` status code when user is camp manager", async (context) => {
-      const { status } = await request()
-        .delete(`/api/v1/camps/${context.publicCamp.id}`)
+    it("should respond with `204` status code when user is camp manager", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const otherCamp = await CampFactory.create();
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}`)
         .send()
-        .set("Authorization", `Bearer ${context.accessToken}`);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
 
       const campCount = await prisma.camp.count();
+      expect(campCount).toBe(1);
 
-      expect(status).toBe(204);
-      expect(campCount).toBe(2);
+      const remainingCamp = await prisma.camp.findFirst();
+      expect(remainingCamp?.id).toBe(otherCamp.id);
     });
 
-    it<CampTestContext>("should respond with `403` status code when user is not camp manager", async (context) => {
-      const { status } = await request()
-        .delete(`/api/v1/camps/${context.publicCamp.id}`)
+    it("should respond with `403` status code when user is not camp manager", async () => {
+      const camp = await CampFactory.create();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}`)
         .send()
-        .set("Authorization", `Bearer ${context.otherAccessToken}`);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(403);
 
       const campCount = await prisma.camp.count();
-
-      expect(status).toBe(403);
-      expect(campCount).toBe(3);
+      expect(campCount).toBe(1);
     });
 
-    it<CampTestContext>("should respond with `401` status code when unauthenticated", async (context) => {
-      const { status } = await request()
-        .delete(`/api/v1/camps/${context.publicCamp.id}`)
-        .send();
+    it("should respond with `401` status code when unauthenticated", async () => {
+      const camp = await CampFactory.create();
+
+      await request().delete(`/api/v1/camps/${camp.id}`).send().expect(401);
 
       const campCount = await prisma.camp.count();
-
-      expect(status).toBe(401);
-      expect(campCount).toBe(3);
+      expect(campCount).toBe(1);
     });
 
-    it<CampTestContext>("should respond with `404` status code when camp id does not exists", async (context) => {
-      const id = "01H9XKPT4NRJB6F7Z0CDV8DCB";
-      const { status } = await request()
-        .delete(`/api/v1/camps/${id}`)
-        .send()
-        .set("Authorization", `Bearer ${context.accessToken}`);
+    it("should respond with `404` status code when camp id does not exists", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
+      const campId = ulid();
 
-      expect(status).toBe(404);
+      await request()
+        .delete(`/api/v1/camps/${campId}`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(404);
     });
 
     it.todo("should delete all files");
