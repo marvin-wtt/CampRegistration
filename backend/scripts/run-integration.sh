@@ -25,5 +25,5 @@ if [ "$#" -eq  "0" ]
   then
     vitest -c ./vitest.config.integration.ts
 else
-    vitest -c ./vitest.config.integration.ts --ui
+    vitest -c ./vitest.config.integration.ts "$@"
 fi
