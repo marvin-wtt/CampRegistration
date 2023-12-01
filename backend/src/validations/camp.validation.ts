@@ -9,16 +9,19 @@ const time = () => {
 };
 
 const translatedValue = (valueType: SchemaLikeWithoutArray) => {
-  return Joi.alternatives().try(
-    valueType,
-    Joi.object()
-      .pattern(
-        Joi.string().valid(Joi.ref("countries", { in: true })),
-        valueType,
-      )
-      .min(Joi.ref("countries.length"))
-      .max(Joi.ref("countries.length")),
-  );
+  return Joi.when("countries", {
+    then: Joi.alternatives().try(
+      valueType,
+      Joi.object()
+        .pattern(
+          Joi.string().valid(Joi.ref("countries", { in: true })),
+          valueType,
+        )
+        .min(Joi.ref("countries.length"))
+        .max(Joi.ref("countries.length")),
+    ),
+    otherwise: Joi.any(),
+  });
 };
 
 const show = {
@@ -48,7 +51,7 @@ const index = {
 const store = {
   body: Joi.object({
     active: Joi.boolean().default(false),
-    public: Joi.boolean().default(false),
+    public: Joi.boolean().required(),
     countries: Joi.array()
       .items(Joi.string().custom(CountryCode).lowercase())
       .min(1)
@@ -57,14 +60,12 @@ const store = {
     organization: translatedValue(Joi.string()).required(),
     contactEmail: translatedValue(Joi.string().email()).required(),
     maxParticipants: translatedValue(Joi.number().integer().min(0)).required(),
-    startAt: time().required(),
+    startAt: time().greater(Date.now()).required(),
     endAt: time().min(Joi.ref("startAt")).required(),
     minAge: Joi.number().integer().min(0).max(99).required(),
     maxAge: Joi.number().integer().min(Joi.ref("minAge")).max(99).required(),
     location: translatedValue(Joi.string()).required(),
     price: Joi.number().min(0).required(),
-    form: Joi.object().required(),
-    themes: Joi.object().pattern(Joi.string(), Joi.object()),
   }),
 };
 
