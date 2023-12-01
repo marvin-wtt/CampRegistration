@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, expectTypeOf } from "vitest";
-import { Camp, CampManager, User } from "@prisma/client";
+import { describe, expect, it, expectTypeOf } from "vitest";
 import { CampFactory, UserFactory } from "../../prisma/factories";
 import { generateAccessToken } from "../utils/token";
 import { request } from "../utils/request";
@@ -36,12 +35,11 @@ describe("/api/v1/camps/:campId/managers", () => {
         invitation: { connect: { id: invitation.id } },
       });
 
-      const { status, body } = await request()
+      const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`);
-
-      expect(status).toBe(200);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(200);
 
       expect(body).toHaveProperty("data");
       expectTypeOf(body.data).toBeArray();
@@ -96,12 +94,12 @@ describe("/api/v1/camps/:campId/managers", () => {
         email: "invited@email.net",
       };
 
-      const { status, body } = await request()
+      const { body } = await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(201);
 
-      expect(status).toBe(201);
       expect(body).toHaveProperty("data");
       expect(body.data).toEqual({
         id: expect.anything(),
@@ -130,12 +128,12 @@ describe("/api/v1/camps/:campId/managers", () => {
         email: "invited@email.net",
       };
 
-      const { status, body } = await request()
+      const { body } = await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`);
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(201);
 
-      expect(status).toBe(201);
       expect(body).toHaveProperty("data");
       expect(body.data).toEqual({
         id: expect.anything(),
