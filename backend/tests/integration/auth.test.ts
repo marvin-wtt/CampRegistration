@@ -10,26 +10,29 @@ import { TokenFactory } from "../../prisma/factories/token";
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
     it("should respond with a `201` status code when provided with details", async () => {
-      const { status } = await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
-      });
-
-      expect(status).toBe(201);
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+        })
+        .expect(201);
     });
 
     it("should respond with the user details when successful", async () => {
-      const { body } = await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
-      });
+      const { body } = await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+        })
+        .expect(201);
 
       const newUser = await prisma.user.findFirst();
 
       expect(newUser).not.toBeNull();
-
       expect(body).toStrictEqual({
         id: newUser?.id,
         email: "test@email.net",
@@ -44,28 +47,31 @@ describe("/api/v1/auth", async () => {
     );
 
     it("should respond with a `400` status code if an invalid email body is provided", async () => {
-      const { status } = await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test(at)email.net",
-        password: "Password1",
-      });
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test(at)email.net",
+          password: "Password1",
+        })
+        .expect(400);
 
       const userCount = await prisma.user.count();
-
-      expect(status).toBe(400);
       expect(userCount).toBe(0);
     });
 
     it("should respond with a `400` status code if an invalid password is provided", async () => {
-      const { status } = await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "invalid",
-      });
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "invalid",
+        })
+        .expect(400);
 
       const userCount = await prisma.user.count();
 
-      expect(status).toBe(400);
       expect(userCount).toBe(0);
     });
 
@@ -76,38 +82,45 @@ describe("/api/v1/auth", async () => {
         password: "",
       });
 
-      const { status } = await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
-      });
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+        })
+        .expect(400);
 
       const userCount = await prisma.user.count();
 
-      expect(status).toBe(400);
       expect(userCount).toBe(1);
     });
 
     it("should respond with a `400` status code if the role is set in request body", async () => {
-      const { status } = await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
-        role: "ADMIN",
-      });
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+          role: "ADMIN",
+        })
+        .expect(400);
 
       const userCount = await prisma.user.count();
 
-      expect(status).toBe(400);
       expect(userCount).toBe(0);
     });
 
     it("should encode the user password", async () => {
-      await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
-      });
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+        })
+        .expect(201);
 
       const user = (await prisma.user.findFirst()) as User;
 
@@ -116,11 +129,14 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should set USER role as default", async () => {
-      await request().post("/api/v1/auth/register").send({
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
-      });
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+        })
+        .expect(201);
 
       const user = (await prisma.user.findFirst()) as User;
 
@@ -134,12 +150,12 @@ describe("/api/v1/auth", async () => {
         password: "Password1",
       };
 
-      const { status, body } = await request()
+      const { body } = await request()
         .post("/api/v1/auth/register")
         .set("Accept-Language", "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")
-        .send(data);
+        .send(data)
+        .expect(201);
 
-      expect(status).toBe(201);
       expect(body).toHaveProperty("locale", "fr-CH");
     });
 
@@ -150,11 +166,11 @@ describe("/api/v1/auth", async () => {
         password: "Password1",
       };
 
-      const { status, body } = await request()
+      const { body } = await request()
         .post("/api/v1/auth/register")
-        .send(data);
+        .send(data)
+        .expect(201);
 
-      expect(status).toBe(201);
       expect(body).toHaveProperty("locale", "en-US");
     });
   });
@@ -169,49 +185,61 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `200` status code when provided valid credentials", async () => {
-      const { status } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-      });
-      expect(status).toBe(200);
+      await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+        })
+        .expect(200);
     });
 
     it("should respond with a `200` status code when provided valid credentials and remember", async () => {
-      const { status } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-        remember: true,
-      });
-      expect(status).toBe(200);
+      await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+          remember: true,
+        })
+        .expect(200);
     });
 
     it("should respond with the user details when successful", async () => {
-      const { body } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-      });
+      const { body } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+        })
+        .expect(200);
 
       expect(body).toHaveProperty("user.id");
     });
 
     it("should respond with access token", async () => {
-      const { body } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-      });
+      const { body } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+        })
+        .expect(200);
 
       expect(body).toHaveProperty("tokens.access.token");
       expect(body).toHaveProperty("tokens.access.expires");
 
-      // TODO Add assertion here
-      expect(verifyToken(body.tokens.access.token));
+      expect(verifyToken(body.tokens.access.token)).toBeDefined();
     });
 
     it("should set access token as cookie when successful", async () => {
-      const { headers } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-      });
+      const { headers } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+        })
+        .expect(200);
 
       const setCookie = headers["set-cookie"];
 
@@ -219,10 +247,13 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should not set refresh token as cookie without remember", async () => {
-      const { headers } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-      });
+      const { headers } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+        })
+        .expect(200);
 
       const setCookie = headers["set-cookie"];
 
@@ -232,25 +263,30 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with refresh token when remember is set when successful", async () => {
-      const { body } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-        remember: true,
-      });
+      const { body } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+          remember: true,
+        })
+        .expect(200);
 
       expect(body).toHaveProperty("tokens.refresh.token");
       expect(body).toHaveProperty("tokens.refresh.expires");
 
-      // TODO Add assertion here
-      expect(verifyToken(body.tokens.refresh.token));
+      expect(verifyToken(body.tokens.refresh.token)).toBeDefined();
     });
 
     it("should set access token and refresh token as cookie with remember when successful", async () => {
-      const { headers } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-        remember: true,
-      });
+      const { headers } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "password",
+          remember: true,
+        })
+        .expect(200);
 
       const setCookie = headers["set-cookie"];
 
@@ -267,31 +303,37 @@ describe("/api/v1/auth", async () => {
         password: bcrypt.hashSync("password", 8),
       });
 
-      const { status } = await request().post("/api/v1/auth/login").send({
-        email: "test2@email.net",
-        password: "password",
-        remember: true,
-      });
-      expect(status).toBe(403);
+      await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test2@email.net",
+          password: "password",
+          remember: true,
+        })
+        .expect(403);
     });
 
     it("should respond with a `400` status code when given invalid credentials", async () => {
-      const { body, status } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "wrongpassword",
-      });
+      const { body } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "wrongpassword",
+        })
+        .expect(400);
 
-      expect(status).toBe(400);
       expect(body).not.toHaveProperty("tokens");
       expect(body).not.toHaveProperty("user");
     });
 
     it("should respond with a `400` status code when the user cannot be found", async () => {
-      const { body, status } = await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "testpassword",
-      });
-      expect(status).toBe(400);
+      const { body, status } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "test@email.net",
+          password: "testpassword",
+        })
+        .expect(400);
       expect(body).not.toHaveProperty("token");
     });
 
@@ -354,23 +396,21 @@ describe("/api/v1/auth", async () => {
         email: "test@email.net",
       });
 
-      const { status } = await request()
+      await request()
         .post("/api/v1/auth/forgot-password")
         .send({
           email: "test@email.net",
-        });
-
-      expect(status).toBe(204);
+        })
+        .expect(204);
     });
 
     it("should respond with `204` status code when provided with invalid email", async () => {
-      const { status } = await request()
+      await request()
         .post("/api/v1/auth/forgot-password")
         .send({
           email: "unknown@email.net",
-        });
-
-      expect(status).toBe(204);
+        })
+        .expect(204);
     });
 
     it("should store a token for the user when successful", async () => {
@@ -378,9 +418,12 @@ describe("/api/v1/auth", async () => {
         email: "test@email.net",
       });
 
-      await request().post("/api/v1/auth/forgot-password").send({
-        email: "test@email.net",
-      });
+      await request()
+        .post("/api/v1/auth/forgot-password")
+        .send({
+          email: "test@email.net",
+        })
+        .expect(204);
 
       const count = await prisma.token.count({
         where: {
@@ -408,8 +451,6 @@ describe("/api/v1/auth", async () => {
       context.email = email;
       context.token = generateResetPasswordToken(user);
 
-      console.log(user.id);
-
       await TokenFactory.create({
         user: {
           connect: {
@@ -429,11 +470,10 @@ describe("/api/v1/auth", async () => {
         password: "Test1234",
       };
 
-      const { status } = await request()
+      await request()
         .post(`/api/v1/auth/reset-password/`)
-        .send(data);
-
-      expect(status).toBe(204);
+        .send(data)
+        .expect(204);
     });
 
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid token", async (context) => {
@@ -443,11 +483,10 @@ describe("/api/v1/auth", async () => {
         password: "Test1234",
       };
 
-      const { status } = await request()
+      await request()
         .post(`/api/v1/auth/reset-password/`)
-        .send(data);
-
-      expect(status).toBe(400);
+        .send(data)
+        .expect(400);
     });
 
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid email", async (context) => {
@@ -457,11 +496,10 @@ describe("/api/v1/auth", async () => {
         password: "123",
       };
 
-      const { status } = await request()
+      await request()
         .post(`/api/v1/auth/reset-password/`)
-        .send(data);
-
-      expect(status).toBe(400);
+        .send(data)
+        .expect(400);
     });
 
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid password", async (context) => {
@@ -471,11 +509,10 @@ describe("/api/v1/auth", async () => {
         password: "Test1234",
       };
 
-      const { status } = await request()
+      await request()
         .post(`/api/v1/auth/reset-password/`)
-        .send(data);
-
-      expect(status).toBe(400);
+        .send(data)
+        .expect(400);
     });
 
     it.todo("should send an email to the user when successful");
