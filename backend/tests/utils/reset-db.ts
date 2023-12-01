@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "./prisma";
 
 export default async () => {
   const modelNames = Object.keys(prisma).filter(
@@ -16,6 +14,4 @@ export default async () => {
       throw e;
     }
   }
-
-  prisma.$disconnect();
 };
