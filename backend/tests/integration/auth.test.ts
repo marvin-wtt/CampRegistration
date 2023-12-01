@@ -6,6 +6,7 @@ import { UserFactory } from "../../prisma/factories";
 import { generateResetPasswordToken, verifyToken } from "../utils/token";
 import { request } from "../utils/request";
 import { TokenFactory } from "../../prisma/factories/token";
+import { receiveEmail } from "../utils/mail-server";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -173,6 +174,18 @@ describe("/api/v1/auth", async () => {
 
       expect(body).toHaveProperty("locale", "en-US");
     });
+
+    it("should send a welcome notification to the user", async () => {
+      const data = {
+        name: "testuser",
+        email: "test@email.net",
+        password: "Password1",
+      };
+
+      await request().post("/api/v1/auth/register").send(data).expect(201);
+
+      await receiveEmail("test@email.net");
+    });
   });
 
   describe("POST /api/v1/auth/login", () => {
@@ -327,7 +340,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code when the user cannot be found", async () => {
-      const { body, status } = await request()
+      const { body } = await request()
         .post("/api/v1/auth/login")
         .send({
           email: "test@email.net",
