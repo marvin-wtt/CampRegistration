@@ -2,11 +2,18 @@ import { beforeEach, describe, expect, it } from "vitest";
 import bcrypt from "bcryptjs";
 import prisma from "../utils/prisma";
 import { TokenType, User } from "@prisma/client";
-import { UserFactory } from "../../prisma/factories";
-import { generateResetPasswordToken, verifyToken } from "../utils/token";
+import { CampFactory, UserFactory } from "../../prisma/factories";
+import {
+  generateAccessToken,
+  generateResetPasswordToken,
+  generateVerifyEmailToken,
+  verifyToken,
+} from "../utils/token";
 import { request } from "../utils/request";
 import { TokenFactory } from "../../prisma/factories/token";
 import { receiveEmail } from "../utils/mail-server";
+import { CampManagerFactory } from "../../prisma/factories/manager";
+import { InvitationFactory } from "../../prisma/factories/invitation";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -43,9 +50,39 @@ describe("/api/v1/auth", async () => {
       });
     });
 
-    it.todo(
-      "should make the user camp manager if the user has pending invitations",
-    );
+    it("should make the user camp manager if the user has pending invitations", async () => {
+      await CampManagerFactory.create({
+        camp: { create: CampFactory.build() },
+        invitation: {
+          create: InvitationFactory.build({
+            email: "test@email.net",
+          }),
+        },
+      });
+
+      await request()
+        .post("/api/v1/auth/register")
+        .send({
+          name: "testuser",
+          email: "test@email.net",
+          password: "Password1",
+        })
+        .expect(201);
+
+      const manager = await prisma.campManager.findFirst({
+        where: {
+          user: {
+            email: "test@email.net",
+          },
+        },
+        include: {
+          invitation: true,
+        },
+      });
+
+      expect(manager).toBeDefined();
+      expect(manager?.invitation).toBeNull();
+    });
 
     it("should respond with a `400` status code if an invalid email body is provided", async () => {
       await request()
@@ -347,6 +384,7 @@ describe("/api/v1/auth", async () => {
           password: "testpassword",
         })
         .expect(400);
+
       expect(body).not.toHaveProperty("token");
     });
 
@@ -448,7 +486,20 @@ describe("/api/v1/auth", async () => {
       expect(count).toBe(1);
     });
 
-    it.todo("should send an email to the user when successful");
+    it("should send an email to the user when successful", async () => {
+      await UserFactory.create({
+        email: "test@email.net",
+      });
+
+      await request()
+        .post("/api/v1/auth/forgot-password")
+        .send({
+          email: "test@email.net",
+        })
+        .expect(204);
+
+      await receiveEmail("test@email.net");
+    });
   });
 
   describe("POST /api/v1/auth/reset-password", () => {
@@ -527,29 +578,76 @@ describe("/api/v1/auth", async () => {
         .send(data)
         .expect(400);
     });
-
-    it.todo("should send an email to the user when successful");
   });
 
   describe("POST /api/v1/auth/send-verification-email", () => {
-    it.todo(
-      "should respond with `200` status code when the user is authenticated",
-    );
+    it("should respond with `204` status code when the user is authenticated", async () => {
+      const user = await UserFactory.create({
+        emailVerified: false,
+      });
+      const accessToken = generateAccessToken(user);
 
-    it.todo(
-      "should respond with `401` status code when the user unauthenticated",
-    );
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
+    });
 
-    it.todo("should send an email to the user when successful");
+    it("should respond with `401` status code when the user is unauthenticated", async () => {
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send()
+        .expect(401);
+    });
+
+    it("should send an email to the user when successful", async () => {
+      const user = await UserFactory.create({
+        emailVerified: false,
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
+
+      await receiveEmail(user.email);
+    });
   });
 
   describe("POST /api/v1/auth/verify-email", () => {
-    it.todo(
-      "should respond with `200` status code when provided with valid token",
-    );
+    it("should respond with `204` status code when provided with valid token", async () => {
+      const user = await UserFactory.create();
+      const token = generateVerifyEmailToken(user);
+      await TokenFactory.create({
+        user: { connect: { id: user.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token,
+      });
 
-    it.todo(
-      "should respond with `400` status code when provided without token",
-    );
+      const data = {
+        token,
+      };
+
+      await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
+    });
+
+    it("should respond with `400` status code when provided without token", async () => {
+      const user = await UserFactory.create();
+      await TokenFactory.create({
+        user: { connect: { id: user.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token: generateVerifyEmailToken(user),
+      });
+      const token = generateVerifyEmailToken(user);
+
+      const data = {
+        token,
+      };
+
+      await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
+    });
   });
 });

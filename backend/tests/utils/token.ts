@@ -25,3 +25,7 @@ export const generateAccessToken = (user: User) => {
 export const generateResetPasswordToken = (user: User) => {
   return generateToken(user, TokenType.RESET_PASSWORD);
 };
+
+export const generateVerifyEmailToken = (user: User) => {
+  return generateToken(user, TokenType.VERIFY_EMAIL);
+};
