@@ -30,6 +30,7 @@ const extractRequestFiles = (req: Request): File[] => {
 const handleFileError = (req: Request) => {
   const files = extractRequestFiles(req);
   files.forEach((file) => {
+    // TODO Use logger
     fs.unlink(file.path, (err) => {
       if (err) {
         console.error(`Error deleting tmp file: ${file.path}: ${err}`);
