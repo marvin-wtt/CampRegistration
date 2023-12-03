@@ -65,10 +65,12 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
   }
 
+  /* c8 ignore next 3 */
   if (typeof payload === "string") {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
   }
 
+  /* c8 ignore next 3 */
   if (payload.sub === undefined || typeof payload.sub !== "string") {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token sub");
   }

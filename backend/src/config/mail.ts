@@ -7,7 +7,7 @@ import i18n from "@/config/i18n";
 import path from "path";
 
 const transport = nodemailer.createTransport(config.email.smtp);
-/* istanbul ignore next */
+/* c8 ignore next 10 */
 if (config.env !== "test") {
   transport
     .verify()

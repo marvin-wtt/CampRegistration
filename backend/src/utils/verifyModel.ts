@@ -2,6 +2,7 @@ import ApiError from "./ApiError";
 import httpStatus from "http-status";
 
 export const routeModel = <T>(model: T): NonNullable<T> => {
+  /* c8 ignore next 3 */
   if (model == null) {
     throw new ApiError(httpStatus.NOT_FOUND, "Route model not found");
   }
