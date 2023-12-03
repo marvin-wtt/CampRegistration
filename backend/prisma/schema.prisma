@@ -37,7 +37,7 @@ model Camp {
   id              String         @id @unique(map: "camps_id_unique") @db.Char(26)
   active          Boolean
   public          Boolean
-  /// ![string[]]
+  /// ![Array<string>]
   countries       Json           @db.Json
   /// [StringOrTranslation]
   name            Json           @db.Json
