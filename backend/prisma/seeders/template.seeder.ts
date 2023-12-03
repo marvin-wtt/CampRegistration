@@ -1,7 +1,6 @@
 import { type Prisma, PrismaClient } from "@prisma/client";
 import data from "./json/templates.json";
-import { ulid } from "@/utils/ulid";
-
+import { ulid } from "../../src/utils/ulid";
 const name = "template";
 
 const run = (prisma: PrismaClient) => {

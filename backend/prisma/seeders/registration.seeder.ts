@@ -1,7 +1,6 @@
 import { type Prisma, PrismaClient } from "@prisma/client";
 import data from "./json/registrations.json";
-import { ulid } from "@/utils/ulid";
-
+import { ulid } from "../../src/utils/ulid";
 const name = "registration";
 const run = (prisma: PrismaClient) => {
   const campId = "01H4BK6DFQAVVB5TDS5BJ1AB95 ";
