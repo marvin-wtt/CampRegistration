@@ -59,6 +59,7 @@ const revokeTokens = async (userId: string, type?: TokenType) => {
 const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   let payload;
   try {
+    // token expiry is checked here
     payload = jwt.verify(token, config.jwt.secret);
   } catch (ignored) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
@@ -74,10 +75,6 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
 
   if (payload.type !== type) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
-  }
-
-  if (payload.exp && payload.exp > Date.now()) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Token expired");
   }
 
   const userId = payload.sub;
