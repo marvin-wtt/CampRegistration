@@ -4,11 +4,12 @@ import fse from "fs-extra";
 import config from "@/config";
 import path from "path";
 import { resetMailServer, stopMailServer } from "./mail-server";
+import { store } from "@/middlewares/rateLimiter.middleware";
 
 beforeEach(async () => {
   await resetDb();
   resetMailServer();
-
+  await resetRateLimiter();
   await clearDirectory(config.storage.tmpDir);
   await clearDirectory(config.storage.uploadDir);
 });
@@ -22,6 +23,10 @@ const clearDirectory = async (dir: string) => {
 
   await fse.ensureDir(directory);
   await fse.emptydir(directory);
+};
+
+const resetRateLimiter = async () => {
+  return store.resetAll();
 };
 
 afterEach(async () => {
