@@ -29,17 +29,19 @@ const loginUserWithEmailAndPassword = async (
 };
 
 const logout = async (refreshToken: string): Promise<void> => {
-  const refreshTokenData = await prisma.token.findFirst({
+  if (!refreshToken) {
+    return;
+  }
+
+  await prisma.token.updateMany({
+    data: {
+      blacklisted: true,
+    },
     where: {
       token: refreshToken,
       type: TokenType.REFRESH,
-      blacklisted: false,
     },
   });
-  if (!refreshTokenData) {
-    return;
-  }
-  await prisma.token.delete({ where: { id: refreshTokenData.id } });
 };
 
 const refreshAuth = async (
@@ -50,8 +52,8 @@ const refreshAuth = async (
       refreshToken,
       TokenType.REFRESH,
     );
-    const { userId } = refreshTokenData;
-    await prisma.token.delete({ where: { id: refreshTokenData.id } });
+    const { id, userId } = refreshTokenData;
+    await prisma.token.delete({ where: { id } });
 
     return tokenService.generateAuthTokens({ id: userId }, true);
   } catch (error) {
@@ -82,7 +84,10 @@ const resetPassword = async (
 };
 
 const logoutAllDevices = async (userId: string) => {
-  return prisma.token.deleteMany({
+  return prisma.token.updateMany({
+    data: {
+      blacklisted: true,
+    },
     where: {
       OR: [
         {
@@ -127,6 +132,7 @@ export default {
   isPasswordMatch,
   encryptPassword,
   logout,
+  logoutAllDevices,
   refreshAuth,
   resetPassword,
   verifyEmail,
