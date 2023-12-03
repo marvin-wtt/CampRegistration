@@ -7,6 +7,7 @@ export default defineConfig({
     setupFiles: ["tests/utils/setup.ts"],
     coverage: {
       enabled: true,
+      include: ["src/*"],
       provider: "v8",
       reporter: ["html", "text", "json", "clover"],
       reportsDirectory: "./tests/integration/coverage",
