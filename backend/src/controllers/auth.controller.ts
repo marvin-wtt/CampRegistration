@@ -106,6 +106,10 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid auth state");
   }
 
+  if (user.emailVerified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already verified");
+  }
+
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
   notificationService.sendVerificationEmail(user.email, verifyEmailToken);
   res.sendStatus(httpStatus.NO_CONTENT);
