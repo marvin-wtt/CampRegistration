@@ -8,6 +8,7 @@ import {
   generateExpiredToken,
   generateRefreshToken,
   generateResetPasswordToken,
+  generateToken,
   generateVerifyEmailToken,
   verifyToken,
 } from "../utils/token";
@@ -682,6 +683,23 @@ describe("/api/v1/auth", async () => {
         .post(`/api/v1/auth/refresh-tokens/`)
         .send({
           refreshToken: generateExpiredToken(user, TokenType.REFRESH),
+        })
+        .expectOrPrint(401);
+    });
+
+    it("should respond with `401` status code when the token type is invalid", async () => {
+      const user = await UserFactory.create();
+      const refreshToken = generateToken(user, TokenType.RESET_PASSWORD);
+      await TokenFactory.create({
+        token: refreshToken,
+        type: TokenType.REFRESH,
+        user: { connect: { id: user.id } },
+      });
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send({
+          refreshToken,
         })
         .expectOrPrint(401);
     });
