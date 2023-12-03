@@ -109,20 +109,39 @@ const updateUserById = async <Key extends keyof User>(
   return updatedUser as Pick<User, Key> | null;
 };
 
+type UserUpdateInput = Omit<Prisma.UserUpdateInput, "id"> & { email?: string };
+
 const updateUserByIdWithCamps = async (
   userId: string,
-  updateBody: Omit<Prisma.UserUpdateInput, "id">,
+  data: UserUpdateInput,
 ) => {
   const user = await getUserById(userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
-  if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+
+  if (data.role) {
+    // TODO Should be possible if the auth user is admin
+    throw new ApiError(httpStatus.FORBIDDEN, "Unscientific permissions");
+  }
+
+  if (data.email) {
+    const count = await prisma.user.count({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (count > 0) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    }
+
+    // Reset email verification
+    data.emailVerified = false;
   }
   return prisma.user.update({
     where: { id: user.id },
-    data: updateBody,
+    data,
     include: {
       camps: {
         include: {
