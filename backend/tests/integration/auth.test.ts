@@ -922,6 +922,19 @@ describe("/api/v1/auth", async () => {
         .expect(401);
     });
 
+    it("should respond with `400` status code when the email is already verified", async () => {
+      const user = await UserFactory.create({
+        emailVerified: true,
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send()
+        .auth(accessToken, { type: "bearer" })
+        .expect(400);
+    });
+
     it("should send an email to the user when successful", async () => {
       const user = await UserFactory.create({
         emailVerified: false,
@@ -935,6 +948,19 @@ describe("/api/v1/auth", async () => {
         .expect(204);
 
       await receiveEmail(user.email);
+    });
+
+    it("should respond with `204` status code when the user authenticated via cookie", async () => {
+      const user = await UserFactory.create({
+        emailVerified: false,
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send()
+        .set("Cookie", `accessToken=${accessToken}; HttpOnly`)
+        .expect(204);
     });
   });
 
