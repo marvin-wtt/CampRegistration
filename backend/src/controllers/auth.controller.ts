@@ -51,7 +51,9 @@ const login = catchRequestAsync(async (req, res) => {
 });
 
 const logout = catchRequestAsync(async (req: Request, res: Response) => {
-  await authService.logout(req.body.refreshToken);
+  const refreshToken = req.body.refreshToken ?? extractCookieRefreshToken(req);
+
+  await authService.logout(refreshToken);
 
   destroyAuthCookies(res);
 
@@ -73,9 +75,6 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
 });
 
 const extractCookieRefreshToken = (req: Request) => {
-  if (req && req.signedCookies && "refreshToken" in req.signedCookies) {
-    return req.signedCookies.refreshToken;
-  }
   if (req && req.cookies && "refreshToken" in req.cookies) {
     return req.cookies.refreshToken;
   }
