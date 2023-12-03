@@ -10,9 +10,6 @@ import config from "./index";
 import { TokenType } from "@prisma/client";
 
 function cookieExtractor(req: Request) {
-  if (req && req.signedCookies && "accessToken" in req.signedCookies) {
-    return req.signedCookies.accessToken;
-  }
   if (req && req.cookies && "accessToken" in req.cookies) {
     return req.cookies.accessToken;
   }
