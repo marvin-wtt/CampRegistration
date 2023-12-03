@@ -14,6 +14,11 @@ if ! $DIR/wait-for-it.sh "${host_port}"  --strict -- echo '🟢 - Database is re
   exit 1
 fi
 
+if ! npx prisma migrate reset --skip-seed --skip-generate --force; then
+  echo '🔴 - Resetting database failed. Exiting...'
+  exit 1
+fi
+
 # Run migration
 if ! npx prisma migrate dev --name init; then
   echo '🔴 - Migration failed. Exiting...'
