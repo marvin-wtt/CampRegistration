@@ -64,8 +64,20 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
   }
 
-  if (payload.sub === undefined || typeof payload.sub !== "string") {
+  if (typeof payload === "string") {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
+  }
+
+  if (payload.sub === undefined || typeof payload.sub !== "string") {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token sub");
+  }
+
+  if (payload.type !== type) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+  }
+
+  if (payload.exp && payload.exp > Date.now()) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Token expired");
   }
 
   const userId = payload.sub;
