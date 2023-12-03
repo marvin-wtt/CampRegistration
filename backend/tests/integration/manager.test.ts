@@ -62,8 +62,7 @@ describe("/api/v1/camps/:campId/managers", () => {
 
     it("should respond with `403` status code when user is not camp manager", async () => {
       const camp = await CampFactory.create();
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
+      const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
         .get(`/api/v1/camps/${camp.id}/managers`)
@@ -177,10 +176,47 @@ describe("/api/v1/camps/:campId/managers", () => {
         .expect(400);
     });
 
+    it("should respond with `400` status code when invited is already manager", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { create: UserFactory.build({ email: "invited@email.net" }) },
+      });
+
+      const data = {
+        email: "invited@email.net",
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(400);
+    });
+
+    it("should respond with `400` status code when invited is already invited", async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: {
+          create: InvitationFactory.build({ email: "invited@email.net" }),
+        },
+      });
+
+      const data = {
+        email: "invited@email.net",
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/managers`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(400);
+    });
+
     it("should respond with `403` status code when user is not camp manager", async () => {
       const camp = await CampFactory.create();
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
+      const accessToken = generateAccessToken(await UserFactory.create());
 
       const data = {
         email: "invited@email.net",
@@ -271,8 +307,7 @@ describe("/api/v1/camps/:campId/managers", () => {
         camp: { connect: { id: camp.id } },
         invitation: { create: InvitationFactory.build() },
       });
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
+      const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
