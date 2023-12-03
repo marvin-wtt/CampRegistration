@@ -70,7 +70,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/registrations`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(200);
 
       expect(body).toHaveProperty("data");
@@ -114,7 +114,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/registrations`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(200);
 
       expect(body[0]).toHaveProperty("files");
@@ -138,7 +138,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/registrations`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
     });
 
@@ -169,7 +169,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
     });
 
@@ -190,7 +190,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(404);
     });
   });
@@ -746,7 +746,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
         .send({
           data: {},
         })
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
     });
 
@@ -769,7 +769,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       await request()
         .patch(`/api/v1/camps/${camp.id}/registrations/${id}`)
         .send({})
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(404);
     });
 
@@ -788,7 +788,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
 
       const registrationCount = await countRegistrations(camp);
@@ -803,7 +803,7 @@ describe("/api/v1/camps/:campId/registrations", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
 
       const registrationCount = await countRegistrations(camp);

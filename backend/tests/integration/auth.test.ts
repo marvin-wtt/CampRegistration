@@ -471,7 +471,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/logout/`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
     });
 
@@ -481,7 +481,7 @@ describe("/api/v1/auth", async () => {
       const { headers } = await request()
         .post(`/api/v1/auth/logout/`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
 
       const cookies = headers["set-cookie"].map(
@@ -505,7 +505,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/logout/`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .set("Cookie", `refreshToken=${refreshToken}; HttpOnly`)
         .expect(204);
 
@@ -536,7 +536,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/logout/`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
 
       const count = await prisma.token.count({
@@ -577,7 +577,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send(data)
-        .expectOrPrint(200);
+        .expect(200);
     });
 
     it("should respond with a `200` status code when token is provided as cookie", async () => {
@@ -600,7 +600,7 @@ describe("/api/v1/auth", async () => {
       const { body } = await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send(data)
-        .expectOrPrint(200);
+        .expect(200);
 
       expect(body).toHaveProperty("refresh");
       expect(body.refresh).not.toBe(refreshToken);
@@ -617,7 +617,7 @@ describe("/api/v1/auth", async () => {
       const { headers } = await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send(data)
-        .expectOrPrint(200);
+        .expect(200);
 
       const setCookie = headers["set-cookie"];
 
@@ -628,10 +628,7 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with `400` status code when the user has no refresh token", async () => {
-      await request()
-        .post(`/api/v1/auth/refresh-tokens/`)
-        .send()
-        .expectOrPrint(400);
+      await request().post(`/api/v1/auth/refresh-tokens/`).send().expect(400);
     });
 
     it("should respond with `401` status code when the token is missing", async () => {
@@ -644,7 +641,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send(data)
-        .expectOrPrint(401);
+        .expect(401);
     });
 
     it("should respond with `401` status code when the token is blacklisted", async () => {
@@ -664,7 +661,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send(data)
-        .expectOrPrint(401);
+        .expect(401);
     });
 
     it("should respond with `401` status code when the token is invalid", async () => {
@@ -673,7 +670,7 @@ describe("/api/v1/auth", async () => {
         .send({
           refreshToken: "test123",
         })
-        .expectOrPrint(401);
+        .expect(401);
     });
 
     it("should respond with `401` status code when the token is invalid", async () => {
@@ -684,7 +681,7 @@ describe("/api/v1/auth", async () => {
         .send({
           refreshToken: generateExpiredToken(user, TokenType.REFRESH),
         })
-        .expectOrPrint(401);
+        .expect(401);
     });
 
     it("should respond with `401` status code when the token type is invalid", async () => {
@@ -701,7 +698,7 @@ describe("/api/v1/auth", async () => {
         .send({
           refreshToken,
         })
-        .expectOrPrint(401);
+        .expect(401);
     });
   });
 
@@ -897,7 +894,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
     });
 
@@ -921,7 +918,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(401);
     });
 
@@ -934,7 +931,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
 
       await receiveEmail(user.email);

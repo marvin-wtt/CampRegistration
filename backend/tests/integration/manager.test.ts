@@ -38,7 +38,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(200);
 
       expect(body).toHaveProperty("data");
@@ -67,7 +67,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
     });
 
@@ -96,7 +96,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       const { body } = await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(201);
 
       expect(body).toHaveProperty("data");
@@ -130,7 +130,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       const { body } = await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(201);
 
       expect(body).toHaveProperty("data");
@@ -165,14 +165,14 @@ describe("/api/v1/camps/:campId/managers", () => {
         .send({
           email: "invalid-email",
         })
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(400);
 
       // No email
       await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(400);
     });
 
@@ -190,7 +190,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(400);
     });
 
@@ -210,7 +210,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(400);
     });
 
@@ -225,7 +225,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
     });
 
@@ -254,7 +254,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
 
       const count = await prisma.campManager.count({
@@ -274,7 +274,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(204);
 
       const count = await prisma.campManager.count({
@@ -291,7 +291,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(400);
 
       const count = await prisma.campManager.count({
@@ -312,7 +312,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(403);
     });
 
@@ -336,7 +336,7 @@ describe("/api/v1/camps/:campId/managers", () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${managerId}`)
         .send()
-        .set("Authorization", `Bearer ${accessToken}`)
+        .auth(accessToken, { type: "bearer" })
         .expect(404);
     });
   });
