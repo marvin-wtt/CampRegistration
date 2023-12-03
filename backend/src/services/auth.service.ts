@@ -1,12 +1,12 @@
 import httpStatus from "http-status";
-import userService from "./user.service";
-import ApiError from "../utils/ApiError";
+import { userService, tokenService, notificationService } from "@/services";
+import ApiError from "@/utils/ApiError";
 import { TokenType } from "@prisma/client";
 import { encryptPassword, isPasswordMatch } from "@/utils/encryption";
-import exclude from "../utils/exclude";
+import exclude from "@/utils/exclude";
 import { AuthTokensResponse } from "@/types/response";
-import tokenService from "./token.service";
-import prisma from "../client";
+import prisma from "@/client";
+import { t } from "@/config/i18n";
 
 const loginUserWithEmailAndPassword = async (
   email: string,
@@ -127,6 +127,40 @@ const verifyEmail = async (token: string): Promise<void> => {
   }
 };
 
+const sendResetPasswordEmail = (to: string, token: string) => {
+  const template = "reset-password";
+  const subject = t("auth:email.reset-password.subject");
+  const url = notificationService.generateUrl("reset-password", {
+    email: to,
+    token,
+  });
+
+  const context = {
+    url,
+  };
+
+  const options = {};
+
+  notificationService.sendEmail(to, subject, template, context, options);
+};
+
+const sendVerificationEmail = (to: string, token: string) => {
+  const subject = t("email:auth.email-verification.subject");
+
+  const url = notificationService.generateUrl("verify-email", {
+    email: to,
+    token,
+  });
+
+  const context = {
+    url,
+  };
+
+  const template = "verify-email";
+
+  notificationService.sendEmail(to, subject, template, context);
+};
+
 export default {
   loginUserWithEmailAndPassword,
   isPasswordMatch,
@@ -136,4 +170,6 @@ export default {
   refreshAuth,
   resetPassword,
   verifyEmail,
+  sendVerificationEmail,
+  sendResetPasswordEmail,
 };

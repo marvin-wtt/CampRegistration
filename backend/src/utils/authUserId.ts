@@ -11,5 +11,5 @@ export const authUser = (req: Request): { id: string } | never => {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
   }
 
-  return req.user;
+  return req.user as { id: string };
 };

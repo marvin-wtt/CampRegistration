@@ -1,11 +1,6 @@
 import httpStatus from "http-status";
 import { catchRequestAsync } from "@/utils/catchAsync";
-import {
-  authService,
-  userService,
-  tokenService,
-  notificationService,
-} from "@/services";
+import { authService, userService, tokenService } from "@/services";
 import { Request, Response } from "express";
 import { AuthTokensResponse } from "@/types/response";
 import config from "@/config";
@@ -29,7 +24,7 @@ const register = catchRequestAsync(async (req, res) => {
   await managerService.resolveManagerInvitations(user.email, user.id);
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  notificationService.sendVerificationEmail(user.email, verifyEmailToken);
+  authService.sendVerificationEmail(user.email, verifyEmailToken);
 
   res.status(httpStatus.CREATED).json(userDetailedResource(user));
 });
@@ -85,11 +80,10 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
   const { email } = req.body;
   const resetPasswordToken =
     await tokenService.generateResetPasswordToken(email);
-  if (resetPasswordToken === undefined) {
-    res.status(httpStatus.NO_CONTENT).send();
-    return;
+
+  if (resetPasswordToken !== undefined) {
+    authService.sendResetPasswordEmail(email, resetPasswordToken);
   }
-  notificationService.sendResetPasswordEmail(email, resetPasswordToken);
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
@@ -111,7 +105,7 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   }
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  notificationService.sendVerificationEmail(user.email, verifyEmailToken);
+  authService.sendVerificationEmail(user.email, verifyEmailToken);
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
