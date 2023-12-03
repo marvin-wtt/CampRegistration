@@ -5,6 +5,8 @@ import { TokenType, User } from "@prisma/client";
 import { CampFactory, UserFactory } from "../../prisma/factories";
 import {
   generateAccessToken,
+  generateExpiredToken,
+  generateRefreshToken,
   generateResetPasswordToken,
   generateVerifyEmailToken,
   verifyToken,
@@ -226,15 +228,17 @@ describe("/api/v1/auth", async () => {
   });
 
   describe("POST /api/v1/auth/login", () => {
-    beforeEach(async () => {
-      await UserFactory.create({
+    const createUser = async () => {
+      return UserFactory.create({
         name: "testuser",
         email: "test@email.net",
         password: bcrypt.hashSync("password", 8),
       });
-    });
+    };
 
     it("should respond with a `200` status code when provided valid credentials", async () => {
+      await createUser();
+
       await request()
         .post("/api/v1/auth/login")
         .send({
@@ -245,6 +249,8 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `200` status code when provided valid credentials and remember", async () => {
+      await createUser();
+
       await request()
         .post("/api/v1/auth/login")
         .send({
@@ -256,6 +262,8 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with the user details when successful", async () => {
+      await createUser();
+
       const { body } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -267,7 +275,32 @@ describe("/api/v1/auth", async () => {
       expect(body).toHaveProperty("user.id");
     });
 
+    it("should respond with camps when successful", async () => {
+      const user = await UserFactory.create({
+        email: "manager@email.net",
+        password: bcrypt.hashSync("password", 8),
+      });
+      const camp = await CampFactory.create();
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { connect: { id: user.id } },
+      });
+
+      const { body } = await request()
+        .post("/api/v1/auth/login")
+        .send({
+          email: "manager@email.net",
+          password: "password",
+        })
+        .expect(200);
+
+      expect(body).toHaveProperty("user.camps");
+      expect(body.user.camps.length).toBe(1);
+    });
+
     it("should respond with access token", async () => {
+      await createUser();
+
       const { body } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -282,7 +315,27 @@ describe("/api/v1/auth", async () => {
       expect(verifyToken(body.tokens.access.token)).toBeDefined();
     });
 
+    it("should store the refresh token when remember is set", async () => {
+      await createUser();
+
+      await request().post("/api/v1/auth/login").send({
+        email: "test@email.net",
+        password: "password",
+        remember: true,
+      });
+
+      const tokenCount = await prisma.token.count({
+        where: {
+          type: TokenType.REFRESH,
+        },
+      });
+
+      expect(tokenCount).toBe(1);
+    });
+
     it("should set access token as cookie when successful", async () => {
+      await createUser();
+
       const { headers } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -297,6 +350,8 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should not set refresh token as cookie without remember", async () => {
+      await createUser();
+
       const { headers } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -313,6 +368,8 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with refresh token when remember is set when successful", async () => {
+      await createUser();
+
       const { body } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -329,6 +386,8 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should set access token and refresh token as cookie with remember when successful", async () => {
+      await createUser();
+
       const { headers } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -364,6 +423,8 @@ describe("/api/v1/auth", async () => {
     });
 
     it("should respond with a `400` status code when given invalid credentials", async () => {
+      await createUser();
+
       const { body } = await request()
         .post("/api/v1/auth/login")
         .send({
@@ -388,57 +449,242 @@ describe("/api/v1/auth", async () => {
       expect(body).not.toHaveProperty("token");
     });
 
-    it("should store the refresh token when remember is set when successful", async () => {
-      await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
-        remember: true,
-      });
+    it("should respond with a `429` status code when too many invalid requests are send", async () => {
+      const sendRequest = () => {
+        return request().post("/api/v1/auth/login").send({
+          email: "test@email.net",
+          password: "wrongpassword",
+        });
+      };
 
-      const tokenCount = await prisma.token.count({
-        where: {
-          type: TokenType.REFRESH,
-        },
-      });
+      await Promise.all(Array.from({ length: 10 }, sendRequest));
 
-      expect(tokenCount).toBe(1);
+      await sendRequest().expect(429);
     });
   });
 
   describe("POST /api/v1/auth/logout", () => {
-    it.todo(
-      "should respond with a `200` status code when the user is authenticated",
-    );
+    it("should respond with a `200` status code when the user is authenticated", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
 
-    it.todo(
-      "should respond with a `401` status code when the user unauthenticated",
-    );
+      await request()
+        .post(`/api/v1/auth/logout/`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
+    });
 
-    it.todo("should delete the refresh token when successful");
+    it("should remove access and refresh token cookie when successful", async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
 
-    it.todo("should remove access and refresh token cookie when successful");
+      const { headers } = await request()
+        .post(`/api/v1/auth/logout/`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
+
+      const cookies = headers["set-cookie"].map(
+        (item: string) => item.split(";")[0],
+      );
+
+      expect(cookies).toContain("accessToken=");
+      expect(cookies).toContain("refreshToken=");
+    });
+
+    it("should blacklist the refresh token from body when successful", async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
+      await TokenFactory.create({
+        token: refreshToken,
+        type: TokenType.REFRESH,
+        user: { connect: { id: user.id } },
+      });
+
+      await request()
+        .post(`/api/v1/auth/logout/`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
+        .set("Cookie", `refreshToken=${refreshToken}; HttpOnly`)
+        .expect(204);
+
+      const count = await prisma.token.count({
+        where: {
+          userId: user.id,
+          blacklisted: true,
+        },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should blacklist the refresh token from cookie when successful", async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
+      await TokenFactory.create({
+        token: refreshToken,
+        type: TokenType.REFRESH,
+        user: { connect: { id: user.id } },
+      });
+
+      const data = {
+        refreshToken,
+      };
+
+      await request()
+        .post(`/api/v1/auth/logout/`)
+        .send(data)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(204);
+
+      const count = await prisma.token.count({
+        where: {
+          userId: user.id,
+          blacklisted: true,
+        },
+      });
+
+      expect(count).toBe(1);
+    });
+
+    it("should respond with a `401` status code when the user unauthenticated", async () => {
+      await request().post(`/api/v1/auth/logout/`).send().expect(401);
+    });
   });
 
   describe("POST /api/v1/auth/refresh-tokens", () => {
-    it.todo(
-      "should respond with a `200` status code when the user is authenticated",
-    );
+    const createUserWithToken = async () => {
+      const user = await UserFactory.create();
+      const refreshToken = generateRefreshToken(user);
+      await TokenFactory.create({
+        token: refreshToken,
+        type: TokenType.REFRESH,
+        user: { connect: { id: user.id } },
+      });
 
-    it.todo(
-      "should respond with a new access and refresh token when successful",
-    );
+      return { user, refreshToken };
+    };
 
-    it.todo("should respond with a access and refresh cookie when successful");
+    it("should respond with a `200` status code when token is provided in body", async () => {
+      const { refreshToken } = await createUserWithToken();
 
-    it.todo("should store the new refresh token when successful");
+      const data = {
+        refreshToken,
+      };
 
-    it.todo(
-      "should respond with `400` status code when the user has no refresh token",
-    );
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expectOrPrint(200);
+    });
 
-    it.todo(
-      "should respond with `401` status code when the user is unauthenticated",
-    );
+    it("should respond with a `200` status code when token is provided as cookie", async () => {
+      const { refreshToken } = await createUserWithToken();
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send()
+        .set("Cookie", `refreshToken=${refreshToken}; HttpOnly`)
+        .expect(200);
+    });
+
+    it("should respond with a new access and refresh token when successful", async () => {
+      const { refreshToken } = await createUserWithToken();
+
+      const data = {
+        refreshToken,
+      };
+
+      const { body } = await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expectOrPrint(200);
+
+      expect(body).toHaveProperty("refresh");
+      expect(body.refresh).not.toBe(refreshToken);
+      expect(body).toHaveProperty("access");
+    });
+
+    it("should respond with a access and refresh cookie when successful", async () => {
+      const { refreshToken } = await createUserWithToken();
+
+      const data = {
+        refreshToken,
+      };
+
+      const { headers } = await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expectOrPrint(200);
+
+      const setCookie = headers["set-cookie"];
+
+      expect(setCookie).toContainEqual(expect.stringMatching(/^accessToken.*/));
+      expect(setCookie).toContainEqual(
+        expect.stringMatching(/^refreshToken.*/),
+      );
+    });
+
+    it("should respond with `400` status code when the user has no refresh token", async () => {
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send()
+        .expectOrPrint(400);
+    });
+
+    it("should respond with `401` status code when the token is missing", async () => {
+      const refreshToken = generateRefreshToken(await UserFactory.create());
+
+      const data = {
+        refreshToken,
+      };
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expectOrPrint(401);
+    });
+
+    it("should respond with `401` status code when the token is blacklisted", async () => {
+      const user = await UserFactory.create();
+      const refreshToken = generateRefreshToken(user);
+      await TokenFactory.create({
+        token: refreshToken,
+        type: TokenType.REFRESH,
+        user: { connect: { id: user.id } },
+        blacklisted: true,
+      });
+
+      const data = {
+        refreshToken,
+      };
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expectOrPrint(401);
+    });
+
+    it("should respond with `401` status code when the token is invalid", async () => {
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send({
+          refreshToken: "test123",
+        })
+        .expectOrPrint(401);
+    });
+
+    it("should respond with `401` status code when the token is invalid", async () => {
+      const user = await UserFactory.create();
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send({
+          refreshToken: generateExpiredToken(user, TokenType.REFRESH),
+        })
+        .expectOrPrint(401);
+    });
   });
 
   describe("POST /api/v1/auth/forgot-password", () => {
@@ -504,21 +750,20 @@ describe("/api/v1/auth", async () => {
 
   describe("POST /api/v1/auth/reset-password", () => {
     type ResetPasswordContext = {
-      email: string;
       token: string;
+      user: User;
     };
 
     beforeEach<ResetPasswordContext>(async (context) => {
       const email = "test@email.net";
-      const user = await UserFactory.create({ email });
+      context.user = await UserFactory.create({ email });
 
-      context.email = email;
-      context.token = generateResetPasswordToken(user);
+      context.token = generateResetPasswordToken(context.user);
 
       await TokenFactory.create({
         user: {
           connect: {
-            id: user.id,
+            id: context.user.id,
           },
         },
         token: context.token,
@@ -530,7 +775,7 @@ describe("/api/v1/auth", async () => {
     it<ResetPasswordContext>("should respond with `204` status code when provided with valid token and email", async (context) => {
       const data = {
         token: context.token,
-        email: context.email,
+        email: context.user.email,
         password: "Test1234",
       };
 
@@ -540,10 +785,54 @@ describe("/api/v1/auth", async () => {
         .expect(204);
     });
 
+    it<ResetPasswordContext>("should revoke all tokens of the user", async (context) => {
+      await TokenFactory.create({
+        type: TokenType.REFRESH,
+        user: { connect: { id: context.user.id } },
+      });
+      await TokenFactory.create({
+        type: TokenType.RESET_PASSWORD,
+        user: { connect: { id: context.user.id } },
+      });
+
+      const data = {
+        token: context.token,
+        email: context.user.email,
+        password: "Test1234",
+      };
+
+      await request()
+        .post(`/api/v1/auth/reset-password/`)
+        .send(data)
+        .expect(204);
+
+      const count = await prisma.token.count({
+        where: {
+          userId: context.user.id,
+          blacklisted: false,
+        },
+      });
+
+      expect(count).toBe(0);
+    });
+
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid token", async (context) => {
       const data = {
         token: "SomeInvalidToken",
-        email: context.email,
+        email: context.user.email,
+        password: "Test1234",
+      };
+
+      await request()
+        .post(`/api/v1/auth/reset-password/`)
+        .send(data)
+        .expect(400);
+    });
+
+    it<ResetPasswordContext>("should respond with `400` status code when provided with expired token", async (context) => {
+      const data = {
+        token: generateExpiredToken(context.user, TokenType.RESET_PASSWORD),
+        email: context.user.email,
         password: "Test1234",
       };
 
@@ -556,7 +845,7 @@ describe("/api/v1/auth", async () => {
     it<ResetPasswordContext>("should respond with `400` status code when provided with invalid email", async (context) => {
       const data = {
         token: context.token,
-        email: context.email,
+        email: context.user.email,
         password: "123",
       };
 
@@ -598,6 +887,23 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
+        .expect(401);
+    });
+
+    it("should respond with `401` status code when user does not exist anymore", async () => {
+      const user = await UserFactory.create({
+        emailVerified: false,
+      });
+      const accessToken = generateAccessToken(user);
+      // Delete user to simulate expired token
+      await prisma.user.delete({
+        where: { id: user.id },
+      });
+
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send()
+        .set("Authorization", `Bearer ${accessToken}`)
         .expect(401);
     });
 
@@ -648,6 +954,37 @@ describe("/api/v1/auth", async () => {
       };
 
       await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
+    });
+
+    it("should respond with `400` status code when token is expired", async () => {
+      const user = await UserFactory.create();
+      const verifyToken = generateExpiredToken(user, TokenType.VERIFY_EMAIL);
+      await TokenFactory.create({
+        user: { connect: { id: user.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token: verifyToken,
+      });
+
+      const data = {
+        token: verifyToken,
+      };
+
+      await request().post(`/api/v1/auth/verify-email/`).send(data).expect(401);
+    });
+
+    it("should respond with `401` status code when token is invalid", async () => {
+      const user = await UserFactory.create();
+      await TokenFactory.create({
+        user: { connect: { id: user.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token: generateVerifyEmailToken(user),
+      });
+
+      const data = {
+        token: "test123",
+      };
+
+      await request().post(`/api/v1/auth/verify-email/`).send(data).expect(401);
     });
   });
 });

@@ -18,8 +18,24 @@ export const generateToken = (user: User, type: TokenType, data?: object) => {
   return jwt.sign(payload, process.env.JWT_SECRET as string);
 };
 
+export const generateExpiredToken = (
+  user: User,
+  type: TokenType,
+  data?: object,
+) => {
+  return generateToken(user, type, {
+    iat: moment().subtract("1", "week").unix(),
+    exp: moment().subtract("6", "days").unix(),
+    ...data,
+  });
+};
+
 export const generateAccessToken = (user: User) => {
   return generateToken(user, TokenType.ACCESS);
+};
+
+export const generateRefreshToken = (user: User) => {
+  return generateToken(user, TokenType.REFRESH);
 };
 
 export const generateResetPasswordToken = (user: User) => {
