@@ -1,7 +1,11 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import prisma from "../utils/prisma";
 import { generateAccessToken } from "../utils/token";
-import { CampFactory, UserFactory } from "../../prisma/factories";
+import {
+  CampFactory,
+  RegistrationFactory,
+  UserFactory,
+} from "../../prisma/factories";
 import { Camp, Prisma } from "@prisma/client";
 import moment from "moment";
 import { ulid } from "ulidx";
@@ -70,6 +74,7 @@ const assertCampResponseBody = (
     endAt: data.endAt,
     price: data.price,
     location: data.location,
+    freePlaces: data.maxParticipants,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
   });
@@ -209,6 +214,405 @@ describe("/api/v1/camps", () => {
       const campId = ulid();
 
       await request().get(`/api/v1/camps/${campId}`).send().expect(404);
+    });
+
+    describe("free places", () => {
+      describe("national camp", () => {
+        it("should respond with the maximum participants when no registrations are available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de"],
+            maxParticipants: 10,
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toBe(10);
+        });
+
+        it("should respond with the free places when registrations are available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de"],
+            maxParticipants: 10,
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toBe(8);
+        });
+
+        it("should include only participants if role field is available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de"],
+            maxParticipants: 10,
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: { role: ["participant"] },
+          });
+          // No role should be a participant too
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: { role: ["counselor"] },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toBe(8);
+        });
+
+        it("should respond with zero when camp is full", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de"],
+            maxParticipants: 3,
+          });
+
+          for (let i = 0; i < 5; i++) {
+            await RegistrationFactory.create({
+              camp: { connect: { id: camp.id } },
+              campData: { role: ["participant"] },
+            });
+          }
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toBe(0);
+        });
+      });
+
+      describe("international", () => {
+        it("should respond with the maximum participants when no registrations are available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: {
+              de: 8,
+              fr: 9,
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual({
+            de: 8,
+            fr: 9,
+          });
+        });
+
+        it("should respond with the free spaces when registrations are available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: {
+              de: 8,
+              fr: 9,
+            },
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["de"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["de"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual({
+            de: 6,
+            fr: 8,
+          });
+        });
+
+        it("should include only participants if role field is available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: {
+              de: 8,
+              fr: 9,
+            },
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["de"],
+              role: ["participant"],
+            },
+          });
+          // No role should be participant too
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["de"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+              role: ["counselor"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual({
+            de: 6,
+            fr: 9,
+          });
+        });
+
+        it("should respond with zero when country for this camp is full", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: {
+              de: 3,
+              fr: 9,
+            },
+          });
+
+          for (let i = 0; i < 5; i++) {
+            await RegistrationFactory.create({
+              camp: { connect: { id: camp.id } },
+              campData: {
+                role: ["participant"],
+                country: ["de"],
+              },
+            });
+          }
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual({
+            de: 0,
+            fr: 8,
+          });
+        });
+
+        it("should ignore participants without a country", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: {
+              de: 3,
+              fr: 9,
+            },
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual({
+            de: 3,
+            fr: 8,
+          });
+        });
+      });
+
+      describe("international - combined max participants", () => {
+        it("should respond with the maximum participants when no registrations are available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: 8,
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual(8);
+        });
+
+        it("should respond with the combined free spaces when registrations are available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: 8,
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["de"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual(5);
+        });
+
+        it("should include only participants if role field is available", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: 8,
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              role: ["participant"],
+              country: ["de"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["fr"],
+            },
+          });
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              role: ["counselor"],
+              country: ["fr"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual(6);
+        });
+
+        it("should respond with zero when country for this camp is full", async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ["de", "fr"],
+            maxParticipants: 5,
+          });
+
+          for (let i = 0; i < 5; i++) {
+            await RegistrationFactory.create({
+              camp: { connect: { id: camp.id } },
+              campData: {
+                role: ["participant"],
+                country: ["fr"],
+              },
+            });
+          }
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              country: ["de"],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty("data.freePlaces");
+          expect(body.data.freePlaces).toEqual(0);
+        });
+      });
     });
   });
 
