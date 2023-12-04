@@ -102,7 +102,7 @@ const isWaitingList = async (
   let maxParticipants = camp.maxParticipants as Record<string, number> | number;
   // Add country filter
   if (typeof maxParticipants !== "number") {
-    const country = findCampDataCountry(campData);
+    const country = findCampDataCountry(campData, camp.countries);
     // Add filter criteria for country
     filter.push({
       campData: {
@@ -131,13 +131,16 @@ const isParticipant = (campData: Record<string, unknown[]>): boolean => {
   return campData["role"].some((role) => role === "participant");
 };
 
-const findCampDataCountry = (campData: Record<string, unknown[]>): string => {
-  const country = campData["country"].find((value) => !!value);
+const findCampDataCountry = (
+  campData: Record<string, unknown[]>,
+  options: string[],
+): string => {
+  const country = campData["country"]?.find((value) => !!value);
   if (!country || typeof country !== "string") {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      "Missing country data.",
-    );
+    throw new ApiError(httpStatus.BAD_REQUEST, "Missing country data.");
+  }
+  if (!options.includes(country)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid country data.");
   }
 
   return country;
