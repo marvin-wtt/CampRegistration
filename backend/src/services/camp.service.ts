@@ -1,7 +1,7 @@
 import { Camp, type Prisma } from "@prisma/client";
 import prisma from "../client";
 import { ulid } from "@/utils/ulid";
-import { objectValueByPath } from "@/utils/objectValueByPath";
+import { registrationService } from "@/services/index";
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
@@ -119,61 +119,33 @@ const deleteCampById = async (id: string): Promise<void> => {
 const getCampFreePlaces = async (
   camp: Camp,
 ): Promise<number | Record<string, number>> => {
-  const countries = Array.isArray(camp.countries) ? camp.countries : [];
-  const freeSpaces = camp.maxParticipants as Record<string, number> | number;
+  const countries = camp.countries;
+  const freePlaces = camp.maxParticipants as Record<string, number> | number;
 
-  // TODO With camp data, it should check for anymatch in the array
-  const rolePath = "";
-  const whereRole = rolePath
-    ? { path: rolePath, equals: "participant" }
-    : undefined;
+  // Simple query for national camps
+  if (typeof freePlaces === "number") {
+    const participants = await registrationService.getParticipantsCount(
+      camp.id,
+    );
 
-  const where = {
-    campId: camp.id,
-    data: whereRole,
-  };
-
-  if (countries.length === 1 || typeof freeSpaces === "number") {
-    return prisma.registration.count({
-      where,
-    });
+    return Math.max(0, freePlaces - participants);
   }
 
-  const registrations = await prisma.registration.findMany({
-    select: {
-      data: true,
+  const countByCountry =
+    await registrationService.getParticipantsCountByCountry(camp.id, countries);
+
+  return Object.entries(freePlaces).reduce(
+    (result, [country, maxParticipants]) => {
+      const free =
+        countByCountry[country] !== undefined
+          ? maxParticipants - countByCountry[country]
+          : maxParticipants;
+
+      result[country] = Math.max(0, free);
+      return result;
     },
-    where,
-  });
-
-  const getRegistrationCountry = (
-    path: string,
-    data: unknown,
-  ): string | undefined => {
-    const value = objectValueByPath(path, data);
-
-    if (typeof value !== "string") {
-      return undefined;
-    }
-    return value;
-  };
-
-  for (const registration of registrations) {
-    const country =
-      getRegistrationCountry("country", registration.data) ?? "unknown"; // TODO Access country
-
-    if (country === "unknown") {
-      console.log(registration);
-    }
-
-    if (!(country in freeSpaces)) {
-      freeSpaces[country] ??= 0;
-    }
-
-    freeSpaces[country]--;
-  }
-
-  return freeSpaces;
+    {} as Record<string, number>,
+  );
 };
 
 export default {

@@ -62,7 +62,9 @@ const store = catchRequestAsync(async (req, res) => {
 
   // TODO Add default templates
 
-  res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
+  res
+    .status(httpStatus.CREATED)
+    .json(resource(detailedCampResource(await withFreePlaces(camp))));
 });
 
 const update = catchRequestAsync(async (req, res) => {

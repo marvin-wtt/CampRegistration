@@ -2,7 +2,7 @@ import prisma from "../client";
 import { ulid } from "@/utils/ulid";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
-import { Camp, Prisma } from "@prisma/client";
+import { Camp, Prisma, Registration } from "@prisma/client";
 import dbJsonPath from "@/utils/dbJsonPath";
 import { formUtils } from "@/utils/form";
 
@@ -24,6 +24,39 @@ const queryRegistrations = async (campId: string) => {
       bed: { include: { room: true } },
     },
   });
+};
+
+const getParticipantsCount = async (campId: string) => {
+  return prisma.registration.count({
+    where: createRegistrationRoleFilter(campId, "participant"),
+  });
+};
+
+const getParticipantsCountByCountry = async (
+  campId: string,
+  countries: string[],
+) => {
+  const participants = await prisma.registration.findMany({
+    where: createRegistrationRoleFilter(campId, "participant"),
+  });
+
+  const getCountry = (registration: Registration): string => {
+    const country = registration.campData["country"]?.find((value: unknown) => {
+      return typeof value === "string" && countries.includes(value);
+    });
+
+    return country ?? "unknown";
+  };
+
+  // Count the participants for each country
+  return participants.reduce(
+    (result, curr) => {
+      const country = getCountry(curr);
+      result[country] = (result[country] || 0) + 1;
+      return result;
+    },
+    {} as Record<string, number>,
+  );
 };
 
 type RegistrationCreateData = Pick<
@@ -63,25 +96,7 @@ const isWaitingList = async (
   }
 
   const filter: Prisma.RegistrationWhereInput[] = [
-    {
-      campId: camp.id,
-    },
-    {
-      OR: [
-        {
-          campData: {
-            path: dbJsonPath("role"),
-            equals: Prisma.DbNull,
-          },
-        },
-        {
-          campData: {
-            path: dbJsonPath("role"),
-            array_contains: ["participant"],
-          },
-        },
-      ],
-    },
+    createRegistrationRoleFilter(camp.id, "participant"),
   ];
 
   let maxParticipants = camp.maxParticipants as Record<string, number> | number;
@@ -155,8 +170,33 @@ const deleteRegistrationById = async (registrationId: string) => {
   await prisma.registration.delete({ where: { id: registrationId } });
 };
 
+const createRegistrationRoleFilter = (
+  campId: string,
+  role: string,
+): Prisma.RegistrationWhereInput => {
+  return {
+    campId,
+    OR: [
+      {
+        campData: {
+          path: dbJsonPath("role"),
+          equals: Prisma.DbNull,
+        },
+      },
+      {
+        campData: {
+          path: dbJsonPath("role"),
+          array_contains: [role],
+        },
+      },
+    ],
+  };
+};
+
 export default {
   getRegistrationById,
+  getParticipantsCountByCountry,
+  getParticipantsCount,
   queryRegistrations,
   createRegistration,
   updateRegistrationById,
