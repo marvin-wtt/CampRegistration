@@ -5,6 +5,9 @@ import httpStatus from "http-status";
 import { Camp, Prisma, Registration } from "@prisma/client";
 import dbJsonPath from "@/utils/dbJsonPath";
 import { formUtils } from "@/utils/form";
+import { notificationService } from "@/services/index";
+import { t, default as i18n } from "@/config/i18n";
+import { translateObject } from "@/utils/translateObject";
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -102,7 +105,16 @@ const isWaitingList = async (
   let maxParticipants = camp.maxParticipants as Record<string, number> | number;
   // Add country filter
   if (typeof maxParticipants !== "number") {
-    const country = findCampDataCountry(campData, camp.countries);
+    const country = registrationCampDataAccessor(campData).country(
+      camp.countries,
+    );
+    if (!country) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Missing or invalid country data",
+      );
+    }
+
     // Add filter criteria for country
     filter.push({
       campData: {
@@ -129,21 +141,6 @@ const isParticipant = (campData: Record<string, unknown[]>): boolean => {
   }
 
   return campData["role"].some((role) => role === "participant");
-};
-
-const findCampDataCountry = (
-  campData: Record<string, unknown[]>,
-  options: string[],
-): string => {
-  const country = campData["country"]?.find((value) => !!value);
-  if (!country || typeof country !== "string") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Missing country data.");
-  }
-  if (!options.includes(country)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid country data.");
-  }
-
-  return country;
 };
 
 const updateRegistrationById = async (
@@ -196,6 +193,170 @@ const createRegistrationRoleFilter = (
   };
 };
 
+const sendRegistrationConfirmation = async (
+  camp: Camp,
+  registration: Registration,
+) => {
+  const { to, replyTo, cc, campName, participantName } =
+    getRegistrationConfirmationRegistrationData(camp, registration);
+
+  await i18n.changeLanguage(registration.locale);
+  const subject = t("email:registration.confirmation");
+  const template = "registration-confirmation";
+
+  const context = {
+    campName,
+    participantName,
+  };
+
+  notificationService.sendEmail({
+    to,
+    cc,
+    replyTo,
+    subject,
+    template,
+    context,
+  });
+};
+
+const sendWaitingListConfirmation = async (
+  camp: Camp,
+  registration: Registration,
+) => {
+  const { to, replyTo, cc, campName, participantName } =
+    getRegistrationConfirmationRegistrationData(camp, registration);
+
+  await i18n.changeLanguage(registration.locale);
+  const subject = t("email:registration.waitingListConfirmation");
+  const template = "registration-waiting-list-confirmation";
+
+  const context = {
+    campName,
+    participantName,
+  };
+
+  notificationService.sendEmail({
+    to,
+    cc,
+    replyTo,
+    subject,
+    template,
+    context,
+  });
+};
+
+const sendRegistrationNotification = async (
+  camp: Camp,
+  registration: Registration,
+) => {
+  const accessor = registrationCampDataAccessor(registration.campData);
+  const country = accessor.country(camp.countries);
+
+  const to = findCampContactEmails(camp.contactEmail, country);
+  const campName = translateObject(camp.name, country);
+  const participantName = accessor.name();
+
+  await i18n.changeLanguage(country);
+  const subject = t("email:registration.notification");
+  const template = "registration-notification";
+
+  const context = {
+    campName,
+    participantName,
+  };
+
+  notificationService.sendEmail({
+    to,
+    subject,
+    template,
+    context,
+  });
+};
+
+const getRegistrationConfirmationRegistrationData = (
+  camp: Camp,
+  registration: Registration,
+) => {
+  const accessor = registrationCampDataAccessor(registration.campData);
+
+  const to = accessor.emails();
+  const cc = accessor.guardianEmails();
+  const country = accessor.country(camp.countries);
+  const replyTo = findCampContactEmails(camp.contactEmail, country);
+  const participantName = accessor.name();
+  const campName = translateObject(camp.name, registration.locale);
+
+  return {
+    to,
+    cc,
+    replyTo,
+    participantName,
+    campName,
+  };
+};
+
+const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
+  const emails = (): string | string[] => {
+    return campData["email"]?.filter((value): value is string => {
+      return !!value && typeof value === "string";
+    });
+  };
+
+  const country = (options?: string[]): string | undefined => {
+    return campData["country"]?.find((value: unknown): value is string => {
+      return typeof value === "string" && (!options || options.includes(value));
+    });
+  };
+
+  const name = (): string | undefined => {
+    if ("first_name" in campData && campData.first_name.length > 0) {
+      return campData.first_name.find((value): value is string => {
+        return typeof value === "string";
+      });
+    }
+
+    if ("full_name" in campData && campData.full_name.length > 0) {
+      return campData.full_name.find((value): value is string => {
+        return typeof value === "string";
+      });
+    }
+
+    return undefined;
+  };
+
+  const guardianEmails = (): string[] => {
+    const emails = campData["guardian_email"]?.filter(
+      (value): value is string => {
+        return !!value && typeof value === "string";
+      },
+    );
+
+    return emails ?? [];
+  };
+
+  return {
+    emails,
+    country,
+    name,
+    guardianEmails,
+  };
+};
+
+const findCampContactEmails = (
+  contactEmail: Record<string, string> | string,
+  country: string | undefined,
+): string | string[] => {
+  if (typeof contactEmail === "string") {
+    return contactEmail;
+  }
+
+  if (!country) {
+    return Object.values(contactEmail);
+  }
+
+  return contactEmail[country];
+};
+
 export default {
   getRegistrationById,
   getParticipantsCountByCountry,
@@ -204,4 +365,7 @@ export default {
   createRegistration,
   updateRegistrationById,
   deleteRegistrationById,
+  sendRegistrationConfirmation,
+  sendWaitingListConfirmation,
+  sendRegistrationNotification,
 };

@@ -1,5 +1,6 @@
 import prisma from "../client";
 import { ulid } from "@/utils/ulid";
+import { Camp, CampManager } from "@prisma/client";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
@@ -95,6 +96,10 @@ const removeManager = async (id: string) => {
   });
 };
 
+const sendManagerInvitation = (camp: Camp, manager: CampManager) => {
+  // TODO
+};
+
 export default {
   getManagers,
   getManagerByEmail,
@@ -104,4 +109,5 @@ export default {
   resolveManagerInvitations,
   campManagerExistsWithUserIdAndCampId,
   removeManager,
+  sendManagerInvitation,
 };

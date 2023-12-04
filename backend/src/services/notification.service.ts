@@ -4,49 +4,35 @@ import { generateQueryString } from "@/utils/uri";
 import Mail from "nodemailer/lib/mailer";
 import { t } from "@/config/i18n";
 
-type Options = Exclude<
-  Mail.Options,
-  "to" | "subject" | "template" | "context"
-> & {
-  replyTo?: string | string[];
+type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
+type RequireAtLeastOne<T, R extends keyof T = keyof T> = Omit<T, R> &
+  { [P in R]: Required<Pick<T, P>> & Partial<Omit<T, P>> }[R];
+
+type EmailOptions = RequireAtLeastOne<Mail.Options, "to" | "cc" | "bcc">;
+
+type Options = WithRequired<EmailOptions, "subject"> & {
+  template: string;
+  context?: object;
 };
 
-const sendEmail = (
-  to: string,
-  subject: string,
-  template: string,
-  context: object,
-  options: Options = {},
-) => {
+const sendEmail = (options: Options) => {
   const { from } = config.email;
   const appName = t("app-name");
 
-  subject = `${subject} | ${appName}`;
+  options.from = {
+    name: appName,
+    address: from,
+  };
+  options.subject = `${options.subject} | ${appName}`;
 
-  context = {
-    ...context,
+  options.context = {
+    ...options.context,
   };
 
-  const replyTo =
-    options.replyTo && Array.isArray(options.replyTo)
-      ? options.replyTo.join(";")
-      : options.replyTo;
-
-  // TODO attachments
-  // TODO alternatives
-  transport
-    .sendMail({
-      ...options,
-      to,
-      from,
-      replyTo,
-      subject,
-      template,
-      context,
-    })
-    .catch((reason) => {
-      console.error("Failed to send email: " + reason);
-    });
+  transport.sendMail(options).catch((reason) => {
+    console.error("Failed to send email: " + reason);
+  });
 };
 
 const generateUrl = (
@@ -59,20 +45,7 @@ const generateUrl = (
   return `${origin}/${path}?${query}`;
 };
 
-const sendCampManagerInvitation = (
-  to: string,
-  campId: string,
-  managerId: string,
-) => {
-  const subject = t("email:camp.invitation");
-
-  const url = generateUrl(`camp-management/`);
-
-  sendEmail(to, subject, "", {});
-};
-
 export default {
   sendEmail,
   generateUrl,
-  sendCampManagerInvitation,
 };

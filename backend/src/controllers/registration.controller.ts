@@ -40,8 +40,15 @@ const store = catchRequestAsync(async (req, res) => {
     );
   }
 
-  // TODO Send notification to participant
-  // TODO Send notifications to contact email(s)
+  // Notify participant
+  if (registration.waitingList) {
+    registrationService.sendWaitingListConfirmation(camp, registration);
+  } else {
+    registrationService.sendRegistrationConfirmation(camp, registration);
+  }
+
+  // Notify contact email
+  registrationService.sendRegistrationNotification(camp, registration);
 
   res
     .status(httpStatus.CREATED)

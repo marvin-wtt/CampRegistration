@@ -4,6 +4,7 @@ import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
 import { notificationService, managerService, userService } from "@/services";
 import { campManagerResource } from "@/resources";
+import { routeModel } from "@/utils/verifyModel";
 
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
@@ -15,11 +16,11 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  const camp = routeModel(req.models.camp);
   const { email } = req.body;
 
   const existingCampManager = await managerService.getManagerByEmail(
-    campId,
+    camp.id,
     email,
   );
   if (existingCampManager) {
@@ -33,10 +34,10 @@ const store = catchRequestAsync(async (req, res) => {
 
   const manager =
     user === null
-      ? await managerService.inviteManager(campId, email)
-      : await managerService.addManager(campId, user.id);
+      ? await managerService.inviteManager(camp.id, email)
+      : await managerService.addManager(camp.id, user.id);
 
-  notificationService.sendCampManagerInvitation(email, campId, manager.id);
+  managerService.sendManagerInvitation(camp, manager);
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
 });

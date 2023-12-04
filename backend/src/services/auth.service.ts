@@ -6,7 +6,7 @@ import { encryptPassword, isPasswordMatch } from "@/utils/encryption";
 import exclude from "@/utils/exclude";
 import { AuthTokensResponse } from "@/types/response";
 import prisma from "@/client";
-import { t } from "@/config/i18n";
+import { t, default as i18n } from "@/config/i18n";
 
 const loginUserWithEmailAndPassword = async (
   email: string,
@@ -127,7 +127,10 @@ const verifyEmail = async (token: string): Promise<void> => {
   }
 };
 
-const sendResetPasswordEmail = (to: string, token: string) => {
+const sendResetPasswordEmail = async (to: string, token: string) => {
+  const user = await userService.getUserByEmail(to);
+  await i18n.changeLanguage(user?.locale);
+
   const template = "reset-password";
   const subject = t("auth:email.reset-password.subject");
   const url = notificationService.generateUrl("reset-password", {
@@ -139,12 +142,18 @@ const sendResetPasswordEmail = (to: string, token: string) => {
     url,
   };
 
-  const options = {};
-
-  notificationService.sendEmail(to, subject, template, context, options);
+  notificationService.sendEmail({
+    to,
+    subject,
+    template,
+    context,
+  });
 };
 
-const sendVerificationEmail = (to: string, token: string) => {
+const sendVerificationEmail = async (to: string, token: string) => {
+  const user = await userService.getUserByEmail(to);
+  await i18n.changeLanguage(user?.locale);
+
   const subject = t("email:auth.email-verification.subject");
 
   const url = notificationService.generateUrl("verify-email", {
@@ -158,7 +167,12 @@ const sendVerificationEmail = (to: string, token: string) => {
 
   const template = "verify-email";
 
-  notificationService.sendEmail(to, subject, template, context);
+  notificationService.sendEmail({
+    to,
+    subject,
+    template,
+    context,
+  });
 };
 
 export default {
