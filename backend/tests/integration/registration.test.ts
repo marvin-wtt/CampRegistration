@@ -26,6 +26,7 @@ import {
   campWithMultipleCampDataValues,
   campWithRequiredField,
   campWithSingleCampDataType,
+  campWithoutCountryData,
 } from "../fixtures/registration/camp.fixtures";
 import { request } from "../utils/request";
 import { CampManagerFactory } from "../../prisma/factories/manager";
@@ -709,6 +710,53 @@ describe("/api/v1/camps/:campId/registrations", () => {
             first_name: `Jhon`,
           },
           waitingList: false,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send(data)
+          .expect(400);
+      });
+
+      it("should respond with `400` status code when camp country data is missing for international camp", async () => {
+        const camp = await CampFactory.create(campWithoutCountryData);
+
+        const data = {
+          data: {
+            first_name: `Jhon`,
+          },
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send(data)
+          .expect(400);
+      });
+
+      it("should respond with `400` status code when camp country data is invalid for international camp", async () => {
+        const camp = await CampFactory.create(campWithoutCountryData);
+
+        const data = {
+          data: {
+            first_name: `Jhon`,
+            country: 1,
+          },
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send(data)
+          .expect(400);
+      });
+
+      it("should respond with `400` status code when camp country data is not matching for international camp", async () => {
+        const camp = await CampFactory.create(campWithoutCountryData);
+
+        const data = {
+          data: {
+            first_name: `Jhon`,
+            country: "us",
+          },
         };
 
         await request()

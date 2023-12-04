@@ -267,3 +267,20 @@ export const campWithMultipleCampDataTypes = {
     },
   ]),
 };
+
+export const campWithoutCountryData = {
+  ...campWithMaxParticipantsInternational,
+  form: createForm([
+    {
+      name: "first_name",
+      type: "text",
+      isRequired: true,
+    },
+    {
+      name: "country",
+      type: "text",
+      campDataType: "country",
+      isRequired: false,
+    },
+  ]),
+};
