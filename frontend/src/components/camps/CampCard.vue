@@ -27,6 +27,9 @@
         <div class="col text-h5">
           {{ to(props.camp.name) }}
         </div>
+        <div class="col text-caption">
+          {{ to(props.camp.organizer) }}
+        </div>
       </q-card-section>
       <q-card-section class="column q-pt-none">
         <div>

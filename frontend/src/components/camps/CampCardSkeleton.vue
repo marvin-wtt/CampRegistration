@@ -20,6 +20,12 @@
             width="200px"
           />
         </div>
+        <div class="col text-caption">
+          <q-skeleton
+            type="text"
+            width="100px"
+          />
+        </div>
       </q-card-section>
       <q-card-section class="column q-pt-none">
         <div class="row">
@@ -29,7 +35,7 @@
           />
           <q-skeleton
             type="text"
-            width="50px"
+            width="150px"
           />
         </div>
         <div class="row">
@@ -42,14 +48,14 @@
             width="50px"
           />
         </div>
-        <div class="col q-col-gutter-sm row">
+        <div class="row">
           <q-icon
             name="language"
             size="sm"
           />
           <q-skeleton
             type="text"
-            width="50px"
+            width="30px"
           />
         </div>
         <div class="row">
@@ -59,7 +65,7 @@
           />
           <q-skeleton
             type="text"
-            width="20px"
+            width="40px"
           />
         </div>
       </q-card-section>
