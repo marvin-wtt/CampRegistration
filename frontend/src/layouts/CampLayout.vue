@@ -118,7 +118,7 @@ create: 'Organize Camp'
 
 <i18n lang="yaml" locale="de">
 camps: 'Camps'
-create: 'Camp Organisieren'
+create: 'Camp organisieren'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
