@@ -2,7 +2,7 @@ import { catchRequestAsync } from "@/utils/catchAsync";
 import ApiError from "@/utils/ApiError";
 import httpStatus from "http-status";
 import { collection, resource } from "@/resources/resource";
-import { notificationService, managerService, userService } from "@/services";
+import { managerService, userService } from "@/services";
 import { campManagerResource } from "@/resources";
 import { routeModel } from "@/utils/verifyModel";
 
@@ -37,7 +37,7 @@ const store = catchRequestAsync(async (req, res) => {
       ? await managerService.inviteManager(camp.id, email)
       : await managerService.addManager(camp.id, user.id);
 
-  managerService.sendManagerInvitation(camp, manager);
+  await managerService.sendManagerInvitation(camp, manager);
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
 });

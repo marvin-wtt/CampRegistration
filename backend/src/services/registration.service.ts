@@ -6,7 +6,7 @@ import { Camp, Prisma, Registration } from "@prisma/client";
 import dbJsonPath from "@/utils/dbJsonPath";
 import { formUtils } from "@/utils/form";
 import { notificationService } from "@/services/index";
-import { t, default as i18n } from "@/config/i18n";
+import i18n, { t } from "@/config/i18n";
 import { translateObject } from "@/utils/translateObject";
 
 const getRegistrationById = async (campId: string, id: string) => {
@@ -201,7 +201,7 @@ const sendRegistrationConfirmation = async (
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
-  const subject = t("email:registration.confirmation");
+  const subject = t("registration:email.confirmation");
   const template = "registration-confirmation";
 
   const context = {
@@ -227,7 +227,7 @@ const sendWaitingListConfirmation = async (
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
-  const subject = t("email:registration.waitingListConfirmation");
+  const subject = t("registration:email.waitingListConfirmation");
   const template = "registration-waiting-list-confirmation";
 
   const context = {
@@ -245,7 +245,7 @@ const sendWaitingListConfirmation = async (
   });
 };
 
-const sendRegistrationNotification = async (
+const sendRegistrationManagerNotification = async (
   camp: Camp,
   registration: Registration,
 ) => {
@@ -257,8 +257,14 @@ const sendRegistrationNotification = async (
   const participantName = accessor.name();
 
   await i18n.changeLanguage(country);
-  const subject = t("email:registration.notification");
-  const template = "registration-notification";
+  const subject = t("registration:email.managerNotification");
+  const template = "registration-manager-notification";
+
+  const dataAttachment = {
+    filename: "data.json",
+    contentType: "application/json",
+    content: JSON.stringify(registration),
+  };
 
   const context = {
     campName,
@@ -270,6 +276,7 @@ const sendRegistrationNotification = async (
     subject,
     template,
     context,
+    attachments: [dataAttachment],
   });
 };
 
@@ -367,5 +374,5 @@ export default {
   deleteRegistrationById,
   sendRegistrationConfirmation,
   sendWaitingListConfirmation,
-  sendRegistrationNotification,
+  sendRegistrationManagerNotification,
 };

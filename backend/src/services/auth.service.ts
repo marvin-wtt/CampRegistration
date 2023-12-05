@@ -6,7 +6,7 @@ import { encryptPassword, isPasswordMatch } from "@/utils/encryption";
 import exclude from "@/utils/exclude";
 import { AuthTokensResponse } from "@/types/response";
 import prisma from "@/client";
-import { t, default as i18n } from "@/config/i18n";
+import i18n, { t } from "@/config/i18n";
 
 const loginUserWithEmailAndPassword = async (
   email: string,
@@ -89,17 +89,15 @@ const logoutAllDevices = async (userId: string) => {
       blacklisted: true,
     },
     where: {
+      userId,
       OR: [
         {
-          userId,
           type: TokenType.RESET_PASSWORD,
         },
         {
-          userId,
           type: TokenType.ACCESS,
         },
         {
-          userId,
           type: TokenType.REFRESH,
         },
       ],

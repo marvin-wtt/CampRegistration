@@ -24,7 +24,7 @@ const register = catchRequestAsync(async (req, res) => {
   await managerService.resolveManagerInvitations(user.email, user.id);
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  authService.sendVerificationEmail(user.email, verifyEmailToken);
+  await authService.sendVerificationEmail(user.email, verifyEmailToken);
 
   res.status(httpStatus.CREATED).json(userDetailedResource(user));
 });
@@ -82,7 +82,7 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
     await tokenService.generateResetPasswordToken(email);
 
   if (resetPasswordToken !== undefined) {
-    authService.sendResetPasswordEmail(email, resetPasswordToken);
+    await authService.sendResetPasswordEmail(email, resetPasswordToken);
   }
   res.sendStatus(httpStatus.NO_CONTENT);
 });
@@ -105,7 +105,7 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   }
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  authService.sendVerificationEmail(user.email, verifyEmailToken);
+  await authService.sendVerificationEmail(user.email, verifyEmailToken);
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 

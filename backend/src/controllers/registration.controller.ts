@@ -42,13 +42,16 @@ const store = catchRequestAsync(async (req, res) => {
 
   // Notify participant
   if (registration.waitingList) {
-    registrationService.sendWaitingListConfirmation(camp, registration);
+    await registrationService.sendWaitingListConfirmation(camp, registration);
   } else {
-    registrationService.sendRegistrationConfirmation(camp, registration);
+    await registrationService.sendRegistrationConfirmation(camp, registration);
   }
 
   // Notify contact email
-  registrationService.sendRegistrationNotification(camp, registration);
+  await registrationService.sendRegistrationManagerNotification(
+    camp,
+    registration,
+  );
 
   res
     .status(httpStatus.CREATED)
@@ -57,6 +60,7 @@ const store = catchRequestAsync(async (req, res) => {
 
 const update = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
+  const previousRegistration = routeModel(req.models.registration);
   const { registrationId } = req.params;
   const data = req.body;
 
@@ -73,7 +77,9 @@ const update = catchRequestAsync(async (req, res) => {
     await fileService.saveRegistrationFiles(registration.id, req.files);
   }
 
-  // TODO Send notification to participant
+  if (previousRegistration.waitingList && !registration.waitingList) {
+    await registrationService.sendRegistrationConfirmation(camp, registration);
+  }
 
   res.json(resource(registrationResource(registration)));
 });
@@ -81,6 +87,7 @@ const update = catchRequestAsync(async (req, res) => {
 const destroy = catchRequestAsync(async (req, res) => {
   const { registrationId } = req.params;
   await registrationService.deleteRegistrationById(registrationId);
+
   res.status(httpStatus.NO_CONTENT).send();
 });
 

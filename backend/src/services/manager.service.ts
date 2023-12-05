@@ -1,6 +1,9 @@
 import prisma from "../client";
 import { ulid } from "@/utils/ulid";
-import { Camp, CampManager } from "@prisma/client";
+import { Camp, CampManager, Invitation, User } from "@prisma/client";
+import { translateObject } from "@/utils/translateObject";
+import i18n, { t } from "@/config/i18n";
+import { notificationService } from "@/services/index";
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
@@ -96,8 +99,41 @@ const removeManager = async (id: string) => {
   });
 };
 
-const sendManagerInvitation = (camp: Camp, manager: CampManager) => {
-  // TODO
+type CampManagerWithUserOrInvitation = CampManager & { user: User | null } & {
+  invitation: Invitation | null;
+};
+
+const sendManagerInvitation = async (
+  camp: Camp,
+  manager: CampManagerWithUserOrInvitation,
+) => {
+  const user = manager.user;
+
+  const to = user?.email ?? manager.invitation?.email;
+
+  /* c8-ignore-next */
+  if (!to) {
+    return;
+  }
+
+  const campName = translateObject(camp.name, user?.locale);
+  const userName = user?.name;
+
+  await i18n.changeLanguage(user?.locale);
+  const subject = t("manager:email.invitation");
+  const template = "manager-invitation";
+
+  const context = {
+    campName,
+    userName,
+  };
+
+  notificationService.sendEmail({
+    to,
+    subject,
+    template,
+    context,
+  });
 };
 
 export default {

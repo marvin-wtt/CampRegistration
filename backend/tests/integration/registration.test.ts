@@ -30,6 +30,7 @@ import {
 } from "../fixtures/registration/camp.fixtures";
 import { request } from "../utils/request";
 import { CampManagerFactory } from "../../prisma/factories/manager";
+import { receiveEmail } from "../utils/mail-server";
 
 describe("/api/v1/camps/:campId/registrations", () => {
   const createCampWithManagerAndToken = async () => {
@@ -767,7 +768,32 @@ describe("/api/v1/camps/:campId/registrations", () => {
     });
 
     describe("sends notification", () => {
-      it.todo("should send a confirmation email to the user");
+      it.todo("should send a confirmation email to the user", async () => {
+        // TODO Create camp with form
+        const camp = await CampFactory.create({
+          active: true,
+        });
+
+        const data = {
+          email: "test@example.com",
+          emergencyContacts: [
+            {
+              email: "parent1@email.net",
+            },
+            {
+              email: "parent1@email.net",
+            },
+          ],
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        await receiveEmail("test@example.com");
+      });
+
       it.todo("should send a copy to the contact email for national camp");
       it.todo(
         "should send a copy to the contact emails for international camp",
