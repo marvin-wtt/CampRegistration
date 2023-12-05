@@ -1,5 +1,6 @@
 #!/bin/sh
 # This script should be executed on the deployment server
+export PATH=/opt/plesk/node/21/bin
 
 # common
 cd ./common/ || exit
