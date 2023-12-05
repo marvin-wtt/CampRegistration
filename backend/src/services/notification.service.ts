@@ -3,6 +3,7 @@ import transport from "@/config/mail";
 import { generateQueryString } from "@/utils/uri";
 import Mail from "nodemailer/lib/mailer";
 import { t } from "@/config/i18n";
+import logger from "@/config/logger";
 
 type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
@@ -31,7 +32,7 @@ const sendEmail = (options: Options) => {
   };
 
   transport.sendMail(options).catch((reason) => {
-    console.error("Failed to send email: " + reason);
+    logger.warn("Failed to send email: " + reason);
   });
 };
 
