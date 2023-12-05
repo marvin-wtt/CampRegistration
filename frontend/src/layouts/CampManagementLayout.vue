@@ -36,7 +36,7 @@
 
         <q-btn
           :label="t('camps')"
-          :to="{ name: 'camp-management' }"
+          :to="{ name: 'management' }"
           class="gt-sm"
           flat
           stretch

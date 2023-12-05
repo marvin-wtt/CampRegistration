@@ -3,8 +3,32 @@ import { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
+    component: () => import('layouts/CampLayout.vue'),
+    children: [
+      {
+        // Same as /camps
+        path: '',
+        redirect: {
+          name: 'camps'
+        },
+        component: () => import('pages/camps/CampIndexPage.vue'),
+      },
+      {
+        path: 'camps',
+        children: [
+          {
+            path: '',
+            name: 'camps',
+            component: () => import('pages/camps/CampIndexPage.vue'),
+          },
+          {
+            path: ':camp',
+            name: 'camp',
+            component: () => import('pages/camps/CampPage.vue'),
+          },
+        ],
+      },
+    ],
   },
   {
     path: '/login',
@@ -51,7 +75,7 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/camp-management',
+    path: '/management',
     component: () => import('layouts/CampManagementLayout.vue'),
     meta: {
       auth: true,
@@ -59,7 +83,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'camp-management',
+        name: 'management',
         meta: {
           hideDrawer: true,
         },
@@ -144,22 +168,6 @@ const routes: RouteRecordRaw[] = [
             ],
           },
         ],
-      },
-    ],
-  },
-  {
-    path: '/camps',
-    component: () => import('layouts/CampLayout.vue'),
-    children: [
-      {
-        path: '',
-        name: 'camps',
-        component: () => import('pages/camps/CampIndexPage.vue'),
-      },
-      {
-        path: ':camp',
-        name: 'camp',
-        component: () => import('pages/camps/CampPage.vue'),
       },
     ],
   },

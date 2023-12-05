@@ -38,7 +38,7 @@ async function onSubmit() {
   await campsStore.createEntry(data.value as Camp);
 
   return router.push({
-    name: 'camp-management',
+    name: 'management',
     query: {
       public: 0,
     },

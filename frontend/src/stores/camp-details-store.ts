@@ -88,7 +88,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     });
 
     if (success) {
-      await router.push({ name: 'camp-management' });
+      await router.push({ name: 'management' });
     }
   }
 

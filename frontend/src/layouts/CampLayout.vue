@@ -23,6 +23,13 @@
           stretch
         />
 
+        <q-btn
+          :label="t('create')"
+          :to="{ name: 'management' }"
+          flat
+          stretch
+        />
+
         <q-separator
           dark
           vertical
@@ -34,6 +41,8 @@
           dense
           rounded
         />
+
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -51,6 +60,7 @@
 import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
+import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 
 const { t } = useI18n();
 
@@ -103,12 +113,15 @@ useMeta(() => {
 
 <i18n lang="yaml" locale="en">
 camps: 'Camps'
+create: 'Organize Camp'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 camps: 'Camps'
+create: 'Camp Organisieren'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 camps: 'Camps'
+create: 'Organiser un camp'
 </i18n>

@@ -155,7 +155,7 @@ const authenticated = computed<boolean>(() => {
 
 function goToCamps() {
   router.push({
-    name: 'camp-management',
+    name: 'management',
   });
 }
 
