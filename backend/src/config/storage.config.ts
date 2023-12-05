@@ -44,6 +44,7 @@ const storageOptions = {
   maxFileSize: envVars.MAX_FILE_SIZE ?? defaultOptions.maxFileSize,
 };
 
+// TODO This should not happen here
 {
   if (storageOptions.tmpDir) {
     fse.ensureDirSync(storageOptions.tmpDir);

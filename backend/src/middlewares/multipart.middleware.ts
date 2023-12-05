@@ -1,9 +1,8 @@
 import multer, { Field } from "multer";
 import config from "@/config";
-import fs from "fs";
 import { NextFunction, Request, Response } from "express";
 import dynamicMiddleware from "@/middlewares/dynamic.middleware";
-import { randomUUID } from "crypto";
+import { fileService } from "@/services";
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 
@@ -19,15 +18,10 @@ const upload = (fields: ParameterType) => {
       cb(null, tmpDir);
     },
     filename: (req, file, cb) => {
-      const fileName = randomUUID();
-      const fileExtension = file.originalname.split(".").pop();
-      cb(null, `${fileName}.${fileExtension}`);
+      const fileName = fileService.generateFileName(file.originalname);
+      cb(null, fileName);
     },
   });
-
-  if (!fs.existsSync(tmpDir)) {
-    fs.mkdirSync(tmpDir);
-  }
 
   const upload = multer({
     storage: tmpStorage,
