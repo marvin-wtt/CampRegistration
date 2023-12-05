@@ -17,22 +17,10 @@
         <q-space />
 
         <q-btn
-          :label="t('camps')"
-          :to="{ name: 'camps' }"
-          flat
-          stretch
-        />
-
-        <q-btn
           :label="t('create')"
           :to="{ name: 'management' }"
           flat
-          stretch
-        />
-
-        <q-separator
-          dark
-          vertical
+          rounded
         />
 
         <language-switch

@@ -29,23 +29,12 @@
           </router-link>
         </q-toolbar-title>
 
-        <q-separator
-          dark
-          vertical
-        />
-
         <q-btn
           :label="t('camps')"
           :to="{ name: 'management' }"
           class="gt-sm"
           flat
-          stretch
-        />
-
-        <q-separator
-          class="gt-sm"
-          dark
-          vertical
+          rounded
         />
 
         <locale-switch
@@ -53,12 +42,6 @@
           class="q-px-md gt-xs"
           dense
           rounded
-        />
-
-        <q-separator
-          class="gt-xs"
-          dark
-          vertical
         />
 
         <profile-menu />
