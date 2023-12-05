@@ -3,9 +3,9 @@
 export PATH=/opt/plesk/node/21/bin
 
 # common
-cd ./common/ || exit
-npm install
-npm build
+#cd ./common/ || exit
+#npm install
+#npm build
 
 # frontend
 cd ../frontend/ || exit
