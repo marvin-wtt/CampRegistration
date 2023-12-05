@@ -8,9 +8,6 @@ const routes: RouteRecordRaw[] = [
       {
         // Same as /camps
         path: '',
-        redirect: {
-          name: 'camps'
-        },
         component: () => import('pages/camps/CampIndexPage.vue'),
       },
       {
