@@ -4,6 +4,7 @@ import prisma from "../client";
 import ApiError from "@/utils/ApiError";
 import { ulid } from "@/utils/ulid";
 import { encryptPassword } from "@/utils/encryption";
+import { authService } from "@/services/index";
 
 const createUser = async (
   data: Pick<
@@ -95,15 +96,19 @@ const getUserByEmail = async (email: string): Promise<User | null> => {
 
 const updateUserById = async <Key extends keyof User>(
   userId: string,
-  updateBody: Omit<Prisma.UserUpdateInput, "id">,
-  keys: Key[] = ["id", "email", "name", "role"] as Key[],
+  data: Omit<Prisma.UserUpdateInput, "id">,
+  keys: Key[] = ["id", "email", "name", "role", "locale", "locked"] as Key[],
 ): Promise<Pick<User, Key> | null> => {
-  if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
+  if (data.email && (await getUserByEmail(data.email as string))) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
+  if (data.locked) {
+    await authService.logoutAllDevices(userId);
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: updateBody,
+    data: data,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
   });
   return updatedUser as Pick<User, Key> | null;

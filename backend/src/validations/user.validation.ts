@@ -38,6 +38,7 @@ const update = {
     password: PasswordSchema,
     name: Joi.string(),
     locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
+    locked: Joi.boolean(),
   }).min(1),
 };
 

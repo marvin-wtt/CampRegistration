@@ -18,6 +18,10 @@ const loginUserWithEmailAndPassword = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect email or password.");
   }
 
+  if (user.locked) {
+    throw new ApiError(httpStatus.FORBIDDEN, "Account is locked");
+  }
+
   if (!user.emailVerified) {
     throw new ApiError(
       httpStatus.FORBIDDEN,

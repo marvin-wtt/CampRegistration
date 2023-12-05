@@ -26,7 +26,6 @@ const update = catchRequestAsync(async (req, res) => {
     email: req.body.email,
     password: req.body.password,
     locale: req.body.locale,
-    role: req.body.role,
   });
 
   if (!user.emailVerified) {
