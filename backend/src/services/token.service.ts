@@ -191,6 +191,18 @@ const generateVerifyEmailToken = async (
   return verifyEmailToken;
 };
 
+const deleteExpiredTokens = async () => {
+  const refDate = moment().subtract(1, "hour").toDate();
+
+  return prisma.token.deleteMany({
+    where: {
+      expiresAt: {
+        lte: refDate,
+      },
+    },
+  });
+};
+
 export default {
   generateToken,
   saveToken,
@@ -198,4 +210,5 @@ export default {
   generateAuthTokens,
   generateResetPasswordToken,
   generateVerifyEmailToken,
+  deleteExpiredTokens,
 };

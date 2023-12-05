@@ -1,14 +1,22 @@
 import Cron from "croner/types/croner";
+import { fileService } from "@/services";
 
 export const deleteUnusedFiles = () => {
-  Cron(
-    "0 3 * * *",
-    {
-      name: "file-deletion-jpb",
-    },
-    () => {
-      // TODO Go through all files and check if there is a reference in the DB. If not, delete it
-      //  Maybe just do a diff and mass delete
-    },
-  );
+  const jobConfig = {
+    name: "file-deletion-job",
+  };
+
+  return Cron("0 4 * * *", jobConfig, async () => {
+    await fileService.deleteUnreferencedFiles();
+  });
+};
+
+export const deleteTemporaryFiles = () => {
+  const jobConfig = {
+    name: "tmp-file-deletion-job",
+  };
+
+  return Cron("30 3 * * *", jobConfig, async () => {
+    await fileService.deleteTempFiles();
+  });
 };

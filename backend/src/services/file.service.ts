@@ -8,6 +8,7 @@ import path from "path";
 import fse from "fs-extra";
 import httpStatus from "http-status";
 import { extractKeyFromFieldName } from "@/utils/form";
+import { randomUUID } from "crypto";
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
@@ -186,6 +187,68 @@ const deleteFile = async (id: string) => {
 
   return file;
 };
+const generateFileName = (originalName: string): string => {
+  const fileName = randomUUID();
+  const fileExtension = originalName.split(".").pop();
+
+  return `${fileName}.${fileExtension}`;
+};
+
+const deleteUnreferencedFiles = async () => {
+  const { uploadDir, location } = config.storage;
+
+  if (location !== "local") {
+    return;
+  }
+
+  const fileNames = await fse.readdir(uploadDir);
+  const fileModels = await prisma.file.findMany({
+    where: {
+      storageLocation: "local",
+    },
+    select: {
+      name: true,
+    },
+  });
+
+  const fileModelNames = fileModels.map((value) => value.name);
+  const filesToDelete = fileNames.filter((fileName) =>
+    fileModelNames.includes(fileName),
+  );
+
+  await Promise.all(
+    filesToDelete.map((fileName) => {
+      const filePath = path.join(uploadDir, fileName);
+      return fse.unlink(filePath);
+    }),
+  );
+};
+
+const deleteTempFiles = async () => {
+  const { tmpDir } = config.storage;
+
+  const fileNames = await fse.readdir(tmpDir);
+  const currentTime = Date.now();
+
+  await Promise.all(
+    fileNames.map((fileName) => {
+      const filePath = path.join(tmpDir, fileName);
+      return deleteOldFiles(filePath, currentTime);
+    }),
+  );
+};
+
+const deleteOldFiles = async (filePath: string, currentTime: number) => {
+  const stats = await fse.stat(filePath);
+  const modificationTime = stats.mtime.getTime();
+
+  const timeDifference = currentTime - modificationTime;
+  const oneHourInMilliseconds = 60 * 60 * 1000; // One hour in milliseconds
+
+  if (timeDifference > oneHourInMilliseconds) {
+    await fse.unlink(filePath);
+  }
+};
 
 // Generic storage
 interface StorageStrategy {
@@ -240,4 +303,7 @@ export default {
   getFileStream,
   queryModelFiles,
   deleteFile,
+  generateFileName,
+  deleteUnreferencedFiles,
+  deleteTempFiles,
 };

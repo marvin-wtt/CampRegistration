@@ -1,24 +1,12 @@
 import Cron from "croner";
-import prisma from "@/client";
-import moment from "moment";
+import { tokenService } from "@/services";
 
 export const removeExpiredTokens = () => {
-  Cron(
-    "0 2 * * *",
-    {
-      name: "token-removal-jpb",
-    },
-    () => {
-      // TODO Get from config
-      const refDate = moment().subtract(1, "months").toDate();
+  const jobConfig = {
+    name: "token-removal-jpb",
+  };
 
-      prisma.token.deleteMany({
-        where: {
-          expiresAt: {
-            lte: refDate,
-          },
-        },
-      });
-    },
-  );
+  return Cron("0 3 * * *", jobConfig, async () => {
+    await tokenService.deleteExpiredTokens();
+  });
 };
