@@ -45,7 +45,7 @@ const store = catchRequestAsync(async (req, res) => {
   const camp = await campService.createCamp(userId, {
     countries: data.countries,
     name: data.name,
-    organization: data.organization,
+    organizer: data.organizer,
     contactEmail: data.contactEmail,
     active: data.active ?? false,
     public: data.public,
@@ -73,7 +73,7 @@ const update = catchRequestAsync(async (req, res) => {
   const camp = await campService.updateCampById(campId, {
     countries: data.countries,
     name: data.name,
-    organization: data.organization,
+    organizer: data.organizer,
     contactEmail: data.contactEmail,
     active: data.active,
     public: data.public,

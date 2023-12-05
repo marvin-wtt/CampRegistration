@@ -57,7 +57,7 @@ const store = {
       .min(1)
       .required(),
     name: translatedValue(Joi.string()).required(),
-    organization: translatedValue(Joi.string()).required(),
+    organizer: translatedValue(Joi.string()).required(),
     contactEmail: translatedValue(Joi.string().email()).required(),
     maxParticipants: translatedValue(Joi.number().integer().min(0)).required(),
     startAt: time().greater(Date.now()).required(),
@@ -82,7 +82,7 @@ const update = {
       .items(Joi.string().custom(CountryCode).lowercase())
       .min(1),
     name: translatedValue(Joi.string()),
-    organization: translatedValue(Joi.string()),
+    organizer: translatedValue(Joi.string()),
     contactEmail: translatedValue(Joi.string()),
     maxParticipants: translatedValue(Joi.number().integer().min(0)),
     startAt: Joi.date().iso(),

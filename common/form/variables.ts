@@ -5,7 +5,7 @@ type Translatable<T = string> = T | Record<string, T>;
 type Data = {
   countries: string[];
   name: Translatable;
-  organization: Translatable;
+  organizer: Translatable;
   contactEmail: Translatable;
   maxParticipants: Translatable<number>;
   startAt: Date | string;
@@ -29,7 +29,7 @@ export const setVariables = (
 
   model.setVariable('camp.countries', data.countries);
   model.setVariable('camp.name', t(data.name));
-  model.setVariable('camp.organization', t(data.organization));
+  model.setVariable('camp.organizer', t(data.organizer));
   model.setVariable('camp.contactEmail', t(data.contactEmail));
   model.setVariable('camp.startAt', data.startAt);
   model.setVariable('camp.startAtDate', toDate(data.startAt));
