@@ -1,5 +1,5 @@
 import { CampDataType } from 'src/lib/surveyJs/properties/campDataMapping/CampDataType';
-import { IPropertyGridEditor } from 'survey-creator-knockout';
+import { IPropertyGridEditor } from 'survey-creator-core';
 import waitingList from 'src/lib/surveyJs/properties/campDataMapping/types/waitingList';
 import country from 'src/lib/surveyJs/properties/campDataMapping/types/country';
 import dateOfBirth from 'src/lib/surveyJs/properties/campDataMapping/types/dateOfBirth';
