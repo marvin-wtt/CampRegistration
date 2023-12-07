@@ -23,9 +23,6 @@
   "prisma": {
     "seed": "ts-node prisma/seeders/index.ts"
   },
-  "_moduleAliases": {
-    "@": "./src"
-  },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
