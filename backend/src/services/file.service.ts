@@ -1,13 +1,13 @@
 import prisma from "../client";
 import { File, Prisma } from "@prisma/client";
-import config from "@/config";
+import config from "config";
 import fs from "fs";
-import { ulid } from "@/utils/ulid";
-import ApiError from "@/utils/ApiError";
+import { ulid } from "utils/ulid";
+import ApiError from "utils/ApiError";
 import path from "path";
 import fse from "fs-extra";
 import httpStatus from "http-status";
-import { extractKeyFromFieldName } from "@/utils/form";
+import { extractKeyFromFieldName } from "utils/form";
 import { randomUUID } from "crypto";
 
 type RequestFile = Express.Multer.File;

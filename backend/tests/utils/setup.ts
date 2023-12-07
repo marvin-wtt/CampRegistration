@@ -1,10 +1,10 @@
 import resetDb from "./reset-db";
 import { afterEach, afterAll, beforeEach } from "vitest";
 import fse from "fs-extra";
-import config from "@/config";
+import config from "config";
 import path from "path";
 import { resetMailServer, stopMailServer } from "./mail-server";
-import { store } from "@/middlewares/rateLimiter.middleware";
+import { store } from "middlewares/rateLimiter.middleware";
 
 beforeEach(async () => {
   await resetDb();

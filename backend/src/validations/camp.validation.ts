@@ -1,6 +1,6 @@
 import Joi, { SchemaLikeWithoutArray } from "joi";
 import JoiDate from "@joi/date";
-import { CountryCode } from "@/validations/custom.validation";
+import { CountryCode } from "validations/custom.validation";
 
 const extendedJoi = Joi.extend(JoiDate);
 

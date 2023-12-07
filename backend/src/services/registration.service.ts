@@ -1,13 +1,13 @@
 import prisma from "../client";
-import { ulid } from "@/utils/ulid";
-import ApiError from "@/utils/ApiError";
+import { ulid } from "utils/ulid";
+import ApiError from "utils/ApiError";
 import httpStatus from "http-status";
 import { Camp, Prisma, Registration } from "@prisma/client";
-import dbJsonPath from "@/utils/dbJsonPath";
-import { formUtils } from "@/utils/form";
-import { notificationService } from "@/services/index";
-import i18n, { t } from "@/config/i18n";
-import { translateObject } from "@/utils/translateObject";
+import dbJsonPath from "utils/dbJsonPath";
+import { formUtils } from "utils/form";
+import { notificationService } from "services/index";
+import i18n, { t } from "config/i18n";
+import { translateObject } from "utils/translateObject";
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({

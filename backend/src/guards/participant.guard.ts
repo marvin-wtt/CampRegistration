@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { routeModel } from "@/utils/verifyModel";
+import { routeModel } from "utils/verifyModel";
 
 const participant = async (req: Request): Promise<boolean | string> => {
   const registration = routeModel(req.models.registration);

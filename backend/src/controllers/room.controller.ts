@@ -1,9 +1,9 @@
-import { catchRequestAsync } from "@/utils/catchAsync";
+import { catchRequestAsync } from "utils/catchAsync";
 import httpStatus from "http-status";
-import { collection, resource } from "@/resources/resource";
-import { roomService } from "@/services";
-import { roomResource } from "@/resources";
-import { routeModel } from "@/utils/verifyModel";
+import { collection, resource } from "resources/resource";
+import { roomService } from "services";
+import { roomResource } from "resources";
+import { routeModel } from "utils/verifyModel";
 
 const show = catchRequestAsync(async (req, res) => {
   const room = routeModel(req.models.room);

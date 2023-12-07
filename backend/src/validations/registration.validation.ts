@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { Request } from "express";
-import { routeModel } from "@/utils/verifyModel";
-import { formUtils } from "@/utils/form";
+import { routeModel } from "utils/verifyModel";
+import { formUtils } from "utils/form";
 
 export const registrationData: Joi.CustomValidator<object> = (
   value,

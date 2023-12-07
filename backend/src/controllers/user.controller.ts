@@ -1,11 +1,11 @@
 import httpStatus from "http-status";
-import pick from "@/utils/pick";
-import { catchRequestAsync } from "@/utils/catchAsync";
-import { userService } from "@/services";
-import exclude from "@/utils/exclude";
-import { routeModel } from "@/utils/verifyModel";
-import ApiError from "@/utils/ApiError";
-import { authUser, authUserId } from "@/utils/authUserId";
+import pick from "utils/pick";
+import { catchRequestAsync } from "utils/catchAsync";
+import { userService } from "services";
+import exclude from "utils/exclude";
+import { routeModel } from "utils/verifyModel";
+import ApiError from "utils/ApiError";
+import { authUserId } from "utils/authUserId";
 import { Role } from "@prisma/client";
 
 const index = catchRequestAsync(async (req, res) => {
