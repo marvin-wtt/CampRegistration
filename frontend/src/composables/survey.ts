@@ -5,8 +5,7 @@ import { nextTick, Ref, watch } from 'vue';
 import { setVariables } from '@camp-registration/common/form/variables';
 import { useQuasar } from 'quasar';
 
-import { PlainLight } from 'survey-core/themes/plain-light';
-import { PlainDark } from 'survey-core/themes/plain-dark';
+import { PlainLight, PlainDark } from 'survey-core/themes';
 
 export function startAutoDataUpdate(
   model: Ref<SurveyModel | undefined>,
