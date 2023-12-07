@@ -1,10 +1,10 @@
-import { catchRequestAsync } from "@/utils/catchAsync";
-import ApiError from "@/utils/ApiError";
+import { catchRequestAsync } from "utils/catchAsync";
+import ApiError from "utils/ApiError";
 import httpStatus from "http-status";
-import { collection, resource } from "@/resources/resource";
-import { managerService, userService } from "@/services";
-import { campManagerResource } from "@/resources";
-import { routeModel } from "@/utils/verifyModel";
+import { collection, resource } from "resources/resource";
+import { managerService, userService } from "services";
+import { campManagerResource } from "resources";
+import { routeModel } from "utils/verifyModel";
 
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;

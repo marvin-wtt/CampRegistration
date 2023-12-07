@@ -1,5 +1,5 @@
 import Cron from "croner";
-import { fileService } from "@/services";
+import { fileService } from "services";
 
 export const deleteUnusedFiles = () => {
   const jobConfig = {

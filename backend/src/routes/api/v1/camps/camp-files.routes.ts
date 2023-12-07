@@ -1,11 +1,11 @@
-import { catchParamAsync } from "@/utils/catchAsync";
-import { routeModel, verifyModelExists } from "@/utils/verifyModel";
-import { fileService } from "@/services";
+import { catchParamAsync } from "utils/catchAsync";
+import { routeModel, verifyModelExists } from "utils/verifyModel";
+import { fileService } from "services";
 import express, { Request } from "express";
-import { auth, guard, multipart, validate } from "@/middlewares";
-import { campManager } from "@/guards";
-import { fileValidation } from "@/validations";
-import { fileController } from "@/controllers";
+import { auth, guard, multipart, validate } from "middlewares";
+import { campManager } from "guards";
+import { fileValidation } from "validations";
+import { fileController } from "controllers";
 
 const router = express.Router({ mergeParams: true });
 

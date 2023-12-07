@@ -11,8 +11,8 @@ import ApiError from "./utils/ApiError";
 import httpStatus from "http-status";
 import { anonymousStrategy, jwtStrategy } from "./config/passport";
 import cookieParser from "cookie-parser";
-import { initI18n } from "@/config/i18n";
-import { startJobs } from "@/jobs";
+import { initI18n } from "config/i18n";
+import { startJobs } from "jobs";
 
 // TODO https://expressjs.com/en/advanced/best-practice-security.html#use-tls
 

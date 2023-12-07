@@ -1,5 +1,5 @@
-import { removeExpiredTokens } from "@/jobs/tokens.job";
-import { deleteTemporaryFiles, deleteUnusedFiles } from "@/jobs/files.job";
+import { removeExpiredTokens } from "jobs/tokens.job";
+import { deleteTemporaryFiles, deleteUnusedFiles } from "jobs/files.job";
 import Cron from "croner";
 
 let jobs: Cron[] = [];

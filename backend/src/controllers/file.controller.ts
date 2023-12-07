@@ -1,11 +1,11 @@
-import { catchRequestAsync } from "@/utils/catchAsync";
-import { routeModel } from "@/utils/verifyModel";
-import { fileService } from "@/services";
+import { catchRequestAsync } from "utils/catchAsync";
+import { routeModel } from "utils/verifyModel";
+import { fileService } from "services";
 import httpStatus from "http-status";
-import ApiError from "@/utils/ApiError";
-import { collection, resource } from "@/resources/resource";
+import ApiError from "utils/ApiError";
+import { collection, resource } from "resources/resource";
 import { Request } from "express";
-import { fileResource } from "@/resources";
+import { fileResource } from "resources";
 import { File } from "@prisma/client";
 
 const show = catchRequestAsync(async (req, res) => {

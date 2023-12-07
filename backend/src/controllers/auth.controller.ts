@@ -1,14 +1,14 @@
 import httpStatus from "http-status";
-import { catchRequestAsync } from "@/utils/catchAsync";
-import { authService, userService, tokenService } from "@/services";
+import { catchRequestAsync } from "utils/catchAsync";
+import { authService, userService, tokenService } from "services";
 import { Request, Response } from "express";
-import { AuthTokensResponse } from "@/types/response";
-import config from "@/config";
-import { userCampResource, userDetailedResource } from "@/resources";
-import ApiError from "@/utils/ApiError";
-import managerService from "@/services/manager.service";
-import { requestLocale } from "@/utils/requestLocale";
-import { authUserId } from "@/utils/authUserId";
+import { AuthTokensResponse } from "types/response";
+import config from "config";
+import { userCampResource, userDetailedResource } from "resources";
+import ApiError from "utils/ApiError";
+import managerService from "services/manager.service";
+import { requestLocale } from "utils/requestLocale";
+import { authUserId } from "utils/authUserId";
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;

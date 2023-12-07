@@ -1,10 +1,10 @@
-import { catchRequestAsync } from "@/utils/catchAsync";
-import { tokenService, userService, authService } from "@/services";
-import ApiError from "@/utils/ApiError";
+import { catchRequestAsync } from "utils/catchAsync";
+import { tokenService, userService, authService } from "services";
+import ApiError from "utils/ApiError";
 import httpStatus from "http-status";
-import { authUserId } from "@/utils/authUserId";
-import { resource } from "@/resources/resource";
-import { userCampResource } from "@/resources";
+import { authUserId } from "utils/authUserId";
+import { resource } from "resources/resource";
+import { userCampResource } from "resources";
 
 const show = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);

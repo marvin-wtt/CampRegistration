@@ -1,11 +1,11 @@
 import express from "express";
-import { auth, guard, validate } from "@/middlewares";
-import { campManager } from "@/guards";
-import { routeModel, verifyModelExists } from "@/utils/verifyModel";
-import { catchParamAsync } from "@/utils/catchAsync";
-import { roomValidation } from "@/validations";
-import { roomService } from "@/services";
-import { roomController } from "@/controllers";
+import { auth, guard, validate } from "middlewares";
+import { campManager } from "guards";
+import { routeModel, verifyModelExists } from "utils/verifyModel";
+import { catchParamAsync } from "utils/catchAsync";
+import { roomValidation } from "validations";
+import { roomService } from "services";
+import { roomController } from "controllers";
 import bedRoutes from "./bed.routes";
 
 const router = express.Router({ mergeParams: true });

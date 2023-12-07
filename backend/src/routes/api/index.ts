@@ -1,6 +1,6 @@
 import express from "express";
 import v1routes from "./v1";
-import { generalLimiter } from "@/middlewares";
+import { generalLimiter } from "middlewares";
 import passport from "passport";
 
 const router = express.Router();

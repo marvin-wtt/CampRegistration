@@ -1,5 +1,5 @@
 import Cron from "croner";
-import { tokenService } from "@/services";
+import { tokenService } from "services";
 
 export const removeExpiredTokens = () => {
   const jobConfig = {

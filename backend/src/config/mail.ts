@@ -3,7 +3,7 @@ import config from "./index";
 import logger from "./logger";
 import hbs from "nodemailer-express-handlebars";
 import { create } from "express-handlebars";
-import i18n from "@/config/i18n";
+import i18n from "config/i18n";
 import path from "path";
 
 const transport = nodemailer.createTransport(config.email.smtp);

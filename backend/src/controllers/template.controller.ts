@@ -1,9 +1,9 @@
-import { catchRequestAsync } from "@/utils/catchAsync";
+import { catchRequestAsync } from "utils/catchAsync";
 import httpStatus from "http-status";
-import { collection, resource } from "@/resources/resource";
-import { templateService } from "@/services";
-import { templateResource } from "@/resources";
-import { routeModel } from "@/utils/verifyModel";
+import { collection, resource } from "resources/resource";
+import { templateService } from "services";
+import { templateResource } from "resources";
+import { routeModel } from "utils/verifyModel";
 
 const show = catchRequestAsync(async (req, res) => {
   const template = routeModel(req.models.template);

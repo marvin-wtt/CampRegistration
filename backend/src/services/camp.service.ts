@@ -1,7 +1,7 @@
 import { Camp, type Prisma } from "@prisma/client";
 import prisma from "../client";
-import { ulid } from "@/utils/ulid";
-import { registrationService } from "@/services/index";
+import { ulid } from "utils/ulid";
+import { registrationService } from "services/index";
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
   "id",
