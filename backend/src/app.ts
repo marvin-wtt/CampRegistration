@@ -7,12 +7,11 @@ import apiRoutes from "./routes/api";
 import config from "./config";
 import morgan from "./config/morgan";
 import { errorConverter, errorHandler } from "./middlewares";
-import ApiError from "./utils/ApiError";
-import httpStatus from "http-status";
 import { anonymousStrategy, jwtStrategy } from "./config/passport";
 import cookieParser from "cookie-parser";
 import { initI18n } from "config/i18n";
 import { startJobs } from "jobs";
+import path from "path";
 
 // TODO https://expressjs.com/en/advanced/best-practice-security.html#use-tls
 
@@ -59,10 +58,24 @@ initI18n();
 app.use("/api", apiRoutes);
 // static content
 app.use(express.static("public"));
+// Serve frontend content
+app.use(
+  express.static(
+    path.join(
+      __dirname,
+      "..",
+      "node_modules",
+      "@camp-registration",
+      "web",
+      "dist",
+      "spa",
+    ),
+  ),
+);
 
-// send back a 404 error for any unknown api request
-app.use((req, res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, "Not found"));
+// Redirect all requests to SPA
+app.use((req, res) => {
+  res.redirect("/");
 });
 
 // convert error to ApiError, if needed
