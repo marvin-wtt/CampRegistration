@@ -1,10 +1,11 @@
 import resetDb from "./reset-db";
 import { afterEach, afterAll, beforeEach } from "vitest";
 import fse from "fs-extra";
-import config from "config";
+import config from "../../src/config";
 import path from "path";
 import { resetMailServer, stopMailServer } from "./mail-server";
-import { store } from "middlewares/rateLimiter.middleware";
+import { store } from "../../src/middlewares/rateLimiter.middleware";
+import { stopJobs } from "../../src/jobs";
 
 beforeEach(async () => {
   await resetDb();
@@ -12,6 +13,7 @@ beforeEach(async () => {
   await resetRateLimiter();
   await clearDirectory(config.storage.tmpDir);
   await clearDirectory(config.storage.uploadDir);
+  stopJobs();
 });
 
 afterAll(async () => {

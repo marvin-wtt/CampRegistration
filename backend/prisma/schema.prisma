@@ -43,7 +43,7 @@ model Camp {
   /// [StringOrTranslation]
   name            Json           @db.Json
   /// [StringOrTranslation]
-  organization    Json           @db.Json
+  organizer       Json           @db.Json
   /// [StringOrTranslation]
   contactEmail    Json           @map("contact_email") @db.Json
   /// [NumberOrTranslation]

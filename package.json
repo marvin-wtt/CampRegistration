@@ -1,0 +1,19 @@
+{
+  "name": "camp-registration",
+  "version": "0.0.1",
+  "scripts": {
+    "depoly": "./post-deploy.sh"
+  },
+  "keywords": [],
+  "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marvin-wtt/CampRegistration"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}

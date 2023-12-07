@@ -3,7 +3,7 @@
     v-if="authenticated"
     flat
     icon="account_circle"
-    stretch
+    rounded
   >
     <q-menu>
       <q-list style="min-width: 100px">
@@ -118,7 +118,7 @@
     v-else
     :to="{ name: 'login' }"
     :label="t('login')"
-    stretch
+    rounded
     flat
   />
 </template>

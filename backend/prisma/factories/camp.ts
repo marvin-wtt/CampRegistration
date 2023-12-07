@@ -28,7 +28,7 @@ export const CampFactory = {
       active: faker.datatype.boolean(),
       countries: ["de"],
       name: faker.lorem.word(),
-      organization: faker.company.name(),
+      organizer: faker.company.name(),
       contactEmail: faker.internet.email(),
       maxParticipants: faker.number.int({ min: 1, max: 100 }),
       minAge,

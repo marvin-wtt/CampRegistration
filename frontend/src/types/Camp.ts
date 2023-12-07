@@ -8,7 +8,7 @@ export interface Camp extends Identifiable {
   active: boolean;
   countries: string[];
   name: Translatable;
-  organization: Translatable;
+  organizer: Translatable;
   contactEmail: Translatable;
   maxParticipants: Translatable<number>;
   startAt: string;

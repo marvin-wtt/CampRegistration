@@ -7,6 +7,7 @@
     emit-value
     map-options
     :multiple="multiple"
+    rounded
   >
     <template
       v-if="!multiple"

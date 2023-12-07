@@ -60,7 +60,7 @@ If the element contains translations, the translation for the current user local
 |-------------------|:----------:|-------------------------------------------------------|
 | camp.countries    |            | List of all countries                                 |
 | camp.name         |            | Name of the camp                                      |
-| camp.organization |     X      | Name of the organization                              |
+| camp.organizer    |     X      | Name of the organizer                                 |
 | camp.contactEmail |     X      | Email address of the responsible person               |
 | camp.startAt      |            | Timestamp of the camp start in UTC format             |
 | camp.startAtDate  |            | Date of the camp start formatted based on user locale |

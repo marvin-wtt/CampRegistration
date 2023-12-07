@@ -11,7 +11,7 @@ const run = (prisma: PrismaClient) => {
       public: true,
       active: true,
       countries: ["de", "fr"],
-      organization: {
+      organizer: {
         de: "Luftsportjugend des DAeC",
         fr: "Fédération Française d'Aérostation",
       },

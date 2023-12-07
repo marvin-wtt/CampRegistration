@@ -19,7 +19,7 @@ export const campCreateNational = {
   public: false,
   countries: ["de"],
   name: "Test Camp",
-  organization: "Test Org",
+  organizer: "Test Org",
   contactEmail: "test@example.com",
   maxParticipants: 10,
   minAge: 10,
@@ -37,7 +37,7 @@ export const campCreateInternational = {
     de: "Beispiel Camp",
     fr: "Exemple de camp",
   },
-  organization: {
+  organizer: {
     de: "Beispiel Organisation",
     fr: "Exemple d'organisation",
   },
@@ -164,12 +164,12 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     },
     expected: 400,
   },
-  // Organization
+  // Organizer
   {
     name: "Organization missing",
     data: {
       ...campCreateInternational,
-      organization: undefined,
+      organizer: undefined,
     },
     expected: 400,
   },
@@ -177,7 +177,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     name: "Organization invalid",
     data: {
       ...campCreateInternational,
-      organization: 10,
+      organizer: 10,
     },
     expected: 400,
   },
@@ -185,7 +185,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     name: "Organization missing translation",
     data: {
       ...campCreateInternational,
-      organization: {
+      organizer: {
         fr: "Exemple d'organisation",
       },
     },

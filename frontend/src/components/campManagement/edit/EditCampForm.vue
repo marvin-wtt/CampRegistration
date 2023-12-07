@@ -50,16 +50,15 @@
       </template>
     </translated-input>
 
-    <!-- organization -->
+    <!-- organizer -->
     <translated-input
-      v-model="data.organization"
+      v-model="data.organizer"
       :disable="loading"
-      :label="t('field.organization')"
+      :label="t('field.organizer')"
       :locales="data.countries"
       :rules="[
-        (val?: string) => !!val || t('validation.organization.empty'),
-        (val: string) =>
-          val.length <= 255 || t('validation.organization.length'),
+        (val?: string) => !!val || t('validation.organizer.empty'),
+        (val: string) => val.length <= 255 || t('validation.organizer.length'),
       ]"
       hide-bottom-space
       outlined
@@ -336,7 +335,7 @@ title:
 field:
   countries: 'Countries'
   name: 'Camp name'
-  organization: 'Organization / Provider / Club'
+  organizer: 'Organizer'
   contactEmail: 'Contact email'
   maxParticipants: 'Maximum number of participants'
   dateRange: 'Start and end date'
@@ -354,8 +353,8 @@ validation:
   name:
     empty: 'Please enter a camp name'
     length: 'Camp name must not exceed 255 characters'
-  organization:
-    empty: 'Please enter an organization'
+  organizer:
+    empty: 'Please enter the organizer'
   contactEmail:
     empty: 'Please enter an email address'
   maxParticipants:
@@ -397,7 +396,7 @@ title:
 field:
   countries: 'Länder'
   name: 'Camp Name'
-  organization: 'Organisation / Träger / Verein'
+  organizer: 'Veranstalter'
   contactEmail: 'Kontakt Email'
   maxParticipants: 'Maximale Teilnehmeranzahl'
   dateRange: 'Start- und Enddatum'
@@ -415,8 +414,8 @@ validation:
   name:
     empty: 'Bitte geben Sie einen Camp-Namen ein'
     length: 'Der Camp-Name darf maximal 255 Zeichen haben'
-  organization:
-    empty: 'Bitte geben Sie eine Organisation ein'
+  organizer:
+    empty: 'Bitte geben Sie ein Veranstalter an'
   contactEmail:
     empty: 'Bitte geben Sie eine Email Adresse an'
   maxParticipants:
@@ -458,7 +457,7 @@ title:
 field:
   countries: 'Pays'
   name: 'Nom du camp'
-  organization: 'Organisation / Fournisseur / Association'
+  organizer: 'Organisateur'
   contactEmail: 'Email de contact'
   maxParticipants: 'Nombre maximum de participants'
   dateRange: 'Date de début et de fin'
@@ -476,8 +475,8 @@ validation:
   name:
     empty: 'Veuillez entrer un nom de camp'
     length: 'Le nom du camp ne doit pas dépasser 255 caractères'
-  organization:
-    empty: 'Veuillez entrer un organisation'
+  organizer:
+    empty: "Veuillez entrer l'organisateur"
   contactEmail:
     empty: 'Veuillez entrer un email'
   maxParticipants:
