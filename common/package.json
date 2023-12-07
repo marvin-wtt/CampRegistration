@@ -13,6 +13,13 @@
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore"
   },
+  "exports":  {
+    "./form": "./dist/form/index.js",
+    "./form/*": {
+      "default": "./dist/form/*/*.js",
+      "types": "./dist/form/*/*.d.ts"
+    }
+  },
   "devDependencies": {
     "@types/node": "^20.8.6",
     "@typescript-eslint/eslint-plugin": "^6.11.0",

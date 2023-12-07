@@ -38,9 +38,9 @@ const store = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
 
   // TODO Set default form
-  const form = {};
+  const form = data.form ?? {};
   // TODO Set themes
-  const themes = {};
+  const themes = data.themes ?? {};
 
   const camp = await campService.createCamp(userId, {
     countries: data.countries,
