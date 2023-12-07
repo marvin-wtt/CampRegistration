@@ -1,4 +1,4 @@
-import Cron from "croner/types/croner";
+import Cron from "croner";
 import { fileService } from "services";
 
 export const deleteUnusedFiles = () => {
