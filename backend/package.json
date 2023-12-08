@@ -4,7 +4,7 @@
   "description": "An API for camp registrations",
   "main": "index.js",
   "scripts": {
-    "build": "prisma generate && tsc",
+    "build": "prisma generate && tsc && npm run build:views",
     "build:views": "mjml ./src/views/templates/emails/* -o ./src/views/emails/",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
