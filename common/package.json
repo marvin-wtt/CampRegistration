@@ -1,23 +1,34 @@
 {
   "name": "@camp-registration/common",
   "version": "0.0.1",
+  "private": true,
   "description": "Common utils for camp registration",
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marvin-wtt/CampRegistration",
+    "url": "git+https://github.com/marvin-wtt/CampRegistration.git",
     "directory": "common"
   },
+  "bugs": {
+    "url": "https://github.com/marvin-wtt/CampRegistration/issues"
+  },
+  "homepage": "https://github.com/marvin-wtt/CampRegistration#readme",
+  "license": "ISC",
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint --ext .js,.ts,.vue ./",
+    "build": "npm run build:esm && npm run build:node",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build:node": "tsc --project tsconfig.node.json",
+    "lint": "eslint --ext .js,.ts ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore"
   },
-  "exports":  {
-    "./form": "./dist/form/index.js",
-    "./form/*": {
-      "default": "./dist/form/*/*.js",
-      "types": "./dist/form/*/*.d.ts"
+  "exports": {
+    "./form": {
+      "node": "./dist/node/form/index.js",
+      "module": "./dist/esm/form/index.js"
+    },
+    "./form/variables": {
+      "node": "./dist/node/form/variables/variables.js",
+      "module": "./dist/esm/form/variables/variables.js"
     }
   },
   "devDependencies": {
