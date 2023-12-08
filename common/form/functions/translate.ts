@@ -6,7 +6,7 @@ const translate = (params: unknown[]): unknown => {
     return null;
   }
 
-  const value = params[0] as Record<string, unknown>;
+  const value = params[0] as Record<string, unknown> | string;
   if (typeof value === 'string') {
     return value;
   }
