@@ -10,6 +10,7 @@ const address: ICustomQuestionTypeConfiguration = {
       autocomplete: 'street-address',
       title: {
         de: 'Straße & Hausnummer',
+        en: 'Street & number',
         fr: 'Rue & Numéro',
       },
       isRequired: true,
@@ -20,6 +21,7 @@ const address: ICustomQuestionTypeConfiguration = {
       autocomplete: 'postal-code',
       title: {
         de: 'Postleitzahl',
+        en: 'Zip code',
         fr: 'Code Postal',
       },
       isRequired: true,
@@ -30,6 +32,7 @@ const address: ICustomQuestionTypeConfiguration = {
       autocomplete: 'address-level2',
       title: {
         de: 'Ort',
+        en: 'Place',
         fr: 'Lieu',
       },
       isRequired: true,
@@ -40,6 +43,7 @@ const address: ICustomQuestionTypeConfiguration = {
       name: 'country',
       title: {
         de: 'Land',
+        en: 'Country',
         fr: 'Pays',
       },
       isRequired: true,
