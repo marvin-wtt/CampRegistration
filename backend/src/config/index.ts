@@ -1,10 +1,8 @@
 import dotenv from "dotenv";
-import path from "path";
 import Joi from "joi";
 
 // This must happen before importing the individual configs
-
-dotenv.config({ path: path.join(process.cwd(), `.env.dev`) });
+dotenv.config();
 
 import authConfig from "./auth.config";
 import emailConfig from "./email.config";
