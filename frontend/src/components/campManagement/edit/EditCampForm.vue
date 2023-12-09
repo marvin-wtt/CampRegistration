@@ -243,8 +243,6 @@
     <q-toggle
       v-model="data.public"
       :label="t('field.public')"
-      :true-value="false"
-      :false-value="true"
     />
 
     <!-- action -->
