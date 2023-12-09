@@ -1,5 +1,6 @@
 import winston from "winston";
 import config from "./index";
+import path from "path";
 
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
@@ -21,6 +22,10 @@ const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
       stderrLevels: ["error"],
+    }),
+    new winston.transports.File({
+      filename: "app-log",
+      dirname: path.join(__dirname, "..", "logs"),
     }),
   ],
 });
