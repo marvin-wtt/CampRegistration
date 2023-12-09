@@ -17,7 +17,7 @@ const props = defineProps<Props>();
 
 const name = computed<string>(() => {
   const language = props.locale.split('-')[0].toLowerCase();
-  return `img:flags/${language}.svg`;
+  return `img:/flags/${language}.svg`;
 });
 </script>
 
