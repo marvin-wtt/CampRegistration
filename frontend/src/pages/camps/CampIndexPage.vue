@@ -6,9 +6,9 @@
   >
     <div
       v-if="!loading && filteredCamps.length === 0"
-      class="class=&quot;absolute fit row justify-center&quot;"
+      class="absolute fit row justify-center"
     >
-      <div class="text-center self-center text-h1">
+      <div class="text-center self-center text-h4">
         {{ t('no_data') }}
       </div>
     </div>
@@ -52,7 +52,7 @@ const campsStore = useCampsStore();
 campsStore.fetchData();
 
 const filteredCamps = computed<Camp[]>(() => {
-  return campsStore.data ?? [];
+  return [];
 });
 
 const error = computed(() => {
@@ -65,11 +65,11 @@ const loading = computed<boolean>(() => {
 </script>
 
 <i18n lang="yaml" locale="en">
-no_data: 'No camps found'
+no_data: 'No camps found matching your criteria.'
 </i18n>
 <i18n lang="yaml" locale="de">
-no_data: 'Keine Camps gefunden'
+no_data: 'Keine Camps gefunden, die diesen Kriterien entsprechen.'
 </i18n>
 <i18n lang="yaml" locale="fr">
-no_data: "Aucun camp n'a été trouvé"
+no_data: "Aucun camp correspondant à ces critères n'a été trouvé."
 </i18n>
