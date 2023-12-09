@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf ./build/ && rm -rf ./node_modules/",
-    "build": "prisma generate && tsc && npm run build:views",
+    "build": "prisma generate && tsc && tsc-alias && npm run build:views",
     "build:views": "mjml ./src/views/templates/emails/* -o ./src/views/emails/",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
@@ -20,7 +20,7 @@
     "db:studio": "prisma studio",
     "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
     "dev": "dotenv -e env.dev cross-env NODE_PATH=./src NODE_ENV=development nodemon src/index.ts",
-    "production": "cross-env NODE_PATH=./build NODE_ENV=development node build/index.js"
+    "production": "cross-env NODE_ENV=development node build/index.js"
   },
   "prisma": {
     "seed": "ts-node prisma/seeders/index.ts"
@@ -110,6 +110,7 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.8",
     "typescript": "5.3",
     "vitest": "^1.0.1",
     "vitest-mock-extended": "^1.1.3"
