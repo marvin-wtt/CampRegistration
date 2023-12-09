@@ -8,6 +8,7 @@
     "build:views": "mjml ./src/views/templates/emails/* -o ./src/views/emails/",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
+    "db:migrate": "prisma migrate deploy",
     "test:int": "./scripts/run-integration.sh",
     "test:int:ui": "./scripts/run-integration.sh --ui",
     "lint": "eslint src",
