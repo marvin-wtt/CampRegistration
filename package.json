@@ -12,6 +12,11 @@
     "type": "git",
     "url": "https://github.com/marvin-wtt/CampRegistration"
   },
+  "workspaces": [
+    "common",
+    "frontend",
+    "backend"
+  ],
   "dependencies": {
   },
   "devDependencies": {
