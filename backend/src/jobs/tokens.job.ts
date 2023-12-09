@@ -1,12 +1,7 @@
-import Cron from "croner";
 import { tokenService } from "services";
+import logger from "config/logger";
 
-export const removeExpiredTokens = () => {
-  const jobConfig = {
-    name: "token-removal-jpb",
-  };
-
-  return Cron("0 3 * * *", jobConfig, async () => {
-    await tokenService.deleteExpiredTokens();
-  });
+export const removeExpiredTokens = async () => {
+  const result = await tokenService.deleteExpiredTokens();
+  logger.info(`Removed ${result.count} tokens.`);
 };

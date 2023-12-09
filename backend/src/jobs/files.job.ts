@@ -1,22 +1,12 @@
-import Cron from "croner";
 import { fileService } from "services";
+import logger from "config/logger";
 
-export const deleteUnusedFiles = () => {
-  const jobConfig = {
-    name: "file-deletion-job",
-  };
-
-  return Cron("0 4 * * *", jobConfig, async () => {
-    await fileService.deleteUnreferencedFiles();
-  });
+export const deleteUnusedFiles = async () => {
+  const fileCount = await fileService.deleteUnreferencedFiles();
+  logger.info(`Deleted ${fileCount} unused files from disk`);
 };
 
-export const deleteTemporaryFiles = () => {
-  const jobConfig = {
-    name: "tmp-file-deletion-job",
-  };
-
-  return Cron("30 3 * * *", jobConfig, async () => {
-    await fileService.deleteTempFiles();
-  });
+export const deleteTemporaryFiles = async () => {
+  const fileCount = await fileService.deleteTempFiles();
+  logger.info(`Deleted ${fileCount} unused temporary files from disk`);
 };
