@@ -70,7 +70,8 @@
     "qs": "^6.11.2",
     "survey-core": "^1.9.119",
     "ulidx": "^2.0.0",
-    "winston": "^3.9.0"
+    "winston": "^3.9.0",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",

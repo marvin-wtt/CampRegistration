@@ -46,6 +46,9 @@ app.use(
 );
 app.options("*", cors());
 
+// use forwarded ip address from reverse proxy - required for throttling and logging
+app.enable("trust proxy");
+
 // authentication
 app.use(passport.initialize());
 passport.use(jwtStrategy);
