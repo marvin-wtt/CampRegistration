@@ -21,6 +21,9 @@ const sendEmail = (options: Options) => {
   const { from } = config.email;
   const appName = t("app-name");
 
+  // Remove duplicate emails
+  options = removeDuplicateEmails(options);
+
   options.from = {
     name: appName,
     address: from,
@@ -36,6 +39,85 @@ const sendEmail = (options: Options) => {
   });
 };
 
+type Address = Mail.Address;
+type Emails = string | Address | (string | Address)[] | undefined;
+
+/**
+ * Filter for unique emails across all fields.
+ * If an emails is unique, the original address or email is kept.
+ * If an emails is not unique, only the first occurrence is used.
+ * If it is an address in this case, the address is converted into a string.
+ * The emails are in the following priority: to -> cc -> bcc
+ * @param options The mail options
+ * @return The mails options with unique recipients
+ */
+const removeDuplicateEmails = (options: Options): Options => {
+  type LookupMap = Record<string, true>;
+  const extractEmail = (item: string | Address) =>
+    typeof item === "string" ? item : item.address;
+
+  const collectEmails = (...fields: Emails[]) => {
+    return fields
+      .filter((field): field is Exclude<Emails, undefined> => !!field)
+      .flatMap((field) => (Array.isArray(field) ? field : [field]))
+      .map(extractEmail)
+      .reduce((acc, email) => {
+        acc[email] = true;
+        return acc;
+      }, {} as LookupMap);
+  };
+
+  // Collect all
+  const allEmails: LookupMap = collectEmails(
+    options.to,
+    options.cc,
+    options.bcc,
+  );
+
+  const uniqueEmails: LookupMap = {};
+  const removeDuplicates = (field: Emails): Emails => {
+    if (!field) {
+      return undefined;
+    }
+    const filterDuplicates = (
+      value: string | Address,
+    ): string | Address | undefined => {
+      const email = extractEmail(value);
+      if (!email || uniqueEmails[email]) {
+        return undefined;
+      }
+
+      if (allEmails[email]) {
+        uniqueEmails[email] = true;
+        return email;
+      }
+
+      return value;
+    };
+
+    if (Array.isArray(field)) {
+      return field
+        .map(filterDuplicates)
+        .filter((value): value is string | Address => !!value);
+    }
+
+    return filterDuplicates(field);
+  };
+
+  return {
+    ...options,
+    to: removeDuplicates(options.to),
+    cc: removeDuplicates(options.cc),
+    bcc: removeDuplicates(options.bcc),
+  } as Options;
+};
+
+/**
+ * Generates a URL with the given path and query parameters.
+ * @param {string} path - The path of the URL.
+ * @param {Record<string, string>} params - The query parameters as key-value pairs.
+ * @returns {string} - The generated URL.
+ */
 const generateUrl = (
   path: string,
   params: Record<string, string> = {},

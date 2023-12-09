@@ -194,11 +194,11 @@ const generateFileName = (originalName: string): string => {
   return `${fileName}.${fileExtension}`;
 };
 
-const deleteUnreferencedFiles = async () => {
+const deleteUnreferencedFiles = async (): Promise<number> => {
   const { uploadDir, location } = config.storage;
 
   if (location !== "local") {
-    return;
+    return 0;
   }
 
   const fileNames = await fse.readdir(uploadDir);
@@ -222,6 +222,8 @@ const deleteUnreferencedFiles = async () => {
       return fse.unlink(filePath);
     }),
   );
+
+  return filesToDelete.length;
 };
 
 const deleteTempFiles = async () => {
@@ -236,6 +238,8 @@ const deleteTempFiles = async () => {
       return deleteOldFiles(filePath, currentTime);
     }),
   );
+
+  return fileNames.length;
 };
 
 const deleteOldFiles = async (filePath: string, currentTime: number) => {

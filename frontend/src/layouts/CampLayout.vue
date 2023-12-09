@@ -19,6 +19,7 @@
         <q-btn
           :label="t('create')"
           :to="{ name: 'management' }"
+          class="desktop-only"
           flat
           rounded
         />
