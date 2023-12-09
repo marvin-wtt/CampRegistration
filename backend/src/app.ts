@@ -59,18 +59,9 @@ app.use("/api", apiRoutes);
 // static content
 app.use(express.static("public"));
 // Serve frontend content
+// TODO Is there a better way to load the files?
 app.use(
-  express.static(
-    path.join(
-      __dirname,
-      "..",
-      "node_modules",
-      "@camp-registration",
-      "web",
-      "dist",
-      "spa",
-    ),
-  ),
+  express.static(path.join(__dirname, "..", "..", "frontend", "dist", "spa")),
 );
 
 // Redirect all requests to SPA
