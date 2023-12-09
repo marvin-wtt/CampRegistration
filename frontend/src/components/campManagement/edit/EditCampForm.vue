@@ -107,7 +107,7 @@
       <time-input
         v-model="data.startAt"
         :disable="loading"
-        :label="t('field.endTime')"
+        :label="t('field.startTime')"
         :rules="[(val?: string) => !!val || t('validation.startAt.empty')]"
         class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-xl-6"
         hide-bottom-space
@@ -313,7 +313,7 @@ const submitLabel = computed<string>(() => {
 
 function initialValue(): Partial<Camp> {
   const camp = structuredClone(toRaw(props.modelValue));
-  camp.public = camp.public ?? true;
+  camp.public = camp.public ?? false;
   return camp;
 }
 
@@ -345,7 +345,7 @@ field:
   maxAge: 'Maximum age'
   location: 'Location'
   price: 'Price'
-  public: 'Enable access via link only, if enabled'
+  public: 'Show camp on main page'
 
 validation:
   countries:
@@ -397,7 +397,7 @@ field:
   countries: 'Länder'
   name: 'Camp Name'
   organizer: 'Veranstalter'
-  contactEmail: 'Kontakt Email'
+  contactEmail: 'Kontakt-Email'
   maxParticipants: 'Maximale Teilnehmeranzahl'
   dateRange: 'Start- und Enddatum'
   startTime: 'Startzeit'
@@ -406,7 +406,7 @@ field:
   maxAge: 'Maximalalter'
   location: 'Ort'
   price: 'Preis'
-  public: 'Zugriff nur über Link ermöglichen, wenn aktiviert'
+  public: 'Camp auf Startseite anzeigen'
 
 validation:
   countries:
@@ -467,7 +467,7 @@ field:
   maxAge: 'Âge maximum'
   location: 'Emplacement'
   price: 'Prix'
-  public: "Autoriser l'accès uniquement via un lien, si activé"
+  public: "Afficher le camp sur la page d'accueil"
 
 validation:
   countries:
