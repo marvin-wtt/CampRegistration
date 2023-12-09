@@ -106,12 +106,14 @@ const inputValue = computed<string | undefined>({
   },
   set: (val) => {
     const dates = val?.split('-');
-    if (dates.length != 2) {
+    if (!dates || dates.length != 2) {
       return;
     }
 
-    modelValue.value.from = dates[0];
-    modelValue.value.to = dates[1];
+    if (modelValue.value) {
+      modelValue.value.from = dates[0];
+      modelValue.value.to = dates[1];
+    }
   },
 });
 
