@@ -20,7 +20,7 @@
     "db:studio": "prisma studio",
     "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
     "dev": "dotenv -e env.dev cross-env NODE_PATH=./src NODE_ENV=development nodemon src/index.ts",
-    "prod": "dotenv -e env.dev cross-env NODE_PATH=./build NODE_ENV=development node build/index.js"
+    "production": "cross-env NODE_PATH=./build NODE_ENV=development node build/index.js"
   },
   "prisma": {
     "seed": "ts-node prisma/seeders/index.ts"
