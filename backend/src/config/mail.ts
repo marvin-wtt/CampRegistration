@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer, { SendMailOptions } from "nodemailer";
 import config from "./index";
 import logger from "./logger";
 import hbs from "nodemailer-express-handlebars";
@@ -6,7 +6,30 @@ import { create } from "express-handlebars";
 import i18n from "config/i18n";
 import path from "path";
 
-const transport = nodemailer.createTransport(config.email.smtp);
+const transportOptions = () => {
+  const mailOptions: SendMailOptions = {
+    from: config.email.from,
+    replyTo: config.email.replyTo,
+  };
+
+  // SMTP
+  if (config.email.smtp.host) {
+    return {
+      ...config.email.smtp,
+      ...mailOptions,
+    };
+  }
+
+  // Sendmail
+  return {
+    sendmail: true,
+    newline: "unix",
+    ...mailOptions,
+  };
+};
+
+const transport = nodemailer.createTransport(transportOptions());
+
 /* c8 ignore next 10 */
 if (config.env !== "test") {
   transport
