@@ -41,7 +41,10 @@ const logger = winston.createLogger({
     enumerateErrorFormat(),
     isDevEnv ? winston.format.colorize() : winston.format.uncolorize(),
     winston.format.splat(),
-    winston.format.printf(({ level, message }) => `${level}: ${message}`),
+    winston.format.timestamp(),
+    winston.format.printf(
+      ({ level, message, timestamp }) => `${timestamp} ${level}: ${message}`,
+    ),
   ),
   transports: [consoleTransport, fileTransport, fileErrorTransport],
 });
