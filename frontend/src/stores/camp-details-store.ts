@@ -59,7 +59,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
   async function updateData(
     newData: Partial<Camp>,
     notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress',
-  ) {
+  ): Promise<Camp | undefined> {
     const campId =
       newData.id ?? data.value?.id ?? (route.params.camp as string);
 
@@ -67,12 +67,14 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
     const newDataWithoutId = omitProperty(newData, 'id');
 
-    await handlerByType(notificationType)('update', async () => {
+    return handlerByType<Camp>(notificationType)('update', async () => {
       const updatedCamp = await api.updateCamp(campId, newDataWithoutId);
 
       // Replace element
       data.value = updatedCamp;
       bus.emit('update', updatedCamp);
+
+      return updatedCamp;
     });
   }
 

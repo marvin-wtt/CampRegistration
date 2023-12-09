@@ -29,24 +29,33 @@ export const useCampsStore = defineStore('camps', () => {
     return lazyFetch(async () => await apiService.fetchCamps());
   }
 
-  async function createEntry(createData: CampCreateData): Promise<void> {
-    await withProgressNotification('update', async () => {
+  async function createEntry(
+    createData: CampCreateData,
+  ): Promise<Camp | undefined> {
+    return withProgressNotification('update', async () => {
       const newCamp = await apiService.createCamp(createData);
 
       await forceFetch(async () => await apiService.fetchCamps());
 
       bus.emit('create', newCamp);
+
+      return newCamp;
     });
   }
 
-  async function updateEntry(id: string, updateData: Partial<Camp>) {
+  async function updateEntry(
+    id: string,
+    updateData: Partial<Camp>,
+  ): Promise<Camp | undefined> {
     checkNotNullWithNotification(id);
-    await withProgressNotification('update', async () => {
+    return withProgressNotification('update', async () => {
       const updatedCamp = await apiService.updateCamp(id, updateData);
 
       await forceFetch(async () => await apiService.fetchCamps());
 
       bus.emit('update', updatedCamp);
+
+      return updatedCamp;
     });
   }
 

@@ -35,7 +35,11 @@ async function onSubmit() {
     pages: [],
   };
 
-  await campsStore.createEntry(data.value as Camp);
+  const camp = await campsStore.createEntry(data.value as Camp);
+
+  if (!camp) {
+    return;
+  }
 
   return router.push({
     name: 'management',

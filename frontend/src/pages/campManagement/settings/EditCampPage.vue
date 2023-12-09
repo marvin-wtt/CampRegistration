@@ -47,7 +47,11 @@ async function onSubmit() {
     return;
   }
 
-  await campStore.updateData(value);
+  const newCamp = await campStore.updateData(value);
+
+  if (!newCamp) {
+    return;
+  }
 
   return router.push({
     name: 'dashboard',
