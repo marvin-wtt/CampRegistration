@@ -1,7 +1,7 @@
 import { SurveyModel } from "survey-core";
 import { setVariables } from "@camp-registration/common/form/variables";
-import "./formRegistration";
-import { Camp } from "@prisma/client"; // TODO Why can't I just import the common package here???
+import "@camp-registration/common/form";
+import { Camp } from "@prisma/client";
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
