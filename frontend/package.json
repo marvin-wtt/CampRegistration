@@ -11,6 +11,7 @@
     "directory": "frontend"
   },
   "scripts": {
+    "clean": "rm -rf ./dist/ && rm -rf ./node_modules/",
     "dev": "quasar dev",
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
