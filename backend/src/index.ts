@@ -16,6 +16,7 @@ const exitHandler = () => {
   if (server) {
     server.close(() => {
       logger.info("Server closed");
+      logger.close();
       process.exit(1);
     });
   } else {
