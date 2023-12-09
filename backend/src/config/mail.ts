@@ -25,6 +25,7 @@ const transportOptions = () => {
     sendmail: true,
     newline: "unix",
     ...mailOptions,
+    smtp: undefined,
   };
 };
 
