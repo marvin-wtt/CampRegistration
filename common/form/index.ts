@@ -9,19 +9,30 @@ import {
 } from './functions';
 import { campDataType } from './property';
 
-ComponentCollection.Instance.add(address);
-ComponentCollection.Instance.add(country);
-ComponentCollection.Instance.add(dateOfBirth);
-ComponentCollection.Instance.add(role);
+let initiated = false;
 
-FunctionFactory.Instance.register('translate', translate, false);
-FunctionFactory.Instance.register('t', translate, false);
-FunctionFactory.Instance.register('isMinor', isMinor, false);
-FunctionFactory.Instance.register('isAdult', isAdult, false);
-FunctionFactory.Instance.register('subtractYears', subtractYears, false);
-FunctionFactory.Instance.register('htmlDate', htmlDate, false);
+const init = () => {
+  ComponentCollection.Instance.add(address);
+  ComponentCollection.Instance.add(country);
+  ComponentCollection.Instance.add(dateOfBirth);
+  ComponentCollection.Instance.add(role);
 
-Serializer.addProperty('question', campDataType);
+  FunctionFactory.Instance.register('translate', translate, false);
+  FunctionFactory.Instance.register('t', translate, false);
+  FunctionFactory.Instance.register('isMinor', isMinor, false);
+  FunctionFactory.Instance.register('isAdult', isAdult, false);
+  FunctionFactory.Instance.register('subtractYears', subtractYears, false);
+  FunctionFactory.Instance.register('htmlDate', htmlDate, false);
 
-Serializer.getProperty('file', 'storeDataAsText').visible = false;
-Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
+  Serializer.addProperty('question', campDataType);
+
+  Serializer.getProperty('file', 'storeDataAsText').visible = false;
+  Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
+
+  initiated = true;
+}
+
+if (!initiated) {
+  init();
+}
+
