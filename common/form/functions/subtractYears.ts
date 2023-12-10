@@ -1,6 +1,6 @@
-const subtractYears = (params: unknown[]): Date | string => {
+const subtractYears = (params: unknown[]): Date | null => {
   if (params.length !== 2) {
-    return 'Error';
+    return null;
   }
 
   let date = params[0];
@@ -11,11 +11,11 @@ const subtractYears = (params: unknown[]): Date | string => {
 
   const years = params[1];
   if (typeof years !== 'number') {
-    return 'Error';
+    return null;
   }
 
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    return 'Error';
+    return null;
   }
 
   const newDate = new Date(date);

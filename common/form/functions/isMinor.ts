@@ -4,7 +4,7 @@ const isMinor = (params: unknown[]) => {
   }
 
   if (typeof params[0] !== 'string' || typeof params[1] !== 'string') {
-    return 'Error';
+    return null;
   }
 
   const birthdate = new Date(params[0]);
