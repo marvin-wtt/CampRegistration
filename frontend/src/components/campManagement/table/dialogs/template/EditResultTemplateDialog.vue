@@ -290,13 +290,13 @@ fields:
     label: 'Filter row by'
     hint: 'Expression when to show a row'
   filter_participants:
-    label: 'Filter normal registrations'
+    label: 'Hide normal registrations'
     hint: ''
   filter_waiting_list:
-    label: 'Filter registrations on waiting list'
+    label: 'Hide registrations on waiting list'
     hint: ''
   filter_counselors:
-    label: 'Filter camp counselors registrations'
+    label: 'Hide camp counselors registrations'
     hint: ''
 </i18n>
 
@@ -329,13 +329,13 @@ fields:
     label: 'Zeile filtern nach'
     hint: 'Ausdruck, wann eine Zeile angezeigt werden soll'
   filter_participants:
-    label: 'Normale Anmeldungen filtern'
+    label: 'Normale Anmeldungen ausblenden'
     hint: ''
   filter_waiting_list:
-    label: 'Anmeldungen auf Warteliste filtern'
+    label: 'Anmeldungen auf Warteliste ausblenden'
     hint: ''
-  filter_counselor:
-    label: 'Anmeldungen von Lagerleitern filtern'
+  filter_counselors:
+    label: 'Anmeldungen von Lagerleitern ausblenden'
     hint: ''
 </i18n>
 
@@ -368,12 +368,12 @@ fields:
     label: 'Filtrer la ligne par'
     hint: 'Expression indiquant quand afficher une ligne'
   filter_participants:
-    label: 'Filtrer les inscriptions normales'
+    label: 'Masquer les inscriptions normales'
     hint: ''
   filter_waiting_list:
-    label: 'Filtrer les inscriptions en liste d’attente'
+    label: 'Masquer les inscriptions en liste d’attente'
     hint: ''
-  filter_counselor:
-    label: 'Filtrer les inscriptions de chefs de camp'
+  filter_counselors:
+    label: 'Masquer les inscriptions de chefs de camp'
     hint: ''
 </i18n>
