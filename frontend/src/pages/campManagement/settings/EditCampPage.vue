@@ -50,6 +50,7 @@ async function onSubmit() {
   const newCamp = await campStore.updateData(value);
 
   if (!newCamp) {
+    loading.value = false;
     return;
   }
 

@@ -38,6 +38,7 @@ async function onSubmit() {
   const camp = await campsStore.createEntry(data.value as Camp);
 
   if (!camp) {
+    loading.value = false;
     return;
   }
 
