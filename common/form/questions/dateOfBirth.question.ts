@@ -11,7 +11,7 @@ const dateOfBirth: ICustomQuestionTypeConfiguration = {
     maxValueExpression:
       'htmlDate(subtractYears({camp.startAt}, {camp.minAge}))',
     minErrorText: {
-      de: 'Das maximale Alter für dieses Camp is {camp.maxAge} Jahre',
+      de: 'Das maximale Alter für dieses Camp ist {camp.maxAge} Jahre',
       en: 'The maximum age for this camp is {camp.maxAge} years',
       fr: "L'âge maximum pour ce camp est de {camp.maxAge} ans.",
     },
