@@ -39,7 +39,9 @@ const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
 const { data: campData } = storeToRefs(campDetailsStore);
 
-const markdownConverter = new showdown.Converter();
+const markdownConverter = new showdown.Converter({
+  openLinksInNewWindow: true,
+});
 const filesStorage: FileStorage = new Map<string, File>();
 
 useMeta(() => {
