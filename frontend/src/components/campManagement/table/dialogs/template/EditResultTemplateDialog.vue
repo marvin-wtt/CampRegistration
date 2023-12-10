@@ -224,6 +224,7 @@ function addColumn(): void {
     name: 'column_' + template.columns.length,
     label: 'label ' + template.columns.length,
     field: '',
+    renderAs: 'default',
   };
 
   quasar
