@@ -58,8 +58,8 @@ const components = () => {
   TableComponentRegistry.register('email', EmailTableCell, {
     label: {
       en: 'Email',
-      de: 'E-mail',
-      fr: 'E-mail',
+      de: 'E-Mail',
+      fr: 'E-Mail',
     },
     edit: {
       type: 'text',
@@ -176,8 +176,8 @@ const components = () => {
   TableComponentRegistry.register('time_ago', TimeAgoTableCell, {
     label: {
       en: 'Time Ago',
-      de: 'Vor',
-      fr: 'Avant',
+      de: 'Vor (Zeit)',
+      fr: 'Avant (Temps)',
     },
   });
   TableComponentRegistry.register(

@@ -379,7 +379,7 @@ fields:
     hint: 'Richtung zur Ausrichtung des Zellinhalts'
     options:
       left: 'Links'
-      right: 'Rechnts'
+      right: 'Rechts'
       center: 'Mitte'
   renderAs:
     label: 'Darstellen als'
