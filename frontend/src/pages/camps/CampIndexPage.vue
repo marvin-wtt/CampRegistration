@@ -52,7 +52,7 @@ const campsStore = useCampsStore();
 campsStore.fetchData();
 
 const filteredCamps = computed<Camp[]>(() => {
-  return [];
+  return campsStore.data ?? [];
 });
 
 const error = computed(() => {
