@@ -10,6 +10,7 @@
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
     "db:migrate": "prisma migrate deploy",
+    "test": "npm run test:int",
     "test:int": "./scripts/run-integration.sh",
     "test:int:ui": "./scripts/run-integration.sh --ui",
     "lint": "eslint src",
