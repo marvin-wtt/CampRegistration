@@ -1,4 +1,22 @@
-export { default as address } from './address.question';
-export { default as country } from './country.question';
-export { default as dateOfBirth } from './dateOfBirth.question';
-export { default as role } from './role.question';
+
+import address from './address.question';
+import country from './country.question';
+import dateOfBirth from './dateOfBirth.question';
+import role from './role.question';
+
+const questions = [
+  address,
+  country,
+  dateOfBirth,
+  role
+]
+
+export {
+  address,
+  country,
+  dateOfBirth,
+  role,
+  questions
+}
+
+export default questions;

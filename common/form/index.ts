@@ -1,38 +1,37 @@
 import { ComponentCollection, FunctionFactory, Serializer } from 'survey-core';
-import { address, country, dateOfBirth, role } from './questions';
-import {
-  htmlDate,
-  isAdult,
-  isMinor,
-  subtractYears,
-  translate,
-} from './functions';
-import { campDataType } from './property';
+import questions from './questions';
+import functions from './functions';
+import properties from './properties';
 
 let initiated = false;
 
-const init = () => {
-  ComponentCollection.Instance.add(address);
-  ComponentCollection.Instance.add(country);
-  ComponentCollection.Instance.add(dateOfBirth);
-  ComponentCollection.Instance.add(role);
+export const init = (
+  componentCollectionInstance: typeof ComponentCollection.Instance,
+  functionFactoryInstance: typeof FunctionFactory.Instance,
+  serializer: typeof Serializer,
+) => {
+  for (const component of questions) {
+    componentCollectionInstance.remove(component.name);
+    componentCollectionInstance.add(component);
+  }
 
-  FunctionFactory.Instance.register('translate', translate, false);
-  FunctionFactory.Instance.register('t', translate, false);
-  FunctionFactory.Instance.register('isMinor', isMinor, false);
-  FunctionFactory.Instance.register('isAdult', isAdult, false);
-  FunctionFactory.Instance.register('subtractYears', subtractYears, false);
-  FunctionFactory.Instance.register('htmlDate', htmlDate, false);
+  for (const fn of functions) {
+    functionFactoryInstance.unregister(fn.name);
+    functionFactoryInstance.register(fn.name, fn.func, fn.isAsync);
+  }
 
-  Serializer.addProperty('question', campDataType);
+  for (const property of properties) {
+    serializer.removeProperty(property.className, property.propertyInfo.name);
+    serializer.addProperty(property.className, property.propertyInfo);
+  }
 
-  Serializer.getProperty('file', 'storeDataAsText').visible = false;
-  Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
+  serializer.getProperty('file', 'storeDataAsText').visible = false;
+  serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
   initiated = true;
 }
 
 if (!initiated) {
-  init();
+  init(ComponentCollection.Instance, FunctionFactory.Instance, Serializer);
 }
 

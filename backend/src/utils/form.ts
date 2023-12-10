@@ -1,11 +1,13 @@
 import { SurveyModel } from "survey-core";
 import { setVariables } from "@camp-registration/common/form/variables";
-import "@camp-registration/common/form";
+import { initSurveyJS } from "./surveyJS";
 import { Camp } from "@prisma/client";
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
 type FormFile = Pick<File, "name" | "type" | "size">;
+
+initSurveyJS();
 
 export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
