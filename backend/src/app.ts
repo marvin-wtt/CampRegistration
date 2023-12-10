@@ -63,13 +63,12 @@ app.use("/api", apiRoutes);
 app.use(express.static("public"));
 // Serve frontend content
 // TODO Is there a better way to load the files?
-app.use(
-  express.static(path.join(__dirname, "..", "..", "frontend", "dist", "spa")),
-);
+const spaPath = path.join(__dirname, "..", "..", "frontend", "dist", "spa");
+app.use(express.static(spaPath));
 
-// Redirect all requests to SPA
-app.use((req, res) => {
-  res.redirect("/");
+// Respond all other get requests with frontend content
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(spaPath, "index.html"));
 });
 
 // convert error to ApiError, if needed
