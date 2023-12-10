@@ -56,10 +56,10 @@
           @click="toggleDarkMode"
         >
           <q-item-section avatar>
-            <q-icon name="dark_mode" />
+            <q-icon :name="darkMode ? 'light_mode' : 'dark_mode'" />
           </q-item-section>
           <q-item-section>
-            {{ t('dark_mode') }}
+            {{ t(darkMode ? 'light_mode' : 'dark_mode') }}
           </q-item-section>
         </q-item>
 
@@ -153,6 +153,10 @@ const authenticated = computed<boolean>(() => {
   return authStore.user !== undefined;
 });
 
+const darkMode = computed<boolean>(() => {
+  return quasar.dark.isActive;
+});
+
 function goToCamps() {
   router.push({
     name: 'management',
@@ -177,6 +181,7 @@ function logout() {
 <i18n lang="yaml" locale="en">
 username: 'Signed in as'
 camps: 'My camps'
+light_mode: 'Light Mode'
 login: 'Login'
 logout: 'Sing out'
 profile: 'Profile'
@@ -187,6 +192,7 @@ dark_mode: 'Dark Mode'
 <i18n lang="yaml" locale="de">
 username: 'Angemeldet als'
 camps: 'Meine Camps'
+light_mode: 'Hellmodus'
 login: 'Anmelden'
 logout: 'Abmelden'
 profile: 'Profil'
@@ -197,6 +203,7 @@ dark_mode: 'Dunkelmodus'
 <i18n lang="yaml" locale="fr">
 username: 'Connecté en tant que'
 camps: 'Mes camps'
+light_mode: 'Mode lumineux'
 login: 'Connexion'
 logout: 'Déconnexion'
 profile: 'Profil'
