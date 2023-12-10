@@ -165,7 +165,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent, useQuasar } from 'quasar';
+import { QSelectOption, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';

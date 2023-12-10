@@ -175,7 +175,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref, toRaw } from 'vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
@@ -235,11 +235,6 @@ const alignOptions = computed(() => {
   ];
 });
 
-interface SelectOption {
-  label: string;
-  value: string;
-}
-
 const renderOptions = computed<BaseComponent[] | undefined>(() => {
   if (!column.renderAs) {
     return undefined;
@@ -250,7 +245,7 @@ const renderOptions = computed<BaseComponent[] | undefined>(() => {
   return renderer?.options.customOptions;
 });
 
-const renderAsOptions = computed<SelectOption[]>(() => {
+const renderAsOptions = computed<QSelectOption[]>(() => {
   return Array.from(ComponentRegistry.all().entries(), ([key, value]) => {
     const options = value.options;
     if (options.internal) {
@@ -261,10 +256,7 @@ const renderAsOptions = computed<SelectOption[]>(() => {
       label: to(options.label) || key,
       value: key,
     };
-  }).filter((value) => value !== undefined) as {
-    label: string;
-    value: string;
-  }[];
+  }).filter((value): value is QSelectOption => !!value);
 });
 
 const fieldOptions = computed(() => {
