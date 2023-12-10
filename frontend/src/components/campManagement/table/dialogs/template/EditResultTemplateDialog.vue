@@ -205,9 +205,9 @@ const template = reactive<TableTemplate>(
 const sortByOptions = computed(() => {
   return template.columns.map((value) => {
     return {
-      value: value.name,
       label: value.label,
-    };
+      value: value.name,
+    } as QSelectOption;
   });
 });
 
