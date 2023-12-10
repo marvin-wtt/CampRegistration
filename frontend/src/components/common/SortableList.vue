@@ -125,7 +125,6 @@ function deleteItem(item: T) {
   const index = modelValue.value.indexOf(item);
   modelValue.value.splice(index, 1);
 
-  // Update order of all items
   // This is more robust against errors than only updating the following items
   updateOrder();
 }
@@ -140,19 +139,13 @@ function orderUpwards(item: T) {
     return;
   }
   const previous = modelValue.value[index - 1];
-  if (!('order' in item) || !('order' in previous)) {
-    return;
-  }
-
-  const previousOrder = previous.order;
-
-  // Swap orders
-  previous.order = item.order;
-  item.order = previousOrder;
 
   // Swap position for animation
   modelValue.value.splice(index, 1, previous);
   modelValue.value.splice(index - 1, 1, item);
+
+  // Update order of all items. This is more robust against errors than swapping
+  updateOrder();
 }
 
 function orderDownwards(item: T) {
