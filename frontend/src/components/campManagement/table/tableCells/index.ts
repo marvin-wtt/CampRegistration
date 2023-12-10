@@ -53,7 +53,11 @@ const components = () => {
     },
   });
   TableComponentRegistry.register('default', DefaultTableCell, {
-    internal: true,
+    label: {
+      en: 'Default',
+      de: 'Standard',
+      fr: 'Défaut',
+    },
   });
   TableComponentRegistry.register('email', EmailTableCell, {
     label: {
