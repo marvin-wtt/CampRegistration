@@ -65,7 +65,9 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
 
     checkNotNullWithError(campId);
 
-    const newDataWithoutId = omitProperty(newData, 'id');
+    // TODO Create multi omit function
+    const newDataWithoutFreePlaces = omitProperty(newData, 'freePlaces');
+    const newDataWithoutId = omitProperty(newDataWithoutFreePlaces, 'id');
 
     return handlerByType<Camp>(notificationType)('update', async () => {
       const updatedCamp = await api.updateCamp(campId, newDataWithoutId);

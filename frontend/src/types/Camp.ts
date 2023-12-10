@@ -17,10 +17,11 @@ export interface Camp extends Identifiable {
   maxAge: number;
   location: Translatable;
   price: number;
+  freePlaces: Translatable<number>;
   form: SurveyJSCampData;
   themes: Record<string, ITheme>;
 }
 
-export type CampCreateData = Omit<Camp, 'id'>;
+export type CampCreateData = Omit<Camp, 'id' | 'freePlaces'>;
 
 export type CampUpdateData = Partial<CampCreateData>;
