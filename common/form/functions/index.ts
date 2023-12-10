@@ -3,6 +3,8 @@ import isAdult from './isAdult';
 import subtractYears from './subtractYears';
 import htmlDate from './htmlDate';
 import translate from './translate';
+import objectValues from './objectValues';
+import joinStrings from './joinStrings';
 
 type FunctionRegistrationParams = {
   name: string;
@@ -13,27 +15,35 @@ type FunctionRegistrationParams = {
 const functions: FunctionRegistrationParams[] = [
   {
     name: 'isMinor',
-    func: isMinor
+    func: isMinor,
   },
   {
     name: 'isAdult',
-    func: isAdult
+    func: isAdult,
   },
   {
     name: 'subtractYears',
-    func: subtractYears
+    func: subtractYears,
   },
   {
     name: 'htmlDate',
-    func: htmlDate
+    func: htmlDate,
   },
   {
     name: 'translate',
-    func: translate
+    func: translate,
   },
   {
     name: 't',
-    func: translate
+    func: translate,
+  },
+  {
+    name: 'objectValues',
+    func: objectValues,
+  },
+  {
+    name: 'joinStrings',
+    func: joinStrings,
   },
 ];
 
