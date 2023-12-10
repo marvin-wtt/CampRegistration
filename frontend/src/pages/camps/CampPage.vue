@@ -19,14 +19,14 @@ import 'survey-core/defaultV2.min.css';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
 } from 'src/composables/survey';
-import { useMeta, useQuasar } from 'quasar';
+import { useMeta } from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
@@ -35,7 +35,6 @@ type FileStorage = Map<string, File>;
 
 const { to } = useObjectTranslation();
 const { locale } = useI18n();
-const quasar = useQuasar();
 const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
 const { data: campData } = storeToRefs(campDetailsStore);
