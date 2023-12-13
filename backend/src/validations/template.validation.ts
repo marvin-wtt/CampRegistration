@@ -35,8 +35,7 @@ const TemplateBodySchema = Joi.object({
   order: Joi.number().required(),
   filter: Joi.string(),
   filterWaitingList: Joi.boolean(),
-  filterCounselors: Joi.boolean(),
-  filterParticipants: Joi.boolean(),
+  filterRoles: Joi.array<string>(),
   printOptions: Joi.object({
     orientation: Joi.string().valid("portrait", "landscape"),
   }),

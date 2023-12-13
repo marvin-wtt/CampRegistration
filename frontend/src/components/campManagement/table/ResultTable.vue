@@ -230,9 +230,6 @@ const rows = computed<Registration[]>(() => {
     });
   }
 
-  // TODO Get keys from setting store or use accessors
-  const counselorsKey = 'counselor';
-
   // Waiting list
   if (template.value.filterWaitingList) {
     rows = rows.filter((row) => {
@@ -240,27 +237,19 @@ const rows = computed<Registration[]>(() => {
     });
   }
 
-  // Counselors
-  // TODO Refactor to filterRoles
-  if (template.value.filterCounselors) {
+  // Role
+  if (template.value.filterRoles) {
     rows = rows.filter((row) => {
-      return (
-        row.data[counselorsKey] === undefined ||
-        row.data[counselorsKey] == false
-      );
-    });
-  }
+      const roles = row.campData['role'];
 
-  // Participants
-  // TODO Refactor to filterRoles
-  if (template.value.filterParticipants) {
-    rows = rows.filter((row) => {
-      const waitingList = row.waitingList;
-      const counselor =
-        row.data[counselorsKey] !== undefined &&
-        row.data[counselorsKey] == true;
+      // If no role is set for a given registration, it is assumed that it is a participant registration
+      if (template.value.filterRoles?.includes('participant')) {
+        if (roles.length === 0 || roles.every((role) => !role)) {
+          return false;
+        }
+      }
 
-      return waitingList || counselor;
+      return !template.value.filterRoles?.some((role) => roles.includes(role));
     });
   }
 

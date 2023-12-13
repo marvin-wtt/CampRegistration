@@ -7,8 +7,7 @@ export interface TableTemplate extends Identifiable {
   order: number;
   filter?: string;
   filterWaitingList?: boolean;
-  filterCounselors?: boolean;
-  filterParticipants?: boolean;
+  filterRoles?: string[];
   printOptions?: {
     orientation?: 'portrait' | 'landscape';
   };

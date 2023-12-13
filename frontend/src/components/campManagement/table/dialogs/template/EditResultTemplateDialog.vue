@@ -81,14 +81,17 @@
           :label="t('fields.filter_waiting_list.label')"
         />
 
-        <q-toggle
-          v-model="template.filterParticipants"
-          :label="t('fields.filter_participants.label')"
-        />
-
-        <q-toggle
-          v-model="template.filterCounselors"
-          :label="t('fields.filter_counselors.label')"
+        <q-select
+          v-model="template.filterRoles"
+          :label="t('fields.filter_roles.label')"
+          use-input
+          use-chips
+          multiple
+          input-debounce="0"
+          new-value-mode="add-unique"
+          :options="roleFilteredOptions"
+          @new-value="createRoleFilter"
+          @filter="roleFilterFn"
         />
 
         <q-input
@@ -170,7 +173,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { TableTemplate } from 'src/types/TableTemplate';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { computed, reactive, toRaw } from 'vue';
+import { computed, reactive, ref, toRaw } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
 import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import EditResultColumnTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultColumnTemplateDialog.vue';
@@ -201,6 +204,9 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const template = reactive<TableTemplate>(
   structuredClone(toRaw(props.template)),
 );
+
+const roleOptions: (string | QSelectOption)[] = ['participant'];
+const roleFilteredOptions = ref<(string | QSelectOption)[]>(roleOptions);
 
 const sortByOptions = computed(() => {
   return template.columns.map((value) => {
@@ -258,6 +264,24 @@ function editColumn(column: TableColumnTemplate): void {
 function onOKClick(): void {
   onDialogOK(template);
 }
+
+function createRoleFilter(value: string, done: (val: string) => void) {
+  done(value);
+}
+
+function roleFilterFn(value: string, update: (fn: () => void) => void) {
+  update(() => {
+    if (value === '') {
+      roleFilteredOptions.value = roleOptions;
+      return;
+    }
+    const needle = value.toLowerCase();
+    roleFilteredOptions.value = roleOptions.filter((v) => {
+      const roleName = typeof v === 'string' ? v : v.label;
+      return roleName.toLowerCase().indexOf(needle) > -1;
+    });
+  });
+}
 </script>
 
 <style scoped></style>
@@ -290,14 +314,11 @@ fields:
   filter:
     label: 'Filter row by'
     hint: 'Expression when to show a row'
-  filter_participants:
-    label: 'Hide normal registrations'
+  filter_roles:
+    label: 'Hide registrations with role'
     hint: ''
   filter_waiting_list:
     label: 'Hide registrations on waiting list'
-    hint: ''
-  filter_counselors:
-    label: 'Hide camp counselors registrations'
     hint: ''
 </i18n>
 
@@ -329,14 +350,11 @@ fields:
   filter:
     label: 'Zeile filtern nach'
     hint: 'Ausdruck, wann eine Zeile angezeigt werden soll'
-  filter_participants:
-    label: 'Normale Anmeldungen ausblenden'
+  filter_roles:
+    label: 'Anmeldungen mit Rolle ausblenden'
     hint: ''
   filter_waiting_list:
     label: 'Anmeldungen auf Warteliste ausblenden'
-    hint: ''
-  filter_counselors:
-    label: 'Anmeldungen von Lagerleitern ausblenden'
     hint: ''
 </i18n>
 
@@ -368,13 +386,10 @@ fields:
   filter:
     label: 'Filtrer la ligne par'
     hint: 'Expression indiquant quand afficher une ligne'
-  filter_participants:
-    label: 'Masquer les inscriptions normales'
+  filter_roles:
+    label: 'Masquer les inscriptions avec rôle'
     hint: ''
   filter_waiting_list:
     label: 'Masquer les inscriptions en liste d’attente'
-    hint: ''
-  filter_counselors:
-    label: 'Masquer les inscriptions de chefs de camp'
     hint: ''
 </i18n>
