@@ -14,7 +14,7 @@ if ! $DIR/wait-for-it.sh "${host_port}"  --strict -- echo '🟢 - Database is re
   exit 1
 fi
 
-if ! npx prisma db push -accept-data-loss; then
+if ! npx prisma db push --force-reset --accept-data-loss; then
   echo '🔴 - Resetting database failed. Exiting...'
   exit 1
 fi
