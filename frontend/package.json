@@ -57,6 +57,6 @@
     "happy-dom": "^12.1.6",
     "prettier": "^3.0.3",
     "typescript": "^5.0.3",
-    "vitest": "^0.34.5"
+    "vitest": "^1.0.4"
   }
 }
