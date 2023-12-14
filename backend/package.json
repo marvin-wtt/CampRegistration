@@ -13,7 +13,7 @@
     "db:migrate": "prisma migrate deploy",
     "test": "npm run test:int",
     "test:int": "vitest -c ./vitest.config.integration.ts",
-    "test:int:ui": "vitest -c ./vitest.config.integration.ts --ui",
+    "test:int:ui": "./scripts/run-integration.sh --ui",
     "lint": "eslint src",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check src/**/*.ts",
