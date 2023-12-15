@@ -1,23 +1,20 @@
 import resetDb from "./reset-db";
-import { afterEach, afterAll, beforeEach } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import fse from "fs-extra";
 import config from "../../src/config";
 import path from "path";
-import { resetMailServer, stopMailServer } from "./mail-server";
 import { store } from "../../src/middlewares/rateLimiter.middleware";
 import { stopJobs } from "../../src/jobs";
+import mailer from "../../src/config/mail";
 
 beforeEach(async () => {
+  vi.spyOn(mailer, "sendMail");
+
   await resetDb();
-  resetMailServer();
   await resetRateLimiter();
   await clearDirectory(config.storage.tmpDir);
   await clearDirectory(config.storage.uploadDir);
   stopJobs();
-});
-
-afterAll(async () => {
-  stopMailServer();
 });
 
 const clearDirectory = async (dir: string) => {

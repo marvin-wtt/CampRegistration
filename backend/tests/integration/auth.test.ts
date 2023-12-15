@@ -14,9 +14,9 @@ import {
 } from "../utils/token";
 import { request } from "../utils/request";
 import { TokenFactory } from "../../prisma/factories/token";
-import { receiveEmail } from "../utils/mail-server";
 import { CampManagerFactory } from "../../prisma/factories/manager";
 import { InvitationFactory } from "../../prisma/factories/invitation";
+import mailer from "../../src/config/mail";
 
 describe("/api/v1/auth", async () => {
   describe("POST /api/v1/auth/register", () => {
@@ -224,7 +224,12 @@ describe("/api/v1/auth", async () => {
 
       await request().post("/api/v1/auth/register").send(data).expect(201);
 
-      await receiveEmail("test@email.net");
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: data.email,
+        }),
+      );
     });
   });
 
@@ -759,7 +764,12 @@ describe("/api/v1/auth", async () => {
         })
         .expect(204);
 
-      await receiveEmail("test@email.net");
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "test@email.net",
+        }),
+      );
     });
   });
 
@@ -947,7 +957,12 @@ describe("/api/v1/auth", async () => {
         .auth(accessToken, { type: "bearer" })
         .expect(204);
 
-      await receiveEmail(user.email);
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: user.email,
+        }),
+      );
     });
 
     it("should respond with `204` status code when the user authenticated via cookie", async () => {

@@ -20,5 +20,6 @@ export default defineConfig({
       reporter: ["html", "text", "json", "clover"],
       reportsDirectory: "./tests/integration/coverage",
     },
+    restoreMocks: true,
   },
 });

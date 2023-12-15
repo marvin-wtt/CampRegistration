@@ -30,7 +30,7 @@ import {
 } from "../fixtures/registration/camp.fixtures";
 import { request } from "../utils/request";
 import { CampManagerFactory } from "../../prisma/factories/manager";
-import { receiveEmail } from "../utils/mail-server";
+import mailer from "../../src/config/mail";
 
 describe("/api/v1/camps/:campId/registrations", () => {
   const createCampWithManagerAndToken = async () => {
@@ -791,7 +791,12 @@ describe("/api/v1/camps/:campId/registrations", () => {
           .send({ data })
           .expect(201);
 
-        await receiveEmail("test@example.com");
+        expect(mailer.sendMail).toBeCalledTimes(1);
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.email,
+          }),
+        );
       });
 
       it.todo("should send a copy to the contact email for national camp");
