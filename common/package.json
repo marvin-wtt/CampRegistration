@@ -20,7 +20,8 @@
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:node": "tsc --project tsconfig.node.json",
     "lint": "eslint --ext .js,.ts ./",
-    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore"
+    "format": "prettier --write \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore"
   },
   "exports": {
     "./form": {

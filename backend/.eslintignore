@@ -1,2 +1,6 @@
 node_modules
 public
+build
+.eslintrc.js
+vitest.config.integration.ts
+vitest.config.unit.ts

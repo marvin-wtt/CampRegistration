@@ -1,5 +1,6 @@
 module.exports = {
   root: true,
+  ignorePatterns: ["build/*"],
   env: {
     node: true,
     browser: true,
