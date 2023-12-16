@@ -233,7 +233,7 @@ const rows = computed<Registration[]>(() => {
   // Waiting list
   if (template.value.filterWaitingList) {
     rows = rows.filter((row) => {
-      return row.waitingList;
+      return !row.waitingList;
     });
   }
 
