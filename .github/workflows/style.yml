@@ -39,5 +39,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
+      - name: Run format
         run: npm run format:check --workspaces
