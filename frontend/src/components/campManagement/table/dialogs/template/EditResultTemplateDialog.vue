@@ -86,6 +86,8 @@
           :label="t('fields.filter_roles.label')"
           use-input
           use-chips
+          outlined
+          rounded
           multiple
           input-debounce="0"
           new-value-mode="add-unique"
