@@ -1,6 +1,6 @@
-import { TokenType, User } from "@prisma/client";
-import moment from "moment/moment";
-import jwt from "jsonwebtoken";
+import { TokenType, User } from '@prisma/client';
+import moment from 'moment/moment';
+import jwt from 'jsonwebtoken';
 
 export const verifyToken = (token: string) => {
   return jwt.verify(token, process.env.JWT_SECRET as string);
@@ -10,7 +10,7 @@ export const generateToken = (user: User, type: TokenType, data?: object) => {
   const payload = {
     sub: user.id,
     iat: moment().unix(),
-    exp: moment().add("1", "minutes").unix(),
+    exp: moment().add('1', 'minutes').unix(),
     type,
     ...data,
   };
@@ -24,8 +24,8 @@ export const generateExpiredToken = (
   data?: object,
 ) => {
   return generateToken(user, type, {
-    iat: moment().subtract("1", "week").unix(),
-    exp: moment().subtract("6", "days").unix(),
+    iat: moment().subtract('1', 'week').unix(),
+    exp: moment().subtract('6', 'days').unix(),
     ...data,
   });
 };

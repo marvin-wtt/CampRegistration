@@ -1,11 +1,11 @@
-import { SurveyModel } from "survey-core";
-import { setVariables } from "@camp-registration/common/form/variables";
-import { initSurveyJS } from "./surveyJS";
-import { Camp } from "@prisma/client";
+import { SurveyModel } from 'survey-core';
+import { setVariables } from '@camp-registration/common/form/variables';
+import { initSurveyJS } from './surveyJS';
+import { Camp } from '@prisma/client';
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
-type FormFile = Pick<File, "name" | "type" | "size">;
+type FormFile = Pick<File, 'name' | 'type' | 'size'>;
 
 initSurveyJS();
 
@@ -13,14 +13,14 @@ export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
   const fileQuestions = survey
     .getAllQuestions(false, undefined, true)
-    .filter((question) => question.getType() === "file");
+    .filter((question) => question.getType() === 'file');
 
   let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
-  setVariables(survey, camp, "en-US");
+  setVariables(survey, camp, 'en-US');
 
   const updateData = (data?: unknown, files?: FileType) => {
-    survey.data = typeof data !== "object" ? {} : data;
+    survey.data = typeof data !== 'object' ? {} : data;
 
     if (files) {
       fileMap = createFileMap(files);
@@ -84,7 +84,7 @@ export const formUtils = (camp: Camp) => {
       includeEmpty: true,
       includeQuestionTypes: true,
       includeValues: true,
-      calculations: [{ propertyName: "campDataType" }],
+      calculations: [{ propertyName: 'campDataType' }],
     });
 
     return data

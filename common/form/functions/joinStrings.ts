@@ -6,11 +6,13 @@ const joinStrings = (params: unknown[]): string | null => {
   const strings = params[0];
   if (
     !Array.isArray(strings) ||
-    !strings.every((item) => Array.isArray(item) && item.every((value) => typeof value === 'string'))
+    !strings.every(
+      (item) =>
+        Array.isArray(item) && item.every((value) => typeof value === 'string'),
+    )
   ) {
     return null;
   }
-
 
   const conjunctions: Record<string, string> = {
     en: 'and',
@@ -21,7 +23,8 @@ const joinStrings = (params: unknown[]): string | null => {
   // Validate and set the locale
   // Get the translation of "and" based on the locale
   const locale = params.length >= 2 ? params[1] : 'en';
-  const selectedLocale = typeof locale === 'string' && locale in conjunctions  ? locale : 'en';
+  const selectedLocale =
+    typeof locale === 'string' && locale in conjunctions ? locale : 'en';
 
   const andTranslation = conjunctions[selectedLocale];
 

@@ -1,7 +1,7 @@
-import express from "express";
-import { validate, auth, authLimiter, guest } from "middlewares";
-import { authValidation } from "validations";
-import { authController } from "controllers";
+import express from 'express';
+import { validate, auth, authLimiter, guest } from 'middlewares';
+import { authValidation } from 'validations';
+import { authController } from 'controllers';
 
 const router = express.Router();
 
@@ -10,37 +10,37 @@ router.use(authLimiter);
 
 // Route definitions
 router.post(
-  "/register",
+  '/register',
   guest(),
   validate(authValidation.register),
   authController.register,
 );
-router.post("/login", validate(authValidation.login), authController.login);
-router.post("/logout", auth(), authController.logout);
+router.post('/login', validate(authValidation.login), authController.login);
+router.post('/logout', auth(), authController.logout);
 router.post(
-  "/refresh-tokens",
+  '/refresh-tokens',
   validate(authValidation.refreshTokens),
   authController.refreshTokens,
 );
 router.post(
-  "/forgot-password",
+  '/forgot-password',
   guest(),
   validate(authValidation.forgotPassword),
   authController.forgotPassword,
 );
 router.post(
-  "/reset-password",
+  '/reset-password',
   guest(),
   validate(authValidation.resetPassword),
   authController.resetPassword,
 );
 router.post(
-  "/send-verification-email",
+  '/send-verification-email',
   auth(),
   authController.sendVerificationEmail,
 );
 router.post(
-  "/verify-email",
+  '/verify-email',
   validate(authValidation.verifyEmail),
   authController.verifyEmail,
 );

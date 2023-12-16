@@ -1,5 +1,3 @@
-import { setVariables } from './variables'
+import { setVariables } from './variables';
 
-export {
-    setVariables
-};
+export { setVariables };

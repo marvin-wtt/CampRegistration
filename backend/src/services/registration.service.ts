@@ -1,13 +1,13 @@
-import prisma from "../client";
-import { ulid } from "utils/ulid";
-import ApiError from "utils/ApiError";
-import httpStatus from "http-status";
-import { Camp, Prisma, Registration } from "@prisma/client";
-import dbJsonPath from "utils/dbJsonPath";
-import { formUtils } from "utils/form";
-import { notificationService } from "services/index";
-import i18n, { t } from "config/i18n";
-import { translateObject } from "utils/translateObject";
+import prisma from '../client';
+import { ulid } from 'utils/ulid';
+import ApiError from 'utils/ApiError';
+import httpStatus from 'http-status';
+import { Camp, Prisma, Registration } from '@prisma/client';
+import dbJsonPath from 'utils/dbJsonPath';
+import { formUtils } from 'utils/form';
+import { notificationService } from 'services/index';
+import i18n, { t } from 'config/i18n';
+import { translateObject } from 'utils/translateObject';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -31,7 +31,7 @@ const queryRegistrations = async (campId: string) => {
 
 const getParticipantsCount = async (campId: string) => {
   return prisma.registration.count({
-    where: createRegistrationRoleFilter(campId, "participant"),
+    where: createRegistrationRoleFilter(campId, 'participant'),
   });
 };
 
@@ -40,15 +40,15 @@ const getParticipantsCountByCountry = async (
   countries: string[],
 ) => {
   const participants = await prisma.registration.findMany({
-    where: createRegistrationRoleFilter(campId, "participant"),
+    where: createRegistrationRoleFilter(campId, 'participant'),
   });
 
   const getCountry = (registration: Registration): string => {
-    const country = registration.campData["country"]?.find((value: unknown) => {
-      return typeof value === "string" && countries.includes(value);
+    const country = registration.campData['country']?.find((value: unknown) => {
+      return typeof value === 'string' && countries.includes(value);
     });
 
-    return country ?? "unknown";
+    return country ?? 'unknown';
   };
 
   // Count the participants for each country
@@ -64,7 +64,7 @@ const getParticipantsCountByCountry = async (
 
 type RegistrationCreateData = Pick<
   Prisma.RegistrationCreateInput,
-  "waitingList" | "data" | "locale"
+  'waitingList' | 'data' | 'locale'
 >;
 const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   // TODO The utils was already initialized during validation. Attach it to the request body
@@ -99,26 +99,26 @@ const isWaitingList = async (
   }
 
   const filter: Prisma.RegistrationWhereInput[] = [
-    createRegistrationRoleFilter(camp.id, "participant"),
+    createRegistrationRoleFilter(camp.id, 'participant'),
   ];
 
   let maxParticipants = camp.maxParticipants as Record<string, number> | number;
   // Add country filter
-  if (typeof maxParticipants !== "number") {
+  if (typeof maxParticipants !== 'number') {
     const country = registrationCampDataAccessor(campData).country(
       camp.countries,
     );
     if (!country) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        "Missing or invalid country data",
+        'Missing or invalid country data',
       );
     }
 
     // Add filter criteria for country
     filter.push({
       campData: {
-        path: dbJsonPath("country"),
+        path: dbJsonPath('country'),
         array_contains: [country],
       },
     });
@@ -136,17 +136,17 @@ const isWaitingList = async (
 
 const isParticipant = (campData: Record<string, unknown[]>): boolean => {
   // If no role is set, it is considered to be participant
-  if (!("role" in campData) || campData["role"].length === 0) {
+  if (!('role' in campData) || campData['role'].length === 0) {
     return true;
   }
 
-  return campData["role"].some((role) => role === "participant");
+  return campData['role'].some((role) => role === 'participant');
 };
 
 const updateRegistrationById = async (
   camp: Camp,
   registrationId: string,
-  data: Pick<Prisma.RegistrationUpdateInput, "waitingList" | "data">,
+  data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
 ) => {
   // TODO The utils was already initialized during validation. Attach it to the request body
   const form = formUtils(camp);
@@ -179,13 +179,13 @@ const createRegistrationRoleFilter = (
     OR: [
       {
         campData: {
-          path: dbJsonPath("role"),
+          path: dbJsonPath('role'),
           equals: Prisma.DbNull,
         },
       },
       {
         campData: {
-          path: dbJsonPath("role"),
+          path: dbJsonPath('role'),
           array_contains: [role],
         },
       },
@@ -201,8 +201,8 @@ const sendRegistrationConfirmation = async (
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
-  const subject = t("registration:email.confirmation");
-  const template = "registration-confirmation";
+  const subject = t('registration:email.confirmation');
+  const template = 'registration-confirmation';
 
   const context = {
     campName,
@@ -227,8 +227,8 @@ const sendWaitingListConfirmation = async (
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
-  const subject = t("registration:email.waitingListConfirmation");
-  const template = "registration-waiting-list-confirmation";
+  const subject = t('registration:email.waitingListConfirmation');
+  const template = 'registration-waiting-list-confirmation';
 
   const context = {
     campName,
@@ -257,12 +257,12 @@ const sendRegistrationManagerNotification = async (
   const participantName = accessor.name();
 
   await i18n.changeLanguage(country);
-  const subject = t("registration:email.managerNotification");
-  const template = "registration-manager-notification";
+  const subject = t('registration:email.managerNotification');
+  const template = 'registration-manager-notification';
 
   const dataAttachment = {
-    filename: "data.json",
-    contentType: "application/json",
+    filename: 'data.json',
+    contentType: 'application/json',
     content: JSON.stringify(registration),
   };
 
@@ -304,27 +304,27 @@ const getRegistrationConfirmationRegistrationData = (
 
 const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
   const emails = (): string | string[] => {
-    return campData["email"]?.filter((value): value is string => {
-      return !!value && typeof value === "string";
+    return campData['email']?.filter((value): value is string => {
+      return !!value && typeof value === 'string';
     });
   };
 
   const country = (options?: string[]): string | undefined => {
-    return campData["country"]?.find((value: unknown): value is string => {
-      return typeof value === "string" && (!options || options.includes(value));
+    return campData['country']?.find((value: unknown): value is string => {
+      return typeof value === 'string' && (!options || options.includes(value));
     });
   };
 
   const name = (): string | undefined => {
-    if ("first_name" in campData && campData.first_name.length > 0) {
+    if ('first_name' in campData && campData.first_name.length > 0) {
       return campData.first_name.find((value): value is string => {
-        return typeof value === "string";
+        return typeof value === 'string';
       });
     }
 
-    if ("full_name" in campData && campData.full_name.length > 0) {
+    if ('full_name' in campData && campData.full_name.length > 0) {
       return campData.full_name.find((value): value is string => {
-        return typeof value === "string";
+        return typeof value === 'string';
       });
     }
 
@@ -332,9 +332,9 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
   };
 
   const guardianEmails = (): string[] => {
-    const emails = campData["guardian_email"]?.filter(
+    const emails = campData['guardian_email']?.filter(
       (value): value is string => {
-        return !!value && typeof value === "string";
+        return !!value && typeof value === 'string';
       },
     );
 
@@ -353,7 +353,7 @@ const findCampContactEmails = (
   contactEmail: Record<string, string> | string,
   country: string | undefined,
 ): string | string[] => {
-  if (typeof contactEmail === "string") {
+  if (typeof contactEmail === 'string') {
     return contactEmail;
   }
 

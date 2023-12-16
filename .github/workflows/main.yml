@@ -12,6 +12,36 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: admin123
+        options: >- 
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 3
+        ports:
+          - 3306:3306
+
+    # Env setup for tests - not deployment
+    env:
+      APP_PORT: 3000
+      APP_URL: http://localhost:9000
+      APP_NAME: Test App
+      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      TMP_DIR: tests/tmp/storage/tmp/
+      UPLOAD_DIR: tests/tmp/storage/uploads/
+      STORAGE_LOCATION: local
+      JWT_SECRET: aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpP
+      SMTP_HOST: localhost
+      SMTP_PORT: 587
+      SMTP_USERNAME: user
+      SMTP_PASSWORD: password
+      EMAIL_FROM: noreply@yourapp.com
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -26,6 +56,9 @@ jobs:
 
       - name: Build workspaces
         run: npm run build --workspaces
+
+      - name: Migrate test database
+        run: npm run migrate --workspaces --if-present
 
       - name: Test workspaces
         run: npm run test --workspaces --if-present

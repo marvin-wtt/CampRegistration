@@ -1,20 +1,20 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 const { value: envVars, error } = Joi.object()
   .keys({
-    SMTP_HOST: Joi.string().description("server that will send the emails"),
-    SMTP_PORT: Joi.number().description("port to connect to the email server"),
-    SMTP_USERNAME: Joi.string().description("username for email server"),
-    SMTP_PASSWORD: Joi.string().description("password for email server"),
+    SMTP_HOST: Joi.string().description('server that will send the emails'),
+    SMTP_PORT: Joi.number().description('port to connect to the email server'),
+    SMTP_USERNAME: Joi.string().description('username for email server'),
+    SMTP_PASSWORD: Joi.string().description('password for email server'),
     EMAIL_FROM: Joi.string().description(
-      "the from field in the emails sent by the app",
+      'the from field in the emails sent by the app',
     ),
     EMAIL_REPLY_TO: Joi.string().description(
-      "the replyTo field in the emails sent by the app",
+      'the replyTo field in the emails sent by the app',
     ),
   })
   .unknown()
-  .prefs({ errors: { label: "key" } })
+  .prefs({ errors: { label: 'key' } })
   .validate(process.env);
 
 if (error) {

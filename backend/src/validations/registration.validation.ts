@@ -1,14 +1,14 @@
-import Joi from "joi";
-import { Request } from "express";
-import { routeModel } from "utils/verifyModel";
-import { formUtils } from "utils/form";
+import Joi from 'joi';
+import { Request } from 'express';
+import { routeModel } from 'utils/verifyModel';
+import { formUtils } from 'utils/form';
 
 export const registrationData: Joi.CustomValidator<object> = (
   value,
   helpers,
 ) => {
-  if (typeof value !== "object" || value == null) {
-    return helpers.message({ custom: "Survey may not be null" });
+  if (typeof value !== 'object' || value == null) {
+    return helpers.message({ custom: 'Survey may not be null' });
   }
 
   const req = helpers.prefs.context as Request;
@@ -18,13 +18,13 @@ export const registrationData: Joi.CustomValidator<object> = (
   formHelper.updateData(value, req.files);
 
   if (formHelper.hasDataErrors()) {
-    return helpers.message({ custom: "Invalid survey data" });
+    return helpers.message({ custom: 'Invalid survey data' });
   }
 
   const unknownDataFields = formHelper.unknownDataFields();
   if (unknownDataFields.length > 0) {
     return helpers.message({
-      custom: `Unknown fields '${unknownDataFields.join(", ")}'`,
+      custom: `Unknown fields '${unknownDataFields.join(', ')}'`,
     });
   }
 
@@ -55,7 +55,7 @@ const store = {
     campId: Joi.string().required(),
   }),
   body: Joi.object({
-    data: Joi.object().custom(registrationData, "registration data").required(),
+    data: Joi.object().custom(registrationData, 'registration data').required(),
     locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     // files
   }),

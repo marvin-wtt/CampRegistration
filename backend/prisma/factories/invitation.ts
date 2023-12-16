@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
-import prisma from "../../tests/utils/prisma";
-import { ulid } from "ulidx";
-import { faker } from "@faker-js/faker/locale/de";
+import { Prisma } from '@prisma/client';
+import prisma from '../../tests/utils/prisma';
+import { ulid } from 'ulidx';
+import { faker } from '@faker-js/faker/locale/de';
 
 export const InvitationFactory = {
   build: (

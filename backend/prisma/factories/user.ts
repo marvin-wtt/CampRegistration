@@ -1,7 +1,7 @@
-import { fakerDE as faker } from "@faker-js/faker";
-import { Prisma } from "@prisma/client";
-import prisma from "../../tests/utils/prisma";
-import { ulid } from "ulidx";
+import { fakerDE as faker } from '@faker-js/faker';
+import { Prisma } from '@prisma/client';
+import prisma from '../../tests/utils/prisma';
+import { ulid } from 'ulidx';
 
 export const UserFactory = {
   build: (
@@ -10,7 +10,7 @@ export const UserFactory = {
     return {
       id: ulid(),
       name: faker.person.fullName(),
-      password: "password",
+      password: 'password',
       email: faker.internet.email(),
       emailVerified: true,
       ...data,

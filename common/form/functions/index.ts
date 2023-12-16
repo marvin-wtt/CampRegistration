@@ -10,7 +10,7 @@ type FunctionRegistrationParams = {
   name: string;
   func: (params: unknown[]) => unknown;
   isAsync?: boolean;
-}
+};
 
 const functions: FunctionRegistrationParams[] = [
   {
@@ -47,13 +47,6 @@ const functions: FunctionRegistrationParams[] = [
   },
 ];
 
-export {
-  isMinor,
-  isAdult,
-  subtractYears,
-  htmlDate,
-  translate,
-  functions
-}
+export { isMinor, isAdult, subtractYears, htmlDate, translate, functions };
 
 export default functions;

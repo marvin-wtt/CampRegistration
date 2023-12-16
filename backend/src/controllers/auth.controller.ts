@@ -1,14 +1,14 @@
-import httpStatus from "http-status";
-import { catchRequestAsync } from "utils/catchAsync";
-import { authService, userService, tokenService } from "services";
-import { Request, Response } from "express";
-import { AuthTokensResponse } from "types/response";
-import config from "config";
-import { userCampResource, userDetailedResource } from "resources";
-import ApiError from "utils/ApiError";
-import managerService from "services/manager.service";
-import { requestLocale } from "utils/requestLocale";
-import { authUserId } from "utils/authUserId";
+import httpStatus from 'http-status';
+import { catchRequestAsync } from 'utils/catchAsync';
+import { authService, userService, tokenService } from 'services';
+import { Request, Response } from 'express';
+import { AuthTokensResponse } from 'types/response';
+import config from 'config';
+import { userCampResource, userDetailedResource } from 'resources';
+import ApiError from 'utils/ApiError';
+import managerService from 'services/manager.service';
+import { requestLocale } from 'utils/requestLocale';
+import { authUserId } from 'utils/authUserId';
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;
@@ -59,7 +59,7 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
   const refreshToken = req.body.refreshToken ?? extractCookieRefreshToken(req);
 
   if (!refreshToken) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Missing refresh token");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Missing refresh token');
   }
 
   const tokens = await authService.refreshAuth(refreshToken);
@@ -70,7 +70,7 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
 });
 
 const extractCookieRefreshToken = (req: Request) => {
-  if (req && req.cookies && "refreshToken" in req.cookies) {
+  if (req && req.cookies && 'refreshToken' in req.cookies) {
     return req.cookies.refreshToken;
   }
   return null;
@@ -97,11 +97,11 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
   const user = await userService.getUserById(userId);
   if (!user) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid auth state");
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid auth state');
   }
 
   if (user.emailVerified) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already verified");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');
   }
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
@@ -118,11 +118,11 @@ const verifyEmail = catchRequestAsync(async (req, res) => {
 
 const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
   const httpOnly = true;
-  const secure = config.env !== "development";
-  const sameSite = "strict";
-  const path = "/";
+  const secure = config.env !== 'development';
+  const sameSite = 'strict';
+  const path = '/';
 
-  res.cookie("accessToken", tokens.access.token, {
+  res.cookie('accessToken', tokens.access.token, {
     httpOnly,
     secure,
     path,
@@ -131,7 +131,7 @@ const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
   });
 
   if (tokens.refresh) {
-    res.cookie("refreshToken", tokens.refresh.token, {
+    res.cookie('refreshToken', tokens.refresh.token, {
       httpOnly,
       secure,
       path,
@@ -142,8 +142,8 @@ const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
 };
 
 const destroyAuthCookies = (res: Response) => {
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
 };
 
 export default {

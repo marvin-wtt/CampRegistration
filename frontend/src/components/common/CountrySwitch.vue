@@ -116,8 +116,8 @@ const optionValue = computed<Options>(() => {
   return props.emitCountry
     ? 'country'
     : props.emitIsoName
-    ? 'isoName'
-    : 'locale';
+      ? 'isoName'
+      : 'locale';
 });
 
 const options = computed(() => {

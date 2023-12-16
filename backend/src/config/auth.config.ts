@@ -1,27 +1,27 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 const { value: envVars, error } = Joi.object()
   .keys({
-    JWT_SECRET: Joi.string().required().description("JWT secret key"),
+    JWT_SECRET: Joi.string().required().description('JWT secret key'),
     TOKEN_EXPIRATION_ACCESS: Joi.number()
       .integer()
       .positive()
-      .description("Time in minutes until access token expires"),
+      .description('Time in minutes until access token expires'),
     TOKEN_EXPIRATION_REFRESH: Joi.number()
       .integer()
       .positive()
-      .description("Time in days until refresh token expires"),
+      .description('Time in days until refresh token expires'),
     TOKEN_EXPIRATION_RESET_PASSWORD: Joi.number()
       .integer()
       .positive()
-      .description("Time in minutes until password reset token expires"),
+      .description('Time in minutes until password reset token expires'),
     TOKEN_EXPIRATION_VERIFY_EMAIL: Joi.number()
       .integer()
       .positive()
-      .description("Time in minutes until email verification token expires"),
+      .description('Time in minutes until email verification token expires'),
   })
   .unknown()
-  .prefs({ errors: { label: "key" } })
+  .prefs({ errors: { label: 'key' } })
   .validate(process.env);
 
 if (error) {

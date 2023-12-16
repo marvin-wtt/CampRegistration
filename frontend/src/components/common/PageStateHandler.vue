@@ -42,7 +42,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeMount, onBeforeUnmount, onErrorCaptured, ref } from 'vue';
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUnmount,
+  onErrorCaptured,
+  ref,
+} from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useQuasar } from 'quasar';
 

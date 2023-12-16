@@ -1,6 +1,6 @@
-import { File, Registration, Room, Bed } from "@prisma/client";
-import groupBy from "utils/groupBy";
-import config from "config";
+import { File, Registration, Room, Bed } from '@prisma/client';
+import groupBy from 'utils/groupBy';
+import config from 'config';
 
 interface RegistrationWithBedAndFiles extends Registration {
   bed?: BedWithRoom | null;
@@ -18,10 +18,10 @@ const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
 
   const fileUrl = `${config.origin}/registrations/${registration.id}/files/`;
   return Object.fromEntries(
-    Object.entries(groupBy(registration.files, (i) => i.field ?? "files")).map(
+    Object.entries(groupBy(registration.files, (i) => i.field ?? 'files')).map(
       ([field, files]) => [
         field,
-        files.map((file) => fileUrl + file.id).join(";"),
+        files.map((file) => fileUrl + file.id).join(';'),
       ],
     ),
   );

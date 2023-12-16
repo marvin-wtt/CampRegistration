@@ -1,4 +1,4 @@
-import { File } from "@prisma/client";
+import { File } from '@prisma/client';
 
 const fileResource = (file: File) => {
   return {

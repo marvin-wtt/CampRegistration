@@ -1,25 +1,25 @@
-import config from "config";
-import transport from "config/mail";
-import { generateQueryString } from "utils/uri";
-import Mail from "nodemailer/lib/mailer";
-import { t } from "config/i18n";
-import logger from "config/logger";
+import config from 'config';
+import transport from 'config/mail';
+import { generateQueryString } from 'utils/uri';
+import Mail from 'nodemailer/lib/mailer';
+import { t } from 'config/i18n';
+import logger from 'config/logger';
 
 type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
 type RequireAtLeastOne<T, R extends keyof T = keyof T> = Omit<T, R> &
   { [P in R]: Required<Pick<T, P>> & Partial<Omit<T, P>> }[R];
 
-type EmailOptions = RequireAtLeastOne<Mail.Options, "to" | "cc" | "bcc">;
+type EmailOptions = RequireAtLeastOne<Mail.Options, 'to' | 'cc' | 'bcc'>;
 
-type Options = WithRequired<EmailOptions, "subject"> & {
+type Options = WithRequired<EmailOptions, 'subject'> & {
   template: string;
   context?: object;
 };
 
 const sendEmail = (options: Options) => {
   const { from } = config.email;
-  const appName = t("app-name");
+  const appName = t('app-name');
 
   // Remove duplicate emails
   options = removeDuplicateEmails(options);
@@ -35,7 +35,7 @@ const sendEmail = (options: Options) => {
   };
 
   transport.sendMail(options).catch((reason) => {
-    logger.warn("Failed to send email: " + reason);
+    logger.warn('Failed to send email: ' + reason);
   });
 };
 
@@ -54,7 +54,7 @@ type Emails = string | Address | (string | Address)[] | undefined;
 const removeDuplicateEmails = (options: Options): Options => {
   type LookupMap = Record<string, true>;
   const extractEmail = (item: string | Address) =>
-    typeof item === "string" ? item : item.address;
+    typeof item === 'string' ? item : item.address;
 
   const collectEmails = (...fields: Emails[]) => {
     return fields

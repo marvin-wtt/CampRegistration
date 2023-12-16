@@ -1,7 +1,7 @@
-import { faker } from "@faker-js/faker/locale/de";
-import { Prisma } from "@prisma/client";
-import prisma from "../../tests/utils/prisma";
-import { ulid } from "ulidx";
+import { faker } from '@faker-js/faker/locale/de';
+import { Prisma } from '@prisma/client';
+import prisma from '../../tests/utils/prisma';
+import { ulid } from 'ulidx';
 
 export const CampFactory = {
   build: (
@@ -26,7 +26,7 @@ export const CampFactory = {
       id: ulid(),
       public: faker.datatype.boolean(),
       active: faker.datatype.boolean(),
-      countries: ["de"],
+      countries: ['de'],
       name: faker.lorem.word(),
       organizer: faker.company.name(),
       contactEmail: faker.internet.email(),

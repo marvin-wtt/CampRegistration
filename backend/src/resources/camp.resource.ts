@@ -1,4 +1,4 @@
-import { Camp } from "@prisma/client";
+import { Camp } from '@prisma/client';
 
 type CampWithFreePlaces = Camp & {
   freePlaces?: Record<string, number> | number;

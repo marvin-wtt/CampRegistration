@@ -1,4 +1,4 @@
-import prisma from "../client";
+import prisma from '../client';
 
 const getBedById = async (id: string, roomId: string) => {
   return prisma.bed.findFirst({

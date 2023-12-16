@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, RequestHandler } from "express";
+import { NextFunction, Request, Response, RequestHandler } from 'express';
 
 const dynamicMiddleware = (middlewares: RequestHandler[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

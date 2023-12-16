@@ -1,5 +1,5 @@
-import { Bed, Room } from "@prisma/client";
-import { bedResource } from "./index";
+import { Bed, Room } from '@prisma/client';
+import { bedResource } from './index';
 
 interface RoomWithBeds extends Room {
   beds: Bed[];
