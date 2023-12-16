@@ -1,4 +1,4 @@
-import { Bed } from "@prisma/client";
+import { Bed } from '@prisma/client';
 
 const bedResource = (bed: Bed) => {
   const registrationId = bed.registrationId ?? null;

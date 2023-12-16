@@ -1,4 +1,4 @@
-import { rateLimit, MemoryStore } from "express-rate-limit";
+import { rateLimit, MemoryStore } from 'express-rate-limit';
 
 // Expose store to reset it for tests
 export const store = new MemoryStore();

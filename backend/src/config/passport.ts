@@ -2,15 +2,15 @@ import {
   Strategy as JwtStrategy,
   ExtractJwt,
   VerifyCallback,
-} from "passport-jwt";
-import { Strategy as AnonymousStrategy } from "passport-anonymous";
-import { Request } from "express";
+} from 'passport-jwt';
+import { Strategy as AnonymousStrategy } from 'passport-anonymous';
+import { Request } from 'express';
 
-import config from "./index";
-import { TokenType } from "@prisma/client";
+import config from './index';
+import { TokenType } from '@prisma/client';
 
 function cookieExtractor(req: Request) {
-  if (req && req.cookies && "accessToken" in req.cookies) {
+  if (req && req.cookies && 'accessToken' in req.cookies) {
     return req.cookies.accessToken;
   }
   return null;
@@ -26,7 +26,7 @@ const jwtOptions = {
 
 const jwtVerify: VerifyCallback = async (payload, done) => {
   if (payload.type !== TokenType.ACCESS) {
-    done("Invalid token type", false);
+    done('Invalid token type', false);
     return;
   }
 

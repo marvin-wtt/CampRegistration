@@ -1,10 +1,10 @@
-import { catchRequestAsync } from "utils/catchAsync";
-import ApiError from "utils/ApiError";
-import httpStatus from "http-status";
-import { collection, resource } from "resources/resource";
-import { managerService, userService } from "services";
-import { campManagerResource } from "resources";
-import { routeModel } from "utils/verifyModel";
+import { catchRequestAsync } from 'utils/catchAsync';
+import ApiError from 'utils/ApiError';
+import httpStatus from 'http-status';
+import { collection, resource } from 'resources/resource';
+import { managerService, userService } from 'services';
+import { campManagerResource } from 'resources';
+import { routeModel } from 'utils/verifyModel';
 
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
@@ -26,7 +26,7 @@ const store = catchRequestAsync(async (req, res) => {
   if (existingCampManager) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "User is already a camp manager.",
+      'User is already a camp manager.',
     );
   }
 
@@ -49,7 +49,7 @@ const destroy = catchRequestAsync(async (req, res) => {
   if (managers.length <= 1) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "The camp must always have at least one camp manager.",
+      'The camp must always have at least one camp manager.',
     );
   }
 

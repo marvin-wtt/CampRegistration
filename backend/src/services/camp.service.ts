@@ -1,25 +1,25 @@
-import { Camp, type Prisma } from "@prisma/client";
-import prisma from "../client";
-import { ulid } from "utils/ulid";
-import { registrationService } from "services/index";
+import { Camp, type Prisma } from '@prisma/client';
+import prisma from '../client';
+import { ulid } from 'utils/ulid';
+import { registrationService } from 'services/index';
 
 const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
-  "id",
-  "active",
-  "public",
-  "name",
-  "countries",
-  "organizer",
-  "contactEmail",
-  "maxParticipants",
-  "minAge",
-  "maxAge",
-  "startAt",
-  "endAt",
-  "price",
-  "location",
-  "createdAt",
-  "updatedAt",
+  'id',
+  'active',
+  'public',
+  'name',
+  'countries',
+  'organizer',
+  'contactEmail',
+  'maxParticipants',
+  'minAge',
+  'maxAge',
+  'startAt',
+  'endAt',
+  'price',
+  'location',
+  'createdAt',
+  'updatedAt',
 ];
 
 const getCampById = (id: string) => {
@@ -53,14 +53,14 @@ const queryPublicCamps = async <Key extends keyof Camp>(
     limit?: number;
     page?: number;
     sortBy?: string;
-    sortType?: "asc" | "desc";
+    sortType?: 'asc' | 'desc';
   },
   keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
-  const sortBy = options.sortBy ?? "startAt";
-  const sortType = options.sortType ?? "desc";
+  const sortBy = options.sortBy ?? 'startAt';
+  const sortType = options.sortType ?? 'desc';
 
   const where: Prisma.CampWhereInput = {
     // Only show active, public camps by default
@@ -87,7 +87,7 @@ const queryPublicCamps = async <Key extends keyof Camp>(
 
 const createCamp = async (
   userId: string,
-  data: Omit<Prisma.CampCreateInput, "id">,
+  data: Omit<Prisma.CampCreateInput, 'id'>,
 ) => {
   return prisma.camp.create({
     data: {
@@ -100,7 +100,7 @@ const createCamp = async (
 
 const updateCampById = async (
   id: string,
-  data: Omit<Prisma.CampUpdateInput, "id">,
+  data: Omit<Prisma.CampUpdateInput, 'id'>,
 ) => {
   return prisma.camp.update({
     where: { id },
@@ -123,7 +123,7 @@ const getCampFreePlaces = async (
   const freePlaces = camp.maxParticipants as Record<string, number> | number;
 
   // Simple query for national camps
-  if (typeof freePlaces === "number") {
+  if (typeof freePlaces === 'number') {
     const participants = await registrationService.getParticipantsCount(
       camp.id,
     );

@@ -1,7 +1,7 @@
-import Chron from "croner";
-import logger from "../config/logger";
-import Cron from "croner";
-import moment from "moment";
+import Chron from 'croner';
+import logger from '../config/logger';
+import Cron from 'croner';
+import moment from 'moment';
 
 export const errorHandler = (error: unknown, job: Chron) => {
   logger.error(`Job ${job.name} failed. ${error}`);

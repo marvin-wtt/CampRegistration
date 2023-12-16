@@ -1,10 +1,10 @@
-import nodemailer, { SendMailOptions } from "nodemailer";
-import config from "./index";
-import logger from "./logger";
-import hbs from "nodemailer-express-handlebars";
-import { create } from "express-handlebars";
-import i18n from "config/i18n";
-import path from "path";
+import nodemailer, { SendMailOptions } from 'nodemailer';
+import config from './index';
+import logger from './logger';
+import hbs from 'nodemailer-express-handlebars';
+import { create } from 'express-handlebars';
+import i18n from 'config/i18n';
+import path from 'path';
 
 const transportOptions = () => {
   const mailOptions: SendMailOptions = {
@@ -23,7 +23,7 @@ const transportOptions = () => {
   // Sendmail
   return {
     sendmail: true,
-    newline: "unix",
+    newline: 'unix',
     ...mailOptions,
     smtp: undefined,
   };
@@ -32,23 +32,23 @@ const transportOptions = () => {
 const transport = nodemailer.createTransport(transportOptions());
 
 /* c8 ignore next 10 */
-if (config.env !== "test") {
+if (config.env !== 'test') {
   transport
     .verify()
-    .then(() => logger.info("Connected to email server"))
+    .then(() => logger.info('Connected to email server'))
     .catch(() =>
       logger.warn(
-        "Unable to connect to email server. Make sure you have configured the SMTP options in .env",
+        'Unable to connect to email server. Make sure you have configured the SMTP options in .env',
       ),
     );
 }
 
-const viewsPath = path.join(__dirname, "..", "views", "emails");
+const viewsPath = path.join(__dirname, '..', 'views', 'emails');
 
 const options = {
-  extName: ".hbs",
+  extName: '.hbs',
   viewEngine: create({
-    partialsDir: path.join(viewsPath, "partials"),
+    partialsDir: path.join(viewsPath, 'partials'),
     layoutsDir: undefined,
     defaultLayout: false,
     helpers: {
@@ -58,6 +58,6 @@ const options = {
   viewPath: viewsPath,
 };
 
-transport.use("compile", hbs(options));
+transport.use('compile', hbs(options));
 
 export default transport as hbs.HbsTransporter;

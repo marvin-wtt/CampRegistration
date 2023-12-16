@@ -1,8 +1,8 @@
-import supertest from "supertest";
-import app from "../../src/app";
-import { SuperAgentRequest } from "superagent";
+import supertest from 'supertest';
+import app from '../../src/app';
+import { SuperAgentRequest } from 'superagent';
 
-declare module "supertest" {
+declare module 'supertest' {
   interface Test {
     expectOrPrint: (statusCode: number) => Test;
   }
@@ -29,12 +29,12 @@ export const request = () => {
 export const withJsonHeader = <Req extends SuperAgentRequest>(
   request: Req,
 ): Req => {
-  return request.set("Accept", "application/json");
+  return request.set('Accept', 'application/json');
 };
 
 export const withAuthToken = <Req extends SuperAgentRequest>(
   request: Req,
   token: string,
 ): Req => {
-  return request.set("Authorization", `Bearer ${token}`);
+  return request.set('Authorization', `Bearer ${token}`);
 };

@@ -1,4 +1,4 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 const TemplateBodySchema = Joi.object({
   title: Joi.alternatives()
@@ -13,10 +13,10 @@ const TemplateBodySchema = Joi.object({
           .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
           .required(),
         required: Joi.boolean(),
-        align: Joi.string().valid("left", "right", "center"),
+        align: Joi.string().valid('left', 'right', 'center'),
         sortable: Joi.boolean(),
         sort: Joi.function(),
-        sortOrder: Joi.string().valid("ad", "da"),
+        sortOrder: Joi.string().valid('ad', 'da'),
         format: Joi.function(),
         style: Joi.alternatives().try(Joi.string(), Joi.function()),
         classes: Joi.alternatives().try(Joi.string(), Joi.function()),
@@ -38,12 +38,12 @@ const TemplateBodySchema = Joi.object({
   filterCounselors: Joi.boolean(),
   filterParticipants: Joi.boolean(),
   printOptions: Joi.object({
-    orientation: Joi.string().valid("portrait", "landscape"),
+    orientation: Joi.string().valid('portrait', 'landscape'),
   }),
   indexed: Joi.boolean(),
   actions: Joi.boolean(),
   sortBy: Joi.string(),
-  sortDirection: Joi.string().valid("asc", "desc"),
+  sortDirection: Joi.string().valid('asc', 'desc'),
   generated: Joi.boolean(),
 }).options({ stripUnknown: true });
 

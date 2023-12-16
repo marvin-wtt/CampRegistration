@@ -1,9 +1,9 @@
-import { Template } from "@prisma/client";
+import { Template } from '@prisma/client';
 
-type TemplateInput = Pick<Template, "id" | "data">;
+type TemplateInput = Pick<Template, 'id' | 'data'>;
 
 const templateResource = (template: TemplateInput) => {
-  const data = typeof template.data === "object" ? template.data : {};
+  const data = typeof template.data === 'object' ? template.data : {};
 
   return {
     ...data,

@@ -1,8 +1,8 @@
-import multer, { Field } from "multer";
-import config from "config";
-import { NextFunction, Request, Response } from "express";
-import dynamicMiddleware from "middlewares/dynamic.middleware";
-import { fileService } from "services";
+import multer, { Field } from 'multer';
+import config from 'config';
+import { NextFunction, Request, Response } from 'express';
+import dynamicMiddleware from 'middlewares/dynamic.middleware';
+import { fileService } from 'services';
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 
@@ -45,7 +45,7 @@ const resolveMulterMiddleware = (
     return upload.any();
   }
 
-  if (typeof fields === "string") {
+  if (typeof fields === 'string') {
     return upload.single(fields);
   }
 

@@ -1,6 +1,6 @@
-import { Prisma } from "@prisma/client";
-import prisma from "../../tests/utils/prisma";
-import { ulid } from "ulidx";
+import { Prisma } from '@prisma/client';
+import prisma from '../../tests/utils/prisma';
+import { ulid } from 'ulidx';
 
 export const RegistrationFactory = {
   build: (

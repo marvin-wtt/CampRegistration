@@ -1,20 +1,20 @@
-import { removeExpiredTokens } from "jobs/tokens.job";
-import { deleteTemporaryFiles, deleteUnusedFiles } from "jobs/files.job";
-import { CronOptions, Cron } from "croner";
+import { removeExpiredTokens } from 'jobs/tokens.job';
+import { deleteTemporaryFiles, deleteUnusedFiles } from 'jobs/files.job';
+import { CronOptions, Cron } from 'croner';
 import {
   errorHandler,
   completionHandler,
   executionHandler,
   protectionHandler,
   terminationHandler,
-} from "./handler";
+} from './handler';
 
 let activeJobs: Cron[] = [];
 
 export const startJobs = () => {
-  scheduleJob("expired-token-cleanup", "0 3 * * *", removeExpiredTokens);
-  scheduleJob("tmp-file-cleanup", "0 4 * * *", deleteTemporaryFiles);
-  scheduleJob("unused-file-cleanup", "0 4 * * *", deleteUnusedFiles);
+  scheduleJob('expired-token-cleanup', '0 3 * * *', removeExpiredTokens);
+  scheduleJob('tmp-file-cleanup', '0 4 * * *', deleteTemporaryFiles);
+  scheduleJob('unused-file-cleanup', '0 4 * * *', deleteUnusedFiles);
 };
 
 const scheduleJob = (
@@ -52,7 +52,7 @@ const runJob = (
     completionHandler(job);
 
     if (!job.nextRun()) {
-      terminationHandler("No further executes scheduled", job);
+      terminationHandler('No further executes scheduled', job);
       activeJobs.splice(activeJobs.indexOf(job), 1);
     }
   };

@@ -1,27 +1,27 @@
-import { type Prisma, PrismaClient } from "@prisma/client";
-import data from "./json/registrations.json";
-import { ulid } from "../../src/utils/ulid";
-const name = "registration";
+import { type Prisma, PrismaClient } from '@prisma/client';
+import data from './json/registrations.json';
+import { ulid } from '../../src/utils/ulid';
+const name = 'registration';
 const run = (prisma: PrismaClient) => {
-  const campId = "01H4BK6DFQAVVB5TDS5BJ1AB95 ";
+  const campId = '01H4BK6DFQAVVB5TDS5BJ1AB95 ';
 
   const registrations: Prisma.RegistrationCreateManyInput[] = [];
 
   for (const registration of data) {
     // Boolean checkboxes
-    convertBooleanCheckbox("waiting_list", registration);
-    convertBooleanCheckbox("agreement_rules", registration);
-    convertBooleanCheckbox("agreement_privacy", registration);
-    convertBooleanCheckbox("agreement_forward_list_participants", registration);
+    convertBooleanCheckbox('waiting_list', registration);
+    convertBooleanCheckbox('agreement_rules', registration);
+    convertBooleanCheckbox('agreement_privacy', registration);
+    convertBooleanCheckbox('agreement_forward_list_participants', registration);
     convertBooleanCheckbox(
-      "agreement_general_terms_and_conditions",
+      'agreement_general_terms_and_conditions',
       registration,
     );
     // Integers
-    convertStringToInt("guardian_permission_leave", registration);
+    convertStringToInt('guardian_permission_leave', registration);
 
     // @ts-ignore
-    registration.role = "participant";
+    registration.role = 'participant';
 
     registrations.push({
       id: ulid(),
@@ -44,7 +44,7 @@ function convertBooleanCheckbox(
   }
 
   registration[key] =
-    registration[key].length === 1 && registration[key][0] === "1";
+    registration[key].length === 1 && registration[key][0] === '1';
 }
 
 function convertStringToInt(

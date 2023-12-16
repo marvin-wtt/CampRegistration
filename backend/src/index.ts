@@ -1,12 +1,12 @@
-import { Server } from "http";
-import app from "./app";
-import prisma from "./client";
-import config from "./config";
-import logger from "./config/logger";
+import { Server } from 'http';
+import app from './app';
+import prisma from './client';
+import config from './config';
+import logger from './config/logger';
 
 let server: Server;
 prisma.$connect().then(() => {
-  logger.info("Connected to SQL Database");
+  logger.info('Connected to SQL Database');
   server = app.listen(config.port, () => {
     logger.info(`Listening to port ${config.port}`);
   });
@@ -15,7 +15,7 @@ prisma.$connect().then(() => {
 const exitHandler = () => {
   if (server) {
     server.close(() => {
-      logger.info("Server closed");
+      logger.info('Server closed');
       logger.close();
       process.exit(1);
     });
@@ -29,11 +29,11 @@ const unexpectedErrorHandler = (error: unknown) => {
   exitHandler();
 };
 
-process.on("uncaughtException", unexpectedErrorHandler);
-process.on("unhandledRejection", unexpectedErrorHandler);
+process.on('uncaughtException', unexpectedErrorHandler);
+process.on('unhandledRejection', unexpectedErrorHandler);
 
-process.on("SIGTERM", () => {
-  logger.info("SIGTERM received");
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received');
   if (server) {
     server.close();
   }

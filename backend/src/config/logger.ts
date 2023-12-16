@@ -1,7 +1,7 @@
-import winston from "winston";
-import "winston-daily-rotate-file";
-import config from "./index";
-import path from "path";
+import winston from 'winston';
+import 'winston-daily-rotate-file';
+import config from './index';
+import path from 'path';
 
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
@@ -11,32 +11,32 @@ const enumerateErrorFormat = winston.format((info) => {
 });
 
 const fileTransport = new winston.transports.DailyRotateFile({
-  filename: "%DATE%-app.log",
-  datePattern: "YYYY-MM-DD-HH",
+  filename: '%DATE%-app.log',
+  datePattern: 'YYYY-MM-DD-HH',
   zippedArchive: true,
-  maxSize: "20m",
-  maxFiles: "14d",
-  dirname: path.join(__dirname, "..", "..", "logs"),
+  maxSize: '20m',
+  maxFiles: '14d',
+  dirname: path.join(__dirname, '..', '..', 'logs'),
 });
 
 const fileErrorTransport = new winston.transports.DailyRotateFile({
-  level: "error",
-  filename: "%DATE%-app-error.log",
-  datePattern: "YYYY-MM-DD-HH",
+  level: 'error',
+  filename: '%DATE%-app-error.log',
+  datePattern: 'YYYY-MM-DD-HH',
   zippedArchive: true,
-  maxSize: "20m",
-  maxFiles: "14d",
-  dirname: path.join(__dirname, "..", "..", "logs"),
+  maxSize: '20m',
+  maxFiles: '14d',
+  dirname: path.join(__dirname, '..', '..', 'logs'),
 });
 
 const consoleTransport = new winston.transports.Console({
-  stderrLevels: ["error"],
+  stderrLevels: ['error'],
 });
 
-const isDevEnv = config.env === "development";
+const isDevEnv = config.env === 'development';
 
 const logger = winston.createLogger({
-  level: isDevEnv ? "debug" : "info",
+  level: isDevEnv ? 'debug' : 'info',
   format: winston.format.combine(
     enumerateErrorFormat(),
     isDevEnv ? winston.format.colorize() : winston.format.uncolorize(),

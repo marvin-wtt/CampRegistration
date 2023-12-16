@@ -45,7 +45,7 @@ export class TableCellRenderer {
     return this._hideEvaluator
       ? this._hideEvaluator.evaluate(data) === false
       : this._showEvaluator
-      ? this._showEvaluator.evaluate(data) === true
-      : true;
+        ? this._showEvaluator.evaluate(data) === true
+        : true;
   }
 }

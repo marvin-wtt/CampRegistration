@@ -1,9 +1,9 @@
-import express from "express";
-import config from "config";
-import campRoutes from "./camps/camp.routes";
-import authRoutes from "./auth.routes";
-import profileRoutes from "./profile.routes";
-import userRoutes from "./user.routes";
+import express from 'express';
+import config from 'config';
+import campRoutes from './camps/camp.routes';
+import authRoutes from './auth.routes';
+import profileRoutes from './profile.routes';
+import userRoutes from './user.routes';
 
 const router = express.Router();
 
@@ -13,12 +13,12 @@ router.use((req, res, next) => {
   next();
 });
 
-router.use("/auth", authRoutes);
-router.use("/users", userRoutes);
-router.use("/profile", profileRoutes);
-router.use("/camps", campRoutes);
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/profile', profileRoutes);
+router.use('/camps', campRoutes);
 
-if (config.env === "development") {
+if (config.env === 'development') {
   // TODO
   // router.use("/docs", docsRoute);
 }

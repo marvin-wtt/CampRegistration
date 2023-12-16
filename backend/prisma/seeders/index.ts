@@ -1,9 +1,9 @@
-import userSeeder from "./user.seeder";
-import campSeeder from "./camp.seeder";
-import registrationSeeder from "./registration.seeder";
-import templateSeeder from "./template.seeder";
-import { PrismaClient } from "@prisma/client";
-import roomSeeder from "./room.seeder";
+import userSeeder from './user.seeder';
+import campSeeder from './camp.seeder';
+import registrationSeeder from './registration.seeder';
+import templateSeeder from './template.seeder';
+import { PrismaClient } from '@prisma/client';
+import roomSeeder from './room.seeder';
 
 const prisma = new PrismaClient();
 

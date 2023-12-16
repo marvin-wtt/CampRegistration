@@ -8,9 +8,10 @@ declare module '@vue/runtime-core' {
 }
 
 // Resolve url depending on environment
-const apiUrl = window.location.hostname === 'localhost'
-  ? 'http://localhost:3000'
-  : window.origin;
+const apiUrl =
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : window.origin;
 
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;

@@ -1,3 +1,3 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from 'vitest';
 
-describe.skip("/api/v1/profile", () => {});
+describe.skip('/api/v1/profile', () => {});

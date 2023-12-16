@@ -1,27 +1,27 @@
-import prisma from "../client";
-import { File, Prisma } from "@prisma/client";
-import config from "config";
-import fs from "fs";
-import { ulid } from "utils/ulid";
-import ApiError from "utils/ApiError";
-import path from "path";
-import fse from "fs-extra";
-import httpStatus from "http-status";
-import { extractKeyFromFieldName } from "utils/form";
-import { randomUUID } from "crypto";
+import prisma from '../client';
+import { File, Prisma } from '@prisma/client';
+import config from 'config';
+import fs from 'fs';
+import { ulid } from 'utils/ulid';
+import ApiError from 'utils/ApiError';
+import path from 'path';
+import fse from 'fs-extra';
+import httpStatus from 'http-status';
+import { extractKeyFromFieldName } from 'utils/form';
+import { randomUUID } from 'crypto';
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
 
 const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
-  "id",
-  "name",
-  "originalName",
-  "field",
-  "type",
-  "size",
-  "accessLevel",
-  "createdAt",
+  'id',
+  'name',
+  'originalName',
+  'field',
+  'type',
+  'size',
+  'accessLevel',
+  'createdAt',
 ];
 
 const mapFields = (
@@ -106,7 +106,7 @@ const saveModelFile = async (
   field: string,
   accessLevel: string,
 ) => {
-  const fileName = name + "." + file.filename.split(".").pop();
+  const fileName = name + '.' + file.filename.split('.').pop();
   const fileData = mapFields(file, fileName, field, accessLevel);
 
   const data = await prisma.file.create({
@@ -140,14 +140,14 @@ const queryModelFiles = async <Key extends keyof File>(
     limit?: number;
     page?: number;
     sortBy?: string;
-    sortType?: "asc" | "desc";
+    sortType?: 'asc' | 'desc';
   },
   keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
-  const sortBy = options.sortBy ?? "name";
-  const sortType = options.sortType ?? "desc";
+  const sortBy = options.sortBy ?? 'name';
+  const sortType = options.sortType ?? 'desc';
 
   const select = keys.reduce((obj, k) => ({ ...obj, [k]: true }), {});
   const where: Prisma.FileWhereInput = {
@@ -189,7 +189,7 @@ const deleteFile = async (id: string) => {
 };
 const generateFileName = (originalName: string): string => {
   const fileName = randomUUID();
-  const fileExtension = originalName.split(".").pop();
+  const fileExtension = originalName.split('.').pop();
 
   return `${fileName}.${fileExtension}`;
 };
@@ -197,14 +197,14 @@ const generateFileName = (originalName: string): string => {
 const deleteUnreferencedFiles = async (): Promise<number> => {
   const { uploadDir, location } = config.storage;
 
-  if (location !== "local") {
+  if (location !== 'local') {
     return 0;
   }
 
   const fileNames = await fse.readdir(uploadDir);
   const fileModels = await prisma.file.findMany({
     where: {
-      storageLocation: "local",
+      storageLocation: 'local',
     },
     select: {
       name: true,
@@ -266,7 +266,7 @@ const getStorage = (name?: string): StorageStrategy => {
     name = config.storage.location;
   }
 
-  if (name === "local") {
+  if (name === 'local') {
     return LocalStorage;
   }
 
@@ -293,7 +293,7 @@ const LocalStorage: StorageStrategy = {
   stream: (file: File) => {
     const filePath = path.join(config.storage.uploadDir, file.name);
     if (!fse.existsSync(filePath)) {
-      throw new ApiError(httpStatus.NOT_FOUND, "File is missing in storage.");
+      throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
     }
 
     return fse.createReadStream(filePath);

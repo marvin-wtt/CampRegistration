@@ -29,9 +29,8 @@ export const init = (
   serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
   initiated = true;
-}
+};
 
 if (!initiated) {
   init(ComponentCollection.Instance, FunctionFactory.Instance, Serializer);
 }
-

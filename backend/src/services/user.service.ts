@@ -1,19 +1,19 @@
-import { type Prisma, User } from "@prisma/client";
-import httpStatus from "http-status";
-import prisma from "../client";
-import ApiError from "utils/ApiError";
-import { ulid } from "utils/ulid";
-import { encryptPassword } from "utils/encryption";
-import { authService } from "services/index";
+import { type Prisma, User } from '@prisma/client';
+import httpStatus from 'http-status';
+import prisma from '../client';
+import ApiError from 'utils/ApiError';
+import { ulid } from 'utils/ulid';
+import { encryptPassword } from 'utils/encryption';
+import { authService } from 'services/index';
 
 const createUser = async (
   data: Pick<
     Prisma.UserCreateInput,
-    "email" | "name" | "password" | "role" | "locale"
+    'email' | 'name' | 'password' | 'role' | 'locale'
   >,
 ) => {
   if (await getUserByEmail(data.email)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
 
   return prisma.user.create({
@@ -34,21 +34,21 @@ const queryUsers = async <Key extends keyof Prisma.UserSelect>(
     limit?: number;
     page?: number;
     sortBy?: string;
-    sortType?: "asc" | "desc";
+    sortType?: 'asc' | 'desc';
   },
   keys: Key[] = [
-    "id",
-    "email",
-    "name",
-    "password",
-    "createdAt",
-    "updatedAt",
+    'id',
+    'email',
+    'name',
+    'password',
+    'createdAt',
+    'updatedAt',
   ] as Key[],
 ): Promise<Pick<Prisma.UserSelect, Key>[]> => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
   const sortBy = options.sortBy;
-  const sortType = options.sortType ?? "desc";
+  const sortType = options.sortType ?? 'desc';
   const users = await prisma.user.findMany({
     where: filter,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
@@ -96,11 +96,11 @@ const getUserByEmail = async (email: string): Promise<User | null> => {
 
 const updateUserById = async <Key extends keyof User>(
   userId: string,
-  data: Omit<Prisma.UserUpdateInput, "id">,
-  keys: Key[] = ["id", "email", "name", "role", "locale", "locked"] as Key[],
+  data: Omit<Prisma.UserUpdateInput, 'id'>,
+  keys: Key[] = ['id', 'email', 'name', 'role', 'locale', 'locked'] as Key[],
 ): Promise<Pick<User, Key> | null> => {
   if (data.email && (await getUserByEmail(data.email as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
   if (data.locked) {
     await authService.logoutAllDevices(userId);
@@ -114,7 +114,7 @@ const updateUserById = async <Key extends keyof User>(
   return updatedUser as Pick<User, Key> | null;
 };
 
-type UserUpdateInput = Omit<Prisma.UserUpdateInput, "id"> & { email?: string };
+type UserUpdateInput = Omit<Prisma.UserUpdateInput, 'id'> & { email?: string };
 
 const updateUserByIdWithCamps = async (
   userId: string,
@@ -122,12 +122,12 @@ const updateUserByIdWithCamps = async (
 ) => {
   const user = await getUserById(userId);
   if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
 
   if (data.role) {
     // TODO Should be possible if the auth user is admin
-    throw new ApiError(httpStatus.FORBIDDEN, "Unscientific permissions");
+    throw new ApiError(httpStatus.FORBIDDEN, 'Unscientific permissions');
   }
 
   if (data.email) {
@@ -138,7 +138,7 @@ const updateUserByIdWithCamps = async (
     });
 
     if (count > 0) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
 
     // Reset email verification
