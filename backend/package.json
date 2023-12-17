@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -rf ./build/ && rm -rf ./node_modules/",
     "build": "prisma generate && tsc && tsc-alias && npm run build:views",
-    "build:views": "mjml ./src/views/templates/emails/* -o ./src/views/emails/",
+    "build:views": "mkdir -p ./build/views/emails/ && mjml ./src/views/templates/emails/* -o ./build/views/emails/",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
     "db:migrate": "prisma migrate deploy",
@@ -19,7 +19,7 @@
     "prettier:fix": "prettier --write src/**/*.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./build/views/emails/ ",
+    "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
     "dev": "dotenv -e env.dev cross-env NODE_PATH=./src NODE_ENV=development nodemon src/index.ts",
     "production": "cross-env NODE_ENV=development node build/index.js"
   },
