@@ -19,7 +19,7 @@
     "prettier:fix": "prettier --write src/**/*.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
+    "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./build/views/emails/ ",
     "dev": "dotenv -e env.dev cross-env NODE_PATH=./src NODE_ENV=development nodemon src/index.ts",
     "production": "cross-env NODE_ENV=development node build/index.js"
   },
