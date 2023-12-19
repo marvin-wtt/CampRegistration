@@ -71,6 +71,15 @@ export const formUtils = (camp: Camp) => {
     return survey.pages.some((p) => p.hasErrors(false, false));
   };
 
+  const getDataErrorFields = (): string => {
+    return survey.pages
+      .filter((value) => value.hasErrors(false, false))
+      .flatMap((page) => page.questions)
+      .filter((question) => question.hasErrors(false, false))
+      .map((question) => question.name)
+      .join(", ");
+  };
+
   const unknownDataFields = (): string[] => {
     const data = survey.data;
 
@@ -112,6 +121,7 @@ export const formUtils = (camp: Camp) => {
   return {
     updateData,
     hasDataErrors,
+    getDataErrorFields,
     hasUnknownFiles,
     unknownDataFields,
     extractCampData,
