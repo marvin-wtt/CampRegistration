@@ -152,6 +152,7 @@ interface NavigationItem {
 const items: NavigationItem[] = [
   {
     name: 'dashboard',
+    preview: true,
     label: t('dashboard'),
     icon: 'dashboard',
     to: { name: 'dashboard' },
@@ -227,6 +228,13 @@ const items: NavigationItem[] = [
         icon: 'key',
         to: { name: 'access' },
       },
+      {
+        name: 'notifications',
+        preview: true,
+        label: t('notifications'),
+        icon: 'sms',
+        to: { name: 'notification' },
+      },
     ],
   },
 ];
@@ -262,6 +270,7 @@ room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
 tools: 'Tools'
+notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -280,6 +289,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tools: 'Tools'
+notifications: 'Benachrichtigungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -298,6 +308,7 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tools: 'Tools'
+notifications: 'Notifications'
 </i18n>
 
 <style>

@@ -12,7 +12,7 @@
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="20px 0 20px 0">
       <mj-column>
-        <mj-text align="center" font-size="20px" font-weight="300">{{t 'app-name' }}</mj-text>
+        <mj-text align="center" font-size="20px" font-weight="300">{{t 'appName' }}</mj-text>
       </mj-column>
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="0">
@@ -24,8 +24,7 @@
       <mj-column vertical-align="middle" width="100%">
         <mj-text mj-class="big-text">{{t 'registration:email.waitingListConfirmation.text.title' }}</mj-text>
         <mj-text mj-class="text">{{t 'registration:email.waitingListConfirmation.text.information' }}</mj-text>
-        <mj-button color="#ffffff" background-color="#338d8e" mj-class="btn" href="{{ url }}">{{t 'manager:email.waitingListConfirmation.text.button' }}</mj-button>
-        <mj-text mj-class="text">{{t 'registration:email.waitingListConfirmation.text.accidental' }}</mj-text>
+        <mj-text mj-class="text">{{t 'registration:email.waitingListConfirmation.text.contact' }}</mj-text>
         <mj-text mj-class="text">
           {{t 'registration:email.waitingListConfirmation.text.greeting' }} <br>
           {{t 'registration:email.waitingListConfirmation.text.teamName' }}
@@ -38,7 +37,8 @@
     <mj-section mj-class="bottom-section">
       <mj-column vertical-align="middle" width="70%">
         <mj-text align="center" mj-class="small-text">
-          {{t 'email:footer.sendTo' email}} <br>
+          {{t 'email:footer.sentTo' email}}
+          <br>
           {{t 'registration:email.waitingListConfirmation.footer.cause' }}
         </mj-text>
       </mj-column>
