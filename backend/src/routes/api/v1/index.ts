@@ -18,6 +18,11 @@ router.use('/users', userRoutes);
 router.use('/profile', profileRoutes);
 router.use('/camps', campRoutes);
 
+// Simple health check to see if the API is available
+router.get("/health", (req, res) => {
+  res.sendStatus(200);
+});
+
 if (config.env === 'development') {
   // TODO
   // router.use("/docs", docsRoute);
