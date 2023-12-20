@@ -205,7 +205,9 @@ const sendRegistrationConfirmation = async (
   const template = "registration-confirmation";
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     participantName,
   };
 
@@ -231,7 +233,9 @@ const sendWaitingListConfirmation = async (
   const template = "registration-waiting-list-confirmation";
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     participantName,
   };
 
@@ -267,7 +271,9 @@ const sendRegistrationManagerNotification = async (
   };
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     participantName,
   };
 

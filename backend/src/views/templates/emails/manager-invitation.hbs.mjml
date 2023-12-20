@@ -38,7 +38,7 @@
     <mj-section mj-class="bottom-section">
       <mj-column vertical-align="middle" width="70%">
         <mj-text align="center" mj-class="small-text">
-          {{t 'email:footer.sentTo' email}}
+          {{t 'email:footer.sentTo'}}
           <br>
           {{t 'manager:email.invitation.footer.cause' }}
         </mj-text>

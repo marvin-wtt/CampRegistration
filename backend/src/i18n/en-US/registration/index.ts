@@ -2,9 +2,11 @@ export default {
   email: {
     managerNotification: {
       subject: "Registration Notification",
+      preview:
+        "Confirmation for your registration to the camp: {{ camp.name }}",
       text: {
         title: "Hello,",
-        information: "Someone registered for {{ campName }}.",
+        information: "{{ participantName }} registered for {{ camp.name }}.",
         button: "View Registrations",
         greeting: "Best regards,",
         teamName: "$t(appName) team",
@@ -14,11 +16,13 @@ export default {
       },
     },
     waitingListConfirmation: {
-      subject: "Waiting List Confirmation",
+      subject: "Waiting List Notification",
+      preview:
+        "Waiting list  notification for your registration to the camp: {{ camp.name }}",
       text: {
         title: "Hello {{ participantName }},",
         information:
-          "Thank you for your registration to {{ campName }}." +
+          "Thank you for your registration to {{ camp.name }}." +
           "Unfortunately, all places have already been taken." +
           "Your registration is now on the waiting list." +
           "You will hear from us, when a place gets available.",
