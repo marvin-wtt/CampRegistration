@@ -25,7 +25,7 @@
         <mj-text mj-class="big-text">{{t 'registration:email.managerNotification.text.title' }}</mj-text>
         <mj-text mj-class="text">{{t 'registration:email.managerNotification.text.information' }}</mj-text>
         <mj-button color="#ffffff" background-color="#338d8e" mj-class="btn" href="{{ url }}">
-          {{t 'manager:email.managerNotification.text.button' }}
+          {{t 'registration:email.managerNotification.text.button' }}
         </mj-button>
         <mj-text mj-class="text">
           {{t 'registration:email.managerNotification.text.greeting' }} <br>
