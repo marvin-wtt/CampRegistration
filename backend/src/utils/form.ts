@@ -68,7 +68,7 @@ export const formUtils = (camp: Camp) => {
   };
 
   const hasDataErrors = (): boolean => {
-    return survey.pages.some((p) => p.hasErrors(false, false));
+    return survey.hasErrors(false, false);
   };
 
   const getDataErrorFields = (): string => {
