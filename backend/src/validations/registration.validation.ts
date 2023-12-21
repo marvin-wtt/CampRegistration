@@ -18,7 +18,8 @@ export const registrationData: Joi.CustomValidator<object> = (
   formHelper.updateData(value, req.files);
 
   if (formHelper.hasDataErrors()) {
-    return helpers.message({ custom: 'Invalid survey data' });
+    const errors = formHelper.getDataErrorFields();
+    return helpers.message({ custom: `Invalid survey data: ${errors}` });
   }
 
   const unknownDataFields = formHelper.unknownDataFields();

@@ -1,13 +1,17 @@
 import { CampDataType } from 'src/lib/surveyJs/properties/campDataMapping/CampDataType';
 import { IPropertyGridEditor } from 'survey-creator-core';
-import waitingList from 'src/lib/surveyJs/properties/campDataMapping/types/waitingList';
-import country from 'src/lib/surveyJs/properties/campDataMapping/types/country';
-import dateOfBirth from 'src/lib/surveyJs/properties/campDataMapping/types/dateOfBirth';
-import email from 'src/lib/surveyJs/properties/campDataMapping/types/email';
-import address from 'src/lib/surveyJs/properties/campDataMapping/types/address';
-import role from 'src/lib/surveyJs/properties/campDataMapping/types/role';
-import firstName from 'src/lib/surveyJs/properties/campDataMapping/types/firstName';
-import lastName from 'src/lib/surveyJs/properties/campDataMapping/types/lastName';
+import {
+  waitingList,
+  country,
+  dateOfBirth,
+  email,
+  address,
+  role,
+  firstName,
+  lastName,
+  guardianEmail,
+  name,
+} from 'src/lib/surveyJs/properties/campDataMapping/types';
 
 const dataTypes: CampDataType[] = [];
 
@@ -16,7 +20,9 @@ dataTypes.push(country);
 dataTypes.push(dateOfBirth);
 dataTypes.push(email);
 dataTypes.push(firstName);
+dataTypes.push(guardianEmail);
 dataTypes.push(lastName);
+dataTypes.push(name);
 dataTypes.push(role);
 dataTypes.push(waitingList);
 

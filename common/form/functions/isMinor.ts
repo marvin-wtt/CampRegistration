@@ -3,12 +3,15 @@ const isMinor = (params: unknown[]) => {
     return true;
   }
 
-  if (typeof params[0] !== 'string' || typeof params[1] !== 'string') {
+  if (typeof params[0] !== 'string') {
+    return null;
+  }
+  if (typeof params[1] !== 'string' && !(params[1] instanceof Date)) {
     return null;
   }
 
   const birthdate = new Date(params[0]);
-  const date = new Date(params[1]);
+  const date = params[1] instanceof Date ? params[1] : new Date(params[1]);
 
   if (isNaN(birthdate.getTime()) || isNaN(date.getTime())) {
     return true;

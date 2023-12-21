@@ -20,8 +20,9 @@
     "format:check": "prettier --check \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "dev": "npm run dev:views & npm run dev:serve",
     "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
-    "dev": "dotenv -e env.dev cross-env NODE_PATH=./src NODE_ENV=development nodemon src/index.ts",
+    "dev:serve": "dotenv -e env.dev cross-env NODE_PATH=./src NODE_ENV=development nodemon src/index.ts",
     "production": "cross-env NODE_ENV=development node build/index.js"
   },
   "prisma": {
@@ -70,7 +71,7 @@
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.1",
     "qs": "^6.11.2",
-    "survey-core": "^1.9.119",
+    "survey-core": "^1.9.122",
     "ulidx": "^2.0.0",
     "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1"

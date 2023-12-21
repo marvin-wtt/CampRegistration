@@ -201,11 +201,13 @@ const sendRegistrationConfirmation = async (
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
-  const subject = t('registration:email.confirmation');
+  const subject = t('registration:email.confirmation.subject');
   const template = 'registration-confirmation';
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     participantName,
   };
 
@@ -227,11 +229,13 @@ const sendWaitingListConfirmation = async (
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
-  const subject = t('registration:email.waitingListConfirmation');
+  const subject = t('registration:email.waitingListConfirmation.subject');
   const template = 'registration-waiting-list-confirmation';
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     participantName,
   };
 
@@ -257,7 +261,7 @@ const sendRegistrationManagerNotification = async (
   const participantName = accessor.name();
 
   await i18n.changeLanguage(country);
-  const subject = t('registration:email.managerNotification');
+  const subject = t('registration:email.managerNotification.subject');
   const template = 'registration-manager-notification';
 
   const dataAttachment = {
@@ -267,7 +271,9 @@ const sendRegistrationManagerNotification = async (
   };
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     participantName,
   };
 
@@ -290,7 +296,7 @@ const getRegistrationConfirmationRegistrationData = (
   const cc = accessor.guardianEmails();
   const country = accessor.country(camp.countries);
   const replyTo = findCampContactEmails(camp.contactEmail, country);
-  const participantName = accessor.name();
+  const participantName = accessor.firstName() ?? accessor.name();
   const campName = translateObject(camp.name, registration.locale);
 
   return {
@@ -315,20 +321,50 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     });
   };
 
+  const firstName = (): string | undefined => {
+    if (!('first_name' in campData) || campData.first_name.length === 0) {
+      return undefined;
+    }
+
+    return campData.first_name.find((value): value is string => {
+      return typeof value === 'string';
+    });
+  };
+
+  const lastName = (): string | undefined => {
+    if (!('last_name' in campData) || campData.last_name.length === 0) {
+      return undefined;
+    }
+
+    return campData.last_name.find((value): value is string => {
+      return typeof value === 'string';
+    });
+  };
+
+  const fullName = (): string | undefined => {
+    if (!('full_name' in campData) || campData.full_name.length === 0) {
+      return undefined;
+    }
+
+    return campData.full_name.find((value): value is string => {
+      return typeof value === 'string';
+    });
+  };
+
   const name = (): string | undefined => {
-    if ('first_name' in campData && campData.first_name.length > 0) {
-      return campData.first_name.find((value): value is string => {
-        return typeof value === 'string';
-      });
+    const full = fullName();
+    const first = firstName();
+    const last = lastName();
+
+    if (full) {
+      return full;
     }
 
-    if ('full_name' in campData && campData.full_name.length > 0) {
-      return campData.full_name.find((value): value is string => {
-        return typeof value === 'string';
-      });
+    if (first !== undefined && last !== undefined) {
+      return `${first} ${last}`;
     }
 
-    return undefined;
+    return first !== undefined ? first : last;
   };
 
   const guardianEmails = (): string[] => {
@@ -345,6 +381,9 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     emails,
     country,
     name,
+    firstName,
+    lastName,
+    fullName,
     guardianEmails,
   };
 };
