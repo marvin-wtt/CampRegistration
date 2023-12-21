@@ -5,6 +5,7 @@ import htmlDate from './htmlDate';
 import translate from './translate';
 import objectValues from './objectValues';
 import joinStrings from './joinStrings';
+import isWaitingList from './isWaitingList';
 
 type FunctionRegistrationParams = {
   name: string;
@@ -45,8 +46,20 @@ const functions: FunctionRegistrationParams[] = [
     name: 'joinStrings',
     func: joinStrings,
   },
+  {
+    name: 'isWaitingList',
+    func: isWaitingList,
+  },
 ];
 
-export { isMinor, isAdult, subtractYears, htmlDate, translate, functions };
+export {
+  isMinor,
+  isAdult,
+  subtractYears,
+  htmlDate,
+  translate,
+  isWaitingList,
+  functions,
+};
 
 export default functions;
