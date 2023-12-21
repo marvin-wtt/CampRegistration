@@ -25,7 +25,7 @@ export default {
           "Please confirm your email to confirm the account belongs to you. You can login directly after confirmation",
         button: "Confirm email",
         accidental:
-          "If you did not request a password reset, you can ignore this email.",
+          "If you did not create an account, please do not click the link and contact us.",
         greeting: "Best regards,",
         teamName: "$t(appName) team",
       },
