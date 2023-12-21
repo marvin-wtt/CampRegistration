@@ -322,32 +322,32 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
   };
 
   const firstName = (): string | undefined => {
-    if (!("first_name" in campData) || campData.first_name.length === 0) {
+    if (!('first_name' in campData) || campData.first_name.length === 0) {
       return undefined;
     }
 
     return campData.first_name.find((value): value is string => {
-      return typeof value === "string";
+      return typeof value === 'string';
     });
   };
 
   const lastName = (): string | undefined => {
-    if (!("last_name" in campData) || campData.last_name.length === 0) {
+    if (!('last_name' in campData) || campData.last_name.length === 0) {
       return undefined;
     }
 
     return campData.last_name.find((value): value is string => {
-      return typeof value === "string";
+      return typeof value === 'string';
     });
   };
 
   const fullName = (): string | undefined => {
-    if (!("full_name" in campData) || campData.full_name.length === 0) {
+    if (!('full_name' in campData) || campData.full_name.length === 0) {
       return undefined;
     }
 
     return campData.full_name.find((value): value is string => {
-      return typeof value === "string";
+      return typeof value === 'string';
     });
   };
 

@@ -19,7 +19,7 @@ router.use('/profile', profileRoutes);
 router.use('/camps', campRoutes);
 
 // Simple health check to see if the API is available
-router.get("/health", (req, res) => {
+router.get('/health', (req, res) => {
   res.sendStatus(200);
 });
 

@@ -77,7 +77,7 @@ export const formUtils = (camp: Camp) => {
       .flatMap((page) => page.questions)
       .filter((question) => question.hasErrors(false, false))
       .map((question) => question.name)
-      .join(", ");
+      .join(', ');
   };
 
   const unknownDataFields = (): string[] => {
