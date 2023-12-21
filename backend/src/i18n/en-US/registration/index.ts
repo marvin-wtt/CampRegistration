@@ -40,7 +40,7 @@ export default {
       text: {
         title: "Hello {{ participantName }},",
         information:
-          "Thank you for your registration to {{ campName }}." +
+          "Thank you for your registration to {{ camp.name }}." +
           "You will receive further information in a separate email.",
         contact:
           "If you have any further questions, please don't hesitate to contact us by replying to this email.",
