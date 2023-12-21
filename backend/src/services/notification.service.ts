@@ -19,7 +19,7 @@ type MailOptions = WithRequired<EmailOptions, "subject"> & {
 
 const sendEmail = (options: MailOptions) => {
   const { from } = config.email;
-  const appName = t("app-name");
+  const appName = t("appName");
 
   // Remove duplicate emails
   options = removeDuplicateEmails(options);

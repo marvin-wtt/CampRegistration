@@ -2,8 +2,7 @@ export default {
   email: {
     managerNotification: {
       subject: "Registration Notification",
-      preview:
-        "Confirmation for your registration to the camp: {{ camp.name }}",
+      preview: "New registration for the camp: {{ camp.name }}",
       text: {
         title: "Hello,",
         information: "{{ participantName }} registered for {{ camp.name }}.",
@@ -18,7 +17,7 @@ export default {
     waitingListConfirmation: {
       subject: "Waiting List Notification",
       preview:
-        "Waiting list  notification for your registration to the camp: {{ camp.name }}",
+        "Waiting list notification for your registration to the camp: {{ camp.name }}",
       text: {
         title: "Hello {{ participantName }},",
         information:
@@ -37,6 +36,8 @@ export default {
     },
     confirmation: {
       subject: "Registration Confirmation",
+      preview:
+        "Confirmation for your registration to the camp: {{ camp.name }}",
       text: {
         title: "Hello {{ participantName }},",
         information:
