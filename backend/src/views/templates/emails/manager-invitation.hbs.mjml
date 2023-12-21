@@ -27,7 +27,6 @@
         <mj-button color="#ffffff" background-color="#338d8e" mj-class="btn" href="{{ url }}">
           {{t 'manager:email.invitation.text.button' this }}
         </mj-button>
-        <mj-text mj-class="text">{{t 'manager:email.invitation.text.accidental' this }}</mj-text>
         <mj-text mj-class="text">
           {{t 'manager:email.invitation.text.greeting' this }}
           <br>
