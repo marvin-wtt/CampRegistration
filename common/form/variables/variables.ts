@@ -14,6 +14,7 @@ type Data = {
   maxAge: number;
   location: Translatable;
   price: number;
+  freePlaces: Translatable<number>;
 };
 
 export const setVariables = (
@@ -41,6 +42,7 @@ export const setVariables = (
   model.setVariable('camp.maxAge', data.maxAge);
   model.setVariable('camp.location', t(data.location));
   model.setVariable('camp.price', data.price);
+  model.setVariable('camp.freePlaces', data.freePlaces);
 };
 
 const converter = (locale: string) => {
