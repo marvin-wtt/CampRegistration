@@ -66,7 +66,9 @@ const email = ref<string>();
 
 function send() {
   if (message.value) {
-    api.sendFeedback(message.value, email.value);
+    const location = window.location.href;
+
+    api.sendFeedback(location, message.value, email.value);
   }
 
   clear();
