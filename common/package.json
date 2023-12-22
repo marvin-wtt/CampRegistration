@@ -19,6 +19,8 @@
     "build": "npm run build:esm && npm run build:node",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:node": "tsc --project tsconfig.node.json",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "lint": "eslint --ext .js,.ts ./",
     "format": "prettier --write \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore"
@@ -37,11 +39,14 @@
     "@types/node": "^20.8.6",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
+    "@vitest/coverage-v8": "^1.1.0",
+    "@vitest/ui": "^1.1.0",
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.3",
     "survey-core": "^1.9.119",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.3",
+    "vitest": "^1.1.0"
   },
   "engines": {
     "node": "^20 || ^18 || ^16 || ^14.19",

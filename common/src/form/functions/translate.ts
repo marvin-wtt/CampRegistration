@@ -6,12 +6,12 @@ const translate = (params: unknown[]): unknown => {
     return null;
   }
 
-  const value = params[0] as Record<string, unknown> | string;
+  const value = params[0] as Record<string, unknown> | string | null;
   if (typeof value === 'string') {
     return value;
   }
 
-  if (typeof value !== 'object' || value === undefined || params.length < 2) {
+  if (typeof value !== 'object' || !value || params.length < 2) {
     return null;
   }
 

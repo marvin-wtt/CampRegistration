@@ -1,6 +1,6 @@
 const isMinor = (params: unknown[]) => {
   if (params.length < 1 || params[0] === null) {
-    return true;
+    return null;
   }
 
   if (typeof params[0] !== 'string') {
@@ -11,10 +11,10 @@ const isMinor = (params: unknown[]) => {
   }
 
   const birthdate = new Date(params[0]);
-  const date = params[1] instanceof Date ? params[1] : new Date(params[1]);
+  const date = new Date(params[1]);
 
   if (isNaN(birthdate.getTime()) || isNaN(date.getTime())) {
-    return true;
+    return null;
   }
 
   const ageInMillis = date.getTime() - birthdate.getTime();
