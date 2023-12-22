@@ -25,9 +25,4 @@ router.get('/health', (req, res) => {
   res.sendStatus(200);
 });
 
-if (config.env === 'development') {
-  // TODO
-  // router.use("/docs", docsRoute);
-}
-
 export default router;
