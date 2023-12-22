@@ -1,5 +1,4 @@
 import express from 'express';
-import config from 'config';
 import campRoutes from './camps/camp.routes';
 import authRoutes from './auth.routes';
 import profileRoutes from './profile.routes';
@@ -24,10 +23,5 @@ router.use('/feedback', feedbackRoutes);
 router.get('/health', (req, res) => {
   res.sendStatus(200);
 });
-
-if (config.env === 'development') {
-  // TODO
-  // router.use("/docs", docsRoute);
-}
 
 export default router;

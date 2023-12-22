@@ -13,8 +13,6 @@ import { initI18n } from 'config/i18n';
 import { startJobs } from 'jobs';
 import path from 'path';
 
-// TODO https://expressjs.com/en/advanced/best-practice-security.html#use-tls
-
 const app = express();
 
 if (config.env !== 'test') {
@@ -24,6 +22,9 @@ if (config.env !== 'test') {
 
 // set security HTTP headers
 app.use(helmet());
+
+// reduce fingerprint -prevents express from sending the header
+app.disable('x-powered-by');
 
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
