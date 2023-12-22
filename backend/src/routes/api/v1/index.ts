@@ -1,5 +1,4 @@
 import express from 'express';
-import config from 'config';
 import campRoutes from './camps/camp.routes';
 import authRoutes from './auth.routes';
 import profileRoutes from './profile.routes';
