@@ -1,6 +1,6 @@
 const htmlDate = (params: unknown[]) => {
   if (params.length !== 1) {
-    return '';
+    return null;
   }
 
   let date = params[0];
@@ -10,8 +10,7 @@ const htmlDate = (params: unknown[]) => {
   }
 
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    // Do not throw an exception
-    return '';
+    return null;
   }
 
   const year = date.getFullYear();

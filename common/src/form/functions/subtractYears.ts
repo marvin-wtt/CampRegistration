@@ -1,4 +1,6 @@
-const subtractYears = (params: unknown[]): Date | null => {
+import { htmlDate } from './index';
+
+const subtractYears = (params: unknown[]): string | null => {
   if (params.length !== 2) {
     return null;
   }
@@ -21,7 +23,7 @@ const subtractYears = (params: unknown[]): Date | null => {
   const newDate = new Date(date);
   newDate.setFullYear(newDate.getFullYear() - years);
 
-  return newDate;
+  return htmlDate([newDate]);
 };
 
 export default subtractYears;
