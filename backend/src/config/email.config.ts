@@ -12,6 +12,9 @@ const { value: envVars, error } = Joi.object()
     EMAIL_REPLY_TO: Joi.string().description(
       'the replyTo field in the emails sent by the app',
     ),
+    EMAIL_ADMIN: Joi.string().description(
+      'email to send operational notifications to',
+    ),
   })
   .unknown()
   .prefs({ errors: { label: 'key' } })
@@ -32,4 +35,5 @@ export default {
   },
   from: envVars.EMAIL_FROM,
   replyTo: envVars.EMAIL_REPLY_TO,
+  admin: envVars.EMAIL_ADMIN,
 };

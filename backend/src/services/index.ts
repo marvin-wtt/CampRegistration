@@ -9,3 +9,4 @@ export { default as templateService } from './template.service';
 export { default as fileService } from './file.service';
 export { default as roomService } from './room.service';
 export { default as bedService } from './bed.service';
+export { default as feedbackService } from './feedback.service';
