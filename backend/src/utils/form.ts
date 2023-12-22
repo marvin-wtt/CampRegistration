@@ -9,6 +9,10 @@ type FormFile = Pick<File, 'name' | 'type' | 'size'>;
 
 initSurveyJS();
 
+type CampWithFreePlaces = Camp & {
+  freePlaces: number | Record<string, number>;
+};
+
 export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
   const fileQuestions = survey
@@ -17,7 +21,8 @@ export const formUtils = (camp: Camp) => {
 
   let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
-  setVariables(survey, camp, 'en-US');
+  // TODO Camp with free places required here!
+  setVariables(survey, camp as CampWithFreePlaces, 'en-US');
 
   const updateData = (data?: unknown, files?: FileType) => {
     survey.data = typeof data !== 'object' ? {} : data;

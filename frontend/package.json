@@ -20,7 +20,7 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@camp-registration/common": "file:../common",
+    "@camp-registration/common": "*",
     "@quasar/extras": "^1.16.2",
     "apexcharts": "^3.37.3",
     "axios": "^1.6.2",

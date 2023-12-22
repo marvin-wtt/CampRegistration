@@ -38,8 +38,8 @@
     "directory": "backend"
   },
   "dependencies": {
-    "@camp-registration/common": "file:../common",
-    "@camp-registration/web": "file:../frontend",
+    "@camp-registration/common": "*",
+    "@camp-registration/web": "*",
     "@joi/date": "^2.1.0",
     "@prisma/client": "^5.5.2",
     "bcryptjs": "^2.4.3",
