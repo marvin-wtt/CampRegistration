@@ -187,6 +187,12 @@ const deleteFile = async (id: string) => {
 
   return file;
 };
+
+const deleteTempFile = async (fileName: string) => {
+  const filePath = path.join(config.storage.tmpDir, fileName);
+  return fse.remove(filePath);
+};
+
 const generateFileName = (originalName: string): string => {
   const fileName = randomUUID();
   const fileExtension = originalName.split('.').pop();
@@ -307,6 +313,7 @@ export default {
   getFileStream,
   queryModelFiles,
   deleteFile,
+  deleteTempFile,
   generateFileName,
   deleteUnreferencedFiles,
   deleteTempFiles,

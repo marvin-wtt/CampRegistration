@@ -3,7 +3,8 @@ import ApiError from 'utils/ApiError';
 import { NextFunction, Request, Response } from 'express';
 import pick from 'utils/pick';
 import Joi from 'joi';
-import * as fs from 'fs';
+import { fileService } from 'services';
+import logger from 'config/logger';
 
 export interface ValidationSchema {
   params?: Joi.ObjectSchema;
@@ -30,11 +31,8 @@ const extractRequestFiles = (req: Request): File[] => {
 const handleFileError = (req: Request) => {
   const files = extractRequestFiles(req);
   files.forEach((file) => {
-    // TODO Use logger
-    fs.unlink(file.path, (err) => {
-      if (err) {
-        console.error(`Error deleting tmp file: ${file.path}: ${err}`);
-      }
+    fileService.deleteTempFile(file.filename).catch((reason) => {
+      logger.error(`Failed to delete tmp file: ${file.filename}: ${reason}`);
     });
   });
 };
