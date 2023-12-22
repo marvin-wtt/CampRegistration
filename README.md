@@ -21,3 +21,11 @@ Test
 ```bash
 npm run test --workspaces
 ```
+
+Run
+```bash
+npm run dev --workspace frontend
+```
+```bash
+npm run dev --workspace backend
+```
