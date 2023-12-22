@@ -40,8 +40,12 @@
   },
   "typesVersions": {
     "*": {
-      "form": ["./dist/node/form/index.d.ts"],
-      "form/variables": ["./dist/node/form/variables/index.d.ts"]
+      "form": [
+        "./dist/node/form/index.d.ts"
+      ],
+      "form/variables": [
+        "./dist/node/form/variables/index.d.ts"
+      ]
     }
   },
   "devDependencies": {
