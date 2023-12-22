@@ -1,5 +1,5 @@
 import { SurveyModel } from 'survey-core';
-import { setVariables } from '@camp-registration/common/form/variables';
+import { setVariables } from '@camp-registration/common/form';
 import { initSurveyJS } from './surveyJS';
 import { Camp } from '@prisma/client';
 

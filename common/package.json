@@ -31,20 +31,12 @@
       "types": "./dist/node/form/index.d.ts",
       "node": "./dist/node/form/index.js",
       "module": "./dist/esm/form/index.js"
-    },
-    "./form/variables": {
-      "types": "./dist/node/form/variables/index.d.ts",
-      "node": "./dist/node/form/variables/index.js",
-      "module": "./dist/esm/form/variables/index.js"
     }
   },
   "typesVersions": {
     "*": {
       "form": [
         "./dist/node/form/index.d.ts"
-      ],
-      "form/variables": [
-        "./dist/node/form/variables/index.d.ts"
       ]
     }
   },
