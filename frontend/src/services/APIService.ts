@@ -7,6 +7,7 @@ import { useRoomService } from 'src/services/RoomService';
 import { useCampManagerService } from 'src/services/CampManagerService';
 import axios, { AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
+import { useFeedbackService } from 'src/services/FeedbackService';
 
 export function useAPIService() {
   return {
@@ -18,6 +19,7 @@ export function useAPIService() {
     ...useTemplateService(),
     ...useRoomService(),
     ...useFileService(),
+    ...useFeedbackService(),
   };
 }
 
