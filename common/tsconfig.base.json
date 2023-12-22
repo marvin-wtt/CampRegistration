@@ -4,7 +4,8 @@
     "target": "es6",
     "sourceMap": true,
     "strict": true,
-    "declaration": true
+    "declaration": true,
+    "baseUrl": "src"
   },
   "exclude": ["node_modules"]
 }
