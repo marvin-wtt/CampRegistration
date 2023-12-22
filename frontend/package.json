@@ -11,7 +11,7 @@
     "directory": "frontend"
   },
   "scripts": {
-    "clean": "rm -rf ./dist/ && rm -rf ./node_modules/",
+    "clean": "rimraf ./dist/ && rimraf ./node_modules/",
     "dev": "quasar dev",
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
@@ -57,6 +57,7 @@
     "eslint-plugin-vue": "^9.10.0",
     "happy-dom": "^12.1.6",
     "prettier": "^3.0.3",
+    "rimraf": "^5.0.5",
     "typescript": "^5.0.3",
     "vitest": "^0.34.5"
   }

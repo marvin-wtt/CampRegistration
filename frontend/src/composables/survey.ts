@@ -2,7 +2,7 @@ import { ITheme, SurveyModel } from 'survey-core';
 import { Camp } from 'src/types/Camp';
 import { useI18n } from 'vue-i18n';
 import { nextTick, Ref, watch } from 'vue';
-import { setVariables } from '@camp-registration/common/form/variables';
+import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 
 import { PlainLight, PlainDark } from 'survey-core/themes';

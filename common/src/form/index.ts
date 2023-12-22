@@ -3,9 +3,11 @@ import questions from './questions';
 import functions from './functions';
 import properties from './properties';
 
+import { setVariables } from './variables';
+
 let initiated = false;
 
-export const init = (
+const init = (
   componentCollectionInstance: typeof ComponentCollection.Instance,
   functionFactoryInstance: typeof FunctionFactory.Instance,
   serializer: typeof Serializer,
@@ -34,3 +36,5 @@ export const init = (
 if (!initiated) {
   init(ComponentCollection.Instance, FunctionFactory.Instance, Serializer);
 }
+
+export { init, setVariables };
