@@ -104,7 +104,7 @@ function add(variableName: string) {
 }
 </script>
 
-<style>
+<style lang="scss">
 .body--light {
   .editor_token {
     background: rgba(0, 0, 0, 0.6);

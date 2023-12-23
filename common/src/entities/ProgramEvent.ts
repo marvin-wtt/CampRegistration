@@ -1,5 +1,5 @@
-import { Identifiable } from 'src/types/Identifiable';
-import { Translatable } from 'src/types/Translatable';
+import type { Identifiable } from './Identifiable';
+import type { Translatable } from './Translatable';
 
 export interface ProgramEvent extends Identifiable {
   seriesId?: string;

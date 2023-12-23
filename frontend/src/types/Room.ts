@@ -1,6 +1,8 @@
-import { Identifiable } from 'src/types/Identifiable';
+import type {
+  Identifiable,
+  Translatable,
+} from '@camp-registration/common/entities';
 import { Roommate } from 'src/types/Roommate';
-import { Translatable } from 'src/types/Translatable';
 
 interface Bed extends Identifiable {
   person: Roommate | null;

@@ -1,4 +1,4 @@
-import { Identifiable } from 'src/types/Identifiable';
+import type { Identifiable } from '@camp-registration/common/entities';
 
 export interface ServiceFile extends Identifiable {
   name: string;

@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ProgramEvent } from 'src/types/ProgramEvent';
+import type { ProgramEvent } from '@camp-registration/common/entities';
 import { computed } from 'vue';
 
 interface Props {

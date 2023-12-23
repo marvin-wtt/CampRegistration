@@ -1,4 +1,4 @@
-import { Identifiable } from 'src/types/Identifiable';
+import { Identifiable } from './Identifiable';
 
 export interface Registration extends Identifiable {
   data: Record<string, unknown>;

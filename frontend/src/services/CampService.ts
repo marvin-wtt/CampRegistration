@@ -1,4 +1,8 @@
-import { Camp, CampCreateData, CampUpdateData } from 'src/types/Camp';
+import type {
+  Camp,
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
 export function useCampService() {

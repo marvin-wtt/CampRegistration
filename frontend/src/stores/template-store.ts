@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { TableTemplate } from 'src/types/TableTemplate';
+import type { TableTemplate } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';

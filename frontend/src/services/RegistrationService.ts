@@ -1,8 +1,8 @@
-import {
+import type {
   Registration,
   RegistrationCreateData,
   RegistrationUpdateData,
-} from 'src/types/Registration';
+} from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
 export function useRegistrationService() {

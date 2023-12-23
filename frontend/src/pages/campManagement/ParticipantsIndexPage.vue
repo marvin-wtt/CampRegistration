@@ -25,9 +25,8 @@ import { QTableColumn } from 'src/types/quasar/QTableColum';
 import ResultTable from 'components/campManagement/table/ResultTable.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { Registration } from 'src/types/Registration';
+import type { Registration } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { Camp } from 'src/types/Camp';
 
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();

@@ -11,7 +11,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Registration } from 'src/types/Registration';
+import type { Registration } from '@camp-registration/common/entities';
 
 const { t } = useI18n();
 

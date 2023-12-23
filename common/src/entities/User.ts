@@ -1,4 +1,4 @@
-import { Camp } from 'src/types/Camp';
+import type { Camp } from './Camp';
 
 export interface User {
   email: string;

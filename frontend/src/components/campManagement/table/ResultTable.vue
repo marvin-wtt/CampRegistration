@@ -169,7 +169,7 @@ import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { TableTemplate } from 'src/types/TableTemplate';
+import type { TableTemplate } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import {
   createPDF,
@@ -178,11 +178,13 @@ import {
 
 import { useRoute, useRouter } from 'vue-router';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
+import {
+  TableColumnTemplate,
+  Registration,
+  Camp,
+} from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { Registration } from 'src/types/Registration';
 import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
-import { Camp } from 'src/types/Camp';
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';

@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 import { useCampsStore } from 'stores/camps-store';
 import { computed } from 'vue';
-import { Camp } from 'src/types/Camp';
+import type { Camp } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import CampCard from 'components/camps/CampCard.vue';
 import CampCardSkeleton from 'components/camps/CampCardSkeleton.vue';

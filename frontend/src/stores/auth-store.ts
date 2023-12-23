@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import { User } from 'src/types/User';
+import type { User } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import { useAuthBus, useCampBus } from 'src/composables/bus';

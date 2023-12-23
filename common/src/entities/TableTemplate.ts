@@ -1,5 +1,4 @@
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
-import { Identifiable } from 'src/types/Identifiable';
+import type { Identifiable } from './Identifiable';
 
 export interface TableTemplate extends Identifiable {
   title: string | Record<string, string>;
@@ -22,3 +21,26 @@ export interface TableTemplate extends Identifiable {
 export type TemplateCreateData = Omit<TableTemplate, 'id'>;
 
 export type TemplateUpdateData = Partial<TemplateCreateData>;
+
+export interface TableColumnTemplate {
+  name: string;
+  label: string | Record<string, string>;
+  field: string;
+  required?: boolean;
+  align?: 'left' | 'right' | 'center';
+  sortable?: boolean;
+  sortOrder?: 'ad' | 'da';
+  renderAs?: string;
+  renderOptions?: object;
+  headerVertical?: boolean;
+  editable?: boolean;
+  shrink?: boolean;
+  hideIf?: string;
+  showIf?: string;
+
+  // Style
+  style?: string;
+  classes?: string;
+  headerStyle?: string;
+  headerClasses?: string;
+}

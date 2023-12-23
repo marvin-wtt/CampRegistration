@@ -10,7 +10,7 @@ import {
   useRegistrationBus,
 } from 'src/composables/bus';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { Registration } from 'src/types/Registration';
+import type { Registration } from '@camp-registration/common/entities';
 import { Roommate } from 'src/types/Roommate';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { formatPersonName } from 'src/utils/formatters';

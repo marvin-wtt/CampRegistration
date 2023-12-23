@@ -1,5 +1,5 @@
 import { Component } from 'vue';
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
+import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 
 export class TableCellRenderer {

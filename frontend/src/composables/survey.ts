@@ -1,5 +1,5 @@
 import { ITheme, SurveyModel } from 'survey-core';
-import { Camp } from 'src/types/Camp';
+import type { Camp } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, Ref, watch } from 'vue';
 import { setVariables } from '@camp-registration/common/form';

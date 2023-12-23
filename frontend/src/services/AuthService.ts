@@ -1,5 +1,5 @@
 import { api } from 'boot/axios';
-import { User } from 'src/types/User';
+import type { User } from '@camp-registration/common/entities';
 import { LoginResponse } from 'src/types/LoginResponse';
 import { AccessTokens } from 'src/types/AccessTokens';
 

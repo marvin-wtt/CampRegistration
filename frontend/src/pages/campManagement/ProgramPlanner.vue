@@ -61,9 +61,8 @@ import { computed, CSSProperties, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
-import { ProgramEvent } from 'src/types/ProgramEvent';
+import type { ProgramEvent } from '@camp-registration/common/entities';
 import { prevent, stop, stopAndPrevent } from 'quasar/src/utils/event';
-import { CalendarEvent } from 'src/types/CalendarEvent';
 import { colors } from 'quasar';
 
 const campDetailsStore = useCampDetailsStore();
@@ -90,7 +89,7 @@ const view = ref();
 const weekDays = ref<number[]>([1, 2, 3, 4, 5, 6, 0]);
 
 const dragging = ref(false);
-const draggedEvent = ref<CalendarEvent>();
+const draggedEvent = ref<ProgramEvent>();
 
 const intervalMinutes = computed<number | undefined>(() => {
   return settings.value.timeIntervalMinutes;

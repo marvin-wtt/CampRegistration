@@ -1,4 +1,4 @@
-import { User } from 'src/types/User';
+import type { User } from '@camp-registration/common/entities';
 import { AccessTokens } from 'src/types/AccessTokens';
 
 export interface LoginResponse {

@@ -1,4 +1,4 @@
-import { Identifiable } from 'src/types/Identifiable';
+import { Identifiable } from '@camp-registration/common/entities';
 
 export interface Roommate extends Identifiable {
   name: string;

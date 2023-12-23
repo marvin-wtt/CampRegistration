@@ -20,8 +20,8 @@
           </div>
 
           <q-input
-            :label="t('message.label')"
             v-model="message"
+            :label="t('message.label')"
             type="textarea"
             outlined
             rounded
