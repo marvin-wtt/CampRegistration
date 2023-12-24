@@ -73,7 +73,7 @@ import type { CampManager } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import AddCampManagerDialog from 'components/campManagement/access/AddCampManagerDialog.vue';
+import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
 import { useAuthStore } from 'stores/auth-store';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 
