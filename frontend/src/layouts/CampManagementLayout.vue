@@ -207,13 +207,6 @@ const items: NavigationItem[] = [
         icon: 'key',
         to: { name: 'access' },
       },
-      {
-        name: 'notifications',
-        preview: true,
-        label: t('notifications'),
-        icon: 'sms',
-        to: { name: 'notification' },
-      },
     ],
   },
 ];

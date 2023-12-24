@@ -147,14 +147,6 @@ const routes: RouteRecordRaw[] = [
                 component: () =>
                   import('pages/campManagement/settings/FormEditPage.vue'),
               },
-              {
-                path: 'notification',
-                name: 'notification',
-                component: () =>
-                  import(
-                    'pages/campManagement/settings/NotificationEditorPage.vue'
-                  ),
-              },
             ],
           },
         ],
