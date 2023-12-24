@@ -1,7 +1,7 @@
 import { ITheme, SurveyModel } from 'survey-core';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { nextTick, Ref, watch } from 'vue';
+import { nextTick, Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 
@@ -48,21 +48,6 @@ export const startAutoThemeUpdate = (
 ) => {
   const quasar = useQuasar();
 
-  watch(
-    () => quasar.dark.isActive,
-    (value) => {
-      applyTheme(model.value, data.value, value);
-    },
-  );
-
-  watch(data, (value) => {
-    applyTheme(model.value, value, quasar.dark.isActive);
-  });
-
-  watch(model, (value) => {
-    applyTheme(value, data.value, quasar.dark.isActive);
-  });
-
   const applyTheme = (
     model: SurveyModel | undefined,
     data: CampDetails | undefined,
@@ -99,4 +84,8 @@ export const startAutoThemeUpdate = (
       }
     });
   };
+
+  watchEffect(() => {
+    applyTheme(model.value, data.value, quasar.dark.isActive);
+  });
 };
