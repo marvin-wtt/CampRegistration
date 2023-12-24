@@ -102,6 +102,11 @@ const routes: RouteRecordRaw[] = [
         },
         children: [
           {
+            path: 'dashboard',
+            name: 'dashboard',
+            component: () => import('pages/campManagement/DashboardPage.vue'),
+          },
+          {
             path: 'participants',
             name: 'participants',
             component: () =>

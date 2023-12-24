@@ -151,6 +151,13 @@ interface NavigationItem {
 
 const items: NavigationItem[] = [
   {
+    name: 'dashboard',
+    preview: true,
+    label: t('dashboard'),
+    icon: 'dashboard',
+    to: { name: 'dashboard' },
+  },
+  {
     name: 'participants',
     label: t('participants'),
     icon: 'groups',
