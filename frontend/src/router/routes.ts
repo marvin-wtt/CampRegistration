@@ -142,7 +142,7 @@ const routes: RouteRecordRaw[] = [
                   import('pages/campManagement/settings/FileSettingsPage.vue'),
               },
               {
-                path: 'edit-form',
+                path: 'form',
                 name: 'edit-form',
                 component: () =>
                   import('pages/campManagement/settings/FormEditPage.vue'),
