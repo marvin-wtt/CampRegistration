@@ -50,10 +50,10 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import SortableList from 'components/common/SortableList.vue';
 import { reactive, toRaw } from 'vue';
-import { Room } from 'src/types/Room';
+import { RoomWithRoommates } from 'src/types/Room';
 
 interface Props {
-  rooms: Room[];
+  rooms: RoomWithRoommates[];
 }
 
 const props = defineProps<Props>();
@@ -72,13 +72,13 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedRooms = reactive<Room[]>(propRooms());
+const modifiedRooms = reactive<RoomWithRoommates[]>(propRooms());
 
-function propRooms(): Room[] {
+function propRooms(): RoomWithRoommates[] {
   const rooms = props.rooms.map((room) => {
     return toRaw(room);
   });
-  return structuredClone(rooms) as Room[];
+  return structuredClone(rooms) as RoomWithRoommates[];
 }
 
 function onOKClick() {

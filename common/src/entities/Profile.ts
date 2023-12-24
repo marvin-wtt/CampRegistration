@@ -7,7 +7,7 @@ export interface Profile {
   camps: Camp[];
 }
 
-export type ProfileCreateData = Exclude<Profile, 'id' | 'camps'> & {
+export type ProfileCreateData = Omit<Profile, 'id' | 'camps'> & {
   password: string;
 };
 

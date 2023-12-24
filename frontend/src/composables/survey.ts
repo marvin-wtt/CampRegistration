@@ -1,5 +1,5 @@
 import { ITheme, SurveyModel } from 'survey-core';
-import type { Camp } from '@camp-registration/common/entities';
+import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, Ref, watch } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
@@ -9,7 +9,7 @@ import { PlainLight, PlainDark } from 'survey-core/themes';
 
 export function startAutoDataUpdate(
   model: Ref<SurveyModel | undefined>,
-  data: Ref<Camp | undefined>,
+  data: Ref<CampDetails | undefined>,
 ) {
   const { locale } = useI18n();
 
@@ -27,7 +27,7 @@ export function startAutoDataUpdate(
 
   const updateVariables = (
     model: SurveyModel | undefined,
-    data: Camp | undefined,
+    data: CampDetails | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -43,7 +43,7 @@ export function startAutoDataUpdate(
 
 export const startAutoThemeUpdate = (
   model: Ref<SurveyModel | undefined>,
-  data: Ref<Camp | undefined>,
+  data: Ref<CampDetails | undefined>,
   bgColor?: Ref<string | undefined> | undefined,
 ) => {
   const quasar = useQuasar();
@@ -65,7 +65,7 @@ export const startAutoThemeUpdate = (
 
   const applyTheme = (
     model: SurveyModel | undefined,
-    data: Camp | undefined,
+    data: CampDetails | undefined,
     dark: boolean,
   ) => {
     if (!model || !data) {

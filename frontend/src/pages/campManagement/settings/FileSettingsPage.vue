@@ -146,10 +146,13 @@ const error = computed<string | null>(() => {
 });
 
 function mapColumnData(file: ServiceFile) {
+  const accessLevel = file.accessLevel
+    ? t(`access_level.${file.accessLevel}`)
+    : 'Unknown';
   return {
     ...file,
     size: formatBytes(file.size),
-    accessLevel: t(`access_level.${file.accessLevel}`, file.accessLevel),
+    accessLevel,
     createdAt: formatUtcDateTime(file.createdAt),
     href: campFileStore.getUrl(file.id),
   };

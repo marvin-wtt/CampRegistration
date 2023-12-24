@@ -77,8 +77,7 @@ import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
-import { Room } from 'src/types/Room';
-import { Roommate } from 'src/types/Roommate';
+import { Roommate, RoomWithRoommates } from 'src/types/Room';
 import ModifyRoomDialog from 'components/campManagement/roomPlanner/dialogs/ModifyRoomDialog.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
@@ -113,7 +112,7 @@ const locales = computed<string[] | undefined>(() => {
   return campDetailsStore.data?.countries;
 });
 
-const rooms = computed<Room[]>(() => {
+const rooms = computed<RoomWithRoommates[]>(() => {
   const rooms = roomStore.data;
   if (rooms === undefined) {
     return [];
@@ -127,7 +126,7 @@ const availablePeople = computed<Roommate[]>(() => {
 });
 
 function addRoom() {
-  const room: Omit<Room, 'beds'> = {
+  const room: Omit<RoomWithRoommates, 'beds'> = {
     id: 'filled-by-server',
     name: '',
     capacity: 0,
@@ -147,7 +146,7 @@ function addRoom() {
     });
 }
 
-function editRoom(room: Room): void {
+function editRoom(room: RoomWithRoommates): void {
   quasar
     .dialog({
       component: ModifyRoomDialog,
@@ -158,7 +157,7 @@ function editRoom(room: Room): void {
       },
       persistent: true,
     })
-    .onOk((payload: Room) => {
+    .onOk((payload: RoomWithRoommates) => {
       roomStore.updateRoom(room.id, payload);
     });
 }
@@ -172,7 +171,7 @@ function orderRooms() {
       },
       persistent: true,
     })
-    .onOk((payload: Room[]) => {
+    .onOk((payload: RoomWithRoommates[]) => {
       // TODO Compare changes and update
     });
 }
@@ -181,7 +180,11 @@ function deleteRoom(id: string) {
   roomStore.deleteRoom(id);
 }
 
-function onBedUpdate(room: Room, position: number, roommate: Roommate | null) {
+function onBedUpdate(
+  room: RoomWithRoommates,
+  position: number,
+  roommate: Roommate | null,
+) {
   roomStore.updateBed(room, position, roommate);
 }
 </script>

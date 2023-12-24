@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
-import type { Camp } from '@camp-registration/common/entities';
+import type { Camp, CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
@@ -22,7 +22,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     handlerByType,
     lazyFetch,
     checkNotNullWithError,
-  } = useServiceHandler<Camp>('camp');
+  } = useServiceHandler<CampDetails>('camp');
 
   authBus.on('logout', () => {
     reset();
@@ -57,9 +57,9 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
   }
 
   async function updateData(
-    newData: Partial<Camp>,
+    newData: Partial<CampDetails>,
     notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress',
-  ): Promise<Camp | undefined> {
+  ): Promise<CampDetails | undefined> {
     const campId =
       newData.id ?? data.value?.id ?? (route.params.camp as string);
 
@@ -69,15 +69,18 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     const newDataWithoutFreePlaces = omitProperty(newData, 'freePlaces');
     const newDataWithoutId = omitProperty(newDataWithoutFreePlaces, 'id');
 
-    return handlerByType<Camp>(notificationType)('update', async () => {
-      const updatedCamp = await api.updateCamp(campId, newDataWithoutId);
+    return handlerByType<CampDetails | undefined>(notificationType)(
+      'update',
+      async () => {
+        const updatedCamp = await api.updateCamp(campId, newDataWithoutId);
 
-      // Replace element
-      data.value = updatedCamp;
-      bus.emit('update', updatedCamp);
+        // Replace element
+        data.value = updatedCamp;
+        bus.emit('update', updatedCamp);
 
-      return updatedCamp;
-    });
+        return updatedCamp;
+      },
+    );
   }
 
   async function deleteData() {

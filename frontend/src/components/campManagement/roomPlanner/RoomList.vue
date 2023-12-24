@@ -71,16 +71,15 @@
 import RoomListItem from 'components/campManagement/roomPlanner/RoomListItem.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Room } from 'src/types/Room';
+import { Roommate, RoomWithRoommates } from 'src/types/Room';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { Roommate } from 'src/types/Roommate';
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 interface Props {
   name: string | Record<string, string>;
-  modelValue: Room;
+  modelValue: RoomWithRoommates;
   people: (Roommate | null)[];
   dense?: boolean;
 }
@@ -93,10 +92,10 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'edit'): void;
   (e: 'update', position: number, roommate: Roommate | null): void;
-  (e: 'update:modelValue', value: Room): void;
+  (e: 'update:modelValue', value: RoomWithRoommates): void;
 }>();
 
-const room = computed<Room>({
+const room = computed<RoomWithRoommates>({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
 });

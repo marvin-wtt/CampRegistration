@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', preventPageLeave);
 });
 
-function preventPageLeave(event) {
+function preventPageLeave(event: BeforeUnloadEvent) {
   if (!props.preventLeave) {
     return;
   }

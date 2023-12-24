@@ -3,15 +3,19 @@ export * from './Identifiable';
 export * from './Translatable';
 
 // Models
+export * from './Bed';
 export * from './Camp';
-export * from './Registration';
-export * from './Profile';
 export * from './CampManager';
-export * from './TableTemplate';
-export * from './ServiceFile';
 export * from './Expense';
+export * from './Profile';
 export * from './ProgramEvent';
+export * from './Registration';
+export * from './Room';
+export * from './ServiceFile';
+export * from './TableTemplate';
+export * from './User';
 
 // Types
 export * from './AuthTokens';
 export * from './Authentication';
+export * from './SurveyJSCampData';

@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import type { User } from '@camp-registration/common/entities';
+import type { Profile, AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { AuthTokens } from 'src/types/AuthTokens';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -22,7 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
-  } = useServiceHandler<User>('user');
+  } = useServiceHandler<Profile>('user');
 
   campBus.on('create', async () => {
     await fetchUser();

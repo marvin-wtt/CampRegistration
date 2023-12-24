@@ -121,6 +121,7 @@ const columns = [
     name: 'action',
     required: true,
     label: '',
+    field: '',
     align: 'center',
   },
 ];

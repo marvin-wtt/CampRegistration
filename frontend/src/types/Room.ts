@@ -1,29 +1,21 @@
 import type {
   Identifiable,
-  Translatable,
+  Room,
+  Bed,
 } from '@camp-registration/common/entities';
-import { Roommate } from 'src/types/Roommate';
 
-interface Bed extends Identifiable {
+export interface Roommate extends Identifiable {
+  name: string;
+  age?: number;
+  gender?: string;
+  country?: string;
+  counselor?: boolean;
+}
+
+interface BedWithRoommate extends Omit<Bed, 'registrationId'> {
   person: Roommate | null;
 }
 
-export interface Room extends Identifiable {
-  name: Translatable;
-  capacity: number;
-  beds: Bed[];
+export interface RoomWithRoommates extends Omit<Room, 'beds'> {
+  beds: BedWithRoommate[];
 }
-
-interface ResponseBed extends Identifiable {
-  registrationId: string | null;
-}
-
-export interface ResponseRoom extends Identifiable {
-  name: Translatable;
-  capacity: number;
-  beds: ResponseBed[];
-}
-
-export type RoomCreateData = Pick<Room, 'name' | 'capacity'>;
-
-export type RoomUpdateData = Partial<RoomCreateData>;

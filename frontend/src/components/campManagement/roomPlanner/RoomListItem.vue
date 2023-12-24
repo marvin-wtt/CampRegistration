@@ -49,7 +49,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import { Roommate } from 'src/types/Roommate';
+import { Roommate } from 'src/types/Room';
 
 interface Props {
   modelValue: Roommate | null;
