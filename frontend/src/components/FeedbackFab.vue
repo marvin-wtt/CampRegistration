@@ -40,7 +40,7 @@
           <q-btn
             class="full-width"
             icon="send"
-            :label="t('send')"
+            :label="t('action.send')"
             color="primary"
             rounded
             @click="send"
@@ -93,6 +93,9 @@ message:
 email:
   label: 'Email'
   hint: 'Optional'
+
+action:
+  send: 'Send'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -105,6 +108,9 @@ message:
 email:
   label: 'E-Mail'
   hint: 'Optional'
+
+action:
+  send: 'Senden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -117,4 +123,7 @@ message:
 email:
   label: 'E-mail'
   hint: 'Facultatif'
+
+action:
+  send: 'Envoyer  '
 </i18n>
