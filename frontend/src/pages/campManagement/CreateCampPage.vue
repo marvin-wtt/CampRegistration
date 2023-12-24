@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/campManagement/edit/EditCampForm.vue';
+import EditCampForm from 'components/campManagement/settings/EditCampForm.vue';
 
 const router = useRouter();
 
