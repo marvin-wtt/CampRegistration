@@ -2,6 +2,10 @@ import Joi from 'joi';
 import { Request } from 'express';
 import { routeModel } from 'utils/verifyModel';
 import { formUtils } from 'utils/form';
+import type {
+  RegistrationCreateData,
+  RegistrationUpdateData,
+} from '@camp-registration/common/entities';
 
 export const registrationData: Joi.CustomValidator<object> = (
   value,
@@ -55,7 +59,7 @@ const store = {
   params: Joi.object({
     campId: Joi.string().required(),
   }),
-  body: Joi.object({
+  body: Joi.object<RegistrationCreateData>({
     data: Joi.object().custom(registrationData, 'registration data').required(),
     locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     // files
@@ -67,7 +71,7 @@ const update = {
     campId: Joi.string().required(),
     registrationId: Joi.string().required(),
   }),
-  body: Joi.object({
+  body: Joi.object<RegistrationUpdateData>({
     data: Joi.object().required(),
     waitingList: Joi.boolean(),
   }),

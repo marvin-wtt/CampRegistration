@@ -3,7 +3,10 @@ import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { FileUploadPayload, ServiceFile } from 'src/types/ServiceFile';
+import {
+  ServiceFileCreateData,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
 
 export const useCampFilesStore = defineStore('campFiles', () => {
@@ -41,7 +44,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   }
 
   async function createEntry(
-    createData: FileUploadPayload,
+    createData: ServiceFileCreateData,
     campId?: string,
   ): Promise<ServiceFile | undefined> {
     campId = campId ?? (route.params.camp as string);

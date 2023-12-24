@@ -1,34 +1,17 @@
-import { File, Registration, Room, Bed } from '@prisma/client';
-import groupBy from 'utils/groupBy';
-import config from 'config';
+import { Registration, Room, Bed } from '@prisma/client';
+import type { Registration as RegistrationResource } from '@camp-registration/common/entities';
 
-interface RegistrationWithBedAndFiles extends Registration {
+interface RegistrationWithBed extends Registration {
   bed?: BedWithRoom | null;
-  files?: File[] | null;
 }
 
 interface BedWithRoom extends Bed {
   room: Room;
 }
 
-const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
-  if (!registration.files) {
-    return {};
-  }
-
-  const fileUrl = `${config.origin}/registrations/${registration.id}/files/`;
-  return Object.fromEntries(
-    Object.entries(groupBy(registration.files, (i) => i.field ?? 'files')).map(
-      ([field, files]) => [
-        field,
-        files.map((file) => fileUrl + file.id).join(';'),
-      ],
-    ),
-  );
-};
-
-const registrationResource = (registration: RegistrationWithBedAndFiles) => {
-  const files = extractFiles(registration);
+const registrationResource = (
+  registration: RegistrationWithBed,
+): RegistrationResource => {
   const room = registration.bed ? registration.bed.room.name : null;
 
   return {
@@ -37,11 +20,10 @@ const registrationResource = (registration: RegistrationWithBedAndFiles) => {
     data: registration.data,
     campData: registration.campData,
     locale: registration.locale,
-    files,
     room,
     // Use snake case because form keys should be snake case too
-    updated_at: registration.updatedAt,
-    created_at: registration.createdAt,
+    updated_at: registration.updatedAt?.toISOString() ?? null,
+    created_at: registration.createdAt.toISOString(),
   };
 };
 

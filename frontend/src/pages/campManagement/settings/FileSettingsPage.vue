@@ -69,7 +69,7 @@ import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
-import { ServiceFile } from 'src/types/ServiceFile';
+import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from 'src/utils/formatters/formatBytes';
 import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
 import { useCampFilesStore } from 'stores/camp-files-store';

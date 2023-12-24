@@ -1,10 +1,14 @@
 import { Camp } from '@prisma/client';
+import type {
+  Camp as CampResource,
+  CampDetails as CampDetailsResource,
+} from '@camp-registration/common/entities';
 
 type CampWithFreePlaces = Camp & {
   freePlaces?: Record<string, number> | number;
 };
 
-const campResource = (camp: CampWithFreePlaces) => {
+const campResource = (camp: CampWithFreePlaces): CampResource => {
   return {
     id: camp.id,
     public: camp.public,
@@ -16,15 +20,17 @@ const campResource = (camp: CampWithFreePlaces) => {
     maxParticipants: camp.maxParticipants,
     minAge: camp.minAge,
     maxAge: camp.maxAge,
-    startAt: camp.startAt,
-    endAt: camp.endAt,
+    startAt: camp.startAt.toISOString(),
+    endAt: camp.endAt.toISOString(),
     price: camp.price ?? null,
     location: camp.location ?? null,
     freePlaces: camp.freePlaces,
   };
 };
 
-export const detailedCampResource = (camp: CampWithFreePlaces) => {
+export const detailedCampResource = (
+  camp: CampWithFreePlaces,
+): CampDetailsResource => {
   return {
     ...campResource(camp),
     form: camp.form,

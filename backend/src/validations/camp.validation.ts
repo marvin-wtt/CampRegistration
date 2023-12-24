@@ -1,6 +1,10 @@
 import Joi, { SchemaLikeWithoutArray } from 'joi';
 import JoiDate from '@joi/date';
 import { CountryCode } from 'validations/custom.validation';
+import type {
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/dist/esm/entities';
 
 const extendedJoi = Joi.extend(JoiDate);
 
@@ -49,7 +53,7 @@ const index = {
 };
 
 const store = {
-  body: Joi.object({
+  body: Joi.object<CampCreateData>({
     active: Joi.boolean().default(false),
     public: Joi.boolean().required(),
     countries: Joi.array()
@@ -75,7 +79,7 @@ const update = {
   params: Joi.object({
     campId: Joi.string().required(),
   }),
-  body: Joi.object({
+  body: Joi.object<CampUpdateData>({
     // TODO If countries changes, the translated values might be required if they are translated
     // FIXME translated values will if countries field is missing
     active: Joi.boolean(),
