@@ -75,6 +75,7 @@ import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import AddCampManagerDialog from 'components/campManagement/access/AddCampManagerDialog.vue';
 import { useAuthStore } from 'stores/auth-store';
+import { QTableColumn } from 'src/types/quasar/QTableColum';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -88,7 +89,7 @@ const pagination = {
   rowsPerPage: -1,
 };
 
-const columns = [
+const columns: QTableColumn[] = [
   {
     name: 'name',
     required: true,

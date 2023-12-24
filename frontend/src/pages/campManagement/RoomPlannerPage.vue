@@ -22,7 +22,7 @@
         <transition-group name="fade">
           <room-list
             v-for="(room, index) in rooms"
-            :key="room.name"
+            :key="room.id"
             v-model="rooms[index]"
             :name="room.name"
             :people="availablePeople"
@@ -100,7 +100,7 @@ const loading = computed<boolean>(() => {
   return roomStore.isLoading;
 });
 
-const error = computed<unknown>(() => {
+const error = computed<string | null>(() => {
   return registrationsStore.error ?? roomStore.error;
 });
 
