@@ -171,13 +171,6 @@ const items: NavigationItem[] = [
     to: undefined,
   },
   {
-    name: 'program_planner',
-    preview: true,
-    label: t('program_planner'),
-    icon: 'event',
-    to: { name: 'program-planner' },
-  },
-  {
     name: 'room_planner',
     label: t('room_planner'),
     icon: 'single_bed',
