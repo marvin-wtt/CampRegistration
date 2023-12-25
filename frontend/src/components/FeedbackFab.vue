@@ -10,7 +10,7 @@
       direction="up"
       vertical-actions-align="right"
     >
-      <q-card style="width: 300px">
+      <q-card :class="cardStyleClass">
         <q-card-section class="q-gutter-sm">
           <div class="text-h5">
             {{ t('title') }}
@@ -53,16 +53,21 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useAPIService } from 'src/services/APIService';
+import { useQuasar } from 'quasar';
 
-const api = useAPIService();
-
+const quasar = useQuasar();
 const { t } = useI18n();
+const api = useAPIService();
 
 const open = ref<boolean>(false);
 const message = ref<string>();
 const email = ref<string>();
+
+const cardStyleClass = computed<string>(() => {
+  return quasar.screen.lt.sm ? 'card-mobile' : 'card-desktop';
+});
 
 function send() {
   if (message.value) {
@@ -81,7 +86,15 @@ function clear() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.card-mobile {
+  width: calc(100vw - 40px);
+}
+
+.card-desktop {
+  width: 400px;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Send us feedback!'
@@ -125,5 +138,5 @@ email:
   hint: 'Facultatif'
 
 action:
-  send: 'Envoyer  '
+  send: 'Envoyer'
 </i18n>
