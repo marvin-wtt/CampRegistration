@@ -22,6 +22,7 @@ type FileStorage = Map<string, File>;
 const { locale } = useI18n();
 
 interface Props {
+  data?: object;
   campDetails: CampDetails;
   submitFn: (id: string, data: unknown) => Promise<void>;
 }
@@ -52,6 +53,10 @@ onMounted(async () => {
   const id = camp.id;
 
   model.value = createModel(id, form);
+
+  if (props.data) {
+    model.value.data = props.data;
+  }
 
   // Auto variables update on locale change
   startAutoDataUpdate(model, campData);
@@ -130,7 +135,7 @@ function createModel(id: string, form: object): SurveyModel {
     mapFileQuestionValues(sender);
 
     const campId = sender.surveyId;
-    const data = sender.data;
+    const data = sender.data ?? {};
     const files = Object.fromEntries(filesStorage.entries());
     const registration = { data, files };
 
