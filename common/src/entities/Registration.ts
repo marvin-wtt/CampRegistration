@@ -6,6 +6,7 @@ export interface Registration extends Identifiable {
   waitingList: boolean;
   locale: string;
   room?: Record<string, string>;
+  files?: Record<string, string>;
   created_at: string;
   updated_at: string | null;
 }
