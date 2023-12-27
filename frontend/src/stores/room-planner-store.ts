@@ -215,7 +215,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     return isLoading.value || registrationsStore.isLoading;
   });
 
-  const storeError = computed<string | object | null>(() => {
+  const storeError = computed<string | null>(() => {
     return error.value ?? registrationsStore.error;
   });
 
