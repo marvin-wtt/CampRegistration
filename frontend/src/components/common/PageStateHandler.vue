@@ -124,12 +124,10 @@ onBeforeRouteLeave((to, from, next) => {
     });
 });
 
-onErrorCaptured((err, instance) => {
+onErrorCaptured(() => {
   // TODO Handle gracefully
   localError.value = true;
 });
-
-// TODO Not working...
 </script>
 
 <style scoped></style>

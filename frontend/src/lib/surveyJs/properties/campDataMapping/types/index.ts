@@ -9,7 +9,7 @@ export const address: CampDataType = {
       fr: 'Adresse',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return obj.getType() === 'address';
   },
 };
@@ -23,7 +23,7 @@ export const country: CampDataType = {
       fr: 'Pays',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return obj.getType() === 'dropdown';
   },
 };
@@ -37,7 +37,7 @@ export const dateOfBirth: CampDataType = {
       fr: 'Date de naissance',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return (
       obj.getType() === 'date_of_birth' ||
       (obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'date')
@@ -54,7 +54,7 @@ export const email: CampDataType = {
       fr: 'E-Mail (participant)',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'email'
     );
@@ -70,7 +70,7 @@ export const firstName: CampDataType = {
       fr: 'Prénom',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'text'
     );
@@ -86,7 +86,7 @@ export const guardianEmail: CampDataType = {
       fr: 'E-Mail (responsables)',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'email'
     );
@@ -102,7 +102,7 @@ export const lastName: CampDataType = {
       fr: 'Nom de Famille',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'text'
     );
@@ -118,7 +118,7 @@ export const name: CampDataType = {
       fr: 'Nom',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'text'
     );
@@ -134,7 +134,7 @@ export const role: CampDataType = {
       fr: 'Rôle',
     },
   },
-  fit: (obj, prop, options) => {
+  fit: (obj) => {
     return ['role', 'dropdown'].includes(obj.getType());
   },
 };
