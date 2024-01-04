@@ -32,6 +32,7 @@ import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { SurveyModel } from 'survey-core';
 import { storeToRefs } from 'pinia';
+import showdown from 'showdown';
 
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
@@ -78,6 +79,10 @@ const creatorOptions = {
   themeForPreview: 'defaultV2',
   showThemeTab: true,
 };
+
+const markdownConverter = new showdown.Converter({
+  openLinksInNewWindow: true,
+});
 
 const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
@@ -156,7 +161,16 @@ creator.saveThemeFunc = (
 };
 
 creator.onPreviewSurveyCreated.add((_, options) => {
-  previewModel.value = options.survey;
+  const survey: SurveyModel = options.survey;
+
+  // Convert markdown to html
+  survey.onTextMarkdown.add((survey, options) => {
+    const str = markdownConverter.makeHtml(options.text);
+    // Remove root paragraphs <p></p>
+    options.html = str.substring(3, str.length - 4);
+  });
+
+  previewModel.value = survey;
 });
 
 creator.onUploadFile.add((_, options) => {

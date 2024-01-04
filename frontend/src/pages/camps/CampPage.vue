@@ -16,8 +16,6 @@
 </template>
 
 <script lang="ts" setup>
-import 'survey-core/defaultV2.min.css';
-
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { computed, onMounted, ref } from 'vue';

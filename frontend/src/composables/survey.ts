@@ -37,8 +37,6 @@ export function startAutoDataUpdate(
     model.locale = locale;
     setVariables(model, data, locale);
   };
-
-  return {};
 }
 
 export const startAutoThemeUpdate = (
