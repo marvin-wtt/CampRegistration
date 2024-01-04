@@ -1,7 +1,7 @@
 import { ITheme, SurveyModel } from 'survey-core';
-import { Camp } from 'src/types/Camp';
+import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { nextTick, Ref, watch } from 'vue';
+import { nextTick, Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 
@@ -9,7 +9,7 @@ import { PlainLight, PlainDark } from 'survey-core/themes';
 
 export function startAutoDataUpdate(
   model: Ref<SurveyModel | undefined>,
-  data: Ref<Camp | undefined>,
+  data: Ref<CampDetails | undefined>,
 ) {
   const { locale } = useI18n();
 
@@ -27,7 +27,7 @@ export function startAutoDataUpdate(
 
   const updateVariables = (
     model: SurveyModel | undefined,
-    data: Camp | undefined,
+    data: CampDetails | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -43,29 +43,14 @@ export function startAutoDataUpdate(
 
 export const startAutoThemeUpdate = (
   model: Ref<SurveyModel | undefined>,
-  data: Ref<Camp | undefined>,
+  data: Ref<CampDetails | undefined>,
   bgColor?: Ref<string | undefined> | undefined,
 ) => {
   const quasar = useQuasar();
 
-  watch(
-    () => quasar.dark.isActive,
-    (value) => {
-      applyTheme(model.value, data.value, value);
-    },
-  );
-
-  watch(data, (value) => {
-    applyTheme(model.value, value, quasar.dark.isActive);
-  });
-
-  watch(model, (value) => {
-    applyTheme(value, data.value, quasar.dark.isActive);
-  });
-
   const applyTheme = (
     model: SurveyModel | undefined,
-    data: Camp | undefined,
+    data: CampDetails | undefined,
     dark: boolean,
   ) => {
     if (!model || !data) {
@@ -99,4 +84,8 @@ export const startAutoThemeUpdate = (
       }
     });
   };
+
+  watchEffect(() => {
+    applyTheme(model.value, data.value, quasar.dark.isActive);
+  });
 };

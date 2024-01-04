@@ -1,5 +1,8 @@
 import { api } from 'boot/axios';
-import { FileUploadPayload, ServiceFile } from 'src/types/ServiceFile';
+import type {
+  ServiceFileCreateData,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 
 export function useFileService() {
   async function fetchCampFiles(campId: string): Promise<ServiceFile[]> {
@@ -10,7 +13,7 @@ export function useFileService() {
 
   async function createCampFile(
     campId: string,
-    data: FileUploadPayload,
+    data: ServiceFileCreateData,
   ): Promise<ServiceFile> {
     const response = await api.post(`camps/${campId}/files/`, data, {
       headers: {

@@ -1,15 +1,15 @@
-import { Identifiable } from 'src/types/Identifiable';
+import type { Identifiable } from './Identifiable';
 
 export interface ServiceFile extends Identifiable {
   name: string;
-  field?: string;
+  field: string | null;
   type: string;
   size: number;
-  accessLevel: string;
+  accessLevel: string | null;
   createdAt: string;
 }
 
-export interface FileUploadPayload {
+export interface ServiceFileCreateData {
   name: string;
   field: string;
   accessLevel: 'private' | 'public';

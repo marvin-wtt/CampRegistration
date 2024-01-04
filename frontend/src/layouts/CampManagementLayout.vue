@@ -151,13 +151,6 @@ interface NavigationItem {
 
 const items: NavigationItem[] = [
   {
-    name: 'dashboard',
-    preview: true,
-    label: t('dashboard'),
-    icon: 'dashboard',
-    to: { name: 'dashboard' },
-  },
-  {
     name: 'participants',
     label: t('participants'),
     icon: 'groups',
@@ -171,24 +164,10 @@ const items: NavigationItem[] = [
     to: undefined,
   },
   {
-    name: 'program_planner',
-    preview: true,
-    label: t('program_planner'),
-    icon: 'event',
-    to: { name: 'program-planner' },
-  },
-  {
     name: 'room_planner',
     label: t('room_planner'),
     icon: 'single_bed',
     to: { name: 'room-planner' },
-  },
-  {
-    name: 'expenses',
-    preview: true,
-    label: t('expenses'),
-    icon: 'payments',
-    to: { name: 'expenses' },
   },
   {
     name: 'tools',
@@ -227,13 +206,6 @@ const items: NavigationItem[] = [
         label: t('access'),
         icon: 'key',
         to: { name: 'access' },
-      },
-      {
-        name: 'notifications',
-        preview: true,
-        label: t('notifications'),
-        icon: 'sms',
-        to: { name: 'notification' },
       },
     ],
   },

@@ -69,7 +69,7 @@ import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
-import { ServiceFile } from 'src/types/ServiceFile';
+import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from 'src/utils/formatters/formatBytes';
 import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
 import { useCampFilesStore } from 'stores/camp-files-store';
@@ -146,10 +146,13 @@ const error = computed<string | null>(() => {
 });
 
 function mapColumnData(file: ServiceFile) {
+  const accessLevel = file.accessLevel
+    ? t(`access_level.${file.accessLevel}`)
+    : 'Unknown';
   return {
     ...file,
     size: formatBytes(file.size),
-    accessLevel: t(`access_level.${file.accessLevel}`, file.accessLevel),
+    accessLevel,
     createdAt: formatUtcDateTime(file.createdAt),
     href: campFileStore.getUrl(file.id),
   };

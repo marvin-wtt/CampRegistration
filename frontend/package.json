@@ -13,7 +13,7 @@
   "scripts": {
     "clean": "rimraf ./dist/ && rimraf ./node_modules/",
     "dev": "quasar dev",
-    "lint": "eslint --ext .js,.ts,.vue ./",
+    "lint": "eslint --ext .js,.ts,.vue ./ && npx vue-tsc --noEmit",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "build": "quasar build",
@@ -59,6 +59,7 @@
     "prettier": "^3.0.3",
     "rimraf": "^5.0.5",
     "typescript": "^5.0.3",
-    "vitest": "^0.34.5"
+    "vitest": "^0.34.5",
+    "vue-tsc": "^1.8.26"
   }
 }

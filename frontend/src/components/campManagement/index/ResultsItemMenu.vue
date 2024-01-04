@@ -109,7 +109,7 @@
   </q-menu>
 </template>
 <script lang="ts" setup>
-import { Camp } from 'src/types/Camp';
+import type { Camp } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();

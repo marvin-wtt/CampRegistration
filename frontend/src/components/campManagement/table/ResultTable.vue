@@ -166,10 +166,11 @@
 <script lang="ts" setup>
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { TableTemplate } from 'src/types/TableTemplate';
+import type { TableTemplate } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import {
   createPDF,
@@ -178,17 +179,19 @@ import {
 
 import { useRoute, useRouter } from 'vue-router';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
+import {
+  TableColumnTemplate,
+  Registration,
+  Camp,
+} from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { Registration } from 'src/types/Registration';
 import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
-import { Camp } from 'src/types/Camp';
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 
 interface Props {
-  questions: QTableColumn[];
+  questions: TableColumnTemplate[];
   results: Registration[];
   templates: TableTemplate[];
   camp: Camp;
@@ -281,8 +284,8 @@ const countries = computed<string[]>(() => {
   return props.camp.countries;
 });
 
-const templates = computed<TableTemplate[]>(() => {
-  const templates: TableTemplate[] = props.templates.map((template) => ({
+const templates = computed<CTableTemplate[]>(() => {
+  const templates: CTableTemplate[] = props.templates.map((template) => ({
     ...template,
     // Map the columns to access the data with dot notation
     columns: template.columns.map((column) => ({
@@ -292,7 +295,7 @@ const templates = computed<TableTemplate[]>(() => {
   }));
 
   // Default template to show all information
-  const columns = props.questions.map((column) => {
+  const columns: CTableColumnTemplate[] = props.questions.map((column) => {
     return {
       ...column,
       field: (row: unknown) =>
@@ -310,14 +313,14 @@ const templates = computed<TableTemplate[]>(() => {
 
   return templates.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 });
-const template = ref<TableTemplate>(defaultTemplate());
+const template = ref<CTableTemplate>(defaultTemplate());
 
 watch(template, (newValue) => {
   pagination.value.sortBy = newValue.sortBy;
   pagination.value.descending = newValue.sortDirection === 'desc';
 });
 
-function defaultTemplate(): TableTemplate {
+function defaultTemplate(): CTableTemplate {
   if (route.hash.length > 1) {
     const id = route.hash.substring(1);
     const result = templates.value.find((value) => value.id == id);
@@ -338,7 +341,7 @@ function onTemplateChange() {
   });
 }
 
-const columns = computed<TableColumnTemplate[]>(() => {
+const columns = computed<CTableColumnTemplate[]>(() => {
   const columns = [...template.value.columns];
 
   // Add index column as first column

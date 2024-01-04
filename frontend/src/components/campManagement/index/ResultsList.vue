@@ -28,7 +28,7 @@
 
 <script lang="ts" setup>
 import ResultsItem from 'components/campManagement/index/ResultsItem.vue';
-import { Camp } from 'src/types/Camp';
+import type { Camp } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import ResultsItemSkeleton from 'components/campManagement/index/ResultsItemSkeleton.vue';
 

@@ -16,7 +16,7 @@ import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import {
   localization,
   PropertyGridEditorCollection,
@@ -79,12 +79,15 @@ const creatorOptions = {
   showThemeTab: true,
 };
 
-localization.currentLocale = locale.value.split(/[-_]/)[0];
 const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
 
 startAutoDataUpdate(previewModel, campData);
 startAutoThemeUpdate(previewModel, campData);
+
+watchEffect(() => {
+  creator.locale = locale.value.split(/[-_]/)[0];
+});
 
 onMounted(async () => {
   await campDetailsStore.fetchData();

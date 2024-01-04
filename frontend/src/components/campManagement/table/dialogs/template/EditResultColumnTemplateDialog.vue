@@ -178,9 +178,11 @@
 import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref, toRaw } from 'vue';
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
+import type {
+  CampDetails,
+  TableColumnTemplate,
+} from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { Camp } from 'src/types/Camp';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
@@ -191,7 +193,7 @@ import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 
 interface Props {
   column: TableColumnTemplate;
-  camp: Camp;
+  camp: CampDetails;
 }
 
 const props = defineProps<Props>();

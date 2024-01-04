@@ -1,8 +1,8 @@
-import {
+import type {
   TableTemplate,
   TemplateCreateData,
   TemplateUpdateData,
-} from 'src/types/TableTemplate';
+} from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
 export function useTemplateService() {

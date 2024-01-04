@@ -17,7 +17,7 @@
             v-bind="$attrs"
           >
             <template
-              v-for="(data, name, index) in $slots"
+              v-for="(data, name, index) in $slots as unknown as QInputSlots"
               :key="index"
               #[name]
             >
@@ -50,7 +50,9 @@
 
             <!-- Parent slots -->
             <template
-              v-for="(data, name, slotIndex) in $slots"
+              v-for="(
+                data, name, slotIndex
+              ) in $slots as unknown as QInputSlots"
               :key="slotIndex"
               #[name]
             >
@@ -87,6 +89,7 @@
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { QInputSlots } from 'quasar';
 
 type Translations = Record<string, string | number>;
 

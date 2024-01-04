@@ -1,9 +1,13 @@
 <template>
   <template v-if="visible">
     <template v-if="element.type === 'text'">
+      <template v-if="!isValidInputModel(modelValue)">
+        Invalid present data
+      </template>
+      <!-- Todo take input type into account -->
       <q-input
+        v-else
         v-model="modelValue"
-        :type="element.inputType"
         :hint="to(element.description)"
         :label="label"
         :disable="readOnly"
@@ -18,6 +22,7 @@
       />
     </template>
 
+    <!--
     <q-input
       v-else-if="element.type === 'comment'"
       v-model="modelValue"
@@ -27,6 +32,7 @@
       :rules="[(val) => checkRequired(val)]"
       type="textarea"
     />
+    -->
 
     <template v-else-if="element.type === 'checkbox'">
       <!-- Confirm checkbox -->
@@ -50,7 +56,7 @@
             <q-checkbox
               v-model="modelValue"
               :true-value="choices[0].value"
-              :false-value="element.choices[0] === true ? false : null"
+              :false-value="element.choices[0] ? false : null"
               :label="to(choices[0].label)"
               :disable="readOnly"
             />
@@ -64,7 +70,7 @@
         type="checkbox"
         :disable="readOnly"
         :options="choices"
-        :rules="[(val) => checkRequired(val)]"
+        :rules="[(val: unknown) => checkRequired(val)]"
       />
     </template>
 
@@ -98,7 +104,7 @@
         v-model="modelValue"
         :disable="readOnly"
         :options="choices"
-        :rules="[(val) => checkRequired(val)]"
+        :rules="[(val: unknown) => checkRequired(val)]"
       />
     </div>
 
@@ -126,19 +132,6 @@
     </div>
 
     <!-- TODO add uploader -->
-    <q-file
-      v-else-if="element.type === 'file'"
-      v-model="modelValue"
-      :label="label"
-      :hint="to(element.description)"
-      :rules="[]"
-      :multiple="element.allowMultiple"
-      :accept="element.acceptedTypes"
-    >
-      <template #prepend>
-        <q-icon name="attach_file" />
-      </template>
-    </q-file>
 
     <p
       v-else
@@ -152,7 +145,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { AnyElement, SelectionElement } from 'src/types/SurveyJSCampData';
+import type {
+  AnyElement,
+  SelectionElement,
+} from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 
@@ -160,13 +156,7 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 interface Props {
-  modelValue:
-    | undefined
-    | string
-    | number
-    | boolean
-    | string[]
-    | Record<string, string | number>;
+  modelValue: unknown;
   data: object;
   element: AnyElement;
   readonly?: boolean;
@@ -314,6 +304,14 @@ function checkMaxValue(value?: string | number): true | string {
   }
 
   return true;
+}
+
+function isValidInputModel(
+  model: unknown,
+): model is null | string | number | undefined {
+  return (
+    model == null || typeof model === 'string' || typeof model === 'number'
+  );
 }
 </script>
 

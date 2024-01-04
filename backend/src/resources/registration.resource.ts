@@ -1,6 +1,7 @@
-import { File, Registration, Room, Bed } from '@prisma/client';
-import groupBy from 'utils/groupBy';
+import { Registration, Room, Bed, File } from '@prisma/client';
+import type { Registration as RegistrationResource } from '@camp-registration/common/entities';
 import config from 'config';
+import groupBy from 'utils/groupBy';
 
 interface RegistrationWithBedAndFiles extends Registration {
   bed?: BedWithRoom | null;
@@ -11,7 +12,9 @@ interface BedWithRoom extends Bed {
   room: Room;
 }
 
-const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
+const extractFiles = (
+  registration: RegistrationWithBedAndFiles,
+): Record<string, string> => {
   if (!registration.files) {
     return {};
   }
@@ -27,9 +30,11 @@ const extractFiles = (registration: RegistrationWithBedAndFiles): object => {
   );
 };
 
-const registrationResource = (registration: RegistrationWithBedAndFiles) => {
-  const files = extractFiles(registration);
+const registrationResource = (
+  registration: RegistrationWithBedAndFiles,
+): RegistrationResource => {
   const room = registration.bed ? registration.bed.room.name : null;
+  const files = extractFiles(registration);
 
   return {
     id: registration.id,
@@ -37,11 +42,11 @@ const registrationResource = (registration: RegistrationWithBedAndFiles) => {
     data: registration.data,
     campData: registration.campData,
     locale: registration.locale,
-    files,
     room,
+    files,
     // Use snake case because form keys should be snake case too
-    updated_at: registration.updatedAt,
-    created_at: registration.createdAt,
+    updated_at: registration.updatedAt?.toISOString() ?? null,
+    created_at: registration.createdAt.toISOString(),
   };
 };
 

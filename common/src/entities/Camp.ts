@@ -1,7 +1,7 @@
-import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
-import { Identifiable } from 'src/types/Identifiable';
+import { SurveyJSCampData } from './SurveyJSCampData';
+import { Identifiable } from './Identifiable';
 import { ITheme } from 'survey-core/typings/themes';
-import { Translatable } from 'src/types/Translatable';
+import { Translatable } from './Translatable';
 
 export interface Camp extends Identifiable {
   public: boolean;
@@ -17,11 +17,14 @@ export interface Camp extends Identifiable {
   maxAge: number;
   location: Translatable;
   price: number;
-  freePlaces: Translatable<number>;
+  freePlaces?: Translatable<number>;
+}
+
+export interface CampDetails extends Camp {
   form: SurveyJSCampData;
   themes: Record<string, ITheme>;
 }
 
-export type CampCreateData = Omit<Camp, 'id' | 'freePlaces'>;
+export type CampCreateData = Omit<CampDetails, 'id' | 'freePlaces'>;
 
 export type CampUpdateData = Partial<CampCreateData>;

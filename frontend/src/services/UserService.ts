@@ -1,5 +1,9 @@
 import { api } from 'boot/axios';
-import { User, UserCreateData, UserUpdateData } from 'src/types/User';
+import type {
+  User,
+  UserCreateData,
+  UserUpdateData,
+} from '@camp-registration/common/entities';
 
 export function useUserService() {
   async function fetchUsers(): Promise<User[]> {

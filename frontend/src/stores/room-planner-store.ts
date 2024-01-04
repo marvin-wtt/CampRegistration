@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { ResponseRoom, Room } from 'src/types/Room';
+import { Roommate, RoomWithRoommates } from 'src/types/Room';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
   useAuthBus,
@@ -10,8 +10,12 @@ import {
   useRegistrationBus,
 } from 'src/composables/bus';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { Registration } from 'src/types/Registration';
-import { Roommate } from 'src/types/Roommate';
+import type {
+  Registration,
+  Room,
+  RoomCreateData,
+  RoomUpdateData,
+} from '@camp-registration/common/entities';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { formatPersonName } from 'src/utils/formatters';
 
@@ -31,7 +35,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     requestPending,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<Room[]>('roomPlanner');
+  } = useServiceHandler<RoomWithRoommates[]>('roomPlanner');
   const registrationsStore = useRegistrationsStore();
   const campBus = useCampBus();
   const authBus = useAuthBus();
@@ -61,31 +65,37 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     });
   }
 
-  async function createRoom(createData: Room): Promise<void> {
+  async function createRoom(
+    createData: RoomCreateData,
+  ): Promise<Room | undefined> {
     const campId = route.params.camp as string | undefined;
 
     const cid = checkNotNullWithError(campId);
-    await withProgressNotification('create', async () => {
+    return withProgressNotification('create', async () => {
       const room = await apiService.createRoom(cid, createData);
 
       data.value?.push(mapResponseRoom(room));
+
+      return room;
     });
   }
 
   async function updateRoom(
     roomId: string | undefined,
-    updateData: Partial<Room>,
-  ) {
+    updateData: RoomUpdateData,
+  ): Promise<Room | undefined> {
     const campId = route.params.camp as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(roomId);
-    await withProgressNotification('update', async () => {
-      await apiService.updateRoom(cid, rid, updateData);
-    });
+    return withProgressNotification('update', async () => {
+      const room = await apiService.updateRoom(cid, rid, updateData);
 
-    invalidate();
-    await fetchRooms();
+      invalidate();
+      await fetchRooms();
+
+      return room;
+    });
   }
 
   async function deleteRoom(roomId: string | undefined) {
@@ -106,7 +116,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
   }
 
   async function updateBed(
-    room: Room,
+    room: RoomWithRoommates,
     position: number,
     person: Roommate | null,
   ) {
@@ -125,7 +135,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     room.beds[position].person = person;
   }
 
-  function mapResponseRoom(room: ResponseRoom): Room {
+  function mapResponseRoom(room: Room): RoomWithRoommates {
     return {
       id: room.id,
       name: room.name,
@@ -205,7 +215,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     return isLoading.value || registrationsStore.isLoading;
   });
 
-  const storeError = computed<string | object | null>(() => {
+  const storeError = computed<string | null>(() => {
     return error.value ?? registrationsStore.error;
   });
 

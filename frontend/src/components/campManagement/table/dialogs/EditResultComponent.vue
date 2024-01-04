@@ -60,13 +60,15 @@
 
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
-import { SurveyJSCampData } from 'src/types/SurveyJSCampData';
+import type {
+  Registration,
+  SurveyJSCampData,
+} from '@camp-registration/common/entities';
 import { reactive, ref, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRegistrationsStore } from 'stores/registration-store';
 import DynamicFromInput from 'components/common/inputs/DynamicFromInput.vue';
-import { Registration } from 'src/types/Registration';
 
 interface Props {
   questions: SurveyJSCampData;

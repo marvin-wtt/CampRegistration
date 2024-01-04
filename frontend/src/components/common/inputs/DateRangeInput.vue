@@ -5,7 +5,7 @@
     outlined
     rounded
     v-bind="$attrs"
-    @focus="$refs.popup.show()"
+    @focus="($refs.popup as QPopupProxy).show()"
   >
     <template #append>
       <q-icon
@@ -38,7 +38,7 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots"
+      v-for="(data, name, index) in $slots as unknown as QInputSlots"
       :key="index"
       #[name]
     >
@@ -53,6 +53,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { QInputSlots, QPopupProxy } from 'quasar';
 
 const { t } = useI18n();
 

@@ -30,7 +30,6 @@
           autofocus
           rounded
           outlined
-          @keyup.enter="prompt = false"
         />
       </q-card-section>
 

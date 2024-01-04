@@ -102,35 +102,20 @@ const routes: RouteRecordRaw[] = [
         },
         children: [
           {
-            path: 'dashboard',
-            name: 'dashboard',
-            component: () => import('pages/campManagement/DashboardPage.vue'),
-          },
-          {
             path: 'participants',
             name: 'participants',
             component: () =>
               import('pages/campManagement/ParticipantsIndexPage.vue'),
           },
           {
-            path: 'program-planner',
-            name: 'program-planner',
-            component: () => import('pages/campManagement/ProgramPlanner.vue'),
-          },
-          {
             path: 'room-planner',
             name: 'room-planner',
-            component: () => import('pages/campManagement/RoomPlanner.vue'),
+            component: () => import('pages/campManagement/RoomPlannerPage.vue'),
           },
           {
             path: 'tools',
             name: 'tools',
             component: () => import('pages/campManagement/ToolsPage.vue'),
-          },
-          {
-            path: 'expenses',
-            name: 'expenses',
-            component: () => import('pages/campManagement/ExpensesPage.vue'),
           },
           {
             path: 'settings',
@@ -157,18 +142,10 @@ const routes: RouteRecordRaw[] = [
                   import('pages/campManagement/settings/FileSettingsPage.vue'),
               },
               {
-                path: 'edit-form',
+                path: 'form',
                 name: 'edit-form',
                 component: () =>
                   import('pages/campManagement/settings/FormEditPage.vue'),
-              },
-              {
-                path: 'notification',
-                name: 'notification',
-                component: () =>
-                  import(
-                    'pages/campManagement/settings/NotificationEditorPage.vue'
-                  ),
               },
             ],
           },

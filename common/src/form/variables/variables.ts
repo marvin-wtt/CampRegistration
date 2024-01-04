@@ -14,7 +14,7 @@ type Data = {
   maxAge: number;
   location: Translatable;
   price: number;
-  freePlaces: Translatable<number>;
+  freePlaces?: Translatable<number>;
 };
 
 export const setVariables = (

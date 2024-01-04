@@ -19,6 +19,7 @@ export interface Page {
 }
 
 export type AnyElement =
+  | BooleanElement
   | TextElement
   | SelectionElement
   | FileElement
@@ -49,16 +50,16 @@ export interface Element {
 
 export interface TextElement extends Element {
   type: 'text';
-  // TODO Maybe covert these types? Or ignore them
-  inputType?: // | 'color'
-  | 'date'
-    // | 'datetime'
+  inputType?:
+    | 'color'
+    | 'date'
+    | 'datetime'
     | 'email'
     | 'number'
     | 'password'
-    // | 'range'
+    | 'range'
     | 'text'
-    // | 'time'
+    | 'time'
     | 'url';
 
   min?: number | string;
@@ -85,4 +86,8 @@ export interface FileElement extends Element {
 
 export interface ExpressionElement extends Element {
   type: 'expression';
+}
+
+export interface BooleanElement extends Element {
+  type: 'boolean';
 }

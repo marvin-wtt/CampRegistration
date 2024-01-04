@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', preventPageLeave);
 });
 
-function preventPageLeave(event) {
+function preventPageLeave(event: BeforeUnloadEvent) {
   if (!props.preventLeave) {
     return;
   }
@@ -124,12 +124,10 @@ onBeforeRouteLeave((to, from, next) => {
     });
 });
 
-onErrorCaptured((err, instance) => {
+onErrorCaptured(() => {
   // TODO Handle gracefully
   localError.value = true;
 });
-
-// TODO Not working...
 </script>
 
 <style scoped></style>

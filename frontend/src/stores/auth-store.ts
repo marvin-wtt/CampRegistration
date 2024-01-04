@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import { User } from 'src/types/User';
+import type { Profile, AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { AccessTokens } from 'src/types/AccessTokens';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -22,7 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
-  } = useServiceHandler<User>('user');
+  } = useServiceHandler<Profile>('user');
 
   campBus.on('create', async () => {
     await fetchUser();
@@ -126,7 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       isRefreshingToken = true;
-      const tokens: AccessTokens = await apiService.refreshTokens();
+      const tokens: AuthTokens = await apiService.refreshTokens();
       handleTokenRefresh(tokens);
       return true;
     } catch (ignored) {
@@ -137,7 +136,7 @@ export const useAuthStore = defineStore('auth', () => {
     return false;
   }
 
-  function handleTokenRefresh(tokens: AccessTokens) {
+  function handleTokenRefresh(tokens: AuthTokens) {
     if (tokens.refresh === undefined) {
       return;
     }
@@ -146,7 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
     const now = Date.now();
     const refreshTime = expires.getTime() - now - 1000 * 60;
     accessTokenTimer = setTimeout(async () => {
-      const tokens: AccessTokens = await apiService.refreshTokens();
+      const tokens: AuthTokens = await apiService.refreshTokens();
       handleTokenRefresh(tokens);
     }, refreshTime);
   }

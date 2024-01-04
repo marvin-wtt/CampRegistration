@@ -1,12 +1,14 @@
-import { Identifiable } from 'src/types/Identifiable';
+import { Identifiable } from './Identifiable';
 
 export interface Registration extends Identifiable {
   data: Record<string, unknown>;
   campData: Record<string, unknown[]>;
   waitingList: boolean;
+  locale: string;
   room?: Record<string, string>;
+  files?: Record<string, string>;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
 }
 
 export type RegistrationCreateData = unknown;

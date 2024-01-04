@@ -1,18 +1,20 @@
 import { api } from 'boot/axios';
-import { User } from 'src/types/User';
-import { LoginResponse } from 'src/types/LoginResponse';
-import { AccessTokens } from 'src/types/AccessTokens';
+import type {
+  AuthTokens,
+  Authentication,
+  Profile,
+} from '@camp-registration/common/entities';
 
 export function useAuthService() {
   async function login(
     email: string,
     password: string,
     remember = false,
-  ): Promise<LoginResponse> {
+  ): Promise<Authentication> {
     const response = await api.post('auth/login', {
-      email: email,
-      password: password,
-      remember: remember,
+      email,
+      password,
+      remember,
     });
 
     return response.data;
@@ -24,7 +26,7 @@ export function useAuthService() {
     return response.data;
   }
 
-  async function refreshTokens(): Promise<AccessTokens> {
+  async function refreshTokens(): Promise<AuthTokens> {
     const response = await api.post('auth/refresh-tokens');
 
     return response.data;
@@ -58,15 +60,15 @@ export function useAuthService() {
     password: string,
   ): Promise<void> {
     const response = await api.post('auth/reset-password', {
-      token: token,
-      email: email,
-      password: password,
+      token,
+      email,
+      password,
     });
 
     return response.data;
   }
 
-  async function fetchProfile(): Promise<User> {
+  async function fetchProfile(): Promise<Profile> {
     const response = await api.get('profile');
 
     return response.data.data;

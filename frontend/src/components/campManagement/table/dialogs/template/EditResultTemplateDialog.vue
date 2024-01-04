@@ -168,13 +168,15 @@
 import { QSelectOption, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { TableTemplate } from 'src/types/TableTemplate';
+import type {
+  TableTemplate,
+  TableColumnTemplate,
+  Camp,
+} from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, toRaw } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
 import EditResultColumnTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultColumnTemplateDialog.vue';
-import { Camp } from 'src/types/Camp';
 
 interface Props {
   template: TableTemplate;

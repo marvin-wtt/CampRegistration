@@ -1,4 +1,4 @@
-import { Registration } from 'src/types/Registration';
+import type { Registration } from '@camp-registration/common/entities';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 

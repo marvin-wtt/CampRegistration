@@ -53,11 +53,10 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { TableTemplate } from 'src/types/TableTemplate';
+import type { Camp, TableTemplate } from '@camp-registration/common/entities';
 import EditResultTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultTemplateDialog.vue';
 import SortableList from 'components/common/SortableList.vue';
 import { reactive, toRaw } from 'vue';
-import { Camp } from 'src/types/Camp';
 
 interface Props {
   templates: TableTemplate[];

@@ -1,4 +1,9 @@
-import { Camp, CampCreateData, CampUpdateData } from 'src/types/Camp';
+import type {
+  Camp,
+  CampDetails,
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
 export function useCampService() {
@@ -8,19 +13,22 @@ export function useCampService() {
     return response.data.data;
   }
 
-  async function fetchCamp(id: string): Promise<Camp> {
+  async function fetchCamp(id: string): Promise<CampDetails> {
     const response = await api.get(`camps/${id}/`);
 
     return response.data.data;
   }
 
-  async function createCamp(data: CampCreateData): Promise<Camp> {
+  async function createCamp(data: CampCreateData): Promise<CampDetails> {
     const response = await api.post('camps/', data);
 
     return response.data.data;
   }
 
-  async function updateCamp(id: string, data: CampUpdateData): Promise<Camp> {
+  async function updateCamp(
+    id: string,
+    data: CampUpdateData,
+  ): Promise<CampDetails> {
     const response = await api.patch(`camps/${id}/`, data);
 
     return response.data.data;

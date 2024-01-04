@@ -1,11 +1,14 @@
 import { CampManager, Invitation, User } from '@prisma/client';
+import type { CampManager as CampManagerResource } from '@camp-registration/common/entities';
 
 interface ManagerWithRelationships extends CampManager {
   user: User | null;
   invitation: Invitation | null;
 }
 
-const managerResource = (manager: ManagerWithRelationships) => {
+const managerResource = (
+  manager: ManagerWithRelationships,
+): CampManagerResource => {
   const { user, invitation } = manager;
 
   const name: string | null = user ? user.name : null;

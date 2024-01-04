@@ -1,8 +1,8 @@
-import {
+import type {
   Registration,
   RegistrationCreateData,
   RegistrationUpdateData,
-} from 'src/types/Registration';
+} from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
 export function useRegistrationService() {
@@ -27,13 +27,7 @@ export function useRegistrationService() {
     campId: string,
     data: RegistrationCreateData,
   ): Promise<Registration> {
-    const headers = {
-      'Content-Type': 'multipart/form-data',
-    };
-
-    const response = await api.post(`camps/${campId}/registrations/`, data, {
-      headers,
-    });
+    const response = await api.postForm(`camps/${campId}/registrations/`, data);
 
     return response.data.data;
   }
@@ -43,7 +37,7 @@ export function useRegistrationService() {
     registrationId: string,
     data: RegistrationUpdateData,
   ): Promise<Registration> {
-    const response = await api.put(
+    const response = await api.putForm(
       `camps/${campId}/registrations/${registrationId}/`,
       data,
     );
