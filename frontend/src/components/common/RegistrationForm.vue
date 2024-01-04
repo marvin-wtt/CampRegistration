@@ -49,6 +49,10 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
+// Auto variables update on locale change
+startAutoDataUpdate(model, campData);
+startAutoThemeUpdate(model, campData, bgColor);
+
 onMounted(async () => {
   const camp = props.campDetails;
   const form = camp.form;
@@ -59,10 +63,6 @@ onMounted(async () => {
   if (props.data) {
     model.value.data = props.data;
   }
-
-  // Auto variables update on locale change
-  startAutoDataUpdate(model, campData);
-  startAutoThemeUpdate(model, campData, bgColor);
 });
 
 function createModel(id: string, form: object): SurveyModel {
