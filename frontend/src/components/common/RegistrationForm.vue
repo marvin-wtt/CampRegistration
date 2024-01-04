@@ -7,6 +7,8 @@
 </template>
 
 <script lang="ts" setup>
+import 'survey-core/defaultV2.min.css';
+
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
 import { onMounted, ref, toRef, watchEffect } from 'vue';
