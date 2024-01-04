@@ -14,7 +14,7 @@ let activeJobs: Cron[] = [];
 export const startJobs = () => {
   scheduleJob('expired-token-cleanup', '0 3 * * *', removeExpiredTokens);
   scheduleJob('tmp-file-cleanup', '0 4 * * *', deleteTemporaryFiles);
-  scheduleJob('unused-file-cleanup', '0 4 * * *', deleteUnusedFiles);
+  scheduleJob('unused-file-cleanup', '30 4 * * *', deleteUnusedFiles);
 };
 
 const scheduleJob = (
