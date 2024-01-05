@@ -45,7 +45,7 @@ async function onSubmit() {
   return router.push({
     name: 'management',
     query: {
-      public: 0,
+      page: 'active',
     },
   });
 }

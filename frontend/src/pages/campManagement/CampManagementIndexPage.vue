@@ -108,11 +108,9 @@ const { user, loading, error } = storeToRefs(authStore);
 const menu = ref<MenuState>(getMenuStateFromQueryParameter());
 
 function getMenuStateFromQueryParameter(): MenuState {
-  if ('active' in route.query) {
-    return route.query.active === '0' ? 'draft' : 'active';
-  }
+  const page = route.query.page;
 
-  return 'active';
+  return page && typeof page === 'string' ? (page as MenuState) : 'active';
 }
 
 function addAction() {
