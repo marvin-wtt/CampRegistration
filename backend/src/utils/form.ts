@@ -22,7 +22,7 @@ export const formUtils = (camp: Camp) => {
   let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
   // TODO Camp with free places required here!
-  setVariables(survey, camp as CampWithFreePlaces, 'en-US');
+  setVariables(survey, camp as CampWithFreePlaces);
 
   const updateData = (data?: unknown, files?: FileType) => {
     survey.data = typeof data !== 'object' ? {} : data;

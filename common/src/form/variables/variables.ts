@@ -17,16 +17,12 @@ type Data = {
   freePlaces?: Translatable<number>;
 };
 
-export const setVariables = (
-  model: SurveyModel,
-  data: Data | undefined,
-  locale: string,
-) => {
+export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   if (!data) {
     return;
   }
 
-  const { t, toDate, toTime } = converter(locale);
+  const { t, toDate, toTime } = converter(model.locale);
 
   model.setVariable('camp.countries', data.countries);
   model.setVariable('camp.name', t(data.name));
