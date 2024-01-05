@@ -71,7 +71,6 @@ const error = computed(() => {
 });
 
 const creatorOptions = {
-  // haveCommercialLicense: true, // TODO Enable with licence
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,

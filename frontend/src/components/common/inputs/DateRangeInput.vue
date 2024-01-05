@@ -86,8 +86,8 @@ const emit = defineEmits<{
 const modelValue = computed<RangeDate | undefined>({
   get: () => {
     return {
-      from: utcToDate(props.from),
-      to: utcToDate(props.to),
+      from: isoToDate(props.from),
+      to: isoToDate(props.to),
     };
   },
   set: (val) => {
@@ -103,7 +103,7 @@ const inputValue = computed<string | undefined>({
       return undefined;
     }
 
-    return `${utcToDate(from.value)} - ${utcToDate(to.value)}`;
+    return `${isoToDate(from.value)} - ${isoToDate(to.value)}`;
   },
   set: (val) => {
     const dates = val?.split('-');
@@ -118,7 +118,7 @@ const inputValue = computed<string | undefined>({
   },
 });
 
-function utcToDate(utcString?: string): string | undefined {
+function isoToDate(utcString?: string): string | undefined {
   if (!utcString) {
     return undefined;
   }

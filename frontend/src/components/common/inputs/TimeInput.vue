@@ -68,11 +68,11 @@ const emit = defineEmits<{
 }>();
 
 const modelValue = computed<string | undefined>({
-  get: () => utcToTime(props.modelValue),
-  set: (val) => emit('update:modelValue', timeToUtc(val)),
+  get: () => isoToTime(props.modelValue),
+  set: (val) => emit('update:modelValue', timeToIso(val)),
 });
 
-function utcToTime(dateString?: string): string | undefined {
+function isoToTime(dateString?: string): string | undefined {
   if (!dateString) {
     return undefined;
   }
@@ -84,7 +84,7 @@ function utcToTime(dateString?: string): string | undefined {
   return `${hours}:${minutes}`;
 }
 
-function timeToUtc(inputTime?: string): string | undefined {
+function timeToIso(inputTime?: string): string | undefined {
   const dateString = props.modelValue;
   if (!dateString || !inputTime) {
     return undefined;
@@ -101,7 +101,7 @@ function timeToUtc(inputTime?: string): string | undefined {
   date.setHours(hours);
   date.setMinutes(minutes);
 
-  return date.toUTCString();
+  return date.toISOString();
 }
 </script>
 
