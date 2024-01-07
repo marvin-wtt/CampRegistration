@@ -102,6 +102,13 @@ const routes: RouteRecordRaw[] = [
         },
         children: [
           {
+            path: 'dashboard',
+            name: 'dashboard',
+            redirect: {
+              name: 'participants',
+            },
+          },
+          {
             path: 'participants',
             name: 'participants',
             component: () =>
