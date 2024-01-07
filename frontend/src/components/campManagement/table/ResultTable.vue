@@ -465,7 +465,6 @@ async function exportPDF() {
   } catch (e: unknown) {
     quasar.notify({
       type: 'negative',
-      position: 'top',
       message: t('error.export.pdf'),
     });
   } finally {

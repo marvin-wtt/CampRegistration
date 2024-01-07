@@ -35,7 +35,7 @@ export function startAutoDataUpdate(
     }
 
     model.locale = locale;
-    setVariables(model, data, locale);
+    setVariables(model, data);
   };
 }
 

@@ -56,9 +56,6 @@ async function onSubmit() {
 
   return router.push({
     name: 'dashboard',
-    query: {
-      public: 0,
-    },
   });
 }
 </script>
