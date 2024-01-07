@@ -21,6 +21,7 @@ export const formUtils = (camp: Camp) => {
 
   let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
+  survey.locale = 'en-US';
   // TODO Camp with free places required here!
   setVariables(survey, camp as CampWithFreePlaces);
 
