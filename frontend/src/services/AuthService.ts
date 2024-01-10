@@ -5,14 +5,24 @@ import type {
   Profile,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
+import { isAxiosError } from 'axios';
 
 export function useAuthService() {
   let onUnauthenticated: (() => unknown | Promise<unknown>) | undefined =
     undefined;
   // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
-  api.interceptors.response.use(undefined, () => {
+  api.interceptors.response.use(undefined, async (error) => {
+    if (!isAxiosError(error)) {
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
+
     if (onUnauthenticated) {
-      return onUnauthenticated();
+      await onUnauthenticated();
+      return Promise.reject(error);
     }
   });
 
