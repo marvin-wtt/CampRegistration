@@ -33,7 +33,9 @@ import { useCampFilesStore } from 'stores/camp-files-store';
 import { SurveyModel } from 'survey-core';
 import { storeToRefs } from 'pinia';
 import showdown from 'showdown';
+import { useAPIService } from 'src/services/APIService';
 
+const api = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
 const { data: campData } = storeToRefs(campDetailsStore);
@@ -173,16 +175,26 @@ creator.onPreviewSurveyCreated.add((_, options) => {
 });
 
 creator.onUploadFile.add((_, options) => {
-  campFileStore
-    .createEntry({
-      name: '',
-      field: '',
-      file: options.file,
+  const files = options.files;
+
+  const campId = campData.value?.id;
+  if (!campId || files.length == 0) {
+    options.callback('error');
+    return;
+  }
+
+  // TODO Why is it an array and not a single file? The callback only accepts a single link as parameter
+  const file = files[0];
+
+  api
+    .createCampFile(campId, {
+      name: file.name,
+      field: 'form-file',
+      file,
       accessLevel: 'public',
     })
-    .then(() => {
-      // TODO Get url
-      const url = '';
+    .then((file) => {
+      const url = campFileStore.getUrl(file.id, campId);
       options.callback('success', url);
     })
     .catch(() => {
