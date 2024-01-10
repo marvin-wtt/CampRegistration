@@ -76,9 +76,14 @@
           {{ t('sections.filter') }}
         </a>
 
-        <q-toggle
+        <q-select
           v-model="template.filterWaitingList"
           :label="t('fields.filter_waiting_list.label')"
+          :options="waitingListOptions"
+          emit-value
+          map-options
+          outlined
+          rounded
         />
 
         <q-select
@@ -209,8 +214,23 @@ const template = reactive<TableTemplate>(
   structuredClone(toRaw(props.template)),
 );
 
-const roleOptions: (string | QSelectOption)[] = ['participant'];
+const roleOptions: (string | QSelectOption)[] = ['participant', 'counselor'];
 const roleFilteredOptions = ref<(string | QSelectOption)[]>(roleOptions);
+
+const waitingListOptions: QSelectOption[] = [
+  {
+    value: 'exclude',
+    label: t('fields.filter_waiting_list.options.exclude'),
+  },
+  {
+    value: 'include',
+    label: t('fields.filter_waiting_list.options.include'),
+  },
+  {
+    value: 'only',
+    label: t('fields.filter_waiting_list.options.only'),
+  },
+];
 
 const sortByOptions = computed(() => {
   return template.columns.map((value) => {
@@ -324,6 +344,10 @@ fields:
   filter_waiting_list:
     label: 'Hide registrations on waiting list'
     hint: ''
+    options:
+      exclude: 'Exclude Waiting List'
+      include: 'Show all'
+      only: 'Only Waiting List'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -360,6 +384,10 @@ fields:
   filter_waiting_list:
     label: 'Anmeldungen auf Warteliste ausblenden'
     hint: ''
+    options:
+      exclude: 'Warteliste ausschließen'
+      include: 'Alle anzeigen'
+      only: 'Nur Warteliste'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -396,4 +424,8 @@ fields:
   filter_waiting_list:
     label: 'Masquer les inscriptions en liste d’attente'
     hint: ''
+  options:
+    exclude: "Exclure la liste d'attente"
+    include: 'Tout afficher'
+    only: "Uniquement la liste d'attente"
 </i18n>
