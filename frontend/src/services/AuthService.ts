@@ -4,8 +4,24 @@ import type {
   Authentication,
   Profile,
 } from '@camp-registration/common/entities';
+import authRefreshToken from 'src/services/authRefreshToken';
 
 export function useAuthService() {
+  let onUnauthenticated: (() => unknown | Promise<unknown>) | undefined =
+    undefined;
+  // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
+  api.interceptors.response.use(undefined, () => {
+    if (onUnauthenticated) {
+      return onUnauthenticated();
+    }
+  });
+
+  // Retry failed requests after fetching a new refresh token
+  authRefreshToken(api, {
+    handleTokenRefresh: refreshTokens,
+    shouldIntercept: (error) => error.response?.status === 401,
+  });
+
   async function login(
     email: string,
     password: string,
@@ -74,6 +90,10 @@ export function useAuthService() {
     return response.data.data;
   }
 
+  function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
+    onUnauthenticated = handler;
+  }
+
   return {
     login,
     logout,
@@ -82,5 +102,6 @@ export function useAuthService() {
     resetPassword,
     fetchProfile,
     refreshTokens,
+    setOnUnauthenticated,
   };
 }
