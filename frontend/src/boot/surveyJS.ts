@@ -5,7 +5,6 @@ import '@camp-registration/common/form';
 import 'survey-core/i18n/german';
 import 'survey-core/i18n/french';
 import { setLicenseKey } from 'survey-core';
-import * as process from 'process';
 
 export default boot(({ app }) => {
   setLicense();
