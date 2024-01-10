@@ -9,7 +9,7 @@ export function useRegistrationService() {
   async function fetchRegistrations(campId: string): Promise<Registration[]> {
     const response = await api.get(`camps/${campId}/registrations/`);
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function fetchRegistration(
@@ -20,7 +20,7 @@ export function useRegistrationService() {
       `camps/${campId}/registrations/${registrationId}/`,
     );
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function createRegistration(
@@ -29,7 +29,7 @@ export function useRegistrationService() {
   ): Promise<Registration> {
     const response = await api.postForm(`camps/${campId}/registrations/`, data);
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function updateRegistration(
@@ -42,7 +42,7 @@ export function useRegistrationService() {
       data,
     );
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function deleteRegistration(

@@ -87,7 +87,7 @@ export function useAuthService() {
   async function fetchProfile(): Promise<Profile> {
     const response = await api.get('profile');
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
