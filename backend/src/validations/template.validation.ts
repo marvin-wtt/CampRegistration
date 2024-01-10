@@ -39,9 +39,8 @@ const TemplateBodySchema = Joi.object<TableTemplate>()
       .required(),
     order: Joi.number().required(),
     filter: Joi.string(),
-    filterWaitingList: Joi.boolean(),
-    filterCounselors: Joi.boolean(),
-    filterParticipants: Joi.boolean(),
+    filterWaitingList: Joi.string().valid('include', 'exclude', 'only'),
+    filterRoles: Joi.array<string>(),
     printOptions: Joi.object({
       orientation: Joi.string().valid('portrait', 'landscape'),
     }),
