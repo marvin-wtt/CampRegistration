@@ -1,9 +1,9 @@
-import express from "express";
-import config from "config";
-import campRoutes from "./camps/camp.routes";
-import authRoutes from "./auth.routes";
-import profileRoutes from "./profile.routes";
-import userRoutes from "./user.routes";
+import express from 'express';
+import campRoutes from './camps/camp.routes';
+import authRoutes from './auth.routes';
+import profileRoutes from './profile.routes';
+import userRoutes from './user.routes';
+import feedbackRoutes from './feedback.routes';
 
 const router = express.Router();
 
@@ -13,14 +13,15 @@ router.use((req, res, next) => {
   next();
 });
 
-router.use("/auth", authRoutes);
-router.use("/users", userRoutes);
-router.use("/profile", profileRoutes);
-router.use("/camps", campRoutes);
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/profile', profileRoutes);
+router.use('/camps', campRoutes);
+router.use('/feedback', feedbackRoutes);
 
-if (config.env === "development") {
-  // TODO
-  // router.use("/docs", docsRoute);
-}
+// Simple health check to see if the API is available
+router.get('/health', (req, res) => {
+  res.sendStatus(200);
+});
 
 export default router;

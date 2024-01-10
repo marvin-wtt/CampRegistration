@@ -11,7 +11,7 @@ import { computed } from 'vue';
 import { formatPhoneNumber } from 'src/utils/formatters';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { Registration } from 'src/types/Registration';
+import type { Registration } from '@camp-registration/common/entities';
 
 const props = defineProps<TableCellProps>();
 const registrationHelper = useRegistrationHelper();

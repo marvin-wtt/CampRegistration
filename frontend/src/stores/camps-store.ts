@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { Camp, CampCreateData } from 'src/types/Camp';
+import type { Camp, CampCreateData } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';

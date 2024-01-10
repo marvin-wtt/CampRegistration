@@ -1,24 +1,24 @@
-import dotenv from "dotenv";
-import Joi from "joi";
+import dotenv from 'dotenv';
+import Joi from 'joi';
 
 // This must happen before importing the individual configs
 dotenv.config();
 
-import authConfig from "./auth.config";
-import emailConfig from "./email.config";
-import storageOptions from "./storage.config";
+import authConfig from './auth.config';
+import emailConfig from './email.config';
+import storageOptions from './storage.config';
 
 const { value: envVars, error } = Joi.object()
   .keys({
     NODE_ENV: Joi.string()
-      .valid("production", "development", "test")
+      .valid('production', 'development', 'test')
       .required(),
     APP_PORT: Joi.number().min(0).max(65535).default(8000),
     APP_URL: Joi.string().uri().required(),
-    APP_NAME: Joi.string().required().description("The name of the app."),
+    APP_NAME: Joi.string().required().description('The name of the app.'),
   })
   .unknown()
-  .prefs({ errors: { label: "key" } })
+  .prefs({ errors: { label: 'key' } })
   .validate(process.env);
 
 if (error) {

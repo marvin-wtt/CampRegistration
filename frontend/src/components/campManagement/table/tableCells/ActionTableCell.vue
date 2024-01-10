@@ -53,7 +53,7 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import { Registration } from 'src/types/Registration';
+import type { Registration } from '@camp-registration/common/entities';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import { useRegistrationsStore } from 'stores/registration-store';

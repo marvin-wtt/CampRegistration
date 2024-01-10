@@ -5,5 +5,5 @@ export const generateQueryString = (params: Record<string, string>): string => {
       const encodedValue = encodeURIComponent(value);
       return `${encodedKey}=${encodedValue}`;
     })
-    .join("&");
+    .join('&');
 };

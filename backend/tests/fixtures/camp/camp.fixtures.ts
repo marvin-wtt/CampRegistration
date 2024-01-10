@@ -1,4 +1,4 @@
-import moment from "moment/moment";
+import moment from 'moment/moment';
 
 export const campActivePublic = {
   active: true,
@@ -17,37 +17,37 @@ export const campInactive = {
 export const campCreateNational = {
   active: false,
   public: false,
-  countries: ["de"],
-  name: "Test Camp",
-  organizer: "Test Org",
-  contactEmail: "test@example.com",
+  countries: ['de'],
+  name: 'Test Camp',
+  organizer: 'Test Org',
+  contactEmail: 'test@example.com',
   maxParticipants: 10,
   minAge: 10,
   maxAge: 15,
-  startAt: moment().add(20, "days").startOf("hour").toDate().toISOString(),
-  endAt: moment().add(22, "days").startOf("hour").toDate().toISOString(),
+  startAt: moment().add(20, 'days').startOf('hour').toDate().toISOString(),
+  endAt: moment().add(22, 'days').startOf('hour').toDate().toISOString(),
   price: 100.0,
-  location: "Somewhere",
+  location: 'Somewhere',
 };
 
 export const campCreateInternational = {
   ...campCreateNational,
-  countries: ["de", "fr"],
+  countries: ['de', 'fr'],
   name: {
-    de: "Beispiel Camp",
-    fr: "Exemple de camp",
+    de: 'Beispiel Camp',
+    fr: 'Exemple de camp',
   },
   organizer: {
-    de: "Beispiel Organisation",
+    de: 'Beispiel Organisation',
     fr: "Exemple d'organisation",
   },
   contactEmail: {
-    de: "test@example.de",
-    fr: "test@example.fr",
+    de: 'test@example.de',
+    fr: 'test@example.fr',
   },
   location: {
-    de: "Irgendwo",
-    fr: "Quelque part",
+    de: 'Irgendwo',
+    fr: 'Quelque part',
   },
   maxParticipants: {
     de: 10,
@@ -64,7 +64,7 @@ type InvalidBodyData = {
 export const campCreateInvalidBody: InvalidBodyData[] = [
   // Active
   {
-    name: "Active missing",
+    name: 'Active missing',
     data: {
       ...campCreateInternational,
       active: undefined,
@@ -72,16 +72,16 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 201,
   },
   {
-    name: "Active invalid",
+    name: 'Active invalid',
     data: {
       ...campCreateInternational,
-      active: "disabled",
+      active: 'disabled',
     },
     expected: 400,
   },
   // Public
   {
-    name: "Public missing",
+    name: 'Public missing',
     data: {
       ...campCreateInternational,
       public: undefined,
@@ -89,16 +89,16 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Public invalid",
+    name: 'Public invalid',
     data: {
       ...campCreateInternational,
-      public: "private",
+      public: 'private',
     },
     expected: 400,
   },
   // Countries
   {
-    name: "Countries missing",
+    name: 'Countries missing',
     data: {
       ...campCreateInternational,
       countries: undefined,
@@ -106,7 +106,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Countries missing",
+    name: 'Countries missing',
     data: {
       ...campCreateInternational,
       countries: undefined,
@@ -114,7 +114,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Countries empty",
+    name: 'Countries empty',
     data: {
       ...campCreateInternational,
       countries: [],
@@ -122,24 +122,24 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Countries invalid locale",
+    name: 'Countries invalid locale',
     data: {
       ...campCreateInternational,
-      countries: ["de", "invalid"],
+      countries: ['de', 'invalid'],
     },
     expected: 400,
   },
   {
-    name: "Countries invalid value",
+    name: 'Countries invalid value',
     data: {
       ...campCreateInternational,
-      countries: ["de", 1],
+      countries: ['de', 1],
     },
     expected: 400,
   },
   // Name
   {
-    name: "Name missing",
+    name: 'Name missing',
     data: {
       ...campCreateInternational,
       name: undefined,
@@ -147,7 +147,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Name invalid",
+    name: 'Name invalid',
     data: {
       ...campCreateInternational,
       name: 10,
@@ -155,18 +155,18 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Name missing translation",
+    name: 'Name missing translation',
     data: {
       ...campCreateInternational,
       name: {
-        fr: "Exemple de camp",
+        fr: 'Exemple de camp',
       },
     },
     expected: 400,
   },
   // Organizer
   {
-    name: "Organization missing",
+    name: 'Organization missing',
     data: {
       ...campCreateInternational,
       organizer: undefined,
@@ -174,7 +174,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Organization invalid",
+    name: 'Organization invalid',
     data: {
       ...campCreateInternational,
       organizer: 10,
@@ -182,7 +182,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Organization missing translation",
+    name: 'Organization missing translation',
     data: {
       ...campCreateInternational,
       organizer: {
@@ -193,7 +193,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
   },
   // Contact Email
   {
-    name: "Contact Email missing",
+    name: 'Contact Email missing',
     data: {
       ...campCreateInternational,
       contactEmail: undefined,
@@ -201,15 +201,15 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Contact Email invalid format",
+    name: 'Contact Email invalid format',
     data: {
       ...campCreateInternational,
-      contactEmail: "my-email",
+      contactEmail: 'my-email',
     },
     expected: 400,
   },
   {
-    name: "Contact Email invalid",
+    name: 'Contact Email invalid',
     data: {
       ...campCreateInternational,
       contactEmail: 10,
@@ -217,18 +217,18 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Contact Email missing translation",
+    name: 'Contact Email missing translation',
     data: {
       ...campCreateInternational,
       contactEmail: {
-        fr: "test@example.fr",
+        fr: 'test@example.fr',
       },
     },
     expected: 400,
   },
   // Max Participants
   {
-    name: "Max Participants missing",
+    name: 'Max Participants missing',
     data: {
       ...campCreateInternational,
       maxParticipants: undefined,
@@ -236,7 +236,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Participants negative",
+    name: 'Max Participants negative',
     data: {
       ...campCreateInternational,
       maxParticipants: -10,
@@ -244,7 +244,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Participants partial negative",
+    name: 'Max Participants partial negative',
     data: {
       ...campCreateInternational,
       maxParticipants: {
@@ -255,26 +255,26 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Participants invalid",
+    name: 'Max Participants invalid',
     data: {
       ...campCreateInternational,
-      maxParticipants: "ten",
+      maxParticipants: 'ten',
     },
     expected: 400,
   },
   {
-    name: "Max Participants partial invalid",
+    name: 'Max Participants partial invalid',
     data: {
       ...campCreateInternational,
       maxParticipants: {
         de: 10,
-        fr: "ten",
+        fr: 'ten',
       },
     },
     expected: 400,
   },
   {
-    name: "Max Participants too many entries",
+    name: 'Max Participants too many entries',
     data: {
       ...campCreateNational,
       maxParticipants: {
@@ -285,7 +285,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Participants too many entries",
+    name: 'Max Participants too many entries',
     data: {
       ...campCreateInternational,
       maxParticipants: {
@@ -297,7 +297,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Participants missing value",
+    name: 'Max Participants missing value',
     data: {
       ...campCreateInternational,
       maxParticipants: {
@@ -307,7 +307,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Min Age missing",
+    name: 'Min Age missing',
     data: {
       ...campCreateInternational,
       minAge: undefined,
@@ -315,7 +315,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Min Age negative",
+    name: 'Min Age negative',
     data: {
       ...campCreateInternational,
       minAge: -1,
@@ -323,7 +323,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Min Age invalid",
+    name: 'Min Age invalid',
     data: {
       ...campCreateInternational,
       minAge: false,
@@ -331,7 +331,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Age missing",
+    name: 'Max Age missing',
     data: {
       ...campCreateInternational,
       maxAge: undefined,
@@ -339,7 +339,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Age negative",
+    name: 'Max Age negative',
     data: {
       ...campCreateInternational,
       maxAge: -10,
@@ -347,15 +347,15 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Max Age invalid",
+    name: 'Max Age invalid',
     data: {
       ...campCreateInternational,
-      maxAge: "ten",
+      maxAge: 'ten',
     },
     expected: 400,
   },
   {
-    name: "Start At missing",
+    name: 'Start At missing',
     data: {
       ...campCreateInternational,
       startAt: undefined,
@@ -363,23 +363,23 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Start At invalid format",
+    name: 'Start At invalid format',
     data: {
       ...campCreateInternational,
-      startAt: "01.01.2013",
+      startAt: '01.01.2013',
     },
     expected: 400,
   },
   {
-    name: "Start At invalid",
+    name: 'Start At invalid',
     data: {
       ...campCreateInternational,
-      startAt: "2010-01-02T00:00:00.000Z",
+      startAt: '2010-01-02T00:00:00.000Z',
     },
     expected: 400,
   },
   {
-    name: "Start At past",
+    name: 'Start At past',
     data: {
       ...campCreateInternational,
       startAt: 12,
@@ -387,7 +387,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "End At missing",
+    name: 'End At missing',
     data: {
       ...campCreateInternational,
       endAt: undefined,
@@ -395,15 +395,15 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "End At invalid format",
+    name: 'End At invalid format',
     data: {
       ...campCreateInternational,
-      endAt: "01/11/1004",
+      endAt: '01/11/1004',
     },
     expected: 400,
   },
   {
-    name: "End At invalid",
+    name: 'End At invalid',
     data: {
       ...campCreateInternational,
       endAt: -6,
@@ -411,16 +411,16 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "End At before Start At",
+    name: 'End At before Start At',
     data: {
       ...campCreateInternational,
-      startAt: "2100-01-02T00:00:00.000Z",
-      endAt: "2100-01-01T00:00:00.000Z",
+      startAt: '2100-01-02T00:00:00.000Z',
+      endAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 400,
   },
   {
-    name: "Price missing",
+    name: 'Price missing',
     data: {
       ...campCreateInternational,
       price: undefined,
@@ -428,7 +428,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Price negative",
+    name: 'Price negative',
     data: {
       ...campCreateInternational,
       price: -10,
@@ -436,15 +436,15 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Price invalid",
+    name: 'Price invalid',
     data: {
       ...campCreateInternational,
-      price: "for free",
+      price: 'for free',
     },
     expected: 400,
   },
   {
-    name: "Location missing",
+    name: 'Location missing',
     data: {
       ...campCreateInternational,
       location: undefined,
@@ -452,11 +452,11 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   {
-    name: "Location missing translation",
+    name: 'Location missing translation',
     data: {
       ...campCreateInternational,
       location: {
-        fr: "Quelque part",
+        fr: 'Quelque part',
       },
     },
     expected: 400,

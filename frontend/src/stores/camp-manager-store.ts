@@ -3,7 +3,7 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { CampManager } from 'src/types/CampManager';
+import type { CampManager } from '@camp-registration/common/entities';
 
 export const useCampManagerStore = defineStore('campManager', () => {
   const route = useRoute();

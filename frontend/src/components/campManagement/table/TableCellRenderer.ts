@@ -1,14 +1,14 @@
 import { Component } from 'vue';
-import { TableColumnTemplate } from 'src/types/TableColumnTemplate';
+import { CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 
 export class TableCellRenderer {
   private readonly _component: Component;
-  private readonly _column: TableColumnTemplate;
+  private readonly _column: CTableColumnTemplate;
   private _hideEvaluator?: ExpressionEvaluator;
   private _showEvaluator?: ExpressionEvaluator;
 
-  constructor(component: Component, column: TableColumnTemplate) {
+  constructor(component: Component, column: CTableColumnTemplate) {
     this._component = component;
     this._column = column;
 
@@ -45,7 +45,7 @@ export class TableCellRenderer {
     return this._hideEvaluator
       ? this._hideEvaluator.evaluate(data) === false
       : this._showEvaluator
-      ? this._showEvaluator.evaluate(data) === true
-      : true;
+        ? this._showEvaluator.evaluate(data) === true
+        : true;
   }
 }

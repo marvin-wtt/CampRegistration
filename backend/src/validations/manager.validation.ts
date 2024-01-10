@@ -1,4 +1,8 @@
-import Joi from "joi";
+import Joi from 'joi';
+import {
+  CampManagerCreateData,
+  CampManagerUpdateData,
+} from '@camp-registration/common/entities';
 
 const index = {
   params: Joi.object({
@@ -10,8 +14,19 @@ const store = {
   params: Joi.object({
     campId: Joi.string().required(),
   }),
-  body: Joi.object({
+  body: Joi.object<CampManagerCreateData>({
     email: Joi.string().email().required(),
+    role: Joi.string(),
+  }),
+};
+
+const update = {
+  params: Joi.object({
+    campId: Joi.string().required(),
+    managerId: Joi.string().required(),
+  }),
+  body: Joi.object<CampManagerUpdateData>({
+    role: Joi.string(),
   }),
 };
 
@@ -32,6 +47,7 @@ const accept = {
 export default {
   index,
   store,
+  update,
   destroy,
   accept,
 };

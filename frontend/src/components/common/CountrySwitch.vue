@@ -40,7 +40,7 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots"
+      v-for="(data, name, index) in $slots as unknown as QSelectSlots"
       :key="index"
       #[name]
     >
@@ -56,6 +56,7 @@
 import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
+import { QSelectSlots } from 'quasar';
 
 interface Props {
   modelValue:
@@ -116,8 +117,8 @@ const optionValue = computed<Options>(() => {
   return props.emitCountry
     ? 'country'
     : props.emitIsoName
-    ? 'isoName'
-    : 'locale';
+      ? 'isoName'
+      : 'locale';
 });
 
 const options = computed(() => {

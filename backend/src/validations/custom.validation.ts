@@ -1,6 +1,6 @@
-import passwordComplexity from "joi-password-complexity";
-import { CustomValidator } from "joi";
-import { getCountryData, TCountryCode } from "countries-list";
+import passwordComplexity from 'joi-password-complexity';
+import { CustomValidator } from 'joi';
+import { getCountryData, TCountryCode } from 'countries-list';
 
 export const PasswordSchema = passwordComplexity({
   min: 8,
@@ -17,7 +17,7 @@ export const CountryCode: CustomValidator<string> = (value, helpers) => {
 
   if (!countryData) {
     return helpers.message({
-      custom: "Invalid country code",
+      custom: 'Invalid country code',
     });
   }
 

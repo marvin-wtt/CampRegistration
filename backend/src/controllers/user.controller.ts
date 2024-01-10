@@ -1,16 +1,16 @@
-import httpStatus from "http-status";
-import pick from "utils/pick";
-import { catchRequestAsync } from "utils/catchAsync";
-import { userService } from "services";
-import exclude from "utils/exclude";
-import { routeModel } from "utils/verifyModel";
-import ApiError from "utils/ApiError";
-import { authUserId } from "utils/authUserId";
-import { Role } from "@prisma/client";
+import httpStatus from 'http-status';
+import pick from 'utils/pick';
+import { catchRequestAsync } from 'utils/catchAsync';
+import { userService } from 'services';
+import exclude from 'utils/exclude';
+import { routeModel } from 'utils/verifyModel';
+import ApiError from 'utils/ApiError';
+import { authUserId } from 'utils/authUserId';
+import { Role } from '@prisma/client';
 
 const index = catchRequestAsync(async (req, res) => {
-  const filter = exclude(req.query, ["sortBy", "limit", "page"]);
-  const options = pick(req.query, ["sortBy", "limit", "page"]);
+  const filter = exclude(req.query, ['sortBy', 'limit', 'page']);
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
   const result = await userService.queryUsers(filter, options);
   res.json(result);
 });
@@ -40,7 +40,7 @@ const update = catchRequestAsync(async (req, res) => {
 
   if (locked !== undefined || role) {
     if (authUser?.role !== Role.ADMIN) {
-      throw new ApiError(httpStatus.FORBIDDEN, "Insouciant permission");
+      throw new ApiError(httpStatus.FORBIDDEN, 'Insouciant permission');
     }
   }
 

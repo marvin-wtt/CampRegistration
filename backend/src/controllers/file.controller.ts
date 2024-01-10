@@ -1,12 +1,12 @@
-import { catchRequestAsync } from "utils/catchAsync";
-import { routeModel } from "utils/verifyModel";
-import { fileService } from "services";
-import httpStatus from "http-status";
-import ApiError from "utils/ApiError";
-import { collection, resource } from "resources/resource";
-import { Request } from "express";
-import { fileResource } from "resources";
-import { File } from "@prisma/client";
+import { catchRequestAsync } from 'utils/catchAsync';
+import { routeModel } from 'utils/verifyModel';
+import { fileService } from 'services';
+import httpStatus from 'http-status';
+import ApiError from 'utils/ApiError';
+import { collection, resource } from 'resources/resource';
+import { Request } from 'express';
+import { fileResource } from 'resources';
+import { File } from '@prisma/client';
 
 const show = catchRequestAsync(async (req, res) => {
   const { download } = req.query;
@@ -16,9 +16,9 @@ const show = catchRequestAsync(async (req, res) => {
   // Set response headers for image display
   res.contentType(file.type);
 
-  const disposition = download ? "attachment" : "inline";
+  const disposition = download ? 'attachment' : 'inline';
   res.setHeader(
-    "Content-disposition",
+    'Content-disposition',
     `${disposition}; filename=${file.originalName}`,
   );
 
@@ -42,8 +42,8 @@ const index = catchRequestAsync(async (req, res) => {
     {
       limit: 20,
       page,
-      sortBy: "id",
-      sortType: "asc",
+      sortBy: 'id',
+      sortType: 'asc',
     },
   )) as File[];
 
@@ -56,7 +56,7 @@ const store = catchRequestAsync(async (req, res) => {
   const file = req.file;
 
   if (!file) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "No files provided.");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'No files provided.');
   }
 
   const model = getRelationModel(req);
@@ -90,17 +90,17 @@ const getRelationModel = (req: Request): ModelData => {
   // TODO Workaround until polymorphic relationships are supported
   const model: Partial<ModelData> = {};
   if (req.models.registration) {
-    model.name = "registration";
+    model.name = 'registration';
     model.id = req.models.registration.id;
   } else if (req.models.camp) {
-    model.name = "camp";
+    model.name = 'camp';
     model.id = req.models.camp.id;
   }
 
   if (!model.name || !model.id) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "File not associated to any model.",
+      'File not associated to any model.',
     );
   }
 

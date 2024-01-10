@@ -1,12 +1,12 @@
-import { fakerDE as faker } from "@faker-js/faker";
-import { Prisma, TokenType } from "@prisma/client";
-import prisma from "../../tests/utils/prisma";
+import { fakerDE as faker } from '@faker-js/faker';
+import { Prisma, TokenType } from '@prisma/client';
+import prisma from '../../tests/utils/prisma';
 
 type PartialExcept<T, K extends keyof T> = Partial<Omit<T, K>> & Pick<T, K>;
 
 export const TokenFactory = {
   build: (
-    data: PartialExcept<Prisma.TokenCreateInput, "user">,
+    data: PartialExcept<Prisma.TokenCreateInput, 'user'>,
   ): Prisma.TokenCreateInput => {
     return {
       expiresAt: faker.date.future({
@@ -21,7 +21,7 @@ export const TokenFactory = {
     };
   },
 
-  create: async (data: PartialExcept<Prisma.TokenCreateInput, "user">) => {
+  create: async (data: PartialExcept<Prisma.TokenCreateInput, 'user'>) => {
     return prisma.token.create({
       data: TokenFactory.build(data),
     });

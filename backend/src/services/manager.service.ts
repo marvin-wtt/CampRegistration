@@ -1,9 +1,9 @@
-import prisma from "../client";
-import { ulid } from "utils/ulid";
-import { Camp, CampManager, Invitation, User } from "@prisma/client";
-import { translateObject } from "utils/translateObject";
-import i18n, { t } from "config/i18n";
-import { notificationService } from "services/index";
+import prisma from '../client';
+import { ulid } from 'utils/ulid';
+import { Camp, CampManager, Invitation, User } from '@prisma/client';
+import { translateObject } from 'utils/translateObject';
+import i18n, { t } from 'config/i18n';
+import { notificationService } from 'services/index';
 
 const campManagerExistsWithUserIdAndCampId = async (
   campId: string,
@@ -120,8 +120,8 @@ const sendManagerInvitation = async (
   const userName = user?.name;
 
   await i18n.changeLanguage(user?.locale);
-  const subject = t("manager:email.invitation");
-  const template = "manager-invitation";
+  const subject = t('manager:email.invitation');
+  const template = 'manager-invitation';
 
   const context = {
     campName,

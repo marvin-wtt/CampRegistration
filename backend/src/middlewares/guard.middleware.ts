@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from "express";
-import ApiError from "utils/ApiError";
-import httpStatus from "http-status";
-import { catchRequestAsync } from "utils/catchAsync";
+import { NextFunction, Request, Response } from 'express';
+import ApiError from 'utils/ApiError';
+import httpStatus from 'http-status';
+import { catchRequestAsync } from 'utils/catchAsync';
 
 /**
  * Middleware to guard the access to a route.
@@ -17,7 +17,7 @@ const guard = (
     async (req: Request, res: Response, next: NextFunction) => {
       // TODO Check if admin - if yes return true here
 
-      let message = "Insufficient permissions";
+      let message = 'Insufficient permissions';
       for (const fn of guardFns) {
         let result: string | boolean = false;
 
@@ -32,13 +32,13 @@ const guard = (
           return;
         }
 
-        if (typeof result === "string") {
+        if (typeof result === 'string') {
           message = result;
         }
       }
 
       if (req.isUnauthenticated()) {
-        next(new ApiError(httpStatus.UNAUTHORIZED, "Unauthenticated"));
+        next(new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated'));
         return;
       }
 

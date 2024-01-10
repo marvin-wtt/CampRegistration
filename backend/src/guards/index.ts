@@ -1,1 +1,1 @@
-export * from "./camp.guard";
+export * from './camp.guard';

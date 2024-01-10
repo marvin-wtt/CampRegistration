@@ -116,7 +116,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
-import { Camp } from 'src/types/Camp';
+import type { Camp } from '@camp-registration/common/entities';
 import { computed, Ref, ref } from 'vue';
 import { useAuthStore } from 'stores/auth-store';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
@@ -173,7 +173,6 @@ function shareAction() {
       quasar.notify({
         type: 'positive',
         message: t('notification.share_success'),
-        position: 'top',
         icon: 'assignment_turned_in',
       });
     })
@@ -181,7 +180,6 @@ function shareAction() {
       quasar.notify({
         type: 'negative',
         message: t('notification.share_fail'),
-        position: 'top',
       });
     });
 }

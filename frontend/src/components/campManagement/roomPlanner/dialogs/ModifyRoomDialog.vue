@@ -65,11 +65,11 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
-import { Room } from 'src/types/Room';
+import { RoomWithRoommates } from 'src/types/Room';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
 interface Props {
-  room?: Omit<Room, 'beds'>;
+  room?: Omit<RoomWithRoommates, 'beds'>;
   mode: 'create' | 'edit';
   locales?: string[];
 }
@@ -89,9 +89,9 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedRoom = reactive<Partial<Room>>(defaultRoom());
+const modifiedRoom = reactive<Partial<RoomWithRoommates>>(defaultRoom());
 
-function defaultRoom(): Partial<Room> {
+function defaultRoom(): Partial<RoomWithRoommates> {
   return structuredClone(toRaw(props.room)) ?? {};
 }
 

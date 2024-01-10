@@ -1,6 +1,6 @@
-import { type Prisma } from "@prisma/client";
-import prisma from "client";
-import { ulid } from "utils/ulid";
+import { type Prisma } from '@prisma/client';
+import prisma from 'client';
+import { ulid } from 'utils/ulid';
 
 const getRoomById = async (campId: string, id: string) => {
   return prisma.room.findFirst({
@@ -38,7 +38,7 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
 
 const updateRoomById = async (
   roomId: string,
-  updateBody: Omit<Prisma.RoomUpdateInput, "id">,
+  updateBody: Omit<Prisma.RoomUpdateInput, 'id'>,
 ) => {
   // TODO Delete or add beds
 

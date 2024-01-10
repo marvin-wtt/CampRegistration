@@ -1,4 +1,5 @@
-import Joi from "joi";
+import Joi from 'joi';
+import { ServiceFileCreateData } from '@camp-registration/common/entities';
 
 const show = {
   params: Joi.object({
@@ -18,7 +19,7 @@ const index = {
 };
 
 const store = {
-  body: Joi.object({
+  body: Joi.object<ServiceFileCreateData>({
     name: Joi.string().required(),
     field: Joi.string().optional(),
     accessLevel: Joi.string().optional(),

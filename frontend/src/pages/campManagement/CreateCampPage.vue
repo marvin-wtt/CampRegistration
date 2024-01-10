@@ -14,15 +14,15 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { Camp } from 'src/types/Camp';
+import type { CampDetails } from '@camp-registration/common/entities';
 import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/campManagement/edit/EditCampForm.vue';
+import EditCampForm from 'components/campManagement/settings/EditCampForm.vue';
 
 const router = useRouter();
 
 const loading = ref<boolean>(false);
-const data = ref<Partial<Camp>>({});
+const data = ref<Partial<CampDetails>>({});
 const campsStore = useCampsStore();
 
 async function onSubmit() {
@@ -35,7 +35,7 @@ async function onSubmit() {
     pages: [],
   };
 
-  const camp = await campsStore.createEntry(data.value as Camp);
+  const camp = await campsStore.createEntry(data.value as CampDetails);
 
   if (!camp) {
     loading.value = false;
@@ -45,7 +45,7 @@ async function onSubmit() {
   return router.push({
     name: 'management',
     query: {
-      public: 0,
+      page: 'active',
     },
   });
 }

@@ -6,12 +6,14 @@ import {
   REGISTRATION_BUS,
   TEMPLATE_BUS,
 } from 'src/utils/keys';
-import { User } from 'src/types/User';
-import { Registration } from 'src/types/Registration';
-import { Camp } from 'src/types/Camp';
+import type {
+  Camp,
+  Registration,
+  Profile,
+} from '@camp-registration/common/entities';
 
 export function useAuthBus(): EventBus<{
-  login: (user: User) => void;
+  login: (user: Profile) => void;
   logout: () => void;
 }> {
   return inject(AUTH_BUS, new EventBus());

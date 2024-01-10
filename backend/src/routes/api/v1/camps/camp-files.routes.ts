@@ -1,19 +1,19 @@
-import { catchParamAsync } from "utils/catchAsync";
-import { routeModel, verifyModelExists } from "utils/verifyModel";
-import { fileService } from "services";
-import express, { Request } from "express";
-import { auth, guard, multipart, validate } from "middlewares";
-import { campManager } from "guards";
-import { fileValidation } from "validations";
-import { fileController } from "controllers";
+import { catchParamAsync } from 'utils/catchAsync';
+import { routeModel, verifyModelExists } from 'utils/verifyModel';
+import { fileService } from 'services';
+import express, { Request } from 'express';
+import { auth, guard, multipart, validate } from 'middlewares';
+import { campManager } from 'guards';
+import { fileValidation } from 'validations';
+import { fileController } from 'controllers';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
-  "fileId",
+  'fileId',
   catchParamAsync(async (req, res, next, id) => {
     const camp = routeModel(req.models.camp);
-    const file = await fileService.getModelFile("camp", camp.id, id);
+    const file = await fileService.getModelFile('camp', camp.id, id);
     req.models.file = verifyModelExists(file);
     next();
   }),
@@ -25,32 +25,32 @@ const fileAccessMiddleware = async (
   const file = routeModel(req.models.file);
 
   // Camp managers always have access to all files
-  return file.accessLevel === "public";
+  return file.accessLevel === 'public';
 };
 
 router.get(
-  "/:fileId",
+  '/:fileId',
   guard([campManager, fileAccessMiddleware]),
   validate(fileValidation.show),
   fileController.show,
 );
 router.get(
-  "/",
+  '/',
   auth(),
   guard([campManager]),
   validate(fileValidation.index),
   fileController.index,
 );
 router.post(
-  "/",
+  '/',
   auth(),
   guard([campManager]),
-  multipart("file"),
+  multipart('file'),
   validate(fileValidation.store),
   fileController.store,
 );
 router.delete(
-  "/:fileId",
+  '/:fileId',
   auth(),
   guard([campManager]),
   validate(fileValidation.destroy),

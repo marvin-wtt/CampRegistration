@@ -27,7 +27,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                label="Ok"
+                :label="t('actions.ok')"
               />
             </div>
           </q-date>
@@ -35,6 +35,7 @@
       </q-icon>
 
       <q-icon
+        v-if="typeof modelValue === 'string'"
         class="cursor-pointer"
         name="schedule"
       >
@@ -64,7 +65,7 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots"
+      v-for="(data, name, index) in $slots as unknown as QInputSlots"
       :key="index"
       #[name]
     >
@@ -79,11 +80,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { QInputSlots } from 'quasar';
 
 const { t } = useI18n();
 
 interface Props {
-  modelValue?: string | number | Record<string, string | number>;
+  modelValue?: string | number;
 }
 
 const props = defineProps<Props>();

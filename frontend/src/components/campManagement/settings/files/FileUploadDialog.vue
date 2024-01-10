@@ -97,7 +97,7 @@
 import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
-import { FileUploadPayload } from 'src/types/ServiceFile';
+import type { ServiceFileCreateData } from '@camp-registration/common/entities';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -112,7 +112,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const file = reactive<FileUploadPayload>({} as FileUploadPayload);
+const file = reactive<ServiceFileCreateData>({} as ServiceFileCreateData);
 
 interface AccessLevelOption extends QSelectOption {
   description?: string;

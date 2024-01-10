@@ -1,26 +1,32 @@
-import { SurveyModel } from "survey-core";
-import { setVariables } from "@camp-registration/common/form/variables";
-import { initSurveyJS } from "./surveyJS";
-import { Camp } from "@prisma/client";
+import { SurveyModel } from 'survey-core';
+import { setVariables } from '@camp-registration/common/form';
+import { initSurveyJS } from './surveyJS';
+import { Camp } from '@prisma/client';
 
 type RequestFile = Express.Multer.File;
 type FileType = RequestFile[] | Record<string, RequestFile[]>;
-type FormFile = Pick<File, "name" | "type" | "size">;
+type FormFile = Pick<File, 'name' | 'type' | 'size'>;
 
 initSurveyJS();
+
+type CampWithFreePlaces = Camp & {
+  freePlaces: number | Record<string, number>;
+};
 
 export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
   const fileQuestions = survey
     .getAllQuestions(false, undefined, true)
-    .filter((question) => question.getType() === "file");
+    .filter((question) => question.getType() === 'file');
 
   let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
-  setVariables(survey, camp, "en-US");
+  survey.locale = 'en-US';
+  // TODO Camp with free places required here!
+  setVariables(survey, camp as CampWithFreePlaces);
 
   const updateData = (data?: unknown, files?: FileType) => {
-    survey.data = typeof data !== "object" ? {} : data;
+    survey.data = typeof data !== 'object' ? {} : data;
 
     if (files) {
       fileMap = createFileMap(files);
@@ -68,7 +74,16 @@ export const formUtils = (camp: Camp) => {
   };
 
   const hasDataErrors = (): boolean => {
-    return survey.pages.some((p) => p.hasErrors(false, false));
+    return survey.hasErrors(false, false);
+  };
+
+  const getDataErrorFields = (): string => {
+    return survey.pages
+      .filter((value) => value.hasErrors(false, false))
+      .flatMap((page) => page.questions)
+      .filter((question) => question.hasErrors(false, false))
+      .map((question) => question.name)
+      .join(', ');
   };
 
   const unknownDataFields = (): string[] => {
@@ -84,7 +99,7 @@ export const formUtils = (camp: Camp) => {
       includeEmpty: true,
       includeQuestionTypes: true,
       includeValues: true,
-      calculations: [{ propertyName: "campDataType" }],
+      calculations: [{ propertyName: 'campDataType' }],
     });
 
     return data
@@ -112,6 +127,7 @@ export const formUtils = (camp: Camp) => {
   return {
     updateData,
     hasDataErrors,
+    getDataErrorFields,
     hasUnknownFiles,
     unknownDataFields,
     extractCampData,

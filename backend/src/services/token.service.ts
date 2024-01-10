@@ -1,12 +1,12 @@
-import jwt from "jsonwebtoken";
-import moment, { Moment } from "moment";
-import httpStatus from "http-status";
-import config from "config";
-import userService from "./user.service";
-import ApiError from "utils/ApiError";
-import { Token, TokenType, User } from "@prisma/client";
-import prisma from "client";
-import { AuthTokensResponse } from "types/response";
+import jwt from 'jsonwebtoken';
+import moment, { Moment } from 'moment';
+import httpStatus from 'http-status';
+import config from 'config';
+import userService from './user.service';
+import ApiError from 'utils/ApiError';
+import { Token, TokenType, User } from '@prisma/client';
+import prisma from 'client';
+import { AuthTokensResponse } from 'types/response';
 
 const generateToken = (
   userId: string,
@@ -62,21 +62,21 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
     // token expiry is checked here
     payload = jwt.verify(token, config.jwt.secret);
   } catch (ignored) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
   }
 
   /* c8 ignore next 3 */
-  if (typeof payload === "string") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
+  if (typeof payload === 'string') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
   }
 
   /* c8 ignore next 3 */
-  if (payload.sub === undefined || typeof payload.sub !== "string") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token sub");
+  if (payload.sub === undefined || typeof payload.sub !== 'string') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token sub');
   }
 
   if (payload.type !== type) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token type');
   }
 
   const userId = payload.sub;
@@ -85,7 +85,7 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   });
 
   if (!tokenData) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Invalid token");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Invalid token');
   }
 
   return tokenData;
@@ -98,12 +98,12 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
  * @returns {Promise<AuthTokensResponse>}
  */
 const generateAuthTokens = async (
-  user: Pick<User, "id">,
+  user: Pick<User, 'id'>,
   remember = false,
 ): Promise<AuthTokensResponse> => {
   const accessTokenExpires = moment().add(
     config.jwt.accessExpirationMinutes,
-    "minutes",
+    'minutes',
   );
   const accessToken = generateToken(
     user.id,
@@ -122,7 +122,7 @@ const generateAuthTokens = async (
 
   const refreshTokenExpires = moment().add(
     config.jwt.refreshExpirationDays,
-    "days",
+    'days',
   );
   const refreshToken = generateToken(
     user.id,
@@ -161,7 +161,7 @@ const generateResetPasswordToken = async (
   }
   const expires = moment().add(
     config.jwt.resetPasswordExpirationMinutes,
-    "minutes",
+    'minutes',
   );
   const type = TokenType.RESET_PASSWORD;
   const resetPasswordToken = generateToken(user.id, expires, type);
@@ -177,11 +177,11 @@ const generateResetPasswordToken = async (
  * @returns {Promise<string>}
  */
 const generateVerifyEmailToken = async (
-  user: Pick<User, "id">,
+  user: Pick<User, 'id'>,
 ): Promise<string> => {
   const expires = moment().add(
     config.jwt.verifyEmailExpirationMinutes,
-    "minutes",
+    'minutes',
   );
   const type = TokenType.VERIFY_EMAIL;
   const verifyEmailToken = generateToken(user.id, expires, type);
@@ -192,7 +192,7 @@ const generateVerifyEmailToken = async (
 };
 
 const deleteExpiredTokens = async () => {
-  const refDate = moment().subtract(1, "hour").toDate();
+  const refDate = moment().subtract(1, 'hour').toDate();
 
   return prisma.token.deleteMany({
     where: {

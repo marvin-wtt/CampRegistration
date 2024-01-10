@@ -1,9 +1,9 @@
-import { Camp, User } from "@prisma/client";
-import { campResource } from "./index";
+import { Camp, User } from '@prisma/client';
+import { campResource } from './index';
 
-export type UserInput = Pick<User, "id" | "name" | "email">;
+export type UserInput = Pick<User, 'id' | 'name' | 'email'>;
 export type UserDetailedInput = UserInput &
-  Pick<User, "emailVerified" | "locale">;
+  Pick<User, 'emailVerified' | 'locale'>;
 
 const userResource = (user: UserInput) => {
   return {

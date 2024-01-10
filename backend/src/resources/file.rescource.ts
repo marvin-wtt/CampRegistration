@@ -1,6 +1,7 @@
-import { File } from "@prisma/client";
+import { File } from '@prisma/client';
+import type { ServiceFile as FileResource } from '@camp-registration/common/entities';
 
-const fileResource = (file: File) => {
+const fileResource = (file: File): FileResource => {
   return {
     id: file.id,
     name: file.originalName,
@@ -8,7 +9,7 @@ const fileResource = (file: File) => {
     type: file.type,
     size: file.size,
     accessLevel: file.accessLevel,
-    createdAt: file.createdAt,
+    createdAt: file.createdAt.toISOString(),
   };
 };
 

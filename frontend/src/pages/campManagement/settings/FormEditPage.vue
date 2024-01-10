@@ -16,7 +16,7 @@ import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import {
   localization,
   PropertyGridEditorCollection,
@@ -32,7 +32,10 @@ import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { SurveyModel } from 'survey-core';
 import { storeToRefs } from 'pinia';
+import showdown from 'showdown';
+import { useAPIService } from 'src/services/APIService';
 
+const api = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
 const { data: campData } = storeToRefs(campDetailsStore);
@@ -70,7 +73,6 @@ const error = computed(() => {
 });
 
 const creatorOptions = {
-  // haveCommercialLicense: true, // TODO Enable with licence
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
@@ -79,12 +81,19 @@ const creatorOptions = {
   showThemeTab: true,
 };
 
-localization.currentLocale = locale.value.split(/[-_]/)[0];
+const markdownConverter = new showdown.Converter({
+  openLinksInNewWindow: true,
+});
+
 const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
 
 startAutoDataUpdate(previewModel, campData);
 startAutoThemeUpdate(previewModel, campData);
+
+watchEffect(() => {
+  creator.locale = locale.value.split(/[-_]/)[0];
+});
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
@@ -153,20 +162,39 @@ creator.saveThemeFunc = (
 };
 
 creator.onPreviewSurveyCreated.add((_, options) => {
-  previewModel.value = options.survey;
+  const survey: SurveyModel = options.survey;
+
+  // Convert markdown to html
+  survey.onTextMarkdown.add((survey, options) => {
+    const str = markdownConverter.makeHtml(options.text);
+    // Remove root paragraphs <p></p>
+    options.html = str.substring(3, str.length - 4);
+  });
+
+  previewModel.value = survey;
 });
 
 creator.onUploadFile.add((_, options) => {
-  campFileStore
-    .createEntry({
-      name: '',
-      field: '',
-      file: options.file,
+  const files = options.files;
+
+  const campId = campData.value?.id;
+  if (!campId || files.length == 0) {
+    options.callback('error');
+    return;
+  }
+
+  // TODO Why is it an array and not a single file? The callback only accepts a single link as parameter
+  const file = files[0];
+
+  api
+    .createCampFile(campId, {
+      name: file.name,
+      field: 'form-file',
+      file,
       accessLevel: 'public',
     })
-    .then(() => {
-      // TODO Get url
-      const url = '';
+    .then((file) => {
+      const url = campFileStore.getUrl(file.id, campId);
       options.callback('success', url);
     })
     .catch(() => {

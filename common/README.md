@@ -41,7 +41,7 @@ camp data type for each field.
 The value can be set by the specified field types or by an expression.
 
 | Name            | CampDataType   | Field                        |     Required      | Alternative | Description                                         |
-|-----------------|----------------|------------------------------|:-----------------:|-------------|-----------------------------------------------------|
+| --------------- | -------------- | ---------------------------- | :---------------: | ----------- | --------------------------------------------------- |
 | Address         | address        | addressQuestion              |        Yes        | country     | The address of the person                           |
 | Country         | country        | dropdown                     | If international  | address     | The country of the person                           |
 | Date of Birth   | date_of_birth  | date_of_birth \| text + date | If age restricted |             | The date of birth of the person                     |
@@ -56,22 +56,23 @@ The value can be set by the specified field types or by an expression.
 Camp data can be accessed in the title, description or in expressions of each element.
 If the element contains translations, the translation for the current user locale is returned.
 
-| Name              | Translated | Description                                           |
-|-------------------|:----------:|-------------------------------------------------------|
-| camp.countries    |            | List of all countries                                 |
-| camp.name         |            | Name of the camp                                      |
-| camp.organizer    |     X      | Name of the organizer                                 |
-| camp.contactEmail |     X      | Email address of the responsible person               |
-| camp.startAt      |            | Timestamp of the camp start in UTC format             |
-| camp.startAtDate  |            | Date of the camp start formatted based on user locale |
-| camp.startAtTime  |            | Time of the camp start formatted based on user locale |
-| camp.endAt        |            | Timestamp of the camp end in UTC format               |
-| camp.endAtDate    |            | Date of the camp end formatted based on user locale   |
-| camp.endAtTime    |            | Time of the camp end formatted based on user locale   |
-| camp.minAge       |            | Minimum age to participate                            |
-| camp.maxAge       |            | Maximum age to participate                            |
-| camp.location     |     X      | Camp location                                         |
-| camp.price        |     X      | Camp price                                            |
+| Name              | Translated | Description                                            |
+| ----------------- | :--------: | ------------------------------------------------------ |
+| camp.countries    |            | List of all countries                                  |
+| camp.name         |            | Name of the camp                                       |
+| camp.organizer    |     X      | Name of the organizer                                  |
+| camp.contactEmail |     X      | Email address of the responsible person                |
+| camp.startAt      |            | Timestamp of the camp start in UTC format              |
+| camp.startAtDate  |            | Date of the camp start formatted based on user locale  |
+| camp.startAtTime  |            | Time of the camp start formatted based on user locale  |
+| camp.endAt        |            | Timestamp of the camp end in UTC format                |
+| camp.endAtDate    |            | Date of the camp end formatted based on user locale    |
+| camp.endAtTime    |            | Time of the camp end formatted based on user locale    |
+| camp.minAge       |            | Minimum age to participate                             |
+| camp.maxAge       |            | Maximum age to participate                             |
+| camp.location     |     X      | Camp location                                          |
+| camp.price        |     X      | Camp price                                             |
+| camp.freePlaces   |            | Amount of total free places or free places per country |
 
 Example:
 
@@ -85,11 +86,13 @@ found [here](https://surveyjs.io/form-library/documentation/design-survey/condit
 ### Functions
 
 Functions can also be used in expression fields.
+All functions return null in case of invalid input parameters. This might be evaluated internally as undefined.
 
-| Name                  | Parameter                                                   | Return         | Description                                         |
-|-----------------------|-------------------------------------------------------------|----------------|-----------------------------------------------------|
-| isMinor               | dateOfBirthQuestion: string                                 | boolean        | Wherever the age is less than 18 at camp start      |
-| isAdult               | dateOfBirthQuestion: string                                 | boolean        | Wherever the age above 18 at camp start             |
-| subtractYearsFromDate | date: string, years: number                                 | Date           | Subtracts years from a given date                   |
-| htmlDate              | date: string                                                | string         | Formats a date to the html date format (YYYY-MM-DD) |
-| translate \| t        | value: string \| object, locale?: string, fallback?: string | string \| null | Searches for a translation in an object             |
+| Name           | Parameter                                                   | Return         | Description                                                       |
+| -------------- | ----------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| isMinor        | dateOfBirthQuestion: string                                 | boolean        | Wherever the age is less than 18 at camp start                    |
+| isAdult        | dateOfBirthQuestion: string                                 | boolean        | Wherever the age above 18 at camp start                           |
+| subtractYears  | date: string, years: number                                 | Date           | Subtracts years from a given date                                 |
+| htmlDate       | date: string                                                | string         | Formats a date to the html date format (YYYY-MM-DD)               |
+| translate \| t | value: string \| object, locale?: string, fallback?: string | string \| null | Searches for a translation in an object                           |
+| isWaitingList  | freePlaces: number \| Record<string, number>                | boolean        | Indicates, if the registration will be placed on the waiting list |

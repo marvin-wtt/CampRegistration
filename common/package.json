@@ -15,32 +15,50 @@
   "homepage": "https://github.com/marvin-wtt/CampRegistration#readme",
   "license": "ISC",
   "scripts": {
-    "clean": "rm -rf ./dist/ && rm -rf ./node_modules/",
+    "clean": "rimraf ./dist/ && rimraf ./node_modules/",
     "build": "npm run build:esm && npm run build:node",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:node": "tsc --project tsconfig.node.json",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "lint": "eslint --ext .js,.ts ./",
-    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore"
+    "format": "prettier --write \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore"
   },
+  "main": "dist/index.js",
   "exports": {
     "./form": {
+      "types": "./dist/node/form/index.d.ts",
       "node": "./dist/node/form/index.js",
       "module": "./dist/esm/form/index.js"
     },
-    "./form/variables": {
-      "node": "./dist/node/form/variables/variables.js",
-      "module": "./dist/esm/form/variables/variables.js"
+    "./entities": {
+      "types": "./dist/node/entities/index.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "form": [
+        "./dist/node/form/index.d.ts"
+      ],
+      "entities": [
+        "./dist/node/entities/index.d.ts"
+      ]
     }
   },
   "devDependencies": {
     "@types/node": "^20.8.6",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
+    "@vitest/coverage-v8": "^1.1.0",
+    "@vitest/ui": "^1.1.0",
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.3",
+    "rimraf": "^5.0.5",
     "survey-core": "^1.9.119",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.3",
+    "vitest": "^1.1.0"
   },
   "engines": {
     "node": "^20 || ^18 || ^16 || ^14.19",

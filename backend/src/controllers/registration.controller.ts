@@ -1,10 +1,10 @@
-import { catchRequestAsync } from "utils/catchAsync";
-import httpStatus from "http-status";
-import { collection, resource } from "resources/resource";
-import { fileService, registrationService } from "services";
-import { registrationResource } from "resources";
-import { routeModel } from "utils/verifyModel";
-import { requestLocale } from "utils/requestLocale";
+import { catchRequestAsync } from 'utils/catchAsync';
+import httpStatus from 'http-status';
+import { collection, resource } from 'resources/resource';
+import { fileService, registrationService } from 'services';
+import { registrationResource } from 'resources';
+import { routeModel } from 'utils/verifyModel';
+import { requestLocale } from 'utils/requestLocale';
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);

@@ -1,21 +1,21 @@
-import express from "express";
-import { auth, guard, validate } from "middlewares";
-import { campActive, campManager } from "guards";
-import { verifyModelExists } from "utils/verifyModel";
-import { catchParamAsync } from "utils/catchAsync";
-import { campController } from "controllers";
-import { campValidation } from "validations";
-import { campService } from "services";
-import registrationRoutes from "routes/api/v1/camps/registrations/registration.routes";
-import templateRoutes from "./template.routes";
-import roomRoutes from "./rooms/room.routes";
-import managerRoutes from "./manager.routes";
-import campFileRoutes from "./camp-files.routes";
+import express from 'express';
+import { auth, guard, validate } from 'middlewares';
+import { campActive, campManager } from 'guards';
+import { verifyModelExists } from 'utils/verifyModel';
+import { catchParamAsync } from 'utils/catchAsync';
+import { campController } from 'controllers';
+import { campValidation } from 'validations';
+import { campService } from 'services';
+import registrationRoutes from 'routes/api/v1/camps/registrations/registration.routes';
+import templateRoutes from './template.routes';
+import roomRoutes from './rooms/room.routes';
+import managerRoutes from './manager.routes';
+import campFileRoutes from './camp-files.routes';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
-  "campId",
+  'campId',
   catchParamAsync(async (req, res, next, id) => {
     const camp = await campService.getCampById(id);
     req.models.camp = verifyModelExists(camp);
@@ -23,29 +23,29 @@ router.param(
   }),
 );
 
-router.use("/:campId/registrations", registrationRoutes);
-router.use("/:campId/templates", templateRoutes);
-router.use("/:campId/managers", managerRoutes);
-router.use("/:campId/rooms", roomRoutes);
-router.use("/:campId/files", campFileRoutes);
+router.use('/:campId/registrations', registrationRoutes);
+router.use('/:campId/templates', templateRoutes);
+router.use('/:campId/managers', managerRoutes);
+router.use('/:campId/rooms', roomRoutes);
+router.use('/:campId/files', campFileRoutes);
 
-router.get("/", validate(campValidation.index), campController.index);
+router.get('/', validate(campValidation.index), campController.index);
 router.get(
-  "/:campId",
+  '/:campId',
   guard([campManager, campActive]),
   validate(campValidation.show),
   campController.show,
 );
-router.post("/", auth(), validate(campValidation.store), campController.store);
+router.post('/', auth(), validate(campValidation.store), campController.store);
 router.patch(
-  "/:campId",
+  '/:campId',
   auth(),
   guard([campManager]),
   validate(campValidation.update),
   campController.update,
 );
 router.delete(
-  "/:campId",
+  '/:campId',
   auth(),
   guard([campManager]),
   validate(campValidation.destroy),

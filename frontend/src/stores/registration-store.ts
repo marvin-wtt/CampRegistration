@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
-import { Registration, RegistrationUpdateData } from 'src/types/Registration';
+import type {
+  Registration,
+  RegistrationUpdateData,
+} from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
   useAuthBus,

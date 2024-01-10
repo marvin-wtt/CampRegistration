@@ -20,8 +20,8 @@ const icon = computed<string | undefined>(() => {
   return props.props.value === 'de'
     ? 'img:flags/de.svg'
     : props.props.value === 'fr'
-    ? 'img:flags/fr.svg'
-    : undefined;
+      ? 'img:flags/fr.svg'
+      : undefined;
 });
 
 const size = computed<string>(() => {

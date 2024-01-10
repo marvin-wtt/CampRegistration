@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Camp } from 'src/types/Camp';
+import type { Camp } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';

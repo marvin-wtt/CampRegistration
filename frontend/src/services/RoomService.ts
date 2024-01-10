@@ -1,19 +1,18 @@
 import { api } from 'boot/axios';
-import {
-  ResponseRoom,
+import type {
   Room,
   RoomCreateData,
   RoomUpdateData,
-} from 'src/types/Room';
+} from '@camp-registration/common/entities';
 
 export function useRoomService() {
-  async function fetchRooms(campId: string): Promise<ResponseRoom[]> {
+  async function fetchRooms(campId: string): Promise<Room[]> {
     const response = await api.get(`camps/${campId}/rooms/`);
 
     return response.data.data;
   }
 
-  async function fetchRoom(campId: string, id: string): Promise<ResponseRoom> {
+  async function fetchRoom(campId: string, id: string): Promise<Room> {
     const response = await api.get(`camps/${campId}/rooms/${id}/`);
 
     return response.data.data;
@@ -22,7 +21,7 @@ export function useRoomService() {
   async function createRoom(
     campId: string,
     data: RoomCreateData,
-  ): Promise<ResponseRoom> {
+  ): Promise<Room> {
     const response = await api.post(`camps/${campId}/rooms/`, {
       name: data.name,
       capacity: data.capacity,

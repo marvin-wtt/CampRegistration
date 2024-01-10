@@ -1,12 +1,12 @@
-import httpStatus from "http-status";
-import { userService, tokenService, notificationService } from "services";
-import ApiError from "utils/ApiError";
-import { TokenType } from "@prisma/client";
-import { encryptPassword, isPasswordMatch } from "utils/encryption";
-import exclude from "utils/exclude";
-import { AuthTokensResponse } from "types/response";
-import prisma from "client";
-import i18n, { t } from "config/i18n";
+import httpStatus from 'http-status';
+import { userService, tokenService, notificationService } from 'services';
+import ApiError from 'utils/ApiError';
+import { TokenType } from '@prisma/client';
+import { encryptPassword, isPasswordMatch } from 'utils/encryption';
+import exclude from 'utils/exclude';
+import { AuthTokensResponse } from 'types/response';
+import prisma from 'client';
+import i18n, { t } from 'config/i18n';
 
 const loginUserWithEmailAndPassword = async (
   email: string,
@@ -15,21 +15,21 @@ const loginUserWithEmailAndPassword = async (
   const user = await userService.getUserByEmailWithCamps(email);
 
   if (!user || !(await isPasswordMatch(password, user.password as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect email or password.");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Incorrect email or password.');
   }
 
   if (user.locked) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Account is locked");
+    throw new ApiError(httpStatus.FORBIDDEN, 'Account is locked');
   }
 
   if (!user.emailVerified) {
     throw new ApiError(
       httpStatus.FORBIDDEN,
-      "Please confirm your email to login.",
+      'Please confirm your email to login.',
     );
   }
 
-  return exclude(user, ["password"]);
+  return exclude(user, ['password']);
 };
 
 const logout = async (refreshToken: string): Promise<void> => {
@@ -61,7 +61,7 @@ const refreshAuth = async (
 
     return tokenService.generateAuthTokens({ id: userId }, true);
   } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }
 };
 
@@ -76,7 +76,7 @@ const resetPassword = async (
   );
   const user = await userService.getUserById(resetPasswordTokenData.userId);
   if (!user || user.email !== email) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token");
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
   }
   const encryptedPassword = await encryptPassword(password);
   await userService.updateUserById(user.id, {
@@ -125,7 +125,7 @@ const verifyEmail = async (token: string): Promise<void> => {
       emailVerified: true,
     });
   } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, "Email verification failed");
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
   }
 };
 
@@ -133,9 +133,9 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
   const user = await userService.getUserByEmail(to);
   await i18n.changeLanguage(user?.locale);
 
-  const template = "reset-password";
-  const subject = t("auth:email.reset-password.subject");
-  const url = notificationService.generateUrl("reset-password", {
+  const template = 'reset-password';
+  const subject = t('auth:email.resetPassword.subject');
+  const url = notificationService.generateUrl('reset-password', {
     email: to,
     token,
   });
@@ -156,9 +156,9 @@ const sendVerificationEmail = async (to: string, token: string) => {
   const user = await userService.getUserByEmail(to);
   await i18n.changeLanguage(user?.locale);
 
-  const subject = t("email:auth.email-verification.subject");
+  const subject = t('auth:email.verifyEmail.subject');
 
-  const url = notificationService.generateUrl("verify-email", {
+  const url = notificationService.generateUrl('verify-email', {
     email: to,
     token,
   });
@@ -167,7 +167,7 @@ const sendVerificationEmail = async (to: string, token: string) => {
     url,
   };
 
-  const template = "verify-email";
+  const template = 'verify-email';
 
   notificationService.sendEmail({
     to,

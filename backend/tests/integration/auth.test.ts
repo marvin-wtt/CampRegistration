@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import bcrypt from "bcryptjs";
-import prisma from "../utils/prisma";
-import { TokenType, User } from "@prisma/client";
-import { CampFactory, UserFactory } from "../../prisma/factories";
+import { beforeEach, describe, expect, it } from 'vitest';
+import bcrypt from 'bcryptjs';
+import prisma from '../utils/prisma';
+import { TokenType, User } from '@prisma/client';
+import { CampFactory, UserFactory } from '../../prisma/factories';
 import {
   generateAccessToken,
   generateExpiredToken,
@@ -11,33 +11,33 @@ import {
   generateToken,
   generateVerifyEmailToken,
   verifyToken,
-} from "../utils/token";
-import { request } from "../utils/request";
-import { TokenFactory } from "../../prisma/factories/token";
-import { receiveEmail } from "../utils/mail-server";
-import { CampManagerFactory } from "../../prisma/factories/manager";
-import { InvitationFactory } from "../../prisma/factories/invitation";
+} from '../utils/token';
+import { request } from '../utils/request';
+import { TokenFactory } from '../../prisma/factories/token';
+import { CampManagerFactory } from '../../prisma/factories/manager';
+import { InvitationFactory } from '../../prisma/factories/invitation';
+import mailer from '../../src/config/mail';
 
-describe("/api/v1/auth", async () => {
-  describe("POST /api/v1/auth/register", () => {
-    it("should respond with a `201` status code when provided with details", async () => {
+describe('/api/v1/auth', async () => {
+  describe('POST /api/v1/auth/register', () => {
+    it('should respond with a `201` status code when provided with details', async () => {
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
         })
         .expect(201);
     });
 
-    it("should respond with the user details when successful", async () => {
+    it('should respond with the user details when successful', async () => {
       const { body } = await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
         })
         .expect(201);
 
@@ -46,36 +46,36 @@ describe("/api/v1/auth", async () => {
       expect(newUser).not.toBeNull();
       expect(body).toStrictEqual({
         id: newUser?.id,
-        email: "test@email.net",
-        name: "testuser",
+        email: 'test@email.net',
+        name: 'testuser',
         locale: expect.anything(),
         emailVerified: false,
       });
     });
 
-    it("should make the user camp manager if the user has pending invitations", async () => {
+    it('should make the user camp manager if the user has pending invitations', async () => {
       await CampManagerFactory.create({
         camp: { create: CampFactory.build() },
         invitation: {
           create: InvitationFactory.build({
-            email: "test@email.net",
+            email: 'test@email.net',
           }),
         },
       });
 
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
         })
         .expect(201);
 
       const manager = await prisma.campManager.findFirst({
         where: {
           user: {
-            email: "test@email.net",
+            email: 'test@email.net',
           },
         },
         include: {
@@ -87,13 +87,13 @@ describe("/api/v1/auth", async () => {
       expect(manager?.invitation).toBeNull();
     });
 
-    it("should respond with a `400` status code if an invalid email body is provided", async () => {
+    it('should respond with a `400` status code if an invalid email body is provided', async () => {
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test(at)email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test(at)email.net',
+          password: 'Password1',
         })
         .expect(400);
 
@@ -101,13 +101,13 @@ describe("/api/v1/auth", async () => {
       expect(userCount).toBe(0);
     });
 
-    it("should respond with a `400` status code if an invalid password is provided", async () => {
+    it('should respond with a `400` status code if an invalid password is provided', async () => {
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "invalid",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'invalid',
         })
         .expect(400);
 
@@ -116,19 +116,19 @@ describe("/api/v1/auth", async () => {
       expect(userCount).toBe(0);
     });
 
-    it("should respond with a `400` status code if the email is already used", async () => {
+    it('should respond with a `400` status code if the email is already used', async () => {
       await UserFactory.create({
-        email: "test@email.net",
-        name: "test",
-        password: "",
+        email: 'test@email.net',
+        name: 'test',
+        password: '',
       });
 
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
         })
         .expect(400);
 
@@ -137,14 +137,14 @@ describe("/api/v1/auth", async () => {
       expect(userCount).toBe(1);
     });
 
-    it("should respond with a `400` status code if the role is set in request body", async () => {
+    it('should respond with a `400` status code if the role is set in request body', async () => {
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
-          role: "ADMIN",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
+          role: 'ADMIN',
         })
         .expect(400);
 
@@ -153,133 +153,138 @@ describe("/api/v1/auth", async () => {
       expect(userCount).toBe(0);
     });
 
-    it("should encode the user password", async () => {
+    it('should encode the user password', async () => {
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
         })
         .expect(201);
 
       const user = (await prisma.user.findFirst()) as User;
 
       expect(user).toBeDefined();
-      expect(bcrypt.compare(user.password, "password1")).toBeTruthy();
+      expect(bcrypt.compare(user.password, 'password1')).toBeTruthy();
     });
 
-    it("should set USER role as default", async () => {
+    it('should set USER role as default', async () => {
       await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send({
-          name: "testuser",
-          email: "test@email.net",
-          password: "Password1",
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
         })
         .expect(201);
 
       const user = (await prisma.user.findFirst()) as User;
 
-      expect(user.role).toEqual("USER");
+      expect(user.role).toEqual('USER');
     });
 
-    it("should store user preferred locale when successful", async () => {
+    it('should store user preferred locale when successful', async () => {
       const data = {
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
+        name: 'testuser',
+        email: 'test@email.net',
+        password: 'Password1',
       };
 
       const { body } = await request()
-        .post("/api/v1/auth/register")
-        .set("Accept-Language", "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")
+        .post('/api/v1/auth/register')
+        .set('Accept-Language', 'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5')
         .send(data)
         .expect(201);
 
-      expect(body).toHaveProperty("locale", "fr-CH");
+      expect(body).toHaveProperty('locale', 'fr-CH');
     });
 
-    it("should use en-US as default locale", async () => {
+    it('should use en-US as default locale', async () => {
       const data = {
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
+        name: 'testuser',
+        email: 'test@email.net',
+        password: 'Password1',
       };
 
       const { body } = await request()
-        .post("/api/v1/auth/register")
+        .post('/api/v1/auth/register')
         .send(data)
         .expect(201);
 
-      expect(body).toHaveProperty("locale", "en-US");
+      expect(body).toHaveProperty('locale', 'en-US');
     });
 
-    it("should send a welcome notification to the user", async () => {
+    it('should send a welcome notification to the user', async () => {
       const data = {
-        name: "testuser",
-        email: "test@email.net",
-        password: "Password1",
+        name: 'testuser',
+        email: 'test@email.net',
+        password: 'Password1',
       };
 
-      await request().post("/api/v1/auth/register").send(data).expect(201);
+      await request().post('/api/v1/auth/register').send(data).expect(201);
 
-      await receiveEmail("test@email.net");
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: data.email,
+        }),
+      );
     });
   });
 
-  describe("POST /api/v1/auth/login", () => {
+  describe('POST /api/v1/auth/login', () => {
     const createUser = async () => {
       return UserFactory.create({
-        name: "testuser",
-        email: "test@email.net",
-        password: bcrypt.hashSync("password", 8),
+        name: 'testuser',
+        email: 'test@email.net',
+        password: bcrypt.hashSync('password', 8),
       });
     };
 
-    it("should respond with a `200` status code when provided valid credentials", async () => {
+    it('should respond with a `200` status code when provided valid credentials', async () => {
       await createUser();
 
       await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(200);
     });
 
-    it("should respond with a `200` status code when provided valid credentials and remember", async () => {
+    it('should respond with a `200` status code when provided valid credentials and remember', async () => {
       await createUser();
 
       await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
           remember: true,
         })
         .expect(200);
     });
 
-    it("should respond with the user details when successful", async () => {
+    it('should respond with the user details when successful', async () => {
       await createUser();
 
       const { body } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(200);
 
-      expect(body).toHaveProperty("user.id");
+      expect(body).toHaveProperty('user.id');
     });
 
-    it("should respond with camps when successful", async () => {
+    it('should respond with camps when successful', async () => {
       const user = await UserFactory.create({
-        email: "manager@email.net",
-        password: bcrypt.hashSync("password", 8),
+        email: 'manager@email.net',
+        password: bcrypt.hashSync('password', 8),
       });
       const camp = await CampFactory.create();
       await CampManagerFactory.create({
@@ -288,40 +293,40 @@ describe("/api/v1/auth", async () => {
       });
 
       const { body } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "manager@email.net",
-          password: "password",
+          email: 'manager@email.net',
+          password: 'password',
         })
         .expect(200);
 
-      expect(body).toHaveProperty("user.camps");
+      expect(body).toHaveProperty('user.camps');
       expect(body.user.camps.length).toBe(1);
     });
 
-    it("should respond with access token", async () => {
+    it('should respond with access token', async () => {
       await createUser();
 
       const { body } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(200);
 
-      expect(body).toHaveProperty("tokens.access.token");
-      expect(body).toHaveProperty("tokens.access.expires");
+      expect(body).toHaveProperty('tokens.access.token');
+      expect(body).toHaveProperty('tokens.access.expires');
 
       expect(verifyToken(body.tokens.access.token)).toBeDefined();
     });
 
-    it("should store the refresh token when remember is set", async () => {
+    it('should store the refresh token when remember is set', async () => {
       await createUser();
 
-      await request().post("/api/v1/auth/login").send({
-        email: "test@email.net",
-        password: "password",
+      await request().post('/api/v1/auth/login').send({
+        email: 'test@email.net',
+        password: 'password',
         remember: true,
       });
 
@@ -334,71 +339,71 @@ describe("/api/v1/auth", async () => {
       expect(tokenCount).toBe(1);
     });
 
-    it("should set access token as cookie when successful", async () => {
+    it('should set access token as cookie when successful', async () => {
       await createUser();
 
       const { headers } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(200);
 
-      const setCookie = headers["set-cookie"];
+      const setCookie = headers['set-cookie'];
 
       expect(setCookie).toContainEqual(expect.stringMatching(/^accessToken.*/));
     });
 
-    it("should not set refresh token as cookie without remember", async () => {
+    it('should not set refresh token as cookie without remember', async () => {
       await createUser();
 
       const { headers } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(200);
 
-      const setCookie = headers["set-cookie"];
+      const setCookie = headers['set-cookie'];
 
       expect(setCookie).not.toContainEqual(
         expect.stringMatching(/^refreshToken.*/),
       );
     });
 
-    it("should respond with refresh token when remember is set when successful", async () => {
+    it('should respond with refresh token when remember is set when successful', async () => {
       await createUser();
 
       const { body } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
           remember: true,
         })
         .expect(200);
 
-      expect(body).toHaveProperty("tokens.refresh.token");
-      expect(body).toHaveProperty("tokens.refresh.expires");
+      expect(body).toHaveProperty('tokens.refresh.token');
+      expect(body).toHaveProperty('tokens.refresh.expires');
 
       expect(verifyToken(body.tokens.refresh.token)).toBeDefined();
     });
 
-    it("should set access token and refresh token as cookie with remember when successful", async () => {
+    it('should set access token and refresh token as cookie with remember when successful', async () => {
       await createUser();
 
       const { headers } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "password",
+          email: 'test@email.net',
+          password: 'password',
           remember: true,
         })
         .expect(200);
 
-      const setCookie = headers["set-cookie"];
+      const setCookie = headers['set-cookie'];
 
       expect(setCookie).toContainEqual(expect.stringMatching(/^accessToken.*/));
       expect(setCookie).toContainEqual(
@@ -406,55 +411,55 @@ describe("/api/v1/auth", async () => {
       );
     });
 
-    it("should respond with a `403` status code when email is not verified", async () => {
+    it('should respond with a `403` status code when email is not verified', async () => {
       await UserFactory.create({
-        email: "test2@email.net",
+        email: 'test2@email.net',
         emailVerified: false,
-        password: bcrypt.hashSync("password", 8),
+        password: bcrypt.hashSync('password', 8),
       });
 
       await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test2@email.net",
-          password: "password",
+          email: 'test2@email.net',
+          password: 'password',
           remember: true,
         })
         .expect(403);
     });
 
-    it("should respond with a `400` status code when given invalid credentials", async () => {
+    it('should respond with a `400` status code when given invalid credentials', async () => {
       await createUser();
 
       const { body } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "wrongpassword",
+          email: 'test@email.net',
+          password: 'wrongpassword',
         })
         .expect(400);
 
-      expect(body).not.toHaveProperty("tokens");
-      expect(body).not.toHaveProperty("user");
+      expect(body).not.toHaveProperty('tokens');
+      expect(body).not.toHaveProperty('user');
     });
 
-    it("should respond with a `400` status code when the user cannot be found", async () => {
+    it('should respond with a `400` status code when the user cannot be found', async () => {
       const { body } = await request()
-        .post("/api/v1/auth/login")
+        .post('/api/v1/auth/login')
         .send({
-          email: "test@email.net",
-          password: "testpassword",
+          email: 'test@email.net',
+          password: 'testpassword',
         })
         .expect(400);
 
-      expect(body).not.toHaveProperty("token");
+      expect(body).not.toHaveProperty('token');
     });
 
-    it("should respond with a `429` status code when too many invalid requests are send", async () => {
+    it('should respond with a `429` status code when too many invalid requests are send', async () => {
       const sendRequest = () => {
-        return request().post("/api/v1/auth/login").send({
-          email: "test@email.net",
-          password: "wrongpassword",
+        return request().post('/api/v1/auth/login').send({
+          email: 'test@email.net',
+          password: 'wrongpassword',
         });
       };
 
@@ -464,35 +469,35 @@ describe("/api/v1/auth", async () => {
     });
   });
 
-  describe("POST /api/v1/auth/logout", () => {
-    it("should respond with a `200` status code when the user is authenticated", async () => {
+  describe('POST /api/v1/auth/logout', () => {
+    it('should respond with a `200` status code when the user is authenticated', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
         .post(`/api/v1/auth/logout/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(204);
     });
 
-    it("should remove access and refresh token cookie when successful", async () => {
+    it('should remove access and refresh token cookie when successful', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       const { headers } = await request()
         .post(`/api/v1/auth/logout/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
-      const cookies = headers["set-cookie"].map(
-        (item: string) => item.split(";")[0],
+      const cookies = headers['set-cookie'].map(
+        (item: string) => item.split(';')[0],
       );
 
-      expect(cookies).toContain("accessToken=");
-      expect(cookies).toContain("refreshToken=");
+      expect(cookies).toContain('accessToken=');
+      expect(cookies).toContain('refreshToken=');
     });
 
-    it("should blacklist the refresh token from body when successful", async () => {
+    it('should blacklist the refresh token from body when successful', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
       const refreshToken = generateRefreshToken(user);
@@ -505,8 +510,8 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/logout/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
-        .set("Cookie", `refreshToken=${refreshToken}; HttpOnly`)
+        .auth(accessToken, { type: 'bearer' })
+        .set('Cookie', `refreshToken=${refreshToken}; HttpOnly`)
         .expect(204);
 
       const count = await prisma.token.count({
@@ -519,7 +524,7 @@ describe("/api/v1/auth", async () => {
       expect(count).toBe(1);
     });
 
-    it("should blacklist the refresh token from cookie when successful", async () => {
+    it('should blacklist the refresh token from cookie when successful', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
       const refreshToken = generateRefreshToken(user);
@@ -536,7 +541,7 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/logout/`)
         .send(data)
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
       const count = await prisma.token.count({
@@ -549,12 +554,12 @@ describe("/api/v1/auth", async () => {
       expect(count).toBe(1);
     });
 
-    it("should respond with a `401` status code when the user unauthenticated", async () => {
+    it('should respond with a `401` status code when the user unauthenticated', async () => {
       await request().post(`/api/v1/auth/logout/`).send().expect(401);
     });
   });
 
-  describe("POST /api/v1/auth/refresh-tokens", () => {
+  describe('POST /api/v1/auth/refresh-tokens', () => {
     const createUserWithToken = async () => {
       const user = await UserFactory.create();
       const refreshToken = generateRefreshToken(user);
@@ -567,7 +572,7 @@ describe("/api/v1/auth", async () => {
       return { user, refreshToken };
     };
 
-    it("should respond with a `200` status code when token is provided in body", async () => {
+    it('should respond with a `200` status code when token is provided in body', async () => {
       const { refreshToken } = await createUserWithToken();
 
       const data = {
@@ -580,17 +585,17 @@ describe("/api/v1/auth", async () => {
         .expect(200);
     });
 
-    it("should respond with a `200` status code when token is provided as cookie", async () => {
+    it('should respond with a `200` status code when token is provided as cookie', async () => {
       const { refreshToken } = await createUserWithToken();
 
       await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send()
-        .set("Cookie", `refreshToken=${refreshToken}; HttpOnly`)
+        .set('Cookie', `refreshToken=${refreshToken}; HttpOnly`)
         .expect(200);
     });
 
-    it("should respond with a new access and refresh token when successful", async () => {
+    it('should respond with a new access and refresh token when successful', async () => {
       const { refreshToken } = await createUserWithToken();
 
       const data = {
@@ -602,12 +607,12 @@ describe("/api/v1/auth", async () => {
         .send(data)
         .expect(200);
 
-      expect(body).toHaveProperty("refresh");
+      expect(body).toHaveProperty('refresh');
       expect(body.refresh).not.toBe(refreshToken);
-      expect(body).toHaveProperty("access");
+      expect(body).toHaveProperty('access');
     });
 
-    it("should respond with a access and refresh cookie when successful", async () => {
+    it('should respond with a access and refresh cookie when successful', async () => {
       const { refreshToken } = await createUserWithToken();
 
       const data = {
@@ -619,7 +624,7 @@ describe("/api/v1/auth", async () => {
         .send(data)
         .expect(200);
 
-      const setCookie = headers["set-cookie"];
+      const setCookie = headers['set-cookie'];
 
       expect(setCookie).toContainEqual(expect.stringMatching(/^accessToken.*/));
       expect(setCookie).toContainEqual(
@@ -627,11 +632,11 @@ describe("/api/v1/auth", async () => {
       );
     });
 
-    it("should respond with `400` status code when the user has no refresh token", async () => {
+    it('should respond with `400` status code when the user has no refresh token', async () => {
       await request().post(`/api/v1/auth/refresh-tokens/`).send().expect(400);
     });
 
-    it("should respond with `401` status code when the token is missing", async () => {
+    it('should respond with `401` status code when the token is missing', async () => {
       const refreshToken = generateRefreshToken(await UserFactory.create());
 
       const data = {
@@ -644,7 +649,7 @@ describe("/api/v1/auth", async () => {
         .expect(401);
     });
 
-    it("should respond with `401` status code when the token is blacklisted", async () => {
+    it('should respond with `401` status code when the token is blacklisted', async () => {
       const user = await UserFactory.create();
       const refreshToken = generateRefreshToken(user);
       await TokenFactory.create({
@@ -664,16 +669,16 @@ describe("/api/v1/auth", async () => {
         .expect(401);
     });
 
-    it("should respond with `401` status code when the token is invalid", async () => {
+    it('should respond with `401` status code when the token is invalid', async () => {
       await request()
         .post(`/api/v1/auth/refresh-tokens/`)
         .send({
-          refreshToken: "test123",
+          refreshToken: 'test123',
         })
         .expect(401);
     });
 
-    it("should respond with `401` status code when the token is invalid", async () => {
+    it('should respond with `401` status code when the token is invalid', async () => {
       const user = await UserFactory.create();
 
       await request()
@@ -684,7 +689,7 @@ describe("/api/v1/auth", async () => {
         .expect(401);
     });
 
-    it("should respond with `401` status code when the token type is invalid", async () => {
+    it('should respond with `401` status code when the token type is invalid', async () => {
       const user = await UserFactory.create();
       const refreshToken = generateToken(user, TokenType.RESET_PASSWORD);
       await TokenFactory.create({
@@ -702,38 +707,38 @@ describe("/api/v1/auth", async () => {
     });
   });
 
-  describe("POST /api/v1/auth/forgot-password", () => {
-    it("should respond with `204` status code when provided with valid email", async () => {
+  describe('POST /api/v1/auth/forgot-password', () => {
+    it('should respond with `204` status code when provided with valid email', async () => {
       await UserFactory.create({
-        email: "test@email.net",
+        email: 'test@email.net',
       });
 
       await request()
-        .post("/api/v1/auth/forgot-password")
+        .post('/api/v1/auth/forgot-password')
         .send({
-          email: "test@email.net",
+          email: 'test@email.net',
         })
         .expect(204);
     });
 
-    it("should respond with `204` status code when provided with invalid email", async () => {
+    it('should respond with `204` status code when provided with invalid email', async () => {
       await request()
-        .post("/api/v1/auth/forgot-password")
+        .post('/api/v1/auth/forgot-password')
         .send({
-          email: "unknown@email.net",
+          email: 'unknown@email.net',
         })
         .expect(204);
     });
 
-    it("should store a token for the user when successful", async () => {
+    it('should store a token for the user when successful', async () => {
       const user = await UserFactory.create({
-        email: "test@email.net",
+        email: 'test@email.net',
       });
 
       await request()
-        .post("/api/v1/auth/forgot-password")
+        .post('/api/v1/auth/forgot-password')
         .send({
-          email: "test@email.net",
+          email: 'test@email.net',
         })
         .expect(204);
 
@@ -747,30 +752,35 @@ describe("/api/v1/auth", async () => {
       expect(count).toBe(1);
     });
 
-    it("should send an email to the user when successful", async () => {
+    it('should send an email to the user when successful', async () => {
       await UserFactory.create({
-        email: "test@email.net",
+        email: 'test@email.net',
       });
 
       await request()
-        .post("/api/v1/auth/forgot-password")
+        .post('/api/v1/auth/forgot-password')
         .send({
-          email: "test@email.net",
+          email: 'test@email.net',
         })
         .expect(204);
 
-      await receiveEmail("test@email.net");
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'test@email.net',
+        }),
+      );
     });
   });
 
-  describe("POST /api/v1/auth/reset-password", () => {
+  describe('POST /api/v1/auth/reset-password', () => {
     type ResetPasswordContext = {
       token: string;
       user: User;
     };
 
     beforeEach<ResetPasswordContext>(async (context) => {
-      const email = "test@email.net";
+      const email = 'test@email.net';
       context.user = await UserFactory.create({ email });
 
       context.token = generateResetPasswordToken(context.user);
@@ -787,11 +797,11 @@ describe("/api/v1/auth", async () => {
       });
     });
 
-    it<ResetPasswordContext>("should respond with `204` status code when provided with valid token and email", async (context) => {
+    it<ResetPasswordContext>('should respond with `204` status code when provided with valid token and email', async (context) => {
       const data = {
         token: context.token,
         email: context.user.email,
-        password: "Test1234",
+        password: 'Test1234',
       };
 
       await request()
@@ -800,7 +810,7 @@ describe("/api/v1/auth", async () => {
         .expect(204);
     });
 
-    it<ResetPasswordContext>("should revoke all tokens of the user", async (context) => {
+    it<ResetPasswordContext>('should revoke all tokens of the user', async (context) => {
       await TokenFactory.create({
         type: TokenType.REFRESH,
         user: { connect: { id: context.user.id } },
@@ -813,7 +823,7 @@ describe("/api/v1/auth", async () => {
       const data = {
         token: context.token,
         email: context.user.email,
-        password: "Test1234",
+        password: 'Test1234',
       };
 
       await request()
@@ -831,11 +841,11 @@ describe("/api/v1/auth", async () => {
       expect(count).toBe(0);
     });
 
-    it<ResetPasswordContext>("should respond with `400` status code when provided with invalid token", async (context) => {
+    it<ResetPasswordContext>('should respond with `400` status code when provided with invalid token', async (context) => {
       const data = {
-        token: "SomeInvalidToken",
+        token: 'SomeInvalidToken',
         email: context.user.email,
-        password: "Test1234",
+        password: 'Test1234',
       };
 
       await request()
@@ -844,11 +854,11 @@ describe("/api/v1/auth", async () => {
         .expect(400);
     });
 
-    it<ResetPasswordContext>("should respond with `400` status code when provided with expired token", async (context) => {
+    it<ResetPasswordContext>('should respond with `400` status code when provided with expired token', async (context) => {
       const data = {
         token: generateExpiredToken(context.user, TokenType.RESET_PASSWORD),
         email: context.user.email,
-        password: "Test1234",
+        password: 'Test1234',
       };
 
       await request()
@@ -857,11 +867,11 @@ describe("/api/v1/auth", async () => {
         .expect(400);
     });
 
-    it<ResetPasswordContext>("should respond with `400` status code when provided with invalid email", async (context) => {
+    it<ResetPasswordContext>('should respond with `400` status code when provided with invalid email', async (context) => {
       const data = {
         token: context.token,
         email: context.user.email,
-        password: "123",
+        password: '123',
       };
 
       await request()
@@ -870,11 +880,11 @@ describe("/api/v1/auth", async () => {
         .expect(400);
     });
 
-    it<ResetPasswordContext>("should respond with `400` status code when provided with invalid password", async (context) => {
+    it<ResetPasswordContext>('should respond with `400` status code when provided with invalid password', async (context) => {
       const data = {
         token: context.token,
-        email: "invalid@email.net",
-        password: "Test1234",
+        email: 'invalid@email.net',
+        password: 'Test1234',
       };
 
       await request()
@@ -884,8 +894,8 @@ describe("/api/v1/auth", async () => {
     });
   });
 
-  describe("POST /api/v1/auth/send-verification-email", () => {
-    it("should respond with `204` status code when the user is authenticated", async () => {
+  describe('POST /api/v1/auth/send-verification-email', () => {
+    it('should respond with `204` status code when the user is authenticated', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
@@ -894,18 +904,18 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(204);
     });
 
-    it("should respond with `401` status code when the user is unauthenticated", async () => {
+    it('should respond with `401` status code when the user is unauthenticated', async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
         .expect(401);
     });
 
-    it("should respond with `401` status code when user does not exist anymore", async () => {
+    it('should respond with `401` status code when user does not exist anymore', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
@@ -918,11 +928,11 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(401);
     });
 
-    it("should respond with `400` status code when the email is already verified", async () => {
+    it('should respond with `400` status code when the email is already verified', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
       });
@@ -931,11 +941,11 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
 
-    it("should send an email to the user when successful", async () => {
+    it('should send an email to the user when successful', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
@@ -944,13 +954,18 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .auth(accessToken, { type: "bearer" })
+        .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
-      await receiveEmail(user.email);
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: user.email,
+        }),
+      );
     });
 
-    it("should respond with `204` status code when the user authenticated via cookie", async () => {
+    it('should respond with `204` status code when the user authenticated via cookie', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
@@ -959,13 +974,13 @@ describe("/api/v1/auth", async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send()
-        .set("Cookie", `accessToken=${accessToken}; HttpOnly`)
+        .set('Cookie', `accessToken=${accessToken}; HttpOnly`)
         .expect(204);
     });
   });
 
-  describe("POST /api/v1/auth/verify-email", () => {
-    it("should respond with `204` status code when provided with valid token", async () => {
+  describe('POST /api/v1/auth/verify-email', () => {
+    it('should respond with `204` status code when provided with valid token', async () => {
       const user = await UserFactory.create();
       const token = generateVerifyEmailToken(user);
       await TokenFactory.create({
@@ -981,7 +996,7 @@ describe("/api/v1/auth", async () => {
       await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
     });
 
-    it("should respond with `400` status code when provided without token", async () => {
+    it('should respond with `400` status code when provided without token', async () => {
       const user = await UserFactory.create();
       await TokenFactory.create({
         user: { connect: { id: user.id } },
@@ -997,7 +1012,7 @@ describe("/api/v1/auth", async () => {
       await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
     });
 
-    it("should respond with `400` status code when token is expired", async () => {
+    it('should respond with `400` status code when token is expired', async () => {
       const user = await UserFactory.create();
       const verifyToken = generateExpiredToken(user, TokenType.VERIFY_EMAIL);
       await TokenFactory.create({
@@ -1013,7 +1028,7 @@ describe("/api/v1/auth", async () => {
       await request().post(`/api/v1/auth/verify-email/`).send(data).expect(401);
     });
 
-    it("should respond with `401` status code when token is invalid", async () => {
+    it('should respond with `401` status code when token is invalid', async () => {
       const user = await UserFactory.create();
       await TokenFactory.create({
         user: { connect: { id: user.id } },
@@ -1022,7 +1037,7 @@ describe("/api/v1/auth", async () => {
       });
 
       const data = {
-        token: "test123",
+        token: 'test123',
       };
 
       await request().post(`/api/v1/auth/verify-email/`).send(data).expect(401);

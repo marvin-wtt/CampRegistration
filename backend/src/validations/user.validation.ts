@@ -1,6 +1,6 @@
-import { Role } from "@prisma/client";
-import Joi from "joi";
-import { PasswordSchema } from "./custom.validation";
+import { Role } from '@prisma/client';
+import Joi from 'joi';
+import { PasswordSchema } from './custom.validation';
 
 const show = {
   params: Joi.object({

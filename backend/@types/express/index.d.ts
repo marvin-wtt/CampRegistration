@@ -1,4 +1,4 @@
-import express from "express";
+import express from 'express';
 import {
   User as UserModel,
   Camp,
@@ -8,7 +8,7 @@ import {
   Bed,
   Room,
   File,
-} from "@prisma/client";
+} from '@prisma/client';
 
 declare global {
   namespace Express {

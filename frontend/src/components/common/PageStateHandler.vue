@@ -1,7 +1,7 @@
 <template>
   <q-page :padding="padding">
     <div
-      v-if="loading || error"
+      v-if="loading || pageError"
       class="absolute fit row justify-center"
     >
       <slot
@@ -18,7 +18,7 @@
       </slot>
 
       <slot
-        v-else-if="error"
+        v-else-if="pageError"
         name="error"
       >
         <div class="text-center self-center">
@@ -26,10 +26,16 @@
             name="error"
             size="xl"
           />
-
           <p class="text-h4">
-            {{ props.error || 'Error' }}
+            {{ errorMessage || 'Error' }}
           </p>
+
+          <q-btn
+            icon="refresh"
+            round
+            color="primary"
+            @click="refreshPage()"
+          />
         </div>
       </slot>
     </div>
@@ -42,8 +48,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeMount, onBeforeUnmount, onErrorCaptured, ref } from 'vue';
-import { onBeforeRouteLeave } from 'vue-router';
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUnmount,
+  onErrorCaptured,
+  ref,
+} from 'vue';
+import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 
 interface Props {
@@ -61,11 +73,20 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const quasar = useQuasar();
+const router = useRouter();
 
-const localError = ref(false);
+const localError = ref<string | null>(null);
 
-const error = computed<boolean>(() => {
-  return props.error != null || localError.value;
+const pageError = computed<boolean>(() => {
+  return errorMessage.value != null;
+});
+
+const errorMessage = computed<string | null>(() => {
+  return props.error
+    ? Array.isArray(props.error)
+      ? props.error[0]
+      : props.error
+    : localError.value;
 });
 
 const loading = computed<boolean>(() => {
@@ -73,7 +94,7 @@ const loading = computed<boolean>(() => {
 });
 
 const padding = computed<boolean>(() => {
-  return props.padding && !loading.value && !error.value;
+  return props.padding && !loading.value && !pageError.value;
 });
 
 onBeforeMount(() => {
@@ -84,7 +105,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', preventPageLeave);
 });
 
-function preventPageLeave(event) {
+function preventPageLeave(event: BeforeUnloadEvent) {
   if (!props.preventLeave) {
     return;
   }
@@ -118,12 +139,14 @@ onBeforeRouteLeave((to, from, next) => {
     });
 });
 
-onErrorCaptured((err, instance) => {
-  // TODO Handle gracefully
-  localError.value = true;
-});
+function refreshPage() {
+  router.go(0);
+}
 
-// TODO Not working...
+onErrorCaptured((err) => {
+  // TODO Handle gracefully
+  localError.value = err.name + ': ' + err.message;
+});
 </script>
 
 <style scoped></style>

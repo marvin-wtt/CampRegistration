@@ -69,12 +69,13 @@
 import { useI18n } from 'vue-i18n';
 import { useCampManagerStore } from 'stores/camp-manager-store';
 import { computed } from 'vue';
-import { CampManager } from 'src/types/CampManager';
+import type { CampManager } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import AddCampManagerDialog from 'components/campManagement/access/AddCampManagerDialog.vue';
+import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
 import { useAuthStore } from 'stores/auth-store';
+import { QTableColumn } from 'src/types/quasar/QTableColum';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -88,7 +89,7 @@ const pagination = {
   rowsPerPage: -1,
 };
 
-const columns = [
+const columns: QTableColumn[] = [
   {
     name: 'name',
     required: true,
@@ -121,6 +122,7 @@ const columns = [
     name: 'action',
     required: true,
     label: '',
+    field: '',
     align: 'center',
   },
 ];

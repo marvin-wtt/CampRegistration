@@ -102,7 +102,7 @@ model Registration {
   campData    Json      @default("{}") @map("camp_data") @db.Json
   locale      String    @default("en-US") @db.VarChar(5)
   waitingList Boolean   @default(true) @map("waiting_list")
-  createdAt   DateTime? @default(now()) @map("created_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
   camp        Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed         Bed?
@@ -136,7 +136,7 @@ model Bed {
 model Template {
   id     String @id @unique(map: "templates_id_unique") @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
-  /// [GenericObject]
+  /// [TableTemplates]
   data   Json   @db.Json
   camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "templates_camp_id_foreign")
 

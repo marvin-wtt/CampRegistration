@@ -151,12 +151,6 @@ interface NavigationItem {
 
 const items: NavigationItem[] = [
   {
-    name: 'dashboard',
-    label: t('dashboard'),
-    icon: 'dashboard',
-    to: { name: 'dashboard' },
-  },
-  {
     name: 'participants',
     label: t('participants'),
     icon: 'groups',
@@ -170,24 +164,10 @@ const items: NavigationItem[] = [
     to: undefined,
   },
   {
-    name: 'program_planner',
-    preview: true,
-    label: t('program_planner'),
-    icon: 'event',
-    to: { name: 'program-planner' },
-  },
-  {
     name: 'room_planner',
     label: t('room_planner'),
     icon: 'single_bed',
     to: { name: 'room-planner' },
-  },
-  {
-    name: 'expenses',
-    preview: true,
-    label: t('expenses'),
-    icon: 'payments',
-    to: { name: 'expenses' },
   },
   {
     name: 'tools',
@@ -262,6 +242,7 @@ room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
 tools: 'Tools'
+notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -280,6 +261,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tools: 'Tools'
+notifications: 'Benachrichtigungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -298,6 +280,7 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tools: 'Tools'
+notifications: 'Notifications'
 </i18n>
 
 <style>

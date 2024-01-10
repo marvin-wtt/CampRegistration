@@ -6,7 +6,7 @@
     type="textarea"
   >
     <template
-      v-for="(data, name, index) in $slots"
+      v-for="(data, name, index) in $slots as unknown as QInputSlots"
       :key="index"
       #[name]
     >
@@ -20,6 +20,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { QInputSlots } from 'quasar';
 
 interface Props {
   modelValue: string | object | undefined;

@@ -1,12 +1,12 @@
-import enUS from "./en-US";
-import deDE from "./de-DE";
-import frFR from "./fr-FR";
+import enUS from './en-US';
+import deDE from './de-DE';
+import frFR from './fr-FR';
 
 export default {
-  "en-US": enUS,
+  'en-US': enUS,
   en: enUS,
-  "de-DE": deDE,
+  'de-DE': deDE,
   de: deDE,
-  "fr-FR": frFR,
+  'fr-FR': frFR,
   fr: frFR,
 };

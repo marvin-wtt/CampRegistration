@@ -1,13 +1,13 @@
-import { campService } from "services";
-import httpStatus from "http-status";
-import { campResource, detailedCampResource } from "resources";
-import { catchRequestAsync } from "utils/catchAsync";
-import pick from "utils/pick";
-import exclude from "utils/exclude";
-import { collection, resource } from "resources/resource";
-import { authUserId } from "utils/authUserId";
-import { routeModel } from "utils/verifyModel";
-import { Camp } from "@prisma/client";
+import { campService } from 'services';
+import httpStatus from 'http-status';
+import { campResource, detailedCampResource } from 'resources';
+import { catchRequestAsync } from 'utils/catchAsync';
+import pick from 'utils/pick';
+import exclude from 'utils/exclude';
+import { collection, resource } from 'resources/resource';
+import { authUserId } from 'utils/authUserId';
+import { routeModel } from 'utils/verifyModel';
+import { Camp } from '@prisma/client';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
@@ -16,14 +16,14 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const filter = exclude(req.query, ["sortBy", "limit", "page"]);
+  const filter = exclude(req.query, ['sortBy', 'limit', 'page']);
   // Set user id if private or inactive camps should be included filter for camp manager
   filter.userId =
-    filter.public == "false" || filter.active === "false"
+    filter.public == 'false' || filter.active === 'false'
       ? authUserId(req)
       : undefined;
 
-  const options = pick(req.query, ["sortBy", "limit", "page"]);
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
   // TODO Add default options, make sure validation is correct and add pagination meta
   const camps = await campService.queryPublicCamps(filter, options);
 
