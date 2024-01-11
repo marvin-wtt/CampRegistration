@@ -100,7 +100,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
-import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
+import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
