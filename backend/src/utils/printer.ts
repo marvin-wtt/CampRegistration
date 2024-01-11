@@ -21,7 +21,8 @@ export const printForm = async (camp: Camp, registration: Registration) => {
   surveyPdf.data = registration.data;
   surveyPdf.data = registration.locale;
 
-  setVariables(surveyPdf as unknown as SurveyModel, camp);
+  // FIXME Incorrect locale provided
+  // setVariables(surveyPdf as unknown as SurveyModel, camp);
 
   // FIXME Find modeJS alternative
   // surveyPdf.onTextMarkdown.add((_, options) => {
