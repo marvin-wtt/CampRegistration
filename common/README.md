@@ -88,9 +88,9 @@ Functions can also be used in expression fields.
 All functions return null in case of invalid input parameters. This might be evaluated internally as undefined.
 
 | Name           | Parameter                                                   | Return         | Description                                                       |
-| -------------- | ----------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
-| isMinor        | dateOfBirthQuestion: string                                 | boolean        | Wherever the age is less than 18 at camp start                    |
-| isAdult        | dateOfBirthQuestion: string                                 | boolean        | Wherever the age above 18 at camp start                           |
+| -------------- |-------------------------------------------------------------| -------------- | ----------------------------------------------------------------- |
+| isMinor        | dateOfBirthQuestion: string, date: string \| Date           | boolean        | Wherever the age is less than 18 at camp start                    |
+| isAdult        | dateOfBirthQuestion: string, date: string \| Date           | boolean        | Wherever the age above 18 at camp start                           |
 | subtractYears  | date: string, years: number                                 | Date           | Subtracts years from a given date                                 |
 | htmlDate       | date: string                                                | string         | Formats a date to the html date format (YYYY-MM-DD)               |
 | translate \| t | value: string \| object, locale?: string, fallback?: string | string \| null | Searches for a translation in an object                           |
