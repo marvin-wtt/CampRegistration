@@ -293,7 +293,7 @@ const getRegistrationConfirmationRegistrationData = (
   const accessor = registrationCampDataAccessor(registration.campData);
 
   const to = accessor.emails();
-  const cc = accessor.guardianEmails();
+  const cc: string[] = [];
   const country = accessor.country(camp.countries);
   const replyTo = findCampContactEmails(camp.contactEmail, country);
   const participantName = accessor.firstName() ?? accessor.name();
@@ -367,16 +367,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     return first !== undefined ? first : last;
   };
 
-  const guardianEmails = (): string[] => {
-    const emails = campData['guardian_email']?.filter(
-      (value): value is string => {
-        return !!value && typeof value === 'string';
-      },
-    );
-
-    return emails ?? [];
-  };
-
   return {
     emails,
     country,
@@ -384,7 +374,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     firstName,
     lastName,
     fullName,
-    guardianEmails,
   };
 };
 

@@ -49,9 +49,9 @@ export const email: CampDataType = {
   element: {
     value: 'email',
     text: {
-      en: 'E-Mail (participant)',
-      de: 'E-Mail (teilnehmer)',
-      fr: 'E-Mail (participant)',
+      en: 'E-Mail (Contact)',
+      de: 'E-Mail (Kontakt)',
+      fr: 'E-Mail (Contact)',
     },
   },
   fit: (obj) => {
@@ -73,22 +73,6 @@ export const firstName: CampDataType = {
   fit: (obj) => {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'text'
-    );
-  },
-};
-
-export const guardianEmail: CampDataType = {
-  element: {
-    value: 'guardian_email',
-    text: {
-      en: 'E-Mail (guardian)',
-      de: 'E-Mail (Sorgeberechtigen)',
-      fr: 'E-Mail (responsables)',
-    },
-  },
-  fit: (obj) => {
-    return (
-      obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'email'
     );
   },
 };

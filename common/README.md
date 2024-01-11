@@ -46,7 +46,6 @@ The value can be set by the specified field types or by an expression.
 | Country         | country        | dropdown                     | If international  | address     | The country of the person                           |
 | Date of Birth   | date_of_birth  | date_of_birth \| text + date | If age restricted |             | The date of birth of the person                     |
 | E-mail          | email          | text + email                 |        Yes        |             | The primary email of the person                     |
-| Guardian E-Mail | guardian_email | text + email                 |        No         |             | The email of a guardian                             |
 | First Name      | first_name     | text                         |        Yes        |             | The persons first name                              |
 | Last Name       | last_name      | text                         |        Yes        |             | The persons family name                             |
 | Role            | role           | text \| dropdown \| role     |        No         |             | The role of the person. The default is participant. |

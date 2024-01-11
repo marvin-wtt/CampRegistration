@@ -284,3 +284,30 @@ export const campWithoutCountryData = {
     },
   ]),
 };
+
+export const campWithEmail = {
+  ...campPrivate,
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+  ]),
+};
+
+export const campWithGuardianEmail = {
+  ...campPublic,
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+    {
+      name: 'emailGuardian',
+      type: 'text',
+      campDataType: 'guardian_email',
+    },
+  ]),
+};
