@@ -8,7 +8,7 @@ export function useFileService() {
   async function fetchCampFiles(campId: string): Promise<ServiceFile[]> {
     const response = await api.get(`camps/${campId}/files/`);
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function createCampFile(
@@ -21,7 +21,7 @@ export function useFileService() {
       },
     });
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function deleteCampFile(campId: string, id: string): Promise<void> {

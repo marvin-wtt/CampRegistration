@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import type { Profile, AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { api } from 'boot/axios';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
@@ -29,61 +28,27 @@ export const useAuthStore = defineStore('auth', () => {
 
   campBus.on('delete', async (campId) => {
     const index = data.value?.camps.findIndex((camp) => camp.id === campId);
-
-    if (index && index >= 0) {
+    if (index !== undefined && index >= 0) {
       data.value?.camps.splice(index);
     }
   });
-
-  // TODO Add i18n message for all operations
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
 
   // Redirect to login page on unauthorized error
-  // TODO Avoid using axios here.
-  api.interceptors.response.use(
-    (response) => {
-      return response;
-    },
-    async function (error) {
-      if (error.response === undefined) {
-        return Promise.reject(
-          'Server not reachable... Please try again later :(',
-        );
-      }
+  apiService.setOnUnauthenticated(() => {
+    if (route.name === 'login' || route.fullPath.startsWith('/login')) {
+      return;
+    }
 
-      // Don't redirect on login page
-      if (route.name === 'login' || route.fullPath.startsWith('/login')) {
-        return Promise.reject(error);
-      }
-      // Only capture unauthorized error
-      if (error.response.status !== 401) {
-        return Promise.reject(error);
-      }
-
-      const authenticated = await refreshTokens();
-      if (authenticated) {
-        return Promise.resolve();
-      }
-
-      bus.emit('logout');
-      // Clear current user for login page
-      reset();
-
-      if (route.name !== 'login') {
-        await router.replace({
-          name: 'login',
-          query: {
-            origin: encodeURIComponent(route.path),
-          },
-        });
-      }
-
-      // Still reject error to avoid false success messages
-      return Promise.reject(error);
-    },
-  );
+    return router.replace({
+      name: 'login',
+      query: {
+        origin: encodeURIComponent(route.path),
+      },
+    });
+  });
 
   function reset() {
     if (accessTokenTimer != null) {

@@ -197,7 +197,7 @@ const sendRegistrationConfirmation = async (
   camp: Camp,
   registration: Registration,
 ) => {
-  const { to, replyTo, cc, campName, participantName } =
+  const { to, replyTo, campName, participantName } =
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
@@ -213,7 +213,6 @@ const sendRegistrationConfirmation = async (
 
   notificationService.sendEmail({
     to,
-    cc,
     replyTo,
     subject,
     template,
@@ -225,7 +224,7 @@ const sendWaitingListConfirmation = async (
   camp: Camp,
   registration: Registration,
 ) => {
-  const { to, replyTo, cc, campName, participantName } =
+  const { to, replyTo, campName, participantName } =
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
@@ -241,7 +240,6 @@ const sendWaitingListConfirmation = async (
 
   notificationService.sendEmail({
     to,
-    cc,
     replyTo,
     subject,
     template,
@@ -257,6 +255,7 @@ const sendRegistrationManagerNotification = async (
   const country = accessor.country(camp.countries);
 
   const to = findCampContactEmails(camp.contactEmail, country);
+  const replyTo = accessor.emails();
   const campName = translateObject(camp.name, country);
   const participantName = accessor.name();
 
@@ -279,6 +278,7 @@ const sendRegistrationManagerNotification = async (
 
   notificationService.sendEmail({
     to,
+    replyTo,
     subject,
     template,
     context,
@@ -293,7 +293,6 @@ const getRegistrationConfirmationRegistrationData = (
   const accessor = registrationCampDataAccessor(registration.campData);
 
   const to = accessor.emails();
-  const cc = accessor.guardianEmails();
   const country = accessor.country(camp.countries);
   const replyTo = findCampContactEmails(camp.contactEmail, country);
   const participantName = accessor.firstName() ?? accessor.name();
@@ -301,7 +300,6 @@ const getRegistrationConfirmationRegistrationData = (
 
   return {
     to,
-    cc,
     replyTo,
     participantName,
     campName,
@@ -367,16 +365,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     return first !== undefined ? first : last;
   };
 
-  const guardianEmails = (): string[] => {
-    const emails = campData['guardian_email']?.filter(
-      (value): value is string => {
-        return !!value && typeof value === 'string';
-      },
-    );
-
-    return emails ?? [];
-  };
-
   return {
     emails,
     country,
@@ -384,7 +372,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     firstName,
     lastName,
     fullName,
-    guardianEmails,
   };
 };
 

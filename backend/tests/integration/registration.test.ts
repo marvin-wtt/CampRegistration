@@ -27,6 +27,11 @@ import {
   campWithRequiredField,
   campWithSingleCampDataType,
   campWithoutCountryData,
+  campWithEmail,
+  campWithMultipleEmails,
+  campWithContactEmailInternational,
+  campWithEmailAndMaxParticipants,
+  campWithFormFunctions,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { CampManagerFactory } from '../../prisma/factories/manager';
@@ -294,25 +299,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(400);
     });
 
-    it('should set the users preferred locale', async () => {
-      const camp = await CampFactory.create(campPublic);
-
-      const data = {
-        data: {
-          first_name: 'Jhon',
-        },
-      };
-
-      const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .set('Accept-Language', 'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5')
-        .send(data)
-        .expect(201);
-
-      expect(body).toHaveProperty('data');
-      expect(body).toHaveProperty('data.locale', 'fr-CH');
-    });
-
     it('should work with camp variables', async () => {
       const camp = await CampFactory.create(campWithCampVariable);
 
@@ -335,6 +321,75 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data: invalidData })
         .expect(400);
+    });
+
+    it('should work with form functions', async () => {
+      const camp = await CampFactory.create(campWithFormFunctions);
+
+      const validData = {
+        date: '2000-01-01',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: validData })
+        .expect(201);
+
+      const invalidData = {
+        date: '2001-01-01',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: invalidData })
+        .expect(400);
+    });
+
+    describe('locale', () => {
+      it('should set the users preferred locale', async () => {
+        const camp = await CampFactory.create(campPublic);
+
+        const data = {
+          data: {
+            first_name: 'Jhon',
+          },
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .set(
+            'Accept-Language',
+            'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5',
+          )
+          .send(data)
+          .expect(201);
+
+        expect(body).toHaveProperty('data');
+        expect(body).toHaveProperty('data.locale', 'fr-CH');
+      });
+
+      it('should use given locale over users preferred locale', async () => {
+        const camp = await CampFactory.create(campPublic);
+
+        const data = {
+          data: {
+            first_name: 'Jhon',
+          },
+          locale: 'de',
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .set(
+            'Accept-Language',
+            'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5',
+          )
+          .send(data)
+          .expect(201);
+
+        expect(body).toHaveProperty('data');
+        expect(body).toHaveProperty('data.locale', 'de');
+      });
     });
 
     describe('files', () => {
@@ -768,22 +823,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends notification', () => {
-      it.todo('should send a confirmation email to the user', async () => {
-        // TODO Create camp with form
-        const camp = await CampFactory.create({
-          active: true,
-        });
+      it('should send a confirmation email to the user', async () => {
+        const camp = await CampFactory.create(campWithEmail);
 
         const data = {
           email: 'test@example.com',
-          emergencyContacts: [
-            {
-              email: 'parent1@email.net',
-            },
-            {
-              email: 'parent1@email.net',
-            },
-          ],
+          first_name: 'Jhon',
+          last_name: 'Doe',
         };
 
         await request()
@@ -791,20 +837,119 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        expect(mailer.sendMail).toBeCalledTimes(1);
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: data.email,
+            to: [data.email],
+            replyTo: camp.contactEmail,
           }),
         );
       });
 
-      it.todo('should send a copy to the contact email for national camp');
-      it.todo(
-        'should send a copy to the contact emails for international camp',
-      );
-      it.todo('should send a confirmation email to multiple addresses');
-      it.todo('should send a waiting list information to the user');
+      it('should send a confirmation email to multiple emails', async () => {
+        const camp = await CampFactory.create(campWithMultipleEmails);
+
+        const data = {
+          email: 'test@example.com',
+          emailGuardian: 'guardian@example.com',
+          full_name: 'Jhon Doe',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: expect.arrayContaining([data.email, data.emailGuardian]),
+            replyTo: camp.contactEmail,
+          }),
+        );
+      });
+
+      it('should send a copy to the contact email for national camp', async () => {
+        const camp = await CampFactory.create(campWithEmail);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: camp.contactEmail,
+            replyTo: expect.arrayContaining([data.email]),
+          }),
+        );
+      });
+
+      it('should send a copy to the contact emails for international camp', async () => {
+        const camp = await CampFactory.create(
+          campWithContactEmailInternational,
+        );
+
+        const data = {
+          country: 'de',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        const expectedEmail = campWithContactEmailInternational.contactEmail.de;
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: expectedEmail,
+          }),
+        );
+      });
+
+      it('should send a copy to all contact emails if country missing', async () => {
+        const camp = await CampFactory.create(
+          campWithContactEmailInternational,
+        );
+
+        const data = {};
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        const expectedEmails = Object.values(
+          campWithContactEmailInternational.contactEmail,
+        );
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: expect.arrayContaining(expectedEmails),
+          }),
+        );
+      });
+
+      it('should send a waiting list information to the user', async () => {
+        const camp = await CampFactory.create(campWithEmailAndMaxParticipants);
+
+        const data = {
+          email: 'test@example.com',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: [data.email],
+          }),
+        );
+      });
     });
   });
 

@@ -997,19 +997,7 @@ describe('/api/v1/auth', async () => {
     });
 
     it('should respond with `400` status code when provided without token', async () => {
-      const user = await UserFactory.create();
-      await TokenFactory.create({
-        user: { connect: { id: user.id } },
-        type: TokenType.VERIFY_EMAIL,
-        token: generateVerifyEmailToken(user),
-      });
-      const token = generateVerifyEmailToken(user);
-
-      const data = {
-        token,
-      };
-
-      await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
+      await request().post(`/api/v1/auth/verify-email/`).send({}).expect(400);
     });
 
     it('should respond with `400` status code when token is expired', async () => {

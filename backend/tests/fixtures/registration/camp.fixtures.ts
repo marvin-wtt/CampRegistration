@@ -284,3 +284,89 @@ export const campWithoutCountryData = {
     },
   ]),
 };
+
+export const campWithEmail = {
+  ...campPrivate,
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+    },
+    {
+      name: 'last_name',
+      type: 'text',
+      campDataType: 'last_name',
+    },
+  ]),
+};
+
+export const campWithMultipleEmails = {
+  ...campPublic,
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+    {
+      name: 'emailGuardian',
+      type: 'text',
+      campDataType: 'email',
+    },
+    {
+      name: 'full_name',
+      type: 'text',
+      campDataType: 'full_name',
+    },
+  ]),
+};
+
+export const campWithContactEmailInternational = {
+  ...campPublic,
+  countries: ['de', 'fr'],
+  contactEmail: {
+    de: 'de@email.net',
+    fr: 'fr@email.net',
+  },
+  form: createForm([
+    {
+      name: 'country',
+      type: 'text',
+      campDataType: 'country',
+    },
+  ]),
+};
+
+export const campWithEmailAndMaxParticipants = {
+  ...campPublic,
+  maxParticipants: 0,
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+  ]),
+};
+
+export const campWithFormFunctions = {
+  ...campPublic,
+  form: createForm([
+    {
+      name: 'date',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'test',
+      type: 'boolean',
+      requiredIf: "isMinor({date}, '2018-01-01')",
+    },
+  ]),
+};
