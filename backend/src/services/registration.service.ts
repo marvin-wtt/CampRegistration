@@ -8,6 +8,7 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
+import { printForm } from '../utils/printer';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -264,10 +265,16 @@ const sendRegistrationManagerNotification = async (
   const subject = t('registration:email.managerNotification.subject');
   const template = 'registration-manager-notification';
 
-  const dataAttachment = {
+  const jsonAttachment = {
     filename: 'data.json',
     contentType: 'application/json',
     content: JSON.stringify(registration),
+  };
+
+  const pdfAttachment = {
+    filename: 'data.pdf',
+    contentType: 'application/json',
+    content: await printForm(camp, registration),
   };
 
   const context = {
@@ -282,7 +289,7 @@ const sendRegistrationManagerNotification = async (
     subject,
     template,
     context,
-    attachments: [dataAttachment],
+    attachments: [pdfAttachment, jsonAttachment],
   });
 };
 

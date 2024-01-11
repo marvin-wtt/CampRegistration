@@ -71,7 +71,9 @@
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.1",
     "qs": "^6.11.2",
+    "showdown": "^2.1.0",
     "survey-core": "^1.9.122",
+    "survey-pdf": "^1.9.124",
     "ulidx": "^2.0.0",
     "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1"
