@@ -323,7 +323,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(400);
     });
 
-    it.only('should work with form functions', async () => {
+    it('should work with form functions', async () => {
       const camp = await CampFactory.create(campWithFormFunctions);
 
       const validData = {
