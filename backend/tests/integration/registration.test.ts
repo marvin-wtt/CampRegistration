@@ -805,6 +805,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         const data = {
           email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
         };
 
         await request()
@@ -826,6 +828,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const data = {
           email: 'test@example.com',
           emailGuardian: 'guardian@example.com',
+          full_name: 'Jhon Doe',
         };
 
         await request()
@@ -846,6 +849,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         const data = {
           email: 'test@example.com',
+          first_name: 'Jhon',
         };
 
         await request()
