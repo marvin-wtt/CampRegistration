@@ -354,3 +354,19 @@ export const campWithEmailAndMaxParticipants = {
     },
   ]),
 };
+
+export const campWithFormFunctions = {
+  ...campPublic,
+  form: createForm([
+    {
+      name: 'date',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'test',
+      type: 'boolean',
+      requiredIf: "isMinor({date}, '2018-01-01')",
+    },
+  ]),
+};

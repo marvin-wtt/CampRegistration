@@ -31,6 +31,7 @@ import {
   campWithMultipleEmails,
   campWithContactEmailInternational,
   campWithEmailAndMaxParticipants,
+  campWithFormFunctions,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { CampManagerFactory } from '../../prisma/factories/manager';
@@ -314,6 +315,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const invalidData = {
         first_name: 'Jhon',
         age: 5,
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: invalidData })
+        .expect(400);
+    });
+
+    it.only('should work with form functions', async () => {
+      const camp = await CampFactory.create(campWithFormFunctions);
+
+      const validData = {
+        date: '2000-01-01',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: validData })
+        .expect(201);
+
+      const invalidData = {
+        date: '2001-01-01',
       };
 
       await request()
