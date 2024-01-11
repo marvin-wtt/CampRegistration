@@ -31,7 +31,10 @@
           rounded
         />
 
-        <profile-menu :profile="user" />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -73,6 +76,10 @@ onMounted(() => {
     authStore.fetchUser();
   }
 });
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <style>

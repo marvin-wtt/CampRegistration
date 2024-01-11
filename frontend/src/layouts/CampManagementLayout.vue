@@ -44,7 +44,10 @@
           rounded
         />
 
-        <profile-menu :profile="user" />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -227,6 +230,10 @@ const filteredItems = computed<NavigationItem[]>(() => {
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <i18n lang="yaml" locale="en">
