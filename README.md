@@ -1,5 +1,15 @@
 # Camp Registration
 
+## Production
+
+### Configure environments
+
+Copy the env files and set them uo
+```bash
+cp ./backend/.env.example ./.backend/.env
+cp ./frontend/.env.example ./.frontend/.env
+```
+
 ## Development
 
 Clean

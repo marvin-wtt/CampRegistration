@@ -190,6 +190,8 @@ function deleteFiles() {
   selected.value.forEach((value: ServiceFile) => {
     campFileStore.deleteEntry(value.id);
   });
+
+  selected.value = [];
 }
 
 function downloadFiles() {

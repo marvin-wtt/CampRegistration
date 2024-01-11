@@ -77,6 +77,11 @@ const converter = (locale: string) => {
       return value[locale];
     }
 
+    const shortLocale = locale.split('-')[0];
+    if (shortLocale in value) {
+      return value[shortLocale];
+    }
+
     fallback ??= defaultFallback;
     if (fallback in value) {
       return value[fallback];
