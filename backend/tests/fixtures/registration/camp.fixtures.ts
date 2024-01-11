@@ -293,10 +293,20 @@ export const campWithEmail = {
       type: 'text',
       campDataType: 'email',
     },
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+    },
+    {
+      name: 'last_name',
+      type: 'text',
+      campDataType: 'last_name',
+    },
   ]),
 };
 
-export const campWithGuardianEmail = {
+export const campWithMultipleEmails = {
   ...campPublic,
   form: createForm([
     {
@@ -307,7 +317,40 @@ export const campWithGuardianEmail = {
     {
       name: 'emailGuardian',
       type: 'text',
-      campDataType: 'guardian_email',
+      campDataType: 'email',
+    },
+    {
+      name: 'full_name',
+      type: 'text',
+      campDataType: 'full_name',
+    },
+  ]),
+};
+
+export const campWithContactEmailInternational = {
+  ...campPublic,
+  countries: ['de', 'fr'],
+  contactEmail: {
+    de: 'de@email.net',
+    fr: 'fr@email.net',
+  },
+  form: createForm([
+    {
+      name: 'country',
+      type: 'text',
+      campDataType: 'country',
+    },
+  ]),
+};
+
+export const campWithEmailAndMaxParticipants = {
+  ...campPublic,
+  maxParticipants: 0,
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
     },
   ]),
 };
