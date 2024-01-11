@@ -31,7 +31,7 @@
           rounded
         />
 
-        <profile-menu />
+        <profile-menu :profile="user" />
       </q-toolbar>
     </q-header>
 
@@ -53,14 +53,25 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
+import { useAuthStore } from 'stores/auth-store';
+import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue';
 
 const { t } = useI18n();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
 useMeta(() => {
   return {
     title: 'Camps',
     titleTemplate: (title) => `${title} | ${t('app_name')}`,
   };
+});
+
+onMounted(() => {
+  if (!authStore.user) {
+    authStore.fetchUser();
+  }
 });
 </script>
 

@@ -44,7 +44,7 @@
           rounded
         />
 
-        <profile-menu />
+        <profile-menu :profile="user" />
       </q-toolbar>
     </q-header>
 
@@ -103,6 +103,7 @@ import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { storeToRefs } from 'pinia';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -111,6 +112,8 @@ const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
+
+const { user } = storeToRefs(authStore);
 
 onMounted(async () => {
   if (!authStore.user) {
