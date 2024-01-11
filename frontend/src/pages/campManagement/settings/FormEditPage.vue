@@ -188,7 +188,7 @@ creator.onUploadFile.add((_, options) => {
 
   api
     .createCampFile(campId, {
-      name: file.name,
+      name: file.name.replace(/\.[^/.]+$/, ''),
       field: 'form-file',
       file,
       accessLevel: 'public',
