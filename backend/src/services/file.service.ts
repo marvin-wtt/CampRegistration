@@ -218,8 +218,8 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
   });
 
   const fileModelNames = fileModels.map((value) => value.name);
-  const filesToDelete = fileNames.filter((fileName) =>
-    fileModelNames.includes(fileName),
+  const filesToDelete = fileNames.filter(
+    (fileName) => !fileModelNames.includes(fileName),
   );
 
   await Promise.all(
