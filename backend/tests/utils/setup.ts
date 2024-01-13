@@ -1,5 +1,5 @@
 import resetDb from './reset-db';
-import { afterEach, beforeEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi, vitest } from 'vitest';
 import fse from 'fs-extra';
 import config from '../../src/config';
 import path from 'path';
@@ -8,7 +8,7 @@ import { stopJobs } from '../../src/jobs';
 import mailer from '../../src/config/mail';
 
 beforeEach(async () => {
-  vi.spyOn(mailer, 'sendMail');
+  vi.spyOn(mailer, 'sendMail').mockResolvedValue({});
 
   await resetDb();
   await resetRateLimiter();
