@@ -9,9 +9,9 @@ import {
   terminationHandler,
 } from './handler';
 
-let activeJobs: Cron[] = [];
+const jobs: Cron[] = [];
 
-export const startJobs = () => {
+const startJobs = () => {
   scheduleJob('expired-token-cleanup', '0 3 * * *', removeExpiredTokens);
   scheduleJob('tmp-file-cleanup', '0 4 * * *', deleteTemporaryFiles);
   scheduleJob('unused-file-cleanup', '30 4 * * *', deleteUnusedFiles);
@@ -23,6 +23,10 @@ const scheduleJob = (
   fn: () => void | Promise<void>,
   options: CronOptions = {},
 ) => {
+  if (findJob(name)) {
+    return;
+  }
+
   const jobOptions: CronOptions = {
     ...options,
     name,
@@ -38,7 +42,7 @@ const scheduleJob = (
     return;
   }
 
-  activeJobs.push(job);
+  jobs.push(job);
 };
 
 const runJob = (
@@ -53,15 +57,21 @@ const runJob = (
 
     if (!job.nextRun()) {
       terminationHandler('No further executes scheduled', job);
-      activeJobs.splice(activeJobs.indexOf(job), 1);
+      jobs.splice(jobs.indexOf(job), 1);
     }
   };
 };
 
-export const stopJobs = () => {
-  for (const job of activeJobs) {
-    job.stop();
+const stopJobs = () => {
+  for (const job of jobs) {
+    if (!job.isStopped()) {
+      job.stop();
+    }
   }
-
-  activeJobs = [];
 };
+
+const findJob = (name: string): Cron | undefined => {
+  return jobs.find((job) => job.name === name);
+};
+
+export { startJobs, stopJobs, findJob };
