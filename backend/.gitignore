@@ -1,5 +1,7 @@
 node_modules/
 build/
 logs/
+tests/tmp/
+coverage/
 # Keep environment variables out of version control
 .env

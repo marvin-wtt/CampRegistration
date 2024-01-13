@@ -18,7 +18,6 @@ export default defineConfig({
       include: ['src/*'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'clover'],
-      reportsDirectory: './tests/integration/coverage',
     },
     restoreMocks: true,
   },
