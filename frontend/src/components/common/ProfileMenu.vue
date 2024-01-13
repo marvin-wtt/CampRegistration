@@ -144,6 +144,10 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const emit = defineEmits<{
+  (e: 'logout'): void;
+}>();
+
 // TODO Read from config
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE', country: 'de' },
@@ -174,7 +178,7 @@ function toggleDarkMode() {
 }
 
 function logout() {
-  authStore.logout();
+  emit('logout');
 }
 </script>
 

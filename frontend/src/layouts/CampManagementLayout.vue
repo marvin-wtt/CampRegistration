@@ -44,7 +44,10 @@
           rounded
         />
 
-        <profile-menu :profile="user" />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -97,7 +100,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
-import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
+import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
@@ -227,6 +230,10 @@ const filteredItems = computed<NavigationItem[]>(() => {
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <i18n lang="yaml" locale="en">

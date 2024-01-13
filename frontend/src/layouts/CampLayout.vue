@@ -31,7 +31,10 @@
           rounded
         />
 
-        <profile-menu :profile="user" />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -51,7 +54,7 @@
 import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
-import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
+import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
@@ -73,6 +76,10 @@ onMounted(() => {
     authStore.fetchUser();
   }
 });
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <style>
