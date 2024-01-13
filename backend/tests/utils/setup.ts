@@ -1,5 +1,5 @@
 import resetDb from './reset-db';
-import { afterEach, beforeEach, vi, vitest } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
 import config from '../../src/config';
 import path from 'path';
