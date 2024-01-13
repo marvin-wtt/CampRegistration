@@ -13,7 +13,7 @@ export const protectionHandler = (job: Chron) => {
 };
 
 export const terminationHandler = (reason: string, job: Chron) => {
-  logger.info(`Job ${job.name} terminated. No future executions scheduled.`);
+  logger.info(`Job ${job.name} terminated. ${reason}`);
 };
 
 export const executionHandler = (job: Chron) => {
