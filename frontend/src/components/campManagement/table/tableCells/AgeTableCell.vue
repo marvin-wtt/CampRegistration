@@ -29,13 +29,21 @@ const props = defineProps<TableCellProps>();
 const { d } = useI18n();
 
 const startAt = computed<Date>(() => {
-  // TODO How get start end end date from store?
-  return new Date('2023-07-29');
+  return new Date(props.camp.startAt);
+});
+
+const endAt = computed<Date>(() => {
+  return new Date(props.camp.endAt);
 });
 
 const hasBirthDay = computed<boolean>(() => {
-  // TODO How get start end end date from store?
-  return false;
+  const value = props.props.value;
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const birthday = new Date(value);
+
+  return birthday >= startAt.value && birthday <= endAt.value;
 });
 
 const birthday = computed<string>(() => {
@@ -54,7 +62,6 @@ const age = computed<string>(() => {
     return 'Invalid';
   }
 
-  // TODO Use camp start date as reference
   const months = startAt.value.getTime() - new Date(value).getTime();
   const years = new Date(months);
 

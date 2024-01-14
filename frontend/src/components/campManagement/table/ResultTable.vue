@@ -154,6 +154,7 @@
         <component
           :is="renderer.component"
           v-if="renderer.isVisible(rendererProps.row)"
+          :camp="camp"
           :options="renderer.options"
           :printing="printing"
           :props="rendererProps"
