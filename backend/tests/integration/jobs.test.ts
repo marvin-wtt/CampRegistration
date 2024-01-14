@@ -3,7 +3,7 @@ import { FileFactory, UserFactory } from '../../prisma/factories';
 import config from '../../src/config';
 import fse from 'fs-extra';
 import path from 'path';
-import { randomUUID } from 'crypto';
+import { ulid } from 'ulidx';
 import { TokenFactory } from '../../prisma/factories/token';
 import moment from 'moment';
 import prisma from '../utils/prisma';
@@ -24,8 +24,8 @@ describe('jobs', () => {
     it('should clear all uploaded files that are not used', async () => {
       const { uploadDir } = config.storage;
 
-      const existingFileName = randomUUID() + '.pdf';
-      const nonexistentFileName = randomUUID() + '.pdf';
+      const existingFileName = ulid() + '.pdf';
+      const nonexistentFileName = ulid() + '.pdf';
 
       // Prepare files for test
       await fse.copy(
@@ -66,16 +66,13 @@ describe('jobs', () => {
       const { tmpDir } = config.storage;
 
       // Prepare files for test
-      const fileName = randomUUID() + '.pdf';
+      const fileName = ulid(moment().subtract(1, 'day').unix()) + '.pdf';
       await fse.copy(
         path.join(__dirname, 'resources', 'blank.pdf'),
         path.join(tmpDir, fileName),
       );
 
       await findJob('tmp-file-cleanup')?.trigger();
-
-      // TODO Remove
-      console.log(tmpDir, fse.readdirSync(tmpDir));
 
       // eslint-disable-next-line security/detect-non-literal-fs-filename
       expect(fse.existsSync(path.join(tmpDir, fileName))).toBeFalsy();
@@ -85,7 +82,7 @@ describe('jobs', () => {
       const { tmpDir } = config.storage;
 
       // Prepare files for test
-      const fileName = randomUUID() + '.pdf';
+      const fileName = ulid() + '.pdf';
       await fse.createFile(path.join(tmpDir, fileName));
 
       await findJob('tmp-file-cleanup')?.trigger();

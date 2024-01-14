@@ -8,7 +8,7 @@ import path from 'path';
 import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import { extractKeyFromFieldName } from 'utils/form';
-import { randomUUID } from 'crypto';
+import { isValid, decodeTime } from 'ulidx';
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
@@ -194,7 +194,7 @@ const deleteTempFile = async (fileName: string) => {
 };
 
 const generateFileName = (originalName: string): string => {
-  const fileName = randomUUID();
+  const fileName = ulid();
   const fileExtension = originalName.split('.').pop();
 
   return `${fileName}.${fileExtension}`;
@@ -238,26 +238,28 @@ const deleteTempFiles = async () => {
   const fileNames = await fse.readdir(tmpDir);
   const currentTime = Date.now();
 
-  await Promise.all(
-    fileNames.map((fileName) => {
+  const getFileCreationTime = (fileName: string) => {
+    const id = fileName.split('.')[0];
+
+    return isValid(id) ? decodeTime(id) : 0;
+  };
+
+  const isOlderThanOneHour = (fileName: string): boolean => {
+    const time = getFileCreationTime(fileName);
+    const timeDifference = currentTime - time;
+    const oneHourInMilliseconds = 60 * 60 * 1000;
+
+    return timeDifference > oneHourInMilliseconds;
+  };
+
+  const results = await Promise.all(
+    fileNames.filter(isOlderThanOneHour).map((fileName) => {
       const filePath = path.join(tmpDir, fileName);
-      return deleteOldFiles(filePath, currentTime);
+      return fse.unlink(filePath);
     }),
   );
 
-  return fileNames.length;
-};
-
-const deleteOldFiles = async (filePath: string, currentTime: number) => {
-  const stats = await fse.stat(filePath);
-  const modificationTime = stats.mtime.getTime();
-
-  const timeDifference = currentTime - modificationTime;
-  const oneHourInMilliseconds = 60 * 60 * 1000; // One hour in milliseconds
-
-  if (timeDifference > oneHourInMilliseconds) {
-    await fse.unlink(filePath);
-  }
+  return results.length;
 };
 
 // Generic storage

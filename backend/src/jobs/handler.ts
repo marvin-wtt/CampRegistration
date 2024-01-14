@@ -4,7 +4,7 @@ import Cron from 'croner';
 import moment from 'moment';
 
 export const errorHandler = (error: unknown, job: Chron) => {
-  logger.error(`Job ${job.name} failed. ${error}`);
+  logger.error(`Job ${job.name} failed. ${JSON.stringify(error)}`);
 };
 
 export const protectionHandler = (job: Chron) => {
