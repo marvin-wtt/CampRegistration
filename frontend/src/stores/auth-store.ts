@@ -59,6 +59,15 @@ export const useAuthStore = defineStore('auth', () => {
     resetDefault();
   }
 
+  async function init() {
+    const authenticated = await refreshTokens();
+    if (!authenticated) {
+      return;
+    }
+
+    await fetchUser();
+  }
+
   async function login(
     email: string,
     password: string,
@@ -116,7 +125,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUser(): Promise<void> {
-    await refreshTokens();
     await errorOnFailure(async () => {
       return await apiService.fetchProfile();
     });
@@ -171,6 +179,7 @@ export const useAuthStore = defineStore('auth', () => {
     user: data,
     error,
     loading: isLoading,
+    init,
     reset,
     fetchUser,
     login,

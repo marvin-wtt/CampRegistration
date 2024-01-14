@@ -73,7 +73,7 @@ useMeta(() => {
 
 onMounted(() => {
   if (!authStore.user) {
-    authStore.fetchUser();
+    authStore.init();
   }
 });
 

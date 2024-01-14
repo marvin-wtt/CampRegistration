@@ -5,7 +5,7 @@ import type {
   Profile,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
-import { isAxiosError } from 'axios';
+import { AxiosRequestConfig, isAxiosError } from 'axios';
 
 export function useAuthService() {
   let onUnauthenticated: (() => unknown | Promise<unknown>) | undefined =
@@ -17,6 +17,14 @@ export function useAuthService() {
     }
 
     if (error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    if (
+      error.config &&
+      '_skipAuthenticationHandler' in error.config &&
+      !error.config._skipAuthenticationHandler
+    ) {
       return Promise.reject(error);
     }
 
@@ -53,7 +61,10 @@ export function useAuthService() {
   }
 
   async function refreshTokens(): Promise<AuthTokens> {
-    const response = await api.post('auth/refresh-tokens');
+    const response = await api.post('auth/refresh-tokens', undefined, {
+      _skipRetry: true,
+      _skipAuthenticationHandler: true,
+    } as AxiosRequestConfig);
 
     return response.data;
   }

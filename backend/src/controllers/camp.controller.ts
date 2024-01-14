@@ -8,6 +8,8 @@ import { collection, resource } from 'resources/resource';
 import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
 import { Camp } from '@prisma/client';
+import defaultForm from 'assets/camp/defaultForm.json';
+import defaultThemes from 'assets/camp/defaultThemes.json';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
@@ -37,10 +39,8 @@ const store = catchRequestAsync(async (req, res) => {
   const data = req.body;
   const userId = authUserId(req);
 
-  // TODO Set default form
-  const form = data.form ?? {};
-  // TODO Set themes
-  const themes = data.themes ?? {};
+  const form = data.form ?? defaultForm;
+  const themes = data.themes ?? defaultThemes;
 
   const camp = await campService.createCamp(userId, {
     countries: data.countries,
