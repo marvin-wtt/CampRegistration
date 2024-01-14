@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    return router.replace({
+    return router.push({
       name: 'login',
       query: {
         origin: encodeURIComponent(route.path),
