@@ -103,6 +103,7 @@ onMounted(async () => {
   }
 
   creator.JSON = campDetailsStore.data.form;
+  creator.theme = campDetailsStore.data.themes['light'];
 });
 
 creator.onPropertyValidationCustomError.add((_, options) => {
@@ -203,6 +204,21 @@ creator.onUploadFile.add((_, options) => {
 });
 
 // TODO Files need to be deleted as well
+
+let previousColorPalette: string | undefined;
+creator.themeEditor.onThemeSelected.add((sender, options) => {
+  const colorPalette = options.theme.colorPalette;
+  if (colorPalette === previousColorPalette) {
+    return;
+  }
+  previousColorPalette = colorPalette;
+
+  const themes = campDetailsStore.data?.themes;
+  if (themes && colorPalette && colorPalette in themes) {
+    const mewTheme = themes[colorPalette];
+    creator.themeEditor.model.setTheme(mewTheme);
+  }
+});
 </script>
 
 <style>
