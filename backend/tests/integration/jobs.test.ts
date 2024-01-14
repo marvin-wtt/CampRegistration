@@ -75,7 +75,7 @@ describe('jobs', () => {
       await findJob('tmp-file-cleanup')?.trigger();
 
       // TODO Remove
-      console.log(fse.statSync(tmpDir));
+      console.log(tmpDir, fse.readdirSync(tmpDir));
 
       // eslint-disable-next-line security/detect-non-literal-fs-filename
       expect(fse.existsSync(path.join(tmpDir, fileName))).toBeFalsy();
