@@ -8,6 +8,7 @@ import {
 type CustomAxiosError = AxiosError & {
   config: InternalAxiosRequestConfig & {
     _retry?: boolean;
+    _skipRetry?: boolean;
     _queued?: boolean;
   };
 };
@@ -49,7 +50,11 @@ export default (axiosClient: AxiosInstance, options: RetryOptions) => {
       return Promise.reject(error);
     }
 
-    if (error.config._retry || error.config._queued) {
+    if (
+      error.config._retry ||
+      error.config._skipRetry ||
+      error.config._queued
+    ) {
       return Promise.reject(error);
     }
 
