@@ -14,6 +14,10 @@ const address = computed<string>(() => {
     return value;
   }
 
+  if (!value || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+
   let address = '';
   if ('address' in value) {
     address += value.address;
