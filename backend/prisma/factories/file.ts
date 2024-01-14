@@ -13,7 +13,7 @@ export const FileFactory = {
       storageLocation: 'local',
       name: faker.string.uuid() + 'pdf',
       type: 'application/pdf',
-      size: faker.number.int(),
+      size: faker.number.int({ min: 0, max: 1e6 }),
       originalName: faker.system.fileName(),
       ...data,
     };

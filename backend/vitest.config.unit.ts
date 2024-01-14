@@ -1,14 +1,18 @@
 import { defineConfig } from 'vitest/config';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  plugins: [tsconfigPaths()],
   test: {
-    include: ['src/**/*.test.ts', '!src/tests'],
-  },
-  resolve: {
-    alias: {
-      auth: '/src/auth',
-      quotes: '/src/quotes',
-      lib: '/src/lib',
+    include: ['tests/unit/**/*.test.ts'],
+    coverage: {
+      enabled: true,
+      include: ['src/*'],
+      provider: 'v8',
+      reporter: ['html', 'text', 'json', 'clover'],
+      reportsDirectory: './tests/integration/coverage',
     },
   },
 });
