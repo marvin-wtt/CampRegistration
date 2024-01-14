@@ -9,7 +9,7 @@ import moment from 'moment';
 import prisma from '../utils/prisma';
 import { findJob, startJobs } from '../../src/jobs';
 
-describe.only('jobs', () => {
+describe('jobs', () => {
   beforeEach(() => {
     startJobs();
   });
