@@ -30,9 +30,9 @@ const address = computed<string>(() => {
   }
 
   if ('zip_code' in value) {
-    address += value.zip_code;
+    address += ', ' + value.zip_code;
   } else if ('zipCode' in value) {
-    address += value.zipCode;
+    address += ', ' + value.zipCode;
   }
 
   if ('city' in value) {
