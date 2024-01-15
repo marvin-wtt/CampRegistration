@@ -327,16 +327,20 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     }
 
     // Try address instead
-    return campData['address']?.find((value: unknown): value is string => {
-      if (!value || typeof value !== 'object' || !('country' in value)) {
-        return false;
-      }
+    const address = campData['address']?.find(
+      (value: unknown): value is { country: string } => {
+        if (!value || typeof value !== 'object' || !('country' in value)) {
+          return false;
+        }
 
-      return (
-        typeof value.country === 'string' &&
-        (!options || options.includes(value.country))
-      );
-    });
+        return (
+          typeof value.country === 'string' &&
+          (!options || options.includes(value.country))
+        );
+      },
+    );
+
+    return address?.country;
   };
 
   const firstName = (): string | undefined => {
