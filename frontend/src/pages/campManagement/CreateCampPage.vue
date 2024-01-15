@@ -28,13 +28,6 @@ const campsStore = useCampsStore();
 async function onSubmit() {
   loading.value = true;
 
-  // TODO Replace with default
-  data.value.form = {
-    title: 'Test',
-    description: 'Survey',
-    pages: [],
-  };
-
   const camp = await campsStore.createEntry(data.value as CampDetails);
 
   if (!camp) {
