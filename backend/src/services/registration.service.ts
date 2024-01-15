@@ -314,8 +314,28 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
   };
 
   const country = (options?: string[]): string | undefined => {
-    return campData['country']?.find((value: unknown): value is string => {
-      return typeof value === 'string' && (!options || options.includes(value));
+    const country = campData['country']?.find(
+      (value: unknown): value is string => {
+        return (
+          typeof value === 'string' && (!options || options.includes(value))
+        );
+      },
+    );
+
+    if (country) {
+      return country;
+    }
+
+    // Try address instead
+    return campData['address']?.find((value: unknown): value is string => {
+      if (!value || typeof value !== 'object' || !('country' in value)) {
+        return false;
+      }
+
+      return (
+        typeof value.country === 'string' &&
+        (!options || options.includes(value.country))
+      );
     });
   };
 
