@@ -41,7 +41,6 @@ const address: ICustomQuestionTypeConfiguration = {
     {
       type: 'country',
       name: 'country',
-      campDataType: 'country',
       title: {
         de: 'Land',
         en: 'Country',
