@@ -2,7 +2,7 @@ import { SurveyModel } from 'survey-core';
 
 type Translatable<T = string> = T | Record<string, T>;
 
-type Data = {
+export type Data = {
   countries: string[];
   name: Translatable;
   organizer: Translatable;
@@ -42,9 +42,20 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
 };
 
 const converter = (locale: string) => {
+  const fallbackLocale = 'en-US';
+
   function toDate(timestamp: Date | string): string | undefined {
     const date =
       typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+
+    try {
+      return toDateString(date, locale);
+    } catch (ignored) {
+      return toDateString(date, fallbackLocale);
+    }
+  }
+
+  function toDateString(date: Date, locale: string): string {
     return date.toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
@@ -55,6 +66,14 @@ const converter = (locale: string) => {
   function toTime(timestamp: Date | string): string | undefined {
     const date =
       typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+    try {
+      return toTimeString(date, locale);
+    } catch (ignored) {
+      return toTimeString(date, fallbackLocale);
+    }
+  }
+
+  function toTimeString(date: Date, locale: string): string {
     return date.toLocaleTimeString(locale, {
       hour12: false,
       hour: '2-digit',
