@@ -24,6 +24,11 @@ const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
   'createdAt',
 ];
 
+interface ModelData {
+  id: string;
+  name: string;
+}
+
 const mapFields = (
   file: RequestFile,
   name?: string,
@@ -59,12 +64,6 @@ const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
   return fileData;
 };
 
-const moveFiles = (files: RequestFiles) => {
-  Object.values(files)
-    .flat()
-    .forEach((file) => moveFile(file));
-};
-
 const moveFile = async (file: RequestFile) => {
   const sourcePath = file.path;
 
@@ -73,34 +72,8 @@ const moveFile = async (file: RequestFile) => {
   await storage.moveToStorage(sourcePath, file.filename);
 };
 
-const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
-  // TODO Remove or move to registration service
-  const fileData: Prisma.FileCreateInput[] = mapFileData(files);
-
-  const registration = await prisma.registration.update({
-    where: {
-      id: id,
-    },
-    data: {
-      files: {
-        createMany: {
-          data: fileData,
-        },
-      },
-    },
-    include: {
-      files: true,
-    },
-  });
-
-  moveFiles(files);
-
-  return registration;
-};
-
 const saveModelFile = async (
-  modelName: string,
-  modelId: string,
+  model: ModelData | undefined,
   file: RequestFile,
   name: string,
   field: string,
@@ -108,16 +81,30 @@ const saveModelFile = async (
 ) => {
   const fileName = name + '.' + file.filename.split('.').pop();
   const fileData = mapFields(file, fileName, field, accessLevel);
+  const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
   const data = await prisma.file.create({
     data: {
       ...fileData,
-      [`${modelName}Id`]: modelId,
+      ...modelData,
     },
   });
   await moveFile(file);
 
   return data;
+};
+
+const assignModelToTemporaryFile = (model: ModelData, fileId: string) => {
+  return prisma.file.update({
+    where: {
+      id: fileId,
+      registrationId: null,
+      campId: null,
+    },
+    data: {
+      [`${model.name}Id`]: model.id,
+    },
+  });
 };
 
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
@@ -130,8 +117,7 @@ const getModelFile = async (modelName: string, modelId: string, id: string) => {
 };
 
 const queryModelFiles = async <Key extends keyof File>(
-  modelName: string,
-  modelId: string,
+  model: ModelData,
   filter: {
     name?: string;
     type?: string;
@@ -157,7 +143,7 @@ const queryModelFiles = async <Key extends keyof File>(
         }
       : undefined,
     type: filter.type,
-    [`${modelName}Id`]: modelId,
+    [`${model.name}Id`]: model.id,
   };
 
   return prisma.file.findMany({
@@ -309,8 +295,8 @@ const LocalStorage: StorageStrategy = {
 };
 
 export default {
-  saveRegistrationFiles,
   saveModelFile,
+  assignModelToTemporaryFile,
   getModelFile,
   getFileStream,
   queryModelFiles,

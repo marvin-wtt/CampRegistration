@@ -8,6 +8,7 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
+import fileService from './file.service';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -75,7 +76,7 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   return prisma.$transaction(async (transaction) => {
     const waitingList =
       data.waitingList ?? (await isWaitingList(transaction, camp, campData));
-    return transaction.registration.create({
+    const registration = await transaction.registration.create({
       data: {
         ...data,
         id: ulid(),
@@ -85,6 +86,18 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
       },
       include: { files: true },
     });
+
+    const files = form.getFileData();
+    for (const value of files) {
+      const model = {
+        id: registration.id,
+        name: 'registration',
+      };
+
+      await fileService.assignModelToTemporaryFile(model, value);
+    }
+
+    return registration;
   });
 };
 
@@ -141,6 +154,10 @@ const isParticipant = (campData: Record<string, unknown[]>): boolean => {
   }
 
   return campData['role'].some((role) => role === 'participant');
+};
+
+const associateFiles = () => {
+  // TODO
 };
 
 const updateRegistrationById = async (

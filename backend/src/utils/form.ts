@@ -3,10 +3,6 @@ import { setVariables } from '@camp-registration/common/form';
 import { initSurveyJS } from './surveyJS';
 import { Camp } from '@prisma/client';
 
-type RequestFile = Express.Multer.File;
-type FileType = RequestFile[] | Record<string, RequestFile[]>;
-type FormFile = Pick<File, 'name' | 'type' | 'size'>;
-
 initSurveyJS();
 
 type CampWithFreePlaces = Camp & {
@@ -15,62 +11,13 @@ type CampWithFreePlaces = Camp & {
 
 export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
-  const fileQuestions = survey
-    .getAllQuestions(false, undefined, true)
-    .filter((question) => question.getType() === 'file');
-
-  let fileMap: Map<string, FormFile> = new Map<string, FormFile>();
 
   survey.locale = 'en-US';
   // TODO Camp with free places required here!
   setVariables(survey, camp as CampWithFreePlaces);
 
-  const updateData = (data?: unknown, files?: FileType) => {
+  const updateData = (data?: unknown) => {
     survey.data = typeof data !== 'object' ? {} : data;
-
-    if (files) {
-      fileMap = createFileMap(files);
-      mapFileQuestions();
-    }
-  };
-
-  const mapFileQuestions = () => {
-    const mapValueToFile = (value: string) => ({ file: fileMap.get(value) });
-
-    fileQuestions.forEach((question) => {
-      question.value = Array.isArray(question.value)
-        ? (question.value = question.value.map(mapValueToFile))
-        : (question.value = mapValueToFile(question.value));
-    });
-  };
-
-  const hasUnknownFiles = (): boolean => {
-    const count = fileQuestions.reduce((count, question) => {
-      if (Array.isArray(question.value)) {
-        return count + question.value.length;
-      }
-      if (question.value?.file) {
-        return count + 1;
-      }
-      return count;
-    }, 0);
-
-    return count != fileMap.size;
-  };
-
-  const createFileMap = (files: FileType) => {
-    const fileArray = Array.isArray(files)
-      ? files
-      : Object.values(files).flat();
-
-    const fileMap = new Map<string, FormFile>();
-    fileArray.forEach((file) => {
-      const { originalname, size, mimetype, fieldname } = file;
-      const key = extractKeyFromFieldName(fieldname);
-      fileMap.set(key, { name: originalname, size, type: mimetype });
-    });
-
-    return fileMap;
   };
 
   const hasDataErrors = (): boolean => {
@@ -84,6 +31,20 @@ export const formUtils = (camp: Camp) => {
       .filter((question) => question.hasErrors(false, false))
       .map((question) => question.name)
       .join(', ');
+  };
+
+  const getFileData = () => {
+    return survey
+      .getAllQuestions(false, undefined, true)
+      .filter((question) => question.getType() === 'file')
+      .map((question) => question.value);
+  };
+
+  const mapFileData = (fn: (value: unknown) => unknown) => {
+    return survey
+      .getAllQuestions(false, undefined, true)
+      .filter((question) => question.getType() === 'file')
+      .forEach((question) => (question.value = fn(question.value)));
   };
 
   const unknownDataFields = (): string[] => {
@@ -126,9 +87,10 @@ export const formUtils = (camp: Camp) => {
 
   return {
     updateData,
+    getFileData,
+    mapFileData,
     hasDataErrors,
     getDataErrorFields,
-    hasUnknownFiles,
     unknownDataFields,
     extractCampData,
   };

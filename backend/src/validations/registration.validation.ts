@@ -19,7 +19,7 @@ export const registrationData: Joi.CustomValidator<object> = (
   const camp = routeModel(req.models.camp);
 
   const formHelper = formUtils(camp);
-  formHelper.updateData(value, req.files);
+  formHelper.updateData(value);
 
   if (formHelper.hasDataErrors()) {
     const errors = formHelper.getDataErrorFields();
@@ -30,12 +30,6 @@ export const registrationData: Joi.CustomValidator<object> = (
   if (unknownDataFields.length > 0) {
     return helpers.message({
       custom: `Unknown fields '${unknownDataFields.join(', ')}'`,
-    });
-  }
-
-  if (formHelper.hasUnknownFiles()) {
-    return helpers.message({
-      custom: `Too many files provided.`,
     });
   }
 
