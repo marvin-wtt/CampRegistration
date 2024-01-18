@@ -15,10 +15,9 @@
   "workspaces": [
     "common",
     "frontend",
-    "backend"
+    "backend",
+    "e2e"
   ],
-  "dependencies": {
-  },
   "devDependencies": {
   }
 }
