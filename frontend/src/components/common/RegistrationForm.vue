@@ -24,7 +24,7 @@ const { locale } = useI18n();
 interface Props {
   data?: object;
   campDetails: CampDetails;
-  submitFn: (id: string, data: unknown) => Promise<void>;
+  submitFn: (id: string, formData: unknown) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
 }
 
@@ -126,8 +126,7 @@ function createModel(id: string, form: object): SurveyModel {
     mapFileQuestionValues(sender);
 
     const campId = sender.surveyId;
-    const data = sender.data ?? {};
-    const registration = { data };
+    const registration = sender.data ?? {};
 
     try {
       await props.submitFn(campId, registration);
