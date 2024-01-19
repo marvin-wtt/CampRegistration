@@ -76,7 +76,7 @@ function createModel(id: string, form: object): SurveyModel {
     }
 
     const fileUploads = options.files.map(async (value) => {
-      const name = await props.uploadFn(value);
+      const name = await props.uploadFileFn(value);
       return {
         ...value,
         name,

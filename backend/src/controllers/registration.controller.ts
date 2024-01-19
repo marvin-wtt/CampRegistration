@@ -30,8 +30,6 @@ const store = catchRequestAsync(async (req, res) => {
     locale,
   });
 
-  // TODO Add file relationship to model
-
   // Notify participant
   if (registration.waitingList) {
     await registrationService.sendWaitingListConfirmation(camp, registration);
@@ -64,8 +62,6 @@ const update = catchRequestAsync(async (req, res) => {
       waitingList: data.waitingList,
     },
   );
-
-  // TODO Add file relationship to model
 
   if (previousRegistration.waitingList && !registration.waitingList) {
     await registrationService.sendRegistrationConfirmation(camp, registration);

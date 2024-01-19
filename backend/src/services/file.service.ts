@@ -1,5 +1,5 @@
 import prisma from '../client';
-import { File, Prisma } from '@prisma/client';
+import { File, Prisma, PrismaClient } from '@prisma/client';
 import config from 'config';
 import fs from 'fs';
 import { ulid } from 'utils/ulid';
@@ -9,6 +9,7 @@ import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import { extractKeyFromFieldName } from 'utils/form';
 import { isValid, decodeTime } from 'ulidx';
+import moment from 'moment';
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
@@ -92,19 +93,6 @@ const saveModelFile = async (
   await moveFile(file);
 
   return data;
-};
-
-const assignModelToTemporaryFile = (model: ModelData, fileId: string) => {
-  return prisma.file.update({
-    where: {
-      id: fileId,
-      registrationId: null,
-      campId: null,
-    },
-    data: {
-      [`${model.name}Id`]: model.id,
-    },
-  });
 };
 
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
@@ -218,6 +206,32 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
   return filesToDelete.length;
 };
 
+const deleteUnassignedFiles = async (): Promise<number> => {
+  const minAge = moment().subtract('1', 'd').toDate();
+  const files = await prisma.file.findMany({
+    where: {
+      campId: null,
+      registrationId: null,
+      createdAt: { lt: minAge },
+    },
+  });
+
+  // Delete files from database first so that the files can no longer be accessed.
+  const fileIds = files.map((file) => file.id);
+  const result = await prisma.file.deleteMany({
+    where: { id: { in: fileIds } },
+  });
+
+  const fileDeletions = files.map((file) => {
+    const storage = getStorage(file.storageLocation);
+    return storage.remove(file);
+  });
+
+  await Promise.all(fileDeletions);
+
+  return result.count;
+};
+
 const deleteTempFiles = async () => {
   const { tmpDir } = config.storage;
 
@@ -296,7 +310,6 @@ const LocalStorage: StorageStrategy = {
 
 export default {
   saveModelFile,
-  assignModelToTemporaryFile,
   getModelFile,
   getFileStream,
   queryModelFiles,
@@ -304,5 +317,6 @@ export default {
   deleteTempFile,
   generateFileName,
   deleteUnreferencedFiles,
+  deleteUnassignedFiles,
   deleteTempFiles,
 };

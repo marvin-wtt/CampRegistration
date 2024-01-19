@@ -13,6 +13,7 @@
           icon="close"
           flat
           dense
+          @click="onDialogCancel"
         >
           <q-tooltip>Close</q-tooltip>
         </q-btn>
@@ -41,6 +42,7 @@ import RegistrationForm from 'components/common/RegistrationForm.vue';
 interface Props {
   camp: CampDetails;
   data: Registration['data'];
+  uploadFileFn: (file: File) => Promise<string>;
 }
 
 const props = defineProps<Props>();
@@ -55,12 +57,14 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-function onSubmit(id: string, data: object) {
+function onSubmit(id: string, data: unknown) {
   onDialogOK(data);
+  // Error is handled elsewhere
+  return Promise.resolve();
 }
 
 async function onFileUpload(file: File) {
-  // TODO How to do this?
+  return props.uploadFileFn(file);
 }
 </script>
 

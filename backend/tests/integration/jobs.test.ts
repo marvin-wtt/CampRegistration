@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { FileFactory, UserFactory } from '../../prisma/factories';
+import {
+  CampFactory,
+  FileFactory,
+  RegistrationFactory,
+  UserFactory,
+} from '../../prisma/factories';
 import config from '../../src/config';
 import fse from 'fs-extra';
 import path from 'path';
@@ -52,6 +57,94 @@ describe('jobs', () => {
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         fse.existsSync(path.join(uploadDir, nonexistentFileName)),
       ).toBeFalsy();
+    });
+  });
+
+  describe('unassigned-file-cleanup', () => {
+    it('should be scheduled', async () => {
+      const job = findJob('unassigned-file-cleanup');
+
+      expect(job.isRunning()).toBeTruthy();
+    });
+
+    const createFile = async (dir: string, name: string) => {
+      await fse.copy(
+        path.join(__dirname, 'resources', 'blank.pdf'),
+        path.join(dir, name),
+      );
+    };
+
+    it('should delete files that do not belong to any model', async () => {
+      const { uploadDir } = config.storage;
+
+      const date = moment().subtract(25, 'h').toDate();
+
+      const campFileName = ulid() + '.pdf';
+      await createFile(uploadDir, campFileName);
+      const camp = await CampFactory.create();
+      await FileFactory.create({
+        name: campFileName,
+        camp: { connect: { id: camp.id } },
+        createdAt: date,
+      });
+
+      const registrationFileName = ulid() + '.pdf';
+      await createFile(uploadDir, registrationFileName);
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      await FileFactory.create({
+        name: registrationFileName,
+        registration: { connect: { id: registration.id } },
+        createdAt: date,
+      });
+
+      const unassignedFileName = ulid() + '.pdf';
+      await createFile(uploadDir, unassignedFileName);
+      await FileFactory.create({
+        name: unassignedFileName,
+        createdAt: date,
+      });
+
+      const job = findJob('unassigned-file-cleanup');
+      await job?.trigger();
+
+      const fileCount = await prisma.file.count();
+      expect(fileCount).toBe(2);
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, campFileName)),
+      ).toBeTruthy();
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, registrationFileName)),
+      ).toBeTruthy();
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, unassignedFileName)),
+      ).toBeFalsy();
+    });
+
+    it('should not delete files that where recently deleted', async () => {
+      const { uploadDir } = config.storage;
+
+      const unassignedFileName = ulid() + '.pdf';
+      await createFile(uploadDir, unassignedFileName);
+      await FileFactory.create({
+        name: unassignedFileName,
+      });
+
+      const job = findJob('unassigned-file-cleanup');
+      await job?.trigger();
+
+      const fileCount = await prisma.file.count();
+      expect(fileCount).toBe(1);
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, unassignedFileName)),
+      ).toBeTruthy();
     });
   });
 

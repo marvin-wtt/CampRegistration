@@ -114,6 +114,7 @@ function editItem(): void {
       componentProps: {
         camp: camp.data.value,
         data: registration.value.data,
+        uploadFileFn: uploadFile,
       },
     })
     .onOk((payload) => {
@@ -121,6 +122,16 @@ function editItem(): void {
 
       registrationStore.updateData(id, { data: payload });
     });
+}
+
+async function uploadFile(file: File): Promise<string> {
+  const serviceFile = await registrationStore.storeFile(file);
+
+  if (serviceFile.field) {
+    return `${serviceFile.id}#${serviceFile.field}`;
+  }
+
+  return serviceFile.id;
 }
 </script>
 

@@ -1,4 +1,4 @@
-import { express } from 'express';
+import express from 'express';
 import { multipart, validate } from 'middlewares';
 import { fileValidation } from 'validations';
 import { fileController } from 'controllers';

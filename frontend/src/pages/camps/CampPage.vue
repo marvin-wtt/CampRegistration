@@ -55,13 +55,12 @@ async function submit(campId: string, data: unknown) {
   await registrationStore.storeData(campId, data);
 }
 
-async function uploadFile(file: File) {
-  const campId = campDetailsStore.data?.id;
-  if (!campId) {
-    throw 'Camp currently not present';
-  }
+async function uploadFile(file: File): Promise<string> {
+  const serviceFile = await registrationStore.storeFile(file);
 
-  const serviceFile = await registrationStore.storeFile(campId, file);
+  if (serviceFile.field) {
+    return `${serviceFile.id}#${serviceFile.field}`;
+  }
 
   return serviceFile.id;
 }
