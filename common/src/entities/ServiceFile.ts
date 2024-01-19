@@ -10,8 +10,8 @@ export interface ServiceFile extends Identifiable {
 }
 
 export interface ServiceFileCreateData {
-  name: string;
-  field: string;
-  accessLevel: 'private' | 'public';
+  name?: string;
+  field?: string;
+  accessLevel?: 'private' | 'public';
   file: File;
 }

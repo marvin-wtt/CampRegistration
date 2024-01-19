@@ -9,6 +9,7 @@
       v-if="campData"
       :camp-details="campData"
       :submit-fn="submit"
+      :upload-file-fn="uploadFile"
       class="col-xs-12 col-sm-12 col-md-8 col-lg-6 col-xl-6"
       @bg-color-update="(color) => updateBgColor(color)"
     />
@@ -52,6 +53,16 @@ const error = computed(() => {
 
 async function submit(campId: string, data: unknown) {
   await registrationStore.storeData(campId, data);
+}
+
+async function uploadFile(file: File): Promise<string> {
+  const serviceFile = await registrationStore.storeFile(file);
+
+  if (serviceFile.field) {
+    return `${serviceFile.id}#${serviceFile.field}`;
+  }
+
+  return serviceFile.id;
 }
 
 function updateBgColor(color: string | undefined) {

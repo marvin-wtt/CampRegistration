@@ -42,7 +42,6 @@ router.get(
 router.post(
   '/',
   guard([campActive]),
-  multipart(undefined),
   validate(registrationValidation.store),
   registrationController.store,
 );
@@ -50,7 +49,6 @@ router.put(
   '/:registrationId',
   auth(),
   guard([campManager]),
-  multipart(undefined),
   validate(registrationValidation.update),
   registrationController.update,
 );
