@@ -23,6 +23,7 @@ const upload = (fields: ParameterType) => {
     },
   });
 
+  // TODO Add file filter to check if the disk has enough space with a threshold before upload
   const upload = multer({
     storage: tmpStorage,
     limits: {

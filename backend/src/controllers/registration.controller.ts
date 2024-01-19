@@ -24,21 +24,11 @@ const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
   const { data, locale: bodyLocale } = req.body;
   const locale = bodyLocale ?? requestLocale(req);
-  const files = req.files;
 
-  let registration = await registrationService.createRegistration(camp, {
+  const registration = await registrationService.createRegistration(camp, {
     data,
     locale,
   });
-
-  // Store related files
-  // Uploaded files for this request may only be in req.files
-  if (files) {
-    registration = await fileService.saveRegistrationFiles(
-      registration.id,
-      files,
-    );
-  }
 
   // Notify participant
   if (registration.waitingList) {
@@ -72,10 +62,6 @@ const update = catchRequestAsync(async (req, res) => {
       waitingList: data.waitingList,
     },
   );
-
-  if (req.files) {
-    await fileService.saveRegistrationFiles(registration.id, req.files);
-  }
 
   if (previousRegistration.waitingList && !registration.waitingList) {
     await registrationService.sendRegistrationConfirmation(camp, registration);

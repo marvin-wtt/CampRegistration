@@ -8,12 +8,13 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
+import fileService from './file.service';
+import config from 'config';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
     where: { id, campId },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -23,7 +24,6 @@ const queryRegistrations = async (campId: string) => {
   return prisma.registration.findMany({
     where: { campId },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -67,25 +67,57 @@ type RegistrationCreateData = Pick<
   'waitingList' | 'data' | 'locale'
 >;
 const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
-  // TODO The utils was already initialized during validation. Attach it to the request body
+  const id = ulid();
   const form = formUtils(camp);
   form.updateData(data.data);
+  // Extract files first before the value are mapped to the URL
+  const fileIds = form.getFileIdentifiers();
+  form.mapFileValues((value) => {
+    // The ID may contain the field name. Remove it.
+    const fileId = value.split('#')[0];
+    return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
+  });
+  // Get updated data from form back
+  const formData = form.data();
   const campData = form.extractCampData();
 
-  return prisma.$transaction(async (transaction) => {
-    const waitingList =
-      data.waitingList ?? (await isWaitingList(transaction, camp, campData));
-    return transaction.registration.create({
-      data: {
-        ...data,
-        id: ulid(),
-        campId: camp.id,
-        waitingList,
-        campData,
-      },
-      include: { files: true },
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const waitingList =
+        data.waitingList ?? (await isWaitingList(transaction, camp, campData));
+      const registration = await transaction.registration.create({
+        data: {
+          ...data,
+          id,
+          campId: camp.id,
+          data: formData,
+          waitingList,
+          campData,
+        },
+      });
+
+      // Assign files to this registration.
+      // TODO This should be handled by the file service
+      for (const value of fileIds) {
+        await transaction.file.update({
+          where: {
+            id: value.id,
+            registrationId: null,
+            campId: null,
+            field: value.field ?? null,
+          },
+          data: {
+            registrationId: registration.id,
+            accessLevel: 'private',
+          },
+        });
+      }
+
+      return registration;
     });
-  });
+  } catch (ignored) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Inconsistent data');
+  }
 };
 
 const isWaitingList = async (
@@ -148,10 +180,12 @@ const updateRegistrationById = async (
   registrationId: string,
   data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
 ) => {
-  // TODO The utils was already initialized during validation. Attach it to the request body
   const form = formUtils(camp);
   form.updateData(data.data);
   const campData = form.extractCampData();
+
+  // TODO Delete files if some where removed
+  // TODO Associate files if new file values are present
 
   return prisma.registration.update({
     where: { id: registrationId },
@@ -160,7 +194,6 @@ const updateRegistrationById = async (
       campData,
     },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });

@@ -1,5 +1,9 @@
 import { removeExpiredTokens } from 'jobs/tokens.job';
-import { deleteTemporaryFiles, deleteUnusedFiles } from 'jobs/files.job';
+import {
+  deleteTemporaryFiles,
+  deleteUnassignedFiles,
+  deleteUnusedFiles,
+} from 'jobs/files.job';
 import { CronOptions, Cron, scheduledJobs } from 'croner';
 import {
   errorHandler,
@@ -12,7 +16,8 @@ import {
 const startJobs = () => {
   scheduleJob('expired-token-cleanup', '0 3 * * *', removeExpiredTokens);
   scheduleJob('tmp-file-cleanup', '0 4 * * *', deleteTemporaryFiles);
-  scheduleJob('unused-file-cleanup', '30 4 * * *', deleteUnusedFiles);
+  scheduleJob('unused-file-cleanup', '15 4 * * *', deleteUnusedFiles);
+  scheduleJob('unassigned-file-cleanup', '30 4 * * *', deleteUnassignedFiles);
 };
 
 const scheduleJob = (

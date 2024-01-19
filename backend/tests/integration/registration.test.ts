@@ -86,58 +86,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body.data[0]).toHaveProperty('room');
     });
 
-    it.todo('should include files in the response body ', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await createRegistration(camp);
-
-      await FileFactory.create({
-        field: 'file_field',
-        name: 'file.pdf',
-        type: 'application/pdf',
-        originalName: 'FileName',
-        size: 1000,
-        registration: { connect: { id: registration.id } },
-      });
-
-      await FileFactory.create({
-        field: 'multiple_files_field',
-        name: 'file1.pdf',
-        type: 'application/pdf',
-        originalName: 'FileName1',
-        size: 1000,
-        registration: { connect: { id: registration.id } },
-      });
-
-      await FileFactory.create({
-        field: 'multiple_files_field',
-        name: 'file2.pdf',
-        type: 'application/pdf',
-        originalName: 'FileName2',
-        size: 1000,
-        registration: { connect: { id: registration.id } },
-      });
-
-      // TODO Create new registration with files
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      expect(body[0]).toHaveProperty('files');
-
-      // TODO Assert files
-      // expect(body.data[0]).toHaveProperty(
-      //   "file_field",
-      //   expect.stringMatching(/.*file\.pdf$/),
-      // );
-      // expect(body.data[0]).toHaveProperty("multiple_files_field");
-      // expect(body.data[0]["multiple_files_field"].split(";").sort()).toEqual([
-      //   expect.stringMatching(/.*file1\.pdf$/),
-      //   expect.stringMatching(/.*file2\.pdf$/),
-      // ]);
-    });
-
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
@@ -164,9 +112,17 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('GET /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it.todo('should respond with `200` status code when user is camp manager');
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await createRegistration(camp);
 
-    it.todo('should include files in the response body ');
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data');
+    });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -395,99 +351,153 @@ describe('/api/v1/camps/:campId/registrations', () => {
     describe('files', () => {
       it('should respond with `201` status code when form has file', async () => {
         const camp = await CampFactory.create(campWithFileRequired);
-        const fileUuid = crypto.randomUUID();
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        const data = {
+          some_field: 'Some value',
+          some_file: `${file.id}#${file.field}`,
+        };
 
         const { body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_field]']: 'Some value',
-            ['data[some_file]']: fileUuid,
-          })
-          .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`)
+          .send({ data })
           .expect(201);
 
-        expect(body).toHaveProperty(`data.files.${fileUuid}`);
-      });
+        expect(body).toHaveProperty(`data.id`);
+        expect(body).toHaveProperty(`data.data.some_file`);
 
-      it('should respond with `400` status code when file is missing', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const fileUuid = crypto.randomUUID();
+        const expectedUrl = `/api/v1/camps/${camp.id}/registrations/${body.data.id}/files/${file.id}/`;
+        expect(body.data.data.some_file.endsWith(expectedUrl)).toBeTruthy();
 
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_field]']: 'Some value',
-            ['data[some_file]']: fileUuid,
-          })
-          .expect(400);
-      });
+        const updatedFile = await prisma.file.findFirst({
+          where: { id: file.id },
+        });
 
-      it('should respond with `400` status code when file id is incorrect', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const fileUuid = crypto.randomUUID();
-        const wrongFileUuid = crypto.randomUUID();
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_field]']: 'Some value',
-            ['data[some_file]']: wrongFileUuid,
-          })
-          .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`)
-          .expect(400);
-      });
-
-      it('should respond with `400` status code when file field is missing', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const fileUuid = crypto.randomUUID();
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_field]']: 'Some value',
-          })
-          .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`)
-          .expect(400);
-      });
-
-      it('should respond with `400` status code when field is missing', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const fileUuid = crypto.randomUUID();
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_file]']: fileUuid,
-          })
-          .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`)
-          .expect(400);
-      });
-
-      it('should respond with `400` status code when additional files are provided', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const fileUuid = crypto.randomUUID();
-        const otherFileUuid = crypto.randomUUID();
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_field]']: 'Some value',
-            ['data[some_file]']: fileUuid,
-          })
-          .attach(`files[${fileUuid}]`, `${__dirname}/resources/blank.pdf`)
-          .attach(`files[${otherFileUuid}]`, `${__dirname}/resources/blank.pdf`)
-          .expect(400);
+        expect(updatedFile.registrationId).toBe(body.data.id);
       });
 
       it('should respond with `201` status code when file is optional', async () => {
         const camp = await CampFactory.create(campWithFileOptional);
 
+        const data = {
+          some_field: 'Some value',
+        };
+
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
-          .field({
-            ['data[some_field]']: 'Some value',
-          })
-          .expect(201);
+          .send({ data })
+          .expectOrPrint(201);
+      });
+
+      it('should respond with `400` status code when file is missing', async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+        const fileId = ulid();
+        const fileField = crypto.randomUUID();
+
+        const data = {
+          some_field: 'Some value',
+          some_file: `${fileId}#${fileField}`,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when file field is missing', async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        const data = {
+          some_field: 'Some value',
+          some_file: `${file.id}`,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when file field is invalid', async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        const invalidField = crypto.randomUUID();
+        const data = {
+          some_field: 'Some value',
+          some_file: `${file.id}#${invalidField}`,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when file data is invalid', async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+
+        const data = {
+          some_field: 'Some value',
+          some_file: {
+            name: 'test',
+            size: 100,
+          },
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when file is already assigned to a registration', async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+          registration: { create: RegistrationFactory.build() },
+        });
+
+        const data = {
+          some_field: 'Some value',
+          some_file: `${file.id}#${file.field}`,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when file is already assigned to a camp', async () => {
+        const camp = await CampFactory.create(campWithFileRequired);
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+          camp: { connect: { id: camp.id } },
+        });
+
+        const data = {
+          some_field: 'Some value',
+          some_file: `${file.id}#${file.field}`,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(400);
       });
     });
 

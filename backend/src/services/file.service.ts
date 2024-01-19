@@ -1,5 +1,5 @@
 import prisma from '../client';
-import { File, Prisma } from '@prisma/client';
+import { File, Prisma, PrismaClient } from '@prisma/client';
 import config from 'config';
 import fs from 'fs';
 import { ulid } from 'utils/ulid';
@@ -9,6 +9,7 @@ import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import { extractKeyFromFieldName } from 'utils/form';
 import { isValid, decodeTime } from 'ulidx';
+import moment from 'moment';
 
 type RequestFile = Express.Multer.File;
 type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
@@ -23,6 +24,11 @@ const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
   'accessLevel',
   'createdAt',
 ];
+
+interface ModelData {
+  id: string;
+  name: string;
+}
 
 const mapFields = (
   file: RequestFile,
@@ -59,12 +65,6 @@ const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
   return fileData;
 };
 
-const moveFiles = (files: RequestFiles) => {
-  Object.values(files)
-    .flat()
-    .forEach((file) => moveFile(file));
-};
-
 const moveFile = async (file: RequestFile) => {
   const sourcePath = file.path;
 
@@ -73,46 +73,21 @@ const moveFile = async (file: RequestFile) => {
   await storage.moveToStorage(sourcePath, file.filename);
 };
 
-const saveRegistrationFiles = async (id: string, files: RequestFiles) => {
-  // TODO Remove or move to registration service
-  const fileData: Prisma.FileCreateInput[] = mapFileData(files);
-
-  const registration = await prisma.registration.update({
-    where: {
-      id: id,
-    },
-    data: {
-      files: {
-        createMany: {
-          data: fileData,
-        },
-      },
-    },
-    include: {
-      files: true,
-    },
-  });
-
-  moveFiles(files);
-
-  return registration;
-};
-
 const saveModelFile = async (
-  modelName: string,
-  modelId: string,
+  model: ModelData | undefined,
   file: RequestFile,
-  name: string,
-  field: string,
-  accessLevel: string,
+  name?: string | undefined,
+  field?: string | undefined,
+  accessLevel?: string | undefined,
 ) => {
   const fileName = name + '.' + file.filename.split('.').pop();
   const fileData = mapFields(file, fileName, field, accessLevel);
+  const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
   const data = await prisma.file.create({
     data: {
       ...fileData,
-      [`${modelName}Id`]: modelId,
+      ...modelData,
     },
   });
   await moveFile(file);
@@ -130,8 +105,7 @@ const getModelFile = async (modelName: string, modelId: string, id: string) => {
 };
 
 const queryModelFiles = async <Key extends keyof File>(
-  modelName: string,
-  modelId: string,
+  model: ModelData,
   filter: {
     name?: string;
     type?: string;
@@ -157,7 +131,7 @@ const queryModelFiles = async <Key extends keyof File>(
         }
       : undefined,
     type: filter.type,
-    [`${modelName}Id`]: modelId,
+    [`${model.name}Id`]: model.id,
   };
 
   return prisma.file.findMany({
@@ -230,6 +204,32 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
   );
 
   return filesToDelete.length;
+};
+
+const deleteUnassignedFiles = async (): Promise<number> => {
+  const minAge = moment().subtract('1', 'd').toDate();
+  const files = await prisma.file.findMany({
+    where: {
+      campId: null,
+      registrationId: null,
+      createdAt: { lt: minAge },
+    },
+  });
+
+  // Delete files from database first so that the files can no longer be accessed.
+  const fileIds = files.map((file) => file.id);
+  const result = await prisma.file.deleteMany({
+    where: { id: { in: fileIds } },
+  });
+
+  const fileDeletions = files.map((file) => {
+    const storage = getStorage(file.storageLocation);
+    return storage.remove(file);
+  });
+
+  await Promise.all(fileDeletions);
+
+  return result.count;
 };
 
 const deleteTempFiles = async () => {
@@ -309,7 +309,6 @@ const LocalStorage: StorageStrategy = {
 };
 
 export default {
-  saveRegistrationFiles,
   saveModelFile,
   getModelFile,
   getFileStream,
@@ -318,5 +317,6 @@ export default {
   deleteTempFile,
   generateFileName,
   deleteUnreferencedFiles,
+  deleteUnassignedFiles,
   deleteTempFiles,
 };
