@@ -27,7 +27,7 @@ export function useRegistrationService() {
     campId: string,
     data: RegistrationCreateData,
   ): Promise<Registration> {
-    const response = await api.postForm(`camps/${campId}/registrations/`, data);
+    const response = await api.post(`camps/${campId}/registrations/`, data);
 
     return response.data?.data;
   }
@@ -37,7 +37,7 @@ export function useRegistrationService() {
     registrationId: string,
     data: RegistrationUpdateData,
   ): Promise<Registration> {
-    const response = await api.putForm(
+    const response = await api.put(
       `camps/${campId}/registrations/${registrationId}/`,
       data,
     );

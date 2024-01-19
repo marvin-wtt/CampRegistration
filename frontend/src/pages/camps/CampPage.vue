@@ -51,8 +51,8 @@ const error = computed(() => {
   return campDetailsStore.error;
 });
 
-async function submit(campId: string, data: unknown) {
-  await registrationStore.storeData(campId, data);
+async function submit(campId: string, formData: unknown) {
+  await registrationStore.storeData(campId, { data: formData });
 }
 
 async function uploadFile(file: File): Promise<string> {
