@@ -20,9 +20,9 @@ const index = {
 
 const store = {
   body: Joi.object<ServiceFileCreateData>({
-    name: Joi.string().required(),
-    field: Joi.string().optional(),
-    accessLevel: Joi.string().optional(),
+    name: Joi.string(),
+    field: Joi.string(),
+    accessLevel: Joi.string(),
   }),
 };
 

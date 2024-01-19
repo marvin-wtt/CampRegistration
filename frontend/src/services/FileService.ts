@@ -24,23 +24,41 @@ export function useFileService() {
     return response.data?.data;
   }
 
-  async function deleteCampFile(campId: string, id: string): Promise<void> {
-    await api.delete(`camps/${campId}/files/${id}`);
+  async function createTemporaryFile(
+    data: ServiceFileCreateData,
+  ): Promise<ServiceFile> {
+    const response = await api.postForm('files/', data);
+
+    return response?.data?.data;
   }
 
-  async function downloadCampFile(campId: string, id: string) {
+  async function deleteCampFile(campId: string, fileId: string): Promise<void> {
+    await api.delete(`camps/${campId}/files/${fileId}`);
+  }
+
+  async function downloadCampFile(campId: string, fileId: string) {
     // TODO How to start a browser download in the same tab?
   }
 
-  function getCampFileUrl(campId: string, id: string): string {
-    return `${api.defaults.baseURL}camps/${campId}/files/${id}/`;
+  function getCampFileUrl(campId: string, fileId: string): string {
+    return `${api.defaults.baseURL}camps/${campId}/files/${fileId}/`;
+  }
+
+  function getRegistrationFileUrl(
+    campId: string,
+    registrationId: string,
+    fileId: string,
+  ) {
+    return `${api.defaults.baseURL}camps/${campId}/registrations/${registrationId}files/${fileId}/`;
   }
 
   return {
     fetchCampFiles,
     createCampFile,
+    createTemporaryFile,
     deleteCampFile,
     downloadCampFile,
     getCampFileUrl,
+    getRegistrationFileUrl,
   };
 }

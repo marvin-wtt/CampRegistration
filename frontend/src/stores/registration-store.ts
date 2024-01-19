@@ -4,6 +4,7 @@ import { useAPIService } from 'src/services/APIService';
 import type {
   Registration,
   RegistrationUpdateData,
+  ServiceFile,
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
@@ -51,6 +52,16 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     checkNotNullWithError(campId);
 
     await apiService.createRegistration(campId, registration);
+  }
+
+  async function storeFile(file: File): Promise<ServiceFile> {
+    const campId = route.params.camp as string;
+    checkNotNullWithError(campId);
+
+    return apiService.createTemporaryFile({
+      file,
+      field: crypto.randomUUID(),
+    });
   }
 
   async function updateData(
@@ -101,6 +112,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     error,
     fetchData,
     storeData,
+    storeFile,
     updateData,
     deleteData,
   };
