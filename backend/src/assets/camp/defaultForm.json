@@ -607,7 +607,18 @@
             "fr": "Je confirme que je suis l'autorité parentale de {first_name} {last_name}."
           },
           "correctAnswer": false,
-          "isRequired": true
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "expression",
+              "text": {
+                "de": "Sie müssen Sorgeberechtigte:r sein",
+                "fr": "Vous devez être titulaire de l'autorité parentale",
+                "default": "You must be a legal guardian"
+              },
+              "expression": "{confirmation_guardian} = true"
+            }
+          ]
         }
       ],
       "title": {
