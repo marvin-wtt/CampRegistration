@@ -53,6 +53,12 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     await apiService.createRegistration(campId, registration);
   }
 
+  async function storeFile(campId: string, file: File) {
+    return apiService.createTemporaryFile({
+      file,
+    });
+  }
+
   async function updateData(
     registrationId: string | undefined,
     updateData: RegistrationUpdateData,
@@ -101,6 +107,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     error,
     fetchData,
     storeData,
+    storeFile,
     updateData,
     deleteData,
   };

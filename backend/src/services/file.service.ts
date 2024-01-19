@@ -75,9 +75,9 @@ const moveFile = async (file: RequestFile) => {
 const saveModelFile = async (
   model: ModelData | undefined,
   file: RequestFile,
-  name: string,
-  field: string,
-  accessLevel: string,
+  name?: string | undefined,
+  field?: string | undefined,
+  accessLevel?: string | undefined,
 ) => {
   const fileName = name + '.' + file.filename.split('.').pop();
   const fileData = mapFields(file, fileName, field, accessLevel);

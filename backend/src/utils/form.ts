@@ -33,18 +33,30 @@ export const formUtils = (camp: Camp) => {
       .join(', ');
   };
 
-  const getFileData = () => {
-    return survey
-      .getAllQuestions(false, undefined, true)
-      .filter((question) => question.getType() === 'file')
-      .map((question) => question.value);
-  };
+  const getFileIds = (): string[] => {
+    const extractId = (value: unknown): string | undefined => {
+      if (typeof value !== 'string') {
+        return undefined;
+      }
 
-  const mapFileData = (fn: (value: unknown) => unknown) => {
+      const trimmedUrl = value.replace(/\/+$/, '');
+      return trimmedUrl.split('/').pop();
+    };
+
+    const extractIds = (value: unknown): (string | undefined)[] => {
+      if (Array.isArray(value)) {
+        return value.map(extractId);
+      }
+
+      return [extractId(value)];
+    };
+
     return survey
       .getAllQuestions(false, undefined, true)
       .filter((question) => question.getType() === 'file')
-      .forEach((question) => (question.value = fn(question.value)));
+      .map((question) => question.value)
+      .flatMap(extractIds)
+      .filter((fileId): fileId is string => !!fileId);
   };
 
   const unknownDataFields = (): string[] => {
@@ -87,8 +99,7 @@ export const formUtils = (camp: Camp) => {
 
   return {
     updateData,
-    getFileData,
-    mapFileData,
+    getFileIds,
     hasDataErrors,
     getDataErrorFields,
     unknownDataFields,

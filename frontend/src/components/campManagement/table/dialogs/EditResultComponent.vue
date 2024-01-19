@@ -22,6 +22,7 @@
         :camp-details="camp"
         :data="data"
         :submit-fn="onSubmit"
+        :upload-file-fn="onFileUpload"
       />
     </q-card>
   </q-dialog>
@@ -56,6 +57,10 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 function onSubmit(id: string, data: object) {
   onDialogOK(data);
+}
+
+async function onFileUpload(file: File) {
+  // TODO How to do this?
 }
 </script>
 

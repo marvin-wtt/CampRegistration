@@ -19,14 +19,13 @@ import {
 } from 'src/composables/survey';
 import type { CampDetails } from '@camp-registration/common/entities';
 
-type FileStorage = Map<string, File>;
-
 const { locale } = useI18n();
 
 interface Props {
   data?: object;
   campDetails: CampDetails;
   submitFn: (id: string, data: unknown) => Promise<void>;
+  uploadFileFn: (file: File) => Promise<string>;
 }
 
 const props = defineProps<Props>();
@@ -38,7 +37,6 @@ const emit = defineEmits<{
 const markdownConverter = new showdown.Converter({
   openLinksInNewWindow: true,
 });
-const filesStorage: FileStorage = new Map<string, File>();
 
 const model = ref<SurveyModel>();
 const bgColor = ref<string>();
@@ -77,43 +75,34 @@ function createModel(id: string, form: object): SurveyModel {
       content?: unknown;
     }
 
+    const fileUploads = options.files.map(async (value) => {
+      const name = await props.uploadFn(value);
+      return {
+        ...value,
+        name,
+      };
+    });
+
+    const files = await Promise.all(fileUploads);
+
     const readFileAsync = async (file: File): Promise<FileOption> => {
-      const uuid = crypto.randomUUID();
       const textContent = await readFile(file);
       return {
-        file: { name: uuid, type: file.type, size: file.size },
+        file: { name: file.name, type: file.type, size: file.size },
         content: textContent,
       };
     };
 
     const fileOptions: FileOption[] = await Promise.all<FileOption>(
-      options.files.map((file) => readFileAsync(file)),
+      files.map((file) => readFileAsync(file)),
     );
 
     options.callback('success', fileOptions);
   });
   // Remove file from storage
   survey.onClearFiles.add((_, options) => {
-    // Undefined if no question was actually removed
-    if (options.fileName === undefined) {
-      options.callback('success');
-      return;
-    }
-
-    // Clear single
-    if (options.fileName) {
-      filesStorage.delete(options.fileName);
-      options.callback('success');
-      return;
-    }
-
-    // Clear all
-    if (Array.isArray(options.value)) {
-      options.value.forEach((value) => {
-        filesStorage.delete(value);
-      });
-    }
-
+    // Files cannot be deleted as the user has no permissions to do so.
+    // Files will be deleted eventually by a cleanup job
     options.callback('success');
   });
   // Convert markdown to html
@@ -138,8 +127,7 @@ function createModel(id: string, form: object): SurveyModel {
 
     const campId = sender.surveyId;
     const data = sender.data ?? {};
-    const files = Object.fromEntries(filesStorage.entries());
-    const registration = { data, files };
+    const registration = { data };
 
     try {
       await props.submitFn(campId, registration);

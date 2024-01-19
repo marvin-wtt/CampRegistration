@@ -73,32 +73,36 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   form.updateData(data.data);
   const campData = form.extractCampData();
 
-  return prisma.$transaction(async (transaction) => {
-    const waitingList =
-      data.waitingList ?? (await isWaitingList(transaction, camp, campData));
-    const registration = await transaction.registration.create({
-      data: {
-        ...data,
-        id: ulid(),
-        campId: camp.id,
-        waitingList,
-        campData,
-      },
-      include: { files: true },
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const waitingList =
+        data.waitingList ?? (await isWaitingList(transaction, camp, campData));
+      const registration = await transaction.registration.create({
+        data: {
+          ...data,
+          id: ulid(),
+          campId: camp.id,
+          waitingList,
+          campData,
+        },
+        include: { files: true },
+      });
+
+      const fileIds = form.getFileIds();
+      for (const value of fileIds) {
+        const model = {
+          id: registration.id,
+          name: 'registration',
+        };
+
+        await fileService.assignModelToTemporaryFile(model, value);
+      }
+
+      return registration;
     });
-
-    const files = form.getFileData();
-    for (const value of files) {
-      const model = {
-        id: registration.id,
-        name: 'registration',
-      };
-
-      await fileService.assignModelToTemporaryFile(model, value);
-    }
-
-    return registration;
-  });
+  } catch (ignored) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Inconsistent data');
+  }
 };
 
 const isWaitingList = async (
