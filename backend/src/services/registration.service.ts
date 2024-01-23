@@ -8,7 +8,6 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
-import fileService from './file.service';
 import config from 'config';
 
 const getRegistrationById = async (campId: string, id: string) => {
@@ -244,7 +243,7 @@ const sendRegistrationConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     replyTo,
     subject,
@@ -271,7 +270,7 @@ const sendWaitingListConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     replyTo,
     subject,
@@ -309,7 +308,7 @@ const sendRegistrationManagerNotification = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     replyTo,
     subject,

@@ -144,7 +144,7 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
     url,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     subject,
     template,
@@ -169,7 +169,7 @@ const sendVerificationEmail = async (to: string, token: string) => {
 
   const template = 'verify-email';
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     subject,
     template,

@@ -1,10 +1,11 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
 import { collection, resource } from 'resources/resource';
-import { fileService, registrationService } from 'services';
+import { registrationService } from 'services';
 import { registrationResource } from 'resources';
 import { routeModel } from 'utils/verifyModel';
 import { requestLocale } from 'utils/requestLocale';
+import { catchAndResolve } from '../utils/promiseUtils';
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
@@ -32,15 +33,18 @@ const store = catchRequestAsync(async (req, res) => {
 
   // Notify participant
   if (registration.waitingList) {
-    await registrationService.sendWaitingListConfirmation(camp, registration);
+    await catchAndResolve(
+      registrationService.sendWaitingListConfirmation(camp, registration),
+    );
   } else {
-    await registrationService.sendRegistrationConfirmation(camp, registration);
+    await catchAndResolve(
+      registrationService.sendRegistrationConfirmation(camp, registration),
+    );
   }
 
   // Notify contact email
-  await registrationService.sendRegistrationManagerNotification(
-    camp,
-    registration,
+  await catchAndResolve(
+    registrationService.sendRegistrationManagerNotification(camp, registration),
   );
 
   res
@@ -64,7 +68,9 @@ const update = catchRequestAsync(async (req, res) => {
   );
 
   if (previousRegistration.waitingList && !registration.waitingList) {
-    await registrationService.sendRegistrationConfirmation(camp, registration);
+    await catchAndResolve(
+      registrationService.sendRegistrationConfirmation(camp, registration),
+    );
   }
 
   res.json(resource(registrationResource(registration)));

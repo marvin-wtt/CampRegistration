@@ -13,7 +13,7 @@ const saveFeedback = async (
 
   // TODO Store to DB instead
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to: config.email.admin,
     subject: 'New Feedback',
     template: 'feedback',
