@@ -124,7 +124,9 @@ const sendManagerInvitation = async (
   const template = 'manager-invitation';
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     userName,
   };
 
