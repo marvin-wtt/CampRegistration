@@ -1,8 +1,8 @@
 {
   "name": "@camp-registration/web",
   "version": "0.0.1",
-  "description": "A frontend for camp registrations",
-  "productName": "Camp Registration Frontent",
+  "productName": "Camp Registrations",
+  "description": "Manage camp registrations",
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
   "repository": {
