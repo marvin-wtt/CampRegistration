@@ -17,7 +17,7 @@ type MailOptions = WithRequired<EmailOptions, 'subject'> & {
   context?: object;
 };
 
-const sendEmail = (options: MailOptions) => {
+const sendEmail = async (options: MailOptions) => {
   const { from } = config.email;
   const appName = t('appName');
 
@@ -37,7 +37,7 @@ const sendEmail = (options: MailOptions) => {
     ...options.context,
   };
 
-  transport.sendMail(options).catch((reason) => {
+  await transport.sendMail(options).catch((reason) => {
     logger.warn('Failed to send email: ' + reason);
   });
 };

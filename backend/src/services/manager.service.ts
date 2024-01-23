@@ -120,7 +120,7 @@ const sendManagerInvitation = async (
   const userName = user?.name;
 
   await i18n.changeLanguage(user?.locale);
-  const subject = t('manager:email.invitation');
+  const subject = t('manager:email.invitation.subject');
   const template = 'manager-invitation';
 
   const context = {
@@ -128,7 +128,7 @@ const sendManagerInvitation = async (
     userName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     subject,
     template,

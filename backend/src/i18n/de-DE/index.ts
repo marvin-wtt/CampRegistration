@@ -1,6 +1,7 @@
 import auth from './auth';
 import camp from './camp';
 import email from './email';
+import manager from './manager';
 import registration from './registration';
 
 export default {
@@ -11,5 +12,6 @@ export default {
   auth,
   camp,
   email,
+  manager,
   registration,
 };
