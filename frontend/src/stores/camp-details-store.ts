@@ -28,6 +28,28 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     reset();
   });
 
+  bus.on('update', async (camp) => {
+    if (camp?.id !== data.value?.id) {
+      return;
+    }
+
+    if ('form' in camp) {
+      // We can assume that the camp contains all details, and we don't need to prefetch it.
+      data.value = camp as CampDetails;
+    } else {
+      // It's a normal camp - we need to fetch the details
+      invalidate();
+      await fetchData(camp?.id);
+    }
+  });
+
+  bus.on('delete', (campId) => {
+    if (data.value?.id !== campId) {
+      return;
+    }
+    reset();
+  });
+
   router.beforeEach(async (to, from) => {
     if (to.params.camp === undefined) {
       if (data.value !== undefined) {
@@ -74,8 +96,6 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       async () => {
         const updatedCamp = await api.updateCamp(campId, newDataWithoutId);
 
-        // Replace element
-        data.value = updatedCamp;
         bus.emit('update', updatedCamp);
 
         return updatedCamp;
