@@ -51,13 +51,13 @@ export function useAuthService() {
       remember,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function logout(): Promise<void> {
     const response = await api.post('auth/logout');
 
-    return response.data;
+    return response?.data;
   }
 
   async function refreshTokens(): Promise<AuthTokens> {
@@ -66,7 +66,7 @@ export function useAuthService() {
       _skipAuthenticationHandler: true,
     } as AxiosRequestConfig);
 
-    return response.data;
+    return response?.data;
   }
 
   async function register(
@@ -80,7 +80,7 @@ export function useAuthService() {
       password,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function forgotPassword(email: string): Promise<void> {
@@ -88,7 +88,7 @@ export function useAuthService() {
       email: email,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function resetPassword(
@@ -102,13 +102,13 @@ export function useAuthService() {
       password,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function fetchProfile(): Promise<Profile> {
     const response = await api.get('profile');
 
-    return response.data?.data;
+    return response?.data?.data;
   }
 
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
