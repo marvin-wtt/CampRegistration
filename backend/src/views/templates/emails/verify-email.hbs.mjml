@@ -17,10 +17,10 @@
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="0">
       <mj-column>
-        <mj-divider border-color="#F45E43"></mj-divider>
+        <mj-divider border-color="#338d8e"></mj-divider>
       </mj-column>
     </mj-section>
-    <mj-section background-color="#338d8e" mj-class="main-section">
+    <mj-section background-color="#F2F2F2" mj-class="main-section">
       <mj-column vertical-align="middle" width="100%">
         <mj-text mj-class="big-text">{{{t 'auth:email.verifyEmail.text.title' }}}</mj-text>
         <mj-text mj-class="text">{{{t 'auth:email.verifyEmail.text.information' }}}</mj-text>

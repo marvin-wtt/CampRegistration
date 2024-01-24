@@ -175,6 +175,14 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  async function verifyEmail(token: string) {
+    checkNotNullWithError(token);
+
+    await withResultNotification('verify-email', async () => {
+      await apiService.verifyEmail(token);
+    });
+  }
+
   return {
     user: data,
     error,
@@ -187,5 +195,6 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     forgotPassword,
     resetPassword,
+    verifyEmail,
   };
 });

@@ -16,7 +16,9 @@
             v-model="email"
             type="email"
             autocomplete="username"
-            :rules="[(val) => !!val || t('fields.email.rules.required')]"
+            :rules="[
+              (val: string) => !!val || t('fields.email.rules.required'),
+            ]"
             :label="t('fields.email.label')"
             outlined
             rounded
@@ -30,7 +32,9 @@
             v-model="password"
             type="password"
             autocomplete="current-password"
-            :rules="[(val) => !!val || t('fields.password.rules.required')]"
+            :rules="[
+              (val: string) => !!val || t('fields.password.rules.required'),
+            ]"
             :label="t('fields.password.label')"
             outlined
             rounded
@@ -100,8 +104,10 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
+import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
+const route = useRoute();
 
 const email = ref<string>('');
 const password = ref<string>('');
@@ -117,6 +123,19 @@ const error = computed(() => {
 onMounted(() => {
   // Suppress any previous errors
   authStore.reset();
+
+  const queryToken = route.query.token;
+  const queryEmail = route.query.email;
+
+  // Verify email
+  if (typeof queryToken === 'string') {
+    authStore.verifyEmail(queryToken);
+  }
+
+  // Set email field
+  if (typeof queryEmail === 'string') {
+    email.value = queryEmail;
+  }
 });
 
 function login() {
