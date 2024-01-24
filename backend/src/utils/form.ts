@@ -77,12 +77,17 @@ export const formUtils = (camp: Camp) => {
       .filter((fileId): fileId is TemporaryFileIdentifier => !!fileId);
   };
 
-  const mapFileValues = (fn: (value: string) => string): void => {
+  const mapFileValues = (fn: (value: unknown) => string): void => {
     survey
       .getAllQuestions(false, undefined, true)
       .filter((question) => question.getType() === 'file')
       .filter((question) => question.value != null)
-      .forEach((question) => (question.value = fn(question.value)));
+      .forEach(
+        (question) =>
+          (question.value = Array.isArray(question.value)
+            ? question.value.map(fn)
+            : fn(question.value)),
+      );
   };
 
   const hasFileValueErrors = (): boolean => {

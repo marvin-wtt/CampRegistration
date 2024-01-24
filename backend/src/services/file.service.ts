@@ -1,5 +1,5 @@
 import prisma from '../client';
-import { File, Prisma, PrismaClient } from '@prisma/client';
+import { File, Prisma } from '@prisma/client';
 import config from 'config';
 import fs from 'fs';
 import { ulid } from 'utils/ulid';
