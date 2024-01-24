@@ -105,6 +105,12 @@ export function useAuthService() {
     return response?.data;
   }
 
+  async function verifyEmail(token: string): Promise<void> {
+    await api.post('auth/verify-email', {
+      token,
+    });
+  }
+
   async function fetchProfile(): Promise<Profile> {
     const response = await api.get('profile');
 
@@ -121,6 +127,7 @@ export function useAuthService() {
     register,
     forgotPassword,
     resetPassword,
+    verifyEmail,
     fetchProfile,
     refreshTokens,
     setOnUnauthenticated,
