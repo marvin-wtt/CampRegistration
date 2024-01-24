@@ -72,6 +72,9 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   // Extract files first before the value are mapped to the URL
   const fileIds = form.getFileIdentifiers();
   form.mapFileValues((value) => {
+    if (typeof value !== 'string') {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
+    }
     // The ID may contain the field name. Remove it.
     const fileId = value.split('#')[0];
     return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
