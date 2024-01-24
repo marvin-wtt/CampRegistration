@@ -175,4 +175,12 @@ function isFile(file: unknown): file is Pick<File, 'name'> {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss">
+#survey {
+  a {
+    color: inherit;
+    font-weight: bold;
+    font-style: oblique;
+  }
+}
+</style>
