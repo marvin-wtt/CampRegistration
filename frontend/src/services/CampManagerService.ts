@@ -9,7 +9,7 @@ export function useCampManagerService() {
   async function fetchCampManagers(campId: string): Promise<CampManager[]> {
     const response = await api.get(`camps/${campId}/managers/`);
 
-    return response.data?.data;
+    return response?.data?.data;
   }
 
   async function createCampManager(
@@ -20,7 +20,7 @@ export function useCampManagerService() {
       email,
     });
 
-    return response.data?.data;
+    return response?.data?.data;
   }
 
   async function updateCampManager(
@@ -30,7 +30,7 @@ export function useCampManagerService() {
   ): Promise<Camp> {
     const response = await api.patch(`camps/${campId}/managers/${id}/`, data);
 
-    return response.data?.data;
+    return response?.data?.data;
   }
 
   async function deleteCampManager(campId: string, id: string): Promise<void> {
