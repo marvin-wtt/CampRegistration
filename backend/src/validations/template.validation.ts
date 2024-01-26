@@ -29,6 +29,7 @@ const TemplateBodySchema = Joi.object<TableTemplate>()
           headerClasses: Joi.string(),
           renderAs: Joi.string(),
           renderOptions: Joi.object().allow(null),
+          isArray: Joi.boolean(),
           editable: Joi.boolean(),
           headerVertical: Joi.boolean(),
           shrink: Joi.boolean(),

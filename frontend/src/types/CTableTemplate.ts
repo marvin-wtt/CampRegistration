@@ -1,6 +1,6 @@
-import {
+import type {
   TableColumnTemplate,
-  type TableTemplate,
+  TableTemplate,
 } from '@camp-registration/common/dist/node/entities';
 
 type FieldResolver = (row: unknown) => unknown;

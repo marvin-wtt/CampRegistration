@@ -137,27 +137,11 @@
       #[`body-cell-${key}`]="rendererProps"
     >
       <q-td :props="rendererProps">
-        <!-- TODO -->
-        <!--        <q-popup-edit-->
-        <!--          v-if="renderer.isEditable()"-->
-        <!--          v-slot="scope"-->
-        <!--          buttons-->
-        <!--          persistent-->
-        <!--        >-->
-        <!--          <dynamic-input-->
-        <!--            v-model="scope.value"-->
-        <!--            :data="{}"-->
-        <!--            :element="{ type: 'text' }"-->
-        <!--          />-->
-        <!--        </q-popup-edit>-->
-
-        <component
-          :is="renderer.component"
-          v-if="renderer.isVisible(rendererProps.row)"
+        <table-cell-wrapper
+          :renderer="renderer"
           :camp="camp"
-          :options="renderer.options"
-          :printing="printing"
           :props="rendererProps"
+          :printing="printing"
         />
       </q-td>
     </template>
@@ -190,6 +174,7 @@ import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/t
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
 
 interface Props {
   questions: TableColumnTemplate[];

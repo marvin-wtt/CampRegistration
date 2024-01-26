@@ -37,6 +37,10 @@ export class TableCellRenderer {
     return this._column.editable ?? false;
   }
 
+  isArray(): boolean {
+    return this._column.isArray ?? false;
+  }
+
   isVisible(data: unknown): boolean {
     if (typeof data !== 'object' || data === null) {
       return true;

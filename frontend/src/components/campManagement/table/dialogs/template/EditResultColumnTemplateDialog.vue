@@ -17,8 +17,9 @@
           :label="t('fields.name.label')"
           :hint="t('fields.name.hint')"
           :rules="[
-            (val) => !!val || t('fields.name.rules.required'),
-            (val) => !/\s/.test(val) || t('fields.name.rules.no_spaces'),
+            (val: string) => !!val || t('fields.name.rules.required'),
+            (val: string) =>
+              !/\s/.test(val) || t('fields.name.rules.no_spaces'),
           ]"
           outlined
           rounded
@@ -63,6 +64,13 @@
             />
           </template>
         </q-select>
+
+        <toggle-item
+          v-if="showIsArray"
+          v-model="column.isArray"
+          :label="t('fields.isArray.label')"
+          :hint="t('fields.isArray.hint')"
+        />
 
         <q-select
           v-model="column.align"
@@ -221,6 +229,10 @@ function onOKClick(): void {
   onDialogOK(column);
 }
 
+const showIsArray = computed<boolean>(() => {
+  return column.isArray || column.field?.includes('.*.');
+});
+
 const alignOptions = computed(() => {
   return [
     {
@@ -334,6 +346,9 @@ fields:
       createdAt: 'Creation date'
       room: 'Room'
       waitingList: 'Waiting list'
+  isArray:
+    label: 'Multiple values'
+    hint: 'Values are split into multiple sub-rows'
   align:
     label: 'Align'
     hint: 'Direction to align content of cell'
@@ -389,6 +404,9 @@ fields:
       createdAt: 'Erstellungsdatum'
       room: 'Raum'
       waitingList: 'Warteliste'
+  isArray:
+    label: 'Mehrere Werte'
+    hint: 'Werte sind in mehrere Unterzeilen aufgeteilt'
   align:
     label: 'Ausrichtung'
     hint: 'Richtung zur Ausrichtung des Zellinhalts'
@@ -444,6 +462,9 @@ fields:
       createdAt: 'Date de création'
       room: 'Salle'
       waitingList: "Liste d'attente"
+  isArray:
+    label: 'Valeurs multiples'
+    hint: 'Les valeurs sont réparties dans plusieurs sous-lignes'
   align:
     label: 'Orientation'
     hint: 'Direction pour aligner le contenu de la cellule'

@@ -31,6 +31,7 @@ export interface TableColumnTemplate {
   sortOrder?: 'ad' | 'da';
   renderAs?: string;
   renderOptions?: Record<string, unknown>;
+  isArray?: boolean;
   headerVertical?: boolean;
   editable?: boolean;
   shrink?: boolean;
