@@ -181,6 +181,7 @@ import { computed, reactive, ref, toRaw } from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
+  Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -262,13 +263,25 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
 });
 
 const fieldOptions = computed(() => {
-  const formFields = extractFormFields(props.camp.form);
-  return formFields.map((field) => {
-    return {
-      ...field,
-      value: 'data.' + field.value,
-    };
-  });
+  const formFields = extractFormFields(props.camp.form, 'data');
+
+  const defaultFields: { label: string; value: keyof Registration }[] = [
+    {
+      label: t('fields.field.options.createdAt'),
+      value: 'createdAt',
+    },
+    {
+      label: t('fields.field.options.waitingList'),
+      value: 'waitingList',
+    },
+    {
+      label: t('fields.field.options.room'),
+      value: 'room',
+    },
+  ];
+  formFields.push(...defaultFields);
+
+  return formFields;
 });
 
 const fieldFilterOptions = ref(fieldOptions.value);
@@ -317,6 +330,10 @@ fields:
   field:
     label: 'Field'
     hint: 'Name of corresponding form field'
+    options:
+      createdAt: 'Creation date'
+      room: 'Room'
+      waitingList: 'Waiting list'
   align:
     label: 'Align'
     hint: 'Direction to align content of cell'
@@ -368,6 +385,10 @@ fields:
   field:
     label: 'Feld'
     hint: 'Name des entsprechenden Formularfelds'
+    options:
+      createdAt: 'Erstellungsdatum'
+      room: 'Raum'
+      waitingList: 'Warteliste'
   align:
     label: 'Ausrichtung'
     hint: 'Richtung zur Ausrichtung des Zellinhalts'
@@ -419,6 +440,10 @@ fields:
   field:
     label: 'Champ'
     hint: 'Nom du champ de formulaire correspondant'
+    options:
+      createdAt: 'Date de création'
+      room: 'Salle'
+      waitingList: "Liste d'attente"
   align:
     label: 'Orientation'
     hint: 'Direction pour aligner le contenu de la cellule'
