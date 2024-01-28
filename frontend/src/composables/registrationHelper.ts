@@ -51,6 +51,18 @@ export function useRegistrationHelper() {
     return value;
   }
 
+  function objectValue<T = object>(
+    registration: Registration,
+    keyName: string,
+  ): T | undefined {
+    const value = unknownValue(registration, keyName);
+    if (typeof value !== 'object' || value === null) {
+      return undefined;
+    }
+
+    return value as T;
+  }
+
   function stringValues(registration: Registration, keyName: string): string[] {
     const values = unknownValues(registration, keyName);
 
@@ -188,7 +200,20 @@ export function useRegistrationHelper() {
   }
 
   function country(registration: Registration): string | undefined {
-    return stringValue(registration, 'country');
+    return (
+      stringValue(registration, 'country') ?? address(registration)?.country
+    );
+  }
+
+  interface Address {
+    street: string;
+    zip_code: string;
+    city: string;
+    country: string;
+  }
+
+  function address(registration: Registration): Address | undefined {
+    return objectValue<Address>(registration, 'address');
   }
 
   function role(registration: Registration): string | undefined {
@@ -220,6 +245,7 @@ export function useRegistrationHelper() {
     age,
     gender,
     country,
+    address,
     role,
     counselor,
     participant,
