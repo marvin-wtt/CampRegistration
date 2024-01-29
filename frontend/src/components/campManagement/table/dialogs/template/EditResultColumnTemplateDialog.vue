@@ -17,8 +17,9 @@
           :label="t('fields.name.label')"
           :hint="t('fields.name.hint')"
           :rules="[
-            (val) => !!val || t('fields.name.rules.required'),
-            (val) => !/\s/.test(val) || t('fields.name.rules.no_spaces'),
+            (val: string) => !!val || t('fields.name.rules.required'),
+            (val: string) =>
+              !/\s/.test(val) || t('fields.name.rules.no_spaces'),
           ]"
           outlined
           rounded
@@ -63,6 +64,13 @@
             />
           </template>
         </q-select>
+
+        <toggle-item
+          v-if="showIsArray"
+          v-model="column.isArray"
+          :label="t('fields.isArray.label')"
+          :hint="t('fields.isArray.hint')"
+        />
 
         <q-select
           v-model="column.align"
@@ -181,6 +189,7 @@ import { computed, reactive, ref, toRaw } from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
+  Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -219,6 +228,10 @@ const column = reactive<TableColumnTemplate>(
 function onOKClick(): void {
   onDialogOK(column);
 }
+
+const showIsArray = computed<boolean>(() => {
+  return column.isArray || column.field?.includes('.*.');
+});
 
 const alignOptions = computed(() => {
   return [
@@ -262,13 +275,25 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
 });
 
 const fieldOptions = computed(() => {
-  const formFields = extractFormFields(props.camp.form);
-  return formFields.map((field) => {
-    return {
-      ...field,
-      value: 'data.' + field.value,
-    };
-  });
+  const formFields = extractFormFields(props.camp.form, 'data');
+
+  const defaultFields: { label: string; value: keyof Registration }[] = [
+    {
+      label: t('fields.field.options.createdAt'),
+      value: 'createdAt',
+    },
+    {
+      label: t('fields.field.options.waitingList'),
+      value: 'waitingList',
+    },
+    {
+      label: t('fields.field.options.room'),
+      value: 'room',
+    },
+  ];
+  formFields.push(...defaultFields);
+
+  return formFields;
 });
 
 const fieldFilterOptions = ref(fieldOptions.value);
@@ -317,6 +342,13 @@ fields:
   field:
     label: 'Field'
     hint: 'Name of corresponding form field'
+    options:
+      createdAt: 'Creation date'
+      room: 'Room'
+      waitingList: 'Waiting list'
+  isArray:
+    label: 'Multiple values'
+    hint: 'Values are split into multiple sub-rows'
   align:
     label: 'Align'
     hint: 'Direction to align content of cell'
@@ -368,6 +400,13 @@ fields:
   field:
     label: 'Feld'
     hint: 'Name des entsprechenden Formularfelds'
+    options:
+      createdAt: 'Erstellungsdatum'
+      room: 'Raum'
+      waitingList: 'Warteliste'
+  isArray:
+    label: 'Mehrere Werte'
+    hint: 'Werte sind in mehrere Unterzeilen aufgeteilt'
   align:
     label: 'Ausrichtung'
     hint: 'Richtung zur Ausrichtung des Zellinhalts'
@@ -419,6 +458,13 @@ fields:
   field:
     label: 'Champ'
     hint: 'Nom du champ de formulaire correspondant'
+    options:
+      createdAt: 'Date de création'
+      room: 'Salle'
+      waitingList: "Liste d'attente"
+  isArray:
+    label: 'Valeurs multiples'
+    hint: 'Les valeurs sont réparties dans plusieurs sous-lignes'
   align:
     label: 'Orientation'
     hint: 'Direction pour aligner le contenu de la cellule'
