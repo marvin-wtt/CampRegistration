@@ -140,7 +140,7 @@
         <table-cell-wrapper
           :renderer="renderer"
           :camp="camp"
-          :props="rendererProps"
+          :props="rendererProps as QTableBodyCellProps"
           :printing="printing"
         />
       </q-td>
@@ -177,6 +177,7 @@ import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
+import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 
 interface Props {
   questions: TableColumnTemplate[];
