@@ -14,7 +14,7 @@
     "start": "npm --prefix ../backend run dev:serve",
     "run": "cypress run",
     "ui": "npx cypress open",
-    "test": "start-server-and-test start http://localhost:3000 run"
+    "test": "npx start-server-and-test start http://localhost:3000 run"
   },
   "devDependencies": {
     "cypress": "^13.6.2",

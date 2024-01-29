@@ -2,6 +2,7 @@
   <q-card
     v-ripple
     class="camp-card cursor-pointer q-hoverable"
+    data-test="camp-card"
     @click="navigateToRegistration"
   >
     <!-- Helper to make it hover and selectable -->
