@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import { default as JsPdf } from 'jspdf';
 import DomToImage, { Options } from 'dom-to-image';
 
 export interface ExportOptions {
@@ -81,72 +81,89 @@ function normalizeMargin(margin: number | number[]): number[] {
   throw 'Invalid page margin';
 }
 
-export async function createPDF(
-  node: HTMLElement,
-  exportOptions?: ExportOptions,
-) {
-  // Assign default parameters
-  exportOptions ??= {};
-  exportOptions.captureWidth ??= node.clientWidth;
-  exportOptions.captureHeight ??= node.clientHeight;
-  exportOptions.page ??= {};
-  exportOptions.page.name ??= 'table';
-  exportOptions.page.orientation ??= 'portrait';
-  exportOptions.page.margin ??= 20;
-
-  // Capture image
-  const image = await createImage(node, exportOptions);
-
+export function createPDF() {
   // Create PDF
-  const doc = new jsPDF({
-    orientation: exportOptions.page.orientation,
+  const doc = new JsPdf({
     format: 'a4',
     unit: 'px',
-    compress: false,
+    compress: true,
   });
 
-  const margin = normalizeMargin(exportOptions.page.margin);
-  const input = {
-    width: exportOptions.captureWidth,
-    height: exportOptions.captureHeight,
-  };
-  const output = {
-    width: doc.internal.pageSize.getWidth() - margin[1] - margin[3],
-    height: doc.internal.pageSize.getHeight() - margin[0] - margin[2],
-  };
-  const dimension = scaleImage(input, output, exportOptions.page.orientation);
-  const headerSpace = exportOptions.page.header ? 5 : 0;
-  const page = {
-    format: 'PNG',
-    x: margin[3],
-    y: margin[0] + headerSpace,
-    width: dimension.width,
-    height: dimension.height,
-  };
-
-  doc.addImage(image, page.format, page.x, page.y, page.width, page.height);
-
-  // Add header and footer
-  const pageCenter = doc.internal.pageSize.getWidth() / 2;
-  if (exportOptions.page.header) {
-    const headerHeight = margin[0] + 1;
-
-    doc.setFontSize(9);
-    doc.text(exportOptions.page.header, pageCenter, headerHeight, {
-      align: 'center',
-    });
+  function save(filename?: string) {
+    // The first page will always be blank, so we can delete it
+    doc.deletePage(1);
+    doc.save(filename);
   }
 
-  if (exportOptions.page.footer) {
-    const footerHeight = doc.internal.pageSize.getHeight() - margin[2] - 1;
+  async function addPage(node: HTMLElement, exportOptions?: ExportOptions) {
+    // Assign default parameters
+    exportOptions ??= {};
+    exportOptions.captureWidth ??= node.clientWidth;
+    exportOptions.captureHeight ??= node.clientHeight;
+    exportOptions.page ??= {};
+    exportOptions.page.name ??= 'table';
+    exportOptions.page.orientation ??= 'portrait';
+    exportOptions.page.margin ??= 20;
 
-    doc.setFontSize(9);
-    doc.text(exportOptions.page.footer, pageCenter, footerHeight, {
-      align: 'center',
-    });
+    doc.addPage('a4', exportOptions.page.orientation);
+
+    const margin = normalizeMargin(exportOptions.page.margin);
+    const input = {
+      width: exportOptions.captureWidth,
+      height: exportOptions.captureHeight,
+    };
+    const output = {
+      width: doc.internal.pageSize.getWidth() - margin[1] - margin[3],
+      height: doc.internal.pageSize.getHeight() - margin[0] - margin[2],
+    };
+    const dimension = scaleImage(input, output, exportOptions.page.orientation);
+    const headerSpace = exportOptions.page.header ? 5 : 0;
+    const pageOptions = {
+      format: 'PNG',
+      x: margin[3],
+      y: margin[0] + headerSpace,
+      width: dimension.width,
+      height: dimension.height,
+    };
+
+    // Capture image
+    const image = await createImage(node, exportOptions);
+    doc.addImage(
+      image,
+      pageOptions.format,
+      pageOptions.x,
+      pageOptions.y,
+      pageOptions.width,
+      pageOptions.height,
+      undefined,
+      'FAST',
+    );
+
+    // Add header and footer
+    const pageCenter = doc.internal.pageSize.getWidth() / 2;
+    if (exportOptions.page.header) {
+      const headerHeight = margin[0] + 1;
+
+      doc.setFontSize(9);
+      doc.text(exportOptions.page.header, pageCenter, headerHeight, {
+        align: 'center',
+      });
+    }
+
+    if (exportOptions.page.footer) {
+      const footerHeight = doc.internal.pageSize.getHeight() - margin[2] - 1;
+
+      doc.setFontSize(9);
+      doc.text(exportOptions.page.footer, pageCenter, footerHeight, {
+        align: 'center',
+      });
+    }
   }
 
-  doc.save(exportOptions.page.name);
+  return {
+    addPage,
+    save,
+  };
 }
 
 export async function createImage(

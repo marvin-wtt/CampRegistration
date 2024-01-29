@@ -94,7 +94,7 @@
               <q-item
                 v-close-popup
                 clickable
-                @click="exportPDF()"
+                @click="onPrint()"
               >
                 <q-item-section avatar>
                   <q-icon name="download" />
@@ -381,9 +381,119 @@ const style = computed<string>(() => {
     : '';
 });
 
-async function exportPDF() {
-  // Remove unwanted elements
+async function onPrint() {
+  const items = templates.value
+    .filter((value) => !value.generated)
+    .map((value) => {
+      return {
+        label: to(value.title),
+        value,
+      };
+    });
+
+  quasar
+    .dialog({
+      title: t('export.dialog.title'),
+      message: t('export.dialog.message'),
+      options: {
+        type: 'checkbox',
+        model: [template.value],
+        items,
+        color: 'primary',
+      },
+      ok: {
+        color: 'primary',
+        rounded: true,
+        label: t('export.dialog.download'),
+        icon: 'download',
+      },
+      cancel: {
+        color: 'primary',
+        rounded: true,
+        outline: true,
+        label: t('export.dialog.cancel'),
+      },
+      persistent: true,
+    })
+    .onOk((data) => {
+      printTables(data);
+    });
+}
+
+async function printTables(templates: CTableTemplate[]) {
+  quasar.loading.show();
   printing.value = true;
+  quasar.dark.set(false);
+
+  const initialTemplate = template.value;
+  try {
+    await printTablesCore(templates);
+  } catch (e: unknown) {
+    quasar.notify({
+      type: 'negative',
+      message: t('export.pdf.error'),
+    });
+  } finally {
+    // Reset loading
+    printing.value = false;
+    quasar.dark.set('auto');
+    quasar.loading.hide();
+    // Reset the template to the initial value
+    template.value = initialTemplate;
+  }
+}
+
+async function printTablesCore(templates: CTableTemplate[]) {
+  // Prepare printing
+  const pdf = createPDF();
+
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const dateTimeString = date.toLocaleString(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  });
+
+  // Print each page
+  for (const printingTemplate of templates) {
+    // Update view
+    template.value = printingTemplate;
+
+    const templateTitle = to(printingTemplate.title);
+    quasar.loading.show({
+      message: t('export.pdf.loading.template') + ' ' + templateTitle,
+    });
+
+    const { element, width, height, orientation } = prepareTableForExport();
+
+    await pdf.addPage(element, {
+      captureHeight: height,
+      captureWidth: width,
+      scale: 3,
+      page: {
+        orientation,
+        footer: `${t('title')} (${templateTitle}) @ ${dateTimeString}`,
+        name: templateTitle,
+      },
+    });
+  }
+
+  quasar.loading.show({
+    message: t('export.pdf.loading.saving'),
+  });
+
+  const filename = `${year}_${month}_${day}_${t('title')}`;
+  pdf.save(filename);
+}
+
+function prepareTableForExport() {
   const element = document.querySelector('#print-table') as HTMLElement;
   const table = element.querySelector('table') as HTMLElement;
 
@@ -405,53 +515,18 @@ async function exportPDF() {
   // Use maximum with of both to maximise size but still fit everything in
   const width = Math.max(minWidth, maxWidth);
 
-  const pageOrientation = template.value?.printOptions?.orientation;
-
+  const orientation = template.value?.printOptions?.orientation;
   printDimensions.value = {
     width: width,
     height: height,
   };
 
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const templateTitle = to(template.value.title);
-
-  const dateTimeString = date.toLocaleString(locale.value, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: false,
-  });
-
-  quasar.loading.show();
-  quasar.dark.set(false);
-
-  try {
-    await createPDF(element, {
-      captureHeight: height,
-      captureWidth: width,
-      scale: 3,
-      page: {
-        orientation: pageOrientation,
-        footer: `${t('title')} (${templateTitle}) @ ${dateTimeString}`,
-        name: `${year}_${month}_${day}_${t('title')}_${templateTitle}`,
-      },
-    });
-  } catch (e: unknown) {
-    quasar.notify({
-      type: 'negative',
-      message: t('error.export.pdf'),
-    });
-  } finally {
-    printing.value = false;
-    quasar.dark.set('auto');
-    quasar.loading.hide();
-  }
+  return {
+    element,
+    width,
+    height,
+    orientation,
+  };
 }
 
 function editTemplates() {
@@ -517,27 +592,62 @@ function editTemplates() {
 }
 </style>
 
-<!-- TODO Add error.export.pdf -->
 <i18n lang="yaml" locale="en">
-template: Template
-title: Participants
+template: 'Template'
+title: 'Participants'
 menu:
-  download: Download Table
-  edit_templates: Edit templates
+  download: 'Download Table'
+  edit_templates: 'Edit templates'
+
+export:
+  dialog:
+    title: 'Export tables'
+    message: 'Select which tables to export'
+    download: 'Download'
+    cancel: 'Cancel'
+  pdf:
+    loading:
+      template: 'Preparing template: '
+      save: 'Saving table(s) to file...'
+    error: 'Failed to export table(s)'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-template: Vorlage
-title: Teilnehmende
+template: 'Vorlage'
+title: 'Teilnehmende'
 menu:
-  download: Tabelle herunterladen
-  edit_templates: Vorlagen bearbeiten
+  download: 'Tabelle herunterladen'
+  edit_templates: 'Vorlagen bearbeiten'
+
+export:
+  dialog:
+    title: 'Tabellen exportieren'
+    message: 'Wählen Sie aus, welche Tabellen exportiert werden sollen'
+    download: 'Herunterladen'
+    cancel: 'Abbrechen'
+  pdf:
+    loading:
+      template: 'Vorlage wird vorbereitet: '
+      save: 'Tabelle(n) werden in Datei gespeichert...'
+    error: 'Fehler beim Exportieren der Tabelle(n)'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-template: Modèle
-title: Participants
+template: 'Modèle'
+title: 'Participants'
 menu:
-  download: Télécharger le tableau
-  edit_templates: Modifier les modèles
+  download: 'Télécharger le tableau'
+  edit_templates: 'Modifier les modèles'
+
+export:
+  dialog:
+    title: 'Exporter les tables'
+    message: 'Sélectionnez les tables à exporter'
+    download: 'Télécharger'
+    cancel: 'Annuler'
+  pdf:
+    loading:
+      template: 'Préparation du modèle : '
+      save: 'Enregistrement de(s) table(s) dans le fichier...'
+    error: "Échec de l'exportation de(s) table(s)"
 </i18n>
