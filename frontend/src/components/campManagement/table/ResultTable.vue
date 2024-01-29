@@ -155,7 +155,10 @@ import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { TableTemplate } from '@camp-registration/common/entities';
+import type {
+  CampDetails,
+  TableTemplate,
+} from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import {
   createPDF,
@@ -167,7 +170,6 @@ import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 import {
   TableColumnTemplate,
   Registration,
-  Camp,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
@@ -180,7 +182,7 @@ interface Props {
   questions: TableColumnTemplate[];
   results: Registration[];
   templates: TableTemplate[];
-  camp: Camp;
+  camp: CampDetails;
 }
 
 const props = defineProps<Props>();
