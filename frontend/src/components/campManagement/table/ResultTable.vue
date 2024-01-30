@@ -153,7 +153,7 @@ import TableComponentRegistry from 'components/campManagement/table/ComponentReg
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type {
   CampDetails,
@@ -418,7 +418,10 @@ async function onPrint() {
       },
       persistent: true,
     })
-    .onOk((data) => {
+    .onOk((data: CTableTemplate[]) => {
+      // Sort by order
+      data = data.sort((a, b) => a.order - b.order);
+
       printTables(data);
     });
 }
@@ -466,13 +469,15 @@ async function printTablesCore(templates: CTableTemplate[]) {
 
   // Print each page
   for (const printingTemplate of templates) {
-    // Update view
-    template.value = printingTemplate;
-
     const templateTitle = to(printingTemplate.title);
     quasar.loading.show({
       message: t('export.pdf.loading.template') + ' ' + templateTitle,
     });
+
+    // Update view
+    template.value = printingTemplate;
+    // Wait for DOM to finish updating the template
+    await new Promise<void>((resolve) => nextTick(resolve));
 
     const { element, width, height, orientation } = prepareTableForExport();
 
@@ -518,11 +523,13 @@ function prepareTableForExport() {
   // Use maximum with of both to maximise size but still fit everything in
   const width = Math.max(minWidth, maxWidth);
 
-  const orientation = template.value?.printOptions?.orientation;
+  // Update the dom to the dimensions
   printDimensions.value = {
-    width: width,
-    height: height,
+    width,
+    height,
   };
+
+  const orientation = template.value?.printOptions?.orientation;
 
   return {
     element,

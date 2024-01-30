@@ -2,10 +2,13 @@
   <q-dialog
     ref="dialogRef"
     full-height
+    full-width
     @hide="onDialogHide"
   >
-    <q-card>
-      <q-bar>
+    <q-card class="column">
+      <q-bar class="col-shrink">
+        {{ t('title') }}
+
         <q-space />
 
         <q-btn
@@ -15,16 +18,21 @@
           dense
           @click="onDialogCancel"
         >
-          <q-tooltip>Close</q-tooltip>
+          <q-tooltip>
+            {{ t('action.close') }}
+          </q-tooltip>
         </q-btn>
       </q-bar>
 
-      <registration-form
-        :camp-details="camp"
-        :data="data"
-        :submit-fn="onSubmit"
-        :upload-file-fn="onFileUpload"
-      />
+      <q-scroll-area class="col-grow">
+        <registration-form
+          :camp-details="camp"
+          :data="data"
+          :submit-fn="onSubmit"
+          :upload-file-fn="onFileUpload"
+          moderation
+        />
+      </q-scroll-area>
     </q-card>
   </q-dialog>
 </template>
@@ -38,6 +46,7 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   camp: CampDetails;
@@ -48,6 +57,7 @@ interface Props {
 const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
+const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 // dialogRef      - Vue ref to be applied to QDialog
@@ -69,24 +79,21 @@ async function onFileUpload(file: File) {
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit data'
+title: 'Update registration'
 action:
-  edit: 'Save'
-  cancel: 'Cancel'
+  close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Daten bearbeiten'
+title: 'Anmeldung bearbeiten'
 action:
-  edit: 'Speichern'
-  cancel: 'Abbrechen'
+  close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier les données'
+title: "Modifier l'inscription"
 action:
-  edit: 'Sauvegarder'
-  cancel: 'Annuler'
+  close: 'Fermer'
 </i18n>
 
 <style></style>

@@ -26,9 +26,13 @@ interface Props {
   campDetails: CampDetails;
   submitFn: (id: string, formData: unknown) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
+  moderation?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  data: undefined,
+  moderation: false,
+});
 
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
@@ -56,12 +60,25 @@ onMounted(async () => {
   const form = camp.form;
   const id = camp.id;
 
-  model.value = createModel(id, form);
+  const modelForm = props.moderation ? createModerationForm(form) : form;
+  model.value = createModel(id, modelForm);
 
   if (props.data) {
     model.value.data = props.data;
   }
 });
+
+function createModerationForm(form: object) {
+  return {
+    ...form,
+    showTOC: true,
+    completeText: {
+      default: 'Save',
+      de: 'Speichern',
+      fr: 'Sauver',
+    },
+  };
+}
 
 function createModel(id: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
