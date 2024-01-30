@@ -72,6 +72,7 @@ function createModerationForm(form: object) {
   return {
     ...form,
     showTOC: true,
+    fitToContainer: true,
     completeText: {
       default: 'Save',
       de: 'Speichern',
