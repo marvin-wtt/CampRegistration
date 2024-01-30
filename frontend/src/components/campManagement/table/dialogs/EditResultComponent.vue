@@ -2,10 +2,11 @@
   <q-dialog
     ref="dialogRef"
     full-height
+    full-width
     @hide="onDialogHide"
   >
-    <q-card>
-      <q-bar>
+    <q-card class="column">
+      <q-bar class="col-shrink">
         <q-space />
 
         <q-btn
@@ -19,12 +20,15 @@
         </q-btn>
       </q-bar>
 
-      <registration-form
-        :camp-details="camp"
-        :data="data"
-        :submit-fn="onSubmit"
-        :upload-file-fn="onFileUpload"
-      />
+      <q-scroll-area class="col-grow">
+        <registration-form
+          :camp-details="camp"
+          :data="data"
+          :submit-fn="onSubmit"
+          :upload-file-fn="onFileUpload"
+          moderation
+        />
+      </q-scroll-area>
     </q-card>
   </q-dialog>
 </template>
