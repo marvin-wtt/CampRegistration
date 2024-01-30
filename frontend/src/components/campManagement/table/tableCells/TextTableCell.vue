@@ -70,8 +70,9 @@ const extraWords = computed<number>(() => {
     return 0;
   }
 
-  const total = value.length;
-  const lastSpaceIndex = value.substring(0, limit).lastIndexOf(' ');
+  const str = value.trim();
+  const total = str.length;
+  const lastSpaceIndex = str.substring(0, limit).lastIndexOf(' ');
   if (lastSpaceIndex < 0) {
     return 0;
   }
