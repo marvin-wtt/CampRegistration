@@ -119,11 +119,13 @@
           </q-expansion-item>
         </q-list>
 
-        <toggle-item
-          v-model="column.editable"
-          :label="t('fields.editable.label')"
-          :hint="t('fields.editable.hint')"
-        />
+        <!-- TODO Enable if feature is implemented or remove it -->
+        <!-- -->
+        <!--        <toggle-item-->
+        <!--          v-model="column.editable"-->
+        <!--          :label="t('fields.editable.label')"-->
+        <!--          :hint="t('fields.editable.hint')"-->
+        <!--        />-->
 
         <toggle-item
           v-model="column.sortable"
