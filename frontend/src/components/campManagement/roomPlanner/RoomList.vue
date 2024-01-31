@@ -116,40 +116,34 @@ const gender = computed<string | undefined>(() => {
   return gender;
 });
 
-const counselor = computed<boolean | undefined>(() => {
-  let counselor: boolean | undefined = undefined;
-
-  room.value.beds.some((bed) => {
+const participant = computed<boolean | undefined>(() => {
+  return room.value.beds.some((bed) => {
     const person = bed.person;
-    if (person?.counselor === undefined) {
-      return false;
-    }
-
-    counselor = person.counselor;
-    return true;
+    return person?.participant;
   });
-
-  return counselor;
 });
 
 const options = computed<unknown[]>(() => {
-  let people = props.people;
+  const genderFilter = (roomMate: Roommate | null): boolean => {
+    if (gender.value === undefined) {
+      return true;
+    }
 
-  if (gender.value !== undefined) {
-    people = people.filter((value) => {
-      return value?.gender !== undefined && value.gender === gender.value;
-    });
-  }
+    return roomMate?.gender !== undefined && roomMate?.gender === gender.value;
+  };
 
-  if (counselor.value !== undefined) {
-    people = people.filter((value) => {
-      return (
-        value?.counselor !== undefined && value.counselor === counselor.value
-      );
-    });
-  }
+  const roleFilter = (roomMate: Roommate | null): boolean => {
+    if (participant.value === undefined) {
+      return true;
+    }
 
-  return people;
+    return (
+      roomMate?.participant !== undefined &&
+      roomMate.participant === participant.value
+    );
+  };
+
+  return props.people.filter(genderFilter).filter(roleFilter);
 });
 
 function onBedUpdate(position: number, roomMate: Roommate | null) {
