@@ -9,15 +9,34 @@ export function useRegistrationHelper() {
   function unknownValue(
     registration: Registration,
     keyName: string,
-    index = 0,
+    index?: number,
   ): unknown {
     const campData = registration.campData;
 
-    if (!(keyName in campData) || campData[keyName].length < index + 1) {
+    if (!(keyName in campData)) {
       return undefined;
     }
 
-    return campData[keyName][index];
+    if (index !== undefined) {
+      return campData[keyName].length > index
+        ? campData[keyName][index]
+        : undefined;
+    }
+
+    return campData[keyName].find((value) => value != null);
+  }
+
+  function unknownValues(
+    registration: Registration,
+    keyName: string,
+  ): unknown[] {
+    const campData = registration.campData;
+
+    if (!(keyName in campData)) {
+      return [];
+    }
+
+    return campData[keyName];
   }
 
   function stringValue(
@@ -30,6 +49,24 @@ export function useRegistrationHelper() {
     }
 
     return value;
+  }
+
+  function objectValue<T = object>(
+    registration: Registration,
+    keyName: string,
+  ): T | undefined {
+    const value = unknownValue(registration, keyName);
+    if (typeof value !== 'object' || value === null) {
+      return undefined;
+    }
+
+    return value as T;
+  }
+
+  function stringValues(registration: Registration, keyName: string): string[] {
+    const values = unknownValues(registration, keyName);
+
+    return values.filter((value): value is string => typeof value === 'string');
   }
 
   function numericValue(
@@ -74,11 +111,11 @@ export function useRegistrationHelper() {
   }
 
   function firstName(registration: Registration): string | undefined {
-    return stringValue(registration, 'firstName');
+    return stringValue(registration, 'first_name');
   }
 
   function lastName(registration: Registration): string | undefined {
-    return stringValue(registration, 'lastName');
+    return stringValue(registration, 'last_name');
   }
 
   function fullName(registration: Registration): string | undefined {
@@ -134,7 +171,7 @@ export function useRegistrationHelper() {
   }
 
   function dateOfBirth(registration: Registration): Date | undefined {
-    return dateValue(registration, 'dateOfBirth');
+    return dateValue(registration, 'date_of_birth');
   }
 
   function age(registration: Registration): number | undefined {
@@ -163,34 +200,36 @@ export function useRegistrationHelper() {
   }
 
   function country(registration: Registration): string | undefined {
-    return stringValue(registration, 'country');
+    return (
+      stringValue(registration, 'country') ?? address(registration)?.country
+    );
   }
 
-  function counselor(registration: Registration): boolean {
-    return booleanValue(registration, 'counselor') ?? false;
+  interface Address {
+    street: string;
+    zip_code: string;
+    city: string;
+    country: string;
+  }
+
+  function address(registration: Registration): Address | undefined {
+    return objectValue<Address>(registration, 'address');
+  }
+
+  function role(registration: Registration): string | undefined {
+    return stringValue(registration, 'role');
   }
 
   function participant(registration: Registration): boolean {
-    return booleanValue(registration, 'participant') ?? true;
-  }
-
-  function waitingList(registration: Registration): boolean {
-    return booleanValue(registration, 'waitingList') ?? false;
+    return role(registration) === 'participant';
   }
 
   function email(registration: Registration): string | undefined {
     return stringValue(registration, 'email');
   }
 
-  function secondaryEmail(registration: Registration): string | undefined {
-    return stringValue(registration, 'secondaryEmail');
-  }
-
   function emails(registration: Registration): string[] {
-    const primary = email(registration);
-    const secondary = email(registration);
-
-    return [primary, secondary].filter((str) => str !== undefined) as string[];
+    return stringValues(registration, 'email');
   }
 
   return {
@@ -202,11 +241,10 @@ export function useRegistrationHelper() {
     age,
     gender,
     country,
-    counselor,
+    address,
+    role,
     participant,
-    waitingList,
     email,
-    secondaryEmail,
     emails,
     unknownValue,
     stringValue,

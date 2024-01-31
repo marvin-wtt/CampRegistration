@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/campManagement/edit/EditCampForm.vue';
+import EditCampForm from 'components/campManagement/settings/EditCampForm.vue';
 
 const router = useRouter();
 
@@ -27,13 +27,6 @@ const campsStore = useCampsStore();
 
 async function onSubmit() {
   loading.value = true;
-
-  // TODO Replace with default
-  data.value.form = {
-    title: 'Test',
-    description: 'Survey',
-    pages: [],
-  };
 
   const camp = await campsStore.createEntry(data.value as CampDetails);
 
@@ -45,7 +38,7 @@ async function onSubmit() {
   return router.push({
     name: 'management',
     query: {
-      public: 0,
+      page: 'active',
     },
   });
 }

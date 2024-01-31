@@ -9,13 +9,13 @@ export function useUserService() {
   async function fetchUsers(): Promise<User[]> {
     const response = await api.get('users/');
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function fetchUser(id?: string): Promise<User> {
     const response = await api.get(`users/${id}/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function createUser(data: UserCreateData): Promise<void> {

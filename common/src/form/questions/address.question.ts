@@ -33,7 +33,7 @@ const address: ICustomQuestionTypeConfiguration = {
       title: {
         de: 'Ort',
         en: 'Place',
-        fr: 'Lieu',
+        fr: 'Ville',
       },
       isRequired: true,
       startWithNewLine: false,

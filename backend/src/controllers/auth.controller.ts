@@ -9,6 +9,7 @@ import ApiError from 'utils/ApiError';
 import managerService from 'services/manager.service';
 import { requestLocale } from 'utils/requestLocale';
 import { authUserId } from 'utils/authUserId';
+import { catchAndResolve } from '../utils/promiseUtils';
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;
@@ -24,7 +25,9 @@ const register = catchRequestAsync(async (req, res) => {
   await managerService.resolveManagerInvitations(user.email, user.id);
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  await authService.sendVerificationEmail(user.email, verifyEmailToken);
+  await catchAndResolve(
+    authService.sendVerificationEmail(user.email, verifyEmailToken),
+  );
 
   res.status(httpStatus.CREATED).json(userDetailedResource(user));
 });

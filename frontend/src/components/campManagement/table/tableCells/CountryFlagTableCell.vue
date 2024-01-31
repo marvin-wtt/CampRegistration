@@ -1,7 +1,7 @@
 <template>
-  <q-icon
-    v-if="icon !== undefined"
-    :name="icon"
+  <country-icon
+    v-if="country !== undefined"
+    :locale="country"
     :size="size"
   />
 
@@ -13,15 +13,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
 const props = defineProps<TableCellProps>();
 
-const icon = computed<string | undefined>(() => {
-  return props.props.value === 'de'
-    ? 'img:flags/de.svg'
-    : props.props.value === 'fr'
-      ? 'img:flags/fr.svg'
-      : undefined;
+const country = computed<string | undefined>(() => {
+  return typeof props.props.value === 'string' ? props.props.value : undefined;
 });
 
 const size = computed<string>(() => {

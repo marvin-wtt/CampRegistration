@@ -11,7 +11,7 @@ export function useTemplateService() {
   ): Promise<TableTemplate[]> {
     const response = await api.get(`camps/${campId}/templates/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function fetchResultTemplate(
@@ -20,7 +20,7 @@ export function useTemplateService() {
   ): Promise<TableTemplate[]> {
     const response = await api.get(`camps/${campId}/templates/${templateId}/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function createResultTemplate(
@@ -29,7 +29,7 @@ export function useTemplateService() {
   ): Promise<TableTemplate> {
     const response = await api.post(`camps/${campId}/templates/`, data);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function updateResultTemplate(
@@ -42,7 +42,7 @@ export function useTemplateService() {
       data,
     );
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function deleteResultTemplate(

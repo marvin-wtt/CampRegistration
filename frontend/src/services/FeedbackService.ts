@@ -12,7 +12,7 @@ export function useFeedbackService() {
       email,
     });
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   return {

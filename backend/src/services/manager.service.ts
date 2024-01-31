@@ -118,17 +118,21 @@ const sendManagerInvitation = async (
 
   const campName = translateObject(camp.name, user?.locale);
   const userName = user?.name;
+  const url = notificationService.generateUrl(`management/${camp.id}/`);
 
   await i18n.changeLanguage(user?.locale);
-  const subject = t('manager:email.invitation');
+  const subject = t('manager:email.invitation.subject');
   const template = 'manager-invitation';
 
   const context = {
-    campName,
+    camp: {
+      name: campName,
+    },
     userName,
+    url,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     subject,
     template,

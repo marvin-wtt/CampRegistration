@@ -10,19 +10,19 @@ export function useCampService() {
   async function fetchCamps(): Promise<Camp[]> {
     const response = await api.get('camps/');
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function fetchCamp(id: string): Promise<CampDetails> {
     const response = await api.get(`camps/${id}/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function createCamp(data: CampCreateData): Promise<CampDetails> {
     const response = await api.post('camps/', data);
 
-    return response.data.data;
+    return response.data?.data;
   }
 
   async function updateCamp(
@@ -31,7 +31,7 @@ export function useCampService() {
   ): Promise<CampDetails> {
     const response = await api.patch(`camps/${id}/`, data);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function deleteCamp(id: string): Promise<void> {

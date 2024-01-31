@@ -5,9 +5,8 @@ export interface TableTemplate extends Identifiable {
   columns: TableColumnTemplate[];
   order: number;
   filter?: string;
-  filterWaitingList?: boolean;
-  filterCounselors?: boolean;
-  filterParticipants?: boolean;
+  filterWaitingList?: 'include' | 'exclude' | 'only';
+  filterRoles?: string[];
   printOptions?: {
     orientation?: 'portrait' | 'landscape';
   };
@@ -31,7 +30,8 @@ export interface TableColumnTemplate {
   sortable?: boolean;
   sortOrder?: 'ad' | 'da';
   renderAs?: string;
-  renderOptions?: object;
+  renderOptions?: Record<string, unknown>;
+  isArray?: boolean;
   headerVertical?: boolean;
   editable?: boolean;
   shrink?: boolean;

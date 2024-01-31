@@ -44,7 +44,10 @@
           rounded
         />
 
-        <profile-menu />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -97,12 +100,13 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
-import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
+import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { storeToRefs } from 'pinia';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -112,8 +116,11 @@ const { to } = useObjectTranslation();
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
 
+const { user } = storeToRefs(authStore);
+
 onMounted(async () => {
   if (!authStore.user) {
+    // Fetch user instead of init to force redirect on error
     await authStore.fetchUser();
   }
   if (route.params.camp) {
@@ -231,6 +238,10 @@ const filteredItems = computed<NavigationItem[]>(() => {
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <i18n lang="yaml" locale="en">

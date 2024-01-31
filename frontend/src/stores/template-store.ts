@@ -31,12 +31,6 @@ export const useTemplateStore = defineStore('templates', () => {
     invalidate();
   });
 
-  // TODO Items:
-  //  federal_licence_id
-  //  (legal_guardian_permission_fly)
-  //  (legal_guardian_permission_written_consent)
-  //  language_skills
-
   async function forceFetchData(id?: string) {
     invalidate();
     return fetchData(id);

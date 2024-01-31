@@ -173,7 +173,6 @@ function shareAction() {
       quasar.notify({
         type: 'positive',
         message: t('notification.share_success'),
-        position: 'top',
         icon: 'assignment_turned_in',
       });
     })
@@ -181,7 +180,6 @@ function shareAction() {
       quasar.notify({
         type: 'negative',
         message: t('notification.share_fail'),
-        position: 'top',
       });
     });
 }

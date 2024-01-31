@@ -98,7 +98,7 @@ function deleteItem(): void {
 }
 
 function accept(): void {
-  // TODO Create dialog and update registration
+  // TODO Create dialog
   quasar.dialog({}).onOk(async () => {
     const id = registration.value.id;
     await registrationStore.updateData(id, {
@@ -108,13 +108,30 @@ function accept(): void {
 }
 
 function editItem(): void {
-  quasar.dialog({
-    component: EditResultComponent,
-    componentProps: {
-      questions: camp.data.value?.form,
-      result: registration.value.data,
-    },
-  });
+  quasar
+    .dialog({
+      component: EditResultComponent,
+      componentProps: {
+        camp: camp.data.value,
+        data: registration.value.data,
+        uploadFileFn: uploadFile,
+      },
+    })
+    .onOk((payload) => {
+      const id = registration.value.id;
+
+      registrationStore.updateData(id, { data: payload });
+    });
+}
+
+async function uploadFile(file: File): Promise<string> {
+  const serviceFile = await registrationStore.storeFile(file);
+
+  if (serviceFile.field) {
+    return `${serviceFile.id}#${serviceFile.field}`;
+  }
+
+  return serviceFile.id;
 }
 </script>
 

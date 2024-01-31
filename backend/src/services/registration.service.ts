@@ -8,12 +8,12 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
+import config from 'config';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
     where: { id, campId },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -23,7 +23,6 @@ const queryRegistrations = async (campId: string) => {
   return prisma.registration.findMany({
     where: { campId },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -67,25 +66,60 @@ type RegistrationCreateData = Pick<
   'waitingList' | 'data' | 'locale'
 >;
 const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
-  // TODO The utils was already initialized during validation. Attach it to the request body
+  const id = ulid();
   const form = formUtils(camp);
   form.updateData(data.data);
+  // Extract files first before the value are mapped to the URL
+  const fileIds = form.getFileIdentifiers();
+  form.mapFileValues((value) => {
+    if (typeof value !== 'string') {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
+    }
+    // The ID may contain the field name. Remove it.
+    const fileId = value.split('#')[0];
+    return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
+  });
+  // Get updated data from form back
+  const formData = form.data();
   const campData = form.extractCampData();
 
-  return prisma.$transaction(async (transaction) => {
-    const waitingList =
-      data.waitingList ?? (await isWaitingList(transaction, camp, campData));
-    return transaction.registration.create({
-      data: {
-        ...data,
-        id: ulid(),
-        campId: camp.id,
-        waitingList,
-        campData,
-      },
-      include: { files: true },
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const waitingList =
+        data.waitingList ?? (await isWaitingList(transaction, camp, campData));
+      const registration = await transaction.registration.create({
+        data: {
+          ...data,
+          id,
+          campId: camp.id,
+          data: formData,
+          waitingList,
+          campData,
+        },
+      });
+
+      // Assign files to this registration.
+      // TODO This should be handled by the file service
+      for (const value of fileIds) {
+        await transaction.file.update({
+          where: {
+            id: value.id,
+            registrationId: null,
+            campId: null,
+            field: value.field ?? null,
+          },
+          data: {
+            registrationId: registration.id,
+            accessLevel: 'private',
+          },
+        });
+      }
+
+      return registration;
     });
-  });
+  } catch (ignored) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Inconsistent data');
+  }
 };
 
 const isWaitingList = async (
@@ -148,10 +182,12 @@ const updateRegistrationById = async (
   registrationId: string,
   data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
 ) => {
-  // TODO The utils was already initialized during validation. Attach it to the request body
   const form = formUtils(camp);
   form.updateData(data.data);
   const campData = form.extractCampData();
+
+  // TODO Delete files if some where removed
+  // TODO Associate files if new file values are present
 
   return prisma.registration.update({
     where: { id: registrationId },
@@ -160,7 +196,6 @@ const updateRegistrationById = async (
       campData,
     },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -197,7 +232,7 @@ const sendRegistrationConfirmation = async (
   camp: Camp,
   registration: Registration,
 ) => {
-  const { to, replyTo, cc, campName, participantName } =
+  const { to, replyTo, campName, participantName } =
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
@@ -211,9 +246,8 @@ const sendRegistrationConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
-    cc,
     replyTo,
     subject,
     template,
@@ -225,7 +259,7 @@ const sendWaitingListConfirmation = async (
   camp: Camp,
   registration: Registration,
 ) => {
-  const { to, replyTo, cc, campName, participantName } =
+  const { to, replyTo, campName, participantName } =
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
@@ -239,9 +273,8 @@ const sendWaitingListConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
-    cc,
     replyTo,
     subject,
     template,
@@ -257,6 +290,7 @@ const sendRegistrationManagerNotification = async (
   const country = accessor.country(camp.countries);
 
   const to = findCampContactEmails(camp.contactEmail, country);
+  const replyTo = accessor.emails();
   const campName = translateObject(camp.name, country);
   const participantName = accessor.name();
 
@@ -277,8 +311,9 @@ const sendRegistrationManagerNotification = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
+    replyTo,
     subject,
     template,
     context,
@@ -293,7 +328,6 @@ const getRegistrationConfirmationRegistrationData = (
   const accessor = registrationCampDataAccessor(registration.campData);
 
   const to = accessor.emails();
-  const cc = accessor.guardianEmails();
   const country = accessor.country(camp.countries);
   const replyTo = findCampContactEmails(camp.contactEmail, country);
   const participantName = accessor.firstName() ?? accessor.name();
@@ -301,7 +335,6 @@ const getRegistrationConfirmationRegistrationData = (
 
   return {
     to,
-    cc,
     replyTo,
     participantName,
     campName,
@@ -316,9 +349,33 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
   };
 
   const country = (options?: string[]): string | undefined => {
-    return campData['country']?.find((value: unknown): value is string => {
-      return typeof value === 'string' && (!options || options.includes(value));
-    });
+    const country = campData['country']?.find(
+      (value: unknown): value is string => {
+        return (
+          typeof value === 'string' && (!options || options.includes(value))
+        );
+      },
+    );
+
+    if (country) {
+      return country;
+    }
+
+    // Try address instead
+    const address = campData['address']?.find(
+      (value: unknown): value is { country: string } => {
+        if (!value || typeof value !== 'object' || !('country' in value)) {
+          return false;
+        }
+
+        return (
+          typeof value.country === 'string' &&
+          (!options || options.includes(value.country))
+        );
+      },
+    );
+
+    return address?.country;
   };
 
   const firstName = (): string | undefined => {
@@ -367,16 +424,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     return first !== undefined ? first : last;
   };
 
-  const guardianEmails = (): string[] => {
-    const emails = campData['guardian_email']?.filter(
-      (value): value is string => {
-        return !!value && typeof value === 'string';
-      },
-    );
-
-    return emails ?? [];
-  };
-
   return {
     emails,
     country,
@@ -384,7 +431,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     firstName,
     lastName,
     fullName,
-    guardianEmails,
   };
 };
 

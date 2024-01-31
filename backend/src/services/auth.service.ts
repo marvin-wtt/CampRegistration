@@ -134,7 +134,7 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
   await i18n.changeLanguage(user?.locale);
 
   const template = 'reset-password';
-  const subject = t('auth:email.reset-password.subject');
+  const subject = t('auth:email.resetPassword.subject');
   const url = notificationService.generateUrl('reset-password', {
     email: to,
     token,
@@ -144,7 +144,7 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
     url,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     subject,
     template,
@@ -156,9 +156,8 @@ const sendVerificationEmail = async (to: string, token: string) => {
   const user = await userService.getUserByEmail(to);
   await i18n.changeLanguage(user?.locale);
 
-  const subject = t('email:auth.email-verification.subject');
-
-  const url = notificationService.generateUrl('verify-email', {
+  const subject = t('auth:email.verifyEmail.subject');
+  const url = notificationService.generateUrl('login', {
     email: to,
     token,
   });
@@ -169,7 +168,7 @@ const sendVerificationEmail = async (to: string, token: string) => {
 
   const template = 'verify-email';
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     subject,
     template,

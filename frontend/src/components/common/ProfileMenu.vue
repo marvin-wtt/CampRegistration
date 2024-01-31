@@ -13,10 +13,10 @@
               {{ t('username') }}
             </q-item-label>
             <q-item-label caption>
-              {{ user?.name }}
+              {{ profile?.name }}
             </q-item-label>
             <q-item-label caption>
-              {{ user?.email }}
+              {{ profile?.email }}
             </q-item-label>
           </q-item-section>
         </q-item>
@@ -128,9 +128,8 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
-import { useAuthStore } from 'stores/auth-store';
-import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
+import type { Profile } from '@camp-registration/common/entities';
 
 const router = useRouter();
 const quasar = useQuasar();
@@ -139,8 +138,15 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
+interface Props {
+  profile: Profile | undefined;
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: 'logout'): void;
+}>();
 
 // TODO Read from config
 const locales = computed(() => [
@@ -150,7 +156,7 @@ const locales = computed(() => [
 ]);
 
 const authenticated = computed<boolean>(() => {
-  return authStore.user !== undefined;
+  return props.profile !== undefined;
 });
 
 const darkMode = computed<boolean>(() => {
@@ -172,7 +178,7 @@ function toggleDarkMode() {
 }
 
 function logout() {
-  authStore.logout();
+  emit('logout');
 }
 </script>
 

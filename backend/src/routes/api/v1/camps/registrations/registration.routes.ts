@@ -1,12 +1,12 @@
 import { registrationController } from 'controllers';
-import { auth, guard, multipart, validate } from 'middlewares';
+import { auth, guard, validate } from 'middlewares';
 import { campActive, campManager } from 'guards';
 import express from 'express';
 import { registrationValidation } from 'validations';
 import { registrationService } from 'services';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
-import registrationFiles from 'routes/api/v1/camps/registrations/registration.files.routes';
+import registrationFiles from './files.routes';
 
 const router = express.Router({ mergeParams: true });
 
@@ -42,7 +42,6 @@ router.get(
 router.post(
   '/',
   guard([campActive]),
-  multipart(undefined),
   validate(registrationValidation.store),
   registrationController.store,
 );
@@ -50,7 +49,6 @@ router.put(
   '/:registrationId',
   auth(),
   guard([campManager]),
-  multipart(undefined),
   validate(registrationValidation.update),
   registrationController.update,
 );

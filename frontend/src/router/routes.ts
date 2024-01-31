@@ -102,6 +102,13 @@ const routes: RouteRecordRaw[] = [
         },
         children: [
           {
+            path: 'dashboard',
+            name: 'dashboard',
+            redirect: {
+              name: 'participants',
+            },
+          },
+          {
             path: 'participants',
             name: 'participants',
             component: () =>
@@ -148,7 +155,7 @@ const routes: RouteRecordRaw[] = [
                   import('pages/campManagement/settings/FileSettingsPage.vue'),
               },
               {
-                path: 'edit-form',
+                path: 'form',
                 name: 'edit-form',
                 component: () =>
                   import('pages/campManagement/settings/FormEditPage.vue'),

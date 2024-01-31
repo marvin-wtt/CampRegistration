@@ -10,7 +10,7 @@ import registrationRoutes from 'routes/api/v1/camps/registrations/registration.r
 import templateRoutes from './template.routes';
 import roomRoutes from './rooms/room.routes';
 import managerRoutes from './manager.routes';
-import campFileRoutes from './camp-files.routes';
+import campFileRoutes from './files.routes';
 
 const router = express.Router({ mergeParams: true });
 

@@ -9,7 +9,6 @@ import {
   role,
   firstName,
   lastName,
-  guardianEmail,
   name,
 } from 'src/lib/surveyJs/properties/campDataMapping/types';
 
@@ -20,7 +19,6 @@ dataTypes.push(country);
 dataTypes.push(dateOfBirth);
 dataTypes.push(email);
 dataTypes.push(firstName);
-dataTypes.push(guardianEmail);
 dataTypes.push(lastName);
 dataTypes.push(name);
 dataTypes.push(role);

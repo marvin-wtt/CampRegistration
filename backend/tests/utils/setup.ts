@@ -8,7 +8,7 @@ import { stopJobs } from '../../src/jobs';
 import mailer from '../../src/config/mail';
 
 beforeEach(async () => {
-  vi.spyOn(mailer, 'sendMail');
+  vi.spyOn(mailer, 'sendMail').mockResolvedValue({});
 
   await resetDb();
   await resetRateLimiter();
