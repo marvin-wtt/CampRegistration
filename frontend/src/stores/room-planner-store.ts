@@ -174,7 +174,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     const age = registrationHelper.age(registration);
     const gender = registrationHelper.gender(registration);
     const country = registrationHelper.country(registration);
-    const counselor = registrationHelper.counselor(registration);
+    const participant = registrationHelper.participant(registration);
 
     return {
       id: registration.id,
@@ -182,7 +182,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
       age,
       gender,
       country,
-      counselor,
+      participant,
     };
   }
 

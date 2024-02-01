@@ -9,7 +9,7 @@ export interface Roommate extends Identifiable {
   age?: number;
   gender?: string;
   country?: string;
-  counselor?: boolean;
+  participant?: boolean;
 }
 
 interface BedWithRoommate extends Omit<Bed, 'registrationId'> {

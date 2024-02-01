@@ -220,10 +220,6 @@ export function useRegistrationHelper() {
     return stringValue(registration, 'role');
   }
 
-  function counselor(registration: Registration): boolean {
-    return role(registration) === 'counselor';
-  }
-
   function participant(registration: Registration): boolean {
     return role(registration) === 'participant';
   }
@@ -247,7 +243,6 @@ export function useRegistrationHelper() {
     country,
     address,
     role,
-    counselor,
     participant,
     email,
     emails,
