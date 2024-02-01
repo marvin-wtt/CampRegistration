@@ -69,10 +69,7 @@ const roleQuestion: RoleQuestionConfiguration = {
     const defaultValues = this.initialChoices.filter(
       (item) => !value?.some((it) => it.value === item.value) ?? true,
     );
-    question.customQuestion.json.questionJSON.choices = [
-      ...defaultValues,
-      ...value,
-    ];
+    question.questionWrapper.choices = [...defaultValues, ...value];
   },
 };
 
