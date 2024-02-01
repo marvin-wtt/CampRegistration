@@ -43,11 +43,10 @@ const getParticipantsCountByCountry = async (
   });
 
   const getCountry = (registration: Registration): string => {
-    const country = registration.campData['country']?.find((value: unknown) => {
-      return typeof value === 'string' && countries.includes(value);
-    });
-
-    return country ?? 'unknown';
+    return (
+      registrationCampDataAccessor(registration.campData).country(countries) ??
+      'unknown'
+    );
   };
 
   // Count the participants for each country
