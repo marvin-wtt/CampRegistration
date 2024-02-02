@@ -5,7 +5,6 @@
   >
     <result-table
       v-if="camp.data.value"
-      ref="table"
       class="absolute fit"
       :questions="columns"
       :results="results"

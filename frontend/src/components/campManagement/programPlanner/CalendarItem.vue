@@ -4,12 +4,11 @@
     class="my-event"
     :class="badgeClasses"
     :style="badgeStyles"
-    :draggable="true"
   >
     <span class="title q-calendar__ellipsis">
-      {{ props.event.title }}
+      {{ to(props.event.title) }}
       <q-tooltip>
-        {{ props.event.details }}
+        {{ to(props.event.details) }}
       </q-tooltip>
     </span>
   </div>
@@ -17,8 +16,8 @@
 
 <script lang="ts" setup>
 import type { ProgramEvent } from '@camp-registration/common/entities';
-import { computed } from 'vue';
-
+import { computed, StyleValue } from 'vue';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 interface Props {
   event: ProgramEvent;
   timeStartPosition?: (time?: string) => number;
@@ -27,6 +26,8 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const { to } = useObjectTranslation();
+
 const backgroundColor = computed<string>(() => {
   return props.event.backgroundColor ?? '#0000ff';
 });
@@ -34,25 +35,21 @@ const backgroundColor = computed<string>(() => {
 const badgeClasses = computed<Record<string, string | boolean>>(() => {
   return {
     [`text-white bg-${props.event.backgroundColor}`]: true,
-    'full-width': !props.event.side || props.event.side === 'full',
+    'full-width': !props.event.side || props.event.side === 'auto',
     'left-side': props.event.side === 'left',
     'right-side': props.event.side === 'right',
     'rounded-border': true,
   };
 });
 
-const badgeStyles = computed(() => {
-  const s: {
-    top: string;
-    height: string;
-    backgroundColor: string;
-  } = {};
+const badgeStyles = computed<StyleValue>(() => {
+  const s: StyleValue = {};
   if (props.timeStartPosition && props.timeDurationHeight) {
     s.top = props.timeStartPosition(props.event.time) + 'px';
     s.height = props.timeDurationHeight(props.event.duration) + 'px';
-    s.backgroundColor = backgroundColor.value;
   }
-  s['align-items'] = 'flex-start';
+  s.backgroundColor = backgroundColor.value;
+  s.alignItems = 'flex-start';
   return s;
 });
 </script>
