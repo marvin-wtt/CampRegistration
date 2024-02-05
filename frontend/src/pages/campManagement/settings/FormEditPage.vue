@@ -180,7 +180,7 @@ creator.onUploadFile.add((_, options) => {
 
   const campId = campData.value?.id;
   if (!campId || files.length == 0) {
-    options.callback('error');
+    options.callback('error', '');
     return;
   }
 
@@ -199,7 +199,7 @@ creator.onUploadFile.add((_, options) => {
       options.callback('success', url);
     })
     .catch(() => {
-      options.callback('error');
+      options.callback('error', '');
     });
 });
 
