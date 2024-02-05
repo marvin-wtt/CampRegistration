@@ -56,7 +56,7 @@
       transition-hide="slide-down"
     >
       <q-card class="column">
-        <q-bar class="bg-primary">
+        <q-bar class="bg-primary text-white">
           <a> {{ t('dialog.title') }} </a>
 
           <q-space />
