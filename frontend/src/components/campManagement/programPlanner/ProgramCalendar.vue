@@ -9,6 +9,8 @@
       @previous="onPreciousNavigation"
     />
 
+    <q-resize-observer @resize="onPageResize" />
+
     <div class="col relative-position">
       <q-calendar-day
         ref="calendar"
@@ -24,6 +26,7 @@
         :interval-start="intervalStart"
         :interval-count="intervalCount"
         :interval-minutes="props.timeInterval"
+        :interval-height="intervalHeight"
         hour24-format
         bordered
         hoverable
@@ -68,9 +71,11 @@ import { useI18n } from 'vue-i18n';
 import type {
   CampDetails,
   ProgramEvent,
+  ProgramEventCreateData,
+  ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import CalendarNavigationBar from 'components/campManagement/programPlanner/CalendarNavigationBar.vue';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
@@ -91,8 +96,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'update', id: string, event: Partial<ProgramEvent>): void;
-  (e: 'add', event: Omit<ProgramEvent, 'id'>): void;
+  (e: 'update', id: string, event: ProgramEventUpdateData): void;
+  (e: 'add', event: ProgramEventCreateData): void;
   (e: 'delete', id: string): void;
 }>();
 
@@ -102,6 +107,13 @@ const quasar = useQuasar();
 const selectedDate = ref<string>(initialSelectedDate());
 
 const range = ref<number>(1);
+
+onMounted(() => {
+  // TODO Find better solution
+  setTimeout(() => {
+    updateIntervalHeight();
+  }, 500);
+});
 
 const intervalStart = computed<number>(() => {
   const start = props.dayStart.split(':');
@@ -122,6 +134,26 @@ const intervalCount = computed<number>(() => {
 
   return minutes / props.timeInterval - intervalStart.value;
 });
+
+const intervalHeight = ref<number>(10);
+
+watch(intervalCount, () => {
+  updateIntervalHeight();
+});
+
+function onPageResize() {
+  updateIntervalHeight();
+}
+
+function updateIntervalHeight() {
+  const el = document.getElementsByClassName('q-calendar-day__body')[0];
+  if (!el) {
+    return;
+  }
+
+  const height = el.clientHeight - 10;
+  intervalHeight.value = height / intervalCount.value;
+}
 
 function initialSelectedDate(): string {
   return props.camp.startAt.split('T')[0];

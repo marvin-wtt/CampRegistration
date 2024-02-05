@@ -8,6 +8,7 @@ import { useCampManagerService } from 'src/services/CampManagerService';
 import axios, { AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
+import { useProgramEventService } from 'src/services/ProgramEventService';
 
 export function useAPIService() {
   return {
@@ -20,6 +21,7 @@ export function useAPIService() {
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
+    ...useProgramEventService(),
   };
 }
 

@@ -219,7 +219,7 @@ export function useServiceHandler<T>(storeName: string) {
     needsUpdate.value = false;
   }
 
-  function asyncUpdate(fn: () => Promise<unknown>) {
+  function asyncAction(fn: () => Promise<unknown>) {
     pendingRequests.value++;
     fn().finally(() => pendingRequests.value--);
   }
@@ -333,7 +333,7 @@ export function useServiceHandler<T>(storeName: string) {
     errorOnFailure,
     forceFetch,
     lazyFetch,
-    asyncUpdate,
+    asyncAction,
     handlerByType,
     withProgressNotification,
     withMultiProgressNotification,

@@ -9,3 +9,4 @@ export { default as roomValidation } from './room.validation';
 export { default as bedValidation } from './bed.validation';
 export { default as fileValidation } from './file.validation';
 export { default as feedbackValidation } from './feedback.validation';
+export { default as programEventValidation } from './program-event.validation';

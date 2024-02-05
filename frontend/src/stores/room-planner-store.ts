@@ -31,7 +31,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     withProgressNotification,
     withErrorNotification,
     lazyFetch,
-    asyncUpdate,
+    asyncAction,
     requestPending,
     checkNotNullWithError,
     checkNotNullWithNotification,
@@ -125,7 +125,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     const bedId = room.beds[position].id;
     const registrationId = person?.id ?? null;
 
-    asyncUpdate(() => {
+    asyncAction(() => {
       return withErrorNotification('update-bed', () => {
         return apiService.updateBed(campId, roomId, bedId, registrationId);
       });

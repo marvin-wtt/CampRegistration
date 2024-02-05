@@ -181,3 +181,19 @@ model File {
 
   @@map("files")
 }
+
+model ProgramEvent {
+  id       String  @id @unique(map: "program_event_id_unique") @db.Char(26)
+  /// [StringOrTranslation]
+  title    Json
+  /// [StringOrTranslation]
+  details  Json?
+  location String?
+  date     String?
+  duration String?
+  time     String?
+  color    String? @map("background_color")
+  side     String?
+
+  @@map("program_events")
+}
