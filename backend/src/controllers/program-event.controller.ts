@@ -6,9 +6,9 @@ import { programEventResource } from 'resources';
 import { routeModel } from 'utils/verifyModel';
 
 const show = catchRequestAsync(async (req, res) => {
-  const room = routeModel(req.models.room);
+  const event = routeModel(req.models.programEvent);
 
-  res.json(resource(programEventResource(room)));
+  res.json(resource(programEventResource(event)));
 });
 
 const index = catchRequestAsync(async (req, res) => {

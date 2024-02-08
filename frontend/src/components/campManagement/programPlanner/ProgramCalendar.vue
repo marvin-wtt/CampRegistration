@@ -34,6 +34,9 @@
         transition-next="slide-left"
         transition-prev="slide-right"
         class="fit absolute"
+        @click-time="onTimeEventAdd"
+        @click-day="onDayEventAdd"
+        @click-head-day="onDayEventAdd"
       >
         <template #head-day-event="{ scope: { timestamp } }">
           <div class="column">
@@ -66,7 +69,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QCalendarDay } from '@quasar/quasar-ui-qcalendar';
+import { QCalendarDay, Timestamp } from '@quasar/quasar-ui-qcalendar';
 import { useI18n } from 'vue-i18n';
 import type {
   CampDetails,
@@ -80,6 +83,7 @@ import CalendarNavigationBar from 'components/campManagement/programPlanner/Cale
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
 import { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
+import PointerEvent from 'happy-dom/lib/event/events/PointerEvent';
 
 interface Props {
   camp: CampDetails;
@@ -190,6 +194,33 @@ function getEvents(date: string) {
   // TODO Apply side when side is auto
 
   return events;
+}
+
+interface Scope {
+  timestamp: Timestamp;
+}
+
+function onDayEventAdd({
+  event,
+  scope,
+}: {
+  event: PointerEvent;
+  scope: Scope;
+}) {
+  console.log(scope.timestamp.date);
+  console.log(props.timeInterval);
+}
+
+function onTimeEventAdd({
+  event,
+  scope,
+}: {
+  event: PointerEvent;
+  scope: Scope;
+}) {
+  console.log(scope.timestamp.date);
+  console.log(scope.timestamp.time);
+  console.log(props.timeInterval);
 }
 
 function onDragStart(e: DragEvent, event: ProgramEvent): void {

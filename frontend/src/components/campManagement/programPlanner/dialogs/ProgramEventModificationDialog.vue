@@ -15,35 +15,23 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
-          <!-- Time interval -->
-          <q-input
-            v-model.number="data.timeInterval"
-            :label="t('field.timeInterval.label')"
-            :hint="t('field.timeInterval.hint')"
-            hide-bottom-space
-            outlined
+          <translated-input
+            v-model="data.title"
+            outline
             rounded
           />
 
-          <!-- Day start -->
-          <time-input
-            v-model="data.dayStart"
-            :label="t('field.dayStart.label')"
-            :hint="t('field.dayStart.hint')"
-            hide-bottom-space
-            outlined
+          <translated-input
+            v-model="data.details"
+            type="textarea"
+            outline
             rounded
           />
 
-          <!-- Day end -->
-          <time-input
-            v-model="data.dayEnd"
-            :label="t('field.dayEnd.label')"
-            :hint="t('field.dayEnd.hint')"
-            hide-bottom-space
-            outlined
-            rounded
-          />
+          <!-- TODO Full day -->
+
+          <!-- TODO Start -->
+          <!-- TODO End -->
         </q-card-section>
 
         <!-- action buttons -->
@@ -68,29 +56,27 @@
 </template>
 
 <script lang="ts" setup>
-import TimeInput from 'components/common/inputs/TimeInput.vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
-
-interface CalendarSettings {
-  dayStart: string;
-  dayEnd: string;
-  timeInterval: number;
-}
+import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import {
+  ProgramEvent,
+  ProgramEventUpdateData,
+} from '@camp-registration/common/entities';
 
 interface Props {
-  modelValue: object;
+  event?: ProgramEvent;
 }
 
 const props = defineProps<Props>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const data = reactive<Partial<CalendarSettings>>(initialValue());
+const data = reactive<Partial<ProgramEventUpdateData>>(initialValue());
 
-function initialValue(): Partial<CalendarSettings> {
-  return structuredClone(toRaw(props.modelValue));
+function initialValue(): Partial<ProgramEventUpdateData> {
+  return props.event ? structuredClone(toRaw(props.event)) : {};
 }
 
 const { t } = useI18n();
@@ -133,8 +119,6 @@ actions:
   save: 'Save'
   cancel: 'Cancel'
 </i18n>
-
-<!-- TODO Add translations -->
 
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,

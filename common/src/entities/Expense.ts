@@ -1,10 +1,10 @@
 export interface Expense {
   id: number;
   name: string;
-  category?: string;
+  category: string | null;
   price: number;
   paid: boolean;
   paidBy: string;
-  date?: string;
-  recipient?: string;
+  date: string | null;
+  recipient: string | null;
 }

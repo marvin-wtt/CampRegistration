@@ -9,11 +9,11 @@ const programEventResource = (
     title: programEvent.title,
     details: programEvent.details,
     location: programEvent.location,
-    date: programEvent.date,
-    time: programEvent.time,
-    duration: programEvent.duration,
-    color: programEvent.color,
-    side: programEvent.side,
+    date: programEvent.date ?? null,
+    time: programEvent.time ?? null,
+    duration: programEvent.duration ?? null,
+    color: programEvent.color ?? 'white',
+    side: (programEvent.side as ProgramEventResource['side']) ?? null,
   };
 };
 

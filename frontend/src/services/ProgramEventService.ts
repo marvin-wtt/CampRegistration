@@ -1,4 +1,8 @@
-import type { ProgramEvent } from '@camp-registration/common/entities';
+import type {
+  ProgramEvent,
+  ProgramEventCreateData,
+  ProgramEventUpdateData,
+} from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
 export function useProgramEventService() {
@@ -21,7 +25,7 @@ export function useProgramEventService() {
 
   async function createProgramEvent(
     campId: string,
-    data: ProgramEvent,
+    data: ProgramEventCreateData,
   ): Promise<ProgramEvent> {
     const response = await api.post(`camps/${campId}/program-events/`, data);
 
@@ -31,7 +35,7 @@ export function useProgramEventService() {
   async function updateProgramEvent(
     campId: string,
     programEventId: string,
-    data: ProgramEvent,
+    data: ProgramEventUpdateData,
   ): Promise<ProgramEvent> {
     const response = await api.put(
       `camps/${campId}/program-events/${programEventId}/`,

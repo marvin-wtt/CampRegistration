@@ -66,6 +66,7 @@ model Camp {
   rooms           Room[]
   templates       Template[]
   files           File[]
+  ProgramEvent    ProgramEvent[]
 
   @@map("camps")
 }
@@ -184,16 +185,19 @@ model File {
 
 model ProgramEvent {
   id       String  @id @unique(map: "program_event_id_unique") @db.Char(26)
+  campId   String  @map("camp_id") @db.Char(36) // Prisma does not support morth
   /// [StringOrTranslation]
   title    Json
   /// [StringOrTranslation]
   details  Json?
-  location String?
+  /// [StringOrTranslation]
+  location Json?
   date     String?
-  duration String?
+  duration Int?
   time     String?
   color    String? @map("background_color")
   side     String?
+  camp     Camp?   @relation(fields: [campId], references: [id], onDelete: Cascade)
 
   @@map("program_events")
 }

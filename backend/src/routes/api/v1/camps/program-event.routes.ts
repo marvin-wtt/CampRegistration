@@ -13,11 +13,8 @@ router.param(
   'programEventId',
   catchParamAsync(async (req, res, next, id) => {
     const camp = routeModel(req.models.camp);
-    const template = await programPlannerService.getProgramEventById(
-      camp.id,
-      id,
-    );
-    req.models.template = verifyModelExists(template);
+    const event = await programPlannerService.getProgramEventById(camp.id, id);
+    req.models.programEvent = verifyModelExists(event);
     next();
   }),
 );

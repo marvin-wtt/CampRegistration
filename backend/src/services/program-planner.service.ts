@@ -16,7 +16,7 @@ const queryProgramEvent = async (campId: string) => {
 
 const createProgramEvent = async (
   campId: string,
-  data: Omit<Prisma.ProgramEventCreateInput, 'id'>,
+  data: Omit<Prisma.ProgramEventCreateInput, 'id' | 'camp'>,
 ) => {
   return prisma.programEvent.create({
     data: {
@@ -31,7 +31,7 @@ const updateProgramEventById = async (
   roomId: string,
   updateBody: Omit<Prisma.ProgramEventUpdateInput, 'id'>,
 ) => {
-  return prisma.room.update({
+  return prisma.programEvent.update({
     where: { id: roomId },
     data: updateBody,
   });

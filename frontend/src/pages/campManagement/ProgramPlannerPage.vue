@@ -34,6 +34,7 @@ const { data: camp } = storeToRefs(campDetailsStore);
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
+  await programPlannerStore.fetchData();
 });
 
 const loading = computed<boolean>(() => {

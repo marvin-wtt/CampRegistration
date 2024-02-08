@@ -47,13 +47,17 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     const campId = route.params.camp as string;
     checkNotNullWithError(campId);
 
+    // When we do optimistic updates, we do not know the id of the event before the requests finishes.
+    // Generate a temporary ID and replace it later
+    const tmpId = `#${crypto.randomUUID()}`;
+
     asyncAction(() =>
       withErrorNotification('create', async () => {
         const result = await apiService.createProgramEvent(campId, event);
 
         // Add item to data
         data.value = data.value?.map((value) =>
-          value.id === event.id ? result : value,
+          value.id === tmpId ? result : value,
         );
 
         return result;
@@ -62,7 +66,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
 
     // Optimistic update
     const tmpEvent = {
-      id: `#${crypto.randomUUID()}`,
+      id: tmpId,
       ...event,
     };
 
@@ -73,7 +77,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     return id.startsWith('#');
   }
 
-  async function updateEntry(id: string, event: ProgramEventCreateData) {
+  async function updateEntry(id: string, event: ProgramEventUpdateData) {
     const campId = route.params.camp as string;
     checkNotNullWithError(campId);
 
@@ -99,7 +103,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       ...event,
     };
     data.value = data.value?.map((value) =>
-      value.id === event.id ? resultEvent : value,
+      value.id === id ? resultEvent : value,
     );
   }
 

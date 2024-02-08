@@ -3,13 +3,13 @@ import type { Translatable } from './Translatable';
 
 export interface ProgramEvent extends Identifiable {
   title: Translatable;
-  details?: Translatable;
-  location?: Translatable;
-  date?: string;
-  time?: string;
-  duration?: number;
-  color: string;
-  side?: 'left' | 'right' | 'auto';
+  details: Translatable | null;
+  location: Translatable | null;
+  date: string | null;
+  time: string | null;
+  duration: number | null;
+  color: string | null;
+  side: 'left' | 'right' | 'auto' | null;
 }
 
 export type ProgramEventCreateData = Omit<ProgramEvent, 'id'>;
