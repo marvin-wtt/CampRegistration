@@ -36,6 +36,11 @@
           <br>
           {{ location }}
         </mj-text>
+        <mj-text mj-class="text">
+          User Agent:
+          <br>
+          {{ userAgent }}
+        </mj-text>
       </mj-column>
     </mj-section>
     <mj-raw>

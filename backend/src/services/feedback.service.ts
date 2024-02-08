@@ -4,11 +4,13 @@ import config from 'config';
 const saveFeedback = async (
   message: string,
   location: string,
+  userAgent?: string,
   email?: string | undefined,
 ) => {
   const context = {
     message,
     location,
+    userAgent,
   };
 
   // TODO Store to DB instead
