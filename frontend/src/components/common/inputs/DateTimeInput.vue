@@ -78,26 +78,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { QInputSlots } from 'quasar';
 
 const { t } = useI18n();
 
-interface Props {
-  modelValue?: string | number;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: unknown): void;
-}>();
-
-const modelValue = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-});
+const modelValue = defineModel<string | number | Date>();
 </script>
 
 <style scoped></style>
