@@ -142,8 +142,9 @@ const dialogOpen = computed<boolean>(() => {
 function send() {
   if (message.value) {
     const location = window.location.href;
+    const userAgent = navigator.userAgent;
 
-    api.sendFeedback(location, message.value, email.value);
+    api.sendFeedback(location, userAgent, message.value, email.value);
   }
 
   clear();
