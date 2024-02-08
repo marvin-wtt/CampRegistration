@@ -83,7 +83,7 @@ import { QInputSlots } from 'quasar';
 
 const { t } = useI18n();
 
-const modelValue = defineModel<string | number | Date>();
+const modelValue = defineModel<string | number>();
 </script>
 
 <style scoped></style>
