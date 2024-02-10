@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import passport from 'passport';
-import apiRoutes from './routes/api';
+import router from './routes';
 import config from './config';
 import morgan from './config/morgan';
 import { errorConverter, errorHandler } from './middlewares';
@@ -15,10 +15,8 @@ import path from 'path';
 
 const app = express();
 
-if (config.env !== 'test') {
-  app.use(morgan.successHandler);
-  app.use(morgan.errorHandler);
-}
+// Errors are always logged. Successful requests are logged inside the routers if required
+app.use(morgan.errorHandler);
 
 // set security HTTP headers
 app.use(helmet());
@@ -58,8 +56,8 @@ passport.use(anonymousStrategy);
 // localization
 initI18n();
 
-// api routes
-app.use('/api', apiRoutes);
+// routes
+app.use(router);
 // static content
 app.use(express.static('public'));
 // Serve frontend content

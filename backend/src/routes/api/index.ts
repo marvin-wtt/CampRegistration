@@ -4,8 +4,11 @@ import { generalLimiter } from 'middlewares';
 import passport from 'passport';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
+import morgan from 'config/morgan';
 
 const router = express.Router();
+
+router.use(morgan.successHandler);
 
 router.use(generalLimiter);
 router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
