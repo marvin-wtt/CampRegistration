@@ -1,5 +1,8 @@
 <template>
-  <q-item>
+  <q-item
+    v-ripple
+    @click="resultsAction"
+  >
     <q-item-section>
       <q-item-label>
         {{ to(props.camp.name) }}
