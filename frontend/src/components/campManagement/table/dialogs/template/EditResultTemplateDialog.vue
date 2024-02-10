@@ -6,7 +6,7 @@
   >
     <q-card
       class="q-dialog-plugin q-pb-none row justify-between content-start"
-      :style="`min-width: ${minWidth}px`"
+      :style="cardStyle"
     >
       <q-card-section class="col-12">
         <div class="text-h5">
@@ -241,8 +241,14 @@ const sortByOptions = computed(() => {
   });
 });
 
-const minWidth = computed<number>(() => {
-  return quasar.screen.xs || quasar.screen.sm ? 500 : 1000;
+const cardStyle = computed<CSSStyleValue>(() => {
+  if (quasar.screen.gt.md) {
+    return {
+      minWidth: '1000px',
+    };
+  }
+
+  return {};
 });
 
 function swapSortDirection(): void {
