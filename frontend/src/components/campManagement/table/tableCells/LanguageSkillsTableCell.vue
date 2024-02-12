@@ -1,22 +1,23 @@
 <template>
   <div class="q-gutter-x-sm">
-    <q-icon
+    <country-icon
       v-for="icon in icons"
-      :key="icon.key"
-      :name="icon.name"
+      :key="icon.name"
+      :locale="icon.name"
       :size="size"
-      :style="`filter: grayscale(${icon.opacity}%)`"
+      :style="`filter: grayscale(${icon.opacity})`"
     >
       <q-tooltip>
         {{ icon.opacity }}
       </q-tooltip>
-    </q-icon>
+    </country-icon>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
 interface Icon {
   key: string;
