@@ -8,6 +8,12 @@ import authRefreshToken from 'src/services/authRefreshToken';
 import { AxiosRequestConfig, isAxiosError } from 'axios';
 
 export function useAuthService() {
+  // Retry failed requests after fetching a new refresh token
+  authRefreshToken(api, {
+    handleTokenRefresh: refreshTokens,
+    shouldIntercept: (error) => error.response?.status === 401,
+  });
+
   let onUnauthenticated: (() => unknown | Promise<unknown>) | undefined =
     undefined;
   // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
@@ -30,14 +36,9 @@ export function useAuthService() {
 
     if (onUnauthenticated) {
       await onUnauthenticated();
-      return Promise.reject(error);
     }
-  });
 
-  // Retry failed requests after fetching a new refresh token
-  authRefreshToken(api, {
-    handleTokenRefresh: refreshTokens,
-    shouldIntercept: (error) => error.response?.status === 401,
+    return Promise.reject(error);
   });
 
   async function login(
