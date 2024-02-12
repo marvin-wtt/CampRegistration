@@ -21,9 +21,9 @@ export default {
       text: {
         title: 'Hello {{ participantName }},',
         information:
-          'Thank you for your registration to {{ camp.name }}.' +
-          'Unfortunately, all places have already been taken.' +
-          'Your registration is now on the waiting list.' +
+          'Thank you for your registration to {{ camp.name }}. ' +
+          'Unfortunately, all places have already been taken. ' +
+          'Your registration is now on the waiting list. ' +
           'You will hear from us, when a place gets available.',
         contact:
           "If you have any further questions, please don't hesitate to contact us by replying to this email.",
@@ -41,7 +41,7 @@ export default {
       text: {
         title: 'Hello {{ participantName }},',
         information:
-          'Thank you for your registration to {{ camp.name }}.' +
+          'Thank you for your registration to {{ camp.name }}. ' +
           'You will receive further information in a separate email.',
         contact:
           "If you have any further questions, please don't hesitate to contact us by replying to this email.",

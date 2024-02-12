@@ -1,30 +1,31 @@
 <template>
   <div class="q-gutter-x-sm">
-    <q-icon
+    <country-icon
       v-for="icon in icons"
-      :key="icon.key"
-      :name="icon.name"
+      :key="icon.name"
+      :locale="icon.name"
       :size="size"
-      :style="`filter: grayscale(${icon.opacity}%)`"
+      :style="`filter: grayscale(${icon.opacity})`"
     >
       <q-tooltip>
         {{ icon.opacity }}
       </q-tooltip>
-    </q-icon>
+    </country-icon>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
 interface Icon {
-  key: string;
   name: string;
   opacity: number;
 }
 
 const props = defineProps<TableCellProps>();
+
 const icons = computed<Icon[]>(() => {
   const value = props.props.value;
 
@@ -35,14 +36,69 @@ const icons = computed<Icon[]>(() => {
   const icons: Icon[] = [];
   for (const [k, v] of Object.entries(value)) {
     icons.push({
-      key: k,
-      name: `img:flags/${k}.svg`,
-      opacity: typeof v === 'number' ? 100 - v : 100,
+      name: k,
+      opacity: calculateOpacity(v),
     });
   }
 
   return icons;
 });
+
+const calculateOpacity = (value: unknown): number => {
+  if (!value) {
+    return 1;
+  }
+
+  if (typeof value === 'object' && 'level' in value) {
+    return calculateOpacity(value.level);
+  }
+
+  if (typeof value === 'string') {
+    return levelToOpacity(value);
+  }
+
+  // This is the legacy support
+  if (typeof value === 'number') {
+    return 100 - value;
+  }
+
+  return 100;
+};
+
+const levelToOpacity = (level: string): number => {
+  level = level.toUpperCase();
+  switch (level) {
+    case 'C2':
+    case 'NATIVE':
+    case 'FLUENT':
+    case 'MASTERY':
+    case 'PROFICIENCY':
+      return 0;
+    case 'C1':
+    case 'ADVANCED':
+      return 1 / 6;
+    case 'B2':
+    case 'VANTAGE':
+    case 'UPPER-INTERMEDIATE':
+      return 2 / 6;
+    case 'B1':
+    case 'THRESHOLD':
+    case 'INTERMEDIATE':
+      return 3 / 6;
+    case 'A2':
+    case 'PRE-INTERMEDIATE':
+    case 'WASTAGE':
+    case 'BASIC':
+      return 4 / 6;
+    case 'A1':
+    case 'BEGINNER':
+    case 'BREAKTHROUGH':
+      return 5 / 6;
+    case 'NONE':
+    default:
+      return 1;
+  }
+};
 
 const size = computed<string>(() => {
   return props.props.dense ? 'xs' : 'md';

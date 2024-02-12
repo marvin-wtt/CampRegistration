@@ -23,9 +23,9 @@ export default {
       text: {
         title: 'Hallo {{ participantName }},',
         information:
-          'Danke für deine Anmeldung zum {{ camp.name }}.' +
-          'Leider sind bereits alle Plätze vergeben.' +
-          'Deine Anmeldung steht nun auf der Warteliste.' +
+          'Danke für deine Anmeldung zum {{ camp.name }}. ' +
+          'Leider sind bereits alle Plätze vergeben. ' +
+          'Deine Anmeldung steht nun auf der Warteliste. ' +
           'Wir melden uns, sobald ein Platz frei wird.',
         contact:
           'Wenn du weitere Fragen hast, zögere nicht, uns zu kontaktieren, indem du auf diese E-Mail antwortest.',
@@ -42,7 +42,7 @@ export default {
       text: {
         title: 'Hallo {{ participantName }},',
         information:
-          'Danke für deine Anmeldung zum {{ camp.name }}.' +
+          'Danke für deine Anmeldung zum {{ camp.name }}. ' +
           'Du erhältst weitere Informationen in einer separaten E-Mail.',
         contact:
           'Wenn du weitere Fragen hast, zögere nicht, uns zu kontaktieren, indem du auf diese E-Mail antwortest.',
