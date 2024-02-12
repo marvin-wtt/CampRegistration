@@ -1,6 +1,7 @@
 <template>
   <q-item
     v-ripple
+    clickable
     @click="resultsAction"
   >
     <q-item-section>
