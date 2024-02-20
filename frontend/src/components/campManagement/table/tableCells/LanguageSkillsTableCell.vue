@@ -8,7 +8,7 @@
       :style="`filter: grayscale(${icon.opacity})`"
     >
       <q-tooltip>
-        {{ icon.opacity }}
+        {{ icon.name }}
       </q-tooltip>
     </country-icon>
   </div>
@@ -33,15 +33,12 @@ const icons = computed<Icon[]>(() => {
     return [];
   }
 
-  const icons: Icon[] = [];
-  for (const [k, v] of Object.entries(value)) {
-    icons.push({
-      name: k,
-      opacity: calculateOpacity(v),
-    });
-  }
-
-  return icons;
+  return Object.entries(value)
+    .map(([name, value]) => ({
+      name,
+      opacity: calculateOpacity(value),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 });
 
 const calculateOpacity = (value: unknown): number => {
