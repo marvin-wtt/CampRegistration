@@ -18,7 +18,6 @@
     "backend"
   ],
   "dependencies": {
-  },
-  "devDependencies": {
+    "pdf-lib": "^1.17.1"
   }
 }
