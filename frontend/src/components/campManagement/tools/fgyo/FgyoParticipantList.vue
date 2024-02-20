@@ -14,6 +14,27 @@
           color="primary"
           animated
         >
+          <q-step
+            title="Download"
+            name="download"
+            icon="download"
+          >
+            <q-stepper-navigation>
+              <q-btn
+                color="primary"
+                label="Download"
+                :loading="downloadLoading"
+                @click="onDownload"
+              />
+              <q-btn
+                flat
+                color="primary"
+                label="Back"
+                class="q-ml-sm"
+                @click="step = 'TODO'"
+              />
+            </q-stepper-navigation>
+          </q-step>
         </q-stepper>
       </q-form>
     </q-card>
@@ -21,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, exportFile } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import type {
@@ -30,6 +51,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { PDFDocument, PDFForm } from 'pdf-lib';
+import { useAPIService } from 'src/services/APIService';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -43,8 +65,21 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const { t, locale } = useI18n();
 const accessor = useRegistrationHelper();
+const api = useAPIService();
 
-const step = ref<string>();
+const step = ref<string>('download');
+const downloadLoading = ref<boolean>(false);
+
+async function onDownload() {
+  downloadLoading.value = true;
+  try {
+    await generateFiles();
+  } catch (error: unknown) {
+    console.log(error);
+  } finally {
+    downloadLoading.value = false;
+  }
+}
 
 type FormKeyValue = (i: number) => string;
 
@@ -60,27 +95,61 @@ interface FormKeys {
   role?: FormKeyValue;
 }
 
-const generateFiles = async () => {
-  const countries = new Set(
-    ...props.registrations
-      .map(accessor.country)
-      .filter((value) => value !== undefined),
-  );
-
-  const files = await Promise.all(Array.from(countries).map(fillPdf));
+const formFiledNames: Record<'participants' | 'team', FormKeys> = {
+  participants: {
+    lastName: (i) => `Name${i + 1}`,
+    firstName: (i) => `Vorname${i + 1}`,
+    zipCode: (i) => `Postleit zahl${i + 1}`,
+    city: (i) => `Ort${i + 1}`,
+    country: (i) => `Land${i + 1}`,
+    age: (i) => `Alter${i + 1}`,
+    nights: (i) => `Anzahl der Nächte${i + 1}`,
+    distance: (i) => `km-${twoDigits(i + 1)}`,
+  },
+  team: {
+    lastName: (i) => `Name${i + 1}_2`,
+    firstName: (i) => `Vorname${i + 1}_2`,
+    zipCode: (i) => `Postleit zahl${i + 1}_2`,
+    city: (i) => `Ort${i + 1}_2`,
+    country: (i) => `Land${i + 1}_2`,
+    age: (i) => `Alter${i + 1}_2`,
+    nights: (i) => `Anzahl der Nächte${i + 1}_2`,
+    distance: (i) => `km-team-${twoDigits(i + 1)}`,
+    role: (i) => `dropdown-4-${twoDigits(i + 1)}`,
+  },
 };
 
-const fillPdf = async (country: string) => {
-  // TODO Use api service and get asset url
-  // TODO Cache the file
-  const bytes = await fetch('').then((res) => res.arrayBuffer());
+const generateFiles = async () => {
+  const countries = new Set(
+    props.registrations
+      .map(accessor.country)
+      .filter((value): value is string => value !== undefined),
+  );
+
+  const fileLocale = locale.value.split('-')[0];
+  const bytes = await api.fetchFile(`fgyo/participats_${fileLocale}.pdf`);
+
   const document = await PDFDocument.load(bytes);
+
+  const files = await Promise.all(
+    Array.from(countries).map(async (country, i) => {
+      // Copy the document if it's not the last element
+      const d = i !== countries.size - 1 ? await document.copy() : document;
+      await fillPdf(d, country);
+      return d.save();
+    }),
+  );
+
+  files.forEach((value, index) => {
+    exportFile(`participants_${index}.pdf`, value);
+  });
+};
+
+const fillPdf = async (document: PDFDocument, country: string) => {
   const form = document.getForm();
+  const nights = campNights.value;
 
   setCountryData(form, country);
-
-  const nights = campNights.value;
-  const fileLocale = locale.value.split('-')[0];
 
   const registrations = props.registrations.filter((registration) => {
     return accessor.country(registration)?.toLowerCase() === country;
@@ -91,39 +160,21 @@ const fillPdf = async (country: string) => {
 
   const team = registrations.filter((r) => !accessor.participant(r));
   setRegistrationData(form, formFiledNames.team, team, nights);
+
+  return document;
 };
 
 const campNights = computed<number>(() => {
   const start = new Date(props.camp.startAt);
+  start.setHours(0, 0, 0, 0);
   const end = new Date(props.camp.endAt);
+  end.setHours(0, 0, 0, 0);
 
-  // TODO Calculate started days
-  return 0;
+  const millisecondsInDay = 1000 * 60 * 60 * 24;
+  const diffTime = Math.abs(start.getTime() - end.getTime());
+
+  return Math.ceil(diffTime / millisecondsInDay);
 });
-
-const formFiledNames: Record<'participants' | 'team', FormKeys> = {
-  participants: {
-    lastName: (i) => `Name${i}`,
-    firstName: (i) => `Vorname${i}`,
-    zipCode: (i) => `Postleit Zahl${i}`,
-    city: (i) => `Ort${i}`,
-    country: (i) => `Land${i}`,
-    age: (i) => `Alter${i}`,
-    nights: (i) => `Anzahl der Nächte${i}`,
-    distance: (i) => `km-${twoDigits(i)}`,
-  },
-  team: {
-    lastName: (i) => `Name${i}_2`,
-    firstName: (i) => `Vorname${i}_2`,
-    zipCode: (i) => `Postleit zahl${i}_2`,
-    city: (i) => `Ort${i}_2`,
-    country: (i) => `Land${i}_2`,
-    age: (i) => `Alter${i}_2`,
-    nights: (i) => `Anzahl der Nächte${i}_2`,
-    distance: (i) => `km-team-${twoDigits(i)}`,
-    role: (i) => `dropdown-4-${twoDigits(i)}`,
-  },
-};
 
 function twoDigits(n: number): string {
   return n < 10 ? `0${n}` : n.toString();
@@ -162,18 +213,30 @@ function setRegistrationData(
       .setText(accessor.address(registration)?.city);
     form
       .getTextField(formKeys.country(i))
-      .setText(accessor.country(registration)); // TODO Convert to name
+      .setText(t(`country.${accessor.country(registration)}`));
     form
       .getTextField(formKeys.age(i))
       .setText(accessor.age(registration)?.toString());
     form.getTextField(formKeys.nights(i)).setText(nights.toString());
-    // TODO Distance
+    form
+      .getTextField(formKeys.distance(i))
+      .setText(
+        calculateDistance(accessor.address(registration)?.zip_code)?.toString(),
+      );
 
     if (formKeys.role) {
       // TODO Dropdown
       form.getDropdown(formKeys.role(i)).select('');
     }
   });
+}
+
+function calculateDistance(zipCode: string | undefined): number | undefined {
+  if (!zipCode) {
+    return undefined;
+  }
+
+  return 0;
 }
 
 function onOKClick(): void {
@@ -184,5 +247,13 @@ function onCancelClick(): void {
   onDialogCancel();
 }
 </script>
+
+<i18n lang="yaml" locale="en">
+country:
+  de: 'Germany'
+  fr: 'France'
+</i18n>
+
+<!-- TODO Add translations -->
 
 <style scoped></style>

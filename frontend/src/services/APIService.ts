@@ -1,3 +1,4 @@
+import axios, { AxiosError } from 'axios';
 import { useAuthService } from 'src/services/AuthService';
 import { useCampService } from 'src/services/CampService';
 import { useRegistrationService } from 'src/services/RegistrationService';
@@ -5,12 +6,13 @@ import { useTemplateService } from 'src/services/TemplateService';
 import { useUserService } from 'src/services/UserService';
 import { useRoomService } from 'src/services/RoomService';
 import { useCampManagerService } from 'src/services/CampManagerService';
-import axios, { AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
+import { useStaticFileService } from 'src/services/StaticFileService';
 
 export function useAPIService() {
   return {
+    ...useStaticFileService(),
     ...useAuthService(),
     ...useUserService(),
     ...useCampService(),

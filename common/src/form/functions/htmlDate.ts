@@ -6,7 +6,7 @@ const htmlDate = (params: unknown[]) => {
   let date = params[0];
 
   if (typeof date === 'string') {
-    date = new Date(date);
+    date = Date.parse(date);
   }
 
   if (!(date instanceof Date) || isNaN(date.getTime())) {
