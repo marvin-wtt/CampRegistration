@@ -25,7 +25,7 @@ router.param(
 );
 
 router.get(
-  '/:registrationId/files/:file',
+  '/:fileId',
   auth(),
   guard([campManager]),
   validate(fileValidation.show),

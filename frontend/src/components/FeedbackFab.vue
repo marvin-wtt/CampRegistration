@@ -56,7 +56,7 @@
       transition-hide="slide-down"
     >
       <q-card class="column">
-        <q-bar class="bg-primary">
+        <q-bar class="bg-primary text-white">
           <a> {{ t('dialog.title') }} </a>
 
           <q-space />
@@ -142,8 +142,9 @@ const dialogOpen = computed<boolean>(() => {
 function send() {
   if (message.value) {
     const location = window.location.href;
+    const userAgent = navigator.userAgent;
 
-    api.sendFeedback(location, message.value, email.value);
+    api.sendFeedback(location, userAgent, message.value, email.value);
   }
 
   clear();

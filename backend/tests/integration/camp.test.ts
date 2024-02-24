@@ -374,6 +374,35 @@ describe('/api/v1/camps', () => {
           });
         });
 
+        it('should respond with the free spaces when country is provided via addrress', async () => {
+          const camp = await CampFactory.create({
+            active: true,
+            countries: ['de', 'fr'],
+            maxParticipants: {
+              de: 8,
+              fr: 9,
+            },
+          });
+
+          await RegistrationFactory.create({
+            camp: { connect: { id: camp.id } },
+            campData: {
+              address: [{ country: 'de' }],
+            },
+          });
+
+          const { body } = await request()
+            .get(`/api/v1/camps/${camp.id}`)
+            .send()
+            .expect(200);
+
+          expect(body).toHaveProperty('data.freePlaces');
+          expect(body.data.freePlaces).toEqual({
+            de: 7,
+            fr: 9,
+          });
+        });
+
         it('should include only participants if role field is available', async () => {
           const camp = await CampFactory.create({
             active: true,

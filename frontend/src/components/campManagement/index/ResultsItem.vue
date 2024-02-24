@@ -1,5 +1,9 @@
 <template>
-  <q-item>
+  <q-item
+    v-ripple
+    clickable
+    @click="resultsAction"
+  >
     <q-item-section>
       <q-item-label>
         {{ to(props.camp.name) }}
@@ -275,8 +279,8 @@ action:
 dialog:
   delete:
     title: 'Lager löschen'
-    message: 'Sind Sie sicher, dass Sie dieses Lager löschen möchten? Alle Anmeldungen gehen verloren. Dieses Lager kann nicht als Vorlage für zukünftige Lager verwendet werden.'
-    label: 'Lagername'
+    message: 'Sind Sie sicher, dass Sie dieses Camp löschen möchten? Alle Anmeldungen gehen verloren. Dieses Lager kann nicht als Vorlage für zukünftige Lager verwendet werden.'
+    label: 'Camp Name'
 
 notification:
   share_success: 'Link in die Zwischenablage kopiert'

@@ -179,8 +179,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body).toHaveProperty('data.data');
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
-      expect(body).toHaveProperty('data.created_at');
-      expect(body).toHaveProperty('data.updated_at');
+      expect(body).toHaveProperty('data.createdAt');
+      expect(body).toHaveProperty('data.updatedAt');
     });
 
     it('should respond with `201` status code for private camps', async () => {

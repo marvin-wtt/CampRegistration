@@ -1,4 +1,4 @@
-import { Registration, Room, Bed, File } from '@prisma/client';
+import { Registration, Room, Bed } from '@prisma/client';
 import type { Registration as RegistrationResource } from '@camp-registration/common/entities';
 
 interface RegistrationWithBed extends Registration {
@@ -22,8 +22,8 @@ const registrationResource = (
     locale: registration.locale,
     room,
     // Use snake case because form keys should be snake case too
-    updated_at: registration.updatedAt?.toISOString() ?? null,
-    created_at: registration.createdAt.toISOString(),
+    updatedAt: registration.updatedAt?.toISOString() ?? null,
+    createdAt: registration.createdAt.toISOString(),
   };
 };
 

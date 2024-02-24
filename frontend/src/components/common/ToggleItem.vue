@@ -17,10 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-
 interface Props {
-  modelValue: boolean | undefined;
   label: string;
   hint?: string;
   color?: string;
@@ -28,12 +25,5 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: unknown): void;
-}>();
-
-const modelValue = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-});
+const modelValue = defineModel<boolean | undefined>();
 </script>

@@ -1,5 +1,6 @@
 // Helpers
 export * from './Identifiable';
+export * from './Timestamps';
 export * from './Translatable';
 
 // Models

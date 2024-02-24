@@ -8,7 +8,6 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
-import fileService from './file.service';
 import config from 'config';
 
 const getRegistrationById = async (campId: string, id: string) => {
@@ -44,11 +43,10 @@ const getParticipantsCountByCountry = async (
   });
 
   const getCountry = (registration: Registration): string => {
-    const country = registration.campData['country']?.find((value: unknown) => {
-      return typeof value === 'string' && countries.includes(value);
-    });
-
-    return country ?? 'unknown';
+    return (
+      registrationCampDataAccessor(registration.campData).country(countries) ??
+      'unknown'
+    );
   };
 
   // Count the participants for each country
@@ -73,6 +71,9 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   // Extract files first before the value are mapped to the URL
   const fileIds = form.getFileIdentifiers();
   form.mapFileValues((value) => {
+    if (typeof value !== 'string') {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
+    }
     // The ID may contain the field name. Remove it.
     const fileId = value.split('#')[0];
     return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
@@ -244,7 +245,7 @@ const sendRegistrationConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     replyTo,
     subject,
@@ -271,7 +272,7 @@ const sendWaitingListConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     replyTo,
     subject,
@@ -309,7 +310,7 @@ const sendRegistrationManagerNotification = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
     replyTo,
     subject,

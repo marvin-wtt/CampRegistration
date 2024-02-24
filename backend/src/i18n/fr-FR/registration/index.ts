@@ -22,9 +22,9 @@ export default {
       text: {
         title: 'Salut {{ participantName }},',
         information:
-          'Merci pour ton inscription au {{ camp.name }}.' +
-          'Malheureusement, toutes les places sont déjà prises.' +
-          "Ton inscription est maintenant sur liste d'attente." +
+          'Merci pour ton inscription au {{ camp.name }}. ' +
+          'Malheureusement, toutes les places sont déjà prises. ' +
+          "Ton inscription est maintenant sur liste d'attente. " +
           "Nous te tiendrons informé dès qu'une place se libérera.",
         contact:
           "Si tu as d'autres questions, n'hésite pas à nous contacter en répondant à cet e-mail.",
@@ -41,7 +41,7 @@ export default {
       text: {
         title: 'Salut {{ participantName }},',
         information:
-          'Merci pour ton inscription au {{ camp.name }}.' +
+          'Merci pour ton inscription au {{ camp.name }}. ' +
           "Tu recevras d'autres informations dans un e-mail séparé.",
         contact:
           "Si tu as d'autres questions, n'hésite pas à nous contacter en répondant à cet e-mail.",

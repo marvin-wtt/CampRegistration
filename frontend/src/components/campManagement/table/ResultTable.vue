@@ -94,7 +94,7 @@
               <q-item
                 v-close-popup
                 clickable
-                @click="exportPDF()"
+                @click="onPrint()"
               >
                 <q-item-section avatar>
                   <q-icon name="download" />
@@ -137,27 +137,11 @@
       #[`body-cell-${key}`]="rendererProps"
     >
       <q-td :props="rendererProps">
-        <!-- TODO -->
-        <!--        <q-popup-edit-->
-        <!--          v-if="renderer.isEditable()"-->
-        <!--          v-slot="scope"-->
-        <!--          buttons-->
-        <!--          persistent-->
-        <!--        >-->
-        <!--          <dynamic-input-->
-        <!--            v-model="scope.value"-->
-        <!--            :data="{}"-->
-        <!--            :element="{ type: 'text' }"-->
-        <!--          />-->
-        <!--        </q-popup-edit>-->
-
-        <component
-          :is="renderer.component"
-          v-if="renderer.isVisible(rendererProps.row)"
+        <table-cell-wrapper
+          :renderer="renderer"
           :camp="camp"
-          :options="renderer.options"
+          :props="rendererProps as QTableBodyCellProps"
           :printing="printing"
-          :props="rendererProps"
         />
       </q-td>
     </template>
@@ -169,9 +153,12 @@ import TableComponentRegistry from 'components/campManagement/table/ComponentReg
 import { QTableColumn } from 'src/types/quasar/QTableColum';
 import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { TableTemplate } from '@camp-registration/common/entities';
+import type {
+  CampDetails,
+  TableTemplate,
+} from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import {
   createPDF,
@@ -183,19 +170,20 @@ import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 import {
   TableColumnTemplate,
   Registration,
-  Camp,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
+import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 
 interface Props {
   questions: TableColumnTemplate[];
   results: Registration[];
   templates: TableTemplate[];
-  camp: Camp;
+  camp: CampDetails;
 }
 
 const props = defineProps<Props>();
@@ -396,9 +384,124 @@ const style = computed<string>(() => {
     : '';
 });
 
-async function exportPDF() {
-  // Remove unwanted elements
+async function onPrint() {
+  const items = templates.value
+    .filter((value) => !value.generated)
+    .map((value) => {
+      return {
+        label: to(value.title),
+        value,
+      };
+    });
+
+  quasar
+    .dialog({
+      title: t('export.dialog.title'),
+      message: t('export.dialog.message'),
+      options: {
+        type: 'checkbox',
+        model: [template.value],
+        items,
+        color: 'primary',
+      },
+      ok: {
+        color: 'primary',
+        rounded: true,
+        label: t('export.dialog.download'),
+        icon: 'download',
+      },
+      cancel: {
+        color: 'primary',
+        rounded: true,
+        outline: true,
+        label: t('export.dialog.cancel'),
+      },
+      persistent: true,
+    })
+    .onOk((data: CTableTemplate[]) => {
+      // Sort by order
+      data = data.sort((a, b) => a.order - b.order);
+
+      printTables(data);
+    });
+}
+
+async function printTables(templates: CTableTemplate[]) {
+  quasar.loading.show();
   printing.value = true;
+  quasar.dark.set(false);
+
+  const initialTemplate = template.value;
+  try {
+    await printTablesCore(templates);
+  } catch (e: unknown) {
+    quasar.notify({
+      type: 'negative',
+      message: t('export.pdf.error'),
+    });
+  } finally {
+    // Reset loading
+    printing.value = false;
+    quasar.dark.set('auto');
+    quasar.loading.hide();
+    // Reset the template to the initial value
+    template.value = initialTemplate;
+  }
+}
+
+async function printTablesCore(templates: CTableTemplate[]) {
+  // Prepare printing
+  const pdf = createPDF();
+
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const dateTimeString = date.toLocaleString(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  });
+
+  // Print each page
+  for (const printingTemplate of templates) {
+    const templateTitle = to(printingTemplate.title);
+    quasar.loading.show({
+      message: t('export.pdf.loading.template') + ' ' + templateTitle,
+    });
+
+    // Update view
+    template.value = printingTemplate;
+    // Wait for DOM to finish updating the template
+    await new Promise<void>((resolve) => nextTick(resolve));
+
+    const { element, width, height, orientation } = prepareTableForExport();
+
+    await pdf.addPage(element, {
+      captureHeight: height,
+      captureWidth: width,
+      scale: 3,
+      page: {
+        orientation,
+        footer: `${t('title')} (${templateTitle}) @ ${dateTimeString}`,
+        name: templateTitle,
+      },
+    });
+  }
+
+  quasar.loading.show({
+    message: t('export.pdf.loading.saving'),
+  });
+
+  const filename = `${year}_${month}_${day}_${t('title')}`;
+  pdf.save(filename);
+}
+
+function prepareTableForExport() {
   const element = document.querySelector('#print-table') as HTMLElement;
   const table = element.querySelector('table') as HTMLElement;
 
@@ -420,53 +523,20 @@ async function exportPDF() {
   // Use maximum with of both to maximise size but still fit everything in
   const width = Math.max(minWidth, maxWidth);
 
-  const pageOrientation = template.value?.printOptions?.orientation;
-
+  // Update the dom to the dimensions
   printDimensions.value = {
-    width: width,
-    height: height,
+    width,
+    height,
   };
 
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const templateTitle = to(template.value.title);
+  const orientation = template.value?.printOptions?.orientation;
 
-  const dateTimeString = date.toLocaleString(locale.value, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: false,
-  });
-
-  quasar.loading.show();
-  quasar.dark.set(false);
-
-  try {
-    await createPDF(element, {
-      captureHeight: height,
-      captureWidth: width,
-      scale: 3,
-      page: {
-        orientation: pageOrientation,
-        footer: `${t('title')} (${templateTitle}) @ ${dateTimeString}`,
-        name: `${year}_${month}_${day}_${t('title')}_${templateTitle}`,
-      },
-    });
-  } catch (e: unknown) {
-    quasar.notify({
-      type: 'negative',
-      message: t('error.export.pdf'),
-    });
-  } finally {
-    printing.value = false;
-    quasar.dark.set('auto');
-    quasar.loading.hide();
-  }
+  return {
+    element,
+    width,
+    height,
+    orientation,
+  };
 }
 
 function editTemplates() {
@@ -532,27 +602,62 @@ function editTemplates() {
 }
 </style>
 
-<!-- TODO Add error.export.pdf -->
 <i18n lang="yaml" locale="en">
-template: Template
-title: Participants
+template: 'Template'
+title: 'Participants'
 menu:
-  download: Download Table
-  edit_templates: Edit templates
+  download: 'Download Table'
+  edit_templates: 'Edit templates'
+
+export:
+  dialog:
+    title: 'Export tables'
+    message: 'Select which tables to export'
+    download: 'Download'
+    cancel: 'Cancel'
+  pdf:
+    loading:
+      template: 'Preparing template: '
+      save: 'Saving table(s) to file...'
+    error: 'Failed to export table(s)'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-template: Vorlage
-title: Teilnehmende
+template: 'Vorlage'
+title: 'Teilnehmende'
 menu:
-  download: Tabelle herunterladen
-  edit_templates: Vorlagen bearbeiten
+  download: 'Tabelle herunterladen'
+  edit_templates: 'Vorlagen bearbeiten'
+
+export:
+  dialog:
+    title: 'Tabellen exportieren'
+    message: 'Wählen Sie aus, welche Tabellen exportiert werden sollen'
+    download: 'Herunterladen'
+    cancel: 'Abbrechen'
+  pdf:
+    loading:
+      template: 'Vorlage wird vorbereitet: '
+      save: 'Tabelle(n) werden in Datei gespeichert...'
+    error: 'Fehler beim Exportieren der Tabelle(n)'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-template: Modèle
-title: Participants
+template: 'Modèle'
+title: 'Participants'
 menu:
-  download: Télécharger le tableau
-  edit_templates: Modifier les modèles
+  download: 'Télécharger le tableau'
+  edit_templates: 'Modifier les modèles'
+
+export:
+  dialog:
+    title: 'Exporter les tables'
+    message: 'Sélectionnez les tables à exporter'
+    download: 'Télécharger'
+    cancel: 'Annuler'
+  pdf:
+    loading:
+      template: 'Préparation du modèle : '
+      save: 'Enregistrement de(s) table(s) dans le fichier...'
+    error: "Échec de l'exportation de(s) table(s)"
 </i18n>

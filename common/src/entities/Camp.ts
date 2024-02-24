@@ -17,7 +17,7 @@ export interface Camp extends Identifiable {
   maxAge: number;
   location: Translatable;
   price: number;
-  freePlaces?: Translatable<number>;
+  freePlaces: Translatable<number> | null;
 }
 
 export interface CampDetails extends Camp {

@@ -24,7 +24,7 @@ const campResource = (camp: CampWithFreePlaces): CampResource => {
     endAt: camp.endAt.toISOString(),
     price: camp.price ?? null,
     location: camp.location ?? null,
-    freePlaces: camp.freePlaces,
+    freePlaces: camp.freePlaces ?? null,
   };
 };
 

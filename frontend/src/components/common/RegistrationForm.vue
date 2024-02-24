@@ -24,11 +24,15 @@ const { locale } = useI18n();
 interface Props {
   data?: object;
   campDetails: CampDetails;
-  submitFn: (id: string, data: unknown) => Promise<void>;
+  submitFn: (id: string, formData: unknown) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
+  moderation?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  data: undefined,
+  moderation: false,
+});
 
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
@@ -56,12 +60,26 @@ onMounted(async () => {
   const form = camp.form;
   const id = camp.id;
 
-  model.value = createModel(id, form);
+  const modelForm = props.moderation ? createModerationForm(form) : form;
+  model.value = createModel(id, modelForm);
 
   if (props.data) {
     model.value.data = props.data;
   }
 });
+
+function createModerationForm(form: object) {
+  return {
+    ...form,
+    showTOC: true,
+    fitToContainer: true,
+    completeText: {
+      default: 'Save',
+      de: 'Speichern',
+      fr: 'Sauver',
+    },
+  };
+}
 
 function createModel(id: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
@@ -75,12 +93,13 @@ function createModel(id: string, form: object): SurveyModel {
       content?: unknown;
     }
 
-    const fileUploads = options.files.map(async (value) => {
-      const name = await props.uploadFileFn(value);
-      return {
-        ...value,
-        name,
-      };
+    const fileUploads = options.files.map(async (file) => {
+      const name = await props.uploadFileFn(file);
+
+      return new File([file], name, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
     });
 
     const files = await Promise.all(fileUploads);
@@ -126,8 +145,7 @@ function createModel(id: string, form: object): SurveyModel {
     mapFileQuestionValues(sender);
 
     const campId = sender.surveyId;
-    const data = sender.data ?? {};
-    const registration = { data };
+    const registration = sender.data ?? {};
 
     try {
       await props.submitFn(campId, registration);
@@ -175,4 +193,12 @@ function isFile(file: unknown): file is Pick<File, 'name'> {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss">
+#survey {
+  a {
+    color: inherit;
+    font-weight: bold;
+    font-style: oblique;
+  }
+}
+</style>
