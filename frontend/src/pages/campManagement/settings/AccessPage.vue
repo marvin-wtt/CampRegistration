@@ -1,14 +1,13 @@
 <template>
-  <page-state-handler
-    :error="error"
-    padding
-  >
+  <page-state-handler :error="error">
     <q-table
       :title="t('title')"
       :columns="columns"
       :rows="rows"
       :loading="loading"
       :pagination="pagination"
+      class="absolute fit"
+      flat
     >
       <template #top-right>
         <q-btn
