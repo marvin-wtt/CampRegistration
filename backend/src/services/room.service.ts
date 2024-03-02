@@ -25,9 +25,8 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
       campId,
       beds: {
         createMany: {
-          data: Array.from({ length: capacity }).map((_, index) => ({
+          data: Array.from({ length: capacity }).map(() => ({
             id: ulid(),
-            bedNumber: index,
           })),
         },
       },
