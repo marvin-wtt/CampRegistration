@@ -42,6 +42,7 @@
     "@camp-registration/web": "*",
     "@joi/date": "^2.1.0",
     "@prisma/client": "^5.5.2",
+    "async-lock": "^1.4.1",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
@@ -79,6 +80,7 @@
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
     "@jest/globals": "^29.5.0",
+    "@types/async-lock": "^1.4.2",
     "@types/bcryptjs": "^2.4.2",
     "@types/compression": "^1.7.2",
     "@types/cookie-parser": "^1.4.3",

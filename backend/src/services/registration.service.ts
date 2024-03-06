@@ -5,10 +5,17 @@ import httpStatus from 'http-status';
 import { Camp, Prisma, Registration } from '@prisma/client';
 import dbJsonPath from 'utils/dbJsonPath';
 import { formUtils } from 'utils/form';
-import { notificationService } from 'services/index';
+import { campService, notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
 import config from 'config';
+import AsyncLock from 'async-lock';
+
+// Registration lock
+const lock = new AsyncLock({
+  timeout: 1e4,
+  maxExecutionTime: 2e3,
+});
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -82,47 +89,50 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   const formData = form.data();
   const campData = form.extractCampData();
 
-  try {
-    return await prisma.$transaction(async (transaction) => {
+  // Use a lock with the camp id as key because we call the camp service and a race condition regarding the waiting list
+  //  must be avoided.
+  return lock.acquire<Registration>(
+    camp.id,
+    async (): Promise<Registration> => {
       const waitingList =
-        data.waitingList ?? (await isWaitingList(transaction, camp, campData));
-      const registration = await transaction.registration.create({
-        data: {
-          ...data,
-          id,
-          campId: camp.id,
-          data: formData,
-          waitingList,
-          campData,
-        },
-      });
+        data.waitingList ?? (await isWaitingList(camp, campData));
 
-      // Assign files to this registration.
-      // TODO This should be handled by the file service
-      for (const value of fileIds) {
-        await transaction.file.update({
-          where: {
-            id: value.id,
-            registrationId: null,
-            campId: null,
-            field: value.field ?? null,
-          },
+      return prisma.$transaction(async (transaction) => {
+        const registration = await transaction.registration.create({
           data: {
-            registrationId: registration.id,
-            accessLevel: 'private',
+            ...data,
+            id,
+            campId: camp.id,
+            data: formData,
+            waitingList,
+            campData,
           },
         });
-      }
 
-      return registration;
-    });
-  } catch (ignored) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Inconsistent data');
-  }
+        // Assign files to this registration.
+        // TODO This should be handled by the file service
+        for (const value of fileIds) {
+          await transaction.file.update({
+            where: {
+              id: value.id,
+              registrationId: null,
+              campId: null,
+              field: value.field ?? null,
+            },
+            data: {
+              registrationId: registration.id,
+              accessLevel: 'private',
+            },
+          });
+        }
+
+        return registration;
+      });
+    },
+  );
 };
 
 const isWaitingList = async (
-  transaction: Partial<typeof prisma>,
   camp: Camp,
   campData: Record<string, unknown[]>,
 ) => {
@@ -131,40 +141,23 @@ const isWaitingList = async (
     return false;
   }
 
-  const filter: Prisma.RegistrationWhereInput[] = [
-    createRegistrationRoleFilter(camp.id, 'participant'),
-  ];
-
-  let maxParticipants = camp.maxParticipants as Record<string, number> | number;
-  // Add country filter
-  if (typeof maxParticipants !== 'number') {
+  const freePlaces = await campService.getCampFreePlaces(camp);
+  if (typeof freePlaces !== 'number') {
     const country = registrationCampDataAccessor(campData).country(
       camp.countries,
     );
-    if (!country) {
+
+    if (!country || !(country in freePlaces)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Missing or invalid country data',
       );
     }
 
-    // Add filter criteria for country
-    filter.push({
-      campData: {
-        path: dbJsonPath('country'),
-        array_contains: [country],
-      },
-    });
-
-    // Set country based value as maximum
-    maxParticipants = maxParticipants[country];
+    return freePlaces[country] > 0;
   }
 
-  const count = await transaction.registration!.count({
-    where: { AND: filter },
-  });
-
-  return count >= maxParticipants;
+  return freePlaces > 0;
 };
 
 const isParticipant = (campData: Record<string, unknown[]>): boolean => {

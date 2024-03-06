@@ -32,6 +32,7 @@ import {
   campWithContactEmailInternational,
   campWithEmailAndMaxParticipants,
   campWithFormFunctions,
+  campWithAddress,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { CampManagerFactory } from '../../prisma/factories/manager';
@@ -763,6 +764,48 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Larry`,
             role: 'participant',
             country: 'fr',
+          },
+          false,
+        );
+      });
+
+      it('should set waiting list when country is provided via address', async () => {
+        const camp = await CampFactory.create(campWithAddress);
+
+        // Fill camp
+        for (let i = 0; i < 5; i++) {
+          await assertRegistration(
+            camp.id,
+            {
+              first_name: `Jhon ${i}`,
+              address: {
+                country: 'de',
+              },
+            },
+            false,
+          );
+        }
+
+        // Assert waiting list
+        await assertRegistration(
+          camp.id,
+          {
+            first_name: `Jhon`,
+            address: {
+              country: 'de',
+            },
+          },
+          true,
+        );
+
+        // Other nation should not be on waiting list
+        await assertRegistration(
+          camp.id,
+          {
+            first_name: `Jhon`,
+            address: {
+              country: 'fr',
+            },
           },
           false,
         );

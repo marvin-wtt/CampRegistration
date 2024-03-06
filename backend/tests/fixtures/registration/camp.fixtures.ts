@@ -164,6 +164,28 @@ export const campWithMaxParticipantsInternational = {
   ]),
 };
 
+export const campWithAddress = {
+  active: true,
+  countries: ['de', 'fr'],
+  maxParticipants: {
+    de: 5,
+    fr: 3,
+  },
+  form: createForm([
+    {
+      name: 'first_name',
+      type: 'text',
+      isRequired: true,
+    },
+    {
+      name: 'country',
+      type: 'text',
+      campDataType: 'address',
+      isRequired: true,
+    },
+  ]),
+};
+
 export const campWithMaxParticipantsRolesNational = {
   active: true,
   maxParticipants: 5,
