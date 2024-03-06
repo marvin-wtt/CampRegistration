@@ -154,10 +154,10 @@ const isWaitingList = async (
       );
     }
 
-    return freePlaces[country] > 0;
+    return freePlaces[country] <= 0;
   }
 
-  return freePlaces > 0;
+  return freePlaces <= 0;
 };
 
 const isParticipant = (campData: Record<string, unknown[]>): boolean => {
