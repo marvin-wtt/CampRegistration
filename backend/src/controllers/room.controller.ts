@@ -21,18 +21,16 @@ const index = catchRequestAsync(async (req, res) => {
 
 const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
-  const data = req.body;
-  const room = await roomService.createRoom(campId, data.name, data.capacity);
+  const { name, capacity } = req.body;
+  const room = await roomService.createRoom(campId, name, capacity);
   res.status(httpStatus.CREATED).json(resource(roomResource(room)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
   const { roomId } = req.params;
-  const data = req.body;
-  const room = await roomService.updateRoomById(roomId, {
-    capacity: data.capacity,
-    name: data.capacity,
-  });
+  const { name } = req.body;
+
+  const room = await roomService.updateRoomById(roomId, name);
   res.json(resource(roomResource(room)));
 });
 

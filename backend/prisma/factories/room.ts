@@ -10,7 +10,6 @@ export const RoomFactory = {
     return {
       id: ulid(),
       name: faker.string.alpha(),
-      capacity: faker.number.int({ min: 1, max: 7 }),
       camp: {},
       ...data,
     };

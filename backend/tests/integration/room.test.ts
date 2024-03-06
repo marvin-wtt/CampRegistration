@@ -9,7 +9,29 @@ describe.skip('/api/v1/camps/:campId/rooms/', () => {
 
   describe('GET /api/v1/camps/:campId/rooms/:roomId', () => {});
 
-  describe('POST /api/v1/camps/:campId/rooms/', () => {});
+  describe('POST /api/v1/camps/:campId/rooms/', () => {
+    it('should respond with `201` status code when user is camp manager', async () => {
+      const camp = await CampFactory.create();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      const data = {
+        name: 'Room 1',
+        capacity: 5,
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/rooms/`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      const roomCount = await prisma.room.count();
+      expect(roomCount).toBe(1);
+
+      const bedCount = await prisma.bed.count();
+      expect(bedCount).toBe(1);
+    });
+  });
 
   describe('PATCH /api/v1/camps/:campId/rooms/:roomId', () => {});
 

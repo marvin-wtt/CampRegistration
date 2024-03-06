@@ -1,4 +1,5 @@
 import prisma from '../client';
+import { ulid } from 'ulidx';
 
 const getBedById = async (id: string, roomId: string) => {
   return prisma.bed.findFirst({
@@ -6,6 +7,14 @@ const getBedById = async (id: string, roomId: string) => {
   });
 };
 
+const createBed = async (roomId: string) => {
+  return prisma.bed.create({
+    data: {
+      id: ulid(),
+      roomId,
+    },
+  });
+};
 const updateBedById = async (id: string, registrationId: string | null) => {
   return prisma.bed.update({
     where: { id },
@@ -18,7 +27,17 @@ const updateBedById = async (id: string, registrationId: string | null) => {
   });
 };
 
+const deleteBedById = async (id: string) => {
+  return prisma.bed.delete({
+    where: {
+      id,
+    },
+  });
+};
+
 export default {
   getBedById,
+  createBed,
   updateBedById,
+  deleteBedById,
 };

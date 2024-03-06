@@ -1,5 +1,10 @@
 import Joi from 'joi';
 
+const Translated = Joi.alternatives().try(
+  Joi.string(),
+  Joi.object().pattern(Joi.string(), Joi.string()),
+);
+
 const show = {
   params: Joi.object({
     campId: Joi.string().required(),
@@ -18,7 +23,7 @@ const store = {
     campId: Joi.string().required(),
   }),
   body: Joi.object({
-    name: Joi.string().required(),
+    name: Translated.required() ,
     capacity: Joi.number().min(1).required(),
   }),
 };
@@ -29,11 +34,7 @@ const update = {
     roomId: Joi.string().required(),
   }),
   body: Joi.object({
-    name: Joi.alternatives().try(
-      Joi.string(),
-      Joi.object().pattern(Joi.string(), Joi.string()),
-    ),
-    capacity: Joi.number().min(1),
+    name: Translated,
   }),
 };
 
