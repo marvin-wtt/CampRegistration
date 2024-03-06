@@ -591,7 +591,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const { body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data })
-          .expect(201);
+          .expectOrPrint(201);
 
         expect(body).toHaveProperty('data.waitingList', expected);
       };

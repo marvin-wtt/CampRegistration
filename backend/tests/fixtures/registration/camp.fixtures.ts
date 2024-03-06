@@ -178,7 +178,7 @@ export const campWithAddress = {
       isRequired: true,
     },
     {
-      name: 'country',
+      name: 'address',
       type: 'text',
       campDataType: 'address',
       isRequired: true,
