@@ -4,7 +4,9 @@
     :locale="country"
     :size="size"
   >
-    {{ props.props.value }}
+    <q-tooltip>
+      {{ props.props.value }}
+    </q-tooltip>
   </country-icon>
 
   <a v-else>
