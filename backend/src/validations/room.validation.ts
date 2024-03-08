@@ -23,8 +23,8 @@ const store = {
     campId: Joi.string().required(),
   }),
   body: Joi.object({
-    name: Translated.required() ,
-    capacity: Joi.number().min(1).required(),
+    name: Translated.required(),
+    capacity: Joi.number().min(1).default(0),
   }),
 };
 

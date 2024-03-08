@@ -6,3 +6,4 @@ export * from './token';
 export * from './invitation';
 export * from './manager';
 export * from './room';
+export * from './bed';

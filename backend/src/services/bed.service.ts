@@ -7,11 +7,12 @@ const getBedById = async (id: string, roomId: string) => {
   });
 };
 
-const createBed = async (roomId: string) => {
+const createBed = async (roomId: string, registrationId?: string) => {
   return prisma.bed.create({
     data: {
       id: ulid(),
       roomId,
+      registrationId,
     },
   });
 };
