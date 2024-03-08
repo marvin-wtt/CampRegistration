@@ -11,4 +11,4 @@ export type RoomCreateData = Pick<Room, 'name'> & {
   capacity: number;
 };
 
-export type RoomUpdateData = Partial<RoomCreateData>;
+export type RoomUpdateData = Partial<Pick<Room, 'name'>>;
