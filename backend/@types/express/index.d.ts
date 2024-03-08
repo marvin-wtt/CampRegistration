@@ -8,6 +8,7 @@ import {
   Bed,
   Room,
   File,
+  ProgramEvent,
 } from '@prisma/client';
 
 declare global {
@@ -23,6 +24,7 @@ declare global {
         room?: Room & { beds: Bed[] };
         bed?: Bed;
         file?: File;
+        programEvent?: ProgramEvent;
       };
     }
   }
