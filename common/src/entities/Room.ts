@@ -4,10 +4,11 @@ import type { Bed } from './Bed';
 
 export interface Room extends Identifiable {
   name: Translatable;
-  capacity: number;
   beds: Bed[];
 }
 
-export type RoomCreateData = Pick<Room, 'name' | 'capacity'>;
+export type RoomCreateData = Pick<Room, 'name'> & {
+  capacity: number;
+};
 
-export type RoomUpdateData = Partial<RoomCreateData>;
+export type RoomUpdateData = Partial<Pick<Room, 'name'>>;

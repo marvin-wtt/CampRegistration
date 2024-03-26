@@ -36,8 +36,21 @@ router.get(
   validate(roomValidation.show),
   roomController.show,
 );
-router.post('/', auth(), guard([campManager]), roomController.store);
-router.put(
+router.post(
+  '/',
+  auth(),
+  guard([campManager]),
+  validate(roomValidation.store),
+  roomController.store,
+);
+router.post(
+  '/',
+  auth(),
+  guard([campManager]),
+  validate(roomValidation.store),
+  roomController.store,
+);
+router.patch(
   '/:roomId',
   auth(),
   guard([campManager]),

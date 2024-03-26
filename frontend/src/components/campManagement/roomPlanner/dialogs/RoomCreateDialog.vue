@@ -10,13 +10,13 @@
       >
         <q-card-section>
           <div class="text-h6">
-            {{ t(`title.${props.mode}`) }}
+            {{ t(`title`) }}
           </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <translated-input
-            v-model="modifiedRoom.name"
+            v-model="room.name"
             :label="t('fields.name.label')"
             :rules="[
               (val: string | Record<string, string> | undefined) =>
@@ -28,7 +28,7 @@
           />
 
           <q-input
-            v-model.number="modifiedRoom.capacity"
+            v-model.number="room.capacity"
             type="number"
             :label="t('fields.capacity.label')"
             :rules="[
@@ -64,17 +64,13 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive, toRaw } from 'vue';
-import { RoomWithRoommates } from 'src/types/Room';
+import { reactive } from 'vue';
+import type { RoomCreateData } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
-interface Props {
-  room?: Omit<RoomWithRoommates, 'beds'>;
-  mode: 'create' | 'edit';
+const props = defineProps<{
   locales?: string[];
-}
-
-const props = defineProps<Props>();
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -89,14 +85,13 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedRoom = reactive<Partial<RoomWithRoommates>>(defaultRoom());
-
-function defaultRoom(): Partial<RoomWithRoommates> {
-  return structuredClone(toRaw(props.room)) ?? {};
-}
+const room = reactive<RoomCreateData>({
+  name: '',
+  capacity: 0,
+});
 
 function onOKClick(): void {
-  onDialogOK(modifiedRoom);
+  onDialogOK(room);
 }
 
 function onCancelClick() {
@@ -106,10 +101,9 @@ function onCancelClick() {
 
 <style scoped></style>
 
+<!-- TODO Complete translations -->
 <i18n lang="yaml" locale="en">
-title:
-  create: 'Create room'
-  edit: 'Edit room'
+title: 'Create room'
 
 fields:
   name:
@@ -127,9 +121,8 @@ actions:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title:
-  create: 'Zimmer erstellen'
-  edit: 'Zimmer bearbeiten'
+title: 'Zimmer erstellen'
+
 fields:
   name:
     label: 'Name'
@@ -146,9 +139,8 @@ actions:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title:
-  create: 'Créer une chambre'
-  edit: 'Modifier la chambre'
+title: 'Créer une chambre'
+
 fields:
   name:
     label: 'Nom'
@@ -164,7 +156,6 @@ actions:
   cancel: 'Annuler'
 </i18n>
 
-<!-- TODO -->
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

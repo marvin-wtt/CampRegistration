@@ -5,6 +5,7 @@ import {
   CampFactory,
   RegistrationFactory,
   UserFactory,
+  CampManagerFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
@@ -17,7 +18,6 @@ import {
   campInactive,
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
-import { CampManagerFactory } from '../../prisma/factories/manager';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 

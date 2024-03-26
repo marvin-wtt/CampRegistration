@@ -1,9 +1,12 @@
 import { describe, expect, it, expectTypeOf } from 'vitest';
-import { CampFactory, UserFactory } from '../../prisma/factories';
+import {
+  CampFactory,
+  UserFactory,
+  CampManagerFactory,
+  InvitationFactory,
+} from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
-import { CampManagerFactory } from '../../prisma/factories/manager';
-import { InvitationFactory } from '../../prisma/factories/invitation';
 import prisma from '../utils/prisma';
 import { ulid } from 'ulidx';
 

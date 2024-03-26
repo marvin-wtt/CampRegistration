@@ -50,7 +50,7 @@ export function useRoomService() {
     bedId: string,
     registrationId: string | null,
   ) {
-    await api.put(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`, {
+    await api.patch(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`, {
       registrationId,
     });
   }

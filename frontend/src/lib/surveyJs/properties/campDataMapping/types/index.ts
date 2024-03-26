@@ -24,7 +24,7 @@ export const country: CampDataType = {
     },
   },
   fit: (obj) => {
-    return obj.getType() === 'dropdown';
+    return ['dropdown', 'country'].includes(obj.getType());
   },
 };
 

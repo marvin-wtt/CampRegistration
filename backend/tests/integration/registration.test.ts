@@ -6,6 +6,7 @@ import {
   FileFactory,
   RegistrationFactory,
   UserFactory,
+  CampManagerFactory,
 } from '../../prisma/factories';
 import { Camp } from '@prisma/client';
 import { ulid } from 'ulidx';
@@ -35,7 +36,6 @@ import {
   campWithAddress,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import { CampManagerFactory } from '../../prisma/factories/manager';
 import mailer from '../../src/config/mail';
 
 describe('/api/v1/camps/:campId/registrations', () => {

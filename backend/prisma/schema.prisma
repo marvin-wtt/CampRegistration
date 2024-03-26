@@ -112,13 +112,12 @@ model Registration {
 }
 
 model Room {
-  id       String @id @unique(map: "rooms_id_unique") @db.Char(26)
-  campId   String @map("camp_id") @db.Char(26)
+  id     String @id @unique(map: "rooms_id_unique") @db.Char(26)
+  campId String @map("camp_id") @db.Char(26)
   /// [StringOrTranslation]
-  name     Json   @db.Json
-  capacity Int    @db.UnsignedInt
-  camp     Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
-  beds     Bed[]
+  name   Json   @db.Json
+  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
+  beds   Bed[]
 
   @@map("rooms")
 }
