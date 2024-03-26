@@ -56,9 +56,12 @@
         icon="keyboard_arrow_up"
         direction="up"
       >
+        <!-- Room ordering is currently not supported -->
         <q-fab-action
+          v-if="rooms.length > 0"
           color="primary"
           icon="swap_vert"
+          disable
           @click="orderRooms"
         />
         <q-fab-action
