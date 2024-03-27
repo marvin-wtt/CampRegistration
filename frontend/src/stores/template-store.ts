@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia';
-import type { TableTemplate } from '@camp-registration/common/entities';
+import type {
+  TableTemplate,
+  TemplateCreateData,
+  TemplateUpdateData,
+} from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
@@ -36,8 +40,8 @@ export const useTemplateStore = defineStore('templates', () => {
     return fetchData(id);
   }
 
-  async function fetchData(id?: string) {
-    const campId = id ?? (route.params.camp as string | undefined);
+  async function fetchData(campId?: string) {
+    campId = campId ?? (route.params.camp as string | undefined);
 
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => {
@@ -108,10 +112,10 @@ export const useTemplateStore = defineStore('templates', () => {
     await forceFetchData();
   }
 
-  async function createEntry(template: TableTemplate) {
-    const campId = route.params.camp as string | undefined;
-
+  async function createEntry(template: TemplateCreateData, campId?: string) {
+    campId = campId ?? (route.params.camp as string | undefined);
     const cid = checkNotNullWithError(campId);
+
     return await withProgressNotification('create', async () => {
       const result = await apiService.createResultTemplate(cid, template);
 
@@ -122,20 +126,20 @@ export const useTemplateStore = defineStore('templates', () => {
     });
   }
 
-  async function updateEntry(template: TableTemplate) {
+  async function updateEntry(templateId: string, template: TemplateUpdateData) {
     const campId = route.params.camp as string | undefined;
 
     const cid = checkNotNullWithError(campId);
     return await withProgressNotification('update', async () => {
       const result = await apiService.updateResultTemplate(
         cid,
-        template.id,
+        templateId,
         template,
       );
 
       // Replace item in data
       data.value = data.value?.map((value) =>
-        value.id === template.id ? result : value,
+        value.id === templateId ? result : value,
       );
 
       return result;
