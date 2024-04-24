@@ -103,13 +103,14 @@ function accept(): void {
       message: t('dialog.accept.message'),
       ok: {
         label: t('dialog.accept.action.ok'),
-        outlined: true,
         rounded: true,
+        color: 'primary',
       },
       cancel: {
         label: t('dialog.accept.action.cancel'),
-        outlined: true,
+        outline: true,
         rounded: true,
+        color: 'primary',
       },
     })
     .onOk(async () => {

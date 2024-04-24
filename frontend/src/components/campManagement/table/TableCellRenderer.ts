@@ -16,11 +16,11 @@ export class TableCellRenderer {
   }
 
   private parse(): void {
-    if (this._column.showIf !== undefined) {
+    if (this._column.showIf != null) {
       this._showEvaluator = new ExpressionEvaluator(this._column.showIf);
     }
 
-    if (this._column.hideIf !== undefined) {
+    if (this._column.hideIf != null) {
       this._hideEvaluator = new ExpressionEvaluator(this._column.hideIf);
     }
   }

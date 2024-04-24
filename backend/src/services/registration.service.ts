@@ -174,9 +174,12 @@ const updateRegistrationById = async (
   registrationId: string,
   data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
 ) => {
-  const form = formUtils(camp);
-  form.updateData(data.data);
-  const campData = form.extractCampData();
+  let campData;
+  if (data.data) {
+    const form = formUtils(camp);
+    form.updateData(data.data);
+    campData = form.extractCampData();
+  }
 
   // TODO Delete files if some where removed
   // TODO Associate files if new file values are present
