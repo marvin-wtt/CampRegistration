@@ -22,7 +22,6 @@
         v-if="waitingList"
         v-close-popup
         clickable
-        disable
         @click="accept"
       >
         <q-item-section>
@@ -98,13 +97,28 @@ function deleteItem(): void {
 }
 
 function accept(): void {
-  // TODO Create dialog
-  quasar.dialog({}).onOk(async () => {
-    const id = registration.value.id;
-    await registrationStore.updateData(id, {
-      waitingList: true,
+  quasar
+    .dialog({
+      title: t('dialog.accept.title'),
+      message: t('dialog.accept.message'),
+      ok: {
+        label: t('dialog.accept.action.ok'),
+        rounded: true,
+        color: 'primary',
+      },
+      cancel: {
+        label: t('dialog.accept.action.cancel'),
+        outline: true,
+        rounded: true,
+        color: 'primary',
+      },
+    })
+    .onOk(async () => {
+      const id = registration.value.id;
+      await registrationStore.updateData(id, {
+        waitingList: true,
+      });
     });
-  });
 }
 
 function editItem(): void {
@@ -119,7 +133,6 @@ function editItem(): void {
     })
     .onOk((payload) => {
       const id = registration.value.id;
-
       registrationStore.updateData(id, { data: payload });
     });
 }
@@ -142,6 +155,12 @@ option:
   accept: 'Accept registration'
 
 dialog:
+  accept:
+    title: 'Accept registration'
+    message: 'Accept registration from waiting list. The participant will revive the confirmation email.'
+    action:
+      ok: 'Accept'
+      cancel: 'Cancel'
   delete:
     title: 'Delete registration'
     message: 'Once you delete the registration, all data about this person is lost.'
@@ -155,6 +174,12 @@ option:
   accept: 'Anmeldung akzeptieren'
 
 dialog:
+  accept:
+    title: 'Registrierung akzeptieren'
+    message: 'Anmeldung aus der Warteliste akzeptieren. Der Teilnehmer erhält eine Bestätigungs-E-Mail.'
+    action:
+      ok: 'Akzeptieren'
+      cancel: 'Abbrechen'
   delete:
     title: 'Registrierung löschen'
     message: 'Wenn Sie die Registrierung löschen, gehen alle Daten dieser Person verloren.'
@@ -168,6 +193,12 @@ option:
   accept: "Accepter l'inscription"
 
 dialog:
+  accept:
+    title: "Accepter l'inscription"
+    message: "Accepter l'inscription de la liste d'attente. Le participant recevra un courriel de confirmation."
+    action:
+      ok: 'Accepter'
+      cancel: 'Annuler'
   delete:
     title: "Supprimer l'inscription"
     message: "Une fois que vous supprimez l'inscription, toutes les données concernant cette personne sont perdues."

@@ -25,6 +25,9 @@ export interface CampDetails extends Camp {
   themes: Record<string, ITheme>;
 }
 
-export type CampCreateData = Omit<CampDetails, 'id' | 'freePlaces'>;
+export type CampCreateData = Omit<
+  Partial<CampDetails> & Camp,
+  'id' | 'freePlaces'
+>;
 
 export type CampUpdateData = Partial<CampCreateData>;

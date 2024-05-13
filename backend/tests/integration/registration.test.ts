@@ -1006,7 +1006,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
   });
 
-  describe('PUT /api/v1/camps/:campId/registrations/:registrationId', () => {
+  describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
     it.todo('should respond with `200` status code when user is camp manager');
 
     it.todo('should respond with `200` status when waiting list is updated');
@@ -1019,7 +1019,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const registration = await createRegistration(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({
           data: {},
         })
@@ -1032,7 +1032,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const registration = await createRegistration(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({})
         .expect(401);
     });
