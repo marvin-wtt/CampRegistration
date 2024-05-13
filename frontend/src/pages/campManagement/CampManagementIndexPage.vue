@@ -46,7 +46,7 @@
                   icon="add"
                   outline
                   rounded
-                  @click="addAction()"
+                  @click="onCreateCamp()"
                 />
               </q-item-label>
             </q-item-section>
@@ -90,14 +90,16 @@
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
+import { useQuasar } from 'quasar';
+import CampCreateDialog from 'components/campManagement/index/CampCreateDialog.vue';
 
 const { t } = useI18n();
-const router = useRouter();
+const quasar = useQuasar();
 const route = useRoute();
 const authStore = useAuthStore();
 
@@ -113,9 +115,9 @@ function getMenuStateFromQueryParameter(): MenuState {
   return page && typeof page === 'string' ? (page as MenuState) : 'active';
 }
 
-function addAction() {
-  router.push({
-    name: 'create-camp',
+function onCreateCamp() {
+  quasar.dialog({
+    component: CampCreateDialog,
   });
 }
 
