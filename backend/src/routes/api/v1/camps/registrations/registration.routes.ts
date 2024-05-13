@@ -45,7 +45,7 @@ router.post(
   validate(registrationValidation.store),
   registrationController.store,
 );
-router.put(
+router.patch(
   '/:registrationId',
   auth(),
   guard([campManager]),
