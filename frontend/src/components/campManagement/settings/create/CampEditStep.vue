@@ -53,10 +53,14 @@ const props = withDefaults(
     last: boolean;
   }>(),
   {
-    title: undefined,
+    title: '',
     last: false,
   },
 );
+const emit = defineEmits<{
+  (e: 'next-step'): void;
+  (e: 'previous-step'): void;
+}>();
 
 const error = ref<boolean>(false);
 
@@ -66,10 +70,13 @@ const nextLabel = computed<string>(() => {
 
 function nextStep() {
   step.value++;
+
+  emit('next-step');
 }
 
 function previousStep() {
   step.value--;
+  emit('previous-step');
 }
 </script>
 

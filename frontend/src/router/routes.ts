@@ -88,14 +88,6 @@ const routes: RouteRecordRaw[] = [
           import('pages/campManagement/CampManagementIndexPage.vue'),
       },
       {
-        path: 'create',
-        name: 'create-camp',
-        meta: {
-          hideDrawer: true,
-        },
-        component: () => import('pages/campManagement/CreateCampPage.vue'),
-      },
-      {
         path: ':camp',
         redirect: {
           name: 'dashboard',
