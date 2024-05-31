@@ -34,7 +34,7 @@
             :rules="[
               (val: number | undefined) =>
                 !!val || t('fields.capacity.rules.required'),
-              (val: number) => val <= 0 || t('fields.capacity.rules.positive'),
+              (val: number) => val > 0 || t('fields.capacity.rules.positive'),
             ]"
             outlined
             rounded
