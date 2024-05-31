@@ -29,9 +29,6 @@
                 clickable
                 @click="editRoom"
               >
-                <q-item-section avatar>
-                  <q-icon name="edit" />
-                </q-item-section>
                 <q-item-section>
                   {{ t('menu.edit') }}
                 </q-item-section>
@@ -42,10 +39,7 @@
                 clickable
                 @click="deleteRoom"
               >
-                <q-item-section avatar>
-                  <q-icon name="delete" />
-                </q-item-section>
-                <q-item-section>
+                <q-item-section class="text-negative">
                   {{ t('menu.delete') }}
                 </q-item-section>
               </q-item>
