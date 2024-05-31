@@ -187,24 +187,28 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
 
   const availableRoommates = computed<Roommate[]>(() => {
     const localRooms = data.value;
-    let results: Registration[] | undefined = registrationsStore.data;
+    const registrations: Registration[] | undefined = registrationsStore.data;
 
-    if (localRooms === undefined || results === undefined) {
+    if (localRooms === undefined || registrations === undefined) {
       return [];
     }
 
+    const waitingListFilter = (registration: Registration): boolean => {
+      return !registration.waitingList;
+    };
+
     // Filter out people who are already in a group
-    results = results.filter((person) => {
+    const alreadyAssignedFilter = (registration: Registration): boolean => {
       return !localRooms.some((room) => {
-        return room.beds.some((value) => value?.person?.id === person.id);
+        return room.beds.some((value) => value?.person?.id === registration.id);
       });
-    });
+    };
 
     // Map to roommate type and sort by age
-    return results
-      .map((roommate) => {
-        return mapRegistrationRoommate(roommate);
-      })
+    return registrations
+      .filter(waitingListFilter)
+      .filter(alreadyAssignedFilter)
+      .map(mapRegistrationRoommate)
       .sort((a, b) => {
         return (a.age ?? 999) - (b.age ?? 999);
       });
