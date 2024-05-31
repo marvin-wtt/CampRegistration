@@ -34,6 +34,7 @@
             :rules="[
               (val: number | undefined) =>
                 !!val || t('fields.capacity.rules.required'),
+              (val: number) => val <= 0 || t('fields.capacity.rules.positive'),
             ]"
             outlined
             rounded
@@ -101,7 +102,6 @@ function onCancelClick() {
 
 <style scoped></style>
 
-<!-- TODO Complete translations -->
 <i18n lang="yaml" locale="en">
 title: 'Create room'
 
@@ -109,11 +109,12 @@ fields:
   name:
     label: 'Name'
     rules:
-      required: ''
+      required: 'Name is required'
   capacity:
     label: 'Number of beds'
     rules:
-      required: ''
+      required: 'Beds is required'
+      positive: 'Room must have at least one bed'
 
 actions:
   save: 'Save'
@@ -127,11 +128,12 @@ fields:
   name:
     label: 'Name'
     rules:
-      required: ''
+      required: 'Name ist erforderlich'
   capacity:
     label: 'Anzahl der Betten'
     rules:
-      required: ''
+      required: 'Betten sind erforderlich'
+      positive: 'Zimmer muss mindestens ein Bett haben'
 
 actions:
   save: 'Speichern'
@@ -145,11 +147,12 @@ fields:
   name:
     label: 'Nom'
     rules:
-      required: ''
+      required: 'Le nom est requis'
   capacity:
     label: 'Nombre de lits'
     rules:
-      required: ''
+      required: 'Le nombre de lits est requis'
+      positive: 'La chambre doit avoir au moins un lit'
 
 actions:
   save: 'Enregistrer'

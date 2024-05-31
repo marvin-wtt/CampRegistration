@@ -87,7 +87,6 @@ function onCancelClick() {
 
 <style scoped></style>
 
-<!-- TODO Complete translations -->
 <i18n lang="yaml" locale="en">
 title: 'Edit room'
 
@@ -95,7 +94,7 @@ fields:
   name:
     label: 'Name'
     rules:
-      required: ''
+      required: 'Name is required'
 
 actions:
   save: 'Save'
@@ -108,7 +107,7 @@ fields:
   name:
     label: 'Name'
     rules:
-      required: ''
+      required: 'Name ist erforderlich'
 
 actions:
   save: 'Speichern'
@@ -121,7 +120,7 @@ fields:
   name:
     label: 'Nom'
     rules:
-      required: ''
+      required: 'Le nom est requis'
 
 actions:
   save: 'Enregistrer'
