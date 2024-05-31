@@ -200,6 +200,30 @@ const deleteRegistrationById = async (registrationId: string) => {
   await prisma.registration.delete({ where: { id: registrationId } });
 };
 
+const updateRegistrationCampDataByCamp = async (camp: Camp): Promise<void> => {
+  const form = formUtils(camp);
+  const registrations = await queryRegistrations(camp.id);
+
+  const results = registrations.map((registration) => {
+    form.updateData(registration.data);
+    const campData = form.extractCampData();
+
+    console.log(campData);
+
+    return prisma.registration.update({
+      where: { id: registration.id },
+      data: {
+        campData,
+      },
+      include: {
+        bed: { include: { room: true } },
+      },
+    });
+  });
+
+  await Promise.all(results);
+};
+
 const createRegistrationRoleFilter = (
   campId: string,
   role: string,
@@ -452,6 +476,7 @@ export default {
   createRegistration,
   updateRegistrationById,
   deleteRegistrationById,
+  updateRegistrationCampDataByCamp,
   sendRegistrationConfirmation,
   sendWaitingListConfirmation,
   sendRegistrationManagerNotification,

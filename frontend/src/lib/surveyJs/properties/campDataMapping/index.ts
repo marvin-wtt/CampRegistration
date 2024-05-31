@@ -40,6 +40,7 @@ const editor: IPropertyGridEditor = {
       type: 'dropdown',
       choices,
       showOtherItem: true,
+      storeOthersAsComment: false,
     };
   },
 };

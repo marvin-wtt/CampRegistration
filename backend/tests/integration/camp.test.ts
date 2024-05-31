@@ -112,7 +112,6 @@ describe('/api/v1/camps', () => {
       const { body } = await request().get(`/api/v1/camps/`).send().expect(200);
 
       expect(body).toHaveProperty('data');
-      expectTypeOf(body.data).toBeArray();
       expect(body.data.length).toBe(2);
     });
 
@@ -123,7 +122,6 @@ describe('/api/v1/camps', () => {
       const { body } = await request().get(`/api/v1/camps/`).send();
 
       expect(body).toHaveProperty('data');
-      expectTypeOf(body.data).toBeArray();
       expect(body.data.length).toBe(1);
     });
   });
@@ -765,6 +763,8 @@ describe('/api/v1/camps', () => {
         await assertCampModel(camp.id, data);
       },
     );
+
+    it.todo('should update camp data for all registrations');
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
