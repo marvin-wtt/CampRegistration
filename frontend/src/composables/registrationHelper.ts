@@ -221,7 +221,9 @@ export function useRegistrationHelper() {
   }
 
   function participant(registration: Registration): boolean {
-    return role(registration) === 'participant';
+    const registrationRole = role(registration);
+    // Undefined counts as participant
+    return !registrationRole || registrationRole === 'participant';
   }
 
   function email(registration: Registration): string | undefined {
