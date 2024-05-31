@@ -1,23 +1,60 @@
 import { catchRequestAsync } from 'utils/catchAsync';
-import ApiError from 'utils/ApiError';
-import httpStatus from 'http-status';
 import { resource } from 'resources/resource';
-import { bedService } from 'services';
+import { bedService, registrationService } from 'services';
 import { bedResource } from 'resources';
+import httpStatus from 'http-status';
+import { Registration } from '@prisma/client';
+import ApiError from '../utils/ApiError';
+
+const store = catchRequestAsync(async (req, res) => {
+  const { roomId, campId } = req.params;
+  const { registrationId } = req.body;
+
+  const registration = registrationId
+    ? await getRegistrationOrFail(campId, registrationId)
+    : undefined;
+
+  const bed = await bedService.createBed(roomId, registration?.id);
+
+  res.status(httpStatus.CREATED).json(resource(bedResource(bed)));
+});
 
 const update = catchRequestAsync(async (req, res) => {
-  const { bedId } = req.params;
-  const data = req.body;
-  const bed = await bedService.updateBedById(bedId, data.registrationId);
-  if (bed == null) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      'Update without response.',
-    );
-  }
+  const { bedId, campId } = req.params;
+  const { registrationId } = req.body;
+
+  const registration = await getRegistrationOrFail(campId, registrationId);
+
+  const bed = await bedService.updateBedById(bedId, registration?.id);
+
   res.json(resource(bedResource(bed)));
 });
 
+const destroy = catchRequestAsync(async (req, res) => {
+  const { bedId } = req.params;
+  await bedService.deleteBedById(bedId);
+
+  res.sendStatus(httpStatus.NO_CONTENT);
+});
+
+const getRegistrationOrFail = async (
+  campId: string,
+  registrationId: string,
+): Promise<Registration> => {
+  const registration = await registrationService.getRegistrationById(
+    campId,
+    registrationId,
+  );
+
+  if (registration === null) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid registration id');
+  }
+
+  return registration;
+};
+
 export default {
+  store,
   update,
+  destroy,
 };

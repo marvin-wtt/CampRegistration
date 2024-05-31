@@ -52,11 +52,9 @@ import SortableList from 'components/common/SortableList.vue';
 import { reactive, toRaw } from 'vue';
 import { RoomWithRoommates } from 'src/types/Room';
 
-interface Props {
+const props = defineProps<{
   rooms: RoomWithRoommates[];
-}
-
-const props = defineProps<Props>();
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 

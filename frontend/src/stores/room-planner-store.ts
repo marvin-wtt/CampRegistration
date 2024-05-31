@@ -139,7 +139,6 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     return {
       id: room.id,
       name: room.name,
-      capacity: room.capacity,
       beds: room.beds.map((bed) => {
         return {
           id: bed.id,
