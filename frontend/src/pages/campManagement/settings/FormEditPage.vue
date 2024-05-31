@@ -162,7 +162,7 @@ creator.saveThemeFunc = (
     });
 };
 
-creator.onPreviewSurveyCreated.add((_, options) => {
+creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
 
   // Convert markdown to html
