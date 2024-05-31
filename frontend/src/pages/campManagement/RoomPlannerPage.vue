@@ -5,6 +5,13 @@
     padding
     class="column"
   >
+    <div
+      v-if="rooms.length === 0"
+      class="col self-center content-center text-h3"
+    >
+      {{ t('noEntries') }}
+    </div>
+
     <!-- Content -->
     <div class="row items-start">
       <template v-if="loading">
@@ -57,11 +64,11 @@
         direction="up"
       >
         <!-- Room ordering is currently not supported -->
+        <!-- TODO Enable when ordering is supported -->
         <q-fab-action
-          v-if="rooms.length > 0"
           color="primary"
           icon="swap_vert"
-          disable
+          :disable="rooms.length === 0 && false"
           @click="orderRooms"
         />
         <q-fab-action
@@ -91,8 +98,10 @@ import type {
   RoomCreateData,
   RoomUpdateData,
 } from '@camp-registration/common/entities';
+import { useI18n } from 'vue-i18n';
 
 const quasar = useQuasar();
+const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomPlannerStore();
@@ -203,7 +212,14 @@ function onBedUpdate(
 }
 </style>
 
-<!-- TODO Translations -->
 <i18n lang="yaml" locale="en">
-title: 'Room Planner'
+noEntries: 'Create new rooms to start'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+noEntries: 'Neue Räume erstellen, um zu beginnen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+noEntries: 'Créer de nouvelles pièces pour commencer'
 </i18n>
