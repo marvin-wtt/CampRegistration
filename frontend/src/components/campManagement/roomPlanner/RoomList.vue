@@ -74,7 +74,7 @@ const { to } = useObjectTranslation();
 interface Props {
   name: string | Record<string, string>;
   modelValue: RoomWithRoommates;
-  people: (Roommate | null)[];
+  people: Roommate[];
   dense?: boolean;
 }
 
@@ -94,46 +94,45 @@ const room = computed<RoomWithRoommates>({
   set: (val) => emit('update:modelValue', val),
 });
 
-const gender = computed<string | undefined>(() => {
-  let gender: string | undefined = undefined;
-
-  room.value.beds.some((bed) => {
-    const person = bed.person;
-    if (person?.gender === undefined) {
-      return false;
-    }
-
-    gender = person.gender;
-    return true;
-  });
-
-  return gender;
+const roomGender = computed<string | undefined>(() => {
+  // Assume gender by first person in room
+  return room.value.beds
+    .map((bed) => bed.person?.gender)
+    .find((gender) => !!gender);
 });
 
-const participant = computed<boolean | undefined>(() => {
+const isParticipantRoom = computed<boolean | undefined>(() => {
+  // Exclude all beds free
+  if (room.value.beds.filter((value) => !!value.person).length === 0) {
+    return undefined;
+  }
+
   return room.value.beds.some((bed) => {
     const person = bed.person;
+
     return person?.participant;
   });
 });
 
-const options = computed<unknown[]>(() => {
+const options = computed<Roommate[]>(() => {
   const genderFilter = (roomMate: Roommate | null): boolean => {
-    if (gender.value === undefined) {
+    if (roomGender.value === undefined) {
       return true;
     }
 
-    return roomMate?.gender !== undefined && roomMate?.gender === gender.value;
+    return (
+      roomMate?.gender !== undefined && roomMate?.gender === roomGender.value
+    );
   };
 
   const roleFilter = (roomMate: Roommate | null): boolean => {
-    if (participant.value === undefined) {
+    if (isParticipantRoom.value === undefined) {
       return true;
     }
 
     return (
       roomMate?.participant !== undefined &&
-      roomMate.participant === participant.value
+      roomMate.participant === isParticipantRoom.value
     );
   };
 

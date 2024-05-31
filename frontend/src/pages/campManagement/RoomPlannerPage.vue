@@ -6,7 +6,7 @@
     class="column"
   >
     <div
-      v-if="rooms.length === 0"
+      v-if="!loading && rooms.length === 0"
       class="col self-center content-center text-h3"
     >
       {{ t('noEntries') }}

@@ -10,11 +10,12 @@ const store = catchRequestAsync(async (req, res) => {
   const { roomId, campId } = req.params;
   const { registrationId } = req.body;
 
-  const registration = registrationId
-    ? await getRegistrationOrFail(campId, registrationId)
-    : undefined;
+  // Validate registrationId is present
+  if (registrationId !== undefined) {
+    await getRegistrationOrFail(campId, registrationId);
+  }
 
-  const bed = await bedService.createBed(roomId, registration?.id);
+  const bed = await bedService.createBed(roomId, registrationId);
 
   res.status(httpStatus.CREATED).json(resource(bedResource(bed)));
 });
@@ -23,9 +24,12 @@ const update = catchRequestAsync(async (req, res) => {
   const { bedId, campId } = req.params;
   const { registrationId } = req.body;
 
-  const registration = await getRegistrationOrFail(campId, registrationId);
+  // Validate registrationId is present
+  if (registrationId !== null) {
+    await getRegistrationOrFail(campId, registrationId);
+  }
 
-  const bed = await bedService.updateBedById(bedId, registration?.id);
+  const bed = await bedService.updateBedById(bedId, registrationId);
 
   res.json(resource(bedResource(bed)));
 });
