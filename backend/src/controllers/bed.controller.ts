@@ -11,11 +11,11 @@ const store = catchRequestAsync(async (req, res) => {
   const { registrationId } = req.body;
 
   // Validate registrationId is present
-  if (registrationId !== null) {
+  if (registrationId !== undefined) {
     await getRegistrationOrFail(campId, registrationId);
   }
 
-  const bed = await bedService.createBed(roomId, registrationId ?? undefined);
+  const bed = await bedService.createBed(roomId, registrationId);
 
   res.status(httpStatus.CREATED).json(resource(bedResource(bed)));
 });
