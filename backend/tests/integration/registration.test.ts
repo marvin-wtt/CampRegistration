@@ -1009,7 +1009,20 @@ describe('/api/v1/camps/:campId/registrations', () => {
   describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
     it.todo('should respond with `200` status code when user is camp manager');
 
-    it.todo('should respond with `200` status when waiting list is updated');
+    it('should respond with `200` status when waiting list is updated', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await createRegistration(camp);
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send({
+          waitingList: false,
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it.todo('should not overwrite camp data when updating waiting list ');
 
     it.todo('should upload files if attached');
 

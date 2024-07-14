@@ -12,7 +12,7 @@ export const registrationData: Joi.CustomValidator<object> = (
   helpers,
 ) => {
   if (typeof value !== 'object' || value == null) {
-    return helpers.message({ custom: 'Survey may not be null' });
+    return helpers.message({ custom: 'Survey must not be null' });
   }
 
   const req = helpers.prefs.context as Request;
@@ -66,7 +66,7 @@ const update = {
     registrationId: Joi.string().required(),
   }),
   body: Joi.object<RegistrationUpdateData>({
-    data: Joi.object().required(),
+    data: Joi.object(),
     waitingList: Joi.boolean(),
   }),
 };
