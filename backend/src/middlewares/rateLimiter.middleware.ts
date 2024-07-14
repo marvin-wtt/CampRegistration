@@ -17,3 +17,10 @@ export const generalLimiter = rateLimit({
   keyGenerator: (request) => `General:${request.ip}`,
   store,
 });
+
+export const staticLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 100,
+  keyGenerator: (request) => `Static:${request.ip}`,
+  store,
+});
