@@ -323,11 +323,14 @@ const sendRegistrationManagerNotification = async (
     content: JSON.stringify(registration),
   };
 
+  const url = notificationService.generateUrl(`management/${camp.id}`);
+
   const context = {
     camp: {
       name: campName,
     },
     participantName,
+    url,
   };
 
   await notificationService.sendEmail({
