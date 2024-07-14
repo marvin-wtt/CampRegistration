@@ -12,7 +12,6 @@ import { isValid, decodeTime } from 'ulidx';
 import moment from 'moment';
 
 type RequestFile = Express.Multer.File;
-type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
 
 const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
   'id',
@@ -46,23 +45,6 @@ const mapFields = (
     storageLocation: config.storage.location,
     accessLevel,
   };
-};
-
-const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
-  // Array of files
-  if (Array.isArray(requestFiles)) {
-    return requestFiles.map((file) => mapFields(file));
-  }
-
-  // Object of files
-  const fileData: Prisma.FileCreateInput[] = [];
-  for (const [field, files] of Object.entries(requestFiles)) {
-    files.forEach((file) => {
-      fileData.push(mapFields(file, field));
-    });
-  }
-
-  return fileData;
 };
 
 const moveFile = async (file: RequestFile) => {
@@ -286,26 +268,42 @@ const getStorage = (name?: string): StorageStrategy => {
 
 const LocalStorage: StorageStrategy = {
   remove: async (file: File) => {
-    const filePath = path.join(config.storage.uploadDir, file.name);
-    return fse.remove(filePath);
+    const { uploadDir } = config.storage;
+    const filePath = path.join(uploadDir, file.name);
+
+    verifyDirectoryPath(filePath, uploadDir);
+    await fse.remove(filePath);
   },
   moveToStorage: async (sourcePath: string, filename: string) => {
-    const destinationDir = config.storage.uploadDir;
-    const destinationPath = path.join(destinationDir, filename);
+    const { uploadDir } = config.storage;
+    const destinationPath = path.join(uploadDir, filename);
 
-    await fse.ensureDir(destinationDir);
+    verifyDirectoryPath(destinationPath, uploadDir);
+    await fse.ensureDir(uploadDir);
     await fse.move(sourcePath, destinationPath, {
       overwrite: false,
     });
   },
   stream: (file: File) => {
-    const filePath = path.join(config.storage.uploadDir, file.name);
+    const { uploadDir } = config.storage;
+    const filePath = path.join(uploadDir, file.name);
+
+    verifyDirectoryPath(filePath, uploadDir);
+
     if (!fse.existsSync(filePath)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
     }
 
     return fse.createReadStream(filePath);
   },
+};
+
+const verifyDirectoryPath = (filePath: string, rootPath: string) => {
+  // Make sure, that the file path does not escape the root path
+  const realPath = fse.realpathSync(filePath);
+  if (!realPath.startsWith(rootPath)) {
+    throw new ApiError(403, 'Invalid file data');
+  }
 };
 
 export default {
