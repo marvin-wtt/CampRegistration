@@ -3,7 +3,7 @@
 export PATH=/opt/plesk/node/20/bin
 
 npm -ws run clean
-mpm ci
+npm ci
 npm -ws run build
 npm run db:migrate -w backend
 
