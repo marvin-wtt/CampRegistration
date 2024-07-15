@@ -57,7 +57,7 @@ const runJob = (
     completionHandler(job);
 
     if (!job.nextRun()) {
-      terminationHandler('No further executes scheduled', job);
+      terminationHandler('No further executions scheduled', job);
     }
   };
 };

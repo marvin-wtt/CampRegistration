@@ -8,8 +8,9 @@ import path from 'path';
 import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import { extractKeyFromFieldName } from 'utils/form';
-import { isValid, decodeTime } from 'ulidx';
+import { decodeTime, isValid } from 'ulidx';
 import moment from 'moment';
+import logger from 'config/logger';
 
 type RequestFile = Express.Multer.File;
 
@@ -66,15 +67,15 @@ const saveModelFile = async (
   const fileData = mapFields(file, fileName, field, accessLevel);
   const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-  const data = await prisma.file.create({
+  // Move file first to ensure that they really exist
+  await moveFile(file);
+
+  return prisma.file.create({
     data: {
       ...fileData,
       ...modelData,
     },
   });
-  await moveFile(file);
-
-  return data;
 };
 
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
@@ -138,8 +139,14 @@ const deleteFile = async (id: string) => {
   });
 
   const storage = getStorage(file.storageLocation);
-  // TODO Can this be done in a job?
-  await storage.remove(file);
+  try {
+    // TODO Can this be done in a job?
+    await storage.remove(file);
+  } catch (e) {
+    // Do not throw an error because the operation seems successfully to the user anyway
+    logger.error(`Error while deleting file: ${file.name}.`);
+    logger.error(e);
+  }
 
   return file;
 };
