@@ -279,13 +279,16 @@ const LocalStorage: StorageStrategy = {
     const filePath = path.join(uploadDir, file.name);
 
     verifyDirectoryPath(filePath, uploadDir);
+
     await fse.remove(filePath);
   },
   moveToStorage: async (sourcePath: string, filename: string) => {
-    const { uploadDir } = config.storage;
+    const { uploadDir, tmpDir } = config.storage;
     const destinationPath = path.join(uploadDir, filename);
 
     verifyDirectoryPath(destinationPath, uploadDir);
+    verifyDirectoryPath(sourcePath, tmpDir);
+
     await fse.ensureDir(uploadDir);
     await fse.move(sourcePath, destinationPath, {
       overwrite: false,
@@ -307,8 +310,10 @@ const LocalStorage: StorageStrategy = {
 
 const verifyDirectoryPath = (filePath: string, rootPath: string) => {
   // Make sure, that the file path does not escape the root path
-  const realPath = fse.realpathSync(filePath);
-  if (!realPath.startsWith(rootPath)) {
+  const resolvedFilePath = path.resolve(filePath);
+  const resolvedRootPath = path.resolve(rootPath);
+
+  if (!resolvedFilePath.startsWith(resolvedRootPath)) {
     throw new ApiError(403, 'Invalid file data');
   }
 };
