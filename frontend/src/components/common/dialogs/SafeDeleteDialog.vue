@@ -97,7 +97,12 @@ const confirmDeleteDisabled = computed<boolean>(() => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.data-value {
+  /* Ensure that multiple spaces are shown correctly */
+  white-space: pre-wrap;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 text:
