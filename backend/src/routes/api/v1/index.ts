@@ -5,6 +5,7 @@ import profileRoutes from './profile.routes';
 import userRoutes from './user.routes';
 import feedbackRoutes from './feedback.routes';
 import fileRoutes from './file.route';
+import httpStatus from 'http-status';
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.use('/files', fileRoutes);
 
 // Simple health check to see if the API is available
 router.get('/health', (req, res) => {
-  res.sendStatus(200);
+  res.sendStatus(httpStatus.OK);
 });
 
 export default router;

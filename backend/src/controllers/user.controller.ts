@@ -38,10 +38,9 @@ const update = catchRequestAsync(async (req, res) => {
   const authId = authUserId(req);
   const authUser = await userService.getUserById(authId);
 
-  if (locked !== undefined || role) {
-    if (authUser?.role !== Role.ADMIN) {
-      throw new ApiError(httpStatus.FORBIDDEN, 'Insouciant permission');
-    }
+  const adminPermissionsRequired = locked !== undefined || role !== undefined;
+  if (adminPermissionsRequired && authUser?.role !== Role.ADMIN) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Insufficient permission');
   }
 
   const user = await userService.updateUserById(userId, {
