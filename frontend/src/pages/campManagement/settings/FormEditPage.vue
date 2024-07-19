@@ -216,7 +216,7 @@ creator.themeEditor.onThemeSelected.add((sender, options) => {
   const themes = campDetailsStore.data?.themes;
   if (themes && colorPalette && colorPalette in themes) {
     const mewTheme = themes[colorPalette];
-    creator.themeEditor.model.setTheme(mewTheme);
+    creator.themeEditor.model.setTheme(colorPalette, mewTheme);
   }
 });
 </script>
