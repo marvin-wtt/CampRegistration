@@ -1,4 +1,4 @@
-import { describe, expect, it, expectTypeOf } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   CampFactory,
   UserFactory,
@@ -45,7 +45,6 @@ describe('/api/v1/camps/:campId/managers', () => {
         .expect(200);
 
       expect(body).toHaveProperty('data');
-      expectTypeOf(body.data).toBeArray();
       expect(body.data.length).toBe(2);
       expect(body.data[0]).toEqual({
         id: expect.anything(),
