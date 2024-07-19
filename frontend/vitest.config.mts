@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import vueI18n from '@intlify/unplugin-vue-i18n'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -20,7 +20,7 @@ export default defineConfig({
     vue({
       template: { transformAssetUrls },
     }),
-    vueI18n(),
+    VueI18nPlugin({}),
     quasar({
       sassVariables: 'src/quasar-variables.scss',
     }),
