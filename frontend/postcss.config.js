@@ -1,7 +1,7 @@
 /* eslint-disable */
 // https://github.com/michael-ciniawsky/postcss-load-config
 
-module.exports = {
+export default {
   plugins: [
     // https://github.com/postcss/autoprefixer
     require('autoprefixer')({
