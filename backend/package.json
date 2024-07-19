@@ -71,7 +71,7 @@
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.1",
     "qs": "^6.11.2",
-    "survey-core": "^1.10.6",
+    "survey-core": "^1.11.7",
     "ulidx": "^2.0.0",
     "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1"
@@ -119,9 +119,9 @@
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "tsc-alias": "^1.8.8",
-    "typescript": "5.3",
+    "typescript": "5.5.3",
     "vite-tsconfig-paths": "^4.2.2",
     "vitest": "^1.0.1",
-    "vitest-mock-extended": "^1.1.3"
+    "vitest-mock-extended": "~1.1.0"
   }
 }
