@@ -1,6 +1,6 @@
 import express from 'express';
 import v1routes from './v1';
-import { generalLimiter } from 'middlewares';
+import { generalLimiter, maintenance } from 'middlewares';
 import passport from 'passport';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
@@ -11,6 +11,7 @@ const router = express.Router();
 router.use(morgan.successHandler);
 
 router.use(generalLimiter);
+router.use(maintenance);
 router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
 
 router.use('/v1', v1routes);
