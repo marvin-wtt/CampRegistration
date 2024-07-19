@@ -13,4 +13,7 @@ export default {
     error: 'Échec de la suppression du fichier',
     invalid: 'ID de fichier non valide',
   },
+  download: {
+    error: 'Échec du téléchargement du fichier',
+  },
 };

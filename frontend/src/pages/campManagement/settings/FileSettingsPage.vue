@@ -195,9 +195,9 @@ function deleteFiles() {
 }
 
 function downloadFiles() {
-  selected.value.forEach((value: ServiceFile) => {
-    campFileStore.downloadData(value.id);
-  });
+  selected.value.forEach((file) =>
+    campFileStore.downloadFile(file, campStore.data?.id),
+  );
 }
 
 function copyLink(url: string) {
