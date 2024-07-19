@@ -20,7 +20,9 @@
           <q-file
             v-model="file.file"
             :label="t('fields.file.label')"
-            :rules="[(val) => !!val || t('fields.access_level.rules.required')]"
+            :rules="[
+              (val?: File) => !!val || t('fields.access_level.rules.required'),
+            ]"
             clearable
             bottom-slots
             counter
@@ -41,7 +43,9 @@
           <q-input
             v-model="file.name"
             :label="t('fields.name.label')"
-            :rules="[(val) => !!val || t('fields.name.rules.required')]"
+            :rules="[
+              (val?: string) => !!val || t('fields.name.rules.required'),
+            ]"
             outlined
             rounded
           />
@@ -51,7 +55,10 @@
             v-model="file.accessLevel"
             :options="accessLevelOptions"
             :label="t('fields.access_level.label')"
-            :rules="[(val) => !!val || t('fields.access_level.rules.required')]"
+            :rules="[
+              (val?: string) =>
+                !!val || t('fields.access_level.rules.required'),
+            ]"
             emit-value
             map-options
             outlined
