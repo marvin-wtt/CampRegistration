@@ -183,7 +183,10 @@ function orderRooms() {
       persistent: true,
     })
     .onOk((payload: RoomWithRoommates[]) => {
-      // TODO Compare changes and update
+      // TODO Rooms needs order property so safe the order
+      payload.forEach((room: RoomWithRoommates) => {
+        roomStore.updateRoom(room.id, room);
+      });
     });
 }
 
