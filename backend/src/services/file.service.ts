@@ -8,11 +8,11 @@ import path from 'path';
 import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import { extractKeyFromFieldName } from 'utils/form';
-import { isValid, decodeTime } from 'ulidx';
+import { decodeTime, isValid } from 'ulidx';
 import moment from 'moment';
+import logger from 'config/logger';
 
 type RequestFile = Express.Multer.File;
-type RequestFiles = { [field: string]: RequestFile[] } | RequestFile[];
 
 const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
   'id',
@@ -48,23 +48,6 @@ const mapFields = (
   };
 };
 
-const mapFileData = (requestFiles: RequestFiles): Prisma.FileCreateInput[] => {
-  // Array of files
-  if (Array.isArray(requestFiles)) {
-    return requestFiles.map((file) => mapFields(file));
-  }
-
-  // Object of files
-  const fileData: Prisma.FileCreateInput[] = [];
-  for (const [field, files] of Object.entries(requestFiles)) {
-    files.forEach((file) => {
-      fileData.push(mapFields(file, field));
-    });
-  }
-
-  return fileData;
-};
-
 const moveFile = async (file: RequestFile) => {
   const sourcePath = file.path;
 
@@ -84,15 +67,15 @@ const saveModelFile = async (
   const fileData = mapFields(file, fileName, field, accessLevel);
   const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-  const data = await prisma.file.create({
+  // Move file first to ensure that they really exist
+  await moveFile(file);
+
+  return prisma.file.create({
     data: {
       ...fileData,
       ...modelData,
     },
   });
-  await moveFile(file);
-
-  return data;
 };
 
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
@@ -156,8 +139,14 @@ const deleteFile = async (id: string) => {
   });
 
   const storage = getStorage(file.storageLocation);
-  // TODO Can this be done in a job?
-  await storage.remove(file);
+  try {
+    // TODO Can this be done in a job?
+    await storage.remove(file);
+  } catch (e) {
+    // Do not throw an error because the operation seems successfully to the user anyway
+    logger.error(`Error while deleting file: ${file.name}.`);
+    logger.error(e);
+  }
 
   return file;
 };
@@ -286,26 +275,47 @@ const getStorage = (name?: string): StorageStrategy => {
 
 const LocalStorage: StorageStrategy = {
   remove: async (file: File) => {
-    const filePath = path.join(config.storage.uploadDir, file.name);
-    return fse.remove(filePath);
+    const { uploadDir } = config.storage;
+    const filePath = path.join(uploadDir, file.name);
+
+    verifyDirectoryPath(filePath, uploadDir);
+
+    await fse.remove(filePath);
   },
   moveToStorage: async (sourcePath: string, filename: string) => {
-    const destinationDir = config.storage.uploadDir;
-    const destinationPath = path.join(destinationDir, filename);
+    const { uploadDir, tmpDir } = config.storage;
+    const destinationPath = path.join(uploadDir, filename);
 
-    await fse.ensureDir(destinationDir);
+    verifyDirectoryPath(destinationPath, uploadDir);
+    verifyDirectoryPath(sourcePath, tmpDir);
+
+    await fse.ensureDir(uploadDir);
     await fse.move(sourcePath, destinationPath, {
       overwrite: false,
     });
   },
   stream: (file: File) => {
-    const filePath = path.join(config.storage.uploadDir, file.name);
+    const { uploadDir } = config.storage;
+    const filePath = path.join(uploadDir, file.name);
+
+    verifyDirectoryPath(filePath, uploadDir);
+
     if (!fse.existsSync(filePath)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
     }
 
     return fse.createReadStream(filePath);
   },
+};
+
+const verifyDirectoryPath = (filePath: string, rootPath: string) => {
+  // Make sure, that the file path does not escape the root path
+  const resolvedFilePath = path.resolve(filePath);
+  const resolvedRootPath = path.resolve(rootPath);
+
+  if (!resolvedFilePath.startsWith(resolvedRootPath)) {
+    throw new ApiError(403, 'Invalid file data');
+  }
 };
 
 export default {

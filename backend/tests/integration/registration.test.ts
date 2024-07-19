@@ -6,6 +6,7 @@ import {
   FileFactory,
   RegistrationFactory,
   UserFactory,
+  CampManagerFactory,
 } from '../../prisma/factories';
 import { Camp } from '@prisma/client';
 import { ulid } from 'ulidx';
@@ -32,9 +33,9 @@ import {
   campWithContactEmailInternational,
   campWithEmailAndMaxParticipants,
   campWithFormFunctions,
+  campWithAddress,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import { CampManagerFactory } from '../../prisma/factories/manager';
 import mailer from '../../src/config/mail';
 
 describe('/api/v1/camps/:campId/registrations', () => {
@@ -590,7 +591,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const { body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data })
-          .expect(201);
+          .expectOrPrint(201);
 
         expect(body).toHaveProperty('data.waitingList', expected);
       };
@@ -763,6 +764,48 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Larry`,
             role: 'participant',
             country: 'fr',
+          },
+          false,
+        );
+      });
+
+      it('should set waiting list when country is provided via address', async () => {
+        const camp = await CampFactory.create(campWithAddress);
+
+        // Fill camp
+        for (let i = 0; i < 5; i++) {
+          await assertRegistration(
+            camp.id,
+            {
+              first_name: `Jhon ${i}`,
+              address: {
+                country: 'de',
+              },
+            },
+            false,
+          );
+        }
+
+        // Assert waiting list
+        await assertRegistration(
+          camp.id,
+          {
+            first_name: `Jhon`,
+            address: {
+              country: 'de',
+            },
+          },
+          true,
+        );
+
+        // Other nation should not be on waiting list
+        await assertRegistration(
+          camp.id,
+          {
+            first_name: `Jhon`,
+            address: {
+              country: 'fr',
+            },
           },
           false,
         );
@@ -963,10 +1006,23 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
   });
 
-  describe('PUT /api/v1/camps/:campId/registrations/:registrationId', () => {
+  describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
     it.todo('should respond with `200` status code when user is camp manager');
 
-    it.todo('should respond with `200` status when waiting list is updated');
+    it('should respond with `200` status when waiting list is updated', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await createRegistration(camp);
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send({
+          waitingList: false,
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it.todo('should not overwrite camp data when updating waiting list ');
 
     it.todo('should upload files if attached');
 
@@ -976,7 +1032,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const registration = await createRegistration(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({
           data: {},
         })
@@ -989,7 +1045,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const registration = await createRegistration(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({})
         .expect(401);
     });

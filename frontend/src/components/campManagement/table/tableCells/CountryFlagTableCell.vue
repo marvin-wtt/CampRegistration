@@ -1,9 +1,13 @@
 <template>
   <country-icon
-    v-if="country !== undefined"
+    v-if="country"
     :locale="country"
     :size="size"
-  />
+  >
+    <q-tooltip>
+      {{ props.props.value }}
+    </q-tooltip>
+  </country-icon>
 
   <a v-else>
     {{ props.props.value }}

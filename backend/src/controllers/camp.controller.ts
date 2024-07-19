@@ -1,4 +1,4 @@
-import { campService } from 'services';
+import { campService, registrationService } from 'services';
 import httpStatus from 'http-status';
 import { campResource, detailedCampResource } from 'resources';
 import { catchRequestAsync } from 'utils/catchAsync';
@@ -87,6 +87,11 @@ const update = catchRequestAsync(async (req, res) => {
     form: data.form,
     themes: data.themes,
   });
+
+  // Re-generate camp data fields
+  if (data.form) {
+    await registrationService.updateRegistrationCampDataByCamp(camp);
+  }
 
   res.json(resource(detailedCampResource(camp)));
 });

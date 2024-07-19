@@ -11,7 +11,6 @@ import { anonymousStrategy, jwtStrategy } from './config/passport';
 import cookieParser from 'cookie-parser';
 import { initI18n } from 'config/i18n';
 import { startJobs } from 'jobs';
-import path from 'path';
 
 const app = express();
 
@@ -58,17 +57,6 @@ initI18n();
 
 // routes
 app.use(router);
-// static content
-app.use(express.static('public'));
-// Serve frontend content
-// TODO Is there a better way to load the files?
-const spaPath = path.join(__dirname, '..', '..', 'frontend', 'dist', 'spa');
-app.use(express.static(spaPath));
-
-// Respond all other get requests with frontend content
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(spaPath, 'index.html'));
-});
 
 // convert error to ApiError, if needed
 app.use(errorConverter);

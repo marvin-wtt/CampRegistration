@@ -10,13 +10,13 @@
       >
         <q-card-section>
           <div class="text-h6">
-            {{ t(`title.${props.mode}`) }}
+            {{ t(`title`) }}
           </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <translated-input
-            v-model="modifiedRoom.name"
+            v-model="room.name"
             :label="t('fields.name.label')"
             :rules="[
               (val: string | Record<string, string> | undefined) =>
@@ -28,12 +28,13 @@
           />
 
           <q-input
-            v-model.number="modifiedRoom.capacity"
+            v-model.number="room.capacity"
             type="number"
             :label="t('fields.capacity.label')"
             :rules="[
               (val: number | undefined) =>
                 !!val || t('fields.capacity.rules.required'),
+              (val: number) => val > 0 || t('fields.capacity.rules.positive'),
             ]"
             outlined
             rounded
@@ -64,17 +65,13 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive, toRaw } from 'vue';
-import { RoomWithRoommates } from 'src/types/Room';
+import { reactive } from 'vue';
+import type { RoomCreateData } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
-interface Props {
-  room?: Omit<RoomWithRoommates, 'beds'>;
-  mode: 'create' | 'edit';
+const props = defineProps<{
   locales?: string[];
-}
-
-const props = defineProps<Props>();
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -89,14 +86,13 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedRoom = reactive<Partial<RoomWithRoommates>>(defaultRoom());
-
-function defaultRoom(): Partial<RoomWithRoommates> {
-  return structuredClone(toRaw(props.room)) ?? {};
-}
+const room = reactive<RoomCreateData>({
+  name: '',
+  capacity: 0,
+});
 
 function onOKClick(): void {
-  onDialogOK(modifiedRoom);
+  onDialogOK(room);
 }
 
 function onCancelClick() {
@@ -107,19 +103,18 @@ function onCancelClick() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title:
-  create: 'Create room'
-  edit: 'Edit room'
+title: 'Create room'
 
 fields:
   name:
     label: 'Name'
     rules:
-      required: ''
+      required: 'Name is required'
   capacity:
     label: 'Number of beds'
     rules:
-      required: ''
+      required: 'Beds is required'
+      positive: 'Room must have at least one bed'
 
 actions:
   save: 'Save'
@@ -127,18 +122,18 @@ actions:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title:
-  create: 'Zimmer erstellen'
-  edit: 'Zimmer bearbeiten'
+title: 'Zimmer erstellen'
+
 fields:
   name:
     label: 'Name'
     rules:
-      required: ''
+      required: 'Name ist erforderlich'
   capacity:
     label: 'Anzahl der Betten'
     rules:
-      required: ''
+      required: 'Betten sind erforderlich'
+      positive: 'Zimmer muss mindestens ein Bett haben'
 
 actions:
   save: 'Speichern'
@@ -146,25 +141,24 @@ actions:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title:
-  create: 'Créer une chambre'
-  edit: 'Modifier la chambre'
+title: 'Créer une chambre'
+
 fields:
   name:
     label: 'Nom'
     rules:
-      required: ''
+      required: 'Le nom est requis'
   capacity:
     label: 'Nombre de lits'
     rules:
-      required: ''
+      required: 'Le nombre de lits est requis'
+      positive: 'La chambre doit avoir au moins un lit'
 
 actions:
   save: 'Enregistrer'
   cancel: 'Annuler'
 </i18n>
 
-<!-- TODO -->
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

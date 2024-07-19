@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma';
 import { TokenType, User } from '@prisma/client';
-import { CampFactory, UserFactory } from '../../prisma/factories';
+import {
+  CampFactory,
+  UserFactory,
+  TokenFactory,
+  CampManagerFactory,
+  InvitationFactory,
+} from '../../prisma/factories';
 import {
   generateAccessToken,
   generateExpiredToken,
@@ -13,9 +19,6 @@ import {
   verifyToken,
 } from '../utils/token';
 import { request } from '../utils/request';
-import { TokenFactory } from '../../prisma/factories/token';
-import { CampManagerFactory } from '../../prisma/factories/manager';
-import { InvitationFactory } from '../../prisma/factories/invitation';
 import mailer from '../../src/config/mail';
 
 describe('/api/v1/auth', async () => {

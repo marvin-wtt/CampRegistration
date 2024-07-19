@@ -37,7 +37,7 @@ export function useRegistrationService() {
     registrationId: string,
     data: RegistrationUpdateData,
   ): Promise<Registration> {
-    const response = await api.put(
+    const response = await api.patch(
       `camps/${campId}/registrations/${registrationId}/`,
       data,
     );

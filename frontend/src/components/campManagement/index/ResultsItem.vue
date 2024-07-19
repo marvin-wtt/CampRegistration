@@ -1,6 +1,7 @@
 <template>
   <q-item
     v-ripple
+    clickable
     @click="resultsAction"
   >
     <q-item-section>
@@ -20,7 +21,7 @@
           icon="share"
           rounded
           :disable="actionLoading"
-          @click="shareAction"
+          @click.stop="shareAction"
         />
 
         <q-btn
@@ -34,7 +35,7 @@
           rounded
           :loading="enableLoading"
           :disable="actionLoading && !disableLoading"
-          @click="enableAction"
+          @click.stop="enableAction"
         />
 
         <q-btn
@@ -46,7 +47,7 @@
           rounded
           :loading="resultLoading"
           :disable="actionLoading && !resultLoading"
-          @click="resultsAction"
+          @click.stop="resultsAction"
         />
 
         <q-btn
@@ -57,7 +58,7 @@
           icon="edit"
           rounded
           :disable="actionLoading"
-          @click="editAction"
+          @click.stop="editAction"
         />
 
         <q-btn
@@ -71,7 +72,7 @@
           rounded
           :loading="disableLoading"
           :disable="actionLoading && !disableLoading"
-          @click="disableAction"
+          @click.stop="disableAction"
         />
 
         <q-btn
@@ -85,7 +86,7 @@
           rounded
           :loading="deleteLoading"
           :disable="actionLoading && !deleteLoading"
-          @click="deleteAction"
+          @click.stop="deleteAction"
         />
 
         <q-btn
@@ -95,6 +96,7 @@
           icon="more_vert"
           round
           :disable="actionLoading"
+          @click.stop
         >
           <results-item-menu
             :camp="props.camp"
@@ -278,8 +280,8 @@ action:
 dialog:
   delete:
     title: 'Lager löschen'
-    message: 'Sind Sie sicher, dass Sie dieses Lager löschen möchten? Alle Anmeldungen gehen verloren. Dieses Lager kann nicht als Vorlage für zukünftige Lager verwendet werden.'
-    label: 'Lagername'
+    message: 'Sind Sie sicher, dass Sie dieses Camp löschen möchten? Alle Anmeldungen gehen verloren. Dieses Lager kann nicht als Vorlage für zukünftige Lager verwendet werden.'
+    label: 'Camp Name'
 
 notification:
   share_success: 'Link in die Zwischenablage kopiert'

@@ -273,7 +273,9 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
       label: to(options.label) || key,
       value: key,
     };
-  }).filter((value): value is QSelectOption => !!value);
+  })
+    .filter((value): value is QSelectOption => !!value)
+    .sort((a, b) => a?.label.localeCompare(b?.label));
 });
 
 const fieldOptions = computed(() => {

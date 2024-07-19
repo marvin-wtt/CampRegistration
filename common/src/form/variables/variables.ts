@@ -14,7 +14,7 @@ export type Data = {
   maxAge: number;
   location: Translatable;
   price: number;
-  freePlaces?: Translatable<number>;
+  freePlaces: Translatable<number> | null;
 };
 
 export const setVariables = (model: SurveyModel, data: Data | undefined) => {

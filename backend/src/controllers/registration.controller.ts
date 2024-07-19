@@ -56,14 +56,14 @@ const update = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
   const previousRegistration = routeModel(req.models.registration);
   const { registrationId } = req.params;
-  const data = req.body;
+  const { data, waitingList } = req.body;
 
   const registration = await registrationService.updateRegistrationById(
     camp,
     registrationId,
     {
-      data: data.data,
-      waitingList: data.waitingList,
+      data,
+      waitingList,
     },
   );
 

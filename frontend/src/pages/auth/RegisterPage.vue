@@ -14,7 +14,9 @@
         <q-card-section class="q-gutter-md">
           <q-input
             v-model="name"
-            :rules="[(val) => !!val || t('fields.name.rules.required')]"
+            :rules="[
+              (val?: string) => !!val || t('fields.name.rules.required'),
+            ]"
             :label="t('fields.name.label')"
             outlined
             rounded
@@ -28,7 +30,9 @@
             v-model="email"
             type="email"
             autocomplete="email"
-            :rules="[(val) => !!val || t('fields.email.rules.required')]"
+            :rules="[
+              (val?: string) => !!val || t('fields.email.rules.required'),
+            ]"
             :label="t('fields.email.label')"
             outlined
             rounded
@@ -42,7 +46,9 @@
             v-model="password"
             type="password"
             autocomplete="new-password"
-            :rules="[(val) => !!val || t('fields.password.rules.required')]"
+            :rules="[
+              (val?: string) => !!val || t('fields.password.rules.required'),
+            ]"
             :label="t('fields.password.label')"
             outlined
             rounded
@@ -57,7 +63,7 @@
             type="password"
             autocomplete="new-password"
             :rules="[
-              (val) =>
+              (val?: string) =>
                 val === password ||
                 t('fields.confirm-password.rules.identical'),
             ]"
