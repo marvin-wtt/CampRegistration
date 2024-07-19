@@ -18,7 +18,10 @@
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "build": "quasar build",
-    "test": "echo \"No test specified\" && exit 0"
+    "test": "npm run test:unit:ci",
+    "test:unit:ui": "vitest --ui",
+    "test:unit": "vitest",
+    "test:unit:ci": "vitest run"
   },
   "dependencies": {
     "@camp-registration/common": "*",
@@ -44,13 +47,16 @@
   "devDependencies": {
     "@intlify/unplugin-vue-i18n": "^4.0.0",
     "@quasar/app-vite": "^2.0.0-beta.15",
-    "@quasar/cli": "^2.3.0",
+    "@quasar/cli": "^2.4.1",
+    "@quasar/quasar-app-extension-testing-unit-vitest": "^1.0.0",
+    "@quasar/vite-plugin": "^1.7.0",
     "@types/dom-to-image": "^2.6.4",
     "@types/node": "^20.8.6",
     "@types/showdown": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
-    "@vue/test-utils": "^2.3.2",
+    "@vitest/ui": "^1.3.1",
+    "@vue/test-utils": "^2.4.4",
     "autoprefixer": "^10.4.14",
     "dotenv": "^16.3.1",
     "eslint": "^8.37.0",
@@ -61,7 +67,7 @@
     "rimraf": "^5.0.5",
     "typescript": "^5.5.3",
     "vite-plugin-checker": "^0.7.2",
-    "vitest": "^1.2.0",
+    "vitest": "^1.6.0",
     "vue-tsc": "^2.0.26"
   }
 }
