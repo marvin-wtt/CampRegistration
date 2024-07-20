@@ -37,7 +37,15 @@ export function useFileService() {
   }
 
   async function downloadCampFile(campId: string, fileId: string) {
-    // TODO How to start a browser download in the same tab?
+    return downloadFile(getCampFileUrl(campId, fileId));
+  }
+
+  async function downloadFile(url: string): Promise<Blob> {
+    const response = await api.get(url, {
+      responseType: 'blob',
+    });
+
+    return response.data;
   }
 
   function getCampFileUrl(campId: string, fileId: string): string {

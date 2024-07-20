@@ -13,4 +13,7 @@ export default {
     error: 'Fehler beim Löschen der Datei',
     invalid: 'Ungültige Datei-ID',
   },
+  download: {
+    error: 'Fehler beim herunterladen der Datei',
+  },
 };

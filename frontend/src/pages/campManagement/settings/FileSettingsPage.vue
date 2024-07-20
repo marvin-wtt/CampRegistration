@@ -77,7 +77,7 @@
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { QTableColumn } from 'quasar';
 import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
@@ -195,9 +195,9 @@ function deleteFiles() {
 }
 
 function downloadFiles() {
-  selected.value.forEach((value: ServiceFile) => {
-    campFileStore.downloadData(value.id);
-  });
+  selected.value.forEach((file) =>
+    campFileStore.downloadFile(file, campStore.data?.id),
+  );
 }
 
 function copyLink(url: string) {

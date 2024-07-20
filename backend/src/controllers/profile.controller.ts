@@ -4,7 +4,7 @@ import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
 import { authUserId } from 'utils/authUserId';
 import { resource } from 'resources/resource';
-import { userCampResource } from 'resources';
+import { profileResource } from 'resources';
 
 const show = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
@@ -16,28 +16,33 @@ const show = catchRequestAsync(async (req, res) => {
     return value.camp;
   });
 
-  res.json(resource(userCampResource(user, camps)));
+  res.json(resource(profileResource(user, camps)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
+  const { name, email, password, locale } = req.body;
+
+  // Mark email as unverified if it is updated
+  const emailVerified = email !== undefined ? true : undefined;
   const user = await userService.updateUserByIdWithCamps(userId, {
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    locale: req.body.locale,
+    name,
+    email,
+    password,
+    locale,
+    emailVerified,
   });
 
-  if (!user.emailVerified) {
+  if (emailVerified) {
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    authService.sendVerificationEmail(user.email, verifyEmailToken);
+    await authService.sendVerificationEmail(user.email, verifyEmailToken);
   }
 
   const camps = user.camps.map((value) => {
     return value.camp;
   });
 
-  res.json(resource(userCampResource(user, camps)));
+  res.json(resource(profileResource(user, camps)));
 });
 
 export default {

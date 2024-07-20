@@ -142,37 +142,37 @@ function hasAgeRows(data: unknown): data is { date_of_birth: string } {
   return 'date_of_birth' in data && typeof data.date_of_birth === 'string';
 }
 
-function createResultData(registrations: unknown): ResultData[] {
-  if (!isResultData(registrations)) {
-    return [];
-  }
+// function createResultData(registrations: unknown): ResultData[] {
+//   if (!isResultData(registrations)) {
+//     return [];
+//   }
+//
+//   registrations.forEach((registration) => {
+//     DataProviderRegistry.INSTANCE.providers.forEach((provider) => {
+//       if (!provider.isFit(registration)) {
+//         return;
+//       }
+//
+//       registration[provider.name] = provider.generate(registration);
+//     });
+//   });
+//
+//   return registrations;
+// }
 
-  registrations.forEach((registration) => {
-    DataProviderRegistry.INSTANCE.providers.forEach((provider) => {
-      if (!provider.isFit(registration)) {
-        return;
-      }
+// function isResultData(data: unknown): data is ResultData[] {
+//   // TODO
+//   return true;
+// }
 
-      registration[provider.name] = provider.generate(registration);
-    });
-  });
-
-  return registrations;
-}
-
-function isResultData(data: unknown): data is ResultData[] {
-  // TODO
-  return true;
-}
-
-type ResultData = Record<string, unknown>;
+// type ResultData = Record<string, unknown>;
 
 // Participants by country
 const participants = computed(() => {
   return registrations.data.value ?? [];
 });
 
-const maxParticipants = ref(30);
+// const maxParticipants = ref(30);
 const countries = ref(['de', 'fr']);
 
 // Participants by country

@@ -18,12 +18,16 @@ export function useUserService() {
     return response?.data?.data;
   }
 
-  async function createUser(data: UserCreateData): Promise<void> {
-    await api.post('users/', data);
+  async function createUser(data: UserCreateData): Promise<User> {
+    const response = await api.post('users/', data);
+
+    return response?.data?.data;
   }
 
-  async function updateUser(id: string, data: UserUpdateData): Promise<void> {
-    await api.patch(`users/${id}/`, data);
+  async function updateUser(id: string, data: UserUpdateData): Promise<User> {
+    const response = await api.patch(`users/${id}/`, data);
+
+    return response?.data?.data;
   }
 
   async function deleteUser(id: string): Promise<void> {

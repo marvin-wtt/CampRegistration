@@ -150,7 +150,7 @@
 
 <script lang="ts" setup>
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { QTableColumn } from 'quasar';
 import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, nextTick, ref, watch } from 'vue';
