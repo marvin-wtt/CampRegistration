@@ -1,5 +1,5 @@
 import express from 'express';
-import { staticLimiter } from '../../middlewares/rateLimiter.middleware';
+import { staticLimiter } from 'middlewares';
 import path from 'path';
 
 const router = express.Router();
