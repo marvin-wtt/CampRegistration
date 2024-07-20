@@ -30,7 +30,11 @@ const register = catchRequestAsync(async (req, res) => {
     authService.sendVerificationEmail(user.email, verifyEmailToken),
   );
 
-  res.status(httpStatus.CREATED).json(profileResource(user));
+  res.status(httpStatus.CREATED).json({
+    name: user.name,
+    email: user.email,
+    locale: user.locale,
+  });
 });
 
 const login = catchRequestAsync(async (req, res) => {
