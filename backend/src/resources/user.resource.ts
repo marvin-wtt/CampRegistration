@@ -1,31 +1,26 @@
-import { Camp, User } from '@prisma/client';
-import { campResource } from './index';
+import { User, Role } from '@prisma/client';
+import type { User as UserResource } from '@camp-registration/common/entities';
 
-export type UserInput = Pick<User, 'id' | 'name' | 'email'>;
-export type UserDetailedInput = UserInput &
-  Pick<User, 'emailVerified' | 'locale'>;
-
-const userResource = (user: UserInput) => {
+const userResource = (user: Pick<User, keyof UserResource>): UserResource => {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
-  };
-};
-
-export const userDetailedResource = (user: UserDetailedInput) => {
-  return {
-    ...userResource(user),
     locale: user.locale,
+    role: convertRole(user.role),
     emailVerified: user.emailVerified,
+    locked: user.locked,
+    createdAt: user.createdAt.toISOString(),
   };
 };
 
-export const userCampResource = (user: UserInput, camps: Camp[]) => {
-  return {
-    ...userResource(user),
-    camps: camps.map((value) => campResource(value)),
-  };
+const convertRole = (role: Role): UserResource['role'] => {
+  switch (role) {
+    case Role.ADMIN:
+      return 'ADMIN';
+    case Role.USER:
+      return 'USER';
+  }
 };
 
 export default userResource;

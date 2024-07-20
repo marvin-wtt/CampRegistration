@@ -36,28 +36,28 @@ const queryUsers = async <Key extends keyof Prisma.UserSelect>(
     sortBy?: string;
     sortType?: 'asc' | 'desc';
   },
-  keys: Key[] = [
-    'id',
-    'email',
-    'name',
-    'password',
-    'createdAt',
-    'updatedAt',
-  ] as Key[],
-): Promise<Pick<Prisma.UserSelect, Key>[]> => {
+) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
   const sortBy = options.sortBy;
   const sortType = options.sortType ?? 'desc';
-  const users = await prisma.user.findMany({
+
+  return prisma.user.findMany({
     where: filter,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      locale: true,
+      emailVerified: true,
+      role: true,
+      locked: true,
+      createdAt: true,
+    },
     skip: page * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined,
   });
-
-  return users as Pick<Prisma.UserSelect, Key>[];
 };
 
 const getUserByIdWithCamps = (id: string) => {
@@ -125,11 +125,6 @@ const updateUserByIdWithCamps = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  if (data.role) {
-    // TODO Should be possible if the auth user is admin
-    throw new ApiError(httpStatus.FORBIDDEN, 'Unscientific permissions');
-  }
-
   if (data.email) {
     const count = await prisma.user.count({
       where: {
@@ -140,10 +135,8 @@ const updateUserByIdWithCamps = async (
     if (count > 0) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
-
-    // Reset email verification
-    data.emailVerified = false;
   }
+
   return prisma.user.update({
     where: { id: user.id },
     data,

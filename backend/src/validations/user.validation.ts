@@ -39,6 +39,7 @@ const update = {
     name: Joi.string(),
     locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     locked: Joi.boolean(),
+    emailVerified: Joi.boolean(),
   }).min(1),
 };
 

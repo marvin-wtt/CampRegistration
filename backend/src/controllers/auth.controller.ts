@@ -4,12 +4,13 @@ import { authService, userService, tokenService } from 'services';
 import { Request, Response } from 'express';
 import { AuthTokensResponse } from 'types/response';
 import config from 'config';
-import { userCampResource, userDetailedResource } from 'resources';
+import { profileResource } from 'resources';
 import ApiError from 'utils/ApiError';
 import managerService from 'services/manager.service';
 import { requestLocale } from 'utils/requestLocale';
 import { authUserId } from 'utils/authUserId';
 import { catchAndResolve } from '../utils/promiseUtils';
+import authenticationResource from '../resources/authentication.resource';
 
 const register = catchRequestAsync(async (req, res) => {
   const { name, email, password } = req.body;
@@ -29,7 +30,7 @@ const register = catchRequestAsync(async (req, res) => {
     authService.sendVerificationEmail(user.email, verifyEmailToken),
   );
 
-  res.status(httpStatus.CREATED).json(userDetailedResource(user));
+  res.status(httpStatus.CREATED).json(profileResource(user));
 });
 
 const login = catchRequestAsync(async (req, res) => {
@@ -42,10 +43,9 @@ const login = catchRequestAsync(async (req, res) => {
   const camps = user.camps.map((value) => {
     return value.camp;
   });
+  const profile = profileResource(user, camps);
 
-  const response = userCampResource(user, camps);
-
-  res.json({ user: response, tokens });
+  res.json(authenticationResource(profile, tokens));
 });
 
 const logout = catchRequestAsync(async (req: Request, res: Response) => {
@@ -76,6 +76,7 @@ const extractCookieRefreshToken = (req: Request) => {
   if (req && req.cookies && 'refreshToken' in req.cookies) {
     return req.cookies.refreshToken;
   }
+
   return null;
 };
 
@@ -87,12 +88,14 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
   if (resetPasswordToken !== undefined) {
     await authService.sendResetPasswordEmail(email, resetPasswordToken);
   }
+
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const resetPassword = catchRequestAsync(async (req, res) => {
   const { password, token, email } = req.body;
   await authService.resetPassword(token, email, password);
+
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
@@ -109,6 +112,7 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
   await authService.sendVerificationEmail(user.email, verifyEmailToken);
+
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
@@ -116,6 +120,7 @@ const verifyEmail = catchRequestAsync(async (req, res) => {
   const { token } = req.body;
 
   await authService.verifyEmail(token);
+
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
