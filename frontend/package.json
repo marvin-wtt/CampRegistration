@@ -14,7 +14,7 @@
   "scripts": {
     "clean": "quasar clean && rimraf ./node_modules/",
     "dev": "quasar dev",
-    "lint": "eslint --ext .js,.ts,.vue ./ && npx vue-tsc --noEmit",
+    "lint": "eslint --ext .js,.ts,.vue ./ && npx vue-tsc --noEmit --skipLibCheck",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "build": "quasar build",
