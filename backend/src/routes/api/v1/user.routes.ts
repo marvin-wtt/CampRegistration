@@ -5,7 +5,6 @@ import { userValidation } from 'validations';
 import { userService } from 'services';
 import { verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
-import { admin } from 'guards';
 
 const router = express.Router();
 
@@ -18,8 +17,8 @@ router.param(
   }),
 );
 
-router.get('/', auth(), guard(admin), userController.index);
-router.get('/:userId', auth(), guard(admin), userController.show);
+router.get('/', auth(), guard(), userController.index);
+router.get('/:userId', auth(), guard(), userController.show);
 router.post(
   '/',
   auth(),
@@ -30,14 +29,14 @@ router.post(
 router.put(
   '/:userId',
   auth(),
-  guard(admin),
+  guard(),
   validate(userValidation.update),
   userController.update,
 );
 router.delete(
   '/:userId',
   auth(),
-  guard(admin),
+  guard(),
   validate(userValidation.destroy),
   userController.destroy,
 );

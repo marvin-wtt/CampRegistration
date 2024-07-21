@@ -22,21 +22,21 @@ router.param(
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(managerValidation.index),
   managerController.index,
 );
 router.post(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(managerValidation.store),
   managerController.store,
 );
 router.delete(
   '/:managerId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(managerValidation.destroy),
   managerController.destroy,
 );

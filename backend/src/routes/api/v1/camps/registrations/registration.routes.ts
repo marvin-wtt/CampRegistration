@@ -28,34 +28,34 @@ router.use('/:registrationId/files', registrationFiles);
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.index),
   registrationController.index,
 );
 router.get(
   '/:registrationId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.show),
   registrationController.show,
 );
 router.post(
   '/',
-  guard([campActive]),
+  guard(campActive),
   validate(registrationValidation.store),
   registrationController.store,
 );
 router.patch(
   '/:registrationId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.update),
   registrationController.update,
 );
 router.delete(
   '/:registrationId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.destroy),
   registrationController.destroy,
 );

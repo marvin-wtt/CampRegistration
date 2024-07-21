@@ -27,7 +27,7 @@ router.param(
 router.get(
   '/:fileId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(fileValidation.show),
   fileController.show,
 );

@@ -22,21 +22,21 @@ router.param(
 router.post(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(bedValidation.store),
   bedController.store,
 );
 router.patch(
   '/:bedId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(bedValidation.update),
   bedController.update,
 );
 router.delete(
   '/:bedId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(bedValidation.destroy),
   bedController.destroy,
 );

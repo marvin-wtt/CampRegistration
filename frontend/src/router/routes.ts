@@ -152,6 +152,24 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/users',
+    // TODO Set layout
+    component: () => import('layouts/CampManagementLayout.vue'),
+    meta: {
+      auth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'users',
+        meta: {
+          hideDrawer: true,
+        },
+        component: () => import('pages/users/UserIndexPage.vue'),
+      },
+    ],
+  },
 
   // Always leave this as last one,
   // but you can also remove it
