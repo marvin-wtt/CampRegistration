@@ -3,6 +3,7 @@ import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
 import { catchRequestAsync } from 'utils/catchAsync';
 
+type GuardFn = (req: Request) => Promise<boolean | string>;
 /**
  * Middleware to guard the access to a route.
  * At least one guard must be true to gain access.
@@ -10,13 +11,11 @@ import { catchRequestAsync } from 'utils/catchAsync';
  *
  * @param guardFns The guard function or an empty array if only administrators should have access
  */
-const guard = (
-  guardFns: ((req: Request) => Promise<boolean | string>)[] = [],
-) => {
+const guard = (guardFns: GuardFn | GuardFn[] = []) => {
+  guardFns = Array.isArray(guardFns) ? guardFns : [guardFns];
+
   return catchRequestAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-      // TODO Check if admin - if yes return true here
-
       let message = 'Insufficient permissions';
       for (const fn of guardFns) {
         let result: string | boolean = false;
@@ -46,4 +45,5 @@ const guard = (
     },
   );
 };
+
 export default guard;
