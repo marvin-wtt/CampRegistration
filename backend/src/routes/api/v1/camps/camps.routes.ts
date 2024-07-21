@@ -19,14 +19,12 @@ router.param(
 );
 
 router.get('/', validate(campValidation.index), campController.index);
-console.log('Lets go');
 router.get(
   '/:campId',
   guard(or(campManager, campActive)),
   validate(campValidation.show),
   campController.show,
 );
-console.log('Done');
 router.post('/', auth(), validate(campValidation.store), campController.store);
 router.patch(
   '/:campId',

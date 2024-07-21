@@ -15,6 +15,5 @@ export const campManager = async (req: Request): Promise<boolean | string> => {
 };
 
 export const campActive = async (req: Request): Promise<boolean | string> => {
-  console.log(routeModel(req.models.camp));
   return routeModel(req.models.camp).active;
 };
