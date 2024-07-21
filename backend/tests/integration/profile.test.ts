@@ -1,3 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 
-describe.skip('/api/v1/profile', () => {});
+describe.skip('/api/v1/profile', () => {
+  describe('PATCH /api/v1/profile/', () => {
+    it.todo('should logout all devices when password is updated');
+  });
+});

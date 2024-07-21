@@ -33,6 +33,10 @@ const update = catchRequestAsync(async (req, res) => {
     emailVerified,
   });
 
+  if (password) {
+    await authService.logoutAllDevices(userId);
+  }
+
   if (emailVerified) {
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
     await authService.sendVerificationEmail(user.email, verifyEmailToken);

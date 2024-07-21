@@ -4,9 +4,6 @@ import { catchRequestAsync } from 'utils/catchAsync';
 import { authService, userService } from 'services';
 import exclude from 'utils/exclude';
 import { routeModel } from 'utils/verifyModel';
-import ApiError from 'utils/ApiError';
-import { authUserId } from 'utils/authUserId';
-import { Role } from '@prisma/client';
 import { collection, resource } from '../resources/resource';
 import { userResource } from 'resources';
 
@@ -41,12 +38,9 @@ const update = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   const { email, password, name, role, locale, locked, emailVerified } =
     req.body;
-  const authId = authUserId(req);
-  const authUser = await userService.getUserById(authId);
 
-  const adminPermissionsRequired = locked !== undefined || role !== undefined;
-  if (adminPermissionsRequired && authUser?.role !== Role.ADMIN) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'Insufficient permission');
+  if (password) {
+    await authService.logoutAllDevices(userId);
   }
 
   const user = await userService.updateUserById(userId, {
