@@ -30,7 +30,12 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
     return;
   }
 
-  done(null, { id: payload.sub });
+  const user = {
+    id: payload.sub,
+    role: payload.role,
+  };
+
+  done(null, user);
 };
 
 export const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);

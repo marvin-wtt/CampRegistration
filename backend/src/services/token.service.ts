@@ -12,14 +12,18 @@ const generateToken = (
   userId: string,
   expires: Moment,
   type: TokenType,
-  secret = config.jwt.secret,
+  extra?: object,
 ): string => {
+  const secret = config.jwt.secret;
+
   const payload = {
     sub: userId,
     iat: moment().unix(),
     exp: expires.unix(),
     type,
+    ...extra,
   };
+
   return jwt.sign(payload, secret);
 };
 
@@ -98,28 +102,44 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
  * @returns {Promise<AuthTokensResponse>}
  */
 const generateAuthTokens = async (
-  user: Pick<User, 'id'>,
+  user: Pick<User, 'id' | 'role'>,
   remember = false,
 ): Promise<AuthTokensResponse> => {
+  const access = generateAccessToken(user);
+
+  if (!remember) {
+    return {
+      ...access,
+    };
+  }
+
+  const refresh = await generateRefreshToken(user);
+
+  return {
+    ...access,
+    ...refresh,
+  };
+};
+
+const generateAccessToken = (user: Pick<User, 'id' | 'role'>) => {
   const accessTokenExpires = moment().add(
     config.jwt.accessExpirationMinutes,
     'minutes',
   );
-  const accessToken = generateToken(
-    user.id,
-    accessTokenExpires,
-    TokenType.ACCESS,
-  );
 
-  if (!remember) {
-    return {
-      access: {
-        token: accessToken,
-        expires: accessTokenExpires.toDate(),
-      },
-    };
-  }
+  const token = generateToken(user.id, accessTokenExpires, TokenType.ACCESS, {
+    role: user.role,
+  });
 
+  return {
+    access: {
+      token,
+      expires: accessTokenExpires.toDate(),
+    },
+  };
+};
+
+const generateRefreshToken = async (user: Pick<User, 'id'>) => {
   const refreshTokenExpires = moment().add(
     config.jwt.refreshExpirationDays,
     'days',
@@ -129,6 +149,7 @@ const generateAuthTokens = async (
     refreshTokenExpires,
     TokenType.REFRESH,
   );
+
   await saveToken(
     refreshToken,
     user.id,
@@ -137,16 +158,13 @@ const generateAuthTokens = async (
   );
 
   return {
-    access: {
-      token: accessToken,
-      expires: accessTokenExpires.toDate(),
-    },
     refresh: {
       token: refreshToken,
       expires: refreshTokenExpires.toDate(),
     },
   };
 };
+
 /**
  * Generate reset password token
  * @param {string} email
@@ -191,6 +209,28 @@ const generateVerifyEmailToken = async (
   return verifyEmailToken;
 };
 
+const blacklistTokens = async (userId: string): Promise<void> => {
+  await prisma.token.updateMany({
+    data: {
+      blacklisted: true,
+    },
+    where: {
+      userId,
+      OR: [
+        {
+          type: TokenType.RESET_PASSWORD,
+        },
+        {
+          type: TokenType.ACCESS,
+        },
+        {
+          type: TokenType.REFRESH,
+        },
+      ],
+    },
+  });
+};
+
 const deleteExpiredTokens = async () => {
   const refDate = moment().subtract(1, 'hour').toDate();
 
@@ -210,5 +250,6 @@ export default {
   generateAuthTokens,
   generateResetPasswordToken,
   generateVerifyEmailToken,
+  blacklistTokens,
   deleteExpiredTokens,
 };

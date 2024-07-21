@@ -59,7 +59,14 @@ const refreshAuth = async (
     const { id, userId } = refreshTokenData;
     await prisma.token.delete({ where: { id } });
 
-    return tokenService.generateAuthTokens({ id: userId }, true);
+    // Fetch user because role is required
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      // noinspection ExceptionCaughtLocallyJS
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Token not found');
+    }
+
+    return tokenService.generateAuthTokens(user, true);
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }
@@ -88,25 +95,7 @@ const resetPassword = async (
 };
 
 const logoutAllDevices = async (userId: string) => {
-  return prisma.token.updateMany({
-    data: {
-      blacklisted: true,
-    },
-    where: {
-      userId,
-      OR: [
-        {
-          type: TokenType.RESET_PASSWORD,
-        },
-        {
-          type: TokenType.ACCESS,
-        },
-        {
-          type: TokenType.REFRESH,
-        },
-      ],
-    },
-  });
+  await tokenService.blacklistTokens(userId);
 };
 
 const verifyEmail = async (token: string): Promise<void> => {
