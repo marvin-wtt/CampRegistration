@@ -10,7 +10,9 @@ const or = (...guardFns: GuardFn[]): GuardFn => {
         if (result === true) {
           return true;
         }
-      } catch (ignored) {}
+      } catch (ignored) {
+        /* tslint:disable:no-empty */
+      }
     }
 
     // Return last error message on failure
