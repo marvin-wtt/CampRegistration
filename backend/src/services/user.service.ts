@@ -43,7 +43,6 @@ const queryUsers = async <Key extends keyof Prisma.UserSelect>(
   const sortType = options.sortType ?? 'desc';
 
   return prisma.user.findMany({
-    where: filter,
     select: {
       id: true,
       name: true,
@@ -54,9 +53,6 @@ const queryUsers = async <Key extends keyof Prisma.UserSelect>(
       locked: true,
       createdAt: true,
     },
-    skip: page * limit,
-    take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined,
   });
 };
 

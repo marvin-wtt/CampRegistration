@@ -11,11 +11,10 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'bedId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const room = routeModel(req.models.room);
     const bed = await bedService.getBedById(id, room.id);
     req.models.bed = verifyModelExists(bed);
-    next();
   }),
 );
 

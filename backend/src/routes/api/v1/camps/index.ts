@@ -13,10 +13,9 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'campId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = await campService.getCampById(id);
     req.models.camp = verifyModelExists(camp);
-    next();
   }),
 );
 

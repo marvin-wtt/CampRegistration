@@ -12,14 +12,13 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'registrationId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const registration = await registrationService.getRegistrationById(
       camp.id,
       id,
     );
     req.models.registration = verifyModelExists(registration);
-    next();
   }),
 );
 

@@ -10,10 +10,9 @@ const router = express.Router();
 
 router.param(
   'userId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const user = await userService.getUserById(id);
     req.models.user = verifyModelExists(user);
-    next();
   }),
 );
 

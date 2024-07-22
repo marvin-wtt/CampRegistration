@@ -11,11 +11,10 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'fileId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const file = await fileService.getModelFile('camp', camp.id, id);
     req.models.file = verifyModelExists(file);
-    next();
   }),
 );
 

@@ -11,11 +11,10 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'managerId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const manager = await managerService.getManagerById(camp.id, id);
     req.models.manager = verifyModelExists(manager);
-    next();
   }),
 );
 

@@ -11,11 +11,10 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'templateId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const template = await templateService.getTemplateById(camp.id, id);
     req.models.template = verifyModelExists(template);
-    next();
   }),
 );
 
