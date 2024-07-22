@@ -23,6 +23,10 @@ const guard = (guardFn?: GuardFn) => {
       return;
     }
 
+    if (typeof result === 'string') {
+      message = result;
+    }
+
     if (req.isUnauthenticated()) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated');
     }
