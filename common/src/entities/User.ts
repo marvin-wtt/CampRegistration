@@ -10,7 +10,10 @@ export interface User extends Identifiable {
   createdAt: string;
 }
 
-export type UserCreateData = Omit<User, 'id' | 'emailVerified'> & {
+export type UserCreateData = Omit<
+  User,
+  'id' | 'emailVerified' | 'createdAt'
+> & {
   password: string;
 };
 
