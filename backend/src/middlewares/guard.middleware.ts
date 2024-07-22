@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
+import { catchMiddlewareAsync } from 'utils/catchAsync';
 import { GuardFn, or, admin } from 'guards';
 
 /**
@@ -15,22 +15,20 @@ const guard = (guardFn?: GuardFn) => {
   // When no guard is defined, only administrators have access
   guardFn = guardFn ? or(admin, guardFn) : admin;
 
-  return catchRequestAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-      let message = 'Insufficient permissions';
+  return catchMiddlewareAsync(async (req: Request, res: Response) => {
+    let message = 'Insufficient permissions';
 
-      const result = await guardFn(req);
-      if (result === true) {
-        return next();
-      }
+    const result = await guardFn(req);
+    if (result === true) {
+      return;
+    }
 
-      if (req.isUnauthenticated()) {
-        return next(new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated'));
-      }
+    if (req.isUnauthenticated()) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated');
+    }
 
-      next(new ApiError(httpStatus.FORBIDDEN, message));
-    },
-  );
+    throw new ApiError(httpStatus.FORBIDDEN, message);
+  });
 };
 
 export default guard;

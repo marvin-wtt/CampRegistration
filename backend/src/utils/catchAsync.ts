@@ -8,6 +8,14 @@ export const catchRequestAsync =
     Promise.resolve(fn(req, res, next)).catch((err) => next(err));
   };
 
+export const catchMiddlewareAsync =
+  (fn: (req: Request, res: Response) => Promise<void> | void) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res))
+      .then(() => next())
+      .catch((err) => next(err));
+  };
+
 export const catchParamAsync =
   (fn: RequestParamHandler) =>
   (
