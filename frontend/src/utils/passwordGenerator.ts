@@ -4,9 +4,12 @@ export function generateRandomPassword(): string {
   const numbers = '0123456789';
   const symbols = '!@#$%^&*()-_=+[]{}|;:",.<>?';
 
-  // Function to get a random character from a string
   function getRandomChar(str: string): string {
-    return str[Math.floor(Math.random() * str.length)];
+    // Generate a number between 0 and 1 like Math.random()
+    const rand =
+      crypto.getRandomValues(new Uint32Array(1))[0] * Math.pow(2, -32);
+
+    return str[Math.floor(rand * str.length)];
   }
 
   // Ensure at least one character from each required set
