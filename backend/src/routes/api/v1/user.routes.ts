@@ -25,7 +25,7 @@ router.post(
   validate(userValidation.store),
   userController.store,
 );
-router.put(
+router.patch(
   '/:userId',
   auth(),
   guard(),

@@ -9,7 +9,7 @@ import { authService } from 'services/index';
 const createUser = async (
   data: Pick<
     Prisma.UserCreateInput,
-    'email' | 'name' | 'password' | 'role' | 'locale'
+    'email' | 'name' | 'password' | 'role' | 'locale' | 'locked'
   >,
 ) => {
   if (await getUserByEmail(data.email)) {
@@ -28,20 +28,7 @@ const createUser = async (
   });
 };
 
-const queryUsers = async <Key extends keyof Prisma.UserSelect>(
-  filter: Prisma.UserWhereInput,
-  options: {
-    limit?: number;
-    page?: number;
-    sortBy?: string;
-    sortType?: 'asc' | 'desc';
-  },
-) => {
-  const page = options.page ?? 1;
-  const limit = options.limit ?? 10;
-  const sortBy = options.sortBy;
-  const sortType = options.sortType ?? 'desc';
-
+const queryUsers = async () => {
   return prisma.user.findMany({
     select: {
       id: true,

@@ -1,6 +1,11 @@
-import { Role } from '@prisma/client';
 import Joi from 'joi';
 import { PasswordSchema } from './custom.validation';
+import {
+  UserCreateData,
+  UserUpdateData,
+} from '@camp-registration/common/entities';
+
+const RoleSchema = Joi.string().valid('USER', 'ADMIN');
 
 const show = {
   params: Joi.object({
@@ -20,12 +25,13 @@ const index = {
 };
 
 const store = {
-  body: Joi.object({
+  body: Joi.object<UserCreateData>({
     email: Joi.string().required().email(),
     password: PasswordSchema,
     name: Joi.string().required(),
-    role: Joi.string().valid(Role.USER, Role.ADMIN),
+    role: RoleSchema,
     locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
+    locked: Joi.boolean(),
   }),
 };
 
@@ -33,10 +39,11 @@ const update = {
   params: Joi.object({
     userId: Joi.string().required(),
   }),
-  body: Joi.object({
+  body: Joi.object<UserUpdateData>({
     email: Joi.string().email(),
     password: PasswordSchema,
     name: Joi.string(),
+    role: RoleSchema.optional(),
     locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     locked: Joi.boolean(),
     emailVerified: Joi.boolean(),
