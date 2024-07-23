@@ -153,20 +153,25 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/users',
-    // TODO Set layout
-    component: () => import('layouts/CampManagementLayout.vue'),
+    path: '/administration',
+    component: () => import('layouts/AdministrationLayout.vue'),
     meta: {
       auth: true,
     },
     children: [
       {
         path: '',
-        name: 'users',
+        name: 'administration',
         meta: {
           hideDrawer: true,
         },
-        component: () => import('pages/users/UserIndexPage.vue'),
+        component: () =>
+          import('pages/administration/AdministrationIndexPage.vue'),
+      },
+      {
+        path: 'users',
+        name: 'administration.users',
+        component: () => import('pages/administration/UserIndexPage.vue'),
       },
     ],
   },
