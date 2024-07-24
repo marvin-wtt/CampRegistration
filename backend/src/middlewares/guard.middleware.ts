@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
 import { catchMiddlewareAsync } from 'utils/catchAsync';
@@ -15,7 +15,7 @@ const guard = (guardFn?: GuardFn) => {
   // When no guard is defined, only administrators have access
   guardFn = guardFn ? or(admin, guardFn) : admin;
 
-  return catchMiddlewareAsync(async (req: Request, res: Response) => {
+  return catchMiddlewareAsync(async (req: Request) => {
     let message = 'Insufficient permissions';
 
     const result = await guardFn(req);
