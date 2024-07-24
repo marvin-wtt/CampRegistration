@@ -71,19 +71,43 @@
             class="q-gt-md row q-gutter-x-md justify-center"
           >
             <q-btn
+              v-if="!props.row.locked"
+              icon="lock"
+              round
+              flat
+              size="sm"
+              @click="lockUser(props.row)"
+            >
+              <q-tooltip>{{ t('action.lock') }}</q-tooltip>
+            </q-btn>
+            <q-btn
+              v-else
+              icon="lock_open"
+              round
+              flat
+              size="sm"
+              @click="unlockUser(props.row)"
+            >
+              <q-tooltip>{{ t('action.unlock') }}</q-tooltip>
+            </q-btn>
+            <q-btn
               icon="edit"
               round
               flat
               size="sm"
               @click="editUser(props.row)"
-            />
+            >
+              <q-tooltip>{{ t('action.edit') }}</q-tooltip>
+            </q-btn>
             <q-btn
               icon="delete"
               round
               flat
               size="sm"
               @click="deleteUser(props.row)"
-            />
+            >
+              <q-tooltip>{{ t('action.delete') }}</q-tooltip>
+            </q-btn>
           </div>
 
           <q-btn
@@ -95,7 +119,27 @@
           >
             <q-menu>
               <q-list style="min-width: 100px">
-                <!-- TODO lock / unlock -->
+                <q-item
+                  v-if="!props.row.locked"
+                  v-close-popup
+                  clickable
+                  @click="lockUser(props.row)"
+                >
+                  <q-item-section>
+                    {{ t('action.lock') }}
+                  </q-item-section>
+                </q-item>
+                <q-item
+                  v-else
+                  v-close-popup
+                  clickable
+                  @click="unlockUser(props.row)"
+                >
+                  <q-item-section>
+                    {{ t('action.unlock') }}
+                  </q-item-section>
+                </q-item>
+                <q-separator />
                 <q-item
                   v-close-popup
                   clickable
@@ -117,7 +161,6 @@
                 </q-item>
               </q-list>
             </q-menu>
-            <!-- TODO add menu -->
           </q-btn>
         </q-td>
       </template>
@@ -295,12 +338,66 @@ function deleteUser(user: User) {
       usersStore.deleteEntry(user.id);
     });
 }
+
+function lockUser(user: User) {
+  quasar
+    .dialog({
+      title: t('dialog.lock.title'),
+      message: t('dialog.lock.message', { name: user.name }),
+      cancel: {
+        label: t('dialog.lock.cancel'),
+        color: 'primary',
+        rounded: true,
+        outline: true,
+      },
+      ok: {
+        label: t('dialog.lock.ok'),
+        color: 'warning',
+        rounded: true,
+      },
+    })
+    .onOk(() => {
+      usersStore.updateEntry(user.id, {
+        locked: true,
+      });
+    });
+}
+
+function unlockUser(user: User) {
+  quasar
+    .dialog({
+      title: t('dialog.unlock.title'),
+      message: t('dialog.unlock.message', { name: user.name }),
+      cancel: {
+        label: t('dialog.unlock.cancel'),
+        color: 'primary',
+        rounded: true,
+        outline: true,
+      },
+      ok: {
+        label: t('dialog.unlock.ok'),
+        color: 'primary',
+        rounded: true,
+      },
+    })
+    .onOk(() => {
+      usersStore.updateEntry(user.id, {
+        locked: false,
+      });
+    });
+}
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
 title: 'Users'
+
+action:
+  delete: 'Delete'
+  edit: 'Edit'
+  lock: 'Lock'
+  unlock: 'Unlock'
 
 column:
   action: 'Action'
@@ -310,17 +407,111 @@ column:
   role: 'Role'
   status: 'Status'
 
-header:
-  create: 'Create user'
-
 dialog:
   delete:
     title: 'Delete User'
     message: 'The user will be permanently deleted. All associated data (e.g. camps) will be lost.'
     label: 'Email'
+  lock:
+    title: 'Lock account'
+    message: 'Are you sure you want to lock { name }?'
+    ok: 'Lock'
+    cancel: 'Cancel'
+  unlock:
+    title: 'Unlock account'
+    message: 'Are you sure you want to unlock { name }?'
+    ok: 'Unlock'
+    cancel: 'Cancel'
+
+header:
+  create: 'Create user'
 
 status:
   active: 'Active'
   locked: 'Locked'
   unverified: 'Unverified'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Benutzer'
+
+action:
+  delete: 'Löschen'
+  edit: 'Bearbeiten'
+  lock: 'Sperren'
+  unlock: 'Entsperren'
+
+column:
+  action: 'Aktion'
+  createdAt: 'Erstellt am'
+  email: 'E-Mail'
+  name: 'Name'
+  role: 'Rolle'
+  status: 'Status'
+
+dialog:
+  delete:
+    title: 'Benutzer löschen'
+    message: 'Der Benutzer wird dauerhaft gelöscht. Alle zugehörigen Daten (z.B. Camps) gehen verloren.'
+    label: 'E-Mail'
+  lock:
+    title: 'Konto sperren'
+    message: 'Bist du sicher, dass du { name } sperren möchtest?'
+    ok: 'Sperren'
+    cancel: 'Abbrechen'
+  unlock:
+    title: 'Konto entsperren'
+    message: 'Bist du sicher, dass du { name } entsperren möchtest?'
+    ok: 'Entsperren'
+    cancel: 'Abbrechen'
+
+header:
+  create: 'Benutzer erstellen'
+
+status:
+  active: 'Aktiv'
+  locked: 'Gesperrt'
+  unverified: 'Unbestätigt'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Utilisateurs'
+
+action:
+  delete: 'Supprimer'
+  edit: 'Modifier'
+  lock: 'Verrouiller'
+  unlock: 'Déverrouiller'
+
+column:
+  action: 'Action'
+  createdAt: 'Créé le'
+  email: 'E-mail'
+  name: 'Nom'
+  role: 'Rôle'
+  status: 'Statut'
+
+dialog:
+  delete:
+    title: 'Supprimer l’utilisateur'
+    message: 'L’utilisateur sera définitivement supprimé. Toutes les données associées (par ex. camps) seront perdues.'
+    label: 'E-mail'
+  lock:
+    title: 'Verrouiller le compte'
+    message: 'Es-tu sûr de vouloir verrouiller { name } ?'
+    ok: 'Verrouiller'
+    cancel: 'Annuler'
+  unlock:
+    title: 'Déverrouiller le compte'
+    message: 'Es-tu sûr de vouloir déverrouiller { name } ?'
+    ok: 'Déverrouiller'
+    cancel: 'Annuler'
+
+header:
+  create: 'Créer un utilisateur'
+
+status:
+  active: 'Actif'
+  locked: 'Verrouillé'
+  unverified: 'Non vérifié'
 </i18n>
