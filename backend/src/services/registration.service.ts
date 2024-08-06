@@ -208,8 +208,6 @@ const updateRegistrationCampDataByCamp = async (camp: Camp): Promise<void> => {
     form.updateData(registration.data);
     const campData = form.extractCampData();
 
-    console.log(campData);
-
     return prisma.registration.update({
       where: { id: registration.id },
       data: {

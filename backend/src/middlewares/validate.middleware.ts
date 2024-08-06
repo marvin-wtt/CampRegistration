@@ -1,10 +1,11 @@
 import httpStatus from 'http-status';
 import ApiError from 'utils/ApiError';
-import { NextFunction, Request, Response } from 'express';
+import { Request } from 'express';
 import pick from 'utils/pick';
 import Joi from 'joi';
 import { fileService } from 'services';
 import logger from 'config/logger';
+import { catchMiddlewareAsync } from '../utils/catchAsync';
 
 export interface ValidationSchema {
   params?: Joi.ObjectSchema;
@@ -37,9 +38,8 @@ const handleFileError = (req: Request) => {
   });
 };
 
-const validate =
-  (schema: ValidationSchema) =>
-  (req: Request, res: Response, next: NextFunction) => {
+const validate = (schema: ValidationSchema) =>
+  catchMiddlewareAsync((req: Request) => {
     const validSchema = pick(schema, ['params', 'query', 'body']);
     const obj = pick(req, Object.keys(validSchema) as (keyof Request)[]);
 
@@ -53,10 +53,9 @@ const validate =
       const errorMessage = error.details
         .map((details) => details.message)
         .join(', ');
-      return next(new ApiError(httpStatus.BAD_REQUEST, errorMessage));
+      throw new ApiError(httpStatus.BAD_REQUEST, errorMessage);
     }
     Object.assign(req, value);
-    return next();
-  };
+  });
 
 export default validate;

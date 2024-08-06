@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO Open expansion-item if route is matched -->
   <q-separator v-if="props.separated" />
 
   <q-item
@@ -56,6 +55,9 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
 
 interface Props {
   name: string;
@@ -74,7 +76,35 @@ const disabled = computed<boolean>(() => {
   return props.to === undefined;
 });
 
-const expanded = ref<boolean>();
+const expanded = ref<boolean>(isExpanded());
+
+function isExpanded(): boolean {
+  return (
+    matchNavigationToRoute(props.to) ||
+    props.children?.some((child) => matchNavigationToRoute(child.to)) ||
+    false
+  );
+}
+
+function matchNavigationToRoute(to?: string | object): boolean {
+  if (to === undefined) {
+    return false;
+  }
+
+  if (typeof to === 'string') {
+    return route.path === to;
+  }
+
+  if ('path' in to) {
+    return route.path === to.path;
+  }
+
+  if ('name' in to) {
+    return route.name === to.name;
+  }
+
+  return false;
+}
 </script>
 
 <style scoped></style>

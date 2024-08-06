@@ -12,7 +12,7 @@ const router = express.Router({ mergeParams: true });
 // Files
 router.param(
   'fileId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const registration = routeModel(req.models.registration);
     const file = await fileService.getModelFile(
       'registration',
@@ -20,14 +20,13 @@ router.param(
       id,
     );
     req.models.file = verifyModelExists(file);
-    next();
   }),
 );
 
 router.get(
   '/:fileId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(fileValidation.show),
   fileController.show,
 );

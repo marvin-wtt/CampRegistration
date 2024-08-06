@@ -12,14 +12,13 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'registrationId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const registration = await registrationService.getRegistrationById(
       camp.id,
       id,
     );
     req.models.registration = verifyModelExists(registration);
-    next();
   }),
 );
 
@@ -28,34 +27,34 @@ router.use('/:registrationId/files', registrationFiles);
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.index),
   registrationController.index,
 );
 router.get(
   '/:registrationId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.show),
   registrationController.show,
 );
 router.post(
   '/',
-  guard([campActive]),
+  guard(campActive),
   validate(registrationValidation.store),
   registrationController.store,
 );
 router.patch(
   '/:registrationId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.update),
   registrationController.update,
 );
 router.delete(
   '/:registrationId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(registrationValidation.destroy),
   registrationController.destroy,
 );

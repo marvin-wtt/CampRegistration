@@ -1,49 +1,38 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request } from 'express';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
+import { catchMiddlewareAsync } from 'utils/catchAsync';
+import { GuardFn, or, admin } from 'guards';
 
 /**
  * Middleware to guard the access to a route.
- * At least one guard must be true to gain access.
- * Administrations always have access.
+ * Multiple guards can be combined by using the 'and', and 'or' guard.
  *
- * @param guardFns The guard function or an empty array if only administrators should have access
+ * @param guardFn The guard function or a wrapper function (and, or)
  */
-const guard = (
-  guardFns: ((req: Request) => Promise<boolean | string>)[] = [],
-) => {
-  return catchRequestAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-      // TODO Check if admin - if yes return true here
+const guard = (guardFn?: GuardFn) => {
+  // Always grand access to administrators
+  // When no guard is defined, only administrators have access
+  guardFn = guardFn ? or(admin, guardFn) : admin;
 
-      let message = 'Insufficient permissions';
-      for (const fn of guardFns) {
-        let result: string | boolean = false;
+  return catchMiddlewareAsync(async (req: Request) => {
+    let message = 'Insufficient permissions';
 
-        try {
-          result = await fn(req);
-        } catch (e: unknown) {
-          result = e instanceof Error ? e.message : false;
-        }
+    const result = await guardFn(req);
+    if (result === true) {
+      return;
+    }
 
-        if (result === true) {
-          next();
-          return;
-        }
+    if (typeof result === 'string') {
+      message = result;
+    }
 
-        if (typeof result === 'string') {
-          message = result;
-        }
-      }
+    if (req.isUnauthenticated()) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated');
+    }
 
-      if (req.isUnauthenticated()) {
-        next(new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated'));
-        return;
-      }
-
-      next(new ApiError(httpStatus.FORBIDDEN, message));
-    },
-  );
+    throw new ApiError(httpStatus.FORBIDDEN, message);
+  });
 };
+
 export default guard;

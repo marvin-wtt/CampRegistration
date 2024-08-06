@@ -12,8 +12,13 @@ import {
 
 declare global {
   namespace Express {
+    interface AuthUser {
+      id: string;
+      role: string;
+    }
+
     interface Request {
-      user: { id: string } | undefined;
+      user?: AuthUser;
       models: {
         user?: UserModel;
         camp?: Camp;

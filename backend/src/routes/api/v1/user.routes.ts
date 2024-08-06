@@ -1,6 +1,6 @@
 import express from 'express';
 import { auth, guard, validate } from 'middlewares';
-import userController from 'controllers/user.controller';
+import { userController } from 'controllers';
 import { userValidation } from 'validations';
 import { userService } from 'services';
 import { verifyModelExists } from 'utils/verifyModel';
@@ -10,10 +10,9 @@ const router = express.Router();
 
 router.param(
   'userId',
-  catchParamAsync(async (req, res, next, id) => {
-    const camp = await userService.getUserById(id);
-    req.models.user = verifyModelExists(camp);
-    next();
+  catchParamAsync(async (req, res, id) => {
+    const user = await userService.getUserById(id);
+    req.models.user = verifyModelExists(user);
   }),
 );
 
@@ -26,7 +25,7 @@ router.post(
   validate(userValidation.store),
   userController.store,
 );
-router.put(
+router.patch(
   '/:userId',
   auth(),
   guard(),
