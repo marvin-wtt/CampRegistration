@@ -78,11 +78,7 @@ const getUserByEmail = async (email: string): Promise<User | null> => {
   });
 };
 
-const updateUserById = async <Key extends keyof User>(
-  userId: string,
-  data: UserUpdateData,
-  keys: Key[] = ['id', 'email', 'name', 'role', 'locale', 'locked'] as Key[],
-): Promise<Pick<User, Key> | null> => {
+const updateUserById = async (userId: string, data: UserUpdateData) => {
   // Verify email not taken yet
   if (data.email !== undefined) {
     const user = await getUserByEmail(data.email);
@@ -96,7 +92,7 @@ const updateUserById = async <Key extends keyof User>(
     await authService.logoutAllDevices(userId);
   }
 
-  const updatedUser = await prisma.user.update({
+  return prisma.user.update({
     where: { id: userId },
     data: {
       name: data.name,
@@ -108,45 +104,6 @@ const updateUserById = async <Key extends keyof User>(
       role: data.role,
       locale: data.locale,
       locked: data.locked,
-    },
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-  });
-
-  return updatedUser as Pick<User, Key> | null;
-};
-
-type UserUpdateInput = Omit<Prisma.UserUpdateInput, 'id'> & { email?: string };
-
-const updateUserByIdWithCamps = async (
-  userId: string,
-  data: UserUpdateInput,
-) => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
-
-  if (data.email) {
-    const count = await prisma.user.count({
-      where: {
-        email: data.email,
-      },
-    });
-
-    if (count > 0) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
-    }
-  }
-
-  return prisma.user.update({
-    where: { id: user.id },
-    data,
-    include: {
-      camps: {
-        include: {
-          camp: true,
-        },
-      },
     },
   });
 };
@@ -163,6 +120,5 @@ export default {
   getUserByEmail,
   getUserByEmailWithCamps,
   updateUserById,
-  updateUserByIdWithCamps,
   deleteUserById,
 };
