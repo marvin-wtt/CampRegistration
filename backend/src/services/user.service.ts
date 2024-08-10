@@ -98,9 +98,20 @@ const updateUserById = async <Key extends keyof User>(
 
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: data,
+    data: {
+      name: data.name,
+      email: data.email,
+      emailVerified: data.emailVerified,
+      password: data.password
+        ? await encryptPassword(data.password)
+        : undefined,
+      role: data.role,
+      locale: data.locale,
+      locked: data.locked,
+    },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
   });
+
   return updatedUser as Pick<User, Key> | null;
 };
 
