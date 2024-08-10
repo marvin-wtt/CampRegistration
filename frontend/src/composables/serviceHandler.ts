@@ -16,7 +16,7 @@ export interface ResultOptions {
   error?: QNotifyCreateOptions;
 }
 
-export function useServiceHandler<T>(storeName: string) {
+export function useServiceHandler<T>(storeName?: string) {
   const quasar = useQuasar();
   const { t } = useI18n();
 

@@ -169,6 +169,11 @@ const routes: RouteRecordRaw[] = [
           import('pages/administration/AdministrationIndexPage.vue'),
       },
       {
+        path: 'camps',
+        name: 'administration.camps',
+        component: () => import('pages/administration/CampIndexPage.vue'),
+      },
+      {
         path: 'users',
         name: 'administration.users',
         component: () => import('pages/administration/UserIndexPage.vue'),

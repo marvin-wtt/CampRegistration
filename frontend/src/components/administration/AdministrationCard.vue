@@ -50,7 +50,7 @@ const slots = defineSlots<{
 }>();
 
 const headerFontSize = computed<string>(() => {
-  return slots.default ? 'text-h4' : 'text-h3';
+  return slots.default ? 'text-h5' : 'text-h4';
 });
 
 function navigate() {
