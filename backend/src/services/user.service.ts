@@ -5,6 +5,7 @@ import ApiError from 'utils/ApiError';
 import { ulid } from 'utils/ulid';
 import { encryptPassword } from 'utils/encryption';
 import { authService } from 'services/index';
+import { UserUpdateData } from '@camp-registration/common/entities';
 
 const createUser = async (
   data: Pick<
@@ -79,12 +80,18 @@ const getUserByEmail = async (email: string): Promise<User | null> => {
 
 const updateUserById = async <Key extends keyof User>(
   userId: string,
-  data: Omit<Prisma.UserUpdateInput, 'id'>,
+  data: UserUpdateData,
   keys: Key[] = ['id', 'email', 'name', 'role', 'locale', 'locked'] as Key[],
 ): Promise<Pick<User, Key> | null> => {
-  if (data.email && (await getUserByEmail(data.email as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+  // Verify email not taken yet
+  if (data.email !== undefined) {
+    const user = await getUserByEmail(data.email);
+
+    if (user?.id === userId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+    }
   }
+
   if (data.locked) {
     await authService.logoutAllDevices(userId);
   }
