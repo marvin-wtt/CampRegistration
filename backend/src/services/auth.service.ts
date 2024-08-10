@@ -85,9 +85,8 @@ const resetPassword = async (
   if (!user || user.email !== email) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
   }
-  const encryptedPassword = await encryptPassword(password);
   await userService.updateUserById(user.id, {
-    password: encryptedPassword,
+    password,
     emailVerified: true,
   });
 
