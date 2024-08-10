@@ -30,6 +30,9 @@ export function useServiceHandler<T>(storeName: string) {
     return pendingRequests.value > 0;
   });
 
+  const translationPrefix = storeName ? `stores.${storeName}` : 'request';
+  const errorLocation = storeName ? `${storeName} store` : 'request handler';
+
   function defaultProgressOptions(
     operation: string,
     options?: ProgressOptions,
@@ -44,7 +47,8 @@ export function useServiceHandler<T>(storeName: string) {
     progressOptions.timeout = 0;
     progressOptions.spinner = true;
     progressOptions.message =
-      progressOptions.message ?? t(`stores.${storeName}.${operation}.progress`);
+      progressOptions.message ??
+      t(`${translationPrefix}.${operation}.progress`);
 
     //
     const successOptions = defaultSuccessOptions(operation, options.success);
@@ -86,7 +90,7 @@ export function useServiceHandler<T>(storeName: string) {
     successOptions.type = successOptions.type ?? 'positive';
     successOptions.position = successOptions.position ?? 'top';
     successOptions.message =
-      successOptions?.message ?? t(`stores.${storeName}.${operation}.success`);
+      successOptions?.message ?? t(`${translationPrefix}.${operation}.success`);
 
     return successOptions;
   }
@@ -100,7 +104,7 @@ export function useServiceHandler<T>(storeName: string) {
     errorOptions.type = errorOptions.type ?? 'negative';
     errorOptions.position = errorOptions.position ?? 'top';
     errorOptions.message =
-      errorOptions?.message ?? t(`stores.${storeName}.${operation}.error`);
+      errorOptions?.message ?? t(`${translationPrefix}.${operation}.error`);
 
     return errorOptions;
   }
@@ -258,12 +262,12 @@ export function useServiceHandler<T>(storeName: string) {
     }
     quasar.notify(
       defaultErrorOptions('', {
-        message: 'Internal error',
-        caption: 'Invalid parameter(s).',
+        message: t('service.internal'),
+        caption: t('service.invalidParams'),
       }),
     );
 
-    throw new Error(`Invalid parameter(s) at ${storeName} store.`);
+    throw new Error(`Invalid parameter(s) at ${errorLocation}.`);
   }
 
   function checkNotNullWithNotification(
@@ -272,24 +276,21 @@ export function useServiceHandler<T>(storeName: string) {
     if (param && param.length > 0) {
       return param;
     }
-    error.value = 'Invalid parameter(s).';
+    error.value = t('service.invalidParams');
 
-    throw new Error(`Invalid parameter(s) at ${storeName} store.`);
+    throw new Error(`Invalid parameter(s) at ${errorLocation}.`);
   }
 
   function extractErrorText(err: unknown): string {
     if (!isAPIServiceError(err)) {
-      // TODO Translate
-      return hasMessage(err)
-        ? err.message
-        : 'Service temporary unavailable. Please try again later.';
+      return hasMessage(err) ? err.message : t('service.unavailable');
     }
 
     if (err.response) {
       return err.response.data.message ?? err.response.statusText;
     }
 
-    return 'Server temporary not available.';
+    return t('service.unknown');
   }
 
   function invalidate() {
