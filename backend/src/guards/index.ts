@@ -5,4 +5,6 @@ export { default as admin } from './admin.guard';
 export { default as and } from './and.guard';
 export { default as or } from './or.guard';
 
-export type GuardFn = (req: Request) => Promise<boolean | string>;
+export type GuardFn = (
+  req: Request,
+) => string | boolean | Promise<boolean | string>;

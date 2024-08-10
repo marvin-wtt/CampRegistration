@@ -38,9 +38,8 @@ const getCampsByUserId = async (userId: string) => {
   });
 };
 
-const queryPublicCamps = async <Key extends keyof Camp>(
+const queryCamps = async <Key extends keyof Camp>(
   filter: {
-    userId?: string;
     active?: boolean;
     public?: boolean;
     name?: string;
@@ -48,13 +47,13 @@ const queryPublicCamps = async <Key extends keyof Camp>(
     startAt?: Date | string;
     entAt?: Date | string;
     country?: string;
-  },
+  } = {},
   options: {
     limit?: number;
     page?: number;
     sortBy?: string;
     sortType?: 'asc' | 'desc';
-  },
+  } = {},
   keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
@@ -64,9 +63,20 @@ const queryPublicCamps = async <Key extends keyof Camp>(
 
   const where: Prisma.CampWhereInput = {
     // Only show active, public camps by default
-    public: filter.public == false ? undefined : true,
-    active: filter.active == false ? undefined : true,
-    campManager: { every: { userId: filter.userId } },
+    public: filter.public,
+    active: filter.active,
+    // FIXME Name filter not working for translated names
+    // OR: filter.name
+    //   ? [
+    //       { name: { string_contains: filter.name } },
+    //       {
+    //         name: {
+    //           path: dbJsonPath('*'),
+    //           string_contains: filter.name,
+    //         },
+    //       },
+    //     ]
+    //   : undefined,
     minAge: { lte: filter.age },
     maxAge: { gte: filter.age },
     startAt: { gte: filter.startAt },
@@ -152,7 +162,7 @@ export default {
   getCampById,
   getCampsByUserId,
   getCampFreePlaces,
-  queryPublicCamps,
+  queryCamps,
   createCamp,
   updateCampById,
   deleteCampById,

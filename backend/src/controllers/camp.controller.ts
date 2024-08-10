@@ -2,14 +2,13 @@ import { campService, registrationService } from 'services';
 import httpStatus from 'http-status';
 import { campResource, detailedCampResource } from 'resources';
 import { catchRequestAsync } from 'utils/catchAsync';
-import pick from 'utils/pick';
-import exclude from 'utils/exclude';
 import { collection, resource } from 'resources/resource';
 import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
 import { Camp } from '@prisma/client';
 import defaultForm from 'assets/camp/defaultForm.json';
 import defaultThemes from 'assets/camp/defaultThemes.json';
+import type { CampQuery } from '@camp-registration/common/entities';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
@@ -18,20 +17,29 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const filter = exclude(req.query, ['sortBy', 'limit', 'page']);
-  // Set user id if private or inactive camps should be included filter for camp manager
-  filter.userId =
-    filter.public == 'false' || filter.active === 'false'
-      ? authUserId(req)
-      : undefined;
-
-  const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  // TODO Add default options, make sure validation is correct and add pagination meta
-  const camps = await campService.queryPublicCamps(filter, options);
+  const query = req.query as CampQuery;
+  const camps = await campService.queryCamps(
+    {
+      public: query.showAll ? undefined : true,
+      active: query.showAll ? undefined : true,
+      name: query.name,
+      country: query.country,
+      age: query.age,
+      startAt: query.startAt,
+      entAt: query.endAt,
+    },
+    {
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortType: query.sortType,
+    },
+  );
 
   const resources = await Promise.all(
     camps.map(async (value) => campResource(await withFreePlaces(value))),
   );
+
   res.json(collection(resources));
 });
 
