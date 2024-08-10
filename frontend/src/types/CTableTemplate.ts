@@ -1,7 +1,7 @@
 import type {
   TableColumnTemplate,
   TableTemplate,
-} from '@camp-registration/common/dist/node/entities';
+} from '@camp-registration/common/entities';
 
 type FieldResolver = (row: unknown) => unknown;
 
