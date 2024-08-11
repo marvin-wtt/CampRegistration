@@ -19,7 +19,7 @@ export interface ResultOptions {
 export function useServiceHandler<T>(storeName?: string) {
   const { t } = useI18n();
 
-  const serviceNotifications = useServiceNotifications<T>(storeName);
+  const serviceNotifications = useServiceNotifications(storeName);
   const { extractErrorText } = useErrorExtractor();
 
   const data = ref<T>();
@@ -78,7 +78,7 @@ export function useServiceHandler<T>(storeName?: string) {
     }
     error.value = t('service.invalidParams');
 
-    throw new Error(`Invalid parameter(s)`);
+    throw new Error('Invalid parameter(s)');
   }
 
   function invalidate() {
@@ -127,7 +127,7 @@ function useErrorExtractor() {
   };
 }
 
-function useServiceNotifications<T>(storeName?: string) {
+function useServiceNotifications(storeName?: string) {
   const { t } = useI18n();
   const quasar = useQuasar();
   const { extractErrorText } = useErrorExtractor();
@@ -259,7 +259,7 @@ function useServiceNotifications<T>(storeName?: string) {
       }),
     );
 
-    throw new Error(`Invalid parameter(s).`);
+    throw new Error('Invalid parameter(s).');
   }
 
   function showErrorNotification(
