@@ -1,12 +1,15 @@
 <template>
   <page-state-handler :error>
     <q-table
+      v-model:pagination="pagination"
       :title="t('title')"
       :loading
       :rows
       :columns
       :visible-columns="visibleColumns"
-      row-key="name"
+      :rows-per-page-options="[0]"
+      virtual-scroll
+      row-key="id"
       class="absolute fit"
     >
       <template #top-right>
@@ -341,6 +344,9 @@ const {
 } = useServiceHandler<Camp[]>('camp');
 
 const filterQuery = ref<string>('');
+const pagination = ref({
+  rowsPerPage: 0,
+});
 
 onMounted(async () => {
   await fetchAll();
