@@ -238,6 +238,21 @@ describe('/api/v1/users/', () => {
       });
     });
 
+    it('should respond with `200` status code when email remains the same', async () => {
+      const { accessToken } = await createAdminWithToken();
+      const user = await UserFactory.create({
+        email: 'test@email.com',
+      });
+
+      await request()
+        .patch(`/api/v1/users/${user.id}`)
+        .send({
+          email: 'test@email.com',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
     it('should respond with `400` status code when email is already used', async () => {
       const { accessToken } = await createAdminWithToken();
       const user = await UserFactory.create();

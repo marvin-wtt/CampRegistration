@@ -83,7 +83,7 @@ const updateUserById = async (userId: string, data: UserUpdateData) => {
   if (data.email !== undefined) {
     const user = await getUserByEmail(data.email);
 
-    if (user?.id === userId) {
+    if (user && user.id !== userId) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
   }
