@@ -29,13 +29,7 @@
           </router-link>
         </q-toolbar-title>
 
-        <q-btn
-          :label="t('camps')"
-          :to="{ name: 'management' }"
-          class="gt-sm"
-          flat
-          rounded
-        />
+        <header-navigation />
 
         <locale-switch
           borderless
@@ -64,11 +58,6 @@
       @mouseout="miniState = true"
       @mouseover="miniState = false"
     >
-      <!-- TODO -->
-      <!--            <q-scroll-area-->
-      <!--              class='fit'-->
-      <!--              horizontal-thumb-style='opacity: 0'-->
-      <!--            >-->
       <q-list padding>
         <navigation-item
           v-for="item in filteredItems"
@@ -82,7 +71,6 @@
           :children="item.children"
         />
       </q-list>
-      <!--            </q-scroll-area>-->
     </q-drawer>
 
     <q-page-container>
@@ -107,6 +95,7 @@ import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
+import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -239,8 +228,6 @@ function logout() {
 
 <i18n lang="yaml" locale="en">
 access: 'Access'
-login: 'Login'
-camps: 'My Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
@@ -258,8 +245,6 @@ notifications: 'Notifications'
 
 <i18n lang="yaml" locale="de">
 access: 'Zugriff'
-login: 'Login'
-camps: 'Meine Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
@@ -277,8 +262,6 @@ notifications: 'Benachrichtigungen'
 
 <i18n lang="yaml" locale="fr">
 access: 'Accès'
-login: 'Login'
-camps: 'Mes Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
