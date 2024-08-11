@@ -11,7 +11,7 @@
         <div class="row no-wrap q-gutter-x-lg">
           <!-- Search -->
           <q-input
-            v-model="query"
+            v-model="filterQuery"
             borderless
             rounded
             dense
@@ -29,14 +29,14 @@
             icon="add"
             color="primary"
             rounded
-            @click="addUser()"
+            @click="onAddUser()"
           />
           <q-btn
             v-else
             icon="add"
             color="primary"
             round
-            @click="addUser()"
+            @click="onAddUser()"
           />
         </div>
       </template>
@@ -76,7 +76,7 @@
               round
               flat
               size="sm"
-              @click="lockUser(props.row)"
+              @click="onLockUser(props.row)"
             >
               <q-tooltip>{{ t('action.lock') }}</q-tooltip>
             </q-btn>
@@ -86,7 +86,7 @@
               round
               flat
               size="sm"
-              @click="unlockUser(props.row)"
+              @click="onUnlockUser(props.row)"
             >
               <q-tooltip>{{ t('action.unlock') }}</q-tooltip>
             </q-btn>
@@ -95,16 +95,17 @@
               round
               flat
               size="sm"
-              @click="editUser(props.row)"
+              @click="onEditUser(props.row)"
             >
               <q-tooltip>{{ t('action.edit') }}</q-tooltip>
             </q-btn>
             <q-btn
               icon="delete"
+              color="negative"
               round
               flat
               size="sm"
-              @click="deleteUser(props.row)"
+              @click="onDeleteUser(props.row)"
             >
               <q-tooltip>{{ t('action.delete') }}</q-tooltip>
             </q-btn>
@@ -123,7 +124,7 @@
                   v-if="!props.row.locked"
                   v-close-popup
                   clickable
-                  @click="lockUser(props.row)"
+                  @click="onLockUser(props.row)"
                 >
                   <q-item-section>
                     {{ t('action.lock') }}
@@ -133,7 +134,7 @@
                   v-else
                   v-close-popup
                   clickable
-                  @click="unlockUser(props.row)"
+                  @click="onUnlockUser(props.row)"
                 >
                   <q-item-section>
                     {{ t('action.unlock') }}
@@ -143,7 +144,7 @@
                 <q-item
                   v-close-popup
                   clickable
-                  @click="editUser(props.row)"
+                  @click="onEditUser(props.row)"
                 >
                   <q-item-section>
                     {{ t('action.edit') }}
@@ -151,9 +152,9 @@
                 </q-item>
                 <q-item
                   v-close-popup
-                  color="negative"
                   clickable
-                  @click="deleteUser(props.row)"
+                  class="text-negative"
+                  @click="onDeleteUser(props.row)"
                 >
                   <q-item-section>
                     {{ t('action.delete') }}
@@ -169,7 +170,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useUsersStore } from 'stores/users-store';
 import { QTableColumn } from 'quasar';
 import type {
   User,
@@ -183,38 +183,39 @@ import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from 'components/administration/users/UserCreateDialog.vue';
 import UserUpdateDialog from 'components/administration/users/UserUpdateDialog.vue';
+import { useAPIService } from 'src/services/APIService';
+import { useServiceHandler } from 'src/composables/serviceHandler';
 
-const usersStore = useUsersStore();
 const { t, locale } = useI18n();
 const quasar = useQuasar();
+const api = useAPIService();
+const {
+  data: users,
+  error,
+  isLoading: loading,
+  forceFetch,
+  withProgressNotification,
+} = useServiceHandler<User[]>('user');
 
-const query = ref<string>('');
+const filterQuery = ref<string>('');
 
 onMounted(async () => {
-  await usersStore.fetchData();
-});
-
-const error = computed(() => {
-  return usersStore.error;
-});
-
-const loading = computed<boolean>(() => {
-  return usersStore.isLoading;
-});
-
-const users = computed<User[]>(() => {
-  return usersStore.data ?? [];
+  await fetchAll();
 });
 
 const rows = computed<User[]>(() => {
-  if (!query.value) {
+  if (!users.value) {
+    return [];
+  }
+
+  if (!filterQuery.value) {
     return users.value;
   }
 
   return users.value
     .map((user) => {
-      const nameScore = getMatchScore(user.name, query.value);
-      const emailScore = getMatchScore(user.email, query.value);
+      const nameScore = getMatchScore(user.name, filterQuery.value);
+      const emailScore = getMatchScore(user.email, filterQuery.value);
       return {
         ...user,
         score: Math.max(nameScore, emailScore),
@@ -300,17 +301,17 @@ function formatDateTime(dateTime: string): string {
   }).format(new Date(dateTime));
 }
 
-function addUser() {
+function onAddUser() {
   quasar
     .dialog({
       component: UserCreateDialog,
     })
     .onOk((payload: UserCreateData) => {
-      usersStore.createEntry(payload);
+      createUser(payload);
     });
 }
 
-function editUser(user: User) {
+function onEditUser(user: User) {
   quasar
     .dialog({
       component: UserUpdateDialog,
@@ -319,11 +320,11 @@ function editUser(user: User) {
       },
     })
     .onOk((payload: UserUpdateData) => {
-      usersStore.updateEntry(user.id, payload);
+      updateUser(user.id, payload);
     });
 }
 
-function deleteUser(user: User) {
+function onDeleteUser(user: User) {
   quasar
     .dialog({
       component: SafeDeleteDialog,
@@ -335,11 +336,11 @@ function deleteUser(user: User) {
       },
     })
     .onOk(() => {
-      usersStore.deleteEntry(user.id);
+      deleteUser(user.id);
     });
 }
 
-function lockUser(user: User) {
+function onLockUser(user: User) {
   quasar
     .dialog({
       title: t('dialog.lock.title'),
@@ -357,13 +358,13 @@ function lockUser(user: User) {
       },
     })
     .onOk(() => {
-      usersStore.updateEntry(user.id, {
+      updateUser(user.id, {
         locked: true,
       });
     });
 }
 
-function unlockUser(user: User) {
+function onUnlockUser(user: User) {
   quasar
     .dialog({
       title: t('dialog.unlock.title'),
@@ -381,10 +382,61 @@ function unlockUser(user: User) {
       },
     })
     .onOk(() => {
-      usersStore.updateEntry(user.id, {
+      updateUser(user.id, {
         locked: false,
       });
     });
+}
+
+async function fetchAll() {
+  return forceFetch(() => api.fetchUsers());
+}
+
+async function createUser(data: UserCreateData) {
+  const user = await withProgressNotification('update', () =>
+    api.createUser(data),
+  );
+
+  // Update data
+  if (!users.value) {
+    return user;
+  }
+
+  users.value.push(user);
+}
+
+async function updateUser(id: string, data: UserUpdateData) {
+  const user = await withProgressNotification('update', () =>
+    api.updateUser(id, data),
+  );
+
+  // Update data
+  if (!users.value) {
+    return user;
+  }
+
+  const index = users.value.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return user;
+  }
+
+  users.value.splice(index, 1, user);
+}
+
+async function deleteUser(id: string) {
+  await withProgressNotification('delete', () => api.deleteUser(id));
+
+  // Update data
+  if (!users.value) {
+    return;
+  }
+
+  const index = users.value.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return;
+  }
+
+  users.value.splice(index, 1);
 }
 </script>
 

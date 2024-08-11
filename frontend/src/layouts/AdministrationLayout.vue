@@ -152,7 +152,6 @@ const items: NavigationItem[] = [
     label: t('camps'),
     icon: 'home',
     to: { name: 'administration.camps' },
-    preview: true,
   },
   {
     name: 'settings',

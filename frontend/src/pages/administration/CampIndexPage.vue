@@ -660,7 +660,6 @@ async function deleteCamp(id: string) {
 
   camps.value.splice(index, 1);
 }
-// TODO add translations
 </script>
 
 <style scoped></style>
