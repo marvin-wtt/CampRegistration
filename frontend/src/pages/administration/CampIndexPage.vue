@@ -88,9 +88,9 @@
         <q-td :props="props">
           <div class="row q-gutter-x-sm justify-center content-center">
             <country-icon
-              v-for="locale in props.value"
-              :key="locale"
-              :locale
+              v-for="country in props.value"
+              :key="country"
+              :locale="country"
             />
           </div>
         </q-td>
