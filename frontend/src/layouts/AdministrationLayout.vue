@@ -24,13 +24,7 @@
           </router-link>
         </q-toolbar-title>
 
-        <q-btn
-          :label="t('camps')"
-          :to="{ name: 'management' }"
-          class="gt-sm"
-          flat
-          rounded
-        />
+        <header-navigation />
 
         <locale-switch
           borderless
@@ -95,6 +89,7 @@ import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
+import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 
 const quasar = useQuasar();
 const route = useRoute();
