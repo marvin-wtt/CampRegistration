@@ -65,10 +65,13 @@
       </template>
 
       <template #body-cell-action="props">
-        <q-td :props="props">
+        <q-td
+          :props="props"
+          auto-width
+        >
           <div
             v-if="quasar.screen.gt.md"
-            class="q-gt-md row q-gutter-x-md justify-center"
+            class="q-gt-md row no-wrap q-gutter-x-md justify-center"
           >
             <q-btn
               v-if="!props.row.locked"

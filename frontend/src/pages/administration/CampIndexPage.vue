@@ -27,7 +27,7 @@
 
           <q-select
             v-model="visibleColumns"
-            :options="columns"
+            :options="columnFilterOptions"
             :display-value="t('header.columns')"
             multiple
             emit-value
@@ -46,8 +46,6 @@
             outline
             rounded
           />
-
-          <!-- TODO Add expand btn -->
         </div>
       </template>
 
@@ -66,6 +64,7 @@
           auto-width
         >
           <q-btn
+            v-if="props.row.countries.length > 1"
             :icon="props.expand ? 'expand_less' : 'expand_more'"
             color="primary"
             size="sm"
@@ -83,6 +82,18 @@
 
       <template #body-cell-organizer="props">
         <translation-td :props="props" />
+      </template>
+
+      <template #body-cell-countries="props">
+        <q-td :props="props">
+          <div class="row q-gutter-x-sm justify-center content-center">
+            <country-icon
+              v-for="locale in props.value"
+              :key="locale"
+              :locale
+            />
+          </div>
+        </q-td>
       </template>
 
       <template #body-cell-maxParticipants="props">
@@ -314,6 +325,7 @@ import { useRouter } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import TranslationTd from 'components/administration/camps/TranslationTd.vue';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -385,6 +397,12 @@ const columns: QTableColumn<Camp>[] = [
     sortable: true,
   },
   {
+    name: 'countries',
+    label: t('column.countries'),
+    field: 'countries',
+    align: 'center',
+  },
+  {
     name: 'minAge',
     label: t('column.minAge'),
     field: 'minAge',
@@ -448,7 +466,18 @@ const columns: QTableColumn<Camp>[] = [
   },
 ];
 
-const visibleColumns = ref(['name', 'organizer', 'active', 'public', 'action']);
+const columnFilterOptions = computed<QTableColumn<Camp>[]>(() => {
+  return columns.filter((column) => !column.required);
+});
+
+const visibleColumns = ref([
+  'name',
+  'organizer',
+  'countries',
+  'active',
+  'public',
+  'action',
+]);
 
 function getMatchScore(text: string, query: string) {
   text = text.toLowerCase();
@@ -680,6 +709,7 @@ action:
 column:
   action: 'Action'
   active: 'Active'
+  countries: 'Countries'
   end: 'End'
   maxAge: 'Max Age'
   maxParticipants: 'Max Participants'
@@ -745,6 +775,7 @@ action:
 column:
   action: 'Aktion'
   active: 'Aktiv'
+  countries: 'Länder'
   end: 'Ende'
   maxAge: 'Max. Alter'
   maxParticipants: 'Max. Teilnehmerzahl'
@@ -811,6 +842,7 @@ action:
 column:
   action: 'Action'
   active: 'Actif'
+  countries: 'Pays'
   end: 'Fin'
   maxAge: 'Âge max'
   maxParticipants: 'Participants max'
