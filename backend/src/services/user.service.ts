@@ -5,11 +5,12 @@ import ApiError from 'utils/ApiError';
 import { ulid } from 'utils/ulid';
 import { encryptPassword } from 'utils/encryption';
 import { authService } from 'services/index';
+import { UserUpdateData } from '@camp-registration/common/entities';
 
 const createUser = async (
   data: Pick<
     Prisma.UserCreateInput,
-    'email' | 'name' | 'password' | 'role' | 'locale'
+    'email' | 'name' | 'password' | 'role' | 'locale' | 'locked'
   >,
 ) => {
   if (await getUserByEmail(data.email)) {
@@ -28,22 +29,8 @@ const createUser = async (
   });
 };
 
-const queryUsers = async <Key extends keyof Prisma.UserSelect>(
-  filter: Prisma.UserWhereInput,
-  options: {
-    limit?: number;
-    page?: number;
-    sortBy?: string;
-    sortType?: 'asc' | 'desc';
-  },
-) => {
-  const page = options.page ?? 1;
-  const limit = options.limit ?? 10;
-  const sortBy = options.sortBy;
-  const sortType = options.sortType ?? 'desc';
-
+const queryUsers = async () => {
   return prisma.user.findMany({
-    where: filter,
     select: {
       id: true,
       name: true,
@@ -54,9 +41,6 @@ const queryUsers = async <Key extends keyof Prisma.UserSelect>(
       locked: true,
       createdAt: true,
     },
-    skip: page * limit,
-    take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined,
   });
 };
 
@@ -94,58 +78,32 @@ const getUserByEmail = async (email: string): Promise<User | null> => {
   });
 };
 
-const updateUserById = async <Key extends keyof User>(
-  userId: string,
-  data: Omit<Prisma.UserUpdateInput, 'id'>,
-  keys: Key[] = ['id', 'email', 'name', 'role', 'locale', 'locked'] as Key[],
-): Promise<Pick<User, Key> | null> => {
-  if (data.email && (await getUserByEmail(data.email as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
-  }
-  if (data.locked) {
-    await authService.logoutAllDevices(userId);
-  }
+const updateUserById = async (userId: string, data: UserUpdateData) => {
+  // Verify email not taken yet
+  if (data.email !== undefined) {
+    const user = await getUserByEmail(data.email);
 
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: data,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-  });
-  return updatedUser as Pick<User, Key> | null;
-};
-
-type UserUpdateInput = Omit<Prisma.UserUpdateInput, 'id'> & { email?: string };
-
-const updateUserByIdWithCamps = async (
-  userId: string,
-  data: UserUpdateInput,
-) => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
-
-  if (data.email) {
-    const count = await prisma.user.count({
-      where: {
-        email: data.email,
-      },
-    });
-
-    if (count > 0) {
+    if (user && user.id !== userId) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
   }
 
+  if (data.locked) {
+    await authService.logoutAllDevices(userId);
+  }
+
   return prisma.user.update({
-    where: { id: user.id },
-    data,
-    include: {
-      camps: {
-        include: {
-          camp: true,
-        },
-      },
+    where: { id: userId },
+    data: {
+      name: data.name,
+      email: data.email,
+      emailVerified: data.emailVerified,
+      password: data.password
+        ? await encryptPassword(data.password)
+        : undefined,
+      role: data.role,
+      locale: data.locale,
+      locked: data.locked,
     },
   });
 };
@@ -162,6 +120,5 @@ export default {
   getUserByEmail,
   getUserByEmailWithCamps,
   updateUserById,
-  updateUserByIdWithCamps,
   deleteUserById,
 };

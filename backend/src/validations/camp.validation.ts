@@ -4,7 +4,8 @@ import { CountryCode } from 'validations/custom.validation';
 import type {
   CampCreateData,
   CampUpdateData,
-} from '@camp-registration/common/dist/esm/entities';
+  CampQuery,
+} from '@camp-registration/common/entities';
 
 const extendedJoi = Joi.extend(JoiDate);
 
@@ -35,20 +36,19 @@ const show = {
 };
 
 const index = {
-  query: Joi.object({
+  query: Joi.object<CampQuery>({
     // Filter
     name: Joi.string(),
-    active: Joi.boolean(),
-    public: Joi.boolean(),
     startAt: Joi.date(),
     endAt: Joi.date(),
-    minAge: Joi.number(),
-    maxAge: Joi.number(),
+    age: Joi.number(),
     country: Joi.string().length(2),
+    showAll: Joi.boolean(),
     // Options
     page: Joi.number(),
     limit: Joi.number(),
     sortBy: Joi.string(),
+    sortType: Joi.string().allow('asc', 'desc').optional(),
   }),
 };
 

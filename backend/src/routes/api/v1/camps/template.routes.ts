@@ -11,40 +11,39 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'templateId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const template = await templateService.getTemplateById(camp.id, id);
     req.models.template = verifyModelExists(template);
-    next();
   }),
 );
 
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(templateValidation.index),
   templateController.index,
 );
 router.get(
   '/:templateId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(templateValidation.show),
   templateController.show,
 );
-router.post('/', auth(), guard([campManager]), templateController.store);
+router.post('/', auth(), guard(campManager), templateController.store);
 router.put(
   '/:templateId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(templateValidation.update),
   templateController.update,
 );
 router.delete(
   '/:templateId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(templateValidation.destroy),
   templateController.destroy,
 );

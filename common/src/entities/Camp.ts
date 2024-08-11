@@ -31,3 +31,18 @@ export type CampCreateData = Omit<
 >;
 
 export type CampUpdateData = Partial<CampCreateData>;
+
+export interface CampQuery {
+  page?: number;
+  limit?: number;
+  sortBy?: keyof Camp;
+  sortType?: 'asc' | 'desc';
+
+  name?: string;
+  country?: string;
+  age?: number;
+  startAt?: string;
+  endAt?: string;
+
+  showAll?: boolean;
+}

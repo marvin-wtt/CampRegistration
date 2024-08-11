@@ -18,7 +18,6 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     error,
     reset,
     invalidate,
-    withProgressNotification,
     handlerByType,
     lazyFetch,
     checkNotNullWithError,
@@ -103,22 +102,6 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     );
   }
 
-  async function deleteData() {
-    const campId = data.value?.id ?? (route.params.camp as string | undefined);
-
-    const cid = checkNotNullWithError(campId);
-
-    const success = await withProgressNotification('delete', async () => {
-      await api.deleteCamp(cid);
-      bus.emit('delete', cid);
-      return true;
-    });
-
-    if (success) {
-      await router.push({ name: 'management' });
-    }
-  }
-
   return {
     reset,
     data,
@@ -126,6 +109,5 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     error,
     fetchData,
     updateData,
-    deleteData,
   };
 });

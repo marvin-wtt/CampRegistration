@@ -10,8 +10,15 @@ export interface User extends Identifiable {
   createdAt: string;
 }
 
-export type UserCreateData = Omit<User, 'id' | 'emailVerified'> & {
+interface UserWithPassword extends User {
   password: string;
-};
+}
 
-export type UserUpdateData = Partial<UserCreateData>;
+export type UserCreateData = Omit<
+  UserWithPassword,
+  'id' | 'emailVerified' | 'createdAt'
+>;
+
+export type UserUpdateData = Partial<
+  Omit<UserWithPassword, 'id' | 'createdAt'>
+>;

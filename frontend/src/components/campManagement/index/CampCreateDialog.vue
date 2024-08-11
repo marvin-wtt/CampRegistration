@@ -344,7 +344,7 @@ import CountrySwitch from 'components/common/CountrySwitch.vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
 import { computed, ref } from 'vue';
-import type { CampCreateData } from '@camp-registration/common/dist/node/entities';
+import type { CampCreateData } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useAuthStore } from 'stores/auth-store';

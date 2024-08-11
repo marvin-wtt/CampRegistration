@@ -11,6 +11,7 @@ import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
+  campActivePrivate,
   campActivePublic,
   campCreateInternational,
   campCreateInvalidBody,
@@ -123,6 +124,113 @@ describe('/api/v1/camps', () => {
 
       expect(body).toHaveProperty('data');
       expect(body.data.length).toBe(1);
+    });
+
+    describe('query', () => {
+      it('should respond with all camps if showAll is true and user is admin', async () => {
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        const user = await UserFactory.create({
+          role: 'ADMIN',
+        });
+        const accessToken = generateAccessToken(user);
+
+        const { status, body } = await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            showAll: true,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .send();
+
+        expect(status).toBe(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data.length).toBe(3);
+      });
+
+      it('should respond with `401` status code when showAll is set and user is unauthenticated', async () => {
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        const { status } = await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            showAll: true,
+          })
+          .send();
+
+        expect(status).toBe(401);
+      });
+
+      it('should respond with `403` status code when showAll is set and user is not an admin', async () => {
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        const user = await UserFactory.create();
+        const accessToken = generateAccessToken(user);
+
+        const { status } = await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            showAll: true,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .send();
+
+        expect(status).toBe(403);
+      });
+
+      it.skip('should filter by name', async () => {
+        await CampFactory.create({
+          ...campActivePublic,
+          name: 'TestCamp',
+        });
+        await CampFactory.create({
+          ...campActivePublic,
+          name: {
+            de: 'TestCampDE',
+            en: 'TestCampEN',
+          },
+        });
+        await CampFactory.create({
+          ...campActivePublic,
+          name: 'OtherCamp',
+        });
+        await CampFactory.create({
+          ...campActivePublic,
+          name: {
+            de: 'OtherCampDE',
+            en: 'OtherCampEN',
+          },
+        });
+
+        const { status, body } = await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            name: 'Test',
+          })
+          .send();
+
+        expect(status).toBe(200);
+
+        console.log(body.data);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data.length).toBe(2);
+      });
+
+      it.todo('should filter by age');
+
+      it.todo('should filter by country');
+
+      it.todo('should filter by startAt');
+
+      it.todo('should filter by endAt');
     });
   });
 

@@ -7,7 +7,7 @@ export const campActivePublic = {
 
 export const campActivePrivate = {
   active: true,
-  public: true,
+  public: false,
 };
 
 export const campInactive = {

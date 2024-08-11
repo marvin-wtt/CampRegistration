@@ -31,7 +31,9 @@ export const generateExpiredToken = (
 };
 
 export const generateAccessToken = (user: User) => {
-  return generateToken(user, TokenType.ACCESS);
+  return generateToken(user, TokenType.ACCESS, {
+    role: user.role,
+  });
 };
 
 export const generateRefreshToken = (user: User) => {

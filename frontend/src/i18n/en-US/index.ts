@@ -5,5 +5,12 @@ import stores from './stores';
 export default {
   app_name: 'Camp Registration Service',
 
-  stores: stores,
+  stores,
+
+  service: {
+    internal: 'Internal error',
+    invalidParams: 'Invalid parameter(s).',
+    unavailable: 'Service temporarily unavailable. Please try again later.',
+    unknown: 'Service temporary not available.',
+  },
 };

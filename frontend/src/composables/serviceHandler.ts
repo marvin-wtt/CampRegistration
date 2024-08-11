@@ -16,9 +16,11 @@ export interface ResultOptions {
   error?: QNotifyCreateOptions;
 }
 
-export function useServiceHandler<T>(storeName: string) {
-  const quasar = useQuasar();
+export function useServiceHandler<T>(storeName?: string) {
   const { t } = useI18n();
+
+  const serviceNotifications = useServiceNotifications(storeName);
+  const { extractErrorText } = useErrorExtractor();
 
   const data = ref<T>();
   const isLoading = ref<boolean>(false);
@@ -29,188 +31,6 @@ export function useServiceHandler<T>(storeName: string) {
   const requestPending = computed<boolean>(() => {
     return pendingRequests.value > 0;
   });
-
-  function defaultProgressOptions(
-    operation: string,
-    options?: ProgressOptions,
-  ): Required<ProgressOptions> {
-    // Set defaults
-    options = options ?? {};
-
-    //
-    const progressOptions = options.progress ?? {};
-    progressOptions.group = false;
-    progressOptions.position = progressOptions.position ?? 'top';
-    progressOptions.timeout = 0;
-    progressOptions.spinner = true;
-    progressOptions.message =
-      progressOptions.message ?? t(`stores.${storeName}.${operation}.progress`);
-
-    //
-    const successOptions = defaultSuccessOptions(operation, options.success);
-    successOptions.spinner = false;
-    successOptions.timeout = successOptions.timeout ?? 2500;
-
-    //
-    const errorOptions = defaultErrorOptions(operation, options.error);
-    errorOptions.spinner = false;
-    errorOptions.timeout = errorOptions.timeout ?? 2500;
-
-    return {
-      progress: progressOptions,
-      success: successOptions,
-      error: errorOptions,
-    };
-  }
-
-  function defaultResultOptions(
-    operation: string,
-    options?: ResultOptions,
-  ): Required<ResultOptions> {
-    // Set defaults
-    const successOptions = defaultSuccessOptions(operation, options?.success);
-    const errorOptions = defaultErrorOptions(operation, options?.error);
-
-    return {
-      success: successOptions,
-      error: errorOptions,
-    };
-  }
-
-  function defaultSuccessOptions(
-    operation: string,
-    options?: QNotifyCreateOptions,
-  ): QNotifyCreateOptions {
-    //
-    const successOptions = options ?? {};
-    successOptions.type = successOptions.type ?? 'positive';
-    successOptions.position = successOptions.position ?? 'top';
-    successOptions.message =
-      successOptions?.message ?? t(`stores.${storeName}.${operation}.success`);
-
-    return successOptions;
-  }
-
-  function defaultErrorOptions(
-    operation: string,
-    options?: QNotifyCreateOptions,
-  ): QNotifyCreateOptions {
-    //
-    const errorOptions = options ?? {};
-    errorOptions.type = errorOptions.type ?? 'negative';
-    errorOptions.position = errorOptions.position ?? 'top';
-    errorOptions.message =
-      errorOptions?.message ?? t(`stores.${storeName}.${operation}.error`);
-
-    return errorOptions;
-  }
-
-  async function withProgressNotification<T>(
-    operation: string,
-    fn: (notify: (props?: QNotifyUpdateOptions) => void) => Promise<T>,
-    options?: ProgressOptions,
-  ): Promise<T | undefined> {
-    // Set defaults
-    const opt = defaultProgressOptions(operation, options);
-
-    // Show progress indicator
-    const notify = quasar.notify(opt.progress);
-
-    try {
-      const result = await fn(notify);
-
-      notify(opt.success);
-
-      return result;
-    } catch (error: unknown) {
-      opt.error.caption = extractErrorText(error);
-      notify(opt.error);
-    }
-
-    return undefined;
-  }
-
-  function withMultiProgressNotification<T>(
-    promises: Promise<T>[],
-    operation: string,
-    options?: ProgressOptions,
-  ): Promise<T[] | undefined> {
-    const func = async (
-      notify: (props?: QNotifyUpdateOptions) => void,
-    ): Promise<T[]> => {
-      let doneCounter = 0;
-      for (const promise of promises) {
-        promise.then(() => {
-          doneCounter++;
-          const percentage = Math.floor((doneCounter / promises.length) * 100);
-
-          notify({
-            caption: `${percentage} %`,
-          });
-        });
-      }
-
-      return Promise.all(promises);
-    };
-
-    return withProgressNotification(operation, func, options);
-  }
-
-  async function withResultNotification<T>(
-    operation: string,
-    fn: () => Promise<T>,
-    options?: ResultOptions,
-  ): Promise<T | undefined> {
-    const opt = defaultResultOptions(operation, options);
-
-    // Set defaults
-    try {
-      const result = await fn();
-
-      quasar.notify(opt.success);
-
-      return result;
-    } catch (error: unknown) {
-      opt.error.caption = extractErrorText(error);
-      quasar.notify(opt.error);
-    }
-
-    return undefined;
-  }
-
-  async function withErrorNotification<T>(
-    operation: string,
-    fn: () => Promise<T>,
-    options?: QNotifyCreateOptions,
-  ): Promise<T | undefined> {
-    const opt = defaultErrorOptions(operation, options);
-
-    // Set defaults
-    try {
-      return await fn();
-    } catch (error: unknown) {
-      opt.caption = extractErrorText(error);
-      quasar.notify(opt);
-    }
-
-    return undefined;
-  }
-
-  function showErrorNotification(
-    operation: string,
-    options?: QNotifyCreateOptions,
-  ) {
-    const opt = defaultErrorOptions(operation, options);
-    quasar.notify(opt);
-  }
-
-  function showSuccessNotification(
-    operation: string,
-    options?: QNotifyCreateOptions,
-  ) {
-    const opt = defaultSuccessOptions(operation, options);
-    quasar.notify(opt);
-  }
 
   async function forceFetch(
     fn: () => Promise<T> | Promise<undefined>,
@@ -256,40 +76,9 @@ export function useServiceHandler<T>(storeName: string) {
     if (param && param.length > 0) {
       return param;
     }
-    quasar.notify(
-      defaultErrorOptions('', {
-        message: 'Internal error',
-        caption: 'Invalid parameter(s).',
-      }),
-    );
+    error.value = t('service.invalidParams');
 
-    throw new Error(`Invalid parameter(s) at ${storeName} store.`);
-  }
-
-  function checkNotNullWithNotification(
-    param: string | undefined | null,
-  ): string | never {
-    if (param && param.length > 0) {
-      return param;
-    }
-    error.value = 'Invalid parameter(s).';
-
-    throw new Error(`Invalid parameter(s) at ${storeName} store.`);
-  }
-
-  function extractErrorText(err: unknown): string {
-    if (!isAPIServiceError(err)) {
-      // TODO Translate
-      return hasMessage(err)
-        ? err.message
-        : 'Service temporary unavailable. Please try again later.';
-    }
-
-    if (err.response) {
-      return err.response.data.message ?? err.response.statusText;
-    }
-
-    return 'Server temporary not available.';
+    throw new Error('Invalid parameter(s)');
   }
 
   function invalidate() {
@@ -301,6 +90,49 @@ export function useServiceHandler<T>(storeName: string) {
     isLoading.value = false;
     error.value = null;
   }
+
+  return {
+    data,
+    isLoading,
+    error,
+    requestPending,
+    reset,
+    invalidate,
+    errorOnFailure,
+    forceFetch,
+    lazyFetch,
+    asyncUpdate,
+    checkNotNullWithError,
+    ...serviceNotifications,
+  };
+}
+
+function useErrorExtractor() {
+  const { t } = useI18n();
+
+  function extractErrorText(err: unknown): string {
+    if (!isAPIServiceError(err)) {
+      return hasMessage(err) ? err.message : t('service.unavailable');
+    }
+
+    if (err.response) {
+      return err.response.data.message ?? err.response.statusText;
+    }
+
+    return t('service.unknown');
+  }
+
+  return {
+    extractErrorText,
+  };
+}
+
+function useServiceNotifications(storeName?: string) {
+  const { t } = useI18n();
+  const quasar = useQuasar();
+  const { extractErrorText } = useErrorExtractor();
+
+  const translationPrefix = storeName ? `stores.${storeName}` : 'request';
 
   function handlerByType<T>(
     type: 'progress' | 'result' | 'error' | 'none',
@@ -323,17 +155,206 @@ export function useServiceHandler<T>(storeName: string) {
     }
   }
 
+  async function withErrorNotification<T>(
+    operation: string,
+    fn: () => Promise<T>,
+    options?: QNotifyCreateOptions,
+  ): Promise<T | undefined> {
+    const opt = defaultErrorOptions(operation, options);
+
+    // Set defaults
+    try {
+      return await fn();
+    } catch (error: unknown) {
+      opt.caption = extractErrorText(error);
+      quasar.notify(opt);
+    }
+
+    return undefined;
+  }
+
+  async function withProgressNotification<T>(
+    operation: string,
+    fn: (notify: (props?: QNotifyUpdateOptions) => void) => Promise<T>,
+    options?: ProgressOptions,
+  ): Promise<T> {
+    // Set defaults
+    const opt = defaultProgressOptions(operation, options);
+
+    // Show progress indicator
+    const notify = quasar.notify(opt.progress);
+
+    try {
+      const result = await fn(notify);
+
+      notify(opt.success);
+
+      return result;
+    } catch (error: unknown) {
+      opt.error.caption = extractErrorText(error);
+      notify(opt.error);
+
+      throw error;
+    }
+  }
+
+  function withMultiProgressNotification<T>(
+    promises: Promise<T>[],
+    operation: string,
+    options?: ProgressOptions,
+  ): Promise<T[]> {
+    const func = async (
+      notify: (props?: QNotifyUpdateOptions) => void,
+    ): Promise<T[]> => {
+      let doneCounter = 0;
+      for (const promise of promises) {
+        promise.then(() => {
+          doneCounter++;
+          const percentage = Math.floor((doneCounter / promises.length) * 100);
+
+          notify({
+            caption: `${percentage} %`,
+          });
+        });
+      }
+
+      return Promise.all(promises);
+    };
+
+    return withProgressNotification(operation, func, options);
+  }
+
+  async function withResultNotification<T>(
+    operation: string,
+    fn: () => Promise<T>,
+    options?: ResultOptions,
+  ): Promise<T> {
+    const opt = defaultResultOptions(operation, options);
+
+    // Set defaults
+    try {
+      const result = await fn();
+
+      quasar.notify(opt.success);
+
+      return result;
+    } catch (error: unknown) {
+      opt.error.caption = extractErrorText(error);
+      quasar.notify(opt.error);
+
+      throw error;
+    }
+  }
+
+  function checkNotNullWithNotification(
+    param: string | undefined | null,
+  ): string | never {
+    if (param && param.length > 0) {
+      return param;
+    }
+    quasar.notify(
+      defaultErrorOptions('', {
+        message: t('service.internal'),
+        caption: t('service.invalidParams'),
+      }),
+    );
+
+    throw new Error('Invalid parameter(s).');
+  }
+
+  function showErrorNotification(
+    operation: string,
+    options?: QNotifyCreateOptions,
+  ) {
+    const opt = defaultErrorOptions(operation, options);
+    quasar.notify(opt);
+  }
+
+  function showSuccessNotification(
+    operation: string,
+    options?: QNotifyCreateOptions,
+  ) {
+    const opt = defaultSuccessOptions(operation, options);
+    quasar.notify(opt);
+  }
+
+  function defaultProgressOptions(
+    operation: string,
+    options?: ProgressOptions,
+  ): Required<ProgressOptions> {
+    // Set defaults
+    options = options ?? {};
+
+    //
+    const progressOptions = options.progress ?? {};
+    progressOptions.group = false;
+    progressOptions.position = progressOptions.position ?? 'top';
+    progressOptions.timeout = 0;
+    progressOptions.spinner = true;
+    progressOptions.message =
+      progressOptions.message ??
+      t(`${translationPrefix}.${operation}.progress`);
+
+    //
+    const successOptions = defaultSuccessOptions(operation, options.success);
+    successOptions.spinner = false;
+    successOptions.timeout = successOptions.timeout ?? 2500;
+
+    //
+    const errorOptions = defaultErrorOptions(operation, options.error);
+    errorOptions.spinner = false;
+    errorOptions.timeout = errorOptions.timeout ?? 2500;
+
+    return {
+      progress: progressOptions,
+      success: successOptions,
+      error: errorOptions,
+    };
+  }
+
+  function defaultResultOptions(
+    operation: string,
+    options?: ResultOptions,
+  ): Required<ResultOptions> {
+    // Set defaults
+    const successOptions = defaultSuccessOptions(operation, options?.success);
+    const errorOptions = defaultErrorOptions(operation, options?.error);
+
+    return {
+      success: successOptions,
+      error: errorOptions,
+    };
+  }
+
+  function defaultSuccessOptions(
+    operation: string,
+    options?: QNotifyCreateOptions,
+  ): QNotifyCreateOptions {
+    //
+    const successOptions = options ?? {};
+    successOptions.type = successOptions.type ?? 'positive';
+    successOptions.position = successOptions.position ?? 'top';
+    successOptions.message =
+      successOptions?.message ?? t(`${translationPrefix}.${operation}.success`);
+
+    return successOptions;
+  }
+
+  function defaultErrorOptions(
+    operation: string,
+    options?: QNotifyCreateOptions,
+  ): QNotifyCreateOptions {
+    //
+    const errorOptions = options ?? {};
+    errorOptions.type = errorOptions.type ?? 'negative';
+    errorOptions.position = errorOptions.position ?? 'top';
+    errorOptions.message =
+      errorOptions?.message ?? t(`${translationPrefix}.${operation}.error`);
+
+    return errorOptions;
+  }
+
   return {
-    data,
-    isLoading,
-    error,
-    requestPending,
-    reset,
-    invalidate,
-    errorOnFailure,
-    forceFetch,
-    lazyFetch,
-    asyncUpdate,
     handlerByType,
     withProgressNotification,
     withMultiProgressNotification,
@@ -341,7 +362,6 @@ export function useServiceHandler<T>(storeName: string) {
     withErrorNotification,
     showErrorNotification,
     showSuccessNotification,
-    checkNotNullWithError,
     checkNotNullWithNotification,
   };
 }

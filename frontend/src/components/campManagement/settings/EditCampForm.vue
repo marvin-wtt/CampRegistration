@@ -270,7 +270,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, toRaw } from 'vue';
-import type { Camp } from '@camp-registration/common/dist/node/entities';
+import type { Camp } from '@camp-registration/common/entities';
 
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useI18n } from 'vue-i18n';

@@ -9,6 +9,7 @@ export const profileResource = (
   return {
     name: user.name,
     email: user.email,
+    role: user.role,
     locale: user.locale,
     camps: camps.map((value) => campResource(value)),
   };

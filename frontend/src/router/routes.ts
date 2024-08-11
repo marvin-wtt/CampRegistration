@@ -152,6 +152,34 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/administration',
+    component: () => import('layouts/AdministrationLayout.vue'),
+    meta: {
+      auth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'administration',
+        meta: {
+          hideDrawer: true,
+        },
+        component: () =>
+          import('pages/administration/AdministrationIndexPage.vue'),
+      },
+      {
+        path: 'camps',
+        name: 'administration.camps',
+        component: () => import('pages/administration/CampIndexPage.vue'),
+      },
+      {
+        path: 'users',
+        name: 'administration.users',
+        component: () => import('pages/administration/UserIndexPage.vue'),
+      },
+    ],
+  },
 
   // Always leave this as last one,
   // but you can also remove it
