@@ -220,13 +220,13 @@ field:
   password:
     label: 'Passwort'
     rule:
-      minLength: 'Die Mindestlänge beträgt {min}',
-      maxLength: 'Die Maximallänge beträgt {max}',
-      lowerCase: 'Mindestens {count} Kleinbuchstabe(n) erforderlich',
-      upperCase: 'Mindestens {count} Großbuchstabe(n) erforderlich',
-      symbol: 'Mindestens {count} Symbol(e) erforderlich',
-      numeric: 'Mindestens {count} Zahl(en) erforderlich',
-      requirementCount: 'Mindestens {count} von 4 Zeichenarten erforderlich',
+      minLength: 'Die Mindestlänge beträgt {min}'
+      maxLength: 'Die Maximallänge beträgt {max}'
+      lowerCase: 'Mindestens {count} Kleinbuchstabe(n) erforderlich'
+      upperCase: 'Mindestens {count} Großbuchstabe(n) erforderlich'
+      symbol: 'Mindestens {count} Symbol(e) erforderlich'
+      numeric: 'Mindestens {count} Zahl(en) erforderlich'
+      requirementCount: 'Mindestens {count} von 4 Zeichenarten erforderlich'
   confirm-password:
     label: 'Passwort bestätigen'
     rule:
@@ -252,13 +252,13 @@ fields:
   password:
     label: 'Mot de passe'
     rule:
-      minLength: 'La longueur minimale est de {min}',
-      maxLength: 'La longueur maximale est de {max}',
-      lowerCase: 'Au moins {count} lettre(s) minuscule(s) requise(s)',
-      upperCase: 'Au moins {count} lettre(s) majuscule(s) requise(s)',
-      symbol: 'Au moins {count} symbole(s) requis',
-      numeric: 'Au moins {count} chiffre(s) requis',
-      requirementCount: 'Au moins {count} des 4 types de caractères requis',
+      minLength: 'La longueur minimale est de {min}'
+      maxLength: 'La longueur maximale est de {max}'
+      lowerCase: 'Au moins {count} lettre(s) minuscule(s) requise(s)'
+      upperCase: 'Au moins {count} lettre(s) majuscule(s) requise(s)'
+      symbol: 'Au moins {count} symbole(s) requis'
+      numeric: 'Au moins {count} chiffre(s) requis'
+      requirementCount: 'Au moins {count} des 4 types de caractères requis'
   confirm-password:
     label: 'Confirmer le mot de passe'
     rule:
