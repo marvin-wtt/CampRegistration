@@ -5,7 +5,25 @@ import type {
   Profile,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
-import { AxiosRequestConfig, isAxiosError } from 'axios';
+import {
+  AxiosError,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+  isAxiosError,
+} from 'axios';
+
+export type CustomAxiosError = AxiosError & {
+  config: InternalAxiosRequestConfig & {
+    _skipRetry?: boolean;
+    _skipAuthenticationHandler?: boolean;
+  };
+};
+
+export const isCustomAxiosError = (
+  error: unknown,
+): error is CustomAxiosError => {
+  return isAxiosError(error);
+};
 
 export function useAuthService() {
   // Retry failed requests after fetching a new refresh token
@@ -18,7 +36,7 @@ export function useAuthService() {
     undefined;
   // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
   api.interceptors.response.use(undefined, async (error) => {
-    if (!isAxiosError(error)) {
+    if (!isCustomAxiosError(error)) {
       return Promise.reject(error);
     }
 
@@ -26,11 +44,7 @@ export function useAuthService() {
       return Promise.reject(error);
     }
 
-    if (
-      error.config &&
-      '_skipAuthenticationHandler' in error.config &&
-      !error.config._skipAuthenticationHandler
-    ) {
+    if (error.config._skipAuthenticationHandler) {
       return Promise.reject(error);
     }
 
