@@ -177,7 +177,7 @@ function useServiceNotifications<T>(storeName?: string) {
     operation: string,
     fn: (notify: (props?: QNotifyUpdateOptions) => void) => Promise<T>,
     options?: ProgressOptions,
-  ): Promise<T | undefined> {
+  ): Promise<T> {
     // Set defaults
     const opt = defaultProgressOptions(operation, options);
 
@@ -193,16 +193,16 @@ function useServiceNotifications<T>(storeName?: string) {
     } catch (error: unknown) {
       opt.error.caption = extractErrorText(error);
       notify(opt.error);
-    }
 
-    return undefined;
+      throw error;
+    }
   }
 
   function withMultiProgressNotification<T>(
     promises: Promise<T>[],
     operation: string,
     options?: ProgressOptions,
-  ): Promise<T[] | undefined> {
+  ): Promise<T[]> {
     const func = async (
       notify: (props?: QNotifyUpdateOptions) => void,
     ): Promise<T[]> => {
@@ -228,7 +228,7 @@ function useServiceNotifications<T>(storeName?: string) {
     operation: string,
     fn: () => Promise<T>,
     options?: ResultOptions,
-  ): Promise<T | undefined> {
+  ): Promise<T> {
     const opt = defaultResultOptions(operation, options);
 
     // Set defaults
@@ -241,9 +241,9 @@ function useServiceNotifications<T>(storeName?: string) {
     } catch (error: unknown) {
       opt.error.caption = extractErrorText(error);
       quasar.notify(opt.error);
-    }
 
-    return undefined;
+      throw error;
+    }
   }
 
   function checkNotNullWithNotification(
