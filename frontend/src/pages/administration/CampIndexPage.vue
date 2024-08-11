@@ -41,7 +41,13 @@
             dense
           />
 
-          <!-- TODO Add language filter -->
+          <q-btn
+            icon="expand"
+            outline
+            rounded
+          />
+
+          <!-- TODO Add expand btn -->
         </div>
       </template>
 
@@ -54,28 +60,33 @@
         </q-th>
       </template>
 
-      <template #body-cell-name="props">
-        <q-td :props="props">
-          {{ to(props.value) }}
-
-          <!-- TODO show all names -->
+      <template #body-cell-expand="props">
+        <q-td
+          :props="props"
+          auto-width
+        >
+          <q-btn
+            :icon="props.expand ? 'expand_less' : 'expand_more'"
+            color="primary"
+            size="sm"
+            round
+            dense
+            outline
+            @click="props.expand = !props.expand"
+          />
         </q-td>
+      </template>
+
+      <template #body-cell-name="props">
+        <translation-td :props="props" />
       </template>
 
       <template #body-cell-organizer="props">
-        <q-td :props="props">
-          {{ to(props.value) }}
-
-          <!-- TODO show all organizers -->
-        </q-td>
+        <translation-td :props="props" />
       </template>
 
       <template #body-cell-maxParticipants="props">
-        <q-td :props="props">
-          {{ to(props.value) }}
-
-          <!-- TODO show all organizers -->
-        </q-td>
+        <translation-td :props="props" />
       </template>
 
       <template #body-cell-active="props">
@@ -222,7 +233,7 @@
                 </q-item>
                 <q-separator />
                 <q-item
-                  v-if="!props.row.publish"
+                  v-if="!props.row.public"
                   v-close-popup
                   clickable
                   @click="onPublishCamp(props.row)"
@@ -302,11 +313,20 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import TranslationTd from 'components/administration/camps/TranslationTd.vue';
 
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const router = useRouter();
+const api = useAPIService();
+const {
+  data: camps,
+  error,
+  isLoading: loading,
+  forceFetch,
+  withProgressNotification,
+} = useServiceHandler<Camp[]>('camp');
 
 const filterQuery = ref<string>('');
 
@@ -342,6 +362,13 @@ const rows = computed<Camp[]>(() => {
 });
 
 const columns: QTableColumn<Camp>[] = [
+  {
+    name: 'expand',
+    label: '',
+    field: 'id',
+    align: 'center',
+    required: true,
+  },
   {
     name: 'name',
     label: t('column.name'),
@@ -483,7 +510,10 @@ function onDeleteCamp(camp: Camp) {
       component: SafeDeleteDialog,
       componentProps: {
         title: t('dialog.delete.title'),
-        message: t('dialog.delete.message'),
+        message: t('dialog.delete.message', {
+          name: to(camp.name),
+          organizer: to(camp.organizer),
+        }),
         value: to(camp.name),
         label: t('dialog.delete.label'),
       },
@@ -589,16 +619,6 @@ function onUnpublishCamp(camp: Camp) {
     });
 }
 
-const api = useAPIService();
-
-const {
-  data: camps,
-  error,
-  isLoading: loading,
-  forceFetch,
-  withProgressNotification,
-} = useServiceHandler<Camp[]>('camps');
-
 async function fetchAll() {
   return forceFetch(() =>
     api.fetchCamps({
@@ -608,11 +628,37 @@ async function fetchAll() {
 }
 
 async function updateCamp(id: string, data: CampUpdateData) {
-  return withProgressNotification('update', () => api.updateCamp(id, data));
+  const camp = await withProgressNotification('update', () =>
+    api.updateCamp(id, data),
+  );
+
+  // Update data
+  if (!camps.value) {
+    return camp;
+  }
+
+  const index = camps.value.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return camp;
+  }
+
+  camps.value.splice(index, 1, camp);
 }
 
 async function deleteCamp(id: string) {
-  return withProgressNotification('delete', () => api.deleteCamp(id));
+  await withProgressNotification('delete', () => api.deleteCamp(id));
+
+  // Update data
+  if (!camps.value) {
+    return;
+  }
+
+  const index = camps.value.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return;
+  }
+
+  camps.value.splice(index, 1);
 }
 // TODO add translations
 </script>
@@ -658,7 +704,10 @@ dialog:
     cancel: 'Cancel'
   delete:
     title: 'Delete Camp'
-    message: 'The camp will be permanently deleted.'
+    message: 'You are about to delete "{ name }" organized by "{ organizer }".
+      All registrations and associated templates will be lost.
+      This action is not reversible.
+      Are you sure you want ot delete this camp?'
     label: 'Name'
   publish:
     title: 'Publish camp'
@@ -679,4 +728,136 @@ value:
   inactive: 'Inactive'
   public: 'Public'
   private: 'Private'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Camps'
+
+action:
+  activate: 'Aktivieren'
+  deactivate: 'Deaktivieren'
+  delete: 'Löschen'
+  edit: 'Bearbeiten'
+  form: 'Formular'
+  publish: 'Veröffentlichen'
+  results: 'Ergebnisse'
+  unpublish: 'Veröffentlichung zurückziehen'
+
+column:
+  action: 'Aktion'
+  active: 'Aktiv'
+  end: 'Ende'
+  maxAge: 'Max. Alter'
+  maxParticipants: 'Max. Teilnehmerzahl'
+  minAge: 'Min. Alter'
+  name: 'Name'
+  organizer: 'Veranstalter'
+  price: 'Preis'
+  public: 'Öffentlich'
+  start: 'Start'
+
+dialog:
+  activate:
+    title: 'Camp aktivieren'
+    message: 'Bist du sicher, dass du die Anmeldung für { name } öffnen möchtest?'
+    ok: 'Aktivieren'
+    cancel: 'Abbrechen'
+  deactivate:
+    title: 'Camp deaktivieren'
+    message: 'Bist du sicher, dass du die Anmeldung für { name } schließen möchtest?'
+    ok: 'Deaktivieren'
+    cancel: 'Abbrechen'
+  delete:
+    title: 'Camp löschen'
+    message:
+      'Du bist dabei, "{ name }" organisiert von "{ organizer }" zu löschen.
+      Alle Anmeldungen und zugehörigen Vorlagen gehen verloren.
+      Diese Aktion kann nicht rückgängig gemacht werden.
+      Bist du sicher, dass du dieses Camp löschen möchtest?'
+    label: 'Name'
+  publish:
+    title: 'Camp veröffentlichen'
+    message: 'Bist du sicher, dass du { name } veröffentlichen möchtest?'
+    ok: 'Veröffentlichen'
+    cancel: 'Abbrechen'
+  unpublish:
+    title: 'Camp zurückziehen'
+    message: 'Bist du sicher, dass du { name } zurückziehen möchtest?'
+    ok: 'Zurückziehen'
+    cancel: 'Abbrechen'
+
+header:
+  columns: 'Spalten'
+
+value:
+  active: 'Aktiv'
+  inactive: 'Inaktiv'
+  public: 'Öffentlich'
+  private: 'Privat'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Camps'
+
+action:
+  activate: 'Activer'
+  deactivate: 'Désactiver'
+  delete: 'Supprimer'
+  edit: 'Modifier'
+  form: 'Formulaire'
+  publish: 'Publier'
+  results: 'Résultats'
+  unpublish: 'Dépublier'
+
+column:
+  action: 'Action'
+  active: 'Actif'
+  end: 'Fin'
+  maxAge: 'Âge max'
+  maxParticipants: 'Participants max'
+  minAge: 'Âge min'
+  name: 'Nom'
+  organizer: 'Organisateur'
+  price: 'Prix'
+  public: 'Public'
+  start: 'Début'
+
+dialog:
+  activate:
+    title: 'Activer le camp'
+    message: 'Es-tu sûr de vouloir ouvrir les inscriptions pour { name } ?'
+    ok: 'Activer'
+    cancel: 'Annuler'
+  deactivate:
+    title: 'Désactiver le camp'
+    message: 'Es-tu sûr de vouloir fermer les inscriptions pour { name } ?'
+    ok: 'Désactiver'
+    cancel: 'Annuler'
+  delete:
+    title: 'Supprimer le camp'
+    message:
+      'Tu es sur le point de supprimer "{ name }" organisé par "{ organizer }".
+      Toutes les inscriptions et les modèles associés seront perdus.
+      Cette action est irréversible.
+      Es-tu sûr de vouloir supprimer ce camp ?'
+    label: 'Nom'
+  publish:
+    title: 'Publier le camp'
+    message: 'Es-tu sûr de vouloir publier { name } ?'
+    ok: 'Publier'
+    cancel: 'Annuler'
+  unpublish:
+    title: 'Dépublier le camp'
+    message: 'Es-tu sûr de vouloir dépublier { name } ?'
+    ok: 'Dépublier'
+    cancel: 'Annuler'
+
+header:
+  columns: 'Colonnes'
+
+value:
+  active: 'Actif'
+  inactive: 'Inactif'
+  public: 'Public'
+  private: 'Privé'
 </i18n>
