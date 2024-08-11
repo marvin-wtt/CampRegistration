@@ -178,7 +178,7 @@ title: 'Register'
 
 field:
   name:
-    label: 'Name'
+    label: 'First and last name'
     rule:
       required: 'You must provide a name'
   email:
@@ -205,66 +205,66 @@ action:
   register: 'Register'
 </i18n>
 
-<!--<i18n lang="yaml" locale="de">-->
-<!--title: 'Registrieren'-->
+<i18n lang="yaml" locale="de">
+title: 'Registrieren'
 
-<!--field:-->
-<!--  name:-->
-<!--    label: 'Name'-->
-<!--    rule:-->
-<!--      required: 'Sie müssen einen Namen angeben'-->
-<!--  email:-->
-<!--    label: 'E-Mail'-->
-<!--    rule:-->
-<!--      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'-->
-<!--  password:-->
-<!--    label: 'Passwort'-->
-<!--    rule:-->
-<!--      minLength: 'Die Mindestlänge beträgt {min}',-->
-<!--      maxLength: 'Die Maximallänge beträgt {max}',-->
-<!--      lowerCase: 'Mindestens {count} Kleinbuchstabe(n) erforderlich',-->
-<!--      upperCase: 'Mindestens {count} Großbuchstabe(n) erforderlich',-->
-<!--      symbol: 'Mindestens {count} Symbol(e) erforderlich',-->
-<!--      numeric: 'Mindestens {count} Zahl(en) erforderlich',-->
-<!--      requirementCount: 'Mindestens {count} von 4 Zeichenarten erforderlich',-->
-<!--  confirm-password:-->
-<!--    label: 'Passwort bestätigen'-->
-<!--    rule:-->
-<!--      identical: 'Passwörter stimmen nicht überein'-->
+field:
+  name:
+    label: 'Vor- und Nachname'
+    rule:
+      required: 'Sie müssen einen Namen angeben'
+  email:
+    label: 'E-Mail'
+    rule:
+      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+  password:
+    label: 'Passwort'
+    rule:
+      minLength: 'Die Mindestlänge beträgt {min}',
+      maxLength: 'Die Maximallänge beträgt {max}',
+      lowerCase: 'Mindestens {count} Kleinbuchstabe(n) erforderlich',
+      upperCase: 'Mindestens {count} Großbuchstabe(n) erforderlich',
+      symbol: 'Mindestens {count} Symbol(e) erforderlich',
+      numeric: 'Mindestens {count} Zahl(en) erforderlich',
+      requirementCount: 'Mindestens {count} von 4 Zeichenarten erforderlich',
+  confirm-password:
+    label: 'Passwort bestätigen'
+    rule:
+      identical: 'Passwörter stimmen nicht überein'
 
-<!--action:-->
-<!--  login: 'Anmelden'-->
-<!--  register: 'Registrieren'-->
-<!--</i18n>-->
+action:
+  login: 'Anmelden'
+  register: 'Registrieren'
+</i18n>
 
-<!--<i18n lang="yaml" locale="fr">-->
-<!--title: 'Inscription'-->
+<i18n lang="yaml" locale="fr">
+title: 'Inscription'
 
-<!--fields:-->
-<!--  name:-->
-<!--    label: 'Nom'-->
-<!--    rule:-->
-<!--      required: 'Vous devez fournir un nom'-->
-<!--  email:-->
-<!--    label: 'E-mail'-->
-<!--    rule:-->
-<!--      required: 'Vous devez fournir une adresse e-mail valide'-->
-<!--  password:-->
-<!--    label: 'Mot de passe'-->
-<!--    rule:-->
-<!--      minLength: 'La longueur minimale est de {min}',-->
-<!--      maxLength: 'La longueur maximale est de {max}',-->
-<!--      lowerCase: 'Au moins {count} lettre(s) minuscule(s) requise(s)',-->
-<!--      upperCase: 'Au moins {count} lettre(s) majuscule(s) requise(s)',-->
-<!--      symbol: 'Au moins {count} symbole(s) requis',-->
-<!--      numeric: 'Au moins {count} chiffre(s) requis',-->
-<!--      requirementCount: 'Au moins {count} des 4 types de caractères requis',-->
-<!--  confirm-password:-->
-<!--    label: 'Confirmer le mot de passe'-->
-<!--    rule:-->
-<!--      identical: 'Les mots de passe ne correspondent pas'-->
+fields:
+  name:
+    label: 'Nom et prénom'
+    rule:
+      required: 'Vous devez fournir un nom'
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Vous devez fournir une adresse e-mail valide'
+  password:
+    label: 'Mot de passe'
+    rule:
+      minLength: 'La longueur minimale est de {min}',
+      maxLength: 'La longueur maximale est de {max}',
+      lowerCase: 'Au moins {count} lettre(s) minuscule(s) requise(s)',
+      upperCase: 'Au moins {count} lettre(s) majuscule(s) requise(s)',
+      symbol: 'Au moins {count} symbole(s) requis',
+      numeric: 'Au moins {count} chiffre(s) requis',
+      requirementCount: 'Au moins {count} des 4 types de caractères requis',
+  confirm-password:
+    label: 'Confirmer le mot de passe'
+    rule:
+      identical: 'Les mots de passe ne correspondent pas'
 
-<!--action:-->
-<!--  login: 'Connexion'-->
-<!--  register: "S'inscrire"-->
-<!--</i18n>-->
+action:
+  login: 'Connexion'
+  register: "S'inscrire"
+</i18n>
