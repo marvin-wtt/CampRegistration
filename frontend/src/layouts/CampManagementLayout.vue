@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh Lpr lff">
+  <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
     <q-header
@@ -55,22 +55,38 @@
       bordered
       mini-to-overlay
       show-if-above
-      @mouseout="miniState = true"
-      @mouseover="miniState = false"
+      @mouseleave="miniState = true"
+      @mouseenter="miniState = false"
     >
-      <q-list padding>
-        <navigation-item
-          v-for="item in filteredItems"
-          :key="item.name"
-          :name="item.name"
-          :label="item.label"
-          :icon="item.icon"
-          :to="item.to"
-          :separated="item.separated"
-          :preview="item.preview"
-          :children="item.children"
-        />
-      </q-list>
+      <q-scroll-area class="fit">
+        <q-list padding>
+          <q-item>
+            <q-item-section
+              v-if="miniState"
+              avatar
+            >
+              <q-icon name="home" />
+            </q-item-section>
+            <q-item-section>
+              {{ campName }}
+            </q-item-section>
+          </q-item>
+
+          <q-separator />
+
+          <navigation-item
+            v-for="item in filteredItems"
+            :key="item.name"
+            :name="item.name"
+            :label="item.label"
+            :icon="item.icon"
+            :to="item.to"
+            :separated="item.separated"
+            :preview="item.preview"
+            :children="item.children"
+          />
+        </q-list>
+      </q-scroll-area>
     </q-drawer>
 
     <q-page-container>
@@ -84,7 +100,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -107,22 +123,24 @@ const campDetailStore = useCampDetailsStore();
 
 const { user } = storeToRefs(authStore);
 
-onMounted(async () => {
-  if (!authStore.user) {
-    // Fetch user instead of init to force redirect on error
-    await authStore.fetchUser();
-  }
-  if (route.params.camp) {
-    await campDetailStore.fetchData();
-  }
-});
+if (!authStore.user) {
+  // Fetch user instead of init to force redirect on error
+  authStore.fetchUser();
+}
+if (route.params.camp) {
+  campDetailStore.fetchData();
+}
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
 });
 
 const title = computed(() => {
-  return showDrawer.value ? campDetailStore.data?.name : t('app_name');
+  return showDrawer.value ? campName.value : t('app_name');
+});
+
+const campName = computed<string | undefined>(() => {
+  return to(campDetailStore.data?.name);
 });
 
 useMeta(() => {
@@ -157,7 +175,7 @@ const items: NavigationItem[] = [
     preview: true,
     label: t('contact'),
     icon: 'email',
-    to: undefined,
+    to: { name: 'management.camp.contact' },
   },
   {
     name: 'room_planner',
