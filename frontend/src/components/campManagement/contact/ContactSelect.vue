@@ -24,7 +24,7 @@
         @remove="scope.removeAtIndex(scope.index)"
       >
         <q-avatar
-          :color="typeColors[scope.opt.type as ContactType]"
+          :color="typeColors[scope.opt.type as Contact['type']]"
           text-color="white"
           class="text-capitalize"
         >
@@ -44,7 +44,7 @@
       >
         <q-item-section avatar>
           <q-avatar
-            :color="typeColors[scope.opt.type as ContactType]"
+            :color="typeColors[scope.opt.type as Contact['type']]"
             text-color="white"
             size="sm"
             class="text-capitalize"
@@ -69,35 +69,35 @@
 import { useI18n } from 'vue-i18n';
 import { QSelectProps } from 'quasar';
 import { CampManager, Registration } from '@camp-registration/common/entities';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { NamedColor } from 'quasar/dist/types/api/color';
 import { formatPersonName } from 'src/utils/formatters';
+import { Contact } from 'components/campManagement/contact/Contact';
 
 const { t } = useI18n();
-const { fullName, emails, role, country } = useRegistrationHelper();
+const { fullName, role, country } = useRegistrationHelper();
 
-const model = defineModel<Contact[]>();
+const model = defineModel<Contact[]>({
+  required: true,
+});
 
 const props = defineProps<{
   registrations: Registration[];
   managers: CampManager[];
 }>();
 
+watch(model, (value) => {
+  // TODO Check for duplicates and remove
+
+  const inGroupIds = value
+    .filter((contact) => contact.type === 'group')
+    .map((value1) => value1.registrations.flatMap((contact) => contact.id));
+
+  // TODO This is not the right place to update...
+});
+
 const filterQuery = ref<string>('');
-
-type ContactType =
-  | 'external'
-  | 'group'
-  | 'participant'
-  | 'counselor'
-  | 'manager';
-
-interface Contact {
-  name: string;
-  registrations: string;
-  type: ContactType;
-}
 
 const filterFn: QSelectProps['onFilter'] = (value, done, abort) => {
   done(() => {
@@ -108,32 +108,45 @@ const filterFn: QSelectProps['onFilter'] = (value, done, abort) => {
 const filteredOptions = computed<Contact[]>(() => {
   return options.value
     .filter((contact) => {
-      return (
-        contact.name.toLowerCase().indexOf(filterQuery.value) > -1 ||
-        contact.email.toLowerCase().indexOf(filterQuery.value) > -1
-      );
+      return contact.name.toLowerCase().indexOf(filterQuery.value) > -1;
     })
     .filter((contact) => {
-      if (!model.value || contact.type === 'group') {
+      if (!model.value) {
         return true;
       }
 
-      const regex = new RegExp(`(^|;)\\s*${contact.email}\\s*(;|$)`);
+      if (contact.type !== 'participant' && contact.type !== 'counselor') {
+        return true;
+      }
 
-      return model.value.every((value) => !regex.test(value.email));
+      // Only groups contain multiple registrations
+
+      return model.value.every((value) => {
+        if (value.type === 'counselor' || value.type === 'participant') {
+          return value.registration.id !== contact.registration.id;
+        }
+
+        if (value.type === 'group') {
+          return value.registrations.every(
+            (value1) => value1.id !== contact.registration.id,
+          );
+        }
+
+        return true;
+      });
     });
 });
 
 const options = computed<Contact[]>(() => {
   const registrationOptions = props.registrations.map(
-    (registration): Partial<Contact> => {
+    (registration): Contact => {
       const roleValue = role(registration);
-      const type: ContactType =
+      const type =
         !roleValue || roleValue === 'participant' ? 'participant' : 'counselor';
 
       return {
         name: formatPersonName(fullName(registration)),
-        email: emails(registration).join(';'),
+        registration,
         type,
       };
     },
@@ -141,24 +154,22 @@ const options = computed<Contact[]>(() => {
 
   const groupOptions = createGroups(props.registrations);
 
-  const managerOptions = props.managers.map((manager): Partial<Contact> => {
+  const managerOptions = props.managers.map((manager): Contact => {
     return {
-      name: manager.name ?? undefined,
+      name: manager.name ?? manager.email,
       email: manager.email,
       type: 'manager',
     };
   });
 
-  return sortItems(
-    filterAndNormalizeContacts([
-      ...groupOptions,
-      ...registrationOptions,
-      ...managerOptions,
-    ]),
-  );
+  return sortItems([
+    ...groupOptions,
+    ...registrationOptions,
+    ...managerOptions,
+  ]);
 });
 
-const typeSortOrder: ContactType[] = [
+const typeSortOrder: Contact['type'][] = [
   'group',
   'participant',
   'counselor',
@@ -173,7 +184,7 @@ const sortItems = (items: Contact[]) => {
 
     // If types are the same, sort by name alphabetically
     if (typeComparison === 0) {
-      return (a.name ?? a.email).localeCompare(b.name ?? b.email);
+      return a.name.localeCompare(b.name);
     }
 
     // Otherwise, sort by the type order
@@ -181,24 +192,13 @@ const sortItems = (items: Contact[]) => {
   });
 };
 
-function filterAndNormalizeContacts(contacts: Partial<Contact>[]): Contact[] {
-  return contacts
-    .filter((value): value is Contact => value.email !== undefined)
-    .map((value): Contact => {
-      return {
-        ...value,
-        name: value.name ?? value.email,
-      };
-    });
-}
-
-function createGroups(registrations: Registration[]): Partial<Contact>[] {
+function createGroups(registrations: Registration[]): Contact[] {
   const dataArray = registrations.map((registration) => {
     return {
       name: fullName(registration),
       country: country(registration),
       role: role(registration),
-      email: emails(registration).join(';'),
+      registration,
     };
   });
 
@@ -221,13 +221,13 @@ function createGroups(registrations: Registration[]): Partial<Contact>[] {
     const [role, country] = JSON.parse(key);
     return {
       name: `${role} - ${country}`,
-      email: data.map((value) => value.email).join(';'),
+      registrations: data.map((data) => data.registration),
       type: 'group',
     };
   });
 }
 
-const typeColors: Record<ContactType, NamedColor> = {
+const typeColors: Record<Contact['type'], NamedColor> = {
   external: 'negative',
   group: 'accent',
   participant: 'primary',

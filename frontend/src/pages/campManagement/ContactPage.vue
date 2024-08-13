@@ -15,20 +15,6 @@
       dense
     />
     <q-input
-      v-model="cc"
-      :label="t('cc')"
-      outlined
-      rounded
-      dense
-    />
-    <q-input
-      v-model="bcc"
-      :label="t('bcc')"
-      outlined
-      rounded
-      dense
-    />
-    <q-input
       v-model="replyTo"
       :label="t('replyTo')"
       outlined
@@ -70,15 +56,17 @@ import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
 import { Registration } from '@camp-registration/common/entities';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
+import { Contact } from 'components/campManagement/contact/Contact';
+import { useRegistrationHelper } from 'src/composables/registrationHelper';
 
 const { t } = useI18n();
+const { emails } = useRegistrationHelper();
+
 const registrationStore = useRegistrationsStore();
 
 registrationStore.fetchData();
 
-const to = ref<string>();
-const cc = ref<string>();
-const bcc = ref<string>();
+const to = ref<Contact[]>([]);
 const replyTo = ref<string>();
 const subject = ref<string>();
 const attachments = ref<File[]>();
@@ -97,6 +85,25 @@ const loading = computed<boolean>(() => {
 const registrations = computed<Registration[]>(() => {
   return registrationStore.data ?? [];
 });
+
+function send() {
+  const addresses = to.value?.flatMap(contactToEmails);
+
+  // TODO Process text
+}
+
+function contactToEmails(contact: Contact): string[] {
+  switch (contact.type) {
+    case 'group':
+      return contact.registrations.flatMap(emails);
+    case 'participant':
+    case 'counselor':
+      return emails(contact.registration);
+    case 'external':
+    case 'manager':
+      return [contact.email];
+  }
+}
 
 // TODO i18n
 // - remove
