@@ -3,6 +3,7 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import type {
   Registration,
+  RegistrationCreateData,
   RegistrationUpdateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
@@ -48,7 +49,10 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
-  async function storeData(campId: string, registration: unknown) {
+  async function storeData(
+    campId: string,
+    registration: RegistrationCreateData,
+  ) {
     checkNotNullWithError(campId);
 
     await apiService.createRegistration(campId, registration);
