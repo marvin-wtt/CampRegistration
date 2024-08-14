@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
 import { Request, Response, NextFunction } from 'express';
-import { RequestParamHandler } from 'express-serve-static-core';
 import ApiError from './ApiError';
 import httpStatus from 'http-status';
 

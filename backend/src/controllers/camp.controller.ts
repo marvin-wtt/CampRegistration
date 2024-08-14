@@ -5,15 +5,18 @@ import { catchRequestAsync } from 'utils/catchAsync';
 import { collection, resource } from 'resources/resource';
 import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
-import { Camp } from '@prisma/client';
 import defaultForm from 'assets/camp/defaultForm.json';
 import defaultThemes from 'assets/camp/defaultThemes.json';
-import type { CampQuery } from '@camp-registration/common/entities';
+import type {
+  CampQuery,
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/entities';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
 
-  res.json(resource(detailedCampResource(await withFreePlaces(camp))));
+  res.json(resource(detailedCampResource(camp)));
 });
 
 const index = catchRequestAsync(async (req, res) => {
@@ -37,14 +40,14 @@ const index = catchRequestAsync(async (req, res) => {
   );
 
   const resources = await Promise.all(
-    camps.map(async (value) => campResource(await withFreePlaces(value))),
+    camps.map(async (value) => campResource(value)),
   );
 
   res.json(collection(resources));
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const data = req.body;
+  const data = req.body as CampCreateData;
   const userId = authUserId(req);
 
   const form = data.form ?? defaultForm;
@@ -70,15 +73,14 @@ const store = catchRequestAsync(async (req, res) => {
 
   // TODO Add default templates
 
-  res
-    .status(httpStatus.CREATED)
-    .json(resource(detailedCampResource(await withFreePlaces(camp))));
+  res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const data = req.body;
-  const camp = await campService.updateCampById(campId, {
+  const camp = routeModel(req.models.camp);
+  const data = req.body as CampUpdateData;
+
+  const updatedCamp = await campService.updateCamp(camp, {
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,
@@ -98,10 +100,10 @@ const update = catchRequestAsync(async (req, res) => {
 
   // Re-generate camp data fields
   if (data.form) {
-    await registrationService.updateRegistrationCampDataByCamp(camp);
+    await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
   }
 
-  res.json(resource(detailedCampResource(camp)));
+  res.json(resource(detailedCampResource(updatedCamp)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
@@ -110,15 +112,6 @@ const destroy = catchRequestAsync(async (req, res) => {
 
   res.status(httpStatus.NO_CONTENT).send();
 });
-
-const withFreePlaces = async (camp: Camp) => {
-  const freePlaces = await campService.getCampFreePlaces(camp);
-
-  return {
-    ...camp,
-    freePlaces,
-  };
-};
 
 export default {
   index,

@@ -5,17 +5,10 @@ import httpStatus from 'http-status';
 import { Camp, Prisma, Registration } from '@prisma/client';
 import dbJsonPath from 'utils/dbJsonPath';
 import { formUtils } from 'utils/form';
-import { campService, notificationService } from 'services/index';
+import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
 import config from 'config';
-import AsyncLock from 'async-lock';
-
-// Registration lock
-const lock = new AsyncLock({
-  timeout: 1e4,
-  maxExecutionTime: 2e3,
-});
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -37,7 +30,7 @@ const queryRegistrations = async (campId: string) => {
 
 const getParticipantsCount = async (campId: string) => {
   return prisma.registration.count({
-    where: createRegistrationRoleFilter(campId, 'participant'),
+    where: registrationRoleFilter(campId, 'participant'),
   });
 };
 
@@ -46,7 +39,7 @@ const getParticipantsCountByCountry = async (
   countries: string[],
 ) => {
   const participants = await prisma.registration.findMany({
-    where: createRegistrationRoleFilter(campId, 'participant'),
+    where: registrationRoleFilter(campId, 'participant'),
   });
 
   const getCountry = (registration: Registration): string => {
@@ -67,16 +60,15 @@ const getParticipantsCountByCountry = async (
   );
 };
 
-type RegistrationCreateData = Pick<
-  Prisma.RegistrationCreateInput,
-  'waitingList' | 'data' | 'locale'
->;
-const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
+const createRegistration = async (
+  camp: Camp,
+  data: Pick<Registration, 'data' | 'locale'>,
+) => {
   const id = ulid();
   const form = formUtils(camp);
   form.updateData(data.data);
   // Extract files first before the value are mapped to the URL
-  const fileIds = form.getFileIdentifiers();
+  const fileIdentifiers = form.getFileIdentifiers();
   form.mapFileValues((value) => {
     if (typeof value !== 'string') {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
@@ -89,75 +81,103 @@ const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
   const formData = form.data();
   const campData = form.extractCampData();
 
-  // Use a lock with the camp id as key because we call the camp service and a race condition regarding the waiting list
-  //  must be avoided.
-  return lock.acquire<Registration>(
-    camp.id,
-    async (): Promise<Registration> => {
-      const waitingList =
-        data.waitingList ?? (await isWaitingList(camp, campData));
+  const freePlaces = await calculateFreePlaces(camp, campData, 'decrement');
+  const waitingList = freePlaces === undefined;
 
-      return prisma.$transaction(async (transaction) => {
-        const registration = await transaction.registration.create({
-          data: {
-            ...data,
-            id,
-            campId: camp.id,
-            data: formData,
-            waitingList,
-            campData,
-          },
-        });
+  const fileConnects = fileIdentifiers.map((identifier) => {
+    return {
+      id: identifier.id,
+      campId: null,
+      registrationId: null,
+      accessLevel: 'private',
+      field: identifier.field ?? null,
+    };
+  });
 
-        // Assign files to this registration.
-        // TODO This should be handled by the file service
-        for (const value of fileIds) {
-          await transaction.file.update({
-            where: {
-              id: value.id,
-              registrationId: null,
-              campId: null,
-              field: value.field ?? null,
-            },
-            data: {
-              registrationId: registration.id,
-              accessLevel: 'private',
-            },
-          });
-        }
+  return prisma.$transaction(async (transaction) => {
+    await updateCampFreePlaces(camp, freePlaces)(transaction);
 
-        return registration;
-      });
-    },
-  );
+    return transaction.registration.create({
+      data: {
+        ...data,
+        id,
+        campId: camp.id,
+        data: formData,
+        waitingList,
+        campData,
+        files: {
+          connect: fileConnects,
+        },
+      },
+    });
+  });
 };
 
-const isWaitingList = async (
+/**
+ * Calculates the new free places of the camp.
+ * Depending on if the data has multiple values or not, the country from the
+ * registration camp data is used as key.
+ *
+ * @param camp The camp related to the registration
+ * @param campData The extracted data
+ * @param direction Wherever to increment or decrement the free places
+ * @return the updated free places or undefined, if there are no free places
+ * @throws ApiError if the free places has multiple entries but the country is
+ *    missing in the camp data
+ */
+const calculateFreePlaces = (
   camp: Camp,
-  campData: Record<string, unknown[]>,
-) => {
-  // Waiting list only applies to participants
+  campData: Registration['campData'],
+  direction: 'increment' | 'decrement',
+): Promise<Camp['freePlaces'] | undefined> => {
+  const updateValue = (val: number) =>
+    direction === 'increment' ? ++val : --val;
+  let { freePlaces } = { ...camp };
+
+  // Free places only apply to participants
   if (!isParticipant(campData)) {
-    return false;
+    return freePlaces;
   }
 
-  const freePlaces = await campService.getCampFreePlaces(camp);
-  if (typeof freePlaces !== 'number') {
-    const country = registrationCampDataAccessor(campData).country(
-      camp.countries,
-    );
+  if (typeof freePlaces === 'number') {
+    // Update free places
+    freePlaces = updateValue(freePlaces);
 
-    if (!country || !(country in freePlaces)) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Missing or invalid country data',
-      );
-    }
-
-    return freePlaces[country] <= 0;
+    // Return the updated freePlaces if valid, otherwise undefined
+    return freePlaces >= 0 ? freePlaces : undefined;
   }
 
-  return freePlaces <= 0;
+  const country = registrationCampDataAccessor(campData).country(
+    camp.countries,
+  );
+
+  if (!country || !(country in freePlaces)) {
+    throw new ApiError(httpStatus.CONFLICT, 'Missing or invalid country data');
+  }
+
+  // Update free places for the specific country
+  freePlaces[country] = updateValue(freePlaces[country]);
+
+  // Return the updated freePlaces if valid, otherwise undefined
+  return freePlaces[country] >= 0 ? freePlaces : undefined;
+};
+
+type PrismaTransaction = Parameters<
+  Parameters<typeof prisma.$transaction>[0]
+>[0];
+
+const updateCampFreePlaces = (camp: Camp, freePlaces: Camp['freePlaces']) => {
+  return async (transaction: PrismaTransaction) => {
+    return transaction.camp.update({
+      data: {
+        freePlaces,
+      },
+      where: {
+        id: camp.id,
+        version: camp.version,
+      },
+    });
+  };
 };
 
 const isParticipant = (campData: Record<string, unknown[]>): boolean => {
@@ -196,8 +216,17 @@ const updateRegistrationById = async (
   });
 };
 
-const deleteRegistrationById = async (registrationId: string) => {
-  await prisma.registration.delete({ where: { id: registrationId } });
+const deleteRegistration = async (camp: Camp, registration: Registration) => {
+  const freePlaces = calculateFreePlaces(
+    camp,
+    registration.campData,
+    'increment',
+  );
+
+  await prisma.$transaction(async (transaction) => {
+    await updateCampFreePlaces(camp, freePlaces)(transaction);
+    await prisma.registration.delete({ where: { id: registration.id } });
+  });
 };
 
 const updateRegistrationCampDataByCamp = async (camp: Camp): Promise<void> => {
@@ -222,7 +251,7 @@ const updateRegistrationCampDataByCamp = async (camp: Camp): Promise<void> => {
   await Promise.all(results);
 };
 
-const createRegistrationRoleFilter = (
+const registrationRoleFilter = (
   campId: string,
   role: string,
 ): Prisma.RegistrationWhereInput => {
@@ -476,7 +505,7 @@ export default {
   queryRegistrations,
   createRegistration,
   updateRegistrationById,
-  deleteRegistrationById,
+  deleteRegistration,
   updateRegistrationCampDataByCamp,
   sendRegistrationConfirmation,
   sendWaitingListConfirmation,

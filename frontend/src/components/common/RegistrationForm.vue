@@ -24,7 +24,7 @@ const { locale } = useI18n();
 interface Props {
   data?: object;
   campDetails: CampDetails;
-  submitFn: (id: string, formData: unknown) => Promise<void>;
+  submitFn: (id: string, formData: Record<string, unknown>) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
   moderation?: boolean;
 }

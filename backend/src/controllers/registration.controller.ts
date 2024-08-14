@@ -77,8 +77,10 @@ const update = catchRequestAsync(async (req, res) => {
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { registrationId } = req.params;
-  await registrationService.deleteRegistrationById(registrationId);
+  const camp = routeModel(req.models.camp);
+  const registration = routeModel(req.models.registration);
+
+  await registrationService.deleteRegistration(camp, registration);
 
   res.status(httpStatus.NO_CONTENT).send();
 });

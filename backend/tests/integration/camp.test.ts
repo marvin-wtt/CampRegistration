@@ -1,11 +1,11 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import prisma from '../utils/prisma';
 import { generateAccessToken } from '../utils/token';
 import {
   CampFactory,
-  RegistrationFactory,
   UserFactory,
   CampManagerFactory,
+  RegistrationFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
@@ -19,13 +19,16 @@ import {
   campInactive,
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
+import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-const assertCampModel = async (
-  id: string,
-  data: PartialBy<Prisma.CampCreateInput, 'id' | 'form' | 'themes'>,
-) => {
+type CampCreateData = PartialBy<
+  Prisma.CampCreateInput,
+  'id' | 'form' | 'themes' | 'freePlaces' | 'version'
+>;
+
+const assertCampModel = async (id: string, data: CampCreateData) => {
   const camp = (await prisma.camp.findFirst({
     where: {
       id: id,
@@ -42,6 +45,7 @@ const assertCampModel = async (
     organizer: data.organizer,
     contactEmail: data.contactEmail,
     maxParticipants: data.maxParticipants,
+    freePlaces: data.maxParticipants,
     minAge: data.minAge,
     maxAge: data.maxAge,
     startAt: new Date(data.startAt),
@@ -50,15 +54,14 @@ const assertCampModel = async (
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
+    version: 1,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
 };
 
-const assertCampResponseBody = (
-  data: PartialBy<Prisma.CampCreateInput, 'id' | 'form' | 'themes'>,
-  body: any,
-) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const assertCampResponseBody = (data: CampCreateData, body: any) => {
   expect(body).toHaveProperty('data');
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
@@ -82,8 +85,10 @@ const assertCampResponseBody = (
 };
 
 describe('/api/v1/camps', () => {
-  const createCampWithManagerAndToken = async () => {
-    const camp = await CampFactory.create();
+  const createCampWithManagerAndToken = async (
+    campData: Partial<Prisma.CampCreateInput> = {},
+  ) => {
+    const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
@@ -321,439 +326,11 @@ describe('/api/v1/camps', () => {
 
       await request().get(`/api/v1/camps/${campId}`).send().expect(404);
     });
-
-    describe('free places', () => {
-      describe('national camp', () => {
-        it('should respond with the maximum participants when no registrations are available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de'],
-            maxParticipants: 10,
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toBe(10);
-        });
-
-        it('should respond with the free places when registrations are available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de'],
-            maxParticipants: 10,
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toBe(8);
-        });
-
-        it('should include only participants if role field is available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de'],
-            maxParticipants: 10,
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: { role: ['participant'] },
-          });
-          // No role should be a participant too
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: { role: ['counselor'] },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toBe(8);
-        });
-
-        it('should respond with zero when camp is full', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de'],
-            maxParticipants: 3,
-          });
-
-          for (let i = 0; i < 5; i++) {
-            await RegistrationFactory.create({
-              camp: { connect: { id: camp.id } },
-              campData: { role: ['participant'] },
-            });
-          }
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toBe(0);
-        });
-      });
-
-      describe('international', () => {
-        it('should respond with the maximum participants when no registrations are available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: {
-              de: 8,
-              fr: 9,
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual({
-            de: 8,
-            fr: 9,
-          });
-        });
-
-        it('should respond with the free spaces when registrations are available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: {
-              de: 8,
-              fr: 9,
-            },
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['de'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['de'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual({
-            de: 6,
-            fr: 8,
-          });
-        });
-
-        it('should respond with the free spaces when country is provided via addrress', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: {
-              de: 8,
-              fr: 9,
-            },
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              address: [{ country: 'de' }],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual({
-            de: 7,
-            fr: 9,
-          });
-        });
-
-        it('should include only participants if role field is available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: {
-              de: 8,
-              fr: 9,
-            },
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['de'],
-              role: ['participant'],
-            },
-          });
-          // No role should be participant too
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['de'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-              role: ['counselor'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual({
-            de: 6,
-            fr: 9,
-          });
-        });
-
-        it('should respond with zero when country for this camp is full', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: {
-              de: 3,
-              fr: 9,
-            },
-          });
-
-          for (let i = 0; i < 5; i++) {
-            await RegistrationFactory.create({
-              camp: { connect: { id: camp.id } },
-              campData: {
-                role: ['participant'],
-                country: ['de'],
-              },
-            });
-          }
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual({
-            de: 0,
-            fr: 8,
-          });
-        });
-
-        it('should ignore participants without a country', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: {
-              de: 3,
-              fr: 9,
-            },
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual({
-            de: 3,
-            fr: 8,
-          });
-        });
-      });
-
-      describe('international - combined max participants', () => {
-        it('should respond with the maximum participants when no registrations are available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: 8,
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual(8);
-        });
-
-        it('should respond with the combined free spaces when registrations are available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: 8,
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['de'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual(5);
-        });
-
-        it('should include only participants if role field is available', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: 8,
-          });
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              role: ['participant'],
-              country: ['de'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['fr'],
-            },
-          });
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              role: ['counselor'],
-              country: ['fr'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual(6);
-        });
-
-        it('should respond with zero when country for this camp is full', async () => {
-          const camp = await CampFactory.create({
-            active: true,
-            countries: ['de', 'fr'],
-            maxParticipants: 5,
-          });
-
-          for (let i = 0; i < 5; i++) {
-            await RegistrationFactory.create({
-              camp: { connect: { id: camp.id } },
-              campData: {
-                role: ['participant'],
-                country: ['fr'],
-              },
-            });
-          }
-
-          await RegistrationFactory.create({
-            camp: { connect: { id: camp.id } },
-            campData: {
-              country: ['de'],
-            },
-          });
-
-          const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}`)
-            .send()
-            .expect(200);
-
-          expect(body).toHaveProperty('data.freePlaces');
-          expect(body.data.freePlaces).toEqual(0);
-        });
-      });
-    });
   });
 
   describe('POST /api/v1/camps', () => {
     const assertCampCreated = async (
-      expected: PartialBy<Prisma.CampCreateInput, 'id' | 'form' | 'themes'>,
+      expected: CampCreateData,
       actual: unknown,
     ) => {
       // Test response
@@ -816,7 +393,7 @@ describe('/api/v1/camps', () => {
       it.each(campCreateInvalidBody)(
         'should validate the request body | $name',
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        async ({ name, data, expected }) => {
+        async ({ data, expected }) => {
           const accessToken = generateAccessToken(await UserFactory.create());
 
           await request()
@@ -830,49 +407,100 @@ describe('/api/v1/camps', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId', () => {
-    it.todo(
-      'should respond with `200` status code when user is camp manager',
-      async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
 
-        // TODO Test each attribute individually
-        const data = {
-          active: true,
-          public: false,
-          countries: ['de'],
-          name: 'Test Camp',
-          organizer: 'Test Org',
-          contactEmail: 'test@example.com',
-          maxParticipants: 10,
-          minAge: 10,
-          maxAge: 15,
-          startAt: moment()
-            .add('20 days')
-            .startOf('hour')
-            .toDate()
-            .toISOString(),
-          endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
-          price: 100.0,
-          location: 'Somewhere',
-          form: {},
-          themes: {},
-        };
+      const data = {
+        active: true,
+        public: false,
+        countries: ['de'],
+        name: 'Test Camp',
+        organizer: 'Test Org',
+        contactEmail: 'test@example.com',
+        maxParticipants: 10,
+        minAge: 10,
+        maxAge: 15,
+        startAt: moment().add('20 days').startOf('hour').toDate().toISOString(),
+        endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
+        price: 100.0,
+        location: 'Somewhere',
+        form: {},
+        themes: {},
+      };
 
-        const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}`)
-          .send(data)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(200);
+      const { body } = await request()
+        .patch(`/api/v1/camps/${camp.id}`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
 
-        // Test response
-        assertCampResponseBody(data, body);
+      // Test response
+      assertCampResponseBody(data, body);
 
-        // Test model
-        await assertCampModel(camp.id, data);
-      },
-    );
+      // Test model
+      await assertCampModel(camp.id, data);
+    });
 
     it.todo('should update camp data for all registrations');
+
+    it('should update the free places when max participant change', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken(
+        campWithMaxParticipantsRolesInternational,
+      );
+      // Normal registrations
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        campData: {
+          country: ['fr'],
+          role: ['participant'],
+        },
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        campData: {
+          country: ['fr'],
+          role: ['participant'],
+        },
+      });
+      // Counselor should not influence free places
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        campData: {
+          country: ['fr'],
+          role: ['counselor'],
+        },
+      });
+
+      const dataA = {
+        maxParticipants: 10,
+      };
+
+      const { body: bodyA } = await request()
+        .patch(`/api/v1/camps/${camp.id}`)
+        .send(dataA)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(bodyA).toHaveProperty('data.freePlaces', 8);
+
+      const dataB = {
+        maxParticipants: {
+          de: 5,
+          fr: 10,
+        },
+      };
+
+      const { body: bodyB } = await request()
+        .patch(`/api/v1/camps/${camp.id}`)
+        .send(dataB)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(bodyB).toHaveProperty('data.freePlaces', {
+        de: 5,
+        fr: 8,
+      });
+    });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
