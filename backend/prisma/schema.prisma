@@ -48,6 +48,8 @@ model Camp {
   contactEmail    Json           @map("contact_email") @db.Json
   /// [NumberOrTranslation]
   maxParticipants Json           @map("max_participants") @db.Json
+  /// [NumberOrTranslation]
+  freePlaces      Json           @map("free_places") @db.Json
   minAge          Int            @map("min_age") @db.UnsignedInt
   maxAge          Int            @map("max_age") @db.UnsignedInt
   startAt         DateTime       @map("start_at") @db.DateTime(0)
@@ -59,6 +61,7 @@ model Camp {
   form            Json           @db.Json
   /// [GenericObject]
   themes          Json           @default("{}") @db.Json
+  version         Int            @default(1) @db.UnsignedInt
   createdAt       DateTime?      @default(now()) @map("created_at")
   updatedAt       DateTime?      @updatedAt @map("updated_at")
   campManager     CampManager[]

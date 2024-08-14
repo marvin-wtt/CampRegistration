@@ -97,25 +97,38 @@ const queryCamps = async <Key extends keyof Camp>(
 
 const createCamp = async (
   userId: string,
-  data: Omit<Prisma.CampCreateInput, 'id'>,
+  data: Omit<Prisma.CampCreateInput, 'id' | 'freePlaces'>,
 ) => {
+  const freePlaces = data.maxParticipants;
+
   return prisma.camp.create({
     data: {
       id: ulid(),
+      freePlaces,
       ...data,
       campManager: { create: { userId, id: ulid() } },
     },
   });
 };
 
-const updateCampById = async (
-  id: string,
-  data: Omit<Prisma.CampUpdateInput, 'id'>,
+const updateCamp = async (
+  camp: Camp,
+  data: Omit<Prisma.CampUpdateInput, 'id' | 'freePlaces'>,
 ) => {
+  const freePlaces =
+    data.maxParticipants !== undefined
+      ? await getCampFreePlaces(
+          camp.id,
+          data.maxParticipants ?? camp.maxParticipants,
+          data.countries ?? camp.countries,
+        )
+      : undefined;
+
   return prisma.camp.update({
-    where: { id },
+    where: { id: camp.id },
     data: {
       ...data,
+      freePlaces,
     },
   });
 };
@@ -127,22 +140,21 @@ const deleteCampById = async (id: string): Promise<void> => {
 };
 
 const getCampFreePlaces = async (
-  camp: Camp,
-): Promise<number | Record<string, number>> => {
-  const countries = camp.countries;
-  const freePlaces = camp.maxParticipants as Record<string, number> | number;
+  id: string,
+  maxParticipants: Camp['maxParticipants'],
+  countries: Camp['countries'],
+): Promise<Camp['freePlaces']> => {
+  const freePlaces = maxParticipants as Record<string, number> | number;
 
   // Simple query for national camps
   if (typeof freePlaces === 'number') {
-    const participants = await registrationService.getParticipantsCount(
-      camp.id,
-    );
+    const participants = await registrationService.getParticipantsCount(id);
 
     return Math.max(0, freePlaces - participants);
   }
 
   const countByCountry =
-    await registrationService.getParticipantsCountByCountry(camp.id, countries);
+    await registrationService.getParticipantsCountByCountry(id, countries);
 
   return Object.entries(freePlaces).reduce(
     (result, [country, maxParticipants]) => {
@@ -161,9 +173,8 @@ const getCampFreePlaces = async (
 export default {
   getCampById,
   getCampsByUserId,
-  getCampFreePlaces,
   queryCamps,
   createCamp,
-  updateCampById,
+  updateCamp,
   deleteCampById,
 };
