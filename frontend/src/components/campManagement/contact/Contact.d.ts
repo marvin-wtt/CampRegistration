@@ -6,16 +6,16 @@ interface GroupContact {
   registrations: Registration[];
 }
 
-interface IndividualContact {
+interface RegistrationContact {
   type: 'participant' | 'counselor';
   name: string;
   registration: Registration;
 }
 
 interface PlainContact {
-  type: 'external' | 'manager';
+  type: 'external';
   name: string;
   email: string;
 }
 
-export type Contact = PlainContact | GroupContact | IndividualContact;
+export type Contact = PlainContact | GroupContact | RegistrationContact;

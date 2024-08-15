@@ -3,7 +3,7 @@
     <q-editor
       ref="editorRef"
       v-model="text"
-      :toolbar
+      :toolbar="toolbar"
       :definitions
       content-class=""
       class="absolute fit"
@@ -25,35 +25,32 @@
 
       <template #token>
         <q-btn-dropdown
-          :label="t('token')"
+          icon="add_box"
           dense
           no-caps
           no-wrap
           unelevated
           size="sm"
         >
-          <!-- TODO -->
           <q-list dense>
             <q-item
+              v-for="token in tokens"
+              :key="token.key"
               v-close-popup
               tag="label"
               clickable
-              @click="addToken('email')"
+              @click="selectTokenValue(token)"
             >
-              <q-item-section side>
-                <q-icon name="mail" />
+              <q-item-section
+                v-if="token.icon"
+                side
+              >
+                <q-icon :name="token.icon" />
               </q-item-section>
-              <q-item-section>Email</q-item-section>
-            </q-item>
-            <q-item
-              tag="label"
-              clickable
-              @click="addToken('title')"
-            >
-              <q-item-section side>
-                <q-icon name="title" />
+
+              <q-item-section>
+                {{ token.label }}
               </q-item-section>
-              <q-item-section>Title</q-item-section>
             </q-item>
           </q-list>
         </q-btn-dropdown>
@@ -72,37 +69,46 @@
 import { QBtnDropdown, QEditor, QEditorProps, useQuasar } from 'quasar';
 import EditorColorPicker from 'components/campManagement/contact/EditorColorPicker.vue';
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { Token } from 'components/campManagement/contact/Token';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 
-const text = defineModel<string>({
+const model = defineModel<string>({
   required: true,
-  default: '',
 });
-
-interface Tokens {
-  label: string;
-  values: string[];
-}
+const text = ref<string>(variableToHtml(model.value));
 
 const props = defineProps<{
-  tokens?: Tokens[];
+  tokens?: Token[];
 }>();
 
-defineExpose({
-  // TODO Expose processed text
+onMounted(() => {
+  editorRef.value?.focus();
+});
+
+let lastTextValue: string = '';
+watch(model, (value) => {
+  if (lastTextValue === value) {
+    return;
+  }
+
+  text.value = variableToHtml(value);
+});
+
+watch(text, (value) => {
+  value = htmlToVariable(value);
+  lastTextValue = value;
+  model.value = value;
 });
 
 // TODO Font size
-// TODO Tokens
 
 const editorRef = ref<QEditor | null>(null);
 const processorRef = ref<HTMLDivElement | null>(null);
 
-const toolbar: QEditorProps['toolbar'] = [
-  ['registrationToken', 'campToken'],
+const defaultToolbar = [
   ['bold', 'italic', 'underline', 'strike'],
   ['foreColor', 'backColor'],
   [
@@ -120,6 +126,16 @@ const toolbar: QEditorProps['toolbar'] = [
   ['fullscreen'],
 ];
 
+const toolbar = computed<QEditorProps['toolbar']>(() => {
+  const toolbar = [...defaultToolbar];
+
+  if (props.tokens && props.tokens.length > 0) {
+    toolbar.unshift(['token']);
+  }
+
+  return toolbar;
+});
+
 const addAttachment = () => {
   // TODO
 };
@@ -132,29 +148,37 @@ const definitions: QEditorProps['definitions'] = {
   },
 };
 
-function processText(text: string): string {
+function htmlToVariable(value: string): string {
   if (!processorRef.value) {
-    return text;
+    return value;
   }
 
-  processorRef.value.innerHTML = text;
-  const tokenEls = processorRef.value.querySelectorAll('.editor_token');
-  tokenEls.forEach((tokenEl) => {
-    const name = tokenEl.querySelector('span')?.textContent;
-    const value = name ? getTokenValue(name) : '???';
+  // Replace determiners spaces with non-breaking spaces to avoid invalid conversion
+  value = value.replace(/`{{ `/g, '{{\u00A0');
+  value = value.replace(/`}} `/g, '\u00A0}}');
 
-    // Clean up div
-    tokenEl.removeAttribute('class');
-    tokenEl.removeAttribute('contenteditable');
-    tokenEl.innerHTML = value;
+  processorRef.value.innerHTML = value;
+  const tokenEls = processorRef.value.querySelectorAll('[data-token]');
+  tokenEls.forEach((element) => {
+    const name = element.getAttribute('data-token');
+    const value = name ? encodeVariable(name) : '???';
+
+    element.insertAdjacentHTML('beforebegin', value);
+    element.remove();
   });
 
   return processorRef.value.innerHTML;
 }
 
-function getTokenValue(name: string) {
-  // TODO Get token value
-  return name;
+function variableToHtml(value: string): string {
+  return value.replace(/{{ *(.*?) }}/g, (match, p1) => {
+    return createTokenElement(p1);
+  });
+}
+
+function encodeVariable(name: string) {
+  // Using non-breaking space to avoid collisions with determiner in text field
+  return `{{ ${name} }}`;
 }
 
 function addColor(command: 'foreColor' | 'backColor', color: string) {
@@ -173,28 +197,53 @@ function addToken(name: string) {
   }
 
   const editor = editorRef.value;
+
   editor.caret.restore();
-  editor.runCmd(
-    'insertHTML',
-    `<div class="editor_token row inline items-center" contenteditable="false">
+  editor.runCmd('insertHTML', createTokenElement(name));
+  editor.focus();
+
+  // FIXME Focus does not work with dialog
+}
+
+function selectTokenValue(token: Token) {
+  // TODO Replace with select
+  quasar
+    .dialog({
+      title: t('dialog.selectToken.title'),
+      options: {
+        model: 'name',
+        type: 'radio',
+        items: token.items,
+      },
+    })
+    .onOk((value) => {
+      addToken(`${token.key}.${value}`);
+    });
+}
+
+function createTokenElement(name: string, label?: string): string {
+  return `
+    <div
+      data-token="${name}"
+      class="editor_token row inline items-center"
+      contenteditable="false"
+    >
       &nbsp;
       <span>
-        ${name}
+        ${label ?? name}
       </span>
       &nbsp;
-      <i class="q-icon material-icons cursor-pointer" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">
+      <i
+        class="q-icon material-icons cursor-pointer"
+        onclick="this.parentNode.parentNode.removeChild(this.parentNode)"
+      >
         close
       </i>
-    </div>`,
-  );
-
-  // TODO Set cursor behind inserted element
-
-  editor.focus();
+    </div>`;
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .editor_token {
   background: rgba(0, 0, 0, 0.6);
   color: white;

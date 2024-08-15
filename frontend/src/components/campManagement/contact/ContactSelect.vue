@@ -68,7 +68,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { QSelectProps } from 'quasar';
-import { CampManager, Registration } from '@camp-registration/common/entities';
+import { Registration } from '@camp-registration/common/entities';
 import { computed, ref, watch } from 'vue';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { NamedColor } from 'quasar/dist/types/api/color';
@@ -84,7 +84,6 @@ const model = defineModel<Contact[]>({
 
 const props = defineProps<{
   registrations: Registration[];
-  managers: CampManager[];
 }>();
 
 watch(model, (value) => {
@@ -119,8 +118,6 @@ const filteredOptions = computed<Contact[]>(() => {
         return true;
       }
 
-      // Only groups contain multiple registrations
-
       return model.value.every((value) => {
         if (value.type === 'counselor' || value.type === 'participant') {
           return value.registration.id !== contact.registration.id;
@@ -154,26 +151,13 @@ const options = computed<Contact[]>(() => {
 
   const groupOptions = createGroups(props.registrations);
 
-  const managerOptions = props.managers.map((manager): Contact => {
-    return {
-      name: manager.name ?? manager.email,
-      email: manager.email,
-      type: 'manager',
-    };
-  });
-
-  return sortItems([
-    ...groupOptions,
-    ...registrationOptions,
-    ...managerOptions,
-  ]);
+  return sortItems([...groupOptions, ...registrationOptions]);
 });
 
 const typeSortOrder: Contact['type'][] = [
   'group',
   'participant',
   'counselor',
-  'manager',
   'external',
 ];
 const sortItems = (items: Contact[]) => {
@@ -232,7 +216,6 @@ const typeColors: Record<Contact['type'], NamedColor> = {
   group: 'accent',
   participant: 'primary',
   counselor: 'secondary',
-  manager: 'warning',
 };
 
 const onNewValue: QSelectProps['onNewValue'] = (email, done) => {
@@ -272,6 +255,5 @@ type:
   counselor: 'Counselor'
   external: 'External'
   group: 'Group'
-  manager: 'Manager'
   participant: 'Participant'
 </i18n>
