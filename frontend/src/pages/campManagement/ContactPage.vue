@@ -123,7 +123,7 @@ const subject = ref<string>();
 const attachments = ref<File[]>();
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 
-const text = ref<string>('This is a test');
+const text = ref<string>('');
 
 const campTokens: (keyof Camp)[] = [
   'name',
