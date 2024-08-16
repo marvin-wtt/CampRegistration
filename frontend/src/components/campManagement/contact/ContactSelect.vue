@@ -244,7 +244,7 @@ function getGroupName(
   country?: string,
   waitingList?: string,
 ): string {
-  let name = role ? role : t('type.participant');
+  let name = role ? getRoleTranslation(role) : t('type.participant');
 
   if (country) {
     name += ` - ${country}`;
@@ -255,6 +255,13 @@ function getGroupName(
   }
 
   return name;
+}
+
+function getRoleTranslation(name: string): string {
+  const key = `role.${name}`;
+  const value = t(key);
+
+  return value === key ? name : value;
 }
 
 const typeColors: Record<Contact['type'], NamedColor> = {
@@ -302,6 +309,10 @@ type:
   group: 'Group'
   participant: 'Participant'
   waitingList: 'Waiting list'
+
+role:
+  counselor: 'Counselor'
+  participant: 'Participant'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -311,6 +322,10 @@ type:
   group: 'Gruppe'
   participant: 'Teilnehmer'
   waitingList: 'Warteliste'
+
+role:
+  counselor: 'Betreuer'
+  participant: 'Teilnehmer'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -320,4 +335,8 @@ type:
   group: 'Groupe'
   participant: 'Participant'
   waitingList: 'Liste d’attente'
+
+role:
+  counselor: 'Conseiller'
+  participant: 'Participant'
 </i18n>
