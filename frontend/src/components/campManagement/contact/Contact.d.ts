@@ -7,7 +7,7 @@ interface GroupContact {
 }
 
 interface RegistrationContact {
-  type: 'participant' | 'counselor';
+  type: 'participant' | 'counselor' | 'waitingList';
   name: string;
   registration: Registration;
 }

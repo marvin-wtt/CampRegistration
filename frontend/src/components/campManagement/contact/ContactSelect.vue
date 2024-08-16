@@ -33,6 +33,7 @@
             {{ t(`type.${scope.opt.type}`) }}
           </q-tooltip>
         </q-avatar>
+        &nbsp;
         {{ scope.opt.name }}
       </q-chip>
     </template>
@@ -87,18 +88,35 @@ const props = defineProps<{
 }>();
 
 watch(model, (value) => {
-  // TODO Check for duplicates and remove
+  const inGroupIds = new Set(
+    value
+      .filter((contact) => contact.type === 'group')
+      .flatMap((group) => group.registrations.flatMap((contact) => contact.id)),
+  );
 
-  const inGroupIds = value
-    .filter((contact) => contact.type === 'group')
-    .map((value1) => value1.registrations.flatMap((contact) => contact.id));
+  const hasDuplicates = value.some(
+    (contact) =>
+      contact.type !== 'group' &&
+      contact.type !== 'external' &&
+      inGroupIds.has(contact.registration.id),
+  );
 
-  // TODO This is not the right place to update...
+  // Exit here to avoid endless update loop
+  if (!hasDuplicates) {
+    return;
+  }
+
+  model.value = model.value.filter(
+    (contact) =>
+      contact.type === 'group' ||
+      contact.type === 'external' ||
+      !inGroupIds.has(contact.registration.id),
+  );
 });
 
 const filterQuery = ref<string>('');
 
-const filterFn: QSelectProps['onFilter'] = (value, done, abort) => {
+const filterFn: QSelectProps['onFilter'] = (value, done) => {
   done(() => {
     filterQuery.value = value.toLowerCase();
   });
@@ -106,47 +124,43 @@ const filterFn: QSelectProps['onFilter'] = (value, done, abort) => {
 
 const filteredOptions = computed<Contact[]>(() => {
   return options.value
+    .filter(
+      (contact) => contact.name.toLowerCase().indexOf(filterQuery.value) > -1,
+    )
     .filter((contact) => {
-      return contact.name.toLowerCase().indexOf(filterQuery.value) > -1;
-    })
-    .filter((contact) => {
-      if (!model.value) {
+      if (!model.value || contact.type === 'external') {
         return true;
       }
 
-      if (contact.type !== 'participant' && contact.type !== 'counselor') {
-        return true;
+      if (contact.type === 'group') {
+        return !model.value.some(
+          (value) => value.type === 'group' && value.name === contact.name,
+        );
       }
 
-      return model.value.every((value) => {
-        if (value.type === 'counselor' || value.type === 'participant') {
-          return value.registration.id !== contact.registration.id;
+      return !model.value.some((value) => {
+        if (value.type === 'external') {
+          return true;
         }
 
         if (value.type === 'group') {
-          return value.registrations.every(
-            (value1) => value1.id !== contact.registration.id,
+          return value.registrations.some(
+            ({ id }) => id === contact.registration.id,
           );
         }
 
-        return true;
+        return value.registration.id === contact.registration.id;
       });
     });
 });
 
 const options = computed<Contact[]>(() => {
   const registrationOptions = props.registrations.map(
-    (registration): Contact => {
-      const roleValue = role(registration);
-      const type =
-        !roleValue || roleValue === 'participant' ? 'participant' : 'counselor';
-
-      return {
-        name: formatPersonName(fullName(registration)),
-        registration,
-        type,
-      };
-    },
+    (registration): Contact => ({
+      registration,
+      name: formatPersonName(fullName(registration)),
+      type: getRegistrationType(registration),
+    }),
   );
 
   const groupOptions = createGroups(props.registrations);
@@ -154,10 +168,24 @@ const options = computed<Contact[]>(() => {
   return sortItems([...groupOptions, ...registrationOptions]);
 });
 
+function getRegistrationType(
+  registration: Registration,
+): Exclude<Contact['type'], 'group' | 'external'> {
+  if (registration.waitingList) {
+    return 'waitingList';
+  }
+
+  const roleValue = role(registration);
+  return roleValue === undefined || roleValue === 'participant'
+    ? 'participant'
+    : 'counselor';
+}
+
 const typeSortOrder: Contact['type'][] = [
   'group',
   'participant',
   'counselor',
+  'waitingList',
   'external',
 ];
 const sortItems = (items: Contact[]) => {
@@ -182,6 +210,7 @@ function createGroups(registrations: Registration[]): Contact[] {
       name: fullName(registration),
       country: country(registration),
       role: role(registration),
+      waitingList: registration.waitingList,
       registration,
     };
   });
@@ -189,7 +218,7 @@ function createGroups(registrations: Registration[]): Contact[] {
   const groups = dataArray.reduce(
     (groups, data) => {
       // Only use categoryA and categoryB for creating the key
-      const key = JSON.stringify([data.role, data.country]);
+      const key = JSON.stringify([data.role, data.country, data.waitingList]);
       if (!groups[key]) {
         groups[key] = [];
       }
@@ -202,13 +231,30 @@ function createGroups(registrations: Registration[]): Contact[] {
   );
 
   return Object.entries(groups).map(([key, data]) => {
-    const [role, country] = JSON.parse(key);
     return {
-      name: `${role} - ${country}`,
+      name: getGroupName(...JSON.parse(key)),
       registrations: data.map((data) => data.registration),
       type: 'group',
     };
   });
+}
+
+function getGroupName(
+  role?: string,
+  country?: string,
+  waitingList?: string,
+): string {
+  let name = role ? role : t('type.participant');
+
+  if (country) {
+    name += ` - ${country}`;
+  }
+
+  if (waitingList) {
+    name += ` (${t('type.waitingList')})`;
+  }
+
+  return name;
 }
 
 const typeColors: Record<Contact['type'], NamedColor> = {
@@ -216,6 +262,7 @@ const typeColors: Record<Contact['type'], NamedColor> = {
   group: 'accent',
   participant: 'primary',
   counselor: 'secondary',
+  waitingList: 'warning',
 };
 
 const onNewValue: QSelectProps['onNewValue'] = (email, done) => {
@@ -249,11 +296,28 @@ function validateEmail(value: string) {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Test'
-
 type:
   counselor: 'Counselor'
   external: 'External'
   group: 'Group'
   participant: 'Participant'
+  waitingList: 'Waiting list'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+type:
+  counselor: 'Betreuer'
+  external: 'Extern'
+  group: 'Gruppe'
+  participant: 'Teilnehmer'
+  waitingList: 'Warteliste'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+type:
+  counselor: 'Conseiller'
+  external: 'Externe'
+  group: 'Groupe'
+  participant: 'Participant'
+  waitingList: 'Liste d’attente'
 </i18n>
