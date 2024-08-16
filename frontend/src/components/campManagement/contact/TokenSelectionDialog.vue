@@ -4,7 +4,7 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin">
-      <q-card-section class="text-h4 text-center">
+      <q-card-section class="text-h5 text-center">
         <template v-if="selectedToken">
           {{ selectedToken.label }}
         </template>
@@ -37,7 +37,7 @@
       <q-card-section v-else>
         <q-list>
           <q-item
-            v-for="token in props.tokens"
+            v-for="token in tokenOptions"
             :key="token.key"
             clickable
             @click="selectedToken = token"
@@ -56,7 +56,7 @@
 import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { Token } from 'components/campManagement/contact/Token';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 const { t } = useI18n();
@@ -68,6 +68,10 @@ const props = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const selectedToken = ref<Token>();
+
+const tokenOptions = computed<Token[]>(() => {
+  return props.tokens.filter((token) => token.items.length > 0);
+});
 
 function onTokenSelect(item: QSelectOption) {
   onDialogOK({
