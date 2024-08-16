@@ -4,7 +4,6 @@
       ref="editorRef"
       v-model="text"
       :toolbar="toolbar"
-      :definitions
       content-class=""
       class="absolute fit"
     >
@@ -103,27 +102,36 @@ watch(text, (value) => {
   model.value = value;
 });
 
-// TODO Font size
-
 const editorRef = ref<QEditor | null>(null);
 const processorRef = ref<HTMLDivElement | null>(null);
 
 const defaultToolbar = [
   ['bold', 'italic', 'underline', 'strike'],
-  ['foreColor', 'backColor'],
   [
     {
-      label: quasar.lang.editor.formatting,
       icon: quasar.iconSet.editor.formatting,
       list: 'no-icons',
       options: ['p', 'h3', 'h4', 'h5', 'h6', 'code'],
     },
+    {
+      icon: quasar.iconSet.editor.size,
+      list: 'no-icons',
+      options: [
+        'size-1',
+        'size-2',
+        'size-3',
+        'size-4',
+        'size-5',
+        'size-6',
+        'size-7',
+      ],
+    },
+    'foreColor',
+    'backColor',
   ],
   ['unordered', 'ordered', 'outdent', 'indent'],
-  ['hr', 'quote', 'link', 'upload'],
-  ['removeFormat'],
-  ['undo', 'redo'],
-  ['fullscreen'],
+  ['hr', 'quote', 'link'],
+  ['undo', 'redo', 'removeFormat', 'fullscreen'],
 ];
 
 const toolbar = computed<QEditorProps['toolbar']>(() => {
@@ -135,18 +143,6 @@ const toolbar = computed<QEditorProps['toolbar']>(() => {
 
   return toolbar;
 });
-
-const addAttachment = () => {
-  // TODO
-};
-
-const definitions: QEditorProps['definitions'] = {
-  upload: {
-    tip: t('definition.upload.tip'),
-    icon: 'cloud_upload',
-    handler: addAttachment,
-  },
-};
 
 function htmlToVariable(value: string): string {
   if (!processorRef.value) {
