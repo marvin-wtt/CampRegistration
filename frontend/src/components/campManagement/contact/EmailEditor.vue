@@ -3,7 +3,8 @@
     <q-editor
       ref="editorRef"
       v-model="text"
-      :toolbar="toolbar"
+      :toolbar
+      :definitions
       content-class=""
       class="absolute fit"
     >
@@ -21,39 +22,6 @@
           @change="(color) => addColor('backColor', color)"
         />
       </template>
-
-      <template #token>
-        <q-btn-dropdown
-          icon="add_box"
-          dense
-          no-caps
-          no-wrap
-          unelevated
-          size="sm"
-        >
-          <q-list dense>
-            <q-item
-              v-for="token in tokens"
-              :key="token.key"
-              v-close-popup
-              tag="label"
-              clickable
-              @click="selectTokenValue(token)"
-            >
-              <q-item-section
-                v-if="token.icon"
-                side
-              >
-                <q-icon :name="token.icon" />
-              </q-item-section>
-
-              <q-item-section>
-                {{ token.label }}
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
-      </template>
     </q-editor>
 
     <!-- Only used to replace the tokens without processing the html string -->
@@ -65,11 +33,12 @@
 </template>
 
 <script lang="ts" setup>
-import { QBtnDropdown, QEditor, QEditorProps, useQuasar } from 'quasar';
+import { QEditor, QEditorProps, QSelectOption, useQuasar } from 'quasar';
 import EditorColorPicker from 'components/campManagement/contact/EditorColorPicker.vue';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref, watch } from 'vue';
 import { Token } from 'components/campManagement/contact/Token';
+import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -77,7 +46,10 @@ const { t } = useI18n();
 const model = defineModel<string>({
   required: true,
 });
-const text = ref<string>(variableToHtml(model.value));
+const text = ref<string>('');
+
+const editorRef = ref<QEditor | null>(null);
+const processorRef = ref<HTMLDivElement | null>(null);
 
 const props = defineProps<{
   tokens?: Token[];
@@ -85,6 +57,8 @@ const props = defineProps<{
 
 onMounted(() => {
   editorRef.value?.focus();
+
+  text.value = variableToHtml(model.value);
 });
 
 let lastTextValue: string = '';
@@ -102,20 +76,21 @@ watch(text, (value) => {
   model.value = value;
 });
 
-const editorRef = ref<QEditor | null>(null);
-const processorRef = ref<HTMLDivElement | null>(null);
-
 const defaultToolbar = [
   ['bold', 'italic', 'underline', 'strike'],
   [
     {
       icon: quasar.iconSet.editor.formatting,
       list: 'no-icons',
+      fixedLabel: true,
+      fixedIcon: true,
       options: ['p', 'h3', 'h4', 'h5', 'h6', 'code'],
     },
     {
       icon: quasar.iconSet.editor.size,
       list: 'no-icons',
+      fixedLabel: true,
+      fixedIcon: true,
       options: [
         'size-1',
         'size-2',
@@ -133,6 +108,14 @@ const defaultToolbar = [
   ['hr', 'quote', 'link'],
   ['undo', 'redo', 'removeFormat', 'fullscreen'],
 ];
+
+const definitions: QEditorProps['definitions'] = {
+  token: {
+    icon: 'add_box',
+    tip: t('definition.token.tip'),
+    handler: onAddToken,
+  },
+};
 
 const toolbar = computed<QEditorProps['toolbar']>(() => {
   const toolbar = [...defaultToolbar];
@@ -166,15 +149,33 @@ function htmlToVariable(value: string): string {
   return processorRef.value.innerHTML;
 }
 
+function encodeVariable(name: string) {
+  return `{{ ${name} }}`;
+}
+
 function variableToHtml(value: string): string {
   return value.replace(/{{ *(.*?) }}/g, (match, p1) => {
-    return createTokenElement(p1);
+    return createTokenElement({
+      value: p1,
+      label: getVariableLabel(p1),
+    });
   });
 }
 
-function encodeVariable(name: string) {
-  // Using non-breaking space to avoid collisions with determiner in text field
-  return `{{ ${name} }}`;
+function getVariableLabel(value: string): string {
+  const options =
+    props.tokens?.flatMap((token) =>
+      token.items.map((item) => createTokenItem(token, item)),
+    ) ?? [];
+
+  return options.find((option) => option.value === value)?.label ?? value;
+}
+
+function createTokenItem(token: Token, item: QSelectOption): QSelectOption {
+  return {
+    label: `${token.label}: ${item.label}`,
+    value: token.key + '.' + item.value,
+  };
 }
 
 function addColor(command: 'foreColor' | 'backColor', color: string) {
@@ -187,7 +188,7 @@ function addColor(command: 'foreColor' | 'backColor', color: string) {
   editor.focus();
 }
 
-function addToken(name: string) {
+function addToken(item: QSelectOption) {
   if (!editorRef.value) {
     return;
   }
@@ -195,38 +196,36 @@ function addToken(name: string) {
   const editor = editorRef.value;
 
   editor.caret.restore();
-  editor.runCmd('insertHTML', createTokenElement(name));
+  editor.runCmd('insertHTML', createTokenElement(item));
   editor.focus();
-
-  // FIXME Focus does not work with dialog
+  // FIXME Place cavet after inserted element
 }
 
-function selectTokenValue(token: Token) {
-  // TODO Replace with select
+function onAddToken() {
   quasar
     .dialog({
-      title: t('dialog.selectToken.title'),
-      options: {
-        model: 'name',
-        type: 'radio',
-        items: token.items,
+      component: TokenSelectionDialog,
+      componentProps: {
+        tokens: props.tokens,
       },
     })
-    .onOk((value) => {
-      addToken(`${token.key}.${value}`);
-    });
+    .onOk(({ token, item }) => {
+      addToken(createTokenItem(token, item));
+    })
+    .onDismiss(() => editorRef.value?.focus());
 }
 
-function createTokenElement(name: string, label?: string): string {
+function createTokenElement({ label, value }: QSelectOption): string {
   return `
     <div
-      data-token="${name}"
-      class="editor_token row inline items-center"
+      id="test"
+      data-token="${value}"
+      class="editor-token row inline items-center"
       contenteditable="false"
     >
       &nbsp;
       <span>
-        ${label ?? name}
+        ${label ?? value}
       </span>
       &nbsp;
       <i
@@ -240,7 +239,7 @@ function createTokenElement(name: string, label?: string): string {
 </script>
 
 <style lang="scss">
-.editor_token {
+.editor-token {
   background: rgba(0, 0, 0, 0.6);
   color: white;
   padding: 3px;
@@ -255,3 +254,9 @@ function createTokenElement(name: string, label?: string): string {
   }
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+definition:
+  token:
+    tip: 'Add a variable'
+</i18n>
