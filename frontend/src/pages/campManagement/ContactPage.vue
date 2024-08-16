@@ -2,75 +2,98 @@
   <page-state-handler
     :error="error"
     :loading="loading"
-    padding
-    class="column q-gutter-sm"
+    class="relative-position"
   >
-    <contact-select
-      v-model="to"
-      :label="t('input.to')"
-      :registrations
-      outlined
-      rounded
-      dense
-    />
-    <div class="row">
+    <q-form
+      class="absolute fit column q-gutter-y-sm q-pa-md"
+      @submit="send"
+    >
+      <contact-select
+        v-model="to"
+        :label="t('input.to.label')"
+        :registrations
+        :rules="[
+          (val?: Contact[]) =>
+            (!!val && val.length > 0) || t('input.to.rule.required'),
+        ]"
+        hide-bottom-space
+        outlined
+        rounded
+        dense
+      />
+      <div class="row q-mt-none q-gutter-sm">
+        <q-input
+          v-model="replyTo"
+          type="email"
+          :label="t('input.replyTo.label')"
+          :rules="[
+            (val?: Contact[]) =>
+              (!!val && val.length > 0) || t('input.to.replyTo.required'),
+          ]"
+          hide-bottom-space
+          class="col-grow"
+          outlined
+          rounded
+          dense
+        />
+
+        <q-select
+          v-model="priority"
+          :label="t('input.priority')"
+          :options="priorityOptions"
+          class="col-xs-12 col-sm-2"
+          emit-value
+          map-options
+          outlined
+          rounded
+          dense
+        />
+      </div>
       <q-input
-        v-model="replyTo"
-        :label="t('input.replyTo')"
+        v-model="subject"
+        :label="t('input.subject.label')"
+        :rules="[
+          (val?: string) =>
+            (!!val && val.length > 0) || t('input.subject.rule.required'),
+        ]"
+        :maxlength="988"
+        hide-bottom-space
+        autogrow
+        outlined
+        rounded
+        dense
+      />
+
+      <q-file
+        v-model="attachments"
+        :label="t('input.attachments')"
+        max-file-size="20000000"
+        max-total-size="20000000"
+        multiple
+        append
+        use-chips
+        outlined
+        rounded
+        dense
+        @rejected="onAttachmentRejected"
+      />
+
+      <email-editor
+        v-model="text"
+        :tokens
         class="col-grow"
-        outlined
-        rounded
-        dense
       />
 
-      <q-select
-        v-model="priority"
-        :label="t('input.priority')"
-        :options="priorityOptions"
-        emit-value
-        map-options
-        outlined
+      <q-btn
+        :label="t('send')"
+        type="submit"
+        icon="send"
+        color="primary"
+        :disabled="sendBtnDisabled"
         rounded
-        dense
-        style="min-width: 100px"
+        class="q-mt-sm self-end"
       />
-    </div>
-    <q-input
-      v-model="subject"
-      :label="t('input.subject')"
-      :maxlength="988"
-      autogrow
-      outlined
-      rounded
-      dense
-    />
-
-    <q-file
-      v-model="attachments"
-      :label="t('input.attachments')"
-      max-total-size="20000000"
-      multiple
-      append
-      use-chips
-      outlined
-      rounded
-      dense
-    />
-
-    <email-editor
-      v-model="text"
-      :tokens
-      class="col-grow"
-    />
-
-    <q-btn
-      :label="t('send')"
-      icon="send"
-      color="primary"
-      rounded
-      class="q-mt-sm self-end"
-      @click="send"
-    />
+    </q-form>
   </page-state-handler>
 </template>
 
@@ -84,8 +107,10 @@ import { Registration } from '@camp-registration/common/entities';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
 import { Contact } from 'components/campManagement/contact/Contact';
 import { Token } from 'components/campManagement/contact/Token';
-import { QSelectOption } from 'quasar';
+import { QSelectOption, useQuasar } from 'quasar';
+import { QRejectedEntry } from 'quasar/dist/types/api/qfile';
 
+const quasar = useQuasar();
 const { t } = useI18n();
 
 const registrationStore = useRegistrationsStore();
@@ -140,25 +165,128 @@ const registrations = computed<Registration[]>(() => {
   return registrationStore.data ?? [];
 });
 
+const sendBtnDisabled = computed<boolean>(() => text.value.trim().length === 0);
+
+function onAttachmentRejected(entities: QRejectedEntry[]) {
+  entities.forEach((entity: QRejectedEntry) => {
+    quasar.notify({
+      type: 'negative',
+      group: 'error.attachment',
+      message: getAttachmentErrorTranslated(entity),
+      caption: entity.file.name,
+    });
+  });
+}
+
+function getAttachmentErrorTranslated(entity: QRejectedEntry): string {
+  switch (entity.failedPropValidation) {
+    case 'duplicate':
+      return t('error.attachment.duplicate');
+    case 'max-file-size':
+    case 'max-total-size':
+      return t('error.attachment.maxFileSize');
+    case 'filter':
+      return t('error.attachment.filter');
+    case 'max-files':
+      return t('error.attachment.maxFiles');
+    default:
+      return 'error.attachment.default';
+  }
+}
+
 function send() {
   // TODO
 }
-
-// TODO i18n
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
+error:
+  attachment:
+    default: 'File not allowed'
+    duplicate: 'File already exists'
+    filter: 'File type not allowed'
+    maxFiles: 'Too many files'
+    maxFileSize: 'File(s) too large. Maximum file size is 20 MB'
+
 input:
   attachments: 'Attachments:'
   priority: 'Priority:'
-  replyTo: 'Reply To:'
-  subject: 'Subject:'
-  to: 'To:'
+  replyTo:
+    label: 'Reply To:'
+    required: 'A reply-to address is required'
+  subject:
+    label: 'Subject:'
+    rule:
+      required: 'A subject is required'
+  to:
+    label: 'To:'
+    rule:
+      required: 'At least one contact is required'
 
 priority:
   high: 'High'
   low: 'Low'
   normal: 'Normal'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+error:
+  attachment:
+    default: 'Datei nicht erlaubt'
+    duplicate: 'Datei existiert bereits'
+    filter: 'Dateityp nicht erlaubt'
+    maxFiles: 'Zu viele Dateien'
+    maxFileSize: 'Datei(en) zu groß. Maximale Dateigröße beträgt 20 MB'
+
+input:
+  attachments: 'Anhänge:'
+  priority: 'Priorität:'
+  replyTo:
+    label: 'Antwort an:'
+    required: 'Eine Antwortadresse ist erforderlich'
+  subject:
+    label: 'Betreff:'
+    rule:
+      required: 'Ein Betreff ist erforderlich'
+  to:
+    label: 'An:'
+    rule:
+      required: 'Mindestens ein Kontakt ist erforderlich'
+
+priority:
+  high: 'Hoch'
+  low: 'Niedrig'
+  normal: 'Normal'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+error:
+  attachment:
+    default: 'Fichier non autorisé'
+    duplicate: 'Fichier déjà existant'
+    filter: 'Type de fichier non autorisé'
+    maxFiles: 'Trop de fichiers'
+    maxFileSize: 'Fichier(s) trop volumineux. La taille maximale est de 20 Mo'
+
+input:
+  attachments: 'Pièces jointes:'
+  priority: 'Priorité:'
+  replyTo:
+    label: 'Répondre à:'
+    required: 'Une adresse de réponse est requise'
+  subject:
+    label: 'Objet:'
+    rule:
+      required: 'Un objet est requis'
+  to:
+    label: 'À:'
+    rule:
+      required: 'Au moins un contact est requis'
+
+priority:
+  high: 'Élevée'
+  low: 'Basse'
+  normal: 'Normale'
 </i18n>
