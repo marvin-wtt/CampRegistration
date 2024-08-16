@@ -5,6 +5,7 @@
       v-model="text"
       :toolbar
       :definitions
+      :placeholder="t('placeholder')"
       content-class=""
       class="absolute fit"
     >
@@ -198,7 +199,8 @@ function addToken(item: QSelectOption) {
   editor.caret.restore();
   editor.runCmd('insertHTML', createTokenElement(item));
   editor.focus();
-  // FIXME Place cavet after inserted element
+
+  // FIXME Place caret after inserted element
 }
 
 function onAddToken() {
@@ -256,7 +258,25 @@ function createTokenElement({ label, value }: QSelectOption): string {
 </style>
 
 <i18n lang="yaml" locale="en">
+placeholder: 'Type your message here...'
+
 definition:
   token:
     tip: 'Add a variable'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+placeholder: 'Gib hier deine Nachricht ein...'
+
+definition:
+  token:
+    tip: 'Füge eine Variable hinzu'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+placeholder: 'Tapez votre message ici...'
+
+definition:
+  token:
+    tip: 'Ajouter une variable'
 </i18n>
