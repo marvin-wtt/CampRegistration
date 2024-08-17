@@ -3,7 +3,7 @@ import { auth, guard, validate } from 'middlewares';
 import { campManager } from 'guards';
 import express from 'express';
 import { templateValidation } from 'validations';
-import { templateService } from 'services';
+import { tableTemplateService } from 'services';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
 
@@ -13,8 +13,8 @@ router.param(
   'templateId',
   catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
-    const template = await templateService.getTemplateById(camp.id, id);
-    req.models.template = verifyModelExists(template);
+    const template = await tableTemplateService.getTemplateById(camp.id, id);
+    req.models.tableTemplate = verifyModelExists(template);
   }),
 );
 

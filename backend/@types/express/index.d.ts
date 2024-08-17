@@ -3,7 +3,7 @@ import {
   User as UserModel,
   Camp,
   Registration,
-  Template,
+  TableTemplate,
   CampManager,
   Bed,
   Room,
@@ -23,7 +23,7 @@ declare global {
         user?: UserModel;
         camp?: Camp;
         registration?: Registration;
-        template?: Template;
+        tableTemplate?: TableTemplate;
         manager?: CampManager;
         room?: Room & { beds: Bed[] };
         bed?: Bed;

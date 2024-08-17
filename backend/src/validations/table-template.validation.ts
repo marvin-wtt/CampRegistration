@@ -4,7 +4,7 @@ import {
   TableColumnTemplate,
 } from '@camp-registration/common/entities';
 
-const TemplateBodySchema = Joi.object<TableTemplate>()
+const TableTemplateBodySchema = Joi.object<TableTemplate>()
   .keys({
     title: Joi.alternatives()
       .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
@@ -70,7 +70,7 @@ const store = {
   params: Joi.object({
     campId: Joi.string().required(),
   }),
-  body: TemplateBodySchema,
+  body: TableTemplateBodySchema,
 };
 
 const update = {
@@ -78,7 +78,7 @@ const update = {
     campId: Joi.string().required(),
     templateId: Joi.string().required(),
   }),
-  body: TemplateBodySchema,
+  body: TableTemplateBodySchema,
 };
 
 const destroy = {
