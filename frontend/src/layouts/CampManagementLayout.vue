@@ -288,11 +288,13 @@ notifications: 'Notifications'
   height: 0.5rem;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.1s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
@@ -317,5 +319,18 @@ notifications: 'Notifications'
 }
 
 ::-webkit-scrollbar-corner {
+}
+
+/* Hide number input arrows */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 </style>

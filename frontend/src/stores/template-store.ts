@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import type {
   TableTemplate,
-  TemplateCreateData,
-  TemplateUpdateData,
+  TableTemplateCreateData,
+  TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
@@ -45,7 +45,7 @@ export const useTemplateStore = defineStore('templates', () => {
 
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => {
-      const data = await apiService.fetchResultTemplates(cid);
+      const data = await apiService.fetchTableTemplates(cid);
       return data.sort((a, b) => {
         return a.order - b.order;
       });
@@ -95,15 +95,15 @@ export const useTemplateStore = defineStore('templates', () => {
     const results: Promise<TableTemplate | void>[] = [];
 
     for (const t of added) {
-      results.push(apiService.createResultTemplate(cid, t));
+      results.push(apiService.createTableTemplate(cid, t));
     }
 
     for (const t of modified) {
-      results.push(apiService.updateResultTemplate(cid, t.id, t));
+      results.push(apiService.updateTableTemplate(cid, t.id, t));
     }
 
     for (const t of removed) {
-      results.push(apiService.deleteResultTemplate(cid, t.id));
+      results.push(apiService.deleteTableTemplate(cid, t.id));
     }
 
     await withMultiProgressNotification(results, 'update');
@@ -112,12 +112,15 @@ export const useTemplateStore = defineStore('templates', () => {
     await forceFetchData();
   }
 
-  async function createEntry(template: TemplateCreateData, campId?: string) {
+  async function createEntry(
+    template: TableTemplateCreateData,
+    campId?: string,
+  ) {
     campId = campId ?? (route.params.camp as string | undefined);
     const cid = checkNotNullWithError(campId);
 
     return await withProgressNotification('create', async () => {
-      const result = await apiService.createResultTemplate(cid, template);
+      const result = await apiService.createTableTemplate(cid, template);
 
       // Add item to data
       data.value?.push(result);
@@ -126,12 +129,15 @@ export const useTemplateStore = defineStore('templates', () => {
     });
   }
 
-  async function updateEntry(templateId: string, template: TemplateUpdateData) {
+  async function updateEntry(
+    templateId: string,
+    template: TableTemplateUpdateData,
+  ) {
     const campId = route.params.camp as string | undefined;
 
     const cid = checkNotNullWithError(campId);
     return await withProgressNotification('update', async () => {
-      const result = await apiService.updateResultTemplate(
+      const result = await apiService.updateTableTemplate(
         cid,
         templateId,
         template,
@@ -152,7 +158,7 @@ export const useTemplateStore = defineStore('templates', () => {
     const cid = checkNotNullWithError(campId);
     const tid = checkNotNullWithNotification(id);
     return await withProgressNotification('delete', async () => {
-      const result = apiService.deleteResultTemplate(cid, tid);
+      const result = apiService.deleteTableTemplate(cid, tid);
 
       // Remove item from data
       data.value = data.value?.filter((value) => value.id === id);

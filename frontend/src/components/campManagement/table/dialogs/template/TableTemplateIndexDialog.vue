@@ -54,7 +54,7 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import type { Camp, TableTemplate } from '@camp-registration/common/entities';
-import EditResultTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultTemplateDialog.vue';
+import TableTemplateEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateEditDialog.vue';
 import SortableList from 'components/common/SortableList.vue';
 import { reactive, toRaw } from 'vue';
 
@@ -99,11 +99,13 @@ function addTemplate() {
     id: 'filled-by-server',
     title: t('defaults.title'),
     order: modifiedTemplates.length,
+    indexed: true,
+    actions: true,
     columns: [],
   };
   quasar
     .dialog({
-      component: EditResultTemplateDialog,
+      component: TableTemplateEditDialog,
       componentProps: {
         template: template,
         camp: props.camp,
@@ -117,7 +119,7 @@ function addTemplate() {
 function editTemplate(template: TableTemplate) {
   quasar
     .dialog({
-      component: EditResultTemplateDialog,
+      component: TableTemplateEditDialog,
       componentProps: {
         template: template,
         camp: props.camp,

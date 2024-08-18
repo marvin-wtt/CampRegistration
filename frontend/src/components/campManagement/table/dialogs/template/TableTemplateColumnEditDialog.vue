@@ -12,19 +12,6 @@
       </q-card-section>
 
       <q-card-section class="q-pt-none q-gutter-y-sm column">
-        <q-input
-          v-model="column.name"
-          :label="t('fields.name.label')"
-          :hint="t('fields.name.hint')"
-          :rules="[
-            (val: string) => !!val || t('fields.name.rules.required'),
-            (val: string) =>
-              !/\s/.test(val) || t('fields.name.rules.no_spaces'),
-          ]"
-          outlined
-          rounded
-        />
-
         <translated-input
           v-model="column.label"
           :label="t('fields.label.label')"
@@ -73,17 +60,6 @@
         />
 
         <q-select
-          v-model="column.align"
-          :label="t('fields.align.label')"
-          :hint="t('fields.hideIf.hint')"
-          :options="alignOptions"
-          emit-value
-          map-options
-          outlined
-          rounded
-        />
-
-        <q-select
           v-model="column.renderAs"
           :label="t('fields.renderAs.label')"
           :hint="t('fields.renderAs.hint')"
@@ -95,37 +71,16 @@
           rounded
         />
 
-        <!-- render options -->
-        <q-list
-          v-if="column.renderAs"
-          bordered
-          class="rounded-borders"
-        >
-          <q-expansion-item
-            :label="t('fields.renderOptions.label')"
-            :caption="t('fields.renderOptions.hint')"
-          >
-            <dynamic-input-group
-              v-if="renderOptions"
-              v-model="column.renderOptions"
-              :elements="renderOptions"
-            />
-
-            <json-input
-              v-else
-              v-model="column.renderOptions"
-              filled
-            />
-          </q-expansion-item>
-        </q-list>
-
-        <!-- TODO Enable if feature is implemented or remove it -->
-        <!-- -->
-        <!--        <toggle-item-->
-        <!--          v-model="column.editable"-->
-        <!--          :label="t('fields.editable.label')"-->
-        <!--          :hint="t('fields.editable.hint')"-->
-        <!--        />-->
+        <q-select
+          v-model="column.align"
+          :label="t('fields.align.label')"
+          :hint="t('fields.hideIf.hint')"
+          :options="alignOptions"
+          emit-value
+          map-options
+          outlined
+          rounded
+        />
 
         <toggle-item
           v-model="column.sortable"
@@ -133,35 +88,98 @@
           :hint="t('fields.sortable.hint')"
         />
 
-        <toggle-item
-          v-model="column.headerVertical"
-          :label="t('fields.headerVertical.label')"
-          :hint="t('fields.headerVertical.hint')"
-        />
-
-        <toggle-item
-          v-model="column.shrink"
-          :label="t('fields.shrink.label')"
-          :hint="t('fields.shrink.hint')"
-        />
-
-        <q-input
-          v-model="column.hideIf"
-          :label="t('fields.hideIf.label')"
-          :hint="t('fields.hideIf.hint')"
-          clearable
-          outlined
+        <q-btn
+          :label="advanced ? t('advanced.hide') : t('advanced.show')"
+          :icon="advanced ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+          color="grey"
+          flat
+          dense
           rounded
+          class="full-width"
+          @click="advanced = !advanced"
         />
 
-        <q-input
-          v-model="column.showIf"
-          :label="t('fields.showIf.label')"
-          :hint="t('fields.showIf.hint')"
-          clearable
-          outlined
-          rounded
-        />
+        <q-slide-transition>
+          <div
+            v-show="advanced"
+            class="q-gutter-y-sm column no-wrap"
+          >
+            <toggle-item
+              v-model="column.headerVertical"
+              :label="t('fields.headerVertical.label')"
+              :hint="t('fields.headerVertical.hint')"
+            />
+
+            <toggle-item
+              v-model="column.shrink"
+              :label="t('fields.shrink.label')"
+              :hint="t('fields.shrink.hint')"
+            />
+
+            <q-input
+              v-model="column.name"
+              :label="t('fields.name.label')"
+              :hint="t('fields.name.hint')"
+              :rules="[
+                (val: string) => !!val || t('fields.name.rules.required'),
+                (val: string) =>
+                  !/\s/.test(val) || t('fields.name.rules.no_spaces'),
+              ]"
+              outlined
+              rounded
+            />
+
+            <q-input
+              v-model="column.hideIf"
+              :label="t('fields.hideIf.label')"
+              :hint="t('fields.hideIf.hint')"
+              clearable
+              outlined
+              rounded
+            />
+
+            <q-input
+              v-model="column.showIf"
+              :label="t('fields.showIf.label')"
+              :hint="t('fields.showIf.hint')"
+              clearable
+              outlined
+              rounded
+            />
+
+            <!-- render options -->
+            <q-list
+              v-if="column.renderAs"
+              bordered
+              class="rounded-borders"
+            >
+              <q-expansion-item
+                :label="t('fields.renderOptions.label')"
+                :caption="t('fields.renderOptions.hint')"
+              >
+                <dynamic-input-group
+                  v-if="renderOptions"
+                  v-model="column.renderOptions"
+                  :elements="renderOptions"
+                />
+
+                <json-input
+                  v-else
+                  v-model="column.renderOptions"
+                  filled
+                />
+              </q-expansion-item>
+            </q-list>
+
+            <!-- TODO Enable if feature is implemented or remove it -->
+            <!-- -->
+            <!--        <toggle-item-->
+            <!--          v-model="column.editable"-->
+            <!--          :label="t('fields.editable.label')"-->
+            <!--          :hint="t('fields.editable.hint')"-->
+            <!--        />-->
+          </div>
+        </q-slide-transition>
       </q-card-section>
 
       <!-- action buttons -->
@@ -201,6 +219,7 @@ import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
 import { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
+import { PartialBy } from 'src/types';
 
 interface Props {
   column: TableColumnTemplate;
@@ -223,9 +242,10 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const column = reactive<TableColumnTemplate>(
+const column = reactive<PartialBy<TableColumnTemplate, 'name'>>(
   structuredClone(toRaw(props.column)),
 );
+const advanced = ref<boolean>(false);
 
 function onOKClick(): void {
   onDialogOK(column);
@@ -242,12 +262,12 @@ const alignOptions = computed(() => {
       value: 'left',
     },
     {
-      label: t('fields.align.options.right'),
-      value: 'right',
-    },
-    {
       label: t('fields.align.options.center'),
       value: 'center',
+    },
+    {
+      label: t('fields.align.options.right'),
+      value: 'right',
     },
   ];
 });
@@ -333,6 +353,10 @@ actions:
   ok: 'Ok'
   cancel: 'Cancel'
 
+advanced:
+  hide: 'Hide advanced options'
+  show: 'Show advanced options'
+
 fields:
   name:
     label: 'Name'
@@ -388,9 +412,15 @@ fields:
 
 <i18n lang="yaml" locale="de">
 title: 'Template-Spalte bearbeiten'
+
 actions:
   ok: 'Ok'
   cancel: 'Abbrechen'
+
+advanced:
+  hide: 'Erweiterte Optionen ausblenden'
+  show: 'Erweiterte Optionen anzeigen'
+
 fields:
   name:
     label: 'Name'
@@ -446,9 +476,15 @@ fields:
 
 <i18n lang="yaml" locale="fr">
 title: 'Modifier la colonne de modèle'
+
 actions:
   ok: 'Ok'
   cancel: 'Annuler'
+
+advanced:
+  hide: 'Masquer les options avancées'
+  show: 'Afficher les options avancées'
+
 fields:
   name:
     label: 'Nom'
