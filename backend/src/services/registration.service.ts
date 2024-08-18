@@ -18,6 +18,12 @@ const getRegistrationById = async (campId: string, id: string) => {
   });
 };
 
+const queryRegistrationsByIds = async (ids: string[]) => {
+  return prisma.registration.findMany({
+    where: { id: { in: ids } },
+  });
+};
+
 const queryRegistrations = async (campId: string) => {
   return prisma.registration.findMany({
     where: { campId },
@@ -441,11 +447,24 @@ const findCampContactEmails = (
   return contactEmail[country];
 };
 
+const extractRegistrationCountry = (
+  registration: Registration,
+): string | undefined => {
+  return registrationCampDataAccessor(registration.campData).country();
+};
+
+const extractRegistrationEmails = (
+  registration: Registration,
+): string[] | string => {
+  return registrationCampDataAccessor(registration.campData).emails();
+};
+
 export default {
   getRegistrationById,
   getParticipantsCountByCountry,
   getParticipantsCount,
   queryRegistrations,
+  queryRegistrationsByIds,
   createRegistration,
   updateRegistrationById,
   deleteRegistration,
@@ -453,4 +472,6 @@ export default {
   sendRegistrationConfirmation,
   sendWaitingListConfirmation,
   sendRegistrationManagerNotification,
+  extractRegistrationCountry,
+  extractRegistrationEmails,
 };

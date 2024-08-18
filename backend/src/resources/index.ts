@@ -7,3 +7,4 @@ export { default as campManagerResource } from './manager.resource';
 export { default as roomResource } from './room.resource';
 export { default as bedResource } from './bed.rescource';
 export { default as fileResource } from './file.rescource';
+export { default as messageResource } from './message.resource';

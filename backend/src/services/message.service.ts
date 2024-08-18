@@ -22,16 +22,49 @@ interface MessageData {
   registrationId?: string;
 }
 
+const sendMessages = async (messageData: MessageData[]) => {
+  const data = messageData.map((data) => {
+    const body = compileMessageBody(data.body, data.context);
+    const recipients = Array.isArray(data.recipients)
+      ? data.recipients.join(',')
+      : data.recipients;
+    // Link message to registration
+    const registrations = data.registrationId
+      ? { create: { registrationId: data.registrationId } }
+      : undefined;
+
+    return {
+      id: ulid(),
+      ...data,
+      body,
+      recipients,
+      ...registrations,
+    };
+  });
+
+  const messages = await prisma.message.createMany({
+    data,
+  });
+};
+
 const sendMessage = async (data: MessageData) => {
   const body = compileMessageBody(data.body, data.context);
   const recipients = Array.isArray(data.recipients)
-    ? data.recipients.join(';')
+    ? data.recipients.join(',')
     : data.recipients;
 
   // Link message to registration
   const registrations = data.registrationId
     ? { create: { registrationId: data.registrationId } }
     : undefined;
+
+  const include = {
+    attachments: {
+      include: {
+        file: true,
+      },
+    },
+  };
 
   const message = await prisma.message.create({
     data: {
@@ -43,6 +76,7 @@ const sendMessage = async (data: MessageData) => {
       priority: data.priority,
       registrations,
     },
+    include,
   });
 
   try {
@@ -63,6 +97,7 @@ const sendMessage = async (data: MessageData) => {
       where: {
         id: message.id,
       },
+      include,
     });
   } catch (reason) {
     logger.warn('Failed to send message: ' + reason);
@@ -145,5 +180,6 @@ const compileMessageBody = (
 
 export default {
   getMessageTemplate,
+  sendMessage,
   sendMessageWithTemplate,
 };

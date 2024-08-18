@@ -15,6 +15,7 @@ export * from './Room';
 export * from './ServiceFile';
 export * from './TableTemplate';
 export * from './User';
+export * from './Message';
 
 // Types
 export * from './AuthTokens';
