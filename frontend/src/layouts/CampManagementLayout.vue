@@ -288,11 +288,13 @@ notifications: 'Notifications'
   height: 0.5rem;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.1s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
