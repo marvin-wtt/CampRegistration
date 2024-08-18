@@ -1,5 +1,6 @@
 <template>
   <q-btn
+    v-if="props.administration"
     :label="t('administration')"
     :to="{ name: 'administration' }"
     class="gt-sm"
@@ -19,6 +20,10 @@
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
+
+const props = defineProps<{
+  administration: boolean;
+}>();
 </script>
 
 <style scoped></style>

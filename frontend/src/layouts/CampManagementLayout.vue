@@ -29,7 +29,7 @@
           </router-link>
         </q-toolbar-title>
 
-        <header-navigation />
+        <header-navigation :administration="administrator" />
 
         <locale-switch
           borderless
@@ -123,6 +123,10 @@ const showDrawer = computed<boolean>(() => {
 
 const title = computed(() => {
   return showDrawer.value ? campDetailStore.data?.name : t('app_name');
+});
+
+const administrator = computed<boolean>(() => {
+  return authStore.user.role === 'ADMIN';
 });
 
 useMeta(() => {
