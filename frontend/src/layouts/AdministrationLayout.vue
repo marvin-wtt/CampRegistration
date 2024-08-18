@@ -24,7 +24,7 @@
           </router-link>
         </q-toolbar-title>
 
-        <header-navigation />
+        <header-navigation :administration="administrator" />
 
         <locale-switch
           borderless
@@ -166,6 +166,10 @@ const filteredItems = computed<NavigationItem[]>(() => {
   return items.filter((item) => {
     return !item.preview;
   });
+});
+
+const administrator = computed<boolean>(() => {
+  return authStore.user?.role === 'ADMIN';
 });
 
 const dev = computed<boolean>(() => {
