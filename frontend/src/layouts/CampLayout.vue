@@ -16,7 +16,10 @@
 
         <q-space />
 
-        <header-navigation v-if="user" />
+        <header-navigation
+          v-if="user"
+          :administration="administrator"
+        />
 
         <q-btn
           v-else
@@ -61,7 +64,7 @@ import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 
 const { t } = useI18n();
@@ -79,6 +82,10 @@ onMounted(() => {
   if (!authStore.user) {
     authStore.init();
   }
+});
+
+const administrator = computed<boolean>(() => {
+  return authStore.user?.role === 'ADMIN';
 });
 
 function logout() {
