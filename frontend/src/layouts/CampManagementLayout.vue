@@ -126,7 +126,7 @@ const title = computed(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user.role === 'ADMIN';
+  return authStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
