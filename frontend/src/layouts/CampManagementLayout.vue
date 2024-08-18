@@ -29,7 +29,7 @@
           </router-link>
         </q-toolbar-title>
 
-        <header-navigation />
+        <header-navigation :administration="administrator" />
 
         <locale-switch
           borderless
@@ -141,6 +141,10 @@ const title = computed(() => {
 
 const campName = computed<string | undefined>(() => {
   return to(campDetailStore.data?.name);
+});
+
+const administrator = computed<boolean>(() => {
+  return authStore.user.role === 'ADMIN';
 });
 
 useMeta(() => {
