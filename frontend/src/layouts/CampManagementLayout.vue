@@ -144,7 +144,7 @@ const campName = computed<string | undefined>(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user.role === 'ADMIN';
+  return authStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
