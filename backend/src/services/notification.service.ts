@@ -4,6 +4,7 @@ import { generateQueryString } from 'utils/uri';
 import Mail from 'nodemailer/lib/mailer';
 import { t } from 'config/i18n';
 import logger from 'config/logger';
+import i18n from 'config/i18n';
 
 type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
@@ -15,6 +16,7 @@ type EmailOptions = RequireAtLeastOne<Mail.Options, 'to' | 'cc' | 'bcc'>;
 type MailOptions = WithRequired<EmailOptions, 'subject'> & {
   template: string;
   context?: object;
+  locale?: string;
 };
 
 const sendEmail = async (options: MailOptions) => {
@@ -23,6 +25,11 @@ const sendEmail = async (options: MailOptions) => {
 
   // Remove duplicate emails
   options = removeDuplicateEmails(options);
+
+  // Update locale for message template
+  if (options.locale) {
+    await i18n.changeLanguage(options.locale);
+  }
 
   options.priority = options.priority ?? 'normal';
   options.from = {
@@ -33,7 +40,7 @@ const sendEmail = async (options: MailOptions) => {
 
   options.context = {
     meta: {
-      ...options,
+      to: options.to,
     },
     ...options.context,
   };

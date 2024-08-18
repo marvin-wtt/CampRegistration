@@ -22,14 +22,7 @@
     </mj-section>
     <mj-section background-color="#F2F2F2" mj-class="main-section">
       <mj-column vertical-align="middle" width="100%">
-        <mj-text mj-class="big-text">{{{t 'registration:email.confirmation.text.title' this }}}</mj-text>
-        <mj-text mj-class="text">{{{t 'registration:email.confirmation.text.information' this }}}</mj-text>
-        <mj-text mj-class="text">{{{t 'registration:email.waitingListConfirmation.text.contact' this }}}</mj-text>
-        <mj-text mj-class="text">
-          {{{t 'registration:email.confirmation.text.greeting' this }}}
-          <br>
-          {{{t 'registration:email.confirmation.text.teamName' this }}}
-        </mj-text>
+        {{ this.body }}
       </mj-column>
     </mj-section>
     <mj-raw>
@@ -39,8 +32,6 @@
       <mj-column vertical-align="middle" width="70%">
         <mj-text align="center" mj-class="small-text">
           {{{t 'email:footer.sentTo' this }}}
-          <br>
-          {{{t 'registration:email.confirmation.footer.cause' this }}}
         </mj-text>
       </mj-column>
     </mj-section>
