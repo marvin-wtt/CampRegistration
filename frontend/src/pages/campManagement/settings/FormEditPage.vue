@@ -23,10 +23,7 @@ import {
   SurveyCreatorModel,
 } from 'survey-creator-core';
 import { useI18n } from 'vue-i18n';
-import {
-  startAutoDataUpdate,
-  startAutoThemeUpdate,
-} from 'src/composables/survey';
+import { startAutoDataUpdate } from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
@@ -76,7 +73,7 @@ const creatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
-  isAutoSave: true, // Survey is currently only saved when pressing the button.
+  isAutoSave: true,
   themeForPreview: 'defaultV2',
   showThemeTab: true,
 };
@@ -89,7 +86,6 @@ const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
 
 startAutoDataUpdate(previewModel, campData);
-startAutoThemeUpdate(previewModel, campData);
 
 watchEffect(() => {
   creator.locale = locale.value.split(/[-_]/)[0];
@@ -165,14 +161,18 @@ creator.saveThemeFunc = (
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
 
-  // Convert markdown to html
-  survey.onTextMarkdown.add((survey, options) => {
-    const str = markdownConverter.makeHtml(options.text);
-    // Remove root paragraphs <p></p>
-    options.html = str.substring(3, str.length - 4);
-  });
+  if (options.reason === 'test' || options.reason === 'designer') {
+    // Convert markdown to html
+    survey.onTextMarkdown.add((survey, options) => {
+      const str = markdownConverter.makeHtml(options.text);
+      // Remove root paragraphs <p></p>
+      options.html = str.substring(3, str.length - 4);
+    });
+  }
 
-  previewModel.value = survey;
+  if (options.reason === 'test') {
+    previewModel.value = survey;
+  }
 });
 
 creator.onUploadFile.add((_, options) => {
