@@ -73,7 +73,7 @@ const creatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
-  isAutoSave: true, // Survey is currently only saved when pressing the button.
+  isAutoSave: true,
   themeForPreview: 'defaultV2',
   showThemeTab: true,
 };

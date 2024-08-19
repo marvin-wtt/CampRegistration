@@ -63,6 +63,13 @@ onMounted(async () => {
   const modelForm = props.moderation ? createModerationForm(form) : form;
   model.value = createModel(id, modelForm);
 
+  // Disable validation to allow manual adjustments that otherwise violate the validation rules
+  if (props.moderation) {
+    // TODO Replace with enableValidation = false
+    // https://github.com/surveyjs/survey-library/issues/8708
+    model.value.ignoreValidation = true;
+  }
+
   if (props.data) {
     model.value.data = props.data;
   }
