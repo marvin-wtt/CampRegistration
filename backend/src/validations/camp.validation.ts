@@ -55,7 +55,7 @@ const index = {
 const store = {
   body: Joi.object<CampCreateData>({
     active: Joi.boolean().default(false),
-    public: Joi.boolean().required(),
+    public: Joi.boolean().default(false),
     countries: Joi.array()
       .items(Joi.string().custom(CountryCode).lowercase())
       .min(1)
@@ -64,7 +64,7 @@ const store = {
     organizer: translatedValue(Joi.string()).required(),
     contactEmail: translatedValue(Joi.string().email()).required(),
     maxParticipants: translatedValue(Joi.number().integer().min(0)).required(),
-    startAt: time().greater(Date.now()).required(),
+    startAt: time().required(),
     endAt: time().min(Joi.ref('startAt')).required(),
     minAge: Joi.number().integer().min(0).max(99).required(),
     maxAge: Joi.number().integer().min(Joi.ref('minAge')).max(99).required(),
