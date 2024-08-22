@@ -1,4 +1,9 @@
-import { campService, registrationService } from 'services';
+import {
+  campService,
+  fileService,
+  registrationService,
+  tableTemplateService,
+} from 'services';
 import httpStatus from 'http-status';
 import { campResource, detailedCampResource } from 'resources';
 import { catchRequestAsync } from 'utils/catchAsync';
@@ -7,6 +12,7 @@ import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
 import defaultForm from 'assets/camp/defaultForm.json';
 import defaultThemes from 'assets/camp/defaultThemes.json';
+import defaultTemplates from 'assets/camp/defaultTemplates.json';
 import type {
   CampQuery,
   CampCreateData,
@@ -50,10 +56,14 @@ const store = catchRequestAsync(async (req, res) => {
   const data = req.body as CampCreateData;
   const userId = authUserId(req);
 
-  const form = data.form ?? defaultForm;
-  const themes = data.themes ?? defaultThemes;
+  const referenceCamp = data.referenceCampId
+    ? await campService.getCampById(data.referenceCampId)
+    : undefined;
 
-  const camp = await campService.createCamp(userId, {
+  const form = data.form ?? referenceCamp?.form ?? defaultForm;
+  const themes = data.themes ?? referenceCamp?.themes ?? defaultThemes;
+
+  let camp = await campService.createCamp(userId, {
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,
@@ -71,7 +81,15 @@ const store = catchRequestAsync(async (req, res) => {
     themes: themes,
   });
 
-  // TODO Add default templates
+  // Insert templates
+  const templates = data.referenceCampId
+    ? (await tableTemplateService.queryTemplates(data.referenceCampId)).map(
+        (value) => value.data,
+      )
+    : defaultTemplates;
+  await tableTemplateService.createManyTemplates(camp.id, templates);
+
+  // TODO Copy files and update form
 
   res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
 });

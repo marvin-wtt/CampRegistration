@@ -2,7 +2,8 @@
   <q-step
     :name="props.name"
     :title="props.title"
-    :done="step > props.name"
+    :done="done"
+    :header-nav="done"
     :error
     v-bind="$attrs"
   >
@@ -62,10 +63,14 @@ const emit = defineEmits<{
   (e: 'previous-step'): void;
 }>();
 
-const error = ref<boolean>(false);
+const error = ref<boolean>();
 
 const nextLabel = computed<string>(() => {
   return props.last ? t('action.finish') : t('action.continue');
+});
+
+const done = computed<boolean>(() => {
+  return error.value === false;
 });
 
 function nextStep() {

@@ -72,6 +72,7 @@ const store = {
     price: Joi.number().min(0).required(),
     form: Joi.object(),
     themes: Joi.object().pattern(Joi.string(), Joi.object()),
+    referenceCampId: Joi.string(),
   }),
 };
 

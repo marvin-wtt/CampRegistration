@@ -6,6 +6,7 @@ import {
   UserFactory,
   CampManagerFactory,
   RegistrationFactory,
+  TableTemplateFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
@@ -403,6 +404,175 @@ describe('/api/v1/camps', () => {
             .expect(expected);
         },
       );
+    });
+
+    describe('reference id', () => {
+      it('should set default form when reference Id is undefined', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const data = campCreateNational;
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.form).toHaveProperty('title');
+      });
+
+      it('should copy the form of the referenced camp', async () => {
+        const referenceForm = {
+          title: 'Reference camp title',
+        };
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken({ form: referenceForm });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.form).toStrictEqual(referenceForm);
+      });
+
+      it('should set default themes when reference Id is undefined', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const data = campCreateNational;
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.themes).toHaveProperty('light');
+      });
+
+      it('should copy the themes of the referenced camp', async () => {
+        const referenceThemes = {
+          light: { themeName: 'Test' },
+        };
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken({ themes: referenceThemes });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.themes).toStrictEqual(referenceThemes);
+      });
+
+      it('should create default table templates when reference Id is undefined', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const data = campCreateNational;
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.tableTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).not.toBe(0);
+      });
+
+      it('should copy all table templates from the referenced camp', async () => {
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken();
+        await TableTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          data: {
+            title: 'Template 1',
+            columns: [],
+          },
+        });
+        await TableTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          data: {
+            title: 'Template 2',
+            columns: [],
+          },
+        });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.tableTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).toBe(2);
+        expect(
+          templates.some((value) => value.data.title === 'Template 1'),
+        ).toBeTruthy();
+        expect(
+          templates.some((value) => value.data.title === 'Template 2'),
+        ).toBeTruthy();
+      });
+
+      it.todo('should copy all files from the referenced camp');
+
+      it('should respond with `403` status code when user does not manage the reference camp', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+        const camp = await CampFactory.create();
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: camp.id,
+        };
+
+        await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
+
+      it('should respond with `403` status code when reference camp does not exist', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: ulid(),
+        };
+
+        await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
     });
   });
 

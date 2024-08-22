@@ -14,17 +14,6 @@ import logger from 'config/logger';
 
 type RequestFile = Express.Multer.File;
 
-const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
-  'id',
-  'name',
-  'originalName',
-  'field',
-  'type',
-  'size',
-  'accessLevel',
-  'createdAt',
-];
-
 interface ModelData {
   id: string;
   name: string;
@@ -87,26 +76,24 @@ const getModelFile = async (modelName: string, modelId: string, id: string) => {
   });
 };
 
-const queryModelFiles = async <Key extends keyof File>(
+const queryModelFiles = async (
   model: ModelData,
   filter: {
     name?: string;
     type?: string;
-  },
+  } = {},
   options: {
     limit?: number;
     page?: number;
     sortBy?: string;
     sortType?: 'asc' | 'desc';
-  },
-  keys: Key[] = defaultSelectKeys as Key[],
+  } = {},
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
   const sortBy = options.sortBy ?? 'name';
   const sortType = options.sortType ?? 'desc';
 
-  const select = keys.reduce((obj, k) => ({ ...obj, [k]: true }), {});
   const where: Prisma.FileWhereInput = {
     name: filter.name
       ? {
@@ -118,7 +105,6 @@ const queryModelFiles = async <Key extends keyof File>(
   };
 
   return prisma.file.findMany({
-    select,
     where,
     skip: (page - 1) * limit,
     take: limit,
@@ -140,7 +126,6 @@ const deleteFile = async (id: string) => {
 
   const storage = getStorage(file.storageLocation);
   try {
-    // TODO Can this be done in a job?
     await storage.remove(file);
   } catch (e) {
     // Do not throw an error because the operation seems successfully to the user anyway

@@ -4,9 +4,10 @@ import { campValidation } from 'validations';
 import { campController } from 'controllers';
 import { or, campActive, campManager } from 'guards';
 import { catchParamAsync } from 'utils/catchAsync';
-import { campService } from 'services';
+import { campService, managerService } from 'services';
 import { verifyModelExists } from 'utils/verifyModel';
-import { CampQuery } from '@camp-registration/common/entities';
+import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
+import { authUserId } from 'utils/authUserId';
 
 const router = express.Router();
 
@@ -25,6 +26,20 @@ const queryShowAllGuard = (req: Request) => {
   return query.showAll != true;
 };
 
+const referenceCampGuard = (req: Request) => {
+  const userId = authUserId(req);
+  const { referenceCampId } = req.body as CampCreateData;
+
+  if (!referenceCampId) {
+    return true;
+  }
+
+  return managerService.campManagerExistsWithUserIdAndCampId(
+    referenceCampId,
+    userId,
+  );
+};
+
 router.get(
   '/',
   validate(campValidation.index),
@@ -37,7 +52,13 @@ router.get(
   validate(campValidation.show),
   campController.show,
 );
-router.post('/', auth(), validate(campValidation.store), campController.store);
+router.post(
+  '/',
+  auth(),
+  validate(campValidation.store),
+  guard(referenceCampGuard),
+  campController.store,
+);
 router.patch(
   '/:campId',
   auth(),
