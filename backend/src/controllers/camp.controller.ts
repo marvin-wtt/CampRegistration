@@ -63,7 +63,7 @@ const store = catchRequestAsync(async (req, res) => {
   const form = data.form ?? referenceCamp?.form ?? defaultForm;
   const themes = data.themes ?? referenceCamp?.themes ?? defaultThemes;
 
-  let camp = await campService.createCamp(userId, {
+  const camp = await campService.createCamp(userId, {
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,

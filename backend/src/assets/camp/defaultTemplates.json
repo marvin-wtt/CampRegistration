@@ -117,13 +117,11 @@
     "sortBy": "created_at",
     "filterWaitingList": "include",
     "sortDirection": "desc",
-    "filterRoles": [
-      "counselor"
-    ]
+    "filterRoles": ["counselor"]
   },
   {
     "title": {
-      "en":  "List of participants",
+      "en": "List of participants",
       "de": "Teilnehmerliste",
       "fr": "Liste des participants"
     },
@@ -239,9 +237,7 @@
     "indexed": true,
     "sortBy": "first_name",
     "filterWaitingList": "exclude",
-    "filterRoles": [
-      "counselor"
-    ]
+    "filterRoles": ["counselor"]
   },
   {
     "title": {
@@ -331,9 +327,7 @@
     "sortBy": "first_name",
     "indexed": true,
     "actions": false,
-    "filterRoles": [
-      "participant"
-    ]
+    "filterRoles": ["participant"]
   },
   {
     "title": {
@@ -430,9 +424,7 @@
     ],
     "filterWaitingList": "exclude",
     "sortBy": "first_name",
-    "filterRoles": [
-      "counselor"
-    ]
+    "filterRoles": ["counselor"]
   },
   {
     "title": {
@@ -500,9 +492,7 @@
         "align": "left"
       }
     ],
-    "filterRoles": [
-      "counselor"
-    ],
+    "filterRoles": ["counselor"],
     "filterWaitingList": "exclude",
     "sortBy": "first_name"
   },
@@ -597,9 +587,7 @@
     "indexed": true,
     "sortBy": "first_name",
     "filterWaitingList": "exclude",
-    "filterRoles": [
-      "counselor"
-    ]
+    "filterRoles": ["counselor"]
   },
   {
     "title": {
@@ -746,4 +734,3 @@
     "sortBy": "date"
   }
 ]
-
