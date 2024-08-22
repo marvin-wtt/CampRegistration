@@ -24,6 +24,7 @@ const sendEmail = async (options: MailOptions) => {
   // Remove duplicate emails
   options = removeDuplicateEmails(options);
 
+  options.priority = options.priority ?? 'normal';
   options.from = {
     name: appName,
     address: from,

@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:10.4
         env:
-          MYSQL_DATABASE: test_db
-          MYSQL_ROOT_PASSWORD: admin123
+          MARIADB_DATABASE: test_db
+          MARIADB_ROOT_PASSWORD: admin123
         options: >- 
           --health-cmd "mysqladmin ping"
           --health-interval 10s 

@@ -107,6 +107,11 @@ const routes: RouteRecordRaw[] = [
               import('pages/campManagement/ParticipantsIndexPage.vue'),
           },
           {
+            path: 'contact',
+            name: 'management.camp.contact',
+            component: () => import('pages/campManagement/ContactPage.vue'),
+          },
+          {
             path: 'room-planner',
             name: 'room-planner',
             component: () => import('pages/campManagement/RoomPlannerPage.vue'),

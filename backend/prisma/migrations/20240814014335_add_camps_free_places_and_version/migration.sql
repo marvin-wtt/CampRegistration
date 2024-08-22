@@ -5,7 +5,7 @@
 */
 
 -- AlterTable
-ALTER TABLE `camps` ADD COLUMN `free_places` JSON NOT NULL,
+ALTER TABLE `camps` ADD COLUMN `free_places` JSON NOT NULL DEFAULT 0,
     ADD COLUMN `version` INTEGER UNSIGNED NOT NULL DEFAULT 1;
 
 -- AlterTable
