@@ -19,6 +19,7 @@
           "name": "i_date",
           "title": {
             "de": "Datum",
+            "fr": "Date",
             "default": "Date"
           },
           "description": {
@@ -67,6 +68,7 @@
           "name": "role",
           "title": {
             "fr": "Rôle",
+            "de": "Rolle",
             "default": "Role"
           },
           "defaultValue": "participant",
@@ -133,6 +135,14 @@
                 "default": "female",
                 "fr": "féminin"
               }
+            },
+            {
+              "value": "d",
+              "text": {
+                "de": "divers",
+                "default": "divers",
+                "fr": "divers"
+              }
             }
           ],
           "autocomplete": "sex"
@@ -151,10 +161,11 @@
         },
         {
           "type": "text",
-          "name": "teamer_date_of_birth",
+          "name": "counselor_date_of_birth",
           "visibleIf": "{role} <> 'participant'",
           "title": {
             "default": "Date of Birth",
+            "de": "Geburtsdatum",
             "fr": "Date de naissance"
           },
           "valueName": "date_of_birth",
@@ -192,7 +203,11 @@
         {
           "type": "text",
           "name": "email",
-          "title": "E-Mail",
+          "title": {
+            "de": "E-Mail",
+            "fr": "E-Mail",
+            "default": "E-Mail"
+          },
           "isRequired": true,
           "campDataType": "email",
           "inputType": "email",
@@ -207,9 +222,9 @@
             "default": "Phone Number"
           },
           "description": {
-            "de": "wenn du keine eigene Telefonnummer hast, kannst du dieses Feld leer lassen",
-            "fr": "si tu n'as pas de numéro de téléphone personnel, tu peux laisser ce champ vide",
-            "default": "if you do not have your own telephone number, you can leave this field blank"
+            "de": "Wenn du keine eigene Telefonnummer hast, kannst du dieses Feld leer lassen",
+            "fr": "Si tu n'as pas de numéro de téléphone personnel, tu peux laisser ce champ vide",
+            "default": "If you do not have your own telephone number, you can leave this field blank"
           },
           "requiredIf": "{isadult}",
           "inputType": "tel",
@@ -237,6 +252,7 @@
               "type": "expression",
               "text": {
                 "de": "Bitte bestätige, dass du auf die Warteliste möchtest",
+                "fr": "Confirme que tu souhaites être sur la liste d'attente",
                 "default": "Confirme que tu souhaites être sur la liste d'attente"
               },
               "expression": "{waiting_list} = true"
@@ -318,6 +334,7 @@
               "name": "emergency_contact_description",
               "title": {
                 "de": "Beschreibung",
+                "fr": "Description",
                 "default": "Description"
               },
               "description": {
