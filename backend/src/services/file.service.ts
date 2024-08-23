@@ -263,7 +263,9 @@ const LocalStorage: StorageStrategy = {
     const { uploadDir } = config.storage;
     const filePath = path.join(uploadDir, file.name);
 
-    verifyDirectoryPath(filePath, uploadDir);
+    if (!isDirectoryPathValid(filePath, uploadDir)) {
+      throw new ApiError(403, 'Invalid file data');
+    }
 
     await fse.remove(filePath);
   },
@@ -271,8 +273,12 @@ const LocalStorage: StorageStrategy = {
     const { uploadDir, tmpDir } = config.storage;
     const destinationPath = path.join(uploadDir, filename);
 
-    verifyDirectoryPath(destinationPath, uploadDir);
-    verifyDirectoryPath(sourcePath, tmpDir);
+    if (
+      !isDirectoryPathValid(destinationPath, uploadDir) ||
+      !isDirectoryPathValid(sourcePath, tmpDir)
+    ) {
+      throw new ApiError(403, 'Invalid file data');
+    }
 
     await fse.ensureDir(uploadDir);
     await fse.move(sourcePath, destinationPath, {
@@ -283,7 +289,9 @@ const LocalStorage: StorageStrategy = {
     const { uploadDir } = config.storage;
     const filePath = path.join(uploadDir, file.name);
 
-    verifyDirectoryPath(filePath, uploadDir);
+    if (!isDirectoryPathValid(filePath, uploadDir)) {
+      throw new ApiError(403, 'Invalid file data');
+    }
 
     if (!fse.existsSync(filePath)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
@@ -293,14 +301,12 @@ const LocalStorage: StorageStrategy = {
   },
 };
 
-const verifyDirectoryPath = (filePath: string, rootPath: string) => {
+const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
   // Make sure, that the file path does not escape the root path
   const resolvedFilePath = path.resolve(filePath);
   const resolvedRootPath = path.resolve(rootPath);
 
-  if (!resolvedFilePath.startsWith(resolvedRootPath)) {
-    throw new ApiError(403, 'Invalid file data');
-  }
+  return resolvedFilePath.startsWith(resolvedRootPath);
 };
 
 export default {
