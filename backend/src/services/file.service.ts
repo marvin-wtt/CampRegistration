@@ -67,6 +67,26 @@ const saveModelFile = async (
   });
 };
 
+const createManyModelFile = async (
+  model: ModelData | undefined,
+  files: Omit<Prisma.FileCreateManyInput, 'id'>[],
+) => {
+  const modelData = model ? { [`${model.name}Id`]: model.id } : {};
+
+  const data = files.map((file) => {
+    return {
+      ...file,
+      ...modelData,
+      id: ulid(),
+      createdAt: undefined,
+    };
+  });
+
+  return prisma.file.createMany({
+    data,
+  });
+};
+
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
   return prisma.file.findFirst({
     where: {
@@ -112,6 +132,16 @@ const queryModelFiles = async (
   });
 };
 
+const queryFilesByIds = async (fileIds: string[]) => {
+  return prisma.file.findMany({
+    where: {
+      id: {
+        in: fileIds,
+      },
+    },
+  });
+};
+
 const getFileStream = async (file: File) => {
   const storage = getStorage(file.storageLocation);
   return storage.stream(file);
@@ -123,6 +153,17 @@ const deleteFile = async (id: string) => {
       id,
     },
   });
+
+  const fileCount = await prisma.file.count({
+    where: {
+      name: file.name,
+    },
+  });
+
+  // Do not delete file from storage if other references still exist
+  if (fileCount > 0) {
+    return file;
+  }
 
   const storage = getStorage(file.storageLocation);
   try {
@@ -249,7 +290,11 @@ const getStorage = (name?: string): StorageStrategy => {
   }
 
   if (name === 'local') {
-    return LocalStorage;
+    return new DiskStorage(config.storage.uploadDir);
+  }
+
+  if (name === 'static') {
+    return new StaticStorage();
   }
 
   throw new ApiError(
@@ -258,38 +303,40 @@ const getStorage = (name?: string): StorageStrategy => {
   );
 };
 
-const LocalStorage: StorageStrategy = {
-  remove: async (file: File) => {
-    const { uploadDir } = config.storage;
-    const filePath = path.join(uploadDir, file.name);
+class DiskStorage implements StorageStrategy {
+  constructor(private storageDir: string) {}
 
-    if (!isDirectoryPathValid(filePath, uploadDir)) {
+  async remove(file: File) {
+    const filePath = path.join(this.storageDir, file.name);
+
+    if (!isDirectoryPathValid(filePath, this.storageDir)) {
       throw new ApiError(403, 'Invalid file data');
     }
 
     await fse.remove(filePath);
-  },
-  moveToStorage: async (sourcePath: string, filename: string) => {
-    const { uploadDir, tmpDir } = config.storage;
-    const destinationPath = path.join(uploadDir, filename);
+  }
+
+  async moveToStorage(sourcePath: string, filename: string) {
+    const { tmpDir } = config.storage;
+    const destinationPath = path.join(this.storageDir, filename);
 
     if (
-      !isDirectoryPathValid(destinationPath, uploadDir) ||
+      !isDirectoryPathValid(destinationPath, this.storageDir) ||
       !isDirectoryPathValid(sourcePath, tmpDir)
     ) {
       throw new ApiError(403, 'Invalid file data');
     }
 
-    await fse.ensureDir(uploadDir);
+    await fse.ensureDir(this.storageDir);
     await fse.move(sourcePath, destinationPath, {
       overwrite: false,
     });
-  },
-  stream: (file: File) => {
-    const { uploadDir } = config.storage;
-    const filePath = path.join(uploadDir, file.name);
+  }
 
-    if (!isDirectoryPathValid(filePath, uploadDir)) {
+  stream(file: File) {
+    const filePath = path.join(this.storageDir, file.name);
+
+    if (!isDirectoryPathValid(filePath, this.storageDir)) {
       throw new ApiError(403, 'Invalid file data');
     }
 
@@ -298,8 +345,22 @@ const LocalStorage: StorageStrategy = {
     }
 
     return fse.createReadStream(filePath);
-  },
-};
+  }
+}
+
+class StaticStorage extends DiskStorage {
+  constructor() {
+    super(config.storage.staticDir);
+  }
+
+  async moveToStorage() {
+    throw 'Static storage may not be accessed';
+  }
+
+  async remove() {
+    throw 'Static storage may not be modified';
+  }
+}
 
 const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
   // Make sure, that the file path does not escape the root path
@@ -311,9 +372,11 @@ const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
 
 export default {
   saveModelFile,
+  createManyModelFile,
   getModelFile,
   getFileStream,
   queryModelFiles,
+  queryFilesByIds,
   deleteFile,
   deleteTempFile,
   generateFileName,

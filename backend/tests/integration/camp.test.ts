@@ -7,6 +7,7 @@ import {
   CampManagerFactory,
   RegistrationFactory,
   TableTemplateFactory,
+  FileFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
@@ -541,7 +542,61 @@ describe('/api/v1/camps', () => {
         ).toBeTruthy();
       });
 
-      it.todo('should copy all files from the referenced camp');
+      it('should create default files when reference Id is undefined', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const files = await prisma.file.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(files.length).not.toBe(0);
+      });
+
+      it('should copy all files from the referenced camp', async () => {
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken();
+        await FileFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          originalName: 'File 1',
+        });
+        await FileFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          originalName: 'File 2',
+        });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const files = await prisma.file.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(files.length).toBe(2);
+        expect(
+          files.some((value) => value.originalName === 'File 1'),
+        ).toBeTruthy();
+        expect(
+          files.some((value) => value.originalName === 'File 2'),
+        ).toBeTruthy();
+      });
 
       it('should respond with `403` status code when user does not manage the reference camp', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());

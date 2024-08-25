@@ -1,26 +1,11 @@
 import { Camp, type Prisma } from '@prisma/client';
 import prisma from '../client';
 import { ulid } from 'utils/ulid';
-import { registrationService } from 'services/index';
-
-const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
-  'id',
-  'active',
-  'public',
-  'name',
-  'countries',
-  'organizer',
-  'contactEmail',
-  'maxParticipants',
-  'minAge',
-  'maxAge',
-  'startAt',
-  'endAt',
-  'price',
-  'location',
-  'createdAt',
-  'updatedAt',
-];
+import {
+  fileService,
+  registrationService,
+  tableTemplateService,
+} from 'services/index';
 
 const getCampById = (id: string) => {
   return prisma.camp.findFirst({
@@ -38,7 +23,7 @@ const getCampsByUserId = async (userId: string) => {
   });
 };
 
-const queryCamps = async <Key extends keyof Camp>(
+const queryCamps = async (
   filter: {
     active?: boolean;
     public?: boolean;
@@ -54,7 +39,6 @@ const queryCamps = async <Key extends keyof Camp>(
     sortBy?: string;
     sortType?: 'asc' | 'desc';
   } = {},
-  keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -84,15 +68,12 @@ const queryCamps = async <Key extends keyof Camp>(
     countries: { array_contains: filter.country },
   };
 
-  const camps = await prisma.camp.findMany({
+  return prisma.camp.findMany({
     where,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
     skip: (page - 1) * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined,
   });
-
-  return camps as Pick<Camp, Key>[];
 };
 
 const createCamp = async (
@@ -139,6 +120,46 @@ const deleteCampById = async (id: string): Promise<void> => {
   await prisma.camp.delete({ where: { id } });
 };
 
+const copyCampTableTemplates = async (
+  referenceCampId: string | undefined,
+  campId: string,
+  defaultTemplates: object[],
+) => {
+  const getReferenceTableTemplates = async (id: string) => {
+    const templates = await tableTemplateService.queryTemplates(id);
+    return templates.map((value) => value.data);
+  };
+
+  const templates = referenceCampId
+    ? await getReferenceTableTemplates(referenceCampId)
+    : defaultTemplates;
+
+  await tableTemplateService.createManyTemplates(campId, templates);
+};
+
+const copyCampFiles = async (
+  referenceCampId: string | undefined,
+  campId: string,
+  defaultFileIds: Omit<Prisma.FileCreateManyInput, 'id'>[],
+) => {
+  const getReferenceFiles = async (id: string) => {
+    return fileService.queryModelFiles({
+      name: 'camp',
+      id,
+    });
+  };
+
+  const files = referenceCampId
+    ? await getReferenceFiles(referenceCampId)
+    : defaultFileIds;
+
+  const model = {
+    name: 'camp',
+    id: campId,
+  };
+  await fileService.createManyModelFile(model, files);
+};
+
 const getCampFreePlaces = async (
   id: string,
   maxParticipants: Camp['maxParticipants'],
@@ -177,4 +198,6 @@ export default {
   createCamp,
   updateCamp,
   deleteCampById,
+  copyCampTableTemplates,
+  copyCampFiles,
 };

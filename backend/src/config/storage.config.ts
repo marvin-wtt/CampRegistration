@@ -34,6 +34,7 @@ const defaultOptions = {
   location: 'local',
   tmpDir: path.join('storage', 'tmp') + path.sep,
   uploadDir: path.join('storage', 'uploads') + path.sep,
+  staticDir: path.join('storage', 'static') + path.sep,
   maxFileSize: 100e6,
 };
 
@@ -41,6 +42,7 @@ const storageOptions = {
   location: envVars.STORAGE_LOCATION ?? defaultOptions.location,
   tmpDir: createPath(envVars.TMP_DIR) ?? defaultOptions.tmpDir,
   uploadDir: createPath(envVars.UPLOAD_DIR) ?? defaultOptions.uploadDir,
+  staticDir: defaultOptions.staticDir,
   maxFileSize: envVars.MAX_FILE_SIZE ?? defaultOptions.maxFileSize,
 };
 

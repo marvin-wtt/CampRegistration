@@ -17,13 +17,17 @@ import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
 } from 'src/composables/survey';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type {
+  CampDetails,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 
 const { locale } = useI18n();
 
 interface Props {
   data?: object;
   campDetails: CampDetails;
+  files?: ServiceFile[];
   submitFn: (id: string, formData: Record<string, unknown>) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
   moderation?: boolean;
@@ -32,6 +36,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   data: undefined,
   moderation: false,
+  files: undefined,
 });
 
 const emit = defineEmits<{
@@ -164,6 +169,8 @@ function createModel(id: string, form: object): SurveyModel {
     }
   });
 
+  createFileVariables(survey);
+
   return survey;
 }
 
@@ -199,6 +206,19 @@ function mapFileQuestionValues(survey: SurveyModel) {
 
 function isFile(file: unknown): file is Pick<File, 'name'> {
   return file != null && typeof file === 'object' && 'name' in file;
+}
+
+function createFileVariables(model: SurveyModel) {
+  if (!props.files) {
+    return;
+  }
+
+  props.files.forEach((file) => {
+    // TODO Replace with actual file id
+    const url = file.id;
+
+    model.setVariable(`_file:${file.field}`, url);
+  });
 }
 </script>
 
