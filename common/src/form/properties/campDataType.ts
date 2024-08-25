@@ -11,6 +11,6 @@ const propertyInfo: IJsonPropertyInfo = {
 };
 
 export default {
-  className: propertyInfo.className,
+  className: propertyInfo.className ?? '',
   propertyInfo: propertyInfo,
 };
