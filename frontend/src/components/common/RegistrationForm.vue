@@ -21,8 +21,10 @@ import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
+import { useAPIService } from 'src/services/APIService';
 
 const { locale } = useI18n();
+const api = useAPIService();
 
 interface Props {
   data?: object;
@@ -95,9 +97,9 @@ function createModerationForm(form: object) {
   };
 }
 
-function createModel(id: string, form: object): SurveyModel {
+function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
-  survey.surveyId = id;
+  survey.surveyId = campId;
   survey.locale = locale.value;
 
   // Handle file uploads
@@ -214,8 +216,7 @@ function createFileVariables(model: SurveyModel) {
   }
 
   props.files.forEach((file) => {
-    // TODO Replace with actual file id
-    const url = file.id;
+    const url = api.getCampFileUrl(model.surveyId, file.id);
 
     model.setVariable(`_file:${file.field}`, url);
   });
