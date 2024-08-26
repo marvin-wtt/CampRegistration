@@ -7,6 +7,7 @@ export interface User extends Identifiable {
   role: 'USER' | 'ADMIN';
   emailVerified: boolean;
   locked: boolean;
+  lastSeen: string | null;
   createdAt: string;
 }
 
@@ -16,7 +17,7 @@ interface UserWithPassword extends User {
 
 export type UserCreateData = Omit<
   UserWithPassword,
-  'id' | 'emailVerified' | 'createdAt'
+  'id' | 'emailVerified' | 'lastSeen' | 'createdAt'
 >;
 
 export type UserUpdateData = Partial<

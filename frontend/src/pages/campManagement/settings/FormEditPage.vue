@@ -220,7 +220,7 @@ creator.onUploadFile.add((_, options) => {
   api
     .createCampFile(campId, {
       name: file.name.replace(/\.[^/.]+$/, ''),
-      field: 'form-file',
+      field: crypto.randomUUID(),
       file,
       accessLevel: 'public',
     })

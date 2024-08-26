@@ -62,6 +62,12 @@
         </q-td>
       </template>
 
+      <template #body-cell-lastSeen="props">
+        <q-td :props="props">
+          {{ props.value ? formatDateTime(props.value) : t('lastSeen.never') }}
+        </q-td>
+      </template>
+
       <template #body-cell-createdAt="props">
         <q-td :props="props">
           {{ formatDateTime(props.value) }}
@@ -235,7 +241,7 @@ const rows = computed<User[]>(() => {
     .sort((a, b) => b.score - a.score);
 });
 
-const columns: QTableColumn<User>[] = [
+const columns = computed<QTableColumn<User>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
@@ -264,6 +270,13 @@ const columns: QTableColumn<User>[] = [
     align: 'left',
   },
   {
+    name: 'lastSeen',
+    label: t('column.lastSeen'),
+    field: 'lastSeen',
+    align: 'left',
+    sortable: true,
+  },
+  {
     name: 'createdAt',
     label: t('column.createdAt'),
     field: 'createdAt',
@@ -276,7 +289,7 @@ const columns: QTableColumn<User>[] = [
     field: 'id',
     align: 'center',
   },
-];
+]);
 
 function getMatchScore(text: string, query: string) {
   text = text.toLowerCase();
@@ -465,6 +478,7 @@ column:
   action: 'Action'
   createdAt: 'Created At'
   email: 'Email'
+  lastSeen: 'Last seen'
   name: 'Name'
   role: 'Role'
   status: 'Status'
@@ -488,6 +502,9 @@ dialog:
 header:
   create: 'Create user'
 
+lastSeen:
+  never: 'Never'
+
 status:
   active: 'Active'
   locked: 'Locked'
@@ -507,6 +524,7 @@ column:
   action: 'Aktion'
   createdAt: 'Erstellt am'
   email: 'E-Mail'
+  lastSeen: 'Zuletzt gesehen'
   name: 'Name'
   role: 'Rolle'
   status: 'Status'
@@ -530,6 +548,9 @@ dialog:
 header:
   create: 'Benutzer erstellen'
 
+lastSeen:
+  never: 'Niemals'
+
 status:
   active: 'Aktiv'
   locked: 'Gesperrt'
@@ -549,6 +570,7 @@ column:
   action: 'Action'
   createdAt: 'Créé le'
   email: 'E-mail'
+  lastSeen: 'Dernière vue'
   name: 'Nom'
   role: 'Rôle'
   status: 'Statut'
@@ -571,6 +593,9 @@ dialog:
 
 header:
   create: 'Créer un utilisateur'
+
+lastSeen:
+  never: 'Jamais'
 
 status:
   active: 'Actif'
