@@ -39,44 +39,61 @@
               />
             </template>
           </q-file>
-          <!-- Name -->
-          <q-input
-            v-model="file.name"
-            :label="t('fields.name.label')"
-            :rules="[
-              (val?: string) => !!val || t('fields.name.rules.required'),
-            ]"
-            outlined
-            rounded
-          />
 
-          <!-- Access -->
-          <q-select
-            v-model="file.accessLevel"
-            :options="accessLevelOptions"
-            :label="t('fields.access_level.label')"
-            :rules="[
-              (val?: string) =>
-                !!val || t('fields.access_level.rules.required'),
-            ]"
-            emit-value
-            map-options
-            outlined
-            rounded
-          >
-            <template #option="scope">
-              <q-item v-bind="scope.itemProps">
-                <q-item-section>
-                  <q-item-label>
-                    {{ scope.opt.label }}
-                  </q-item-label>
-                  <q-item-label caption>
-                    {{ scope.opt.description }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
+          <template v-if="file.file">
+            <!-- Name -->
+            <q-input
+              v-model="file.name"
+              :label="t('fields.name.label')"
+              :rules="[
+                (val?: string) => !!val || t('fields.name.rules.required'),
+              ]"
+              outlined
+              rounded
+            />
+
+            <!-- Field -->
+            <q-input
+              v-model="file.field"
+              :label="t('fields.field.label')"
+              :hint="t('fields.field.hint')"
+              :rules="[
+                (val?: string) => !!val || t('fields.field.rules.required'),
+                (val: string) =>
+                  !props.fields.includes(val) || t('fields.field.rules.unique'),
+              ]"
+              outlined
+              rounded
+            />
+
+            <!-- Access -->
+            <q-select
+              v-model="file.accessLevel"
+              :options="accessLevelOptions"
+              :label="t('fields.access_level.label')"
+              :rules="[
+                (val?: string) =>
+                  !!val || t('fields.access_level.rules.required'),
+              ]"
+              emit-value
+              map-options
+              outlined
+              rounded
+            >
+              <template #option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>
+                      {{ scope.opt.label }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ scope.opt.description }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </template>
         </q-card-section>
 
         <!-- action buttons -->
@@ -105,6 +122,7 @@ import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
 import type { ServiceFileCreateData } from '@camp-registration/common/entities';
+import { uniqueName } from 'src/utils/uniqueName';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -119,7 +137,13 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const file = reactive<ServiceFileCreateData>({} as ServiceFileCreateData);
+const props = defineProps<{
+  fields: string[];
+}>();
+
+const file = reactive<ServiceFileCreateData>({
+  accessLevel: 'public',
+} as ServiceFileCreateData);
 
 interface AccessLevelOption extends QSelectOption {
   description?: string;
@@ -143,6 +167,12 @@ function onFileUpdate() {
     // File name without extension
     file.name = file.file.name.replace(/\.[^/.]+$/, '');
   }
+
+  // Generate default
+  if (file.name && !file.field) {
+    const name = file.name.trim().toLowerCase().replaceAll(' ', '-');
+    file.field = uniqueName(name, props.fields);
+  }
 }
 
 function onOKClick(): void {
@@ -164,6 +194,12 @@ fields:
     label: 'Access'
     rules:
       required: 'This field is required'
+  field:
+    label: 'Identifier'
+    hint: 'Used to reference the file in the form'
+    rules:
+      required: 'This field is required'
+      unique: 'Another file with this identifier already exists'
   file:
     label: 'File'
     rules:
@@ -194,6 +230,12 @@ fields:
     label: 'Zugriff'
     rules:
       required: 'Dieses Feld ist erforderlich'
+  field:
+    label: 'Kennung'
+    hint: 'Wird verwendet, um auf die Datei im Formular zu verweisen'
+    rules:
+      required: 'Dieses Feld ist erforderlich'
+      unique: 'Eine Datei mit dieser Kennung existiert bereits'
   file:
     label: 'Datei'
     rules:
@@ -210,20 +252,26 @@ action:
 access_level:
   public:
     label: 'Öffentlich'
-    description: 'Sichtbar für alle'
+    description: 'Für alle sichtbar'
   private:
     label: 'Privat'
-    description: 'Sichtbar nur für Manager'
+    description: 'Nur für Camp-Manager sichtbar'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Télécharger un fichier'
+title: 'Téléverser un fichier'
 
 fields:
   access_level:
     label: 'Accès'
     rules:
       required: 'Ce champ est requis'
+  field:
+    label: 'Identifiant'
+    hint: 'Utilisé pour référencer le fichier dans le formulaire'
+    rules:
+      required: 'Ce champ est requis'
+      unique: 'Un autre fichier avec cet identifiant existe déjà'
   file:
     label: 'Fichier'
     rules:
@@ -231,19 +279,19 @@ fields:
   name:
     label: 'Nom'
     rules:
-      required: 'Veuillez saisir le nouveau nom de fichier'
+      required: 'Veuillez choisir le nouveau nom de fichier'
 
 action:
-  ok: 'Télécharger'
+  ok: 'Téléverser'
   cancel: 'Annuler'
 
 access_level:
   public:
     label: 'Public'
-    description: 'Visible par tous'
+    description: 'Visible par tout le monde'
   private:
-    label: 'Private'
-    description: 'Visible uniquement par les managers'
+    label: 'Privé'
+    description: 'Visible uniquement par les gestionnaires de camp'
 </i18n>
 
 <style lang="scss">

@@ -116,6 +116,12 @@ const columns: QTableColumn[] = [
     align: 'center',
   },
   {
+    name: 'field',
+    label: t('column.field'),
+    field: 'field',
+    align: 'left',
+  },
+  {
     name: 'access',
     label: t('column.access_level'),
     field: 'accessLevel',
@@ -171,9 +177,15 @@ function mapColumnData(file: ServiceFile) {
 }
 
 function uploadFile() {
+  const files = campFileStore.data ?? [];
+  const fileFields = files.map((file) => file.field).filter((field) => !!field);
+
   quasar
     .dialog({
       component: FileUploadDialog,
+      componentProps: {
+        fields: fileFields,
+      },
     })
     .onOk(async (payload) => {
       uploadOngoing.value = true;
@@ -228,6 +240,7 @@ action:
 
 column:
   access_level: 'Access'
+  field: 'Identifier'
   last_modified: 'Last Modified'
   link: 'Link'
   name: 'Name'
@@ -254,6 +267,7 @@ action:
 
 column:
   access_level: 'Zugriff'
+  field: 'Kennung'
   last_modified: 'Zuletzt geändert'
   link: 'Link'
   name: 'Name'
@@ -279,7 +293,8 @@ action:
   upload: 'Téléverser'
 
 column:
-  access_level: "Niveau d'accès"
+  access_level: 'Accès'
+  field: 'Identifiant'
   last_modified: 'Dernière modification'
   link: 'Lien'
   name: 'Nom'
@@ -288,7 +303,7 @@ column:
 
 access_level:
   public: 'Public'
-  private: 'Private'
+  private: 'Privé'
 
 notification:
   copy_link:

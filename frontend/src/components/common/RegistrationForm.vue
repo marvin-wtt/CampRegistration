@@ -11,7 +11,7 @@ import 'survey-core/defaultV2.min.css';
 
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
-import { onMounted, ref, toRef, watchEffect } from 'vue';
+import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import {
   startAutoDataUpdate,
@@ -21,10 +21,8 @@ import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { useAPIService } from 'src/services/APIService';
 
 const { locale } = useI18n();
-const api = useAPIService();
 
 interface Props {
   data?: object;
@@ -58,8 +56,12 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
+const files = computed<ServiceFile[] | undefined>(() => {
+  return props.files;
+});
+
 // Auto variables update on locale change
-startAutoDataUpdate(model, campData);
+startAutoDataUpdate(model, campData, files);
 startAutoThemeUpdate(model, campData, bgColor);
 
 onMounted(async () => {
@@ -171,8 +173,6 @@ function createModel(campId: string, form: object): SurveyModel {
     }
   });
 
-  createFileVariables(survey);
-
   return survey;
 }
 
@@ -208,18 +208,6 @@ function mapFileQuestionValues(survey: SurveyModel) {
 
 function isFile(file: unknown): file is Pick<File, 'name'> {
   return file != null && typeof file === 'object' && 'name' in file;
-}
-
-function createFileVariables(model: SurveyModel) {
-  if (!props.files) {
-    return;
-  }
-
-  props.files.forEach((file) => {
-    const url = api.getCampFileUrl(model.surveyId, file.id);
-
-    model.setVariable(`_file:${file.field}`, url);
-  });
 }
 </script>
 

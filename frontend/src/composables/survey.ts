@@ -1,33 +1,42 @@
 import { ITheme, SurveyModel } from 'survey-core';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { nextTick, Ref, watch, watchEffect } from 'vue';
+import { computed, nextTick, Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 
 import { PlainLight, PlainDark } from 'survey-core/themes';
+import type { ServiceFile } from '@camp-registration/common/dist/node/entities';
+import { useAPIService } from 'src/services/APIService';
 
 export function startAutoDataUpdate(
   model: Ref<SurveyModel | undefined>,
   data: Ref<CampDetails | undefined>,
+  files: Ref<ServiceFile[] | undefined>,
 ) {
+  const api = useAPIService();
   const { locale } = useI18n();
 
   watch(locale, (value) => {
-    updateVariables(model.value, data.value, value);
+    updateVariables(model.value, data.value, files.value, value);
   });
 
   watch(model, (value) => {
-    updateVariables(value, data.value, locale.value);
+    updateVariables(value, data.value, files.value, locale.value);
   });
 
   watch(data, (value) => {
-    updateVariables(model.value, value, locale.value);
+    updateVariables(model.value, value, files.value, locale.value);
+  });
+
+  watch(files, (value) => {
+    updateVariables(model.value, data.value, value, locale.value);
   });
 
   const updateVariables = (
     model: SurveyModel | undefined,
     data: CampDetails | undefined,
+    files: ServiceFile[] | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -36,6 +45,14 @@ export function startAutoDataUpdate(
 
     model.locale = locale;
     setVariables(model, data);
+
+    // Set file variables
+    files?.forEach((file) => {
+      const name = `_file:${file.field}`;
+      const url = api.getCampFileUrl(model.surveyId, file.id);
+
+      model.setVariable(name, url);
+    });
   };
 }
 

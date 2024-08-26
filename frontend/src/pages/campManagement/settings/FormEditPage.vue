@@ -36,6 +36,7 @@ const api = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
 const { data: campData } = storeToRefs(campDetailsStore);
+const { data: campFiles } = storeToRefs(campFileStore);
 const { locale } = useI18n();
 
 // Custom properties
@@ -76,11 +77,11 @@ frLocale.pehelp.campDataType =
   'nom du champ.';
 
 const loading = computed<boolean>(() => {
-  return campDetailsStore.isLoading;
+  return campDetailsStore.isLoading || campFileStore.isLoading;
 });
 
 const error = computed(() => {
-  return campDetailsStore.error;
+  return campDetailsStore.error || campFileStore.error;
 });
 
 const creatorOptions = {
@@ -99,7 +100,7 @@ const markdownConverter = new showdown.Converter({
 const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
 
-startAutoDataUpdate(previewModel, campData);
+startAutoDataUpdate(previewModel, campData, campFiles);
 
 watchEffect(() => {
   creator.locale = locale.value.split(/[-_]/)[0];
@@ -107,6 +108,7 @@ watchEffect(() => {
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
+  await campFileStore.fetchData();
 
   if (!campDetailsStore.data) {
     return;
@@ -196,6 +198,9 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 
   if (options.area === 'preview-tab') {
+    // Set surveyID for dynamic link generation
+    survey.surveyId = campData.value?.id ?? '';
+
     previewModel.value = survey;
   }
 });
