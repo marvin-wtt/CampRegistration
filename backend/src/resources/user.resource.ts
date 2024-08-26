@@ -10,6 +10,7 @@ const userResource = (user: Pick<User, keyof UserResource>): UserResource => {
     role: convertRole(user.role),
     emailVerified: user.emailVerified,
     locked: user.locked,
+    lastSeen: user.lastSeen?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
   };
 };
