@@ -167,7 +167,7 @@ const deleteFile = async (id: string) => {
 
   const storage = getStorage(file.storageLocation);
   try {
-    await storage.remove(file);
+    await storage.remove(file.name);
   } catch (e) {
     // Do not throw an error because the operation seems successfully to the user anyway
     logger.error(`Error while deleting file: ${file.name}.`);
@@ -229,6 +229,11 @@ const deleteUnassignedFiles = async (): Promise<number> => {
       registrationId: null,
       createdAt: { lt: minAge },
     },
+    select: {
+      id: true,
+      name: true,
+      storageLocation: true,
+    },
   });
 
   // Delete files from database first so that the files can no longer be accessed.
@@ -237,10 +242,21 @@ const deleteUnassignedFiles = async (): Promise<number> => {
     where: { id: { in: fileIds } },
   });
 
-  const fileDeletions = files.map((file) => {
-    const storage = getStorage(file.storageLocation);
-    return storage.remove(file);
+  // Check if any file is still referenced by another model
+  const fileNames = files.map((file) => file.name);
+  const usedFiles = await prisma.file.findMany({
+    where: { name: { in: fileNames } },
+    select: { name: true },
   });
+
+  // Delete files from storage that are no longer in use
+  const fileDeletions = files
+    .filter((file) => !usedFiles.some((value) => value.name === file.name))
+    .map((file) => {
+      const storage = getStorage(file.storageLocation);
+
+      return storage.remove(file.name);
+    });
 
   await Promise.all(fileDeletions);
 
@@ -279,7 +295,7 @@ const deleteTempFiles = async () => {
 
 // Generic storage
 interface StorageStrategy {
-  remove: (file: File) => Promise<void>;
+  remove: (fileName: string) => Promise<void>;
   moveToStorage: (sourcePath: string, filename: string) => Promise<void>;
   stream: (file: File) => fs.ReadStream;
 }
@@ -306,8 +322,8 @@ const getStorage = (name?: string): StorageStrategy => {
 class DiskStorage implements StorageStrategy {
   constructor(private storageDir: string) {}
 
-  async remove(file: File) {
-    const filePath = path.join(this.storageDir, file.name);
+  async remove(fileName: string) {
+    const filePath = path.join(this.storageDir, fileName);
 
     if (!isDirectoryPathValid(filePath, this.storageDir)) {
       throw new ApiError(403, 'Invalid file data');
