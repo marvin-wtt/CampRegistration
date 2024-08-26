@@ -21,6 +21,7 @@ model User {
   role          Role          @default(USER)
   locale        String        @default("en-US") @db.VarChar(5)
   locked        Boolean       @default(false)
+  lastSeen      DateTime?     @map("last_seen")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime?     @updatedAt @map("updated_at")
   camps         CampManager[]

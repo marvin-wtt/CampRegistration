@@ -39,6 +39,7 @@ const queryUsers = async () => {
       emailVerified: true,
       role: true,
       locked: true,
+      lastSeen: true,
       createdAt: true,
     },
   });
@@ -61,9 +62,21 @@ const getUserById = async (id: string): Promise<User | null> => {
   });
 };
 
-const getUserByEmailWithCamps = async (email: string) => {
-  return prisma.user.findUnique({
-    where: { email },
+const updateUserLastSeenById = async (userId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      lastSeen: new Date(),
+    },
+  });
+};
+
+const updateUserLastSeenByIdWithCamps = async (userId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      lastSeen: new Date(),
+    },
     include: {
       camps: {
         include: { camp: true },
@@ -118,7 +131,8 @@ export default {
   getUserById,
   getUserByIdWithCamps,
   getUserByEmail,
-  getUserByEmailWithCamps,
   updateUserById,
+  updateUserLastSeenById,
+  updateUserLastSeenByIdWithCamps,
   deleteUserById,
 };

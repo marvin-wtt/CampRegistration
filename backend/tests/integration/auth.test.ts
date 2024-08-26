@@ -413,6 +413,26 @@ describe('/api/v1/auth', async () => {
       );
     });
 
+    it('should update user last seen time', async () => {
+      const { id } = await createUser();
+
+      const timestamp = new Date().getTime();
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
+    });
+
     it('should respond with a `403` status code when email is not verified', async () => {
       await UserFactory.create({
         email: 'test2@email.net',
@@ -632,6 +652,30 @@ describe('/api/v1/auth', async () => {
       expect(setCookie).toContainEqual(
         expect.stringMatching(/^refreshToken.*/),
       );
+    });
+
+    it('should update user last seen time', async () => {
+      const {
+        refreshToken,
+        user: { id },
+      } = await createUserWithToken();
+
+      const timestamp = new Date().getTime();
+
+      const data = {
+        refreshToken,
+      };
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
     });
 
     it('should respond with `400` status code when the user has no refresh token', async () => {

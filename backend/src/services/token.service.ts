@@ -243,6 +243,10 @@ const deleteExpiredTokens = async () => {
   });
 };
 
+const deleteTokenById = async (id: number) => {
+  await prisma.token.delete({ where: { id } });
+};
+
 export default {
   generateToken,
   saveToken,
@@ -251,5 +255,6 @@ export default {
   generateResetPasswordToken,
   generateVerifyEmailToken,
   blacklistTokens,
+  deleteTokenById,
   deleteExpiredTokens,
 };
