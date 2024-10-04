@@ -114,18 +114,12 @@ const queryModelFiles = async (
   const sortBy = options.sortBy ?? 'name';
   const sortType = options.sortType ?? 'desc';
 
-  const where: Prisma.FileWhereInput = {
-    name: filter.name
-      ? {
-          startsWith: `_${filter.name}_`,
-        }
-      : undefined,
-    type: filter.type,
-    [`${model.name}Id`]: model.id,
-  };
-
   return prisma.file.findMany({
-    where,
+    where: {
+      name: filter.name ? { startsWith: `_${filter.name}_` } : undefined,
+      type: filter.type,
+      [`${model.name}Id`]: model.id,
+    },
     skip: (page - 1) * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined,
@@ -223,6 +217,7 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
 
 const deleteUnassignedFiles = async (): Promise<number> => {
   const minAge = moment().subtract('1', 'd').toDate();
+
   const files = await prisma.file.findMany({
     where: {
       campId: null,

@@ -140,7 +140,7 @@ const copyCampTableTemplates = async (
 const copyCampFiles = async (
   referenceCampId: string | undefined,
   campId: string,
-  defaultFileIds: Omit<Prisma.FileCreateManyInput, 'id'>[],
+  defaultFileData: Omit<Prisma.FileCreateManyInput, 'id'>[],
 ) => {
   const getReferenceFiles = async (id: string) => {
     return fileService.queryModelFiles({
@@ -151,12 +151,13 @@ const copyCampFiles = async (
 
   const files = referenceCampId
     ? await getReferenceFiles(referenceCampId)
-    : defaultFileIds;
+    : defaultFileData;
 
   const model = {
     name: 'camp',
     id: campId,
   };
+
   await fileService.createManyModelFile(model, files);
 };
 

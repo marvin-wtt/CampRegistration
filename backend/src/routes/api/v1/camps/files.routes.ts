@@ -27,11 +27,12 @@ const fileAccessMiddleware = async (
   return file.accessLevel === 'public';
 };
 
+// TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
 router.get(
   '/:fileId',
   guard(or(campManager, and(fileAccessMiddleware, campActive))),
   validate(fileValidation.show),
-  fileController.show,
+  fileController.stream,
 );
 router.get(
   '/',
