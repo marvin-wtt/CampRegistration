@@ -59,8 +59,8 @@ enLocale.qt.address = 'Address';
 enLocale.qt.country = 'Country';
 enLocale.qt.date_of_birth = 'Birthday';
 enLocale.qt.rolle = 'Role';
-deLocale.p.campDataType = 'Data Tag';
-deLocale.pehelp.campDataType =
+enLocale.p.campDataType = 'Data Tag';
+enLocale.pehelp.campDataType =
   'Select what type of data the user enters. ' +
   'The information makes information available to the service regardless of the ' +
   'field name.';
