@@ -60,7 +60,7 @@
               :rules="[
                 (val?: string) => !!val || t('fields.field.rules.required'),
                 (val: string) =>
-                  !props.fields.includes(val) || t('fields.field.rules.unique'),
+                  !fields.includes(val) || t('fields.field.rules.unique'),
               ]"
               outlined
               rounded
@@ -120,11 +120,14 @@
 <script lang="ts" setup>
 import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { ServiceFileCreateData } from '@camp-registration/common/entities';
 import { uniqueName } from 'src/utils/uniqueName';
+import { useCampFilesStore } from 'stores/camp-files-store';
 
 defineEmits([...useDialogPluginComponent.emits]);
+
+const campFileStore = useCampFilesStore();
 
 const { t } = useI18n();
 
@@ -137,13 +140,17 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const props = defineProps<{
-  fields: string[];
-}>();
-
 const file = reactive<ServiceFileCreateData>({
   accessLevel: 'public',
 } as ServiceFileCreateData);
+
+const loading = ref<boolean>(false);
+
+const fields = computed<string[]>(() => {
+  const files = campFileStore.data ?? [];
+
+  return files.map((file) => file.field).filter((field) => field != null);
+});
 
 interface AccessLevelOption extends QSelectOption {
   description?: string;
@@ -171,12 +178,19 @@ function onFileUpdate() {
   // Generate default
   if (file.name && !file.field) {
     const name = file.name.trim().toLowerCase().replaceAll(' ', '-');
-    file.field = uniqueName(name, props.fields);
+    file.field = uniqueName(name, fields.value);
   }
 }
 
-function onOKClick(): void {
-  onDialogOK(file);
+async function onOKClick(): Promise<void> {
+  loading.value = true;
+  try {
+    await campFileStore.createEntry(file);
+
+    onDialogOK(file);
+  } finally {
+    loading.value = false;
+  }
 }
 
 function onCancelClick() {

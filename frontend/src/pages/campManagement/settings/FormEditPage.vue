@@ -31,7 +31,10 @@ import { SurveyModel } from 'survey-core';
 import { storeToRefs } from 'pinia';
 import showdown from 'showdown';
 import { useAPIService } from 'src/services/APIService';
+import { useQuasar } from 'quasar';
+import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 
+const quasar = useQuasar();
 const api = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
@@ -217,6 +220,13 @@ creator.onUploadFile.add((_, options) => {
   // TODO Why is it an array and not a single file? The callback only accepts a single link as parameter
   const file = files[0];
 
+  // When file is selected via custom picker, then the file is already present on the server
+  if ('id' in file && typeof file.id === 'string') {
+    const url = campFileStore.getUrl(file.id, campId);
+    options.callback('success', url);
+    return;
+  }
+
   api
     .createCampFile(campId, {
       name: file.name.replace(/\.[^/.]+$/, ''),
@@ -230,6 +240,22 @@ creator.onUploadFile.add((_, options) => {
     })
     .catch(() => {
       options.callback('error', '');
+    });
+});
+
+creator.onOpenFileChooser.add((_, options) => {
+  quasar
+    .dialog({
+      component: FileSelectionDialog,
+      componentProps: {
+        accept: 'image/*',
+      },
+    })
+    .onOk((files) => {
+      options.callback(files);
+    })
+    .onCancel(() => {
+      options.callback([]);
     });
 });
 

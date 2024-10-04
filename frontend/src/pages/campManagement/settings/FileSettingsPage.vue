@@ -177,24 +177,14 @@ function mapColumnData(file: ServiceFile) {
 }
 
 function uploadFile() {
-  const files = campFileStore.data ?? [];
-  const fileFields = files.map((file) => file.field).filter((field) => !!field);
+  uploadOngoing.value = true;
 
   quasar
     .dialog({
       component: FileUploadDialog,
-      componentProps: {
-        fields: fileFields,
-      },
     })
-    .onOk(async (payload) => {
-      uploadOngoing.value = true;
-      try {
-        await campFileStore.createEntry(payload);
-      } catch (ignored) {
-      } finally {
-        uploadOngoing.value = false;
-      }
+    .onDismiss(() => {
+      uploadOngoing.value = false;
     });
 }
 
