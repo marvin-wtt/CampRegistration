@@ -598,6 +598,70 @@ describe('/api/v1/camps', () => {
         ).toBeTruthy();
       });
 
+      it('should replace file URLs in the form', async () => {
+        const fileUrl = (id: string): string => {
+          return `http://localhost:9000/files/${id}`;
+        };
+
+        const createForm = (fileId1: string, fileId2: string) => {
+          return {
+            logo: { default: fileUrl(fileId1) },
+            questions: [
+              { title: `This is [markdown](${fileUrl(fileId2)})` },
+              { title: `And another [markdown](${fileUrl(fileId2)}) link` },
+              { title: `Url with [query](${fileUrl(fileId2)}?test=yes)` },
+              { title: 'External [link](https://test.net) link' },
+            ],
+          };
+        };
+
+        const fileId1 = ulid();
+        const fileId2 = ulid();
+        const form = createForm(fileId1, fileId2);
+
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken({ form });
+
+        await FileFactory.create({
+          id: fileId1,
+          camp: { connect: { id: referenceCamp.id } },
+          originalName: 'File 1',
+        });
+        await FileFactory.create({
+          id: fileId2,
+          camp: { connect: { id: referenceCamp.id } },
+          originalName: 'File 2',
+        });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const newFile1 = await prisma.file.findFirst({
+          where: {
+            camp: { id: body.data.id },
+            originalName: 'File 1',
+          },
+        });
+        const newFile2 = await prisma.file.findFirst({
+          where: {
+            camp: { id: body.data.id },
+            originalName: 'File 2',
+          },
+        });
+
+        expect(body.data.form).toStrictEqual(
+          createForm(newFile1.id, newFile2.id),
+        );
+      });
+
       it('should respond with `403` status code when user does not manage the reference camp', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
         const camp = await CampFactory.create();

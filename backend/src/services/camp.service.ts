@@ -1,11 +1,10 @@
 import { Camp, type Prisma } from '@prisma/client';
 import prisma from '../client';
 import { ulid } from 'utils/ulid';
-import {
-  fileService,
-  registrationService,
-  tableTemplateService,
-} from 'services/index';
+import { registrationService } from 'services/index';
+import { replaceUrlsInObject } from '../utils/replaceUrls';
+import { OptionalByKeys } from '../types/utils';
+import config from '../config';
 
 const getCampById = (id: string) => {
   return prisma.camp.findFirst({
@@ -76,19 +75,86 @@ const queryCamps = async (
   });
 };
 
+type TableTemplateCreateData = OptionalByKeys<
+  Prisma.TableTemplateCreateManyCampInput,
+  'id'
+>[];
+type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
+
 const createCamp = async (
   userId: string,
   data: Omit<Prisma.CampCreateInput, 'id' | 'freePlaces'>,
+  templates: TableTemplateCreateData = [],
+  files: FileCreateData = [],
 ) => {
   const freePlaces = data.maxParticipants;
+
+  const fileIds = files.map((f) => f.id).filter((f) => f != null);
+  const fileIdMap = new Map<string, string>();
+  const form = replaceFormFileUrls(data.form, fileIds, fileIdMap);
+
+  // Copy files from reference camp with new id
+  const fileData = files.map((file) => ({
+    ...file,
+    // Use id from file map if present
+    id: file.id ? (fileIdMap.get(file.id) ?? ulid()) : ulid(),
+    // Override camp id
+    campId: undefined,
+  }));
+
+  // Copy templates from reference camp with new id
+  const templateData = templates.map((template) => ({
+    ...template,
+    id: ulid(),
+    // Override camp id
+    campId: undefined,
+  }));
 
   return prisma.camp.create({
     data: {
       id: ulid(),
       freePlaces,
       ...data,
+      form,
       campManager: { create: { userId, id: ulid() } },
+      templates: { createMany: { data: templateData } },
+      files: { createMany: { data: fileData } },
     },
+  });
+};
+
+const replaceFormFileUrls = (
+  form: object,
+  fileIds: string[],
+  fileIdMap: Map<string, string>,
+): object => {
+  return replaceUrlsInObject(form, (url) => {
+    const urlObj = new URL(url);
+
+    // Only replace app urls
+    if (urlObj.origin !== config.origin) {
+      return url;
+    }
+
+    const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+
+    // Replace all url params
+    for (const fileId of fileIds) {
+      const index = pathSegments.indexOf(fileId);
+      if (index === -1) {
+        continue;
+      }
+
+      // Replace the id with the new one
+      const id = fileIdMap.get(fileId) ?? ulid();
+      pathSegments[index] = id;
+      fileIdMap.set(fileId, id);
+    }
+
+    // Reconstruct the URL with the updated path
+    urlObj.pathname = pathSegments.join('/');
+
+    return urlObj.toString();
   });
 };
 
@@ -118,47 +184,6 @@ const deleteCampById = async (id: string): Promise<void> => {
   // TODO All files need to be deleted
 
   await prisma.camp.delete({ where: { id } });
-};
-
-const copyCampTableTemplates = async (
-  referenceCampId: string | undefined,
-  campId: string,
-  defaultTemplates: object[],
-) => {
-  const getReferenceTableTemplates = async (id: string) => {
-    const templates = await tableTemplateService.queryTemplates(id);
-    return templates.map((value) => value.data);
-  };
-
-  const templates = referenceCampId
-    ? await getReferenceTableTemplates(referenceCampId)
-    : defaultTemplates;
-
-  await tableTemplateService.createManyTemplates(campId, templates);
-};
-
-const copyCampFiles = async (
-  referenceCampId: string | undefined,
-  campId: string,
-  defaultFileData: Omit<Prisma.FileCreateManyInput, 'id'>[],
-) => {
-  const getReferenceFiles = async (id: string) => {
-    return fileService.queryModelFiles({
-      name: 'camp',
-      id,
-    });
-  };
-
-  const files = referenceCampId
-    ? await getReferenceFiles(referenceCampId)
-    : defaultFileData;
-
-  const model = {
-    name: 'camp',
-    id: campId,
-  };
-
-  await fileService.createManyModelFile(model, files);
 };
 
 const getCampFreePlaces = async (
@@ -199,6 +224,4 @@ export default {
   createCamp,
   updateCamp,
   deleteCampById,
-  copyCampTableTemplates,
-  copyCampFiles,
 };

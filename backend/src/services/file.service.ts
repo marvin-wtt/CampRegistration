@@ -159,6 +159,18 @@ const deleteFile = async (id: string) => {
     return file;
   }
 
+  // Check if other files still reference the file on the disk
+  const remainingReferences = await prisma.file.count({
+    where: {
+      name: file.name,
+    },
+  });
+
+  // Only delete the file if no further references are present
+  if (remainingReferences > 0) {
+    return;
+  }
+
   const storage = getStorage(file.storageLocation);
   try {
     await storage.remove(file.name);
@@ -167,8 +179,6 @@ const deleteFile = async (id: string) => {
     logger.error(`Error while deleting file: ${file.name}.`);
     logger.error(e);
   }
-
-  return file;
 };
 
 const deleteTempFile = async (fileName: string) => {
