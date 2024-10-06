@@ -1,7 +1,7 @@
 import { ITheme, SurveyModel } from 'survey-core';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { computed, nextTick, Ref, watch, watchEffect } from 'vue';
+import { nextTick, Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 
