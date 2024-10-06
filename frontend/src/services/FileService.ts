@@ -49,7 +49,9 @@ export function useFileService() {
   }
 
   function getCampFileUrl(campId: string, fileId: string): string {
-    return `${api.defaults.baseURL}camps/${campId}/files/${fileId}/`;
+    return api.getUri({
+      url: `camps/${campId}/files/${fileId}/`,
+    });
   }
 
   function getRegistrationFileUrl(
@@ -57,7 +59,9 @@ export function useFileService() {
     registrationId: string,
     fileId: string,
   ) {
-    return `${api.defaults.baseURL}camps/${campId}/registrations/${registrationId}files/${fileId}/`;
+    return api.getUri({
+      url: `camps/${campId}/registrations/${registrationId}files/${fileId}/`,
+    });
   }
 
   return {

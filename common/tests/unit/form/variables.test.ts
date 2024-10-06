@@ -96,4 +96,20 @@ describe('variables', () => {
       expect(model.getVariable('camp.startAtDate')).toBe('01/10/2000');
     });
   });
+
+  describe('helpers', () => {
+    it('should set `validationEnabled`', () => {
+      const model = new SurveyModel();
+
+      setVariables(model, fakeCampData());
+
+      expect(model.getVariable('_validationEnabled')).toBe(true);
+
+      model.validationEnabled = false;
+
+      setVariables(model, fakeCampData());
+
+      expect(model.getVariable('_validationEnabled')).toBe(false);
+    });
+  });
 });

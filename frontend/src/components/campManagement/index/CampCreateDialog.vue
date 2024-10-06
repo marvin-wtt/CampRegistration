@@ -10,6 +10,7 @@
         color="primary"
         animated
         flat
+        header-nav
         class="column col-xs-12 col-sm-7 col-md-5 col-lg-4 col-xl-3"
       >
         <camp-edit-step
@@ -68,10 +69,9 @@
         >
           <!-- Template -->
           <q-select
-            v-model="template"
+            v-model="data.referenceCampId"
             :label="t('field.template.label')"
-            :options="templateOptions"
-            :rules="[(val?: string) => !!val || t('validation.template.empty')]"
+            :options="referenceCampOptions"
             clearable
             outlined
             rounded
@@ -349,30 +349,19 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useAuthStore } from 'stores/auth-store';
 import { useCampsStore } from 'stores/camps-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useTemplateStore } from 'stores/template-store';
 
 const authStore = useAuthStore();
 const campStore = useCampsStore();
-const campDetailsStore = useCampDetailsStore();
-const templateStore = useTemplateStore();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
 const step = ref<number>(0);
 const loading = ref<boolean>(false);
 const data = ref<CampCreateData>({} as CampCreateData);
-const template = ref<string>('#default');
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
-const templateOptions = computed<QSelectOption[]>(() => {
-  const defaults: QSelectOption[] = [
-    {
-      label: t('field.template.options.default'),
-      value: '#default',
-    },
-  ];
-
+type ReferenceCampOptions = QSelectOption<string | undefined>[];
+const referenceCampOptions = computed<ReferenceCampOptions>(() => {
   const camps = authStore.user?.camps
     .map((camp): QSelectOption => {
       return {
@@ -382,40 +371,20 @@ const templateOptions = computed<QSelectOption[]>(() => {
     })
     .sort((a, b) => a.label.localeCompare(b.label));
 
-  return camps ? [...defaults, ...camps] : defaults;
+  return camps ?? [];
 });
 
 async function onComplete() {
   loading.value = true;
-
-  // Copy form and themes from template
-  if (template.value && !template.value.startsWith('#')) {
-    await campDetailsStore.fetchData(template.value);
-    data.value.form = campDetailsStore.data?.form;
-    data.value.themes = campDetailsStore.data?.themes;
-  }
-
   // Create camp
-  const camp = await campStore.createEntry(data.value);
-  if (camp === undefined) {
+  try {
+    await campStore.createEntry(data.value);
+
+    onDialogOK();
+  } catch (e) {
     loading.value = false;
-    return;
+    step.value--;
   }
-
-  // Copy templates
-  if (template.value && !template.value.startsWith('#')) {
-    await templateStore.fetchData(template.value);
-
-    if (templateStore.data) {
-      await Promise.all(
-        templateStore.data.map((template) => {
-          templateStore.createEntry(template, camp.id);
-        }),
-      );
-    }
-  }
-
-  onDialogOK();
 }
 </script>
 

@@ -8,7 +8,7 @@ import { Request } from 'express';
 import { fileResource } from 'resources';
 import { File } from '@prisma/client';
 
-const show = catchRequestAsync(async (req, res) => {
+const stream = catchRequestAsync(async (req, res) => {
   const { download } = req.query;
   const file = routeModel(req.models.file);
   const fileStream = await fileService.getFileStream(file);
@@ -23,6 +23,12 @@ const show = catchRequestAsync(async (req, res) => {
   );
 
   fileStream.pipe(res); // Pipe the file stream to the response
+});
+
+const show = catchRequestAsync(async (req, res) => {
+  const file = routeModel(req.models.file);
+
+  res.status(httpStatus.OK).json(fileResource(file));
 });
 
 const index = catchRequestAsync(async (req, res) => {
@@ -102,6 +108,7 @@ const getRelationModel = (req: Request): ModelData | undefined => {
 };
 
 export default {
+  stream,
   show,
   index,
   store,
