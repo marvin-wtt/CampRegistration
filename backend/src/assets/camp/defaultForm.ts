@@ -1,3 +1,8 @@
+// TODO Set file IDs
+import config from 'config';
+
+const host = config.origin;
+
 export default {
   locale: 'de',
   title: '{camp.name}',
@@ -550,10 +555,9 @@ export default {
           type: 'boolean',
           name: 'consent_rules',
           title: {
-            de: 'Ich habe die [Campregeln](https://camps.ballaeron.de) gelesen und bin damit einverstanden.',
-            fr: "J'ai lu et j'accepte le [règlement](https://camps.ballaeron.de) de la colonie de vacances.",
-            default:
-              'I have read the [camp rules](https://camps.ballaeron.de) and agree to them.',
+            de: `Ich habe die [Campregeln](${host}/) gelesen und bin damit einverstanden.`,
+            fr: `J'ai lu et j'accepte le [règlement](${host}/) de la colonie de vacances.`,
+            default: `I have read the [camp rules](${host}/) and agree to them.`,
           },
           correctAnswer: true,
           isRequired: true,
@@ -580,10 +584,9 @@ export default {
           type: 'boolean',
           name: 'consent_general_terms_and_conditions',
           title: {
-            de: 'Ich habe die [allgemeinen Geschäftsbedingungen](https://camps.ballaeron.de) gelesen und stimme diesen zu.',
-            fr: "J'ai lu et j'accepte les [conditions générales](https://camps.ballaeron.de/f).",
-            default:
-              'I have read the [General Terms and Conditions](https://camps.ballaeron.de) and agree to them.',
+            de: `Ich habe die [allgemeinen Geschäftsbedingungen](${host}/) gelesen und stimme diesen zu.`,
+            fr: `J'ai lu et j'accepte les [conditions générales](${host}/).`,
+            default: `I have read the [General Terms and Conditions](${host}/) and agree to them.`,
           },
           correctAnswer: true,
           isRequired: true,
