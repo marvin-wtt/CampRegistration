@@ -116,6 +116,12 @@ const columns: QTableColumn[] = [
     align: 'center',
   },
   {
+    name: 'field',
+    label: t('column.field'),
+    field: 'field',
+    align: 'left',
+  },
+  {
     name: 'access',
     label: t('column.access_level'),
     field: 'accessLevel',
@@ -171,18 +177,14 @@ function mapColumnData(file: ServiceFile) {
 }
 
 function uploadFile() {
+  uploadOngoing.value = true;
+
   quasar
     .dialog({
       component: FileUploadDialog,
     })
-    .onOk(async (payload) => {
-      uploadOngoing.value = true;
-      try {
-        await campFileStore.createEntry(payload);
-      } catch (ignored) {
-      } finally {
-        uploadOngoing.value = false;
-      }
+    .onDismiss(() => {
+      uploadOngoing.value = false;
     });
 }
 
@@ -228,6 +230,7 @@ action:
 
 column:
   access_level: 'Access'
+  field: 'Identifier'
   last_modified: 'Last Modified'
   link: 'Link'
   name: 'Name'
@@ -254,6 +257,7 @@ action:
 
 column:
   access_level: 'Zugriff'
+  field: 'Kennung'
   last_modified: 'Zuletzt geändert'
   link: 'Link'
   name: 'Name'
@@ -279,7 +283,8 @@ action:
   upload: 'Téléverser'
 
 column:
-  access_level: "Niveau d'accès"
+  access_level: 'Accès'
+  field: 'Identifiant'
   last_modified: 'Dernière modification'
   link: 'Lien'
   name: 'Nom'
@@ -288,7 +293,7 @@ column:
 
 access_level:
   public: 'Public'
-  private: 'Private'
+  private: 'Privé'
 
 notification:
   copy_link:

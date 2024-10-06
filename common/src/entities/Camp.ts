@@ -28,7 +28,9 @@ export interface CampDetails extends Camp {
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
   'id' | 'freePlaces'
->;
+> & {
+  referenceCampId?: string;
+};
 
 export type CampUpdateData = Partial<CampCreateData>;
 

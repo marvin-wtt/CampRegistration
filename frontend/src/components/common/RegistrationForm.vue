@@ -11,19 +11,23 @@ import 'survey-core/defaultV2.min.css';
 
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
-import { onMounted, ref, toRef, watchEffect } from 'vue';
+import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
 } from 'src/composables/survey';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type {
+  CampDetails,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 
 const { locale } = useI18n();
 
 interface Props {
   data?: object;
   campDetails: CampDetails;
+  files?: ServiceFile[];
   submitFn: (id: string, formData: Record<string, unknown>) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
   moderation?: boolean;
@@ -32,6 +36,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   data: undefined,
   moderation: false,
+  files: undefined,
 });
 
 const emit = defineEmits<{
@@ -51,8 +56,12 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
+const files = computed<ServiceFile[] | undefined>(() => {
+  return props.files;
+});
+
 // Auto variables update on locale change
-startAutoDataUpdate(model, campData);
+startAutoDataUpdate(model, campData, files);
 startAutoThemeUpdate(model, campData, bgColor);
 
 onMounted(async () => {
@@ -63,11 +72,11 @@ onMounted(async () => {
   const modelForm = props.moderation ? createModerationForm(form) : form;
   model.value = createModel(id, modelForm);
 
-  // Disable validation to allow manual adjustments that otherwise violate the validation rules
+  // TODO Remove with next surveyJs release
   if (props.moderation) {
-    // TODO Replace with enableValidation = false
     // https://github.com/surveyjs/survey-library/issues/8708
     model.value.ignoreValidation = true;
+    model.value.validationEnabled = false;
   }
 
   if (props.data) {
@@ -80,6 +89,8 @@ function createModerationForm(form: object) {
     ...form,
     showTOC: true,
     fitToContainer: true,
+    // Disable validation to allow manual adjustments that otherwise violate the validation rules
+    validationEnabled: false,
     completeText: {
       default: 'Save',
       de: 'Speichern',
@@ -88,9 +99,9 @@ function createModerationForm(form: object) {
   };
 }
 
-function createModel(id: string, form: object): SurveyModel {
+function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
-  survey.surveyId = id;
+  survey.surveyId = campId;
   survey.locale = locale.value;
 
   // Handle file uploads

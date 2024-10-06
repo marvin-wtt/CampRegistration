@@ -392,7 +392,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
       });
 
       it('should respond with `400` status code when file is missing', async () => {
@@ -593,7 +593,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const { body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
 
         expect(body).toHaveProperty('data.waitingList', expected);
       };
@@ -891,7 +891,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations/`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
 
         const refCamp = await prisma.camp.findFirst({
           where: { id: camp.id },

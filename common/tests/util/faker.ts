@@ -1,6 +1,6 @@
 import { Data } from '../../src/form/variables/variables';
 
-export const fakeCampData = (data: Partial<Data>): Data => {
+export const fakeCampData = (data: Partial<Data> = {}): Data => {
   return {
     name: '',
     organizer: '',
@@ -13,6 +13,7 @@ export const fakeCampData = (data: Partial<Data>): Data => {
     maxAge: 0,
     price: 0,
     location: '',
+    freePlaces: null,
     ...data,
   };
 };

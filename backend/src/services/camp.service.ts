@@ -2,25 +2,9 @@ import { Camp, type Prisma } from '@prisma/client';
 import prisma from '../client';
 import { ulid } from 'utils/ulid';
 import { registrationService } from 'services/index';
-
-const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
-  'id',
-  'active',
-  'public',
-  'name',
-  'countries',
-  'organizer',
-  'contactEmail',
-  'maxParticipants',
-  'minAge',
-  'maxAge',
-  'startAt',
-  'endAt',
-  'price',
-  'location',
-  'createdAt',
-  'updatedAt',
-];
+import { replaceUrlsInObject } from '../utils/replaceUrls';
+import { OptionalByKeys } from '../types/utils';
+import config from '../config';
 
 const getCampById = (id: string) => {
   return prisma.camp.findFirst({
@@ -38,7 +22,7 @@ const getCampsByUserId = async (userId: string) => {
   });
 };
 
-const queryCamps = async <Key extends keyof Camp>(
+const queryCamps = async (
   filter: {
     active?: boolean;
     public?: boolean;
@@ -54,7 +38,6 @@ const queryCamps = async <Key extends keyof Camp>(
     sortBy?: string;
     sortType?: 'asc' | 'desc';
   } = {},
-  keys: Key[] = defaultSelectKeys as Key[],
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -84,30 +67,94 @@ const queryCamps = async <Key extends keyof Camp>(
     countries: { array_contains: filter.country },
   };
 
-  const camps = await prisma.camp.findMany({
+  return prisma.camp.findMany({
     where,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
     skip: (page - 1) * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined,
   });
-
-  return camps as Pick<Camp, Key>[];
 };
+
+type TableTemplateCreateData = OptionalByKeys<
+  Prisma.TableTemplateCreateManyCampInput,
+  'id'
+>[];
+type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 const createCamp = async (
   userId: string,
   data: Omit<Prisma.CampCreateInput, 'id' | 'freePlaces'>,
+  templates: TableTemplateCreateData = [],
+  files: FileCreateData = [],
 ) => {
   const freePlaces = data.maxParticipants;
+
+  const fileIds = files.map((f) => f.id).filter((f) => f != null);
+  const fileIdMap = new Map<string, string>();
+  const form = replaceFormFileUrls(data.form, fileIds, fileIdMap);
+
+  // Copy files from reference camp with new id
+  const fileData = files.map((file) => ({
+    ...file,
+    // Use id from file map if present
+    id: file.id ? (fileIdMap.get(file.id) ?? ulid()) : ulid(),
+    // Override camp id
+    campId: undefined,
+  }));
+
+  // Copy templates from reference camp with new id
+  const templateData = templates.map((template) => ({
+    ...template,
+    id: ulid(),
+    // Override camp id
+    campId: undefined,
+  }));
 
   return prisma.camp.create({
     data: {
       id: ulid(),
       freePlaces,
       ...data,
+      form,
       campManager: { create: { userId, id: ulid() } },
+      templates: { createMany: { data: templateData } },
+      files: { createMany: { data: fileData } },
     },
+  });
+};
+
+const replaceFormFileUrls = (
+  form: object,
+  fileIds: string[],
+  fileIdMap: Map<string, string>,
+): object => {
+  return replaceUrlsInObject(form, (url) => {
+    const urlObj = new URL(url);
+
+    // Only replace app urls
+    if (urlObj.origin !== config.origin) {
+      return url;
+    }
+
+    const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+
+    // Replace all url params
+    for (const fileId of fileIds) {
+      const index = pathSegments.indexOf(fileId);
+      if (index === -1) {
+        continue;
+      }
+
+      // Replace the id with the new one
+      const id = fileIdMap.get(fileId) ?? ulid();
+      pathSegments[index] = id;
+      fileIdMap.set(fileId, id);
+    }
+
+    // Reconstruct the URL with the updated path
+    urlObj.pathname = pathSegments.join('/');
+
+    return urlObj.toString();
   });
 };
 

@@ -223,6 +223,7 @@ import { computed, reactive, ref, toRaw } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
 import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateColumnEditDialog.vue';
 import { PartialBy } from 'src/types';
+import { uniqueName } from 'src/utils/uniqueName';
 
 interface Props {
   template: TableTemplate;
@@ -319,19 +320,9 @@ function createColumnName(label: TableColumnTemplate['label']): string {
   const labelString =
     typeof label === 'string' ? label : Object.values(label)[0];
   const name = labelString.toLowerCase().replaceAll(' ', '_');
-  let uniqueName = name;
-  let count = 1;
-
   const names = template.columns.map((column) => column.name);
 
-  // Check if the string already exists in the array
-  while (names.includes(uniqueName)) {
-    // If it does, append the count and increment the count
-    uniqueName = `${name}_${count}`;
-    count++;
-  }
-
-  return uniqueName;
+  return uniqueName(name, names);
 }
 
 function editColumn(column: TableColumnTemplate): void {

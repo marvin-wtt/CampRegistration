@@ -7,3 +7,4 @@ export * from './invitation';
 export * from './manager';
 export * from './room';
 export * from './bed';
+export * from './table-template';

@@ -14,17 +14,6 @@ import logger from 'config/logger';
 
 type RequestFile = Express.Multer.File;
 
-const defaultSelectKeys: (keyof Prisma.FileSelect)[] = [
-  'id',
-  'name',
-  'originalName',
-  'field',
-  'type',
-  'size',
-  'accessLevel',
-  'createdAt',
-];
-
 interface ModelData {
   id: string;
   name: string;
@@ -78,6 +67,26 @@ const saveModelFile = async (
   });
 };
 
+const createManyModelFile = async (
+  model: ModelData | undefined,
+  files: Omit<Prisma.FileCreateManyInput, 'id'>[],
+) => {
+  const modelData = model ? { [`${model.name}Id`]: model.id } : {};
+
+  const data = files.map((file) => {
+    return {
+      ...file,
+      ...modelData,
+      id: ulid(),
+      createdAt: undefined,
+    };
+  });
+
+  return prisma.file.createMany({
+    data,
+  });
+};
+
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
   return prisma.file.findFirst({
     where: {
@@ -87,42 +96,43 @@ const getModelFile = async (modelName: string, modelId: string, id: string) => {
   });
 };
 
-const queryModelFiles = async <Key extends keyof File>(
+const queryModelFiles = async (
   model: ModelData,
   filter: {
     name?: string;
     type?: string;
-  },
+  } = {},
   options: {
     limit?: number;
     page?: number;
     sortBy?: string;
     sortType?: 'asc' | 'desc';
-  },
-  keys: Key[] = defaultSelectKeys as Key[],
+  } = {},
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
   const sortBy = options.sortBy ?? 'name';
   const sortType = options.sortType ?? 'desc';
 
-  const select = keys.reduce((obj, k) => ({ ...obj, [k]: true }), {});
-  const where: Prisma.FileWhereInput = {
-    name: filter.name
-      ? {
-          startsWith: `_${filter.name}_`,
-        }
-      : undefined,
-    type: filter.type,
-    [`${model.name}Id`]: model.id,
-  };
-
   return prisma.file.findMany({
-    select,
-    where,
+    where: {
+      name: filter.name ? { startsWith: `_${filter.name}_` } : undefined,
+      type: filter.type,
+      [`${model.name}Id`]: model.id,
+    },
     skip: (page - 1) * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined,
+  });
+};
+
+const queryFilesByIds = async (fileIds: string[]) => {
+  return prisma.file.findMany({
+    where: {
+      id: {
+        in: fileIds,
+      },
+    },
   });
 };
 
@@ -138,17 +148,37 @@ const deleteFile = async (id: string) => {
     },
   });
 
+  const fileCount = await prisma.file.count({
+    where: {
+      name: file.name,
+    },
+  });
+
+  // Do not delete file from storage if other references still exist
+  if (fileCount > 0) {
+    return file;
+  }
+
+  // Check if other files still reference the file on the disk
+  const remainingReferences = await prisma.file.count({
+    where: {
+      name: file.name,
+    },
+  });
+
+  // Only delete the file if no further references are present
+  if (remainingReferences > 0) {
+    return;
+  }
+
   const storage = getStorage(file.storageLocation);
   try {
-    // TODO Can this be done in a job?
-    await storage.remove(file);
+    await storage.remove(file.name);
   } catch (e) {
     // Do not throw an error because the operation seems successfully to the user anyway
     logger.error(`Error while deleting file: ${file.name}.`);
     logger.error(e);
   }
-
-  return file;
 };
 
 const deleteTempFile = async (fileName: string) => {
@@ -197,11 +227,17 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
 
 const deleteUnassignedFiles = async (): Promise<number> => {
   const minAge = moment().subtract('1', 'd').toDate();
+
   const files = await prisma.file.findMany({
     where: {
       campId: null,
       registrationId: null,
       createdAt: { lt: minAge },
+    },
+    select: {
+      id: true,
+      name: true,
+      storageLocation: true,
     },
   });
 
@@ -211,10 +247,21 @@ const deleteUnassignedFiles = async (): Promise<number> => {
     where: { id: { in: fileIds } },
   });
 
-  const fileDeletions = files.map((file) => {
-    const storage = getStorage(file.storageLocation);
-    return storage.remove(file);
+  // Check if any file is still referenced by another model
+  const fileNames = files.map((file) => file.name);
+  const usedFiles = await prisma.file.findMany({
+    where: { name: { in: fileNames } },
+    select: { name: true },
   });
+
+  // Delete files from storage that are no longer in use
+  const fileDeletions = files
+    .filter((file) => !usedFiles.some((value) => value.name === file.name))
+    .map((file) => {
+      const storage = getStorage(file.storageLocation);
+
+      return storage.remove(file.name);
+    });
 
   await Promise.all(fileDeletions);
 
@@ -253,7 +300,7 @@ const deleteTempFiles = async () => {
 
 // Generic storage
 interface StorageStrategy {
-  remove: (file: File) => Promise<void>;
+  remove: (fileName: string) => Promise<void>;
   moveToStorage: (sourcePath: string, filename: string) => Promise<void>;
   stream: (file: File) => fs.ReadStream;
 }
@@ -264,7 +311,11 @@ const getStorage = (name?: string): StorageStrategy => {
   }
 
   if (name === 'local') {
-    return LocalStorage;
+    return new DiskStorage(config.storage.uploadDir);
+  }
+
+  if (name === 'static') {
+    return new StaticStorage();
   }
 
   throw new ApiError(
@@ -273,56 +324,80 @@ const getStorage = (name?: string): StorageStrategy => {
   );
 };
 
-const LocalStorage: StorageStrategy = {
-  remove: async (file: File) => {
-    const { uploadDir } = config.storage;
-    const filePath = path.join(uploadDir, file.name);
+class DiskStorage implements StorageStrategy {
+  constructor(private storageDir: string) {}
 
-    verifyDirectoryPath(filePath, uploadDir);
+  async remove(fileName: string) {
+    const filePath = path.join(this.storageDir, fileName);
+
+    if (!isDirectoryPathValid(filePath, this.storageDir)) {
+      throw new ApiError(403, 'Invalid file data');
+    }
 
     await fse.remove(filePath);
-  },
-  moveToStorage: async (sourcePath: string, filename: string) => {
-    const { uploadDir, tmpDir } = config.storage;
-    const destinationPath = path.join(uploadDir, filename);
+  }
 
-    verifyDirectoryPath(destinationPath, uploadDir);
-    verifyDirectoryPath(sourcePath, tmpDir);
+  async moveToStorage(sourcePath: string, filename: string) {
+    const { tmpDir } = config.storage;
+    const destinationPath = path.join(this.storageDir, filename);
 
-    await fse.ensureDir(uploadDir);
+    if (
+      !isDirectoryPathValid(destinationPath, this.storageDir) ||
+      !isDirectoryPathValid(sourcePath, tmpDir)
+    ) {
+      throw new ApiError(403, 'Invalid file data');
+    }
+
+    await fse.ensureDir(this.storageDir);
     await fse.move(sourcePath, destinationPath, {
       overwrite: false,
     });
-  },
-  stream: (file: File) => {
-    const { uploadDir } = config.storage;
-    const filePath = path.join(uploadDir, file.name);
+  }
 
-    verifyDirectoryPath(filePath, uploadDir);
+  stream(file: File) {
+    const filePath = path.join(this.storageDir, file.name);
+
+    if (!isDirectoryPathValid(filePath, this.storageDir)) {
+      throw new ApiError(403, 'Invalid file data');
+    }
 
     if (!fse.existsSync(filePath)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
     }
 
     return fse.createReadStream(filePath);
-  },
-};
+  }
+}
 
-const verifyDirectoryPath = (filePath: string, rootPath: string) => {
+class StaticStorage extends DiskStorage {
+  constructor() {
+    super(config.storage.staticDir);
+  }
+
+  async moveToStorage() {
+    throw 'Static storage may not be accessed';
+  }
+
+  async remove() {
+    throw 'Static storage may not be modified';
+  }
+}
+
+const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
   // Make sure, that the file path does not escape the root path
   const resolvedFilePath = path.resolve(filePath);
   const resolvedRootPath = path.resolve(rootPath);
 
-  if (!resolvedFilePath.startsWith(resolvedRootPath)) {
-    throw new ApiError(403, 'Invalid file data');
-  }
+  return resolvedFilePath.startsWith(resolvedRootPath);
 };
 
 export default {
   saveModelFile,
+  createManyModelFile,
   getModelFile,
   getFileStream,
   queryModelFiles,
+  queryFilesByIds,
   deleteFile,
   deleteTempFile,
   generateFileName,

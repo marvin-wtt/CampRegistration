@@ -24,6 +24,20 @@ const createTemplate = async (campId: string, data: object) => {
   });
 };
 
+const createManyTemplates = async (campId: string, templates: object[]) => {
+  const data = templates.map((template) => {
+    return {
+      id: ulid(),
+      data: template,
+      campId,
+    };
+  });
+
+  return prisma.tableTemplate.createMany({
+    data,
+  });
+};
+
 const updateTemplateById = async (
   templateId: string,
   data: Prisma.InputJsonValue,
@@ -44,6 +58,7 @@ export default {
   getTemplateById,
   queryTemplates,
   createTemplate,
+  createManyTemplates,
   updateTemplateById,
   deleteTemplateById,
 };
