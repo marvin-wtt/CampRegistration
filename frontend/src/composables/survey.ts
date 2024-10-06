@@ -48,6 +48,10 @@ export function startAutoDataUpdate(
 
     // Set file variables
     files?.forEach((file) => {
+      if (!file.field) {
+        return;
+      }
+
       const name = `_file:${file.field}`;
       const url = api.getCampFileUrl(model.surveyId, file.id);
 
