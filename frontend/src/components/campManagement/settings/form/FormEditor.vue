@@ -34,7 +34,7 @@ import type {
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { SurveyJSCampData } from '@camp-registration/common/src/entities';
+import { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
 
 const props = defineProps<{
