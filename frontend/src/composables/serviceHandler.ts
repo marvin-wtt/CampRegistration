@@ -1,5 +1,5 @@
 import { QNotifyCreateOptions, useQuasar } from 'quasar';
-import { QNotifyUpdateOptions } from 'quasar/dist/types/api';
+import { QNotifyUpdateOptions } from 'quasar';
 import { hasMessage } from 'src/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
