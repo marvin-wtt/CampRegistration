@@ -50,7 +50,7 @@
     </q-item>
 
     <room-list-item
-      v-for="(bed, index) in room.beds"
+      v-for="(_, index) in room.beds"
       :key="index"
       v-model="room.beds[index].person"
       :options="options"
