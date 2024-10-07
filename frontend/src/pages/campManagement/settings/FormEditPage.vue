@@ -18,7 +18,6 @@
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { computed, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { storeToRefs } from 'pinia';
@@ -26,7 +25,7 @@ import { useAPIService } from 'src/services/APIService';
 import { useQuasar } from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store.ts';
 import FormEditor from 'components/campManagement/settings/form/FormEditor.vue';
-import type { SurveyJSCampData } from '@camp-registration/common/src/entities';
+import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { ITheme } from 'survey-core';
 import EditorRestrictedAccessDialog from 'components/campManagement/settings/form/EditorRestrictedAccessDialog.vue';
 
@@ -37,7 +36,6 @@ const campFileStore = useCampFilesStore();
 const registrationStore = useRegistrationsStore();
 const { data: campData } = storeToRefs(campDetailsStore);
 const { data: campFiles } = storeToRefs(campFileStore);
-const { t } = useI18n();
 
 const showEditor = ref<boolean>(false);
 let restrictedAccess = ref<boolean>(false);

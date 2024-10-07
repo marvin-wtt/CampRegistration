@@ -1,12 +1,13 @@
 import { ITheme, SurveyModel } from 'survey-core';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type {
+  CampDetails,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
-
 import { PlainLight, PlainDark } from 'survey-core/themes';
-import type { ServiceFile } from '@camp-registration/common/dist/node/entities';
 import { useAPIService } from 'src/services/APIService';
 
 export function startAutoDataUpdate(
