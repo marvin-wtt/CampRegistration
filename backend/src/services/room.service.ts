@@ -1,4 +1,3 @@
-import { type Prisma } from '@prisma/client';
 import prisma from 'client';
 import { ulid } from 'utils/ulid';
 

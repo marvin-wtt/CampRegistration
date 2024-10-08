@@ -12,11 +12,10 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'roomId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const room = await roomService.getRoomById(camp.id, id);
     req.models.room = verifyModelExists(room);
-    next();
   }),
 );
 
@@ -25,42 +24,42 @@ router.use('/:roomId/beds', bedRoutes);
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(roomValidation.index),
   roomController.index,
 );
 router.get(
   '/:roomId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(roomValidation.show),
   roomController.show,
 );
 router.post(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(roomValidation.store),
   roomController.store,
 );
 router.post(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(roomValidation.store),
   roomController.store,
 );
 router.patch(
   '/:roomId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(roomValidation.update),
   roomController.update,
 );
 router.delete(
   '/:roomId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(roomValidation.destroy),
   roomController.destroy,
 );

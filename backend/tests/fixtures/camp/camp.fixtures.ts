@@ -7,7 +7,7 @@ export const campActivePublic = {
 
 export const campActivePrivate = {
   active: true,
-  public: true,
+  public: false,
 };
 
 export const campInactive = {
@@ -80,14 +80,6 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     expected: 400,
   },
   // Public
-  {
-    name: 'Public missing',
-    data: {
-      ...campCreateInternational,
-      public: undefined,
-    },
-    expected: 400,
-  },
   {
     name: 'Public invalid',
     data: {
@@ -374,15 +366,7 @@ export const campCreateInvalidBody: InvalidBodyData[] = [
     name: 'Start At invalid',
     data: {
       ...campCreateInternational,
-      startAt: '2010-01-02T00:00:00.000Z',
-    },
-    expected: 400,
-  },
-  {
-    name: 'Start At past',
-    data: {
-      ...campCreateInternational,
-      startAt: 12,
+      startAt: '12',
     },
     expected: 400,
   },

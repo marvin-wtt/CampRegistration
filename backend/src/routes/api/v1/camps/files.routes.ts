@@ -3,7 +3,7 @@ import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { fileService } from 'services';
 import express, { Request } from 'express';
 import { auth, guard, multipart, validate } from 'middlewares';
-import { campManager } from 'guards';
+import { and, or, campManager, campActive } from 'guards';
 import { fileValidation } from 'validations';
 import { fileController } from 'controllers';
 
@@ -11,11 +11,10 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'fileId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const file = await fileService.getModelFile('camp', camp.id, id);
     req.models.file = verifyModelExists(file);
-    next();
   }),
 );
 
@@ -28,23 +27,24 @@ const fileAccessMiddleware = async (
   return file.accessLevel === 'public';
 };
 
+// TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
 router.get(
   '/:fileId',
-  guard([campManager, fileAccessMiddleware]),
+  guard(or(campManager, and(fileAccessMiddleware, campActive))),
   validate(fileValidation.show),
-  fileController.show,
+  fileController.stream,
 );
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(fileValidation.index),
   fileController.index,
 );
 router.post(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   multipart('file'),
   validate(fileValidation.store),
   fileController.store,
@@ -52,7 +52,7 @@ router.post(
 router.delete(
   '/:fileId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(fileValidation.destroy),
   fileController.destroy,
 );

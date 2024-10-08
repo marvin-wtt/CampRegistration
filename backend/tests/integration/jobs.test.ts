@@ -146,6 +146,37 @@ describe('jobs', () => {
         fse.existsSync(path.join(uploadDir, unassignedFileName)),
       ).toBeTruthy();
     });
+
+    it('should not delete a file from storage if it is reference by another model', async () => {
+      const { uploadDir } = config.storage;
+
+      const createdAt = moment().subtract(25, 'h').toDate();
+
+      const fileName = ulid() + '.pdf';
+      await createFile(uploadDir, fileName);
+      const camp = await CampFactory.create();
+      await FileFactory.create({
+        name: fileName,
+        camp: { connect: { id: camp.id } },
+        createdAt,
+      });
+
+      await FileFactory.create({
+        name: fileName,
+        createdAt,
+      });
+
+      const job = findJob('unassigned-file-cleanup');
+      await job?.trigger();
+
+      const fileCount = await prisma.file.count();
+      expect(fileCount).toBe(1);
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, fileName)),
+      ).toBeTruthy();
+    });
   });
 
   describe('tmp-file-cleanup', () => {

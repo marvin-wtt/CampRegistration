@@ -2,25 +2,9 @@ import { Camp, type Prisma } from '@prisma/client';
 import prisma from '../client';
 import { ulid } from 'utils/ulid';
 import { registrationService } from 'services/index';
-
-const defaultSelectKeys: (keyof Prisma.CampSelect)[] = [
-  'id',
-  'active',
-  'public',
-  'name',
-  'countries',
-  'organizer',
-  'contactEmail',
-  'maxParticipants',
-  'minAge',
-  'maxAge',
-  'startAt',
-  'endAt',
-  'price',
-  'location',
-  'createdAt',
-  'updatedAt',
-];
+import { replaceUrlsInObject } from '../utils/replaceUrls';
+import { OptionalByKeys } from '../types/utils';
+import config from '../config';
 
 const getCampById = (id: string) => {
   return prisma.camp.findFirst({
@@ -38,9 +22,8 @@ const getCampsByUserId = async (userId: string) => {
   });
 };
 
-const queryPublicCamps = async <Key extends keyof Camp>(
+const queryCamps = async (
   filter: {
-    userId?: string;
     active?: boolean;
     public?: boolean;
     name?: string;
@@ -48,14 +31,13 @@ const queryPublicCamps = async <Key extends keyof Camp>(
     startAt?: Date | string;
     entAt?: Date | string;
     country?: string;
-  },
+  } = {},
   options: {
     limit?: number;
     page?: number;
     sortBy?: string;
     sortType?: 'asc' | 'desc';
-  },
-  keys: Key[] = defaultSelectKeys as Key[],
+  } = {},
 ) => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
@@ -64,9 +46,20 @@ const queryPublicCamps = async <Key extends keyof Camp>(
 
   const where: Prisma.CampWhereInput = {
     // Only show active, public camps by default
-    public: filter.public == false ? undefined : true,
-    active: filter.active == false ? undefined : true,
-    campManager: { every: { userId: filter.userId } },
+    public: filter.public,
+    active: filter.active,
+    // FIXME Name filter not working for translated names
+    // OR: filter.name
+    //   ? [
+    //       { name: { string_contains: filter.name } },
+    //       {
+    //         name: {
+    //           path: dbJsonPath('*'),
+    //           string_contains: filter.name,
+    //         },
+    //       },
+    //     ]
+    //   : undefined,
     minAge: { lte: filter.age },
     maxAge: { gte: filter.age },
     startAt: { gte: filter.startAt },
@@ -74,38 +67,115 @@ const queryPublicCamps = async <Key extends keyof Camp>(
     countries: { array_contains: filter.country },
   };
 
-  const camps = await prisma.camp.findMany({
+  return prisma.camp.findMany({
     where,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
     skip: (page - 1) * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined,
   });
-
-  return camps as Pick<Camp, Key>[];
 };
+
+type TableTemplateCreateData = OptionalByKeys<
+  Prisma.TableTemplateCreateManyCampInput,
+  'id'
+>[];
+type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 const createCamp = async (
   userId: string,
-  data: Omit<Prisma.CampCreateInput, 'id'>,
+  data: Omit<Prisma.CampCreateInput, 'id' | 'freePlaces'>,
+  templates: TableTemplateCreateData = [],
+  files: FileCreateData = [],
 ) => {
+  const freePlaces = data.maxParticipants;
+
+  const fileIds = files.map((f) => f.id).filter((f) => f != null);
+  const fileIdMap = new Map<string, string>();
+  const form = replaceFormFileUrls(data.form, fileIds, fileIdMap);
+
+  // Copy files from reference camp with new id
+  const fileData = files.map((file) => ({
+    ...file,
+    // Use id from file map if present
+    id: file.id ? (fileIdMap.get(file.id) ?? ulid()) : ulid(),
+    // Override camp id
+    campId: undefined,
+  }));
+
+  // Copy templates from reference camp with new id
+  const templateData = templates.map((template) => ({
+    ...template,
+    id: ulid(),
+    // Override camp id
+    campId: undefined,
+  }));
+
   return prisma.camp.create({
     data: {
       id: ulid(),
+      freePlaces,
       ...data,
+      form,
       campManager: { create: { userId, id: ulid() } },
+      templates: { createMany: { data: templateData } },
+      files: { createMany: { data: fileData } },
     },
   });
 };
 
-const updateCampById = async (
-  id: string,
-  data: Omit<Prisma.CampUpdateInput, 'id'>,
+const replaceFormFileUrls = (
+  form: object,
+  fileIds: string[],
+  fileIdMap: Map<string, string>,
+): object => {
+  return replaceUrlsInObject(form, (url) => {
+    const urlObj = new URL(url);
+
+    // Only replace app urls
+    if (urlObj.origin !== config.origin) {
+      return url;
+    }
+
+    const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+
+    // Replace all url params
+    for (const fileId of fileIds) {
+      const index = pathSegments.indexOf(fileId);
+      if (index === -1) {
+        continue;
+      }
+
+      // Replace the id with the new one
+      const id = fileIdMap.get(fileId) ?? ulid();
+      pathSegments[index] = id;
+      fileIdMap.set(fileId, id);
+    }
+
+    // Reconstruct the URL with the updated path
+    urlObj.pathname = pathSegments.join('/');
+
+    return urlObj.toString();
+  });
+};
+
+const updateCamp = async (
+  camp: Camp,
+  data: Omit<Prisma.CampUpdateInput, 'id' | 'freePlaces'>,
 ) => {
+  const freePlaces =
+    data.maxParticipants !== undefined
+      ? await getCampFreePlaces(
+          camp.id,
+          data.maxParticipants ?? camp.maxParticipants,
+          data.countries ?? camp.countries,
+        )
+      : undefined;
+
   return prisma.camp.update({
-    where: { id },
+    where: { id: camp.id },
     data: {
       ...data,
+      freePlaces,
     },
   });
 };
@@ -117,22 +187,21 @@ const deleteCampById = async (id: string): Promise<void> => {
 };
 
 const getCampFreePlaces = async (
-  camp: Camp,
-): Promise<number | Record<string, number>> => {
-  const countries = camp.countries;
-  const freePlaces = camp.maxParticipants as Record<string, number> | number;
+  id: string,
+  maxParticipants: Camp['maxParticipants'],
+  countries: Camp['countries'],
+): Promise<Camp['freePlaces']> => {
+  const freePlaces = maxParticipants as Record<string, number> | number;
 
   // Simple query for national camps
   if (typeof freePlaces === 'number') {
-    const participants = await registrationService.getParticipantsCount(
-      camp.id,
-    );
+    const participants = await registrationService.getParticipantsCount(id);
 
     return Math.max(0, freePlaces - participants);
   }
 
   const countByCountry =
-    await registrationService.getParticipantsCountByCountry(camp.id, countries);
+    await registrationService.getParticipantsCountByCountry(id, countries);
 
   return Object.entries(freePlaces).reduce(
     (result, [country, maxParticipants]) => {
@@ -151,9 +220,8 @@ const getCampFreePlaces = async (
 export default {
   getCampById,
   getCampsByUserId,
-  getCampFreePlaces,
-  queryPublicCamps,
+  queryCamps,
   createCamp,
-  updateCampById,
+  updateCamp,
   deleteCampById,
 };

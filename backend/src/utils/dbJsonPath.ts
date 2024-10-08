@@ -1,5 +1,7 @@
-const dbJsonPath = (...keys: string[]): string | undefined => {
-  return '$.' + keys.join('.');
+const dbJsonPath = (...keys: string[]): string => {
+  keys.unshift('$');
+
+  return keys.join('.');
 };
 
 export default dbJsonPath;

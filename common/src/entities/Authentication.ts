@@ -2,7 +2,7 @@ import type { Profile } from './Profile';
 import type { AuthTokens } from './AuthTokens';
 
 export interface Authentication {
-  user: Profile;
+  profile: Profile;
   tokens: AuthTokens;
 }
 

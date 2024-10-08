@@ -77,7 +77,7 @@
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { QTableColumn } from 'quasar';
 import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
@@ -114,6 +114,12 @@ const columns: QTableColumn[] = [
     label: t('column.link'),
     field: 'href',
     align: 'center',
+  },
+  {
+    name: 'field',
+    label: t('column.field'),
+    field: 'field',
+    align: 'left',
   },
   {
     name: 'access',
@@ -171,18 +177,14 @@ function mapColumnData(file: ServiceFile) {
 }
 
 function uploadFile() {
+  uploadOngoing.value = true;
+
   quasar
     .dialog({
       component: FileUploadDialog,
     })
-    .onOk(async (payload) => {
-      uploadOngoing.value = true;
-      try {
-        await campFileStore.createEntry(payload);
-      } catch (ignored) {
-      } finally {
-        uploadOngoing.value = false;
-      }
+    .onDismiss(() => {
+      uploadOngoing.value = false;
     });
 }
 
@@ -195,9 +197,9 @@ function deleteFiles() {
 }
 
 function downloadFiles() {
-  selected.value.forEach((value: ServiceFile) => {
-    campFileStore.downloadData(value.id);
-  });
+  selected.value.forEach((file) =>
+    campFileStore.downloadFile(file, campStore.data?.id),
+  );
 }
 
 function copyLink(url: string) {
@@ -228,6 +230,7 @@ action:
 
 column:
   access_level: 'Access'
+  field: 'Identifier'
   last_modified: 'Last Modified'
   link: 'Link'
   name: 'Name'
@@ -254,6 +257,7 @@ action:
 
 column:
   access_level: 'Zugriff'
+  field: 'Kennung'
   last_modified: 'Zuletzt geändert'
   link: 'Link'
   name: 'Name'
@@ -279,7 +283,8 @@ action:
   upload: 'Téléverser'
 
 column:
-  access_level: "Niveau d'accès"
+  access_level: 'Accès'
+  field: 'Identifiant'
   last_modified: 'Dernière modification'
   link: 'Lien'
   name: 'Nom'
@@ -288,7 +293,7 @@ column:
 
 access_level:
   public: 'Public'
-  private: 'Private'
+  private: 'Privé'
 
 notification:
   copy_link:

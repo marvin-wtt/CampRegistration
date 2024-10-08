@@ -3,19 +3,19 @@ import prisma from 'client';
 import { ulid } from 'utils/ulid';
 
 const getTemplateById = async (campId: string, id: string) => {
-  return prisma.template.findFirst({
+  return prisma.tableTemplate.findFirst({
     where: { id, campId },
   });
 };
 
 const queryTemplates = async (campId: string) => {
-  return prisma.template.findMany({
+  return prisma.tableTemplate.findMany({
     where: { campId },
   });
 };
 
 const createTemplate = async (campId: string, data: object) => {
-  return prisma.template.create({
+  return prisma.tableTemplate.create({
     data: {
       id: ulid(),
       data,
@@ -24,11 +24,25 @@ const createTemplate = async (campId: string, data: object) => {
   });
 };
 
+const createManyTemplates = async (campId: string, templates: object[]) => {
+  const data = templates.map((template) => {
+    return {
+      id: ulid(),
+      data: template,
+      campId,
+    };
+  });
+
+  return prisma.tableTemplate.createMany({
+    data,
+  });
+};
+
 const updateTemplateById = async (
   templateId: string,
   data: Prisma.InputJsonValue,
 ) => {
-  return prisma.template.update({
+  return prisma.tableTemplate.update({
     where: { id: templateId },
     data: {
       data,
@@ -37,13 +51,14 @@ const updateTemplateById = async (
 };
 
 const deleteTemplateById = async (templateId: string) => {
-  await prisma.template.delete({ where: { id: templateId } });
+  await prisma.tableTemplate.delete({ where: { id: templateId } });
 };
 
 export default {
   getTemplateById,
   queryTemplates,
   createTemplate,
+  createManyTemplates,
   updateTemplateById,
   deleteTemplateById,
 };

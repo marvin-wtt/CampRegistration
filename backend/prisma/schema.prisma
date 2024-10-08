@@ -21,7 +21,8 @@ model User {
   role          Role          @default(USER)
   locale        String        @default("en-US") @db.VarChar(5)
   locked        Boolean       @default(false)
-  createdAt     DateTime?     @default(now()) @map("created_at")
+  lastSeen      DateTime?     @map("last_seen")
+  createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime?     @updatedAt @map("updated_at")
   camps         CampManager[]
   tokens        Token[]
@@ -35,36 +36,39 @@ enum Role {
 }
 
 model Camp {
-  id              String         @id @unique(map: "camps_id_unique") @db.Char(26)
+  id              String          @id @unique(map: "camps_id_unique") @db.Char(26)
   active          Boolean
   public          Boolean
   /// ![Array<string>]
-  countries       Json           @db.Json
+  countries       Json            @db.Json
   /// [StringOrTranslation]
-  name            Json           @db.Json
+  name            Json            @db.Json
   /// [StringOrTranslation]
-  organizer       Json           @db.Json
+  organizer       Json            @db.Json
   /// [StringOrTranslation]
-  contactEmail    Json           @map("contact_email") @db.Json
+  contactEmail    Json            @map("contact_email") @db.Json
   /// [NumberOrTranslation]
-  maxParticipants Json           @map("max_participants") @db.Json
-  minAge          Int            @map("min_age") @db.UnsignedInt
-  maxAge          Int            @map("max_age") @db.UnsignedInt
-  startAt         DateTime       @map("start_at") @db.DateTime(0)
-  endAt           DateTime       @map("end_at") @db.DateTime(0)
+  maxParticipants Json            @map("max_participants") @db.Json
+  /// [NumberOrTranslation]
+  freePlaces      Json            @map("free_places") @db.Json
+  minAge          Int             @map("min_age") @db.UnsignedInt
+  maxAge          Int             @map("max_age") @db.UnsignedInt
+  startAt         DateTime        @map("start_at") @db.DateTime(0)
+  endAt           DateTime        @map("end_at") @db.DateTime(0)
   price           Float
   /// [StringOrTranslation]
-  location        Json?          @db.Json
+  location        Json?           @db.Json
   /// [GenericObject]
-  form            Json           @db.Json
+  form            Json            @db.Json
   /// [GenericObject]
-  themes          Json           @default("{}") @db.Json
-  createdAt       DateTime?      @default(now()) @map("created_at")
-  updatedAt       DateTime?      @updatedAt @map("updated_at")
+  themes          Json            @default("{}") @db.Json
+  version         Int             @default(1) @db.UnsignedInt
+  createdAt       DateTime?       @default(now()) @map("created_at")
+  updatedAt       DateTime?       @updatedAt @map("updated_at")
   campManager     CampManager[]
   registrations   Registration[]
   rooms           Room[]
-  templates       Template[]
+  templates       TableTemplate[]
   files           File[]
   ProgramEvent    ProgramEvent[]
 
@@ -133,15 +137,15 @@ model Bed {
   @@map("beds")
 }
 
-model Template {
-  id     String @id @unique(map: "templates_id_unique") @db.Char(26)
+model TableTemplate {
+  id     String @id @unique(map: "table_templates_id_unique") @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
   /// [TableTemplates]
   data   Json   @db.Json
-  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "templates_camp_id_foreign")
+  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_camp_id_foreign")
 
-  @@index([campId], map: "templates_camp_id_foreign")
-  @@map("templates")
+  @@index([campId], map: "table_templates_camp_id_foreign")
+  @@map("table_templates")
 }
 
 model Token {

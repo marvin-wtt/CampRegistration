@@ -4,11 +4,7 @@ import type {
   CampDetails as CampDetailsResource,
 } from '@camp-registration/common/entities';
 
-type CampWithFreePlaces = Camp & {
-  freePlaces?: Record<string, number> | number;
-};
-
-const campResource = (camp: CampWithFreePlaces): CampResource => {
+const campResource = (camp: Camp): CampResource => {
   return {
     id: camp.id,
     public: camp.public,
@@ -28,9 +24,7 @@ const campResource = (camp: CampWithFreePlaces): CampResource => {
   };
 };
 
-export const detailedCampResource = (
-  camp: CampWithFreePlaces,
-): CampDetailsResource => {
+export const detailedCampResource = (camp: Camp): CampDetailsResource => {
   return {
     ...campResource(camp),
     form: camp.form,

@@ -28,6 +28,23 @@ export interface CampDetails extends Camp {
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
   'id' | 'freePlaces'
->;
+> & {
+  referenceCampId?: string;
+};
 
 export type CampUpdateData = Partial<CampCreateData>;
+
+export interface CampQuery {
+  page?: number;
+  limit?: number;
+  sortBy?: keyof Camp;
+  sortType?: 'asc' | 'desc';
+
+  name?: string;
+  country?: string;
+  age?: number;
+  startAt?: string;
+  endAt?: string;
+
+  showAll?: boolean;
+}

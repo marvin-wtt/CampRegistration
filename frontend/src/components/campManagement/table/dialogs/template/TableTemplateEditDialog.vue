@@ -14,7 +14,7 @@
         </div>
       </q-card-section>
 
-      <q-card-section class="col-12 col-md-5 q-pt-none q-gutter-y-sm column">
+      <q-card-section class="col-12 col-md-7 q-pt-none q-gutter-y-sm column">
         <translated-input
           v-model="template.title"
           :label="t('fields.title.label')"
@@ -26,107 +26,8 @@
         />
 
         <a class="text-h6">
-          {{ t('sections.sort') }}
-        </a>
-
-        <q-select
-          v-model="template.sortBy"
-          :label="t('fields.sortBy.label')"
-          :hint="t('fields.sortBy.hint')"
-          :options="sortByOptions"
-          emit-value
-          hide-bottom-space
-          outlined
-          rounded
-        >
-          <template #option="scope">
-            <q-item v-bind="scope.itemProps">
-              <q-item-section>
-                <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
-                <q-item-label caption>{{ scope.opt.value }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
-
-          <template #append>
-            <q-icon
-              v-if="template.sortBy"
-              name="close"
-              class="cursor-pointer"
-              @click.stop.prevent="template.sortBy = undefined"
-            />
-          </template>
-
-          <template #after>
-            <q-btn
-              v-if="template.sortBy"
-              :icon="
-                template.sortDirection === 'asc'
-                  ? 'arrow_upward'
-                  : 'arrow_downward'
-              "
-              round
-              outline
-              @click="swapSortDirection"
-            />
-          </template>
-        </q-select>
-
-        <a class="text-h6">
-          {{ t('sections.filter') }}
-        </a>
-
-        <q-select
-          v-model="template.filterWaitingList"
-          :label="t('fields.filter_waiting_list.label')"
-          :options="waitingListOptions"
-          emit-value
-          map-options
-          outlined
-          rounded
-        />
-
-        <q-select
-          v-model="template.filterRoles"
-          :label="t('fields.filter_roles.label')"
-          use-input
-          use-chips
-          outlined
-          rounded
-          multiple
-          input-debounce="0"
-          new-value-mode="add-unique"
-          :options="roleFilteredOptions"
-          @new-value="createRoleFilter"
-          @filter="roleFilterFn"
-        />
-
-        <q-input
-          v-model="template.filter"
-          :label="t('fields.filter.label')"
-          :hint="t('fields.filter.hint')"
-          clearable
-          outlined
-          rounded
-        />
-
-        <q-separator class="lt-md" />
-      </q-card-section>
-
-      <q-card-section class="col-12 col-md-7 q-pt-none q-gutter-y-sm column">
-        <a class="text-h6">
           {{ t('sections.columns') }}
         </a>
-
-        <q-toggle
-          v-model="template.indexed"
-          :label="t('fields.indexed.label')"
-        />
-
-        <q-toggle
-          v-model="template.actions"
-          :label="t('fields.actions.label')"
-        />
 
         <sortable-list
           v-slot="slotProps"
@@ -150,6 +51,140 @@
           </q-item-section>
         </sortable-list>
       </q-card-section>
+
+      <div class="col-12 col-md-5">
+        <q-card-section class="q-pt-none q-gutter-y-sm column">
+          <a class="text-h6">
+            {{ t('sections.options') }}
+          </a>
+
+          <q-select
+            v-model="template.sortBy"
+            :label="t('fields.sortBy.label')"
+            :hint="t('fields.sortBy.hint')"
+            :options="sortByOptions"
+            emit-value
+            map-options
+            hide-bottom-space
+            outlined
+            rounded
+          >
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.value }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+
+            <template #prepend>
+              <q-icon name="sort" />
+            </template>
+
+            <template #append>
+              <q-icon
+                v-if="template.sortBy"
+                name="close"
+                class="cursor-pointer"
+                @click.stop.prevent="template.sortBy = undefined"
+              />
+            </template>
+
+            <template #after>
+              <q-btn
+                v-if="template.sortBy"
+                :icon="
+                  template.sortDirection === 'asc'
+                    ? 'arrow_upward'
+                    : 'arrow_downward'
+                "
+                round
+                outline
+                @click="swapSortDirection"
+              />
+            </template>
+          </q-select>
+
+          <q-select
+            v-model="template.filterWaitingList"
+            :label="t('fields.filter_waiting_list.label')"
+            :options="waitingListOptions"
+            emit-value
+            map-options
+            outlined
+            rounded
+          >
+            <template #prepend>
+              <q-icon name="filter_alt" />
+            </template>
+          </q-select>
+
+          <q-select
+            v-model="template.filterRoles"
+            :label="t('fields.filter_roles.label')"
+            use-input
+            use-chips
+            outlined
+            rounded
+            multiple
+            input-debounce="0"
+            new-value-mode="add-unique"
+            :options="roleFilteredOptions"
+            @new-value="createRoleFilter"
+            @filter="roleFilterFn"
+          >
+            <template #prepend>
+              <q-icon name="filter_alt" />
+            </template>
+          </q-select>
+
+          <q-btn
+            :label="advanced ? t('advanced.hide') : t('advanced.show')"
+            :icon="advanced ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+            color="grey"
+            flat
+            dense
+            rounded
+            class="full-width"
+            @click="advanced = !advanced"
+          />
+
+          <q-slide-transition>
+            <div
+              v-show="advanced"
+              class="q-gutter-y-sm column no-wrap"
+            >
+              <a class="text-h6">
+                {{ t('sections.advanced') }}
+              </a>
+
+              <q-toggle
+                v-model="template.indexed"
+                :label="t('fields.indexed.label')"
+              />
+
+              <q-toggle
+                v-model="template.actions"
+                :label="t('fields.actions.label')"
+              />
+
+              <q-input
+                v-model="template.filter"
+                :label="t('fields.filter.label')"
+                :hint="t('fields.filter.hint')"
+                clearable
+                outlined
+                rounded
+              >
+                <template #prepend>
+                  <q-icon name="filter_alt" />
+                </template>
+              </q-input>
+            </div>
+          </q-slide-transition>
+        </q-card-section>
+      </div>
 
       <!-- action buttons -->
       <q-card-actions
@@ -186,7 +221,9 @@ import type {
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, ref, toRaw } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
-import EditResultColumnTemplateDialog from 'components/campManagement/table/dialogs/template/EditResultColumnTemplateDialog.vue';
+import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateColumnEditDialog.vue';
+import { PartialBy } from 'src/types';
+import { uniqueName } from 'src/utils/uniqueName';
 
 interface Props {
   template: TableTemplate;
@@ -213,18 +250,19 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const template = reactive<TableTemplate>(
   structuredClone(toRaw(props.template)),
 );
+const advanced = ref<boolean>(false);
 
 const roleOptions: (string | QSelectOption)[] = ['participant', 'counselor'];
 const roleFilteredOptions = ref<(string | QSelectOption)[]>(roleOptions);
 
 const waitingListOptions: QSelectOption[] = [
   {
-    value: 'exclude',
-    label: t('fields.filter_waiting_list.options.exclude'),
-  },
-  {
     value: 'include',
     label: t('fields.filter_waiting_list.options.include'),
+  },
+  {
+    value: 'exclude',
+    label: t('fields.filter_waiting_list.options.exclude'),
   },
   {
     value: 'only',
@@ -232,17 +270,17 @@ const waitingListOptions: QSelectOption[] = [
   },
 ];
 
-const sortByOptions = computed(() => {
+const sortByOptions = computed<QSelectOption[]>(() => {
   return template.columns.map((value) => {
     return {
-      label: value.label,
+      label: to(value.label),
       value: value.name,
-    } as QSelectOption;
+    };
   });
 });
 
 const cardStyle = computed<CSSStyleValue>(() => {
-  if (quasar.screen.gt.md) {
+  if (quasar.screen.gt.sm) {
     return {
       minWidth: '1000px',
     };
@@ -256,30 +294,41 @@ function swapSortDirection(): void {
 }
 
 function addColumn(): void {
-  const column: TableColumnTemplate = {
-    name: 'column_' + template.columns.length,
+  const column: PartialBy<TableColumnTemplate, 'name'> = {
     label: 'label ' + template.columns.length,
     field: '',
+    align: 'left',
     renderAs: 'default',
   };
 
   quasar
     .dialog({
-      component: EditResultColumnTemplateDialog,
+      component: TableTemplateColumnEditDialog,
       componentProps: {
         column: column,
         camp: props.camp,
       },
     })
     .onOk((payload: TableColumnTemplate) => {
+      payload.name = payload.name ?? createColumnName(payload.label);
+
       template.columns.push(payload);
     });
+}
+
+function createColumnName(label: TableColumnTemplate['label']): string {
+  const labelString =
+    typeof label === 'string' ? label : Object.values(label)[0];
+  const name = labelString.toLowerCase().replaceAll(' ', '_');
+  const names = template.columns.map((column) => column.name);
+
+  return uniqueName(name, names);
 }
 
 function editColumn(column: TableColumnTemplate): void {
   quasar
     .dialog({
-      component: EditResultColumnTemplateDialog,
+      component: TableTemplateColumnEditDialog,
       componentProps: {
         column: column,
         camp: props.camp,
@@ -319,10 +368,14 @@ function roleFilterFn(value: string, update: (fn: () => void) => void) {
 <i18n lang="yaml" locale="en">
 title: 'Edit Template'
 
+advanced:
+  hide: 'Hide advanced options'
+  show: 'Show advanced options'
+
 sections:
+  advanced: 'Advanced options'
   columns: 'Columns'
-  filter: 'Filters'
-  sort: 'Sorting'
+  options: 'Options'
 
 actions:
   ok: 'Ok'
@@ -333,7 +386,7 @@ fields:
     label: 'Title'
     hint: ''
   indexed:
-    label: 'Show index'
+    label: 'Number columns'
     hint: ''
   actions:
     label: 'Show actions'
@@ -348,21 +401,25 @@ fields:
     label: 'Hide registrations with role'
     hint: ''
   filter_waiting_list:
-    label: 'Hide registrations on waiting list'
+    label: 'Waiting list'
     hint: ''
     options:
       exclude: 'Exclude Waiting List'
-      include: 'Show all'
-      only: 'Only Waiting List'
+      include: 'Show all registrations'
+      only: 'Show Only Waiting List'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Vorlage bearbeiten'
 
+advanced:
+  hide: 'Erweiterte Optionen ausblenden'
+  show: 'Erweiterte Optionen anzeigen'
+
 sections:
+  advanced: 'Erweiterte Optionen'
   columns: 'Spalten'
-  filter: 'Filter'
-  sort: 'Sortierung'
+  options: 'Optionen'
 
 actions:
   ok: 'Ok'
@@ -373,7 +430,7 @@ fields:
     label: 'Titel'
     hint: ''
   indexed:
-    label: 'Index anzeigen'
+    label: 'Spalten nummerieren'
     hint: ''
   actions:
     label: 'Aktionen anzeigen'
@@ -383,26 +440,30 @@ fields:
     hint: ''
   filter:
     label: 'Zeile filtern nach'
-    hint: 'Ausdruck, wann eine Zeile angezeigt werden soll'
+    hint: 'Ausdruck, wann eine Zeile angezeigt wird'
   filter_roles:
-    label: 'Anmeldungen mit Rolle ausblenden'
+    label: 'Registrierungen mit Rolle ausblenden'
     hint: ''
   filter_waiting_list:
-    label: 'Anmeldungen auf Warteliste ausblenden'
+    label: 'Warteliste'
     hint: ''
     options:
       exclude: 'Warteliste ausschließen'
-      include: 'Alle anzeigen'
-      only: 'Nur Warteliste'
+      include: 'Alle Registrierungen anzeigen'
+      only: 'Nur Warteliste anzeigen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Modifier le modèle'
 
+advanced:
+  hide: 'Masquer les options avancées'
+  show: 'Afficher les options avancées'
+
 sections:
+  advanced: 'Options avancées'
   columns: 'Colonnes'
-  filter: 'Filtres'
-  sort: 'Trier'
+  options: 'Options'
 
 actions:
   ok: 'Ok'
@@ -413,7 +474,7 @@ fields:
     label: 'Titre'
     hint: ''
   indexed:
-    label: "Afficher l'index"
+    label: 'Numéroter les colonnes'
     hint: ''
   actions:
     label: 'Afficher les actions'
@@ -423,15 +484,15 @@ fields:
     hint: ''
   filter:
     label: 'Filtrer la ligne par'
-    hint: 'Expression indiquant quand afficher une ligne'
+    hint: 'Expression pour déterminer quand afficher une ligne'
   filter_roles:
     label: 'Masquer les inscriptions avec rôle'
     hint: ''
   filter_waiting_list:
-    label: 'Masquer les inscriptions en liste d’attente'
+    label: 'Liste d’attente'
     hint: ''
-  options:
-    exclude: "Exclure la liste d'attente"
-    include: 'Tout afficher'
-    only: "Uniquement la liste d'attente"
+    options:
+      exclude: 'Exclure la liste d’attente'
+      include: 'Afficher toutes les inscriptions'
+      only: 'Afficher uniquement la liste d’attente'
 </i18n>

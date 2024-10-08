@@ -23,10 +23,7 @@ import {
   SurveyCreatorModel,
 } from 'survey-creator-core';
 import { useI18n } from 'vue-i18n';
-import {
-  startAutoDataUpdate,
-  startAutoThemeUpdate,
-} from 'src/composables/survey';
+import { startAutoDataUpdate } from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
@@ -34,49 +31,67 @@ import { SurveyModel } from 'survey-core';
 import { storeToRefs } from 'pinia';
 import showdown from 'showdown';
 import { useAPIService } from 'src/services/APIService';
+import { useQuasar } from 'quasar';
+import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 
+const quasar = useQuasar();
 const api = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
 const { data: campData } = storeToRefs(campDetailsStore);
+const { data: campFiles } = storeToRefs(campFileStore);
 const { locale } = useI18n();
 
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
 
 // Add localization
-// TODO campData property
 const deLocale = localization.getLocale('de');
 deLocale.qt.address = 'Adresse';
 deLocale.qt.country = 'Land';
 deLocale.qt.date_of_birth = 'Geburtstag';
 deLocale.qt.role = 'Rolle';
+deLocale.p.campDataType = 'Daten-Tag';
+deLocale.pehelp.campDataType =
+  'Wählen Sie aus, welche Art von Daten der Benutzer eingibt. ' +
+  'Die Informationen werden dem Dienst unabhängig vom ' +
+  'Feldnamen zur Verfügung gestellt.';
 
 const enLocale = localization.getLocale('en');
 enLocale.qt.address = 'Address';
 enLocale.qt.country = 'Country';
 enLocale.qt.date_of_birth = 'Birthday';
 enLocale.qt.rolle = 'Role';
+enLocale.p.campDataType = 'Data Tag';
+enLocale.pehelp.campDataType =
+  'Select what type of data the user enters. ' +
+  'The information makes information available to the service regardless of the ' +
+  'field name.';
 
 const frLocale = localization.getLocale('fr');
 frLocale.qt.address = 'Adresse';
 frLocale.qt.country = 'Pays';
 frLocale.qt.date_of_birth = 'Date de Naissance';
 frLocale.qt.role = 'Rôle';
+frLocale.p.campDataType = 'Étiquette de données';
+frLocale.pehelp.campDataType =
+  'Sélectionnez le type de données que l’utilisateur saisit. ' +
+  'Les informations sont mises à la disposition du service indépendamment du ' +
+  'nom du champ.';
 
 const loading = computed<boolean>(() => {
-  return campDetailsStore.isLoading;
+  return campDetailsStore.isLoading || campFileStore.isLoading;
 });
 
 const error = computed(() => {
-  return campDetailsStore.error;
+  return campDetailsStore.error || campFileStore.error;
 });
 
 const creatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
-  isAutoSave: true, // Survey is currently only saved when pressing the button.
+  isAutoSave: true,
   themeForPreview: 'defaultV2',
   showThemeTab: true,
 };
@@ -88,8 +103,7 @@ const markdownConverter = new showdown.Converter({
 const creator = new SurveyCreatorModel(creatorOptions);
 const previewModel = ref<SurveyModel>();
 
-startAutoDataUpdate(previewModel, campData);
-startAutoThemeUpdate(previewModel, campData);
+startAutoDataUpdate(previewModel, campData, campFiles);
 
 watchEffect(() => {
   creator.locale = locale.value.split(/[-_]/)[0];
@@ -97,6 +111,7 @@ watchEffect(() => {
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
+  await campFileStore.fetchData();
 
   if (!campDetailsStore.data) {
     return;
@@ -111,12 +126,23 @@ creator.onPropertyValidationCustomError.add((_, options) => {
     return;
   }
 
-  if (options.value === 0) {
+  // TODO Translate errors
+
+  // Internal variables start with _
+  if (options.value.startsWith('_')) {
     options.error = 'Zero is not allowed here.';
+    return;
   }
 
+  if (options.value === 0) {
+    options.error = 'Zero is not allowed here.';
+    return;
+  }
+
+  // Dots are used to access objects
   if (options.value.includes('.')) {
     options.error = 'Dots are not allowed here.';
+    return;
   }
 });
 
@@ -165,14 +191,21 @@ creator.saveThemeFunc = (
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
 
-  // Convert markdown to html
-  survey.onTextMarkdown.add((survey, options) => {
-    const str = markdownConverter.makeHtml(options.text);
-    // Remove root paragraphs <p></p>
-    options.html = str.substring(3, str.length - 4);
-  });
+  if (options.area === 'preview-tab' || options.area === 'designer-tab') {
+    // Convert markdown to html
+    survey.onTextMarkdown.add((survey, options) => {
+      const str = markdownConverter.makeHtml(options.text);
+      // Remove root paragraphs <p></p>
+      options.html = str.substring(3, str.length - 4);
+    });
+  }
 
-  previewModel.value = survey;
+  if (options.area === 'preview-tab') {
+    // Set surveyID for dynamic link generation
+    survey.surveyId = campData.value?.id ?? '';
+
+    previewModel.value = survey;
+  }
 });
 
 creator.onUploadFile.add((_, options) => {
@@ -187,10 +220,17 @@ creator.onUploadFile.add((_, options) => {
   // TODO Why is it an array and not a single file? The callback only accepts a single link as parameter
   const file = files[0];
 
+  // When file is selected via custom picker, then the file is already present on the server
+  if ('id' in file && typeof file.id === 'string') {
+    const url = campFileStore.getUrl(file.id, campId);
+    options.callback('success', url);
+    return;
+  }
+
   api
     .createCampFile(campId, {
       name: file.name.replace(/\.[^/.]+$/, ''),
-      field: 'form-file',
+      field: crypto.randomUUID(),
       file,
       accessLevel: 'public',
     })
@@ -200,6 +240,22 @@ creator.onUploadFile.add((_, options) => {
     })
     .catch(() => {
       options.callback('error', '');
+    });
+});
+
+creator.onOpenFileChooser.add((_, options) => {
+  quasar
+    .dialog({
+      component: FileSelectionDialog,
+      componentProps: {
+        accept: 'image/*',
+      },
+    })
+    .onOk((files) => {
+      options.callback(files);
+    })
+    .onCancel(() => {
+      options.callback([]);
     });
 });
 
@@ -216,7 +272,7 @@ creator.themeEditor.onThemeSelected.add((sender, options) => {
   const themes = campDetailsStore.data?.themes;
   if (themes && colorPalette && colorPalette in themes) {
     const mewTheme = themes[colorPalette];
-    creator.themeEditor.model.setTheme(mewTheme);
+    creator.themeEditor.model.setTheme(colorPalette, mewTheme);
   }
 });
 </script>

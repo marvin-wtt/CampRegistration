@@ -12,7 +12,7 @@ const loginUserWithEmailAndPassword = async (
   email: string,
   password: string,
 ) => {
-  const user = await userService.getUserByEmailWithCamps(email);
+  const user = await userService.getUserByEmail(email);
 
   if (!user || !(await isPasswordMatch(password, user.password as string))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Incorrect email or password.');
@@ -29,7 +29,11 @@ const loginUserWithEmailAndPassword = async (
     );
   }
 
-  return exclude(user, ['password']);
+  const updatedUser = await userService.updateUserLastSeenByIdWithCamps(
+    user.id,
+  );
+
+  return exclude(updatedUser, ['password']);
 };
 
 const logout = async (refreshToken: string): Promise<void> => {
@@ -57,9 +61,19 @@ const refreshAuth = async (
       TokenType.REFRESH,
     );
     const { id, userId } = refreshTokenData;
-    await prisma.token.delete({ where: { id } });
 
-    return tokenService.generateAuthTokens({ id: userId }, true);
+    await tokenService.deleteTokenById(id);
+
+    // Fetch user because role is required
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      // noinspection ExceptionCaughtLocallyJS
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Token not found');
+    }
+
+    await userService.updateUserLastSeenById(userId);
+
+    return tokenService.generateAuthTokens(user, true);
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }
@@ -78,9 +92,8 @@ const resetPassword = async (
   if (!user || user.email !== email) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
   }
-  const encryptedPassword = await encryptPassword(password);
   await userService.updateUserById(user.id, {
-    password: encryptedPassword,
+    password,
     emailVerified: true,
   });
 
@@ -88,25 +101,7 @@ const resetPassword = async (
 };
 
 const logoutAllDevices = async (userId: string) => {
-  return prisma.token.updateMany({
-    data: {
-      blacklisted: true,
-    },
-    where: {
-      userId,
-      OR: [
-        {
-          type: TokenType.RESET_PASSWORD,
-        },
-        {
-          type: TokenType.ACCESS,
-        },
-        {
-          type: TokenType.REFRESH,
-        },
-      ],
-    },
-  });
+  await tokenService.blacklistTokens(userId);
 };
 
 const verifyEmail = async (token: string): Promise<void> => {

@@ -22,6 +22,8 @@ export const CampFactory = {
       to: new Date(),
     });
 
+    const maxParticipants = faker.number.int({ min: 1, max: 100 });
+
     return {
       id: ulid(),
       public: faker.datatype.boolean(),
@@ -30,7 +32,8 @@ export const CampFactory = {
       name: faker.lorem.word(),
       organizer: faker.company.name(),
       contactEmail: faker.internet.email(),
-      maxParticipants: faker.number.int({ min: 1, max: 100 }),
+      maxParticipants,
+      freePlaces: maxParticipants,
       minAge,
       maxAge,
       startAt,

@@ -1,20 +1,18 @@
 import type {
   TableTemplate,
-  TemplateCreateData,
-  TemplateUpdateData,
+  TableTemplateCreateData,
+  TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
-export function useTemplateService() {
-  async function fetchResultTemplates(
-    campId: string,
-  ): Promise<TableTemplate[]> {
+export function useTableTemplateService() {
+  async function fetchTableTemplates(campId: string): Promise<TableTemplate[]> {
     const response = await api.get(`camps/${campId}/templates/`);
 
     return response?.data?.data;
   }
 
-  async function fetchResultTemplate(
+  async function fetchTableTemplate(
     campId: string,
     templateId: string,
   ): Promise<TableTemplate[]> {
@@ -23,19 +21,19 @@ export function useTemplateService() {
     return response?.data?.data;
   }
 
-  async function createResultTemplate(
+  async function createTableTemplate(
     campId: string,
-    data: TemplateCreateData,
+    data: TableTemplateCreateData,
   ): Promise<TableTemplate> {
     const response = await api.post(`camps/${campId}/templates/`, data);
 
     return response?.data?.data;
   }
 
-  async function updateResultTemplate(
+  async function updateTableTemplate(
     campId: string,
     templateId: string,
-    data: TemplateUpdateData,
+    data: TableTemplateUpdateData,
   ): Promise<TableTemplate> {
     const response = await api.put(
       `camps/${campId}/templates/${templateId}/`,
@@ -45,7 +43,7 @@ export function useTemplateService() {
     return response?.data?.data;
   }
 
-  async function deleteResultTemplate(
+  async function deleteTableTemplate(
     campId: string,
     templateId: string,
   ): Promise<void> {
@@ -53,10 +51,10 @@ export function useTemplateService() {
   }
 
   return {
-    fetchResultTemplates,
-    fetchResultTemplate,
-    createResultTemplate,
-    updateResultTemplate,
-    deleteResultTemplate,
+    fetchTableTemplates,
+    fetchTableTemplate,
+    createTableTemplate,
+    updateTableTemplate,
+    deleteTableTemplate,
   };
 }

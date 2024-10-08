@@ -48,6 +48,20 @@
           </q-item-section>
         </q-item>
 
+        <q-item
+          v-if="administrator"
+          v-close-popup
+          clickable
+          @click="goToAdministration"
+        >
+          <q-item-section avatar>
+            <q-icon name="manage_accounts" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('administration') }}
+          </q-item-section>
+        </q-item>
+
         <q-separator />
 
         <q-item
@@ -159,6 +173,10 @@ const authenticated = computed<boolean>(() => {
   return props.profile !== undefined;
 });
 
+const administrator = computed<boolean>(() => {
+  return props.profile?.role === 'ADMIN';
+});
+
 const darkMode = computed<boolean>(() => {
   return quasar.dark.isActive;
 });
@@ -166,6 +184,12 @@ const darkMode = computed<boolean>(() => {
 function goToCamps() {
   router.push({
     name: 'management',
+  });
+}
+
+function goToAdministration() {
+  router.push({
+    name: 'administration',
   });
 }
 
@@ -187,6 +211,7 @@ function logout() {
 <i18n lang="yaml" locale="en">
 username: 'Signed in as'
 camps: 'My camps'
+administration: 'Administration'
 light_mode: 'Light Mode'
 login: 'Login'
 logout: 'Sing out'
@@ -198,6 +223,7 @@ dark_mode: 'Dark Mode'
 <i18n lang="yaml" locale="de">
 username: 'Angemeldet als'
 camps: 'Meine Camps'
+administration: 'Verwaltung'
 light_mode: 'Hellmodus'
 login: 'Anmelden'
 logout: 'Abmelden'
@@ -209,6 +235,7 @@ dark_mode: 'Dunkelmodus'
 <i18n lang="yaml" locale="fr">
 username: 'Connecté en tant que'
 camps: 'Mes camps'
+administration: 'Administration'
 light_mode: 'Mode lumineux'
 login: 'Connexion'
 logout: 'Déconnexion'

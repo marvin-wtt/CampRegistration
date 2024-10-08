@@ -17,9 +17,9 @@ export interface TableTemplate extends Identifiable {
   generated?: boolean;
 }
 
-export type TemplateCreateData = Omit<TableTemplate, 'id'>;
+export type TableTemplateCreateData = Omit<TableTemplate, 'id'>;
 
-export type TemplateUpdateData = Partial<TemplateCreateData>;
+export type TableTemplateUpdateData = Partial<TableTemplateCreateData>;
 
 export interface TableColumnTemplate {
   name: string;

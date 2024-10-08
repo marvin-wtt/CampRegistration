@@ -1,26 +1,22 @@
 import express from 'express';
-import { auth, guard, validate } from 'middlewares';
-import { campActive, campManager } from 'guards';
 import { verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
-import { campController } from 'controllers';
-import { campValidation } from 'validations';
 import { campService } from 'services';
 import registrationRoutes from 'routes/api/v1/camps/registrations/registration.routes';
 import templateRoutes from './template.routes';
 import roomRoutes from './rooms/room.routes';
 import managerRoutes from './manager.routes';
 import campFileRoutes from './files.routes';
+import campRoutes from './camps.routes';
 import programEventRoutes from './program-event.routes';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'campId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = await campService.getCampById(id);
     req.models.camp = verifyModelExists(camp);
-    next();
   }),
 );
 
@@ -30,28 +26,6 @@ router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
 router.use('/:campId/files', campFileRoutes);
 router.use('/:campId/program-events', programEventRoutes);
-
-router.get('/', validate(campValidation.index), campController.index);
-router.get(
-  '/:campId',
-  guard([campManager, campActive]),
-  validate(campValidation.show),
-  campController.show,
-);
-router.post('/', auth(), validate(campValidation.store), campController.store);
-router.patch(
-  '/:campId',
-  auth(),
-  guard([campManager]),
-  validate(campValidation.update),
-  campController.update,
-);
-router.delete(
-  '/:campId',
-  auth(),
-  guard([campManager]),
-  validate(campValidation.destroy),
-  campController.destroy,
-);
+router.use(campRoutes);
 
 export default router;

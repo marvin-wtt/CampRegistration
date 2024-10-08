@@ -44,9 +44,7 @@ export const useCampsStore = defineStore('camps', () => {
     return lazyFetch(async () => await apiService.fetchCamps());
   }
 
-  async function createEntry(
-    createData: CampCreateData,
-  ): Promise<Camp | undefined> {
+  async function createEntry(createData: CampCreateData): Promise<Camp> {
     return withProgressNotification('update', async () => {
       const newCamp = await apiService.createCamp(createData);
 

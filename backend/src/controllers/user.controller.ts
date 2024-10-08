@@ -1,46 +1,43 @@
 import httpStatus from 'http-status';
-import pick from 'utils/pick';
 import { catchRequestAsync } from 'utils/catchAsync';
-import { userService } from 'services';
-import exclude from 'utils/exclude';
+import { authService, userService } from 'services';
 import { routeModel } from 'utils/verifyModel';
-import ApiError from 'utils/ApiError';
-import { authUserId } from 'utils/authUserId';
-import { Role } from '@prisma/client';
+import { collection, resource } from '../resources/resource';
+import { userResource } from 'resources';
 
 const index = catchRequestAsync(async (req, res) => {
-  const filter = exclude(req.query, ['sortBy', 'limit', 'page']);
-  const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  const result = await userService.queryUsers(filter, options);
-  res.json(result);
+  const users = await userService.queryUsers();
+
+  res.json(collection(users.map(userResource)));
 });
 
 const show = catchRequestAsync(async (req, res) => {
   const user = routeModel(req.models.user);
-  res.json(user);
+
+  res.json(resource(userResource(user)));
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { email, password, name, role, locale } = req.body;
+  const { email, password, name, role, locale, locked } = req.body;
   const user = await userService.createUser({
     name,
     email,
     password,
     role,
     locale,
+    locked,
   });
-  res.status(httpStatus.CREATED).json(user);
+
+  res.status(httpStatus.CREATED).json(resource(user));
 });
 
 const update = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
-  const { email, password, name, role, locale, locked } = req.body;
-  const authId = authUserId(req);
-  const authUser = await userService.getUserById(authId);
+  const { email, password, name, role, locale, locked, emailVerified } =
+    req.body;
 
-  const adminPermissionsRequired = locked !== undefined || role !== undefined;
-  if (adminPermissionsRequired && authUser?.role !== Role.ADMIN) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'Insufficient permission');
+  if (password) {
+    await authService.logoutAllDevices(userId);
   }
 
   const user = await userService.updateUserById(userId, {
@@ -50,13 +47,16 @@ const update = catchRequestAsync(async (req, res) => {
     role,
     locale,
     locked,
+    emailVerified,
   });
-  res.json(user);
+
+  res.json(resource(user));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
   const { userId } = req.params;
   await userService.deleteUserById(userId);
+
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
