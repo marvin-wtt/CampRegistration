@@ -198,7 +198,7 @@ model ProgramEvent {
   date     String?
   duration Int?
   time     String?
-  color    String? @map("background_color")
+  color    String? @map("color")
   side     String?
   camp     Camp?   @relation(fields: [campId], references: [id], onDelete: Cascade)
 

@@ -22,6 +22,7 @@ const index = catchRequestAsync(async (req, res) => {
 const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const data = req.body;
+
   const event = await programPlannerService.createProgramEvent(campId, {
     title: data.title,
     details: data.details,
@@ -36,9 +37,10 @@ const store = catchRequestAsync(async (req, res) => {
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { roomId } = req.params;
+  const { programEventId: id } = req.params;
   const data = req.body;
-  const event = await programPlannerService.updateProgramEventById(roomId, {
+
+  const event = await programPlannerService.updateProgramEventById(id, {
     title: data.title,
     details: data.details,
     location: data.location,

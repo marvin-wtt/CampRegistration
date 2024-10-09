@@ -28,12 +28,12 @@ const createProgramEvent = async (
 };
 
 const updateProgramEventById = async (
-  roomId: string,
-  updateBody: Omit<Prisma.ProgramEventUpdateInput, 'id'>,
+  id: string,
+  data: Omit<Prisma.ProgramEventUpdateInput, 'id'>,
 ) => {
   return prisma.programEvent.update({
-    where: { id: roomId },
-    data: updateBody,
+    where: { id: id },
+    data,
   });
 };
 

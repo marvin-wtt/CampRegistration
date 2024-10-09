@@ -21,7 +21,7 @@ const props = defineProps<Props>();
 const { to } = useObjectTranslation();
 
 const backgroundColor = computed<string>(() => {
-  return props.event.backgroundColor ?? '#0000ff';
+  return props.event.color ?? '#0000ff';
 });
 
 const badgeStyles = computed<StyleValue>(() => {

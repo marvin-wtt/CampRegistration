@@ -22,9 +22,11 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     invalidate,
     withErrorNotification,
     lazyFetch,
-    asyncAction,
     checkNotNullWithError,
   } = useServiceHandler<ProgramEvent[]>('programPlanner');
+
+  // TODO Force fetch on update error after all pending requests finished
+  //  --> Set loading to true while waiting
 
   // TODO Add translations
 
@@ -51,18 +53,16 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     // Generate a temporary ID and replace it later
     const tmpId = `#${crypto.randomUUID()}`;
 
-    asyncAction(() =>
-      withErrorNotification('create', async () => {
-        const result = await apiService.createProgramEvent(campId, event);
+    withErrorNotification('create', async () => {
+      const result = await apiService.createProgramEvent(campId, event);
 
-        // Add item to data
-        data.value = data.value?.map((value) =>
-          value.id === tmpId ? result : value,
-        );
+      // Add item to data
+      data.value = data.value?.map((value) =>
+        value.id === tmpId ? result : value,
+      );
 
-        return result;
-      }),
-    );
+      return result;
+    });
 
     // Optimistic update
     const tmpEvent = {
@@ -87,10 +87,8 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       });
     }
 
-    asyncAction(() =>
-      withErrorNotification('update', () =>
-        apiService.updateProgramEvent(campId, id, event),
-      ),
+    withErrorNotification('update', () =>
+      apiService.updateProgramEvent(campId, id, event),
     );
 
     // Optimistic update
@@ -117,10 +115,8 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       });
     }
 
-    asyncAction(() =>
-      withErrorNotification('delete', () =>
-        apiService.deleteProgramEvent(campId, id),
-      ),
+    withErrorNotification('delete', () =>
+      apiService.deleteProgramEvent(campId, id),
     );
 
     data.value = data.value?.filter((event) => event.id === id);

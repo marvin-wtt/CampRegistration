@@ -12,6 +12,9 @@ export interface ProgramEvent extends Identifiable {
   side: 'left' | 'right' | 'auto' | null;
 }
 
-export type ProgramEventCreateData = Omit<ProgramEvent, 'id'>;
+export type ProgramEventCreateData = Partial<
+  Omit<ProgramEvent, 'id' | 'title'>
+> &
+  Pick<ProgramEvent, 'title'>;
 
 export type ProgramEventUpdateData = Partial<ProgramEventCreateData>;

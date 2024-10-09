@@ -26,6 +26,7 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@quasar/extras": "^1.16.12",
+    "@quasar/quasar-ui-qcalendar": "^4.0.0-beta.16",
     "apexcharts": "^3.50.0",
     "axios": "^1.7.4",
     "dom-to-image": "^2.6.0",

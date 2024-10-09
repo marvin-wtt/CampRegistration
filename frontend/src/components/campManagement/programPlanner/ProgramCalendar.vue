@@ -28,6 +28,7 @@
         :interval-minutes="props.timeInterval"
         :interval-height="intervalHeight"
         hour24-format
+        time-clicks-clamped
         bordered
         hoverable
         animated
@@ -69,6 +70,7 @@
 </template>
 
 <script lang="ts" setup>
+import '@quasar/quasar-ui-qcalendar/dist/index.css';
 import { QCalendarDay, Timestamp } from '@quasar/quasar-ui-qcalendar';
 import { useI18n } from 'vue-i18n';
 import type {
@@ -84,6 +86,7 @@ import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
 import { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
 import PointerEvent from 'happy-dom/lib/event/events/PointerEvent';
+import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 
 interface Props {
   camp: CampDetails;
@@ -165,16 +168,13 @@ function initialSelectedDate(): string {
 
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
   return props.events
-    .filter(
-      (event): event is ProgramEvent & Required<Pick<ProgramEvent, 'date'>> =>
-        !!event.date,
-    )
+    .filter((event) => event.date != null)
     .reduce(
       (map, event) => {
-        if (!(event.date in map)) {
-          map[event.date] = [];
+        if (!(event.date! in map)) {
+          map[event.date!] = [];
         }
-        map[event.date].push(event);
+        map[event.date!].push(event);
 
         return map;
       },
@@ -196,31 +196,43 @@ function getEvents(date: string) {
   return events;
 }
 
-interface Scope {
-  timestamp: Timestamp;
+interface CalendarEvent {
+  event: PointerEvent;
+  scope: {
+    timestamp: Timestamp;
+  };
 }
 
-function onDayEventAdd({
-  event,
-  scope,
-}: {
-  event: PointerEvent;
-  scope: Scope;
-}) {
-  console.log(scope.timestamp.date);
-  console.log(props.timeInterval);
+function onDayEventAdd({ scope }: CalendarEvent) {
+  quasar
+    .dialog({
+      component: ProgramEventAddDialog,
+      componentProps: {
+        date: scope.timestamp.date,
+        time: null,
+        duration: null,
+      },
+    })
+    .onOk((programEvent: ProgramEventCreateData) => {
+      emit('add', programEvent);
+    });
 }
 
-function onTimeEventAdd({
-  event,
-  scope,
-}: {
-  event: PointerEvent;
-  scope: Scope;
-}) {
-  console.log(scope.timestamp.date);
-  console.log(scope.timestamp.time);
-  console.log(props.timeInterval);
+function onTimeEventAdd({ scope }: CalendarEvent) {
+  quasar
+    .dialog({
+      component: ProgramEventAddDialog,
+      componentProps: {
+        date: scope.timestamp.date,
+        time: scope.timestamp.time,
+        duration: props.timeInterval,
+        dateTimeMin: props.camp.startAt,
+        dateTimeMax: props.camp.endAt,
+      },
+    })
+    .onOk((programEvent: ProgramEventCreateData) => {
+      emit('add', programEvent);
+    });
 }
 
 function onDragStart(e: DragEvent, event: ProgramEvent): void {
@@ -270,7 +282,7 @@ function onDrop(e: DragEvent, type: string, scope: DragAndDropScope): boolean {
     return false;
   }
 
-  let eventUpdate: Pick<ProgramEvent, 'time' | 'date' | 'duration' | 'side'>;
+  let eventUpdate: ProgramEventUpdateData;
   switch (type) {
     case 'interval':
       // Dropped on a time slot
@@ -285,13 +297,13 @@ function onDrop(e: DragEvent, type: string, scope: DragAndDropScope): boolean {
       // Dropped on the header
       eventUpdate = {
         date: scope.timestamp.date,
-        time: undefined,
+        time: null,
       };
       break;
     default:
       eventUpdate = {
-        date: undefined,
-        time: undefined,
+        date: null,
+        time: null,
       };
   }
 

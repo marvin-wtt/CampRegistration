@@ -11,40 +11,45 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'programEventId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const event = await programPlannerService.getProgramEventById(camp.id, id);
     req.models.programEvent = verifyModelExists(event);
-    next();
   }),
 );
 
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(programEventValidation.index),
   programEventController.index,
 );
 router.get(
   '/:programEventId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(programEventValidation.show),
   programEventController.show,
 );
-router.post('/', auth(), guard([campManager]), programEventController.store);
+router.post(
+  '/',
+  auth(),
+  guard(campManager),
+  validate(programEventValidation.store),
+  programEventController.store,
+);
 router.put(
   '/:programEventId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(programEventValidation.update),
   programEventController.update,
 );
 router.delete(
   '/:programEventId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(programEventValidation.destroy),
   programEventController.destroy,
 );

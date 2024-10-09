@@ -1,13 +1,17 @@
 <template>
   <div
-    v-if="props.event.time !== undefined"
+    v-if="props.event.time"
     class="my-event"
     :class="badgeClasses"
     :style="badgeStyles"
   >
     <span class="title q-calendar__ellipsis">
       {{ to(props.event.title) }}
-      <q-tooltip>
+      <q-tooltip
+        v-if="props.event.details"
+        class="column text-caption"
+        style="white-space: pre-line"
+      >
         {{ to(props.event.details) }}
       </q-tooltip>
     </span>
@@ -18,6 +22,7 @@
 import type { ProgramEvent } from '@camp-registration/common/entities';
 import { computed, StyleValue } from 'vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+
 interface Props {
   event: ProgramEvent;
   timeStartPosition?: (time?: string) => number;
@@ -29,12 +34,12 @@ const props = defineProps<Props>();
 const { to } = useObjectTranslation();
 
 const backgroundColor = computed<string>(() => {
-  return props.event.backgroundColor ?? '#0000ff';
+  return props.event.color ?? '#0000ff';
 });
 
 const badgeClasses = computed<Record<string, string | boolean>>(() => {
   return {
-    [`text-white bg-${props.event.backgroundColor}`]: true,
+    [`text-white bg-${props.event.color}`]: true,
     'full-width': !props.event.side || props.event.side === 'auto',
     'left-side': props.event.side === 'left',
     'right-side': props.event.side === 'right',
@@ -43,14 +48,22 @@ const badgeClasses = computed<Record<string, string | boolean>>(() => {
 });
 
 const badgeStyles = computed<StyleValue>(() => {
-  const s: StyleValue = {};
-  if (props.timeStartPosition && props.timeDurationHeight) {
-    s.top = props.timeStartPosition(props.event.time) + 'px';
-    s.height = props.timeDurationHeight(props.event.duration) + 'px';
-  }
-  s.backgroundColor = backgroundColor.value;
-  s.alignItems = 'flex-start';
-  return s;
+  const top =
+    props.timeStartPosition && props.event.time
+      ? props.timeStartPosition(props.event.time) + 'px'
+      : undefined;
+
+  const height =
+    props.timeDurationHeight && props.event.duration
+      ? props.timeDurationHeight(props.event.duration) + 'px'
+      : undefined;
+
+  return {
+    backgroundColor: backgroundColor.value,
+    alignItems: 'flex-start',
+    top,
+    height,
+  };
 });
 </script>
 

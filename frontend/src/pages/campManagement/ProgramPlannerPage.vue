@@ -22,8 +22,8 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import ProgramCalendar from 'components/campManagement/programPlanner/ProgramCalendar.vue';
 import { storeToRefs } from 'pinia';
 import type {
-  ProgramEvent,
   ProgramEventCreateData,
+  ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
 import { useProgramPlannerStore } from 'stores/program-planner-store';
 
@@ -41,7 +41,7 @@ const loading = computed<boolean>(() => {
   return campDetailsStore.isLoading || programPlannerStore.isLoading;
 });
 
-const error = computed<unknown>(() => {
+const error = computed(() => {
   return campDetailsStore.error ?? programPlannerStore.error;
 });
 
@@ -49,7 +49,7 @@ function onEventAdd(event: ProgramEventCreateData) {
   programPlannerStore.createEntry(event);
 }
 
-function onEventUpdate(id: string, eventUpdate: Partial<ProgramEvent>) {
+function onEventUpdate(id: string, eventUpdate: ProgramEventUpdateData) {
   programPlannerStore.updateEntry(id, eventUpdate);
 }
 

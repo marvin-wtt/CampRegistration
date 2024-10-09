@@ -8,7 +8,7 @@ const translatableSchema = Joi.alternatives()
   .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
   .required();
 const timeSchema = Joi.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
-const dateSchema = extendedJoi.date().format('YYYY-MM-DD');
+const dateSchema = extendedJoi.date().format('YYYY-MM-DD').raw();
 
 const show = {
   params: Joi.object({
@@ -29,13 +29,13 @@ const store = {
   }),
   body: Joi.object<ProgramEvent>({
     title: translatableSchema.required(),
-    details: translatableSchema.optional(),
-    location: translatableSchema.optional(),
+    details: translatableSchema.optional().allow(null),
+    location: translatableSchema.optional().allow(null),
     date: dateSchema.optional(),
-    time: timeSchema.optional(),
-    duration: Joi.number().min(0).optional(),
-    color: Joi.string().required(),
-    side: Joi.string().optional(),
+    time: timeSchema.optional().allow(null),
+    duration: Joi.number().min(0).optional().allow(null),
+    color: Joi.string().optional().allow(null),
+    side: Joi.string().optional().allow(null),
   }),
 };
 
@@ -46,13 +46,13 @@ const update = {
   }),
   body: Joi.object({
     title: translatableSchema.optional(),
-    details: translatableSchema.optional(),
-    location: translatableSchema.optional(),
+    details: translatableSchema.optional().allow(null),
+    location: translatableSchema.optional().allow(null),
     date: dateSchema.optional(),
-    time: timeSchema.optional(),
-    duration: Joi.number().min(0).optional(),
-    color: Joi.string().optional(),
-    side: Joi.string().optional(),
+    time: timeSchema.optional().allow(null),
+    duration: Joi.number().min(0).optional().allow(null),
+    color: Joi.string().optional().allow(null),
+    side: Joi.string().optional().allow(null),
   }),
 };
 
