@@ -1,9 +1,17 @@
 <template>
   <div
-    class="text-center rounded-borders"
+    class="text-center rounded-borders cursor-pointer"
     :style="badgeStyles"
   >
     {{ to(event.title) }}
+
+    <calendar-item-popup :event="props.event" />
+
+    <calendar-item-popup
+      :event="props.event"
+      @edit="onEdit"
+      @delete="onDelete"
+    />
   </div>
 </template>
 
@@ -11,12 +19,16 @@
 import type { ProgramEvent } from '@camp-registration/common/entities';
 import { computed, StyleValue } from 'vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
 
-interface Props {
+const props = defineProps<{
   event: ProgramEvent;
-}
+}>();
 
-const props = defineProps<Props>();
+const emit = defineEmits<{
+  (e: 'edit'): void;
+  (e: 'delete'): void;
+}>();
 
 const { to } = useObjectTranslation();
 
@@ -29,6 +41,14 @@ const badgeStyles = computed<StyleValue>(() => {
     backgroundColor: backgroundColor.value,
   };
 });
+
+function onDelete() {
+  emit('delete');
+}
+
+function onEdit() {
+  emit('edit');
+}
 </script>
 
 <style scoped></style>

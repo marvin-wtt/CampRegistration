@@ -65,9 +65,16 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     });
 
     // Optimistic update
-    const tmpEvent = {
+    const tmpEvent: ProgramEvent = {
       id: tmpId,
       ...event,
+      details: event.details ?? null,
+      location: event.location ?? null,
+      date: event.date ?? null,
+      time: event.time ?? null,
+      duration: event.duration ?? null,
+      color: event.color ?? null,
+      side: event.side ?? null,
     };
 
     data.value?.push(tmpEvent);
@@ -119,7 +126,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       apiService.deleteProgramEvent(campId, id),
     );
 
-    data.value = data.value?.filter((event) => event.id === id);
+    data.value = data.value?.filter((event) => event.id !== id);
   }
 
   return {

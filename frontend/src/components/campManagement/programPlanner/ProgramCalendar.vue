@@ -1,10 +1,14 @@
 <template>
-  <div class="column">
+  <div
+    class="column"
+    :class="quasar.platform.is.mobile ? 'reverse' : ''"
+  >
     <calendar-navigation-bar
       v-model="range"
       class="col-shrink"
       :start="props.camp.startAt"
       :end="props.camp.endAt"
+      :current="selectedDate"
       @next="onNextNavigation"
       @previous="onPreciousNavigation"
     />
@@ -13,7 +17,7 @@
 
     <div class="col relative-position">
       <q-calendar-day
-        ref="calendar"
+        ref="calendarRef"
         v-model="selectedDate"
         view="day"
         :drag-enter-func="onDragEnter"
@@ -47,6 +51,8 @@
               :event="event"
               :draggable="true"
               @dragstart="onDragStart($event, event)"
+              @edit="onEventEdit(event)"
+              @delete="onEventDelete(event)"
             />
           </div>
         </template>
@@ -62,6 +68,8 @@
             :time-duration-height="timeDurationHeight"
             :draggable="true"
             @dragstart="onDragStart($event, event)"
+            @edit="onEventEdit(event)"
+            @delete="onEventDelete(event)"
           />
         </template>
       </q-calendar-day>
@@ -111,9 +119,9 @@ const emit = defineEmits<{
 const { t, locale } = useI18n();
 const quasar = useQuasar();
 
+const calendarRef = ref<QCalendarDay | null>(null);
 const selectedDate = ref<string>(initialSelectedDate());
-
-const range = ref<number>(1);
+const range = ref<number>(initialRange());
 
 onMounted(() => {
   // TODO Find better solution
@@ -162,8 +170,22 @@ function updateIntervalHeight() {
   intervalHeight.value = height / intervalCount.value;
 }
 
+function initialRange(): number {
+  switch (quasar.screen.name) {
+    case 'xs':
+      return 1;
+    case 'sm':
+      return 3;
+    case 'md':
+      return 5;
+    case 'lg':
+    case 'xl':
+      return 7;
+  }
+}
+
 function initialSelectedDate(): string {
-  return props.camp.startAt.split('T')[0];
+  return formatDate(new Date(props.camp.startAt));
 }
 
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
@@ -235,6 +257,15 @@ function onTimeEventAdd({ scope }: CalendarEvent) {
     });
 }
 
+function onEventEdit(event: ProgramEvent) {
+  // TODO
+}
+
+function onEventDelete(event: ProgramEvent) {
+  // TODO Maybe add conform
+  emit('delete', event.id);
+}
+
 function onDragStart(e: DragEvent, event: ProgramEvent): void {
   if (!e.dataTransfer) {
     return;
@@ -298,12 +329,14 @@ function onDrop(e: DragEvent, type: string, scope: DragAndDropScope): boolean {
       eventUpdate = {
         date: scope.timestamp.date,
         time: null,
+        duration: null,
       };
       break;
     default:
       eventUpdate = {
         date: null,
         time: null,
+        duration: null,
       };
   }
 
@@ -324,12 +357,38 @@ function onWeekdayClass({ scope }: { scope: DragAndDropScope }) {
   };
 }
 
+const DAY_IN_MY = 24 * 60 * 60 * 1000;
+
 function onNextNavigation() {
-  // TODO How to shift
+  const endDate = new Date(props.camp.endAt);
+  endDate.setHours(0, 0);
+
+  const endTime = endDate.getTime();
+  const currentTime = new Date(selectedDate.value).getTime();
+
+  const rangeTime = range.value * DAY_IN_MY;
+  const maxTime = endTime - (rangeTime - DAY_IN_MY);
+  const updateMs = Math.min(maxTime, currentTime + rangeTime);
+
+  selectedDate.value = formatDate(new Date(updateMs));
 }
 
 function onPreciousNavigation() {
-  // TODO How to shift
+  const startDate = new Date(props.camp.startAt);
+  startDate.setHours(0, 0);
+
+  const startTime = startDate.getTime();
+  const currentTime = new Date(selectedDate.value).getTime();
+
+  const rangeTime = range.value * DAY_IN_MY;
+  const minTime = currentTime - rangeTime;
+  const updateMs = Math.max(startTime, minTime);
+
+  selectedDate.value = formatDate(new Date(updateMs));
+}
+
+function formatDate(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 </script>
 

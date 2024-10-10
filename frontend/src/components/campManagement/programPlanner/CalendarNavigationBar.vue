@@ -5,12 +5,14 @@
     <div>
       <q-btn
         icon="arrow_back"
+        :disable="prevDisabled"
         rounded
         dense
         @click="previous"
       />
       <q-btn
         icon="arrow_forward"
+        :disable="nextDisabled"
         rounded
         dense
         @click="next"
@@ -36,25 +38,48 @@ const { t } = useI18n();
 
 interface Props {
   modelValue: number;
-  start: string | Date;
-  end: string | Date;
+  start: string;
+  end: string;
+  current: string;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: number);
+  (e: 'update:modelValue', val: number): void;
   (e: 'next'): void;
   (e: 'previous'): void;
 }>();
 
 onMounted(() => {
-  daysRange.value = maxDays.value;
+  if (daysRange.value > maxDays.value) {
+    daysRange.value = maxDays.value;
+  }
 });
 
-const daysRange = computed({
+const daysRange = computed<number>({
   get: () => props.modelValue,
-  set: (val: number) => emit('update:modelValue', val),
+  set: (val) => emit('update:modelValue', val),
+});
+
+const prevDisabled = computed<boolean>(() => {
+  const startDate = new Date(props.start);
+  startDate.setHours(0, 0);
+  const currentDate = new Date(props.current);
+
+  return startDate.getTime() >= currentDate.getTime();
+});
+
+const DAY_IN_MY = 24 * 60 * 60 * 1000;
+const nextDisabled = computed<boolean>(() => {
+  const endDate = new Date(props.end);
+  endDate.setHours(0, 0);
+  const currentDate = new Date(props.current);
+
+  return (
+    endDate.getTime() <=
+    currentDate.getTime() + (daysRange.value - 1) * DAY_IN_MY
+  );
 });
 
 function next() {

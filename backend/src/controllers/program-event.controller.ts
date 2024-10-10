@@ -13,6 +13,7 @@ const show = catchRequestAsync(async (req, res) => {
 
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
+
   const events = await programPlannerService.queryProgramEvent(campId);
   const resources = events.map((value) => programEventResource(value));
 
@@ -33,6 +34,7 @@ const store = catchRequestAsync(async (req, res) => {
     color: data.color,
     side: data.side,
   });
+
   res.status(httpStatus.CREATED).json(resource(programEventResource(event)));
 });
 
@@ -50,12 +52,15 @@ const update = catchRequestAsync(async (req, res) => {
     color: data.color,
     side: data.side,
   });
+
   res.json(resource(programEventResource(event)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { roomId } = req.params;
-  await programPlannerService.deleteProgramEventById(roomId);
+  const { programEventId: id } = req.params;
+
+  await programPlannerService.deleteProgramEventById(id);
+
   res.status(httpStatus.NO_CONTENT).send();
 });
 
