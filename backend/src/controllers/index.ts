@@ -9,3 +9,4 @@ export { default as bedController } from './bed.controller';
 export { default as fileController } from './file.controller';
 export { default as feedbackController } from './feedback.controller';
 export { default as userController } from './user.controller';
+export { default as programEventController } from './program-event.controller';

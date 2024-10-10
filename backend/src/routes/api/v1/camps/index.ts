@@ -8,6 +8,7 @@ import roomRoutes from './rooms/room.routes';
 import managerRoutes from './manager.routes';
 import campFileRoutes from './files.routes';
 import campRoutes from './camps.routes';
+import programEventRoutes from './program-event.routes';
 
 const router = express.Router({ mergeParams: true });
 
@@ -24,6 +25,7 @@ router.use('/:campId/templates', templateRoutes);
 router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
 router.use('/:campId/files', campFileRoutes);
+router.use('/:campId/program-events', programEventRoutes);
 router.use(campRoutes);
 
 export default router;
