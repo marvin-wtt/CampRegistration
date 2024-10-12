@@ -183,6 +183,9 @@ const deleteFile = async (id: string) => {
 
 const deleteTempFile = async (fileName: string) => {
   const filePath = path.join(config.storage.tmpDir, fileName);
+
+  isDirectoryPathValid(filePath, config.storage.tmpDir);
+
   return fse.remove(filePath);
 };
 
