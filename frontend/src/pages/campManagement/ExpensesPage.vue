@@ -15,17 +15,17 @@
         <q-tab
           :label="t('list')"
           icon="overview"
-          name="overview"
+          name="categories"
         />
         <q-tab
           :label="t('list')"
           icon="list"
-          name="list"
+          name="overview"
         />
         <q-tab
           :label="t('person')"
           icon="person"
-          name="person"
+          name="people"
         />
       </q-tabs>
       <q-separator v-if="!tabBarBottom" />
@@ -37,98 +37,115 @@
       animated
       class="col"
     >
-      <q-tab-panel
+      <q-tab-panel name="categories"> </q-tab-panel>
+
+      <expenses-list-panel
         name="overview"
-        class="full-height"
-      >
-      </q-tab-panel>
+        :expenses
+      />
 
-      <q-tab-panel
-        class="absolute"
-        name="list"
-      >
-        <q-scroll-area class="fit">
-          <div class="text-h6">
-            {{ t('list.title') }}
-          </div>
-
-          <q-list separator>
-            <!-- TODO Add payment status -->
-            <q-item
-              v-for="expense in expenses"
-              :key="expense.id"
-              clickable
-            >
-              <q-item-section avatar>
-                <q-avatar>
-                  {{ expense.receiptNumber ?? '-' }}
-                </q-avatar>
-              </q-item-section>
-
-              <q-item-section>
-                <q-item-label>
-                  {{ expense.name }}
-                </q-item-label>
-                <q-item-label caption>
-                  {{ d(expense.date, 'short') }} &middot;
-                  {{ expense?.category ?? '-' }}
-                </q-item-label>
-              </q-item-section>
-
-              <q-item-section
-                class="text-bold"
-                side
-              >
-                {{ n(expense.amount, 'currency') }}
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-scroll-area>
-
-        <!-- FIXME FAB is falling from top when switching tabs -->
-        <q-btn
-          class="absolute-bottom-right q-ma-md"
-          color="primary"
-          fab
-          icon="add"
-          style="z-index: 10"
-          @click="onAddExpense()"
-        />
-      </q-tab-panel>
-
-      <q-tab-panel name="person"> Test3</q-tab-panel>
+      <expenses-people-panel
+        name="people"
+        :expenses
+      />
     </q-tab-panels>
+
+    <q-page-sticky
+      position="bottom-right"
+      :offset="[18, 18]"
+    >
+      <q-btn
+        class="absolute-bottom-right q-ma-md"
+        color="primary"
+        fab
+        icon="add"
+        style="z-index: 10"
+        @click="onAddExpense()"
+      />
+    </q-page-sticky>
   </q-page>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Expense } from '@camp-registration/common/entities';
+import ExpensesListPanel from 'components/campManagement/expenses/ExpensesListPanel.vue';
 import ExpenseCreateDialog from 'components/campManagement/expenses/ExpenseCreateDialog.vue';
+import ExpensesPeoplePanel from 'components/campManagement/expenses/ExpensesPeoplePanel.vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const { t, d, n } = useI18n();
+const { t } = useI18n();
 const quasar = useQuasar();
+const router = useRouter();
+const route = useRoute();
 
-const tab = ref<string>('list');
+const allowedFragments = ['categories', 'overview', 'people'];
+
+const tab = ref<string>(initialTab());
+
+function initialTab(): string {
+  const fragment =
+    route.hash && route.hash.length > 0 ? route.hash.substring(1) : null;
+
+  return fragment && allowedFragments.includes(fragment) ? fragment : 'list';
+}
+
+watch(tab, (value) => {
+  router.replace({
+    hash: `#${value}`,
+  });
+});
+
+const events = ref([
+  {
+    id: '1234',
+    receiptNumber: 1,
+    name: 'First expense',
+    category: 'test',
+    amount: 100,
+    date: new Date().toISOString(),
+    paidBy: 'Marvin',
+    recipient: null,
+    description: null,
+    fileId: null,
+    paidAt: null,
+  },
+  {
+    id: '1234',
+    receiptNumber: 2,
+    name: 'Second expense',
+    category: 'test',
+    amount: 100,
+    date: new Date().toISOString(),
+    paidBy: null,
+    recipient: null,
+    description: null,
+    fileId: null,
+    paidAt: null,
+  },
+]);
 
 const expenses = computed<Expense[]>(() => {
-  return [
-    {
-      id: '1234',
-      receiptNumber: 1,
-      name: 'First expense',
-      category: 'test',
-      amount: 100,
-      date: new Date().toISOString(),
-      paidBy: null,
-      recipient: null,
-      description: null,
-      fileId: null,
-      paidAt: null,
-    },
-  ];
+  return events.value
+    .toSorted((a, b) => a.receiptNumber ?? 0 - b.receiptNumber ?? 0)
+    .reverse();
+});
+
+const people = computed<string[]>(() => {
+  const names = events.value
+    .map((value) => value.paidBy)
+    .filter((value) => value != null);
+
+  const uniqueNames = [...new Set(names)];
+
+  return uniqueNames.sort((a, b) => a.localeCompare(b));
+});
+
+const locales = computed<string[]>(() => {
+  // TODO
+  return [];
 });
 
 const tabBarBottom = computed<boolean>(() => {
@@ -139,14 +156,11 @@ function onAddExpense() {
   quasar.dialog({
     component: ExpenseCreateDialog,
     componentProps: {
-      locales: [],
-      people: [],
+      locales: locales.value,
+      people: people.value,
     },
   });
 }
 </script>
 
-<i18n lang="yaml" locale="en">
-list:
-  title: 'Expenses'
-</i18n>
+<i18n lang="yaml" locale="en"></i18n>
