@@ -95,8 +95,10 @@ type Translations = Record<string, string | number>;
 
 const { t } = useI18n();
 
+type ModelValue = Translations | string | number | undefined | null;
+
 interface Props {
-  modelValue: undefined | string | number | Translations;
+  modelValue: ModelValue;
   modelModifiers?: Record<string, boolean>;
   label?: string;
   locales?: string[];
@@ -106,14 +108,12 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   modelModifiers: undefined,
   label: '',
-  locales: undefined, // TODO Why cant I make it an empty array?
+  locales: undefined,
   always: false,
 });
+
 const emit = defineEmits<{
-  (
-    e: 'update:modelValue',
-    value: string | number | Translations | undefined,
-  ): void;
+  (e: 'update:modelValue', value: ModelValue): void;
 }>();
 
 const useTranslations = ref(defaultUseTranslations());
@@ -131,7 +131,11 @@ function defaultUseTranslations(): boolean {
 function defaultValue(): string | number {
   // If the model value if an object and there is only one locale, we assume that the object is a translation and
   //  contains a translation for the given locale
-  if (props.locales?.length === 1 && typeof props.modelValue === 'object') {
+  if (
+    props.locales?.length === 1 &&
+    props.modelValue &&
+    typeof props.modelValue === 'object'
+  ) {
     return props.modelValue[props.locales[0]];
   }
 
@@ -142,7 +146,9 @@ function defaultValue(): string | number {
 }
 
 function defaultTranslations(): Translations {
-  return typeof props.modelValue === 'object' ? props.modelValue : {};
+  return props.modelValue && typeof props.modelValue === 'object'
+    ? props.modelValue
+    : {};
 }
 
 watch(
@@ -167,7 +173,7 @@ watch(
     if (typeof newValue === 'string' || typeof newValue === 'number') {
       value.value = newValue;
       useTranslations.value = false;
-    } else if (typeof newValue === 'object') {
+    } else if (newValue && typeof newValue === 'object') {
       translations.value = newValue;
       useTranslations.value = true;
     }
