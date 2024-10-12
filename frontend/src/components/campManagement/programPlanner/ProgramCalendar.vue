@@ -94,7 +94,6 @@ import CalendarNavigationBar from 'components/campManagement/programPlanner/Cale
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
 import { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
-import PointerEvent from 'happy-dom/lib/event/events/PointerEvent';
 import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 
