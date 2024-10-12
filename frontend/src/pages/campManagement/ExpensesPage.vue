@@ -35,30 +35,55 @@
       v-model="tab"
       :swipeable="tabBarBottom"
       animated
-      class="col bg-green"
+      class="col"
     >
-      <q-tab-panel name="overview"></q-tab-panel>
+      <q-tab-panel
+        name="overview"
+        class="full-height"
+      >
+      </q-tab-panel>
 
       <q-tab-panel
-        class="bg-red"
+        class="absolute"
         name="list"
       >
         <q-scroll-area class="fit">
-          <div
-            v-for="n in 100"
-            :key="n"
-            class="q-py-xs"
-          >
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          <div class="text-h6">
+            {{ t('list.title') }}
           </div>
-        </q-scroll-area>
 
-        <!--        <q-scroll-area style="height: 200px; max-width: 300px;">-->
-        <!--          <div class="text-h6">-->
-        <!--            {{ t('list.title') }}-->
-        <!--          </div>-->
-        <!--        </q-scroll-area>-->
+          <q-list separator>
+            <!-- TODO Add payment status -->
+            <q-item
+              v-for="expense in expenses"
+              :key="expense.id"
+              clickable
+            >
+              <q-item-section avatar>
+                <q-avatar>
+                  {{ expense.receiptNumber ?? '-' }}
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label>
+                  {{ expense.name }}
+                </q-item-label>
+                <q-item-label caption>
+                  {{ d(expense.date, 'short') }} &middot;
+                  {{ expense?.category ?? '-' }}
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section
+                class="text-bold"
+                side
+              >
+                {{ n(expense.amount, 'currency') }}
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-scroll-area>
 
         <!-- FIXME FAB is falling from top when switching tabs -->
         <q-btn
@@ -67,6 +92,7 @@
           fab
           icon="add"
           style="z-index: 10"
+          @click="onAddExpense()"
         />
       </q-tab-panel>
 
@@ -79,13 +105,48 @@
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { computed, ref } from 'vue';
+import { Expense } from '@camp-registration/common/entities';
+import ExpenseCreateDialog from 'components/campManagement/expenses/ExpenseCreateDialog.vue';
 
-const { t } = useI18n();
+const { t, d, n } = useI18n();
 const quasar = useQuasar();
 
 const tab = ref<string>('list');
 
-const tabBarBottom = computed<boolean>(() => {
-  return quasar.screen.xs;
+const expenses = computed<Expense[]>(() => {
+  return [
+    {
+      id: '1234',
+      receiptNumber: 1,
+      name: 'First expense',
+      category: 'test',
+      amount: 100,
+      date: new Date().toISOString(),
+      paidBy: null,
+      recipient: null,
+      description: null,
+      fileId: null,
+      paidAt: null,
+    },
+  ];
 });
+
+const tabBarBottom = computed<boolean>(() => {
+  return quasar.platform.has.touch;
+});
+
+function onAddExpense() {
+  quasar.dialog({
+    component: ExpenseCreateDialog,
+    componentProps: {
+      locales: [],
+      people: [],
+    },
+  });
+}
 </script>
+
+<i18n lang="yaml" locale="en">
+list:
+  title: 'Expenses'
+</i18n>
