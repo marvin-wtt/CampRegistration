@@ -1,10 +1,11 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
 import { collection, resource } from 'resources/resource';
-import { fileService, registrationService } from 'services';
+import { registrationService } from 'services';
 import { registrationResource } from 'resources';
 import { routeModel } from 'utils/verifyModel';
 import { requestLocale } from 'utils/requestLocale';
+import { catchAndResolve } from '../utils/promiseUtils';
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
@@ -24,33 +25,26 @@ const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
   const { data, locale: bodyLocale } = req.body;
   const locale = bodyLocale ?? requestLocale(req);
-  const files = req.files;
 
-  let registration = await registrationService.createRegistration(camp, {
+  const registration = await registrationService.createRegistration(camp, {
     data,
     locale,
   });
 
-  // Store related files
-  // Uploaded files for this request may only be in req.files
-  if (files) {
-    registration = await fileService.saveRegistrationFiles(
-      registration.id,
-      files,
+  // Notify participant
+  if (registration.waitingList) {
+    await catchAndResolve(
+      registrationService.sendWaitingListConfirmation(camp, registration),
+    );
+  } else {
+    await catchAndResolve(
+      registrationService.sendRegistrationConfirmation(camp, registration),
     );
   }
 
-  // Notify participant
-  if (registration.waitingList) {
-    await registrationService.sendWaitingListConfirmation(camp, registration);
-  } else {
-    await registrationService.sendRegistrationConfirmation(camp, registration);
-  }
-
   // Notify contact email
-  await registrationService.sendRegistrationManagerNotification(
-    camp,
-    registration,
+  await catchAndResolve(
+    registrationService.sendRegistrationManagerNotification(camp, registration),
   );
 
   res
@@ -62,31 +56,31 @@ const update = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
   const previousRegistration = routeModel(req.models.registration);
   const { registrationId } = req.params;
-  const data = req.body;
+  const { data, waitingList } = req.body;
 
   const registration = await registrationService.updateRegistrationById(
     camp,
     registrationId,
     {
-      data: data.data,
-      waitingList: data.waitingList,
+      data,
+      waitingList,
     },
   );
 
-  if (req.files) {
-    await fileService.saveRegistrationFiles(registration.id, req.files);
-  }
-
   if (previousRegistration.waitingList && !registration.waitingList) {
-    await registrationService.sendRegistrationConfirmation(camp, registration);
+    await catchAndResolve(
+      registrationService.sendRegistrationConfirmation(camp, registration),
+    );
   }
 
   res.json(resource(registrationResource(registration)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { registrationId } = req.params;
-  await registrationService.deleteRegistrationById(registrationId);
+  const camp = routeModel(req.models.camp);
+  const registration = routeModel(req.models.registration);
+
+  await registrationService.deleteRegistration(camp, registration);
 
   res.status(httpStatus.NO_CONTENT).send();
 });

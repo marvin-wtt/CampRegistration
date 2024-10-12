@@ -14,8 +14,8 @@
   },
   "workspaces": [
     "common",
-    "frontend",
-    "backend"
+    "backend",
+    "frontend"
   ],
   "dependencies": {
   },

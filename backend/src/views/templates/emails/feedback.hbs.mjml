@@ -36,6 +36,11 @@
           <br>
           {{ location }}
         </mj-text>
+        <mj-text mj-class="text">
+          User Agent:
+          <br>
+          {{ userAgent }}
+        </mj-text>
       </mj-column>
     </mj-section>
     <mj-raw>
@@ -44,7 +49,7 @@
     <mj-section mj-class="bottom-section">
       <mj-column vertical-align="middle" width="70%">
         <mj-text align="center" mj-class="small-text">
-          {{t 'email:footer.sentTo' this }}
+          {{{t 'email:footer.sentTo' this }}}
           <br>
           You received this email because you are an administrator.
         </mj-text>

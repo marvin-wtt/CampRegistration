@@ -8,7 +8,7 @@ export function useFileService() {
   async function fetchCampFiles(campId: string): Promise<ServiceFile[]> {
     const response = await api.get(`camps/${campId}/files/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function createCampFile(
@@ -21,26 +21,56 @@ export function useFileService() {
       },
     });
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
-  async function deleteCampFile(campId: string, id: string): Promise<void> {
-    await api.delete(`camps/${campId}/files/${id}`);
+  async function createTemporaryFile(
+    data: ServiceFileCreateData,
+  ): Promise<ServiceFile> {
+    const response = await api.postForm('files/', data);
+
+    return response?.data?.data;
   }
 
-  async function downloadCampFile(campId: string, id: string) {
-    // TODO How to start a browser download in the same tab?
+  async function deleteCampFile(campId: string, fileId: string): Promise<void> {
+    await api.delete(`camps/${campId}/files/${fileId}`);
   }
 
-  function getCampFileUrl(campId: string, id: string): string {
-    return `${api.defaults.baseURL}camps/${campId}/files/${id}/`;
+  async function downloadCampFile(campId: string, fileId: string) {
+    return downloadFile(getCampFileUrl(campId, fileId));
+  }
+
+  async function downloadFile(url: string): Promise<Blob> {
+    const response = await api.get(url, {
+      responseType: 'blob',
+    });
+
+    return response.data;
+  }
+
+  function getCampFileUrl(campId: string, fileId: string): string {
+    return api.getUri({
+      url: `camps/${campId}/files/${fileId}/`,
+    });
+  }
+
+  function getRegistrationFileUrl(
+    campId: string,
+    registrationId: string,
+    fileId: string,
+  ) {
+    return api.getUri({
+      url: `camps/${campId}/registrations/${registrationId}files/${fileId}/`,
+    });
   }
 
   return {
     fetchCampFiles,
     createCampFile,
+    createTemporaryFile,
     deleteCampFile,
     downloadCampFile,
     getCampFileUrl,
+    getRegistrationFileUrl,
   };
 }

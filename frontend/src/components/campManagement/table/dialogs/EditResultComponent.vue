@@ -1,87 +1,63 @@
 <template>
   <q-dialog
     ref="dialogRef"
-    persistent
+    full-height
+    full-width
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin">
-      <q-card-section>
-        <div class="text-h6">
-          {{ t('title') }}
-        </div>
-      </q-card-section>
+    <q-card class="column">
+      <q-bar class="col-shrink">
+        {{ t('title') }}
 
-      <q-list
-        bordered
-        class="rounded-borders scroll"
-        style="max-height: 75vh"
-      >
-        <q-expansion-item
-          v-for="page in props.questions.pages"
-          :key="page.name"
-          :label="to(page.title)"
-          group="questions"
-        >
-          <q-card>
-            <q-card-section>
-              <!-- TODO required, visible, readonly -->
-              <dynamic-from-input
-                v-for="element in page.elements"
-                :key="element.name"
-                v-model="data[element.name]"
-                :element="element"
-                :data="data"
-              />
-            </q-card-section>
-          </q-card>
-          <q-separator />
-        </q-expansion-item>
-      </q-list>
+        <q-space />
 
-      <q-card-actions align="right">
         <q-btn
-          :disable="loading"
-          :label="t('action.cancel')"
+          v-close-popup
+          icon="close"
           flat
-          rounded
+          dense
           @click="onDialogCancel"
+        >
+          <q-tooltip>
+            {{ t('action.close') }}
+          </q-tooltip>
+        </q-btn>
+      </q-bar>
+
+      <q-scroll-area class="col-grow">
+        <registration-form
+          :camp-details="camp"
+          :data="data"
+          :submit-fn="onSubmit"
+          :upload-file-fn="onFileUpload"
+          moderation
         />
-        <q-btn
-          :label="t('action.edit')"
-          :loading="loading"
-          color="primary"
-          rounded
-          @click="onOKClick"
-        />
-      </q-card-actions>
+      </q-scroll-area>
     </q-card>
   </q-dialog>
 </template>
 
 <script lang="ts" setup>
+import 'survey-core/defaultV2.min.css';
+
 import { useDialogPluginComponent } from 'quasar';
 import type {
+  CampDetails,
   Registration,
-  SurveyJSCampData,
 } from '@camp-registration/common/entities';
-import { reactive, ref, toRaw } from 'vue';
+import RegistrationForm from 'components/common/RegistrationForm.vue';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useRegistrationsStore } from 'stores/registration-store';
-import DynamicFromInput from 'components/common/inputs/DynamicFromInput.vue';
 
 interface Props {
-  questions: SurveyJSCampData;
-  result: Registration['data'];
+  camp: CampDetails;
+  data: Registration['data'];
+  uploadFileFn: (file: File) => Promise<string>;
 }
 
 const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
-const { to } = useObjectTranslation();
-const registrationStore = useRegistrationsStore();
-
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 // dialogRef      - Vue ref to be applied to QDialog
@@ -91,49 +67,33 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 //                    example: onDialogOK({ /*...*/ }) - with payload
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const loading = ref<boolean>(false);
-const data = reactive(structuredClone(toRaw(props.result)) ?? {});
-
-async function onOKClick() {
-  const result = props.result;
-
-  loading.value = true;
-  const id = isIdentifiable(result) ? result.id : undefined;
-  await registrationStore.updateData(id, {
-    data: toRaw(data),
-  });
-
-  onDialogOK();
+function onSubmit(id: string, data: unknown) {
+  onDialogOK(data);
+  // Error is handled elsewhere
+  return Promise.resolve();
 }
 
-function isObject(value: unknown): value is object {
-  return value != null && typeof value === 'object';
-}
-
-function isIdentifiable(value: unknown): value is { id: string } {
-  return isObject(value) && 'id' in value && typeof value.id === 'string';
+async function onFileUpload(file: File) {
+  return props.uploadFileFn(file);
 }
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit data'
+title: 'Update registration'
 action:
-  edit: 'Save'
-  cancel: 'Cancel'
+  close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Daten bearbeiten'
+title: 'Anmeldung bearbeiten'
 action:
-  edit: 'Speichern'
-  cancel: 'Abbrechen'
+  close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier les données'
+title: "Modifier l'inscription"
 action:
-  edit: 'Sauvegarder'
-  cancel: 'Annuler'
+  close: 'Fermer'
 </i18n>
 
 <style></style>

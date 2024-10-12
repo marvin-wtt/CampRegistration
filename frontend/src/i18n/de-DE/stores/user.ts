@@ -9,4 +9,8 @@ export default {
   'reset-password': {
     error: 'Passwort zurücksetzen fehlgeschlagen',
   },
+  'verify-email': {
+    error: 'E-Mail-Verifizierung fehlgeschlagen',
+    success: 'E-Mail verifiziert',
+  },
 };

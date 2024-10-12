@@ -1,14 +1,13 @@
 <template>
-  <page-state-handler
-    :error="error"
-    padding
-  >
+  <page-state-handler :error="error">
     <q-table
       :title="t('title')"
       :columns="columns"
       :rows="rows"
       :loading="loading"
       :pagination="pagination"
+      class="absolute fit"
+      flat
     >
       <template #top-right>
         <q-btn
@@ -75,7 +74,7 @@ import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
 import { useAuthStore } from 'stores/auth-store';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { QTableColumn } from 'quasar';
 
 const quasar = useQuasar();
 const { t } = useI18n();

@@ -2,10 +2,10 @@
   <q-list>
     <q-item
       v-for="element in props.elements"
-      :key="element.field"
+      :key="element.name"
     >
       <dynamic-input
-        v-model="modelValue[element.field]"
+        v-model="modelValue[element.name]"
         :element="element"
       />
     </q-item>

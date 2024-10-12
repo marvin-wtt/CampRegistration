@@ -57,6 +57,18 @@
           </a>
         </q-td>
       </template>
+      <!-- Link button -->
+      <template #body-cell-link="props">
+        <q-td :props="props">
+          <q-btn
+            icon="share"
+            size="sm"
+            rounded
+            dense
+            @click="copyLink(props.value)"
+          />
+        </q-td>
+      </template>
     </q-table>
   </page-state-handler>
 </template>
@@ -65,9 +77,9 @@
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { QTableColumn } from 'quasar';
 import { computed, onMounted, ref } from 'vue';
-import { useQuasar } from 'quasar';
+import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from 'src/utils/formatters/formatBytes';
@@ -98,10 +110,16 @@ const columns: QTableColumn[] = [
     align: 'left',
   },
   {
-    name: 'id',
-    label: t('column.id'),
-    field: 'id',
+    name: 'link',
+    label: t('column.link'),
+    field: 'href',
     align: 'center',
+  },
+  {
+    name: 'field',
+    label: t('column.field'),
+    field: 'field',
+    align: 'left',
   },
   {
     name: 'access',
@@ -159,18 +177,14 @@ function mapColumnData(file: ServiceFile) {
 }
 
 function uploadFile() {
+  uploadOngoing.value = true;
+
   quasar
     .dialog({
       component: FileUploadDialog,
     })
-    .onOk(async (payload) => {
-      uploadOngoing.value = true;
-      try {
-        await campFileStore.createEntry(payload);
-      } catch (ignored) {
-      } finally {
-        uploadOngoing.value = false;
-      }
+    .onDismiss(() => {
+      uploadOngoing.value = false;
     });
 }
 
@@ -178,12 +192,31 @@ function deleteFiles() {
   selected.value.forEach((value: ServiceFile) => {
     campFileStore.deleteEntry(value.id);
   });
+
+  selected.value = [];
 }
 
 function downloadFiles() {
-  selected.value.forEach((value: ServiceFile) => {
-    campFileStore.downloadData(value.id);
-  });
+  selected.value.forEach((file) =>
+    campFileStore.downloadFile(file, campStore.data?.id),
+  );
+}
+
+function copyLink(url: string) {
+  copyToClipboard(url)
+    .then(() => {
+      quasar.notify({
+        type: 'positive',
+        message: t('notification.copy_link.success'),
+      });
+    })
+    .catch((reason) => {
+      quasar.notify({
+        type: 'negative',
+        message: t('notification.copy_link.failed'),
+        caption: reason,
+      });
+    });
 }
 </script>
 
@@ -197,8 +230,9 @@ action:
 
 column:
   access_level: 'Access'
-  id: 'ID'
+  field: 'Identifier'
   last_modified: 'Last Modified'
+  link: 'Link'
   name: 'Name'
   size: 'Size'
   type: 'Type'
@@ -206,6 +240,11 @@ column:
 access_level:
   public: 'Public'
   private: 'Private'
+
+notification:
+  copy_link:
+    success: 'Link copied to clipboard'
+    failed: 'Failed to copy link to clipboard'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -218,8 +257,9 @@ action:
 
 column:
   access_level: 'Zugriff'
-  id: 'ID'
+  field: 'Kennung'
   last_modified: 'Zuletzt geändert'
+  link: 'Link'
   name: 'Name'
   size: 'Größe'
   type: 'Typ'
@@ -227,6 +267,11 @@ column:
 access_level:
   public: 'Öffentlich'
   private: 'Privat'
+
+notification:
+  copy_link:
+    success: 'Link in Zwischenablage kopiert'
+    failed: 'Link konnte nicht in Zwischenablage kopiert werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -238,14 +283,20 @@ action:
   upload: 'Téléverser'
 
 column:
-  access_level: "Niveau d'accès"
-  id: 'ID'
+  access_level: 'Accès'
+  field: 'Identifiant'
   last_modified: 'Dernière modification'
+  link: 'Lien'
   name: 'Nom'
   size: 'Taille'
   type: 'Type'
 
 access_level:
   public: 'Public'
-  private: 'Private'
+  private: 'Privé'
+
+notification:
+  copy_link:
+    success: 'Lien copié dans le presse-papiers'
+    failed: 'Échec de la copie du lien dans le presse-papiers'
 </i18n>

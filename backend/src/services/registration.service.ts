@@ -8,12 +8,12 @@ import { formUtils } from 'utils/form';
 import { notificationService } from 'services/index';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
+import config from 'config';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
     where: { id, campId },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -23,7 +23,6 @@ const queryRegistrations = async (campId: string) => {
   return prisma.registration.findMany({
     where: { campId },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
@@ -31,7 +30,7 @@ const queryRegistrations = async (campId: string) => {
 
 const getParticipantsCount = async (campId: string) => {
   return prisma.registration.count({
-    where: createRegistrationRoleFilter(campId, 'participant'),
+    where: registrationRoleFilter(campId, 'participant'),
   });
 };
 
@@ -40,15 +39,14 @@ const getParticipantsCountByCountry = async (
   countries: string[],
 ) => {
   const participants = await prisma.registration.findMany({
-    where: createRegistrationRoleFilter(campId, 'participant'),
+    where: registrationRoleFilter(campId, 'participant'),
   });
 
   const getCountry = (registration: Registration): string => {
-    const country = registration.campData['country']?.find((value: unknown) => {
-      return typeof value === 'string' && countries.includes(value);
-    });
-
-    return country ?? 'unknown';
+    return (
+      registrationCampDataAccessor(registration.campData).country(countries) ??
+      'unknown'
+    );
   };
 
   // Count the participants for each country
@@ -62,76 +60,124 @@ const getParticipantsCountByCountry = async (
   );
 };
 
-type RegistrationCreateData = Pick<
-  Prisma.RegistrationCreateInput,
-  'waitingList' | 'data' | 'locale'
->;
-const createRegistration = async (camp: Camp, data: RegistrationCreateData) => {
-  // TODO The utils was already initialized during validation. Attach it to the request body
+const createRegistration = async (
+  camp: Camp,
+  data: Pick<Registration, 'data' | 'locale'>,
+) => {
+  const id = ulid();
   const form = formUtils(camp);
   form.updateData(data.data);
+  // Extract files first before the value are mapped to the URL
+  const fileIdentifiers = form.getFileIdentifiers();
+  form.mapFileValues((value) => {
+    if (typeof value !== 'string') {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
+    }
+    // The ID may contain the field name. Remove it.
+    const fileId = value.split('#')[0];
+    return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
+  });
+  // Get updated data from form back
+  const formData = form.data();
   const campData = form.extractCampData();
 
+  const freePlaces = await calculateFreePlaces(camp, campData, 'decrement');
+  const waitingList = freePlaces === undefined;
+
+  const fileConnects = fileIdentifiers.map((identifier) => {
+    return {
+      id: identifier.id,
+      campId: null,
+      registrationId: null,
+      accessLevel: 'private',
+      field: identifier.field ?? null,
+    };
+  });
+
   return prisma.$transaction(async (transaction) => {
-    const waitingList =
-      data.waitingList ?? (await isWaitingList(transaction, camp, campData));
+    await updateCampFreePlaces(camp, freePlaces)(transaction);
+
     return transaction.registration.create({
       data: {
         ...data,
-        id: ulid(),
+        id,
         campId: camp.id,
+        data: formData,
         waitingList,
         campData,
+        files: {
+          connect: fileConnects,
+        },
       },
-      include: { files: true },
     });
   });
 };
 
-const isWaitingList = async (
-  transaction: Partial<typeof prisma>,
+/**
+ * Calculates the new free places of the camp.
+ * Depending on if the data has multiple values or not, the country from the
+ * registration camp data is used as key.
+ *
+ * @param camp The camp related to the registration
+ * @param campData The extracted data
+ * @param direction Wherever to increment or decrement the free places
+ * @return the updated free places or undefined, if there are no free places
+ * @throws ApiError if the free places has multiple entries but the country is
+ *    missing in the camp data
+ */
+const calculateFreePlaces = (
   camp: Camp,
-  campData: Record<string, unknown[]>,
-) => {
-  // Waiting list only applies to participants
+  campData: Registration['campData'],
+  direction: 'increment' | 'decrement',
+): Promise<Camp['freePlaces'] | undefined> => {
+  const updateValue = (val: number) =>
+    direction === 'increment' ? ++val : --val;
+  let { freePlaces } = { ...camp };
+
+  // Free places only apply to participants
   if (!isParticipant(campData)) {
-    return false;
+    return freePlaces;
   }
 
-  const filter: Prisma.RegistrationWhereInput[] = [
-    createRegistrationRoleFilter(camp.id, 'participant'),
-  ];
+  if (typeof freePlaces === 'number') {
+    // Update free places
+    freePlaces = updateValue(freePlaces);
 
-  let maxParticipants = camp.maxParticipants as Record<string, number> | number;
-  // Add country filter
-  if (typeof maxParticipants !== 'number') {
-    const country = registrationCampDataAccessor(campData).country(
-      camp.countries,
-    );
-    if (!country) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Missing or invalid country data',
-      );
-    }
+    // Return the updated freePlaces if valid, otherwise undefined
+    return freePlaces >= 0 ? freePlaces : undefined;
+  }
 
-    // Add filter criteria for country
-    filter.push({
-      campData: {
-        path: dbJsonPath('country'),
-        array_contains: [country],
+  const country = registrationCampDataAccessor(campData).country(
+    camp.countries,
+  );
+
+  if (!country || !(country in freePlaces)) {
+    throw new ApiError(httpStatus.CONFLICT, 'Missing or invalid country data');
+  }
+
+  // Update free places for the specific country
+  freePlaces[country] = updateValue(freePlaces[country]);
+
+  // Return the updated freePlaces if valid, otherwise undefined
+  return freePlaces[country] >= 0 ? freePlaces : undefined;
+};
+
+type PrismaTransaction = Parameters<
+  Parameters<typeof prisma.$transaction>[0]
+>[0];
+
+const updateCampFreePlaces = (camp: Camp, freePlaces: Camp['freePlaces']) => {
+  return async (transaction: PrismaTransaction) => {
+    return transaction.camp.update({
+      data: {
+        freePlaces,
+      },
+      where: {
+        id: camp.id,
+        version: camp.version,
       },
     });
-
-    // Set country based value as maximum
-    maxParticipants = maxParticipants[country];
-  }
-
-  const count = await transaction.registration!.count({
-    where: { AND: filter },
-  });
-
-  return count >= maxParticipants;
+  };
 };
 
 const isParticipant = (campData: Record<string, unknown[]>): boolean => {
@@ -148,10 +194,15 @@ const updateRegistrationById = async (
   registrationId: string,
   data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
 ) => {
-  // TODO The utils was already initialized during validation. Attach it to the request body
-  const form = formUtils(camp);
-  form.updateData(data.data);
-  const campData = form.extractCampData();
+  let campData;
+  if (data.data) {
+    const form = formUtils(camp);
+    form.updateData(data.data);
+    campData = form.extractCampData();
+  }
+
+  // TODO Delete files if some where removed
+  // TODO Associate files if new file values are present
 
   return prisma.registration.update({
     where: { id: registrationId },
@@ -160,17 +211,47 @@ const updateRegistrationById = async (
       campData,
     },
     include: {
-      files: true,
       bed: { include: { room: true } },
     },
   });
 };
 
-const deleteRegistrationById = async (registrationId: string) => {
-  await prisma.registration.delete({ where: { id: registrationId } });
+const deleteRegistration = async (camp: Camp, registration: Registration) => {
+  const freePlaces = calculateFreePlaces(
+    camp,
+    registration.campData,
+    'increment',
+  );
+
+  await prisma.$transaction(async (transaction) => {
+    await updateCampFreePlaces(camp, freePlaces)(transaction);
+    await prisma.registration.delete({ where: { id: registration.id } });
+  });
 };
 
-const createRegistrationRoleFilter = (
+const updateRegistrationCampDataByCamp = async (camp: Camp): Promise<void> => {
+  const form = formUtils(camp);
+  const registrations = await queryRegistrations(camp.id);
+
+  const results = registrations.map((registration) => {
+    form.updateData(registration.data);
+    const campData = form.extractCampData();
+
+    return prisma.registration.update({
+      where: { id: registration.id },
+      data: {
+        campData,
+      },
+      include: {
+        bed: { include: { room: true } },
+      },
+    });
+  });
+
+  await Promise.all(results);
+};
+
+const registrationRoleFilter = (
   campId: string,
   role: string,
 ): Prisma.RegistrationWhereInput => {
@@ -197,7 +278,7 @@ const sendRegistrationConfirmation = async (
   camp: Camp,
   registration: Registration,
 ) => {
-  const { to, replyTo, cc, campName, participantName } =
+  const { to, replyTo, campName, participantName } =
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
@@ -211,9 +292,8 @@ const sendRegistrationConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
-    cc,
     replyTo,
     subject,
     template,
@@ -225,7 +305,7 @@ const sendWaitingListConfirmation = async (
   camp: Camp,
   registration: Registration,
 ) => {
-  const { to, replyTo, cc, campName, participantName } =
+  const { to, replyTo, campName, participantName } =
     getRegistrationConfirmationRegistrationData(camp, registration);
 
   await i18n.changeLanguage(registration.locale);
@@ -239,9 +319,8 @@ const sendWaitingListConfirmation = async (
     participantName,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
-    cc,
     replyTo,
     subject,
     template,
@@ -257,6 +336,7 @@ const sendRegistrationManagerNotification = async (
   const country = accessor.country(camp.countries);
 
   const to = findCampContactEmails(camp.contactEmail, country);
+  const replyTo = accessor.emails();
   const campName = translateObject(camp.name, country);
   const participantName = accessor.name();
 
@@ -270,15 +350,19 @@ const sendRegistrationManagerNotification = async (
     content: JSON.stringify(registration),
   };
 
+  const url = notificationService.generateUrl(`management/${camp.id}`);
+
   const context = {
     camp: {
       name: campName,
     },
     participantName,
+    url,
   };
 
-  notificationService.sendEmail({
+  await notificationService.sendEmail({
     to,
+    replyTo,
     subject,
     template,
     context,
@@ -293,7 +377,6 @@ const getRegistrationConfirmationRegistrationData = (
   const accessor = registrationCampDataAccessor(registration.campData);
 
   const to = accessor.emails();
-  const cc = accessor.guardianEmails();
   const country = accessor.country(camp.countries);
   const replyTo = findCampContactEmails(camp.contactEmail, country);
   const participantName = accessor.firstName() ?? accessor.name();
@@ -301,7 +384,6 @@ const getRegistrationConfirmationRegistrationData = (
 
   return {
     to,
-    cc,
     replyTo,
     participantName,
     campName,
@@ -316,9 +398,33 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
   };
 
   const country = (options?: string[]): string | undefined => {
-    return campData['country']?.find((value: unknown): value is string => {
-      return typeof value === 'string' && (!options || options.includes(value));
-    });
+    const country = campData['country']?.find(
+      (value: unknown): value is string => {
+        return (
+          typeof value === 'string' && (!options || options.includes(value))
+        );
+      },
+    );
+
+    if (country) {
+      return country;
+    }
+
+    // Try address instead
+    const address = campData['address']?.find(
+      (value: unknown): value is { country: string } => {
+        if (!value || typeof value !== 'object' || !('country' in value)) {
+          return false;
+        }
+
+        return (
+          typeof value.country === 'string' &&
+          (!options || options.includes(value.country))
+        );
+      },
+    );
+
+    return address?.country;
   };
 
   const firstName = (): string | undefined => {
@@ -367,16 +473,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     return first !== undefined ? first : last;
   };
 
-  const guardianEmails = (): string[] => {
-    const emails = campData['guardian_email']?.filter(
-      (value): value is string => {
-        return !!value && typeof value === 'string';
-      },
-    );
-
-    return emails ?? [];
-  };
-
   return {
     emails,
     country,
@@ -384,7 +480,6 @@ const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
     firstName,
     lastName,
     fullName,
-    guardianEmails,
   };
 };
 
@@ -410,7 +505,8 @@ export default {
   queryRegistrations,
   createRegistration,
   updateRegistrationById,
-  deleteRegistrationById,
+  deleteRegistration,
+  updateRegistrationCampDataByCamp,
   sendRegistrationConfirmation,
   sendWaitingListConfirmation,
   sendRegistrationManagerNotification,

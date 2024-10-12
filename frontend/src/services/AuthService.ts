@@ -4,8 +4,57 @@ import type {
   Authentication,
   Profile,
 } from '@camp-registration/common/entities';
+import authRefreshToken from 'src/services/authRefreshToken';
+import {
+  AxiosError,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+  isAxiosError,
+} from 'axios';
+
+export type CustomAxiosError = AxiosError & {
+  config: InternalAxiosRequestConfig & {
+    _skipRetry?: boolean;
+    _skipAuthenticationHandler?: boolean;
+  };
+};
+
+export const isCustomAxiosError = (
+  error: unknown,
+): error is CustomAxiosError => {
+  return isAxiosError(error);
+};
 
 export function useAuthService() {
+  // Retry failed requests after fetching a new refresh token
+  authRefreshToken(api, {
+    handleTokenRefresh: refreshTokens,
+    shouldIntercept: (error) => error.response?.status === 401,
+  });
+
+  let onUnauthenticated: (() => unknown | Promise<unknown>) | undefined =
+    undefined;
+  // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
+  api.interceptors.response.use(undefined, async (error) => {
+    if (!isCustomAxiosError(error)) {
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    if (error.config._skipAuthenticationHandler) {
+      return Promise.reject(error);
+    }
+
+    if (onUnauthenticated) {
+      await onUnauthenticated();
+    }
+
+    return Promise.reject(error);
+  });
+
   async function login(
     email: string,
     password: string,
@@ -17,19 +66,22 @@ export function useAuthService() {
       remember,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function logout(): Promise<void> {
     const response = await api.post('auth/logout');
 
-    return response.data;
+    return response?.data;
   }
 
   async function refreshTokens(): Promise<AuthTokens> {
-    const response = await api.post('auth/refresh-tokens');
+    const response = await api.post('auth/refresh-tokens', undefined, {
+      _skipRetry: true,
+      _skipAuthenticationHandler: true,
+    } as AxiosRequestConfig);
 
-    return response.data;
+    return response?.data;
   }
 
   async function register(
@@ -43,7 +95,7 @@ export function useAuthService() {
       password,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function forgotPassword(email: string): Promise<void> {
@@ -51,7 +103,7 @@ export function useAuthService() {
       email: email,
     });
 
-    return response.data;
+    return response?.data;
   }
 
   async function resetPassword(
@@ -65,13 +117,23 @@ export function useAuthService() {
       password,
     });
 
-    return response.data;
+    return response?.data;
+  }
+
+  async function verifyEmail(token: string): Promise<void> {
+    await api.post('auth/verify-email', {
+      token,
+    });
   }
 
   async function fetchProfile(): Promise<Profile> {
     const response = await api.get('profile');
 
-    return response.data.data;
+    return response?.data?.data;
+  }
+
+  function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
+    onUnauthenticated = handler;
   }
 
   return {
@@ -80,7 +142,9 @@ export function useAuthService() {
     register,
     forgotPassword,
     resetPassword,
+    verifyEmail,
     fetchProfile,
     refreshTokens,
+    setOnUnauthenticated,
   };
 }

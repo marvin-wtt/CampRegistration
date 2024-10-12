@@ -11,32 +11,31 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'managerId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const camp = routeModel(req.models.camp);
     const manager = await managerService.getManagerById(camp.id, id);
     req.models.manager = verifyModelExists(manager);
-    next();
   }),
 );
 
 router.get(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(managerValidation.index),
   managerController.index,
 );
 router.post(
   '/',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(managerValidation.store),
   managerController.store,
 );
 router.delete(
   '/:managerId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(managerValidation.destroy),
   managerController.destroy,
 );

@@ -1,4 +1,3 @@
-import { type Prisma } from '@prisma/client';
 import prisma from 'client';
 import { ulid } from 'utils/ulid';
 
@@ -21,13 +20,11 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
     data: {
       id: ulid(),
       name,
-      capacity,
       campId,
       beds: {
         createMany: {
-          data: Array.from({ length: capacity }).map((_, index) => ({
+          data: Array.from({ length: capacity }).map(() => ({
             id: ulid(),
-            bedNumber: index,
           })),
         },
       },
@@ -36,15 +33,12 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
   });
 };
 
-const updateRoomById = async (
-  roomId: string,
-  updateBody: Omit<Prisma.RoomUpdateInput, 'id'>,
-) => {
-  // TODO Delete or add beds
-
+const updateRoomById = async (roomId: string, name: string) => {
   return prisma.room.update({
     where: { id: roomId },
-    data: updateBody,
+    data: {
+      name,
+    },
     include: { beds: true },
   });
 };

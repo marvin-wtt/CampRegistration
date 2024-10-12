@@ -1,23 +1,20 @@
 import httpStatus from 'http-status';
 import ApiError from 'utils/ApiError';
-import { NextFunction, Request, Response } from 'express';
+import { Request } from 'express';
+import { catchMiddlewareAsync } from '../utils/catchAsync';
 
 export const auth = () => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    if (req.isAuthenticated()) {
-      next();
-    } else {
-      next(new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated'));
+  return catchMiddlewareAsync((req: Request) => {
+    if (req.isUnauthenticated()) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthenticated');
     }
-  };
+  });
 };
 
 export const guest = () => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    if (req.isUnauthenticated()) {
-      next();
-    } else {
-      next(new ApiError(httpStatus.FORBIDDEN, 'Authenticated'));
+  return catchMiddlewareAsync((req: Request) => {
+    if (req.isAuthenticated()) {
+      throw new ApiError(httpStatus.FORBIDDEN, 'Authenticated');
     }
-  };
+  });
 };

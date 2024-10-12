@@ -29,13 +29,7 @@
           </router-link>
         </q-toolbar-title>
 
-        <q-btn
-          :label="t('camps')"
-          :to="{ name: 'management' }"
-          class="gt-sm"
-          flat
-          rounded
-        />
+        <header-navigation :administration="administrator" />
 
         <locale-switch
           borderless
@@ -44,7 +38,10 @@
           rounded
         />
 
-        <profile-menu />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -61,11 +58,6 @@
       @mouseout="miniState = true"
       @mouseover="miniState = false"
     >
-      <!-- TODO -->
-      <!--            <q-scroll-area-->
-      <!--              class='fit'-->
-      <!--              horizontal-thumb-style='opacity: 0'-->
-      <!--            >-->
       <q-list padding>
         <navigation-item
           v-for="item in filteredItems"
@@ -79,7 +71,6 @@
           :children="item.children"
         />
       </q-list>
-      <!--            </q-scroll-area>-->
     </q-drawer>
 
     <q-page-container>
@@ -97,12 +88,14 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
-import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
+import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { storeToRefs } from 'pinia';
+import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -112,8 +105,11 @@ const { to } = useObjectTranslation();
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
 
+const { user } = storeToRefs(authStore);
+
 onMounted(async () => {
   if (!authStore.user) {
+    // Fetch user instead of init to force redirect on error
     await authStore.fetchUser();
   }
   if (route.params.camp) {
@@ -127,6 +123,10 @@ const showDrawer = computed<boolean>(() => {
 
 const title = computed(() => {
   return showDrawer.value ? campDetailStore.data?.name : t('app_name');
+});
+
+const administrator = computed<boolean>(() => {
+  return authStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
@@ -231,12 +231,14 @@ const filteredItems = computed<NavigationItem[]>(() => {
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <i18n lang="yaml" locale="en">
 access: 'Access'
-login: 'Login'
-camps: 'My Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
@@ -254,8 +256,6 @@ notifications: 'Notifications'
 
 <i18n lang="yaml" locale="de">
 access: 'Zugriff'
-login: 'Login'
-camps: 'Meine Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
@@ -273,8 +273,6 @@ notifications: 'Benachrichtigungen'
 
 <i18n lang="yaml" locale="fr">
 access: 'Accès'
-login: 'Login'
-camps: 'Mes Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
@@ -297,11 +295,13 @@ notifications: 'Notifications'
   height: 0.5rem;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.1s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
@@ -326,5 +326,18 @@ notifications: 'Notifications'
 }
 
 ::-webkit-scrollbar-corner {
+}
+
+/* Hide number input arrows */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 </style>

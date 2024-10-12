@@ -13,4 +13,7 @@ export default {
     error: 'Failed to delete file',
     invalid: 'Invalid file id',
   },
+  download: {
+    error: 'Failed to download file',
+  },
 };

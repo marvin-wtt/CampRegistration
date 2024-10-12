@@ -29,9 +29,6 @@
                 clickable
                 @click="editRoom"
               >
-                <q-item-section avatar>
-                  <q-icon name="edit" />
-                </q-item-section>
                 <q-item-section>
                   {{ t('menu.edit') }}
                 </q-item-section>
@@ -42,10 +39,7 @@
                 clickable
                 @click="deleteRoom"
               >
-                <q-item-section avatar>
-                  <q-icon name="delete" />
-                </q-item-section>
-                <q-item-section>
+                <q-item-section class="text-negative">
                   {{ t('menu.delete') }}
                 </q-item-section>
               </q-item>
@@ -56,7 +50,7 @@
     </q-item>
 
     <room-list-item
-      v-for="(bed, index) in room.beds"
+      v-for="(_, index) in room.beds"
       :key="index"
       v-model="room.beds[index].person"
       :options="options"
@@ -80,7 +74,7 @@ const { to } = useObjectTranslation();
 interface Props {
   name: string | Record<string, string>;
   modelValue: RoomWithRoommates;
-  people: (Roommate | null)[];
+  people: Roommate[];
   dense?: boolean;
 }
 
@@ -100,56 +94,49 @@ const room = computed<RoomWithRoommates>({
   set: (val) => emit('update:modelValue', val),
 });
 
-const gender = computed<string | undefined>(() => {
-  let gender: string | undefined = undefined;
-
-  room.value.beds.some((bed) => {
-    const person = bed.person;
-    if (person?.gender === undefined) {
-      return false;
-    }
-
-    gender = person.gender;
-    return true;
-  });
-
-  return gender;
+const roomGender = computed<string | undefined>(() => {
+  // Assume gender by first person in room
+  return room.value.beds
+    .map((bed) => bed.person?.gender)
+    .find((gender) => !!gender);
 });
 
-const counselor = computed<boolean | undefined>(() => {
-  let counselor: boolean | undefined = undefined;
+const isParticipantRoom = computed<boolean | undefined>(() => {
+  // Exclude all beds free
+  if (room.value.beds.filter((value) => !!value.person).length === 0) {
+    return undefined;
+  }
 
-  room.value.beds.some((bed) => {
+  return room.value.beds.some((bed) => {
     const person = bed.person;
-    if (person?.counselor === undefined) {
-      return false;
-    }
 
-    counselor = person.counselor;
-    return true;
+    return person?.participant;
   });
-
-  return counselor;
 });
 
-const options = computed<unknown[]>(() => {
-  let people = props.people;
+const options = computed<Roommate[]>(() => {
+  const genderFilter = (roomMate: Roommate | null): boolean => {
+    if (roomGender.value === undefined) {
+      return true;
+    }
 
-  if (gender.value !== undefined) {
-    people = people.filter((value) => {
-      return value?.gender !== undefined && value.gender === gender.value;
-    });
-  }
+    return (
+      roomMate?.gender !== undefined && roomMate?.gender === roomGender.value
+    );
+  };
 
-  if (counselor.value !== undefined) {
-    people = people.filter((value) => {
-      return (
-        value?.counselor !== undefined && value.counselor === counselor.value
-      );
-    });
-  }
+  const roleFilter = (roomMate: Roommate | null): boolean => {
+    if (isParticipantRoom.value === undefined) {
+      return true;
+    }
 
-  return people;
+    return (
+      roomMate?.participant !== undefined &&
+      roomMate.participant === isParticipantRoom.value
+    );
+  };
+
+  return props.people.filter(genderFilter).filter(roleFilter);
 });
 
 function onBedUpdate(position: number, roomMate: Roommate | null) {

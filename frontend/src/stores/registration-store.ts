@@ -3,7 +3,9 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import type {
   Registration,
+  RegistrationCreateData,
   RegistrationUpdateData,
+  ServiceFile,
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
@@ -47,10 +49,23 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
-  async function storeData(campId: string, registration: unknown) {
+  async function storeData(
+    campId: string,
+    registration: RegistrationCreateData,
+  ) {
     checkNotNullWithError(campId);
 
     await apiService.createRegistration(campId, registration);
+  }
+
+  async function storeFile(file: File): Promise<ServiceFile> {
+    const campId = route.params.camp as string;
+    checkNotNullWithError(campId);
+
+    return apiService.createTemporaryFile({
+      file,
+      field: crypto.randomUUID(),
+    });
   }
 
   async function updateData(
@@ -101,6 +116,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     error,
     fetchData,
     storeData,
+    storeFile,
     updateData,
     deleteData,
   };

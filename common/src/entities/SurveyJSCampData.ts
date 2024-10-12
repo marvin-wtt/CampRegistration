@@ -19,6 +19,7 @@ export interface Page {
 }
 
 export type AnyElement =
+  | BooleanElement
   | TextElement
   | SelectionElement
   | FileElement
@@ -85,4 +86,8 @@ export interface FileElement extends Element {
 
 export interface ExpressionElement extends Element {
   type: 'expression';
+}
+
+export interface BooleanElement extends Element {
+  type: 'boolean';
 }

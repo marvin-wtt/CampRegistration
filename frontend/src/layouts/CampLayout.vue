@@ -16,10 +16,16 @@
 
         <q-space />
 
+        <header-navigation
+          v-if="user"
+          :administration="administrator"
+        />
+
         <q-btn
+          v-else
           :label="t('create')"
           :to="{ name: 'management' }"
-          class="desktop-only"
+          class="gt-sm"
           flat
           rounded
         />
@@ -31,7 +37,10 @@
           rounded
         />
 
-        <profile-menu />
+        <profile-menu
+          :profile="user"
+          @logout="logout()"
+        />
       </q-toolbar>
     </q-header>
 
@@ -51,10 +60,16 @@
 import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
-import ProfileMenu from 'components/campManagement/ProfileMenu.vue';
+import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
+import { useAuthStore } from 'stores/auth-store';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted } from 'vue';
+import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 
 const { t } = useI18n();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
 useMeta(() => {
   return {
@@ -62,6 +77,20 @@ useMeta(() => {
     titleTemplate: (title) => `${title} | ${t('app_name')}`,
   };
 });
+
+onMounted(() => {
+  if (!authStore.user) {
+    authStore.init();
+  }
+});
+
+const administrator = computed<boolean>(() => {
+  return authStore.user?.role === 'ADMIN';
+});
+
+function logout() {
+  authStore.logout();
+}
 </script>
 
 <style>

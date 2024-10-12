@@ -1,13 +1,19 @@
 import Joi from 'joi';
 import { ServiceFileCreateData } from '@camp-registration/common/entities';
 
-const show = {
+const stream = {
   params: Joi.object({
     fileId: Joi.string().required(),
   }).unknown(),
   query: Joi.object({
     download: Joi.boolean(),
   }),
+};
+
+const show = {
+  params: Joi.object({
+    fileId: Joi.string().required(),
+  }).unknown(),
 };
 
 const index = {
@@ -20,9 +26,9 @@ const index = {
 
 const store = {
   body: Joi.object<ServiceFileCreateData>({
-    name: Joi.string().required(),
-    field: Joi.string().optional(),
-    accessLevel: Joi.string().optional(),
+    name: Joi.string(),
+    field: Joi.string(),
+    accessLevel: Joi.string(),
   }),
 };
 
@@ -33,6 +39,7 @@ const destroy = {
 };
 
 export default {
+  stream,
   show,
   index,
   store,

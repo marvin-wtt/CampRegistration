@@ -12,8 +12,7 @@ const enumerateErrorFormat = winston.format((info) => {
 
 const fileTransport = new winston.transports.DailyRotateFile({
   filename: '%DATE%-app.log',
-  datePattern: 'YYYY-MM-DD-HH',
-  zippedArchive: true,
+  datePattern: 'YYYY-MM-DD',
   maxSize: '20m',
   maxFiles: '14d',
   dirname: path.join(__dirname, '..', '..', 'logs'),
@@ -22,8 +21,7 @@ const fileTransport = new winston.transports.DailyRotateFile({
 const fileErrorTransport = new winston.transports.DailyRotateFile({
   level: 'error',
   filename: '%DATE%-app-error.log',
-  datePattern: 'YYYY-MM-DD-HH',
-  zippedArchive: true,
+  datePattern: 'YYYY-MM-DD',
   maxSize: '20m',
   maxFiles: '14d',
   dirname: path.join(__dirname, '..', '..', 'logs'),

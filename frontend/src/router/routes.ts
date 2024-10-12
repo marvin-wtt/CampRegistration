@@ -88,19 +88,18 @@ const routes: RouteRecordRaw[] = [
           import('pages/campManagement/CampManagementIndexPage.vue'),
       },
       {
-        path: 'create',
-        name: 'create-camp',
-        meta: {
-          hideDrawer: true,
-        },
-        component: () => import('pages/campManagement/CreateCampPage.vue'),
-      },
-      {
         path: ':camp',
         redirect: {
           name: 'dashboard',
         },
         children: [
+          {
+            path: 'dashboard',
+            name: 'dashboard',
+            redirect: {
+              name: 'participants',
+            },
+          },
           {
             path: 'participants',
             name: 'participants',
@@ -147,7 +146,7 @@ const routes: RouteRecordRaw[] = [
                   import('pages/campManagement/settings/FileSettingsPage.vue'),
               },
               {
-                path: 'edit-form',
+                path: 'form',
                 name: 'edit-form',
                 component: () =>
                   import('pages/campManagement/settings/FormEditPage.vue'),
@@ -155,6 +154,34 @@ const routes: RouteRecordRaw[] = [
             ],
           },
         ],
+      },
+    ],
+  },
+  {
+    path: '/administration',
+    component: () => import('layouts/AdministrationLayout.vue'),
+    meta: {
+      auth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'administration',
+        meta: {
+          hideDrawer: true,
+        },
+        component: () =>
+          import('pages/administration/AdministrationIndexPage.vue'),
+      },
+      {
+        path: 'camps',
+        name: 'administration.camps',
+        component: () => import('pages/administration/CampIndexPage.vue'),
+      },
+      {
+        path: 'users',
+        name: 'administration.users',
+        component: () => import('pages/administration/UserIndexPage.vue'),
       },
     ],
   },

@@ -6,8 +6,8 @@ export default {
       text: {
         title: 'Hallo,',
         information:
-          'Du wurdest eingeladen, {{ camp.name }} zu verwalten.' +
-          'Wenn du bereits ein Konto hast, wird das Camp automatisch verfügbar sein.' +
+          'Du wurdest eingeladen, {{ camp.name }} zu verwalten. ' +
+          'Wenn du bereits ein Konto hast, wird das Camp automatisch verfügbar sein. ' +
           'Andernfalls erstelle bitte zuerst ein kostenloses Konto.',
         button: 'Camp verwalten',
         greeting: 'Viele Grüße,',

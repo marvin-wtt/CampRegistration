@@ -9,4 +9,8 @@ export default {
   'reset-password': {
     error: 'Failed to reset password',
   },
+  'verify-email': {
+    error: 'Failed to verify e-mail',
+    success: 'Email verified',
+  },
 };

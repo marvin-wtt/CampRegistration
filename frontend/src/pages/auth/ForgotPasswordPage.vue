@@ -16,7 +16,9 @@
             v-model="email"
             type="email"
             autocomplete="email"
-            :rules="[(val) => !!val || t('fields.email.rules.required')]"
+            :rules="[
+              (val?: string) => !!val || t('fields.email.rules.required'),
+            ]"
             :label="t('fields.email.label')"
             outlined
             rounded

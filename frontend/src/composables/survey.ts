@@ -1,33 +1,43 @@
 import { ITheme, SurveyModel } from 'survey-core';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type {
+  CampDetails,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { nextTick, Ref, watch } from 'vue';
+import { nextTick, Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
-
 import { PlainLight, PlainDark } from 'survey-core/themes';
+import { useAPIService } from 'src/services/APIService';
 
 export function startAutoDataUpdate(
   model: Ref<SurveyModel | undefined>,
   data: Ref<CampDetails | undefined>,
+  files: Ref<ServiceFile[] | undefined>,
 ) {
+  const api = useAPIService();
   const { locale } = useI18n();
 
   watch(locale, (value) => {
-    updateVariables(model.value, data.value, value);
+    updateVariables(model.value, data.value, files.value, value);
   });
 
   watch(model, (value) => {
-    updateVariables(value, data.value, locale.value);
+    updateVariables(value, data.value, files.value, locale.value);
   });
 
   watch(data, (value) => {
-    updateVariables(model.value, value, locale.value);
+    updateVariables(model.value, value, files.value, locale.value);
+  });
+
+  watch(files, (value) => {
+    updateVariables(model.value, data.value, value, locale.value);
   });
 
   const updateVariables = (
     model: SurveyModel | undefined,
     data: CampDetails | undefined,
+    files: ServiceFile[] | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -35,10 +45,20 @@ export function startAutoDataUpdate(
     }
 
     model.locale = locale;
-    setVariables(model, data, locale);
-  };
+    setVariables(model, data);
 
-  return {};
+    // Set file variables
+    files?.forEach((file) => {
+      if (!file.field) {
+        return;
+      }
+
+      const name = `_file:${file.field}`;
+      const url = api.getCampFileUrl(model.surveyId, file.id);
+
+      model.setVariable(name, url);
+    });
+  };
 }
 
 export const startAutoThemeUpdate = (
@@ -47,21 +67,6 @@ export const startAutoThemeUpdate = (
   bgColor?: Ref<string | undefined> | undefined,
 ) => {
   const quasar = useQuasar();
-
-  watch(
-    () => quasar.dark.isActive,
-    (value) => {
-      applyTheme(model.value, data.value, value);
-    },
-  );
-
-  watch(data, (value) => {
-    applyTheme(model.value, value, quasar.dark.isActive);
-  });
-
-  watch(model, (value) => {
-    applyTheme(value, data.value, quasar.dark.isActive);
-  });
 
   const applyTheme = (
     model: SurveyModel | undefined,
@@ -99,4 +104,8 @@ export const startAutoThemeUpdate = (
       }
     });
   };
+
+  watchEffect(() => {
+    applyTheme(model.value, data.value, quasar.dark.isActive);
+  });
 };

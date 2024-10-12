@@ -4,7 +4,7 @@
     :loading="loading"
   >
     <result-table
-      v-if="camp.data.value !== undefined"
+      v-if="camp.data.value"
       ref="table"
       class="absolute fit"
       :questions="columns"
@@ -21,11 +21,13 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
 import ResultTable from 'components/campManagement/table/ResultTable.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import type { Registration } from '@camp-registration/common/entities';
+import type {
+  Registration,
+  TableColumnTemplate,
+} from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const campDetailStore = useCampDetailsStore();
@@ -53,10 +55,10 @@ const error = computed<string | null>(() => {
   return camp.error.value ?? registrations.error.value;
 });
 
-const columns = computed<QTableColumn[]>(() => {
+const columns = computed<TableColumnTemplate[]>(() => {
   const data = camp.data.value;
 
-  const columns: QTableColumn[] = [];
+  const columns: TableColumnTemplate[] = [];
 
   if (data?.form === undefined || !('pages' in data.form)) {
     return [];

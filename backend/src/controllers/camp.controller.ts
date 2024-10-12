@@ -1,76 +1,113 @@
-import { campService } from 'services';
+import {
+  campService,
+  fileService,
+  registrationService,
+  tableTemplateService,
+} from 'services';
 import httpStatus from 'http-status';
 import { campResource, detailedCampResource } from 'resources';
 import { catchRequestAsync } from 'utils/catchAsync';
-import pick from 'utils/pick';
-import exclude from 'utils/exclude';
 import { collection, resource } from 'resources/resource';
 import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
-import { Camp } from '@prisma/client';
+import defaultForm from 'assets/camp/defaultForm';
+import defaultThemes from 'assets/camp/defaultThemes';
+import defaultTemplates from 'assets/camp/defaultTemplates';
+import defaultFiles from 'assets/camp/defaultFiles';
+import type {
+  CampQuery,
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/entities';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
 
-  res.json(resource(detailedCampResource(await withFreePlaces(camp))));
+  res.json(resource(detailedCampResource(camp)));
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const filter = exclude(req.query, ['sortBy', 'limit', 'page']);
-  // Set user id if private or inactive camps should be included filter for camp manager
-  filter.userId =
-    filter.public == 'false' || filter.active === 'false'
-      ? authUserId(req)
-      : undefined;
-
-  const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  // TODO Add default options, make sure validation is correct and add pagination meta
-  const camps = await campService.queryPublicCamps(filter, options);
+  const query = req.query as CampQuery;
+  const camps = await campService.queryCamps(
+    {
+      public: query.showAll ? undefined : true,
+      active: query.showAll ? undefined : true,
+      name: query.name,
+      country: query.country,
+      age: query.age,
+      startAt: query.startAt,
+      entAt: query.endAt,
+    },
+    {
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortType: query.sortType,
+    },
+  );
 
   const resources = await Promise.all(
-    camps.map(async (value) => campResource(await withFreePlaces(value))),
+    camps.map(async (value) => campResource(value)),
   );
+
   res.json(collection(resources));
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const data = req.body;
+  const data = req.body as CampCreateData;
   const userId = authUserId(req);
 
-  // TODO Set default form
-  const form = data.form ?? {};
-  // TODO Set themes
-  const themes = data.themes ?? {};
+  const referenceCamp = data.referenceCampId
+    ? await campService.getCampById(data.referenceCampId)
+    : undefined;
 
-  const camp = await campService.createCamp(userId, {
-    countries: data.countries,
-    name: data.name,
-    organizer: data.organizer,
-    contactEmail: data.contactEmail,
-    active: data.active ?? false,
-    public: data.public,
-    maxParticipants: data.maxParticipants,
-    startAt: data.startAt,
-    endAt: data.endAt,
-    minAge: data.minAge,
-    maxAge: data.maxAge,
-    price: data.price,
-    location: data.location,
-    form: form,
-    themes: themes,
-  });
+  const form = data.form ?? referenceCamp?.form ?? defaultForm;
+  const themes = data.themes ?? referenceCamp?.themes ?? defaultThemes;
 
-  // TODO Add default templates
+  // Copy files from reference or use defaults
+  const files = data.referenceCampId
+    ? await fileService.queryModelFiles({
+        name: 'camp',
+        id: data.referenceCampId,
+      })
+    : defaultFiles;
 
-  res
-    .status(httpStatus.CREATED)
-    .json(resource(detailedCampResource(await withFreePlaces(camp))));
+  // Copy table templates from reference or use defaults
+  const templates = data.referenceCampId
+    ? await tableTemplateService.queryTemplates(data.referenceCampId)
+    : defaultTemplates.map((value) => ({ data: value }));
+
+  const camp = await campService.createCamp(
+    userId,
+    {
+      countries: data.countries,
+      name: data.name,
+      organizer: data.organizer,
+      contactEmail: data.contactEmail,
+      active: data.active ?? false,
+      public: data.public,
+      maxParticipants: data.maxParticipants,
+      startAt: data.startAt,
+      endAt: data.endAt,
+      minAge: data.minAge,
+      maxAge: data.maxAge,
+      price: data.price,
+      location: data.location,
+      form: form,
+      themes: themes,
+    },
+    templates,
+    files,
+  );
+
+  res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const data = req.body;
-  const camp = await campService.updateCampById(campId, {
+  const camp = routeModel(req.models.camp);
+  const data = req.body as CampUpdateData;
+
+  const updatedCamp = await campService.updateCamp(camp, {
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,
@@ -88,7 +125,12 @@ const update = catchRequestAsync(async (req, res) => {
     themes: data.themes,
   });
 
-  res.json(resource(detailedCampResource(camp)));
+  // Re-generate camp data fields
+  if (data.form) {
+    await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
+  }
+
+  res.json(resource(detailedCampResource(updatedCamp)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
@@ -97,15 +139,6 @@ const destroy = catchRequestAsync(async (req, res) => {
 
   res.status(httpStatus.NO_CONTENT).send();
 });
-
-const withFreePlaces = async (camp: Camp) => {
-  const freePlaces = await campService.getCampFreePlaces(camp);
-
-  return {
-    ...camp,
-    freePlaces,
-  };
-};
 
 export default {
   index,

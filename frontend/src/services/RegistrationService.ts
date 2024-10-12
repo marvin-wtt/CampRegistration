@@ -9,7 +9,7 @@ export function useRegistrationService() {
   async function fetchRegistrations(campId: string): Promise<Registration[]> {
     const response = await api.get(`camps/${campId}/registrations/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function fetchRegistration(
@@ -20,22 +20,16 @@ export function useRegistrationService() {
       `camps/${campId}/registrations/${registrationId}/`,
     );
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function createRegistration(
     campId: string,
     data: RegistrationCreateData,
   ): Promise<Registration> {
-    const headers = {
-      'Content-Type': 'multipart/form-data',
-    };
+    const response = await api.post(`camps/${campId}/registrations/`, data);
 
-    const response = await api.post(`camps/${campId}/registrations/`, data, {
-      headers,
-    });
-
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function updateRegistration(
@@ -43,12 +37,12 @@ export function useRegistrationService() {
     registrationId: string,
     data: RegistrationUpdateData,
   ): Promise<Registration> {
-    const response = await api.put(
+    const response = await api.patch(
       `camps/${campId}/registrations/${registrationId}/`,
       data,
     );
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function deleteRegistration(

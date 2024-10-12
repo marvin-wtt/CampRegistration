@@ -1,4 +1,4 @@
-name: Code style
+name: PR
 
 on:
   pull_request:
@@ -20,6 +20,9 @@ jobs:
 
     - name: Install dependencies
       run: npm ci
+
+    - name: Build common
+      run: npm run build -workspace common
 
     - name: Run lint
       run: npm run lint --workspaces

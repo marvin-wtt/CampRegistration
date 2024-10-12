@@ -12,7 +12,7 @@ const managerResource = (
   const { user, invitation } = manager;
 
   const name: string | null = user ? user.name : null;
-  const email: string = invitation ? invitation.email : user?.email ?? '';
+  const email: string = invitation ? invitation.email : (user?.email ?? '');
   const status: string = user ? 'accepted' : 'pending';
   const role = 'manager';
 

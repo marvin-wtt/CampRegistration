@@ -12,14 +12,14 @@ export const registrationData: Joi.CustomValidator<object> = (
   helpers,
 ) => {
   if (typeof value !== 'object' || value == null) {
-    return helpers.message({ custom: 'Survey may not be null' });
+    return helpers.message({ custom: 'Survey must not be null' });
   }
 
   const req = helpers.prefs.context as Request;
   const camp = routeModel(req.models.camp);
 
   const formHelper = formUtils(camp);
-  formHelper.updateData(value, req.files);
+  formHelper.updateData(value);
 
   if (formHelper.hasDataErrors()) {
     const errors = formHelper.getDataErrorFields();
@@ -30,12 +30,6 @@ export const registrationData: Joi.CustomValidator<object> = (
   if (unknownDataFields.length > 0) {
     return helpers.message({
       custom: `Unknown fields '${unknownDataFields.join(', ')}'`,
-    });
-  }
-
-  if (formHelper.hasUnknownFiles()) {
-    return helpers.message({
-      custom: `Too many files provided.`,
     });
   }
 
@@ -72,7 +66,7 @@ const update = {
     registrationId: Joi.string().required(),
   }),
   body: Joi.object<RegistrationUpdateData>({
-    data: Joi.object().required(),
+    data: Joi.object(),
     waitingList: Joi.boolean(),
   }),
 };

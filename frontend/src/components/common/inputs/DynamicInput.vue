@@ -37,26 +37,18 @@ const component = computed(() => {
       return QSlider;
     case 'toggle':
       return QToggle;
+    default:
+      return undefined;
   }
-
-  return undefined;
 });
 
 interface Props {
   element: BaseComponent;
-  modelValue?: unknown;
 }
 
 const props = defineProps<Props>();
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: unknown): void;
-}>();
-
-const modelValue = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-});
+const modelValue = defineModel<unknown>();
 </script>
 
 <style scoped></style>

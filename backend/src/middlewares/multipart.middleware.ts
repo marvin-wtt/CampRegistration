@@ -1,13 +1,13 @@
 import multer, { Field } from 'multer';
 import config from 'config';
 import { NextFunction, Request, Response } from 'express';
-import dynamicMiddleware from 'middlewares/dynamic.middleware';
+import { dynamic } from 'middlewares';
 import { fileService } from 'services';
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 
 const multiPart = (fields: ParameterType) => {
-  return dynamicMiddleware([upload(fields), formatterMiddleware]);
+  return dynamic([upload(fields), formatterMiddleware]);
 };
 
 const upload = (fields: ParameterType) => {
@@ -23,6 +23,7 @@ const upload = (fields: ParameterType) => {
     },
   });
 
+  // TODO Add file filter to check if the disk has enough space with a threshold before upload
   const upload = multer({
     storage: tmpStorage,
     limits: {

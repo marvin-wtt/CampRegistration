@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import type { Profile, AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { api } from 'boot/axios';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
@@ -29,61 +28,27 @@ export const useAuthStore = defineStore('auth', () => {
 
   campBus.on('delete', async (campId) => {
     const index = data.value?.camps.findIndex((camp) => camp.id === campId);
-
-    if (index && index >= 0) {
+    if (index !== undefined && index >= 0) {
       data.value?.camps.splice(index);
     }
   });
-
-  // TODO Add i18n message for all operations
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
 
   // Redirect to login page on unauthorized error
-  // TODO Avoid using axios here.
-  api.interceptors.response.use(
-    (response) => {
-      return response;
-    },
-    async function (error) {
-      if (error.response === undefined) {
-        return Promise.reject(
-          'Server not reachable... Please try again later :(',
-        );
-      }
+  apiService.setOnUnauthenticated(() => {
+    if (route.name === 'login' || route.fullPath.startsWith('/login')) {
+      return;
+    }
 
-      // Don't redirect on login page
-      if (route.name === 'login' || route.fullPath.startsWith('/login')) {
-        return Promise.reject(error);
-      }
-      // Only capture unauthorized error
-      if (error.response.status !== 401) {
-        return Promise.reject(error);
-      }
-
-      const authenticated = await refreshTokens();
-      if (authenticated) {
-        return Promise.resolve();
-      }
-
-      bus.emit('logout');
-      // Clear current user for login page
-      reset();
-
-      if (route.name !== 'login') {
-        await router.replace({
-          name: 'login',
-          query: {
-            origin: encodeURIComponent(route.path),
-          },
-        });
-      }
-
-      // Still reject error to avoid false success messages
-      return Promise.reject(error);
-    },
-  );
+    return router.push({
+      name: 'login',
+      query: {
+        origin: encodeURIComponent(route.path),
+      },
+    });
+  });
 
   function reset() {
     if (accessTokenTimer != null) {
@@ -94,6 +59,15 @@ export const useAuthStore = defineStore('auth', () => {
     resetDefault();
   }
 
+  async function init() {
+    const authenticated = await refreshTokens();
+    if (!authenticated) {
+      return;
+    }
+
+    await fetchUser();
+  }
+
   async function login(
     email: string,
     password: string,
@@ -102,7 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
     await errorOnFailure(async () => {
       const result = await apiService.login(email, password, remember);
 
-      bus.emit('login', result.user);
+      bus.emit('login', result.profile);
 
       handleTokenRefresh(result.tokens);
 
@@ -114,7 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       await router.push(destination);
 
-      return result.user;
+      return result.profile;
     });
   }
 
@@ -151,7 +125,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUser(): Promise<void> {
-    await refreshTokens();
     await errorOnFailure(async () => {
       return await apiService.fetchProfile();
     });
@@ -202,10 +175,19 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  async function verifyEmail(token: string) {
+    checkNotNullWithError(token);
+
+    await withResultNotification('verify-email', async () => {
+      await apiService.verifyEmail(token);
+    });
+  }
+
   return {
     user: data,
     error,
     loading: isLoading,
+    init,
     reset,
     fetchUser,
     login,
@@ -213,5 +195,6 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     forgotPassword,
     resetPassword,
+    verifyEmail,
   };
 });

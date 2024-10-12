@@ -1,10 +1,13 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import { feedbackService } from 'services';
+import { catchAndResolve } from '../utils/promiseUtils';
 
-const store = catchRequestAsync(async (req, res) => {
-  const { message, email, location } = req.body;
+const store = catchRequestAsync(async (req) => {
+  const { message, email, location, userAgent } = req.body;
 
-  await feedbackService.saveFeedback(message, location, email);
+  await catchAndResolve(
+    feedbackService.saveFeedback(message, location, userAgent, email),
+  );
 });
 
 export default {

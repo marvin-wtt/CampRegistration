@@ -5,7 +5,7 @@
     outlined
     rounded
     v-bind="$attrs"
-    @focus="$refs.popup.show()"
+    @focus="($refs.popup as QPopupProxy).show()"
   >
     <template #append>
       <q-icon
@@ -38,7 +38,7 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots"
+      v-for="(data, name, index) in $slots as unknown as QInputSlots"
       :key="index"
       #[name]
     >
@@ -53,6 +53,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { QInputSlots, QPopupProxy } from 'quasar';
 
 const { t } = useI18n();
 
@@ -85,8 +86,8 @@ const emit = defineEmits<{
 const modelValue = computed<RangeDate | undefined>({
   get: () => {
     return {
-      from: utcToDate(props.from),
-      to: utcToDate(props.to),
+      from: isoToDate(props.from),
+      to: isoToDate(props.to),
     };
   },
   set: (val) => {
@@ -102,7 +103,7 @@ const inputValue = computed<string | undefined>({
       return undefined;
     }
 
-    return `${utcToDate(from.value)} - ${utcToDate(to.value)}`;
+    return `${isoToDate(from.value)} - ${isoToDate(to.value)}`;
   },
   set: (val) => {
     const dates = val?.split('-');
@@ -117,7 +118,7 @@ const inputValue = computed<string | undefined>({
   },
 });
 
-function utcToDate(utcString?: string): string | undefined {
+function isoToDate(utcString?: string): string | undefined {
   if (!utcString) {
     return undefined;
   }

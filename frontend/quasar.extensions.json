@@ -1,3 +1,5 @@
 {
-  "@quasar/qcalendar": {}
+  "@quasar/testing-unit-vitest": {
+    "options": ["ui"]
+  }
 }

@@ -8,6 +8,7 @@ import {
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
+import { exportFile } from 'quasar';
 
 export const useCampFilesStore = defineStore('campFiles', () => {
   const apiService = useAPIService();
@@ -21,6 +22,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     error,
     reset,
     withProgressNotification,
+    withErrorNotification,
     errorOnFailure,
     checkNotNullWithNotification,
     checkNotNullWithError,
@@ -74,12 +76,17 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     });
   }
 
-  async function downloadData(id: string, campId?: string) {
-    campId = campId ?? (route.params.camp as string);
-    const cid = checkNotNullWithNotification(campId);
-    checkNotNullWithNotification(id);
+  async function downloadFile(file: ServiceFile, campId?: string) {
+    campId = campId ?? (route.params.camp as string | undefined);
+    const cid = checkNotNullWithError(campId);
 
-    await apiService.downloadCampFile(cid, id);
+    await withErrorNotification('download', async () => {
+      const blob = await apiService.downloadCampFile(cid, file.id);
+
+      exportFile(file.name, blob, {
+        mimeType: file.type,
+      });
+    });
   }
 
   function getUrl(id: string, campId?: string) {
@@ -95,7 +102,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     data,
     isLoading,
     error,
-    downloadData,
+    downloadFile,
     getUrl,
     fetchData,
     createEntry,

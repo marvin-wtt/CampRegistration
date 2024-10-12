@@ -61,7 +61,9 @@ export class ExpressionEvaluator {
   private evaluateArrayExpression(
     expression: jsep.ArrayExpression,
   ): jsep.baseTypes[] {
-    return expression.elements.map((value) => this.evaluateAny(value));
+    return expression.elements
+      .filter((value): value is jsep.Expression => value !== null)
+      .map((value) => this.evaluateAny(value));
   }
 
   private evaluateCallExpression(

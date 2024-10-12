@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
-import type { Camp, CampDetails } from '@camp-registration/common/entities';
+import type { CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
@@ -18,13 +18,34 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     error,
     reset,
     invalidate,
-    withProgressNotification,
     handlerByType,
     lazyFetch,
     checkNotNullWithError,
   } = useServiceHandler<CampDetails>('camp');
 
   authBus.on('logout', () => {
+    reset();
+  });
+
+  bus.on('update', async (camp) => {
+    if (camp?.id !== data.value?.id) {
+      return;
+    }
+
+    if ('form' in camp) {
+      // We can assume that the camp contains all details, and we don't need to prefetch it.
+      data.value = camp as CampDetails;
+    } else {
+      // It's a normal camp - we need to fetch the details
+      invalidate();
+      await fetchData(camp?.id);
+    }
+  });
+
+  bus.on('delete', (campId) => {
+    if (data.value?.id !== campId) {
+      return;
+    }
     reset();
   });
 
@@ -74,29 +95,11 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       async () => {
         const updatedCamp = await api.updateCamp(campId, newDataWithoutId);
 
-        // Replace element
-        data.value = updatedCamp;
         bus.emit('update', updatedCamp);
 
         return updatedCamp;
       },
     );
-  }
-
-  async function deleteData() {
-    const campId = data.value?.id ?? (route.params.camp as string | undefined);
-
-    const cid = checkNotNullWithError(campId);
-
-    const success = await withProgressNotification('delete', async () => {
-      await api.deleteCamp(cid);
-      bus.emit('delete', cid);
-      return true;
-    });
-
-    if (success) {
-      await router.push({ name: 'management' });
-    }
   }
 
   return {
@@ -106,6 +109,5 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     error,
     fetchData,
     updateData,
-    deleteData,
   };
 });

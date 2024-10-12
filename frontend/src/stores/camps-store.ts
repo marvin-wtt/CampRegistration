@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia';
-import type { Camp, CampCreateData } from '@camp-registration/common/entities';
+import type {
+  Camp,
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { useCampDetailsStore } from 'stores/camp-details-store';
 
 export const useCampsStore = defineStore('camps', () => {
   const apiService = useAPIService();
-  const campStore = useCampDetailsStore();
   const bus = useCampBus();
   const authBus = useAuthBus();
   const {
@@ -16,7 +18,6 @@ export const useCampsStore = defineStore('camps', () => {
     error,
     reset,
     withProgressNotification,
-    forceFetch,
     lazyFetch,
     checkNotNullWithNotification,
   } = useServiceHandler<Camp[]>('camp');
@@ -25,17 +26,27 @@ export const useCampsStore = defineStore('camps', () => {
     reset();
   });
 
+  bus.on('create', (camp) => {
+    data.value?.push(camp);
+  });
+
+  bus.on('update', (camp) => {
+    data.value = data.value?.map((value) =>
+      value.id === camp.id ? camp : value,
+    );
+  });
+
+  bus.on('delete', (campId) => {
+    data.value = data.value?.filter((camp) => camp.id !== campId);
+  });
+
   async function fetchData() {
     return lazyFetch(async () => await apiService.fetchCamps());
   }
 
-  async function createEntry(
-    createData: CampCreateData,
-  ): Promise<Camp | undefined> {
+  async function createEntry(createData: CampCreateData): Promise<Camp> {
     return withProgressNotification('update', async () => {
       const newCamp = await apiService.createCamp(createData);
-
-      await forceFetch(async () => await apiService.fetchCamps());
 
       bus.emit('create', newCamp);
 
@@ -45,13 +56,11 @@ export const useCampsStore = defineStore('camps', () => {
 
   async function updateEntry(
     id: string,
-    updateData: Partial<Camp>,
+    updateData: CampUpdateData,
   ): Promise<Camp | undefined> {
     checkNotNullWithNotification(id);
     return withProgressNotification('update', async () => {
       const updatedCamp = await apiService.updateCamp(id, updateData);
-
-      await forceFetch(async () => await apiService.fetchCamps());
 
       bus.emit('update', updatedCamp);
 
@@ -63,12 +72,6 @@ export const useCampsStore = defineStore('camps', () => {
     checkNotNullWithNotification(id);
     await withProgressNotification('delete', async () => {
       await apiService.deleteCamp(id);
-
-      data.value = data.value?.filter((camp) => camp.id !== id);
-
-      if (campStore.data?.id === id) {
-        campStore.reset();
-      }
 
       bus.emit('delete', id);
     });

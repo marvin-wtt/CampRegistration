@@ -2,7 +2,7 @@ import { SurveyModel } from 'survey-core';
 
 type Translatable<T = string> = T | Record<string, T>;
 
-type Data = {
+export type Data = {
   countries: string[];
   name: Translatable;
   organizer: Translatable;
@@ -14,19 +14,15 @@ type Data = {
   maxAge: number;
   location: Translatable;
   price: number;
-  freePlaces: Translatable<number>;
+  freePlaces: Translatable<number> | null;
 };
 
-export const setVariables = (
-  model: SurveyModel,
-  data: Data | undefined,
-  locale: string,
-) => {
+export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   if (!data) {
     return;
   }
 
-  const { t, toDate, toTime } = converter(locale);
+  const { t, toDate, toTime } = converter(model.locale);
 
   model.setVariable('camp.countries', data.countries);
   model.setVariable('camp.name', t(data.name));
@@ -43,12 +39,25 @@ export const setVariables = (
   model.setVariable('camp.location', t(data.location));
   model.setVariable('camp.price', data.price);
   model.setVariable('camp.freePlaces', data.freePlaces);
+
+  model.setVariable('_validationEnabled', model.validationEnabled);
 };
 
 const converter = (locale: string) => {
+  const fallbackLocale = 'en-US';
+
   function toDate(timestamp: Date | string): string | undefined {
     const date =
       typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+
+    try {
+      return toDateString(date, locale);
+    } catch (ignored) {
+      return toDateString(date, fallbackLocale);
+    }
+  }
+
+  function toDateString(date: Date, locale: string): string {
     return date.toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
@@ -59,6 +68,14 @@ const converter = (locale: string) => {
   function toTime(timestamp: Date | string): string | undefined {
     const date =
       typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+    try {
+      return toTimeString(date, locale);
+    } catch (ignored) {
+      return toTimeString(date, fallbackLocale);
+    }
+  }
+
+  function toTimeString(date: Date, locale: string): string {
     return date.toLocaleTimeString(locale, {
       hour12: false,
       hour: '2-digit',
@@ -79,6 +96,11 @@ const converter = (locale: string) => {
 
     if (locale in value) {
       return value[locale];
+    }
+
+    const shortLocale = locale.split('-')[0];
+    if (shortLocale in value) {
+      return value[shortLocale];
     }
 
     fallback ??= defaultFallback;

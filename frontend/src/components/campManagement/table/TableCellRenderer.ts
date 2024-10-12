@@ -1,14 +1,14 @@
 import { Component } from 'vue';
-import type { TableColumnTemplate } from '@camp-registration/common/entities';
+import { CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 
 export class TableCellRenderer {
   private readonly _component: Component;
-  private readonly _column: TableColumnTemplate;
+  private readonly _column: CTableColumnTemplate;
   private _hideEvaluator?: ExpressionEvaluator;
   private _showEvaluator?: ExpressionEvaluator;
 
-  constructor(component: Component, column: TableColumnTemplate) {
+  constructor(component: Component, column: CTableColumnTemplate) {
     this._component = component;
     this._column = column;
 
@@ -16,11 +16,11 @@ export class TableCellRenderer {
   }
 
   private parse(): void {
-    if (this._column.showIf !== undefined) {
+    if (this._column.showIf != null) {
       this._showEvaluator = new ExpressionEvaluator(this._column.showIf);
     }
 
-    if (this._column.hideIf !== undefined) {
+    if (this._column.hideIf != null) {
       this._hideEvaluator = new ExpressionEvaluator(this._column.hideIf);
     }
   }
@@ -35,6 +35,10 @@ export class TableCellRenderer {
 
   isEditable(): boolean {
     return this._column.editable ?? false;
+  }
+
+  isArray(): boolean {
+    return this._column.isArray ?? false;
   }
 
   isVisible(data: unknown): boolean {

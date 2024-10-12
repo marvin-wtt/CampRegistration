@@ -1,7 +1,7 @@
 <mjml>
   <mj-head>
     <mj-preview>
-      {{t 'auth:email.verifyEmail.preview' this }}
+      {{{t 'auth:email.verifyEmail.preview' this }}}
     </mj-preview>
     <mj-attributes>
       <mj-all font-family="Montserrat, Helvetica, Arial, sans-serif"></mj-all>
@@ -12,23 +12,23 @@
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="20px 0 20px 0">
       <mj-column>
-        <mj-text align="center" font-size="20px" font-weight="300">{{t 'appName' }}</mj-text>
+        <mj-text align="center" font-size="20px" font-weight="300">{{{t 'appName' }}}</mj-text>
       </mj-column>
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="0">
       <mj-column>
-        <mj-divider border-color="#F45E43"></mj-divider>
+        <mj-divider border-color="#338d8e"></mj-divider>
       </mj-column>
     </mj-section>
-    <mj-section background-color="#338d8e" mj-class="main-section">
+    <mj-section background-color="#F2F2F2" mj-class="main-section">
       <mj-column vertical-align="middle" width="100%">
-        <mj-text mj-class="big-text">{{t 'auth:email.verifyEmail.text.title' }}</mj-text>
-        <mj-text mj-class="text">{{t 'auth:email.verifyEmail.text.information' }}</mj-text>
-        <mj-button mj-class="btn" color="#ffffff" background-color="#338d8e" href="{{ url }}">{{t 'auth:email.verifyEmail.text.button' }}</mj-button>
-        <mj-text mj-class="text">{{t 'auth:email.verifyEmail.text.accidental' }}</mj-text>
+        <mj-text mj-class="big-text">{{{t 'auth:email.verifyEmail.text.title' }}}</mj-text>
+        <mj-text mj-class="text">{{{t 'auth:email.verifyEmail.text.information' }}}</mj-text>
+        <mj-button mj-class="btn" color="#ffffff" background-color="#338d8e" href="{{ url }}">{{{t 'auth:email.verifyEmail.text.button' }}}</mj-button>
+        <mj-text mj-class="text">{{{t 'auth:email.verifyEmail.text.accidental' }}}</mj-text>
         <mj-text mj-class="text">
-          {{t 'auth:email.verifyEmail.text.greeting' }} <br>
-          {{t 'auth:email.verifyEmail.text.teamName' }}
+          {{{t 'auth:email.verifyEmail.text.greeting' }}} <br>
+          {{{t 'auth:email.verifyEmail.text.teamName' }}}
         </mj-text>
       </mj-column>
     </mj-section>
@@ -38,9 +38,9 @@
     <mj-section mj-class="bottom-section">
       <mj-column vertical-align="middle" width="70%">
         <mj-text align="center" mj-class="small-text">
-          {{t 'email:footer.sentTo' email}}
+          {{{t 'email:footer.sentTo' this }}}
           <br>
-          {{t 'auth:email.verifyEmail.footer.cause' }}
+          {{{t 'auth:email.verifyEmail.footer.cause' }}}
         </mj-text>
       </mj-column>
     </mj-section>

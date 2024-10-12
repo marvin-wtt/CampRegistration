@@ -3,15 +3,23 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
 import config from '../../src/config';
 import path from 'path';
-import { store } from '../../src/middlewares/rateLimiter.middleware';
 import { stopJobs } from '../../src/jobs';
 import mailer from '../../src/config/mail';
+import { Request, Response, NextFunction } from 'express';
+
+const skipMiddleware = (req: Request, res: Response, next: NextFunction) =>
+  next();
+vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
+  generalLimiter: skipMiddleware,
+  authLimiter: skipMiddleware,
+  staticLimiter: skipMiddleware,
+}));
 
 beforeEach(async () => {
-  vi.spyOn(mailer, 'sendMail');
+  // mailer
+  vi.spyOn(mailer, 'sendMail').mockResolvedValue({});
 
   await resetDb();
-  await resetRateLimiter();
   await clearDirectory(config.storage.tmpDir);
   await clearDirectory(config.storage.uploadDir);
   stopJobs();
@@ -24,11 +32,9 @@ const clearDirectory = async (dir: string) => {
   await fse.emptydir(directory);
 };
 
-const resetRateLimiter = async () => {
-  return store.resetAll();
-};
-
 afterEach(async () => {
+  vi.clearAllMocks();
+  vi.resetAllMocks();
   // TODO Is this correct?
   // await prisma.$disconnect();
 });

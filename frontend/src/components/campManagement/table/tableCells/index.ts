@@ -1,5 +1,6 @@
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ActionTableCell from 'components/campManagement/table/tableCells/ActionTableCell.vue';
+import AddressTableCell from 'components/campManagement/table/tableCells/AddressTableCell.vue';
 import AgeTableCell from 'components/campManagement/table/tableCells/AgeTableCell.vue';
 import CountryFlagTableCell from 'components/campManagement/table/tableCells/CountryFlagTableCell.vue';
 import DateTableCell from 'components/campManagement/table/tableCells/DateTableCell.vue';
@@ -22,6 +23,13 @@ import TranslatedValueTableCell from 'components/campManagement/table/tableCells
 const components = () => {
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,
+  });
+  TableComponentRegistry.register('address', AddressTableCell, {
+    label: {
+      en: 'Address',
+      de: 'Adresse',
+      fr: 'Adresse',
+    },
   });
   TableComponentRegistry.register('age', AgeTableCell, {
     label: {

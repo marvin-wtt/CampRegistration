@@ -3,136 +3,92 @@
     :error="error"
     :loading="loading"
   >
-    <survey-creator-component :model="creator" />
+    <form-editor
+      v-if="showEditor && campData && campFiles"
+      :camp="campData"
+      :files="campFiles"
+      :restricted-access="restrictedAccess"
+      :save-form-func="saveForm"
+      :save-theme-func="saveTheme"
+      :save-file-func="saveFile"
+    />
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-// Style
-import 'survey-core/defaultV2.min.css';
-import 'survey-creator-core/survey-creator-core.min.css';
-// JS
-import 'survey-core/survey.i18n';
-import 'survey-creator-core/survey-creator-core.i18n';
-
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { computed, onMounted, ref } from 'vue';
-import {
-  localization,
-  PropertyGridEditorCollection,
-  SurveyCreatorModel,
-} from 'survey-creator-core';
-import { useI18n } from 'vue-i18n';
-import {
-  startAutoDataUpdate,
-  startAutoThemeUpdate,
-} from 'src/composables/survey';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import { useCampFilesStore } from 'stores/camp-files-store';
-import { SurveyModel } from 'survey-core';
 import { storeToRefs } from 'pinia';
+import { useAPIService } from 'src/services/APIService';
+import { useQuasar } from 'quasar';
+import { useRegistrationsStore } from 'stores/registration-store.ts';
+import FormEditor from 'components/campManagement/settings/form/FormEditor.vue';
+import type { SurveyJSCampData } from '@camp-registration/common/entities';
+import { ITheme } from 'survey-core';
+import EditorRestrictedAccessDialog from 'components/campManagement/settings/form/EditorRestrictedAccessDialog.vue';
 
+const quasar = useQuasar();
+const api = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
+const registrationStore = useRegistrationsStore();
 const { data: campData } = storeToRefs(campDetailsStore);
-const { locale } = useI18n();
+const { data: campFiles } = storeToRefs(campFileStore);
 
-// Custom properties
-PropertyGridEditorCollection.register(campDataMapping);
-
-// Add localization
-// TODO campData property
-const deLocale = localization.getLocale('de');
-deLocale.qt.address = 'Adresse';
-deLocale.qt.country = 'Land';
-deLocale.qt.date_of_birth = 'Geburtstag';
-deLocale.qt.role = 'Rolle';
-
-const enLocale = localization.getLocale('en');
-enLocale.qt.address = 'Address';
-enLocale.qt.country = 'Country';
-enLocale.qt.date_of_birth = 'Birthday';
-enLocale.qt.rolle = 'Role';
-
-const frLocale = localization.getLocale('fr');
-frLocale.qt.address = 'Adresse';
-frLocale.qt.country = 'Pays';
-frLocale.qt.date_of_birth = 'Date de Naissance';
-frLocale.qt.role = 'Rôle';
+const showEditor = ref<boolean>(false);
+let restrictedAccess = ref<boolean>(false);
 
 const loading = computed<boolean>(() => {
-  return campDetailsStore.isLoading;
+  return (
+    campDetailsStore.isLoading ||
+    campFileStore.isLoading ||
+    registrationStore.isLoading
+  );
 });
 
 const error = computed(() => {
-  return campDetailsStore.error;
+  return (
+    campDetailsStore.error || campFileStore.error || registrationStore.error
+  );
 });
-
-const creatorOptions = {
-  // haveCommercialLicense: true, // TODO Enable with licence
-  showLogicTab: true,
-  showTranslationTab: true,
-  showEmbeddedSurveyTab: false,
-  isAutoSave: true, // Survey is currently only saved when pressing the button.
-  themeForPreview: 'defaultV2',
-  showThemeTab: true,
-};
-
-localization.currentLocale = locale.value.split(/[-_]/)[0];
-const creator = new SurveyCreatorModel(creatorOptions);
-const previewModel = ref<SurveyModel>();
-
-startAutoDataUpdate(previewModel, campData);
-startAutoThemeUpdate(previewModel, campData);
 
 onMounted(async () => {
   await campDetailsStore.fetchData();
+  await campFileStore.fetchData();
+  await registrationStore.fetchData();
 
   if (!campDetailsStore.data) {
     return;
   }
 
-  creator.JSON = campDetailsStore.data.form;
+  if (registrationStore.data && registrationStore.data.length > 0) {
+    quasar
+      .dialog({ component: EditorRestrictedAccessDialog })
+      .onOk(() => {
+        restrictedAccess.value = true;
+      })
+      .onCancel(() => {
+        restrictedAccess.value = false;
+      })
+      .onDismiss(() => {
+        showEditor.value = true;
+      });
+  } else {
+    showEditor.value = true;
+  }
 });
 
-creator.onPropertyValidationCustomError.add((_, options) => {
-  if (!['name', 'valueName'].includes(options.propertyName)) {
-    return;
-  }
-
-  if (options.value === 0) {
-    options.error = 'Zero is not allowed here.';
-  }
-
-  if (options.value.includes('.')) {
-    options.error = 'Dots are not allowed here.';
-  }
-});
-
-creator.saveSurveyFunc = (
-  saveNo: number,
-  callback: (saveNo: number, success: boolean) => void,
-) => {
+async function saveForm(form: SurveyJSCampData): Promise<void> {
   const data = {
-    form: creator.JSON,
+    form,
   };
 
-  campDetailsStore
-    .updateData(data, 'none')
-    .then(() => {
-      callback(saveNo, true);
-    })
-    .catch(() => {
-      callback(saveNo, false);
-    });
-};
+  await campDetailsStore.updateData(data, 'none');
+}
 
-creator.saveThemeFunc = (
-  saveNo: number,
-  callback: (saveNo: number, success: boolean) => void,
-) => {
-  const theme = creator.theme;
+async function saveTheme(theme: ITheme): Promise<void> {
   const colorPlatte = theme.colorPalette ?? 'light';
 
   const data = {
@@ -142,45 +98,37 @@ creator.saveThemeFunc = (
     },
   };
 
-  campDetailsStore
-    .updateData(data, 'none')
-    .then(() => {
-      callback(saveNo, true);
-    })
-    .catch(() => {
-      callback(saveNo, false);
-    });
-};
+  await campDetailsStore.updateData(data, 'none');
+}
 
-creator.onPreviewSurveyCreated.add((_, options) => {
-  previewModel.value = options.survey;
-});
+async function saveFile(file: File): Promise<string> {
+  const campId = campData.value?.id;
 
-creator.onUploadFile.add((_, options) => {
-  campFileStore
-    .createEntry({
-      name: '',
-      field: '',
-      file: options.file,
-      accessLevel: 'public',
-    })
-    .then(() => {
-      // TODO Get url
-      const url = '';
-      options.callback('success', url);
-    })
-    .catch(() => {
-      options.callback('error');
-    });
-});
+  if (!campId) {
+    throw 'Camp not loaded';
+  }
 
-// TODO Files need to be deleted as well
+  // When file is selected via custom picker, then the file is already present on the server
+  if ('id' in file && typeof file.id === 'string') {
+    return campFileStore.getUrl(file.id, campId);
+  }
+
+  const newFile = await api.createCampFile(campId, {
+    name: file.name.replace(/\.[^/.]+$/, ''),
+    field: crypto.randomUUID(),
+    file,
+    accessLevel: 'public',
+  });
+
+  return campFileStore.getUrl(newFile.id, campId);
+}
 </script>
 
 <style>
 .svc-creator {
   position: absolute;
 }
+
 /* Creator popups should be over navigation bar */
 .sv-popup {
   z-index: 5000;

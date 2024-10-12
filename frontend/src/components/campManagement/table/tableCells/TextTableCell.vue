@@ -28,9 +28,22 @@ import { computed, ref } from 'vue';
 import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 const props = defineProps<TableCellProps>();
-const limit = 25;
 const containerHover = ref<boolean>(false);
 const bannerHover = ref<boolean>(false);
+
+const defaultLimit = 25;
+
+const limit = computed<number>(() => {
+  if (
+    props.options &&
+    'limit' in props.options &&
+    typeof props.options.limit === 'number'
+  ) {
+    return props.options.limit;
+  }
+
+  return defaultLimit;
+});
 
 const bannerVisible = computed<boolean>(() => {
   // Banner hover might behave weird when trying to hover the element below
@@ -41,7 +54,7 @@ const bannerVisible = computed<boolean>(() => {
 const isTruncated = computed<boolean>(() => {
   const value = props.props.value;
 
-  return typeof value === 'string' && value.trim().length > limit;
+  return typeof value === 'string' && value.trim().length > limit.value;
 });
 
 const truncatedText = computed<string | unknown>(() => {
@@ -52,9 +65,9 @@ const truncatedText = computed<string | unknown>(() => {
   }
 
   if (isTruncated.value) {
-    const lastSpaceIndex = value.substring(0, limit).lastIndexOf(' ');
+    const lastSpaceIndex = value.substring(0, limit.value).lastIndexOf(' ');
     if (lastSpaceIndex === -1) {
-      return value.substring(0, limit);
+      return value.substring(0, limit.value);
     }
 
     return value.substring(0, lastSpaceIndex);
@@ -65,18 +78,13 @@ const truncatedText = computed<string | unknown>(() => {
 
 const extraWords = computed<number>(() => {
   const value = props.props.value;
+  const text = truncatedText.value;
 
-  if (typeof value !== 'string') {
+  if (typeof value !== 'string' || typeof text !== 'string') {
     return 0;
   }
 
-  const total = value.length;
-  const lastSpaceIndex = value.substring(0, limit).lastIndexOf(' ');
-  if (lastSpaceIndex < 0) {
-    return 0;
-  }
-
-  return total - lastSpaceIndex;
+  return value.trim().length - text.length;
 });
 </script>
 

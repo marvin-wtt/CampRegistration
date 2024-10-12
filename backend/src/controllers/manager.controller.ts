@@ -5,6 +5,7 @@ import { collection, resource } from 'resources/resource';
 import { managerService, userService } from 'services';
 import { campManagerResource } from 'resources';
 import { routeModel } from 'utils/verifyModel';
+import { catchAndResolve } from '../utils/promiseUtils';
 
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
@@ -37,7 +38,7 @@ const store = catchRequestAsync(async (req, res) => {
       ? await managerService.inviteManager(camp.id, email)
       : await managerService.addManager(camp.id, user.id);
 
-  await managerService.sendManagerInvitation(camp, manager);
+  await catchAndResolve(managerService.sendManagerInvitation(camp, manager));
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
 });
@@ -53,7 +54,7 @@ const destroy = catchRequestAsync(async (req, res) => {
     );
   }
 
-  await managerService.removeManager(managerId);
+  await catchAndResolve(managerService.removeManager(managerId));
 
   res.sendStatus(httpStatus.NO_CONTENT);
 });

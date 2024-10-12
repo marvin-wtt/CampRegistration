@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma';
 import { TokenType, User } from '@prisma/client';
-import { CampFactory, UserFactory } from '../../prisma/factories';
+import {
+  CampFactory,
+  UserFactory,
+  TokenFactory,
+  CampManagerFactory,
+  InvitationFactory,
+} from '../../prisma/factories';
 import {
   generateAccessToken,
   generateExpiredToken,
@@ -13,9 +19,6 @@ import {
   verifyToken,
 } from '../utils/token';
 import { request } from '../utils/request';
-import { TokenFactory } from '../../prisma/factories/token';
-import { CampManagerFactory } from '../../prisma/factories/manager';
-import { InvitationFactory } from '../../prisma/factories/invitation';
 import mailer from '../../src/config/mail';
 
 describe('/api/v1/auth', async () => {
@@ -31,7 +34,7 @@ describe('/api/v1/auth', async () => {
         .expect(201);
     });
 
-    it('should respond with the user details when successful', async () => {
+    it('should respond with the user profile when successful', async () => {
       const { body } = await request()
         .post('/api/v1/auth/register')
         .send({
@@ -45,11 +48,9 @@ describe('/api/v1/auth', async () => {
 
       expect(newUser).not.toBeNull();
       expect(body).toStrictEqual({
-        id: newUser?.id,
         email: 'test@email.net',
         name: 'testuser',
         locale: expect.anything(),
-        emailVerified: false,
       });
     });
 
@@ -278,7 +279,8 @@ describe('/api/v1/auth', async () => {
         })
         .expect(200);
 
-      expect(body).toHaveProperty('user.id');
+      expect(body).toHaveProperty('profile.email', 'test@email.net');
+      expect(body).toHaveProperty('profile.name', 'testuser');
     });
 
     it('should respond with camps when successful', async () => {
@@ -300,8 +302,8 @@ describe('/api/v1/auth', async () => {
         })
         .expect(200);
 
-      expect(body).toHaveProperty('user.camps');
-      expect(body.user.camps.length).toBe(1);
+      expect(body).toHaveProperty('profile.camps');
+      expect(body.profile.camps.length).toBe(1);
     });
 
     it('should respond with access token', async () => {
@@ -411,6 +413,26 @@ describe('/api/v1/auth', async () => {
       );
     });
 
+    it('should update user last seen time', async () => {
+      const { id } = await createUser();
+
+      const timestamp = new Date().getTime();
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
+    });
+
     it('should respond with a `403` status code when email is not verified', async () => {
       await UserFactory.create({
         email: 'test2@email.net',
@@ -455,7 +477,8 @@ describe('/api/v1/auth', async () => {
       expect(body).not.toHaveProperty('token');
     });
 
-    it('should respond with a `429` status code when too many invalid requests are send', async () => {
+    // TODO Rate limiter must not be mocked for this test
+    it.skip('should respond with a `429` status code when too many invalid requests are send', async () => {
       const sendRequest = () => {
         return request().post('/api/v1/auth/login').send({
           email: 'test@email.net',
@@ -489,9 +512,8 @@ describe('/api/v1/auth', async () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
-      const cookies = headers['set-cookie'].map(
-        (item: string) => item.split(';')[0],
-      );
+      const cookieStrings = headers['set-cookie'] as unknown as string[];
+      const cookies = cookieStrings.map((item: string) => item.split(';')[0]);
 
       expect(cookies).toContain('accessToken=');
       expect(cookies).toContain('refreshToken=');
@@ -630,6 +652,30 @@ describe('/api/v1/auth', async () => {
       expect(setCookie).toContainEqual(
         expect.stringMatching(/^refreshToken.*/),
       );
+    });
+
+    it('should update user last seen time', async () => {
+      const {
+        refreshToken,
+        user: { id },
+      } = await createUserWithToken();
+
+      const timestamp = new Date().getTime();
+
+      const data = {
+        refreshToken,
+      };
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
     });
 
     it('should respond with `400` status code when the user has no refresh token', async () => {
@@ -997,19 +1043,7 @@ describe('/api/v1/auth', async () => {
     });
 
     it('should respond with `400` status code when provided without token', async () => {
-      const user = await UserFactory.create();
-      await TokenFactory.create({
-        user: { connect: { id: user.id } },
-        type: TokenType.VERIFY_EMAIL,
-        token: generateVerifyEmailToken(user),
-      });
-      const token = generateVerifyEmailToken(user);
-
-      const data = {
-        token,
-      };
-
-      await request().post(`/api/v1/auth/verify-email/`).send(data).expect(204);
+      await request().post(`/api/v1/auth/verify-email/`).send({}).expect(400);
     });
 
     it('should respond with `400` status code when token is expired', async () => {

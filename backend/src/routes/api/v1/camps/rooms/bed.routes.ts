@@ -11,20 +11,32 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'bedId',
-  catchParamAsync(async (req, res, next, id) => {
+  catchParamAsync(async (req, res, id) => {
     const room = routeModel(req.models.room);
     const bed = await bedService.getBedById(id, room.id);
     req.models.bed = verifyModelExists(bed);
-    next();
   }),
 );
 
-router.put(
+router.post(
+  '/',
+  auth(),
+  guard(campManager),
+  validate(bedValidation.store),
+  bedController.store,
+);
+router.patch(
   '/:bedId',
   auth(),
-  guard([campManager]),
+  guard(campManager),
   validate(bedValidation.update),
   bedController.update,
 );
-
+router.delete(
+  '/:bedId',
+  auth(),
+  guard(campManager),
+  validate(bedValidation.destroy),
+  bedController.destroy,
+);
 export default router;

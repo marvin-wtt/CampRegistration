@@ -9,13 +9,13 @@ export function useRoomService() {
   async function fetchRooms(campId: string): Promise<Room[]> {
     const response = await api.get(`camps/${campId}/rooms/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function fetchRoom(campId: string, id: string): Promise<Room> {
     const response = await api.get(`camps/${campId}/rooms/${id}/`);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function createRoom(
@@ -27,7 +27,7 @@ export function useRoomService() {
       capacity: data.capacity,
     });
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function updateRoom(
@@ -37,7 +37,7 @@ export function useRoomService() {
   ): Promise<Room> {
     const response = await api.patch(`camps/${campId}/rooms/${id}/`, data);
 
-    return response.data.data;
+    return response?.data?.data;
   }
 
   async function deleteRoom(campId: string, id: string): Promise<void> {
@@ -50,7 +50,7 @@ export function useRoomService() {
     bedId: string,
     registrationId: string | null,
   ) {
-    await api.put(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`, {
+    await api.patch(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`, {
       registrationId,
     });
   }
