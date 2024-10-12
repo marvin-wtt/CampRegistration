@@ -182,9 +182,7 @@ const deleteFile = async (id: string) => {
 };
 
 const deleteTempFile = async (fileName: string) => {
-  const filePath = path.join(config.storage.tmpDir, fileName);
-
-  isDirectoryPathValid(filePath, config.storage.tmpDir);
+  const filePath = safeJoinFilePath(config.storage.tmpDir, fileName);
 
   return fse.remove(filePath);
 };
@@ -331,24 +329,17 @@ class DiskStorage implements StorageStrategy {
   constructor(private storageDir: string) {}
 
   async remove(fileName: string) {
-    const filePath = path.join(this.storageDir, fileName);
-
-    if (!isDirectoryPathValid(filePath, this.storageDir)) {
-      throw new ApiError(403, 'Invalid file data');
-    }
+    const filePath = safeJoinFilePath(this.storageDir, fileName);
 
     await fse.remove(filePath);
   }
 
   async moveToStorage(sourcePath: string, filename: string) {
     const { tmpDir } = config.storage;
-    const destinationPath = path.join(this.storageDir, filename);
+    const destinationPath = safeJoinFilePath(this.storageDir, filename);
 
-    if (
-      !isDirectoryPathValid(destinationPath, this.storageDir) ||
-      !isDirectoryPathValid(sourcePath, tmpDir)
-    ) {
-      throw new ApiError(403, 'Invalid file data');
+    if (!isDirectoryPathValid(sourcePath, tmpDir)) {
+      throw new ApiError(httpStatus.FORBIDDEN, 'Invalid file data');
     }
 
     await fse.ensureDir(this.storageDir);
@@ -358,11 +349,7 @@ class DiskStorage implements StorageStrategy {
   }
 
   stream(file: File) {
-    const filePath = path.join(this.storageDir, file.name);
-
-    if (!isDirectoryPathValid(filePath, this.storageDir)) {
-      throw new ApiError(403, 'Invalid file data');
-    }
+    const filePath = safeJoinFilePath(this.storageDir, file.name);
 
     if (!fse.existsSync(filePath)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
@@ -392,6 +379,16 @@ const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
   const resolvedRootPath = path.resolve(rootPath);
 
   return resolvedFilePath.startsWith(resolvedRootPath);
+};
+
+const safeJoinFilePath = (rootPath: string, filename: string): string => {
+  const filePath = path.join(rootPath, filename);
+
+  if (!isDirectoryPathValid(filePath, rootPath)) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Invalid file');
+  }
+
+  return filePath;
 };
 
 export default {
