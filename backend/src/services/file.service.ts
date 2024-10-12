@@ -382,13 +382,13 @@ const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
 };
 
 const safeJoinFilePath = (rootPath: string, filename): string => {
-  const destinationPath = path.join(rootPath, filename);
+  const filePath = path.join(rootPath, filename);
 
   if (!isDirectoryPathValid(filePath, rootPath)) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Invalid file');
   }
 
-  return destinationPath;
+  return filePath;
 };
 
 export default {
