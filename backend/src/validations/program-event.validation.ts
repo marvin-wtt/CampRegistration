@@ -6,7 +6,7 @@ const extendedJoi = Joi.extend(JoiDate);
 
 const translatableSchema = Joi.alternatives()
   .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
-  .required();
+  .allow('');
 const timeSchema = Joi.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
 const dateSchema = extendedJoi.date().format('YYYY-MM-DD').raw();
 
