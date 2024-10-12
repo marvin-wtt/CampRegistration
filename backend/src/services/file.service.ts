@@ -381,7 +381,7 @@ const isDirectoryPathValid = (filePath: string, rootPath: string): boolean => {
   return resolvedFilePath.startsWith(resolvedRootPath);
 };
 
-const safeJoinFilePath = (rootPath: string, filename): string => {
+const safeJoinFilePath = (rootPath: string, filename: string): string => {
   const filePath = path.join(rootPath, filename);
 
   if (!isDirectoryPathValid(filePath, rootPath)) {
