@@ -12,6 +12,7 @@
           size="sm"
           flat
           rounded
+          @click="onEdit"
         />
         <q-btn
           v-close-popup

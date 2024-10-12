@@ -20,6 +20,7 @@
         ref="calendarRef"
         v-model="selectedDate"
         view="day"
+        :locale="locale"
         :drag-enter-func="onDragEnter"
         :drag-over-func="onDragOver"
         :drag-leave-func="onDragLeave"
@@ -95,6 +96,7 @@ import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDa
 import { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
 import PointerEvent from 'happy-dom/lib/event/events/PointerEvent';
 import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
+import ProgramEventEditDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 
 interface Props {
   camp: CampDetails;
@@ -116,7 +118,7 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
 }>();
 
-const { t, locale } = useI18n();
+const { locale } = useI18n();
 const quasar = useQuasar();
 
 const calendarRef = ref<QCalendarDay | null>(null);
@@ -211,11 +213,7 @@ function getFullDayEvents(date: string) {
 }
 
 function getEvents(date: string) {
-  const events = eventsMap.value[date] || [];
-
-  // TODO Apply side when side is auto
-
-  return events;
+  return eventsMap.value[date] || [];
 }
 
 interface CalendarEvent {
@@ -258,7 +256,18 @@ function onTimeEventAdd({ scope }: CalendarEvent) {
 }
 
 function onEventEdit(event: ProgramEvent) {
-  // TODO
+  quasar
+    .dialog({
+      component: ProgramEventEditDialog,
+      componentProps: {
+        event,
+        dateTimeMin: props.camp.startAt,
+        dateTimeMax: props.camp.endAt,
+      },
+    })
+    .onOk((programEvent: ProgramEventCreateData) => {
+      emit('update', event.id, programEvent);
+    });
 }
 
 function onEventDelete(event: ProgramEvent) {
