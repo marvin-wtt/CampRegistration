@@ -148,18 +148,36 @@ function onItemClick({ label, expenses }: Spending) {
     },
   });
 }
-
-// TODO i18n
 </script>
 
 <i18n lang="yaml" locale="en">
-items: '{count} item | {count} items'
+items: '{count} expense | {count} expenses'
 
 noData:
   line1: 'There are no expenses yet.'
   line2: 'Add a new expense by pressing the "+" button.'
 
 unknown: 'Unknown'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+items: '{count} Ausgabe | {count} Ausgaben'
+
+noData:
+  line1: 'Es gibt noch keine Ausgaben.'
+  line2: 'Füge eine neue Ausgabe hinzu, indem du auf die "+"-Schaltfläche drückst.'
+
+unknown: 'Unbekannt'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+items: '{count} dépense | {count} dépenses'
+
+noData:
+  line1: "Il n'y a pas encore de dépenses."
+  line2: 'Ajoute une nouvelle dépense en appuyant sur le bouton "+".'
+
+unknown: 'Inconnu'
 </i18n>
 
 <style scoped></style>

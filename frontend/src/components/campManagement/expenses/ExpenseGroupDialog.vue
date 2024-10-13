@@ -58,21 +58,21 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Add expense'
-
-fields:
-  name:
-    label: 'Name'
-    rules:
-      required: 'Name is required'
-  amount:
-    label: 'Amount'
-    rules:
-      required: 'Amount is required'
-
 actions:
   ok: 'Ok'
   cancel: 'Cancel'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+actions:
+  ok: 'Ok'
+  cancel: 'Abbrechen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+actions:
+  ok: 'Ok'
+  cancel: 'Annuler'
 </i18n>
 
 <style lang="scss">

@@ -80,7 +80,7 @@ import { Expense } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import ExpenseItem from 'components/campManagement/expenses/ExpenseItem.vue';
 
-const { t, d, n } = useI18n();
+const { t } = useI18n();
 
 const props = defineProps<{
   name: string;
@@ -94,6 +94,22 @@ title: 'Expenses'
 noData:
   line1: 'There are no expenses yet.'
   line2: 'Add a new expense by pressing the "+" button.'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Ausgaben'
+
+noData:
+  line1: 'Es gibt noch keine Ausgaben.'
+  line2: 'Füge eine neue Ausgabe hinzu, indem du auf die "+"-Schaltfläche drückst.'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Dépenses'
+
+noData:
+  line1: "Il n'y a pas encore de dépenses."
+  line2: 'Ajoute une nouvelle dépense en appuyant sur le bouton "+".'
 </i18n>
 
 <style scoped></style>
