@@ -1,58 +1,66 @@
 <template>
-  <q-page
-    :class="tabBarBottom ? 'reverse' : ''"
-    class="column"
-  >
-    <div class="col-shrink">
-      <!-- Desktop navigation -->
-      <q-separator v-if="tabBarBottom" />
-      <q-tabs
-        v-model="tab"
-        :inline-label="!tabBarBottom"
-        :switch-indicator="tabBarBottom"
-        align="justify"
-      >
-        <q-tab
-          :label="t('list')"
-          icon="overview"
-          name="categories"
-        />
-        <q-tab
-          :label="t('list')"
-          icon="list"
-          name="overview"
-        />
-        <q-tab
-          :label="t('person')"
-          icon="person"
-          name="people"
-        />
-      </q-tabs>
-      <q-separator v-if="!tabBarBottom" />
-    </div>
-
-    <q-tab-panels
-      v-model="tab"
-      :swipeable="tabBarBottom"
-      animated
-      class="col"
+  <q-page class="column">
+    <div
+      class="absolute fit column"
+      :class="tabBarBottom ? 'reverse' : ''"
     >
-      <q-tab-panel name="categories"> </q-tab-panel>
+      <div class="col-shrink">
+        <!-- Desktop navigation -->
+        <q-separator v-if="tabBarBottom" />
+        <q-tabs
+          v-model="tab"
+          :inline-label="!tabBarBottom"
+          :switch-indicator="tabBarBottom"
+          align="justify"
+        >
+          <q-tab
+            :label="t('list')"
+            icon="category"
+            name="category"
+          />
+          <q-tab
+            :label="t('list')"
+            icon="list"
+            name="overview"
+          />
+          <q-tab
+            :label="t('person')"
+            icon="person"
+            name="person"
+          />
+        </q-tabs>
+        <q-separator v-if="!tabBarBottom" />
+      </div>
 
-      <expenses-list-panel
-        name="overview"
-        :expenses
-      />
+      <q-tab-panels
+        v-model="tab"
+        :swipeable="tabBarBottom"
+        animated
+        class="col"
+      >
+        <expenses-grouped-panel
+          name="category"
+          :title="t('panel.category')"
+          group-by="category"
+          :expenses
+        />
 
-      <expenses-people-panel
-        name="people"
-        :expenses
-      />
-    </q-tab-panels>
+        <expenses-list-panel
+          name="overview"
+          :expenses
+        />
 
+        <expenses-grouped-panel
+          name="person"
+          :title="t('panel.person')"
+          group-by="paidBy"
+          :expenses
+        />
+      </q-tab-panels>
+    </div>
     <q-page-sticky
       position="bottom-right"
-      :offset="[18, 18]"
+      :offset="tabBarBottom ? [18, 78] : [18, 18]"
     >
       <q-btn
         class="absolute-bottom-right q-ma-md"
@@ -73,15 +81,15 @@ import { computed, ref, watch } from 'vue';
 import { Expense } from '@camp-registration/common/entities';
 import ExpensesListPanel from 'components/campManagement/expenses/ExpensesListPanel.vue';
 import ExpenseCreateDialog from 'components/campManagement/expenses/ExpenseCreateDialog.vue';
-import ExpensesPeoplePanel from 'components/campManagement/expenses/ExpensesPeoplePanel.vue';
 import { useRoute, useRouter } from 'vue-router';
+import ExpensesGroupedPanel from 'components/campManagement/expenses/ExpensesGroupedPanel.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
 const router = useRouter();
 const route = useRoute();
 
-const allowedFragments = ['categories', 'overview', 'people'];
+const allowedFragments = ['category', 'overview', 'person'];
 
 const tab = ref<string>(initialTab());
 
@@ -100,7 +108,7 @@ watch(tab, (value) => {
 
 const events = ref([
   {
-    id: '1234',
+    id: '01JA1HR0ACWQR6F60FHPKQQ1FG ',
     receiptNumber: 1,
     name: 'First expense',
     category: 'test',
@@ -113,7 +121,7 @@ const events = ref([
     paidAt: null,
   },
   {
-    id: '1234',
+    id: '01JA1HR465XSKERARZ4CKNQ3YC ',
     receiptNumber: 2,
     name: 'Second expense',
     category: 'test',
@@ -163,4 +171,8 @@ function onAddExpense() {
 }
 </script>
 
-<i18n lang="yaml" locale="en"></i18n>
+<i18n lang="yaml" locale="en">
+panel:
+  person: 'Expenses by person'
+  category: 'Expense by category'
+</i18n>
