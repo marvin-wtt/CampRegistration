@@ -37,7 +37,7 @@ const update = catchRequestAsync(async (req, res) => {
   const { email, password, name, role, locale, locked, emailVerified } =
     req.body;
 
-  if (password) {
+  if (password || locked) {
     await authService.logoutAllDevices(userId);
   }
 
