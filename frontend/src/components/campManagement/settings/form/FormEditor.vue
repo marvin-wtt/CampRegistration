@@ -220,6 +220,7 @@ creator.onOpenFileChooser.add((_, options) => {
       component: FileSelectionDialog,
       componentProps: {
         accept: 'image/*',
+        accessLevel: 'public',
       },
     })
     .onOk((files) => {
