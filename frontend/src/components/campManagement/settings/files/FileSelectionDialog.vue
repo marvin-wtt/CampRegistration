@@ -112,7 +112,7 @@ import { useI18n } from 'vue-i18n';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
-import { ServiceFile } from '@camp-registration/common/dist/node/entities';
+import { ServiceFile } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
 
@@ -132,6 +132,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 const props = defineProps<{
   multiple?: boolean;
   accept?: string;
+  accessLevel?: string;
 }>();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -152,7 +153,7 @@ const acceptedTypes = computed<string[]>(() => {
 });
 
 const files = computed<ServiceFile[]>(() => {
-  return data.value?.filter(filterFileType) ?? [];
+  return data.value?.filter(filterAccessLevel).filter(filterFileType) ?? [];
 });
 
 function onOKClick() {
@@ -161,6 +162,10 @@ function onOKClick() {
 
 function onCancelClick() {
   onDialogCancel();
+}
+
+function filterAccessLevel(file: ServiceFile): boolean {
+  return !props.accessLevel || file.accessLevel === props.accessLevel;
 }
 
 function filterFileType(file: ServiceFile): boolean {

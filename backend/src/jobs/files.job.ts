@@ -1,4 +1,4 @@
-import { fileService } from 'services';
+import fileService from 'app/file/file.service';
 import logger from 'config/logger';
 
 export const deleteUnusedFiles = async () => {

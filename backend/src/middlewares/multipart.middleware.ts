@@ -1,8 +1,8 @@
 import multer, { Field } from 'multer';
 import config from 'config';
 import { NextFunction, Request, Response } from 'express';
-import { dynamic } from 'middlewares';
-import { fileService } from 'services';
+import dynamic from './dynamic.middleware';
+import fileService from 'app/file/file.service';
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 

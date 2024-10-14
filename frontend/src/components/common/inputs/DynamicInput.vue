@@ -37,9 +37,9 @@ const component = computed(() => {
       return QSlider;
     case 'toggle':
       return QToggle;
+    default:
+      return undefined;
   }
-
-  return undefined;
 });
 
 interface Props {

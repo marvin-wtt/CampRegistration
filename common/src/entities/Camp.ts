@@ -1,6 +1,6 @@
 import { SurveyJSCampData } from './SurveyJSCampData';
 import { Identifiable } from './Identifiable';
-import { ITheme } from 'survey-core/typings/themes';
+import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable';
 
 export interface Camp extends Identifiable {
