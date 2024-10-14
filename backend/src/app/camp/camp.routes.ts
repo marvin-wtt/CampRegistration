@@ -13,6 +13,7 @@ import registrationRoutes from 'app/registration/registration.routes';
 import tableTemplateRoutes from 'app/tableTemplate/table-template.routes';
 import roomRoutes from 'app/room/room.routes';
 import campFileRoutes from './camp-files.routes';
+import expenseRoutes from 'app/expense/expense.routes';
 import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
 
 const router = express.Router();
@@ -51,6 +52,7 @@ router.use('/:campId/templates', tableTemplateRoutes);
 router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
 router.use('/:campId/files', campFileRoutes);
+router.use('/:campId/expenses', expenseRoutes);
 
 router.get(
   '/',

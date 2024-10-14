@@ -8,6 +8,7 @@ import {
   Bed,
   Room,
   File,
+  Expense,
 } from '@prisma/client';
 
 declare global {
@@ -28,6 +29,7 @@ declare global {
         room?: Room & { beds: Bed[] };
         bed?: Bed;
         file?: File;
+        expense?: Expense;
       };
     }
   }
