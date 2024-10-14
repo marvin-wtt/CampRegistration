@@ -102,10 +102,19 @@ const logoutAllDevices = async (userId: string) => {
 };
 
 const verifyEmail = async (token: string): Promise<void> => {
-  const verifyEmailTokenData = await tokenService.verifyToken(
-    token,
-    TokenType.VERIFY_EMAIL,
-  );
+  let verifyEmailTokenData;
+  try {
+    verifyEmailTokenData = await tokenService.verifyToken(
+      token,
+      TokenType.VERIFY_EMAIL,
+    );
+  } catch (e: unknown) {
+    // Change status code of api error
+    if (e instanceof ApiError) {
+      e.statusCode = httpStatus.UNAUTHORIZED;
+    }
+    throw e;
+  }
 
   await prisma.token.deleteMany({
     where: {
