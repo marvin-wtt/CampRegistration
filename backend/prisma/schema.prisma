@@ -181,6 +181,24 @@ model File {
   createdAt       DateTime      @default(now()) @map("created_at")
   camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
   registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  expenses         Expense[]
 
   @@map("files")
+}
+
+model Expense {
+  id            String   @id @unique(map: "expenses_id_unique") @db.Char(26)
+  receiptNumber Int?     @map("receipt_number") @db.UnsignedSmallInt
+  name          String
+  description   String?
+  category      String?
+  amount        Decimal?
+  date          String?
+  paidAt        String?  @map("paid_at")
+  paidBy        String?  @map("paid_by")
+  recipient     String?
+  fileId        String?  @map("file_id")
+  file          File?    @relation(fields: [fileId], references: [id], onDelete: Cascade, map: "expenses_file_id_foreign")
+
+  @@map("expenses")
 }
