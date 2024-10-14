@@ -102,23 +102,21 @@ const logoutAllDevices = async (userId: string) => {
 };
 
 const verifyEmail = async (token: string): Promise<void> => {
-  try {
-    const verifyEmailTokenData = await tokenService.verifyToken(
-      token,
-      TokenType.VERIFY_EMAIL,
-    );
-    await prisma.token.deleteMany({
-      where: {
-        userId: verifyEmailTokenData.userId,
-        type: TokenType.VERIFY_EMAIL,
-      },
-    });
-    await userService.updateUserById(verifyEmailTokenData.userId, {
-      emailVerified: true,
-    });
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
-  }
+  const verifyEmailTokenData = await tokenService.verifyToken(
+    token,
+    TokenType.VERIFY_EMAIL,
+  );
+
+  await prisma.token.deleteMany({
+    where: {
+      userId: verifyEmailTokenData.userId,
+      type: TokenType.VERIFY_EMAIL,
+    },
+  });
+
+  await userService.updateUserById(verifyEmailTokenData.userId, {
+    emailVerified: true,
+  });
 };
 
 const sendResetPasswordEmail = async (to: string, token: string) => {

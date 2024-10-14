@@ -4,7 +4,6 @@ import prisma from 'client';
 import ApiError from 'utils/ApiError';
 import { ulid } from 'utils/ulid';
 import { encryptPassword } from 'utils/encryption';
-import authService from 'app/auth/auth.service';
 import { UserUpdateData } from '@camp-registration/common/entities';
 
 const createUser = async (
@@ -99,10 +98,6 @@ const updateUserById = async (userId: string, data: UserUpdateData) => {
     if (user && user.id !== userId) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
-  }
-
-  if (data.locked) {
-    await authService.logoutAllDevices(userId);
   }
 
   return prisma.user.update({
