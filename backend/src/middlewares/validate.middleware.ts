@@ -3,9 +3,9 @@ import ApiError from 'utils/ApiError';
 import { Request } from 'express';
 import pick from 'utils/pick';
 import Joi from 'joi';
-import { fileService } from 'services';
+import fileService from 'app/file/file.service';
 import logger from 'config/logger';
-import { catchMiddlewareAsync } from '../utils/catchAsync';
+import { catchMiddlewareAsync } from 'utils/catchAsync';
 
 export interface ValidationSchema {
   params?: Joi.ObjectSchema;

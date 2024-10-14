@@ -1,4 +1,4 @@
-import { managerService } from 'services';
+import managerService from 'app/manager/manager.service';
 import { Request } from 'express';
 import { routeModel } from 'utils/verifyModel';
 import { authUserId } from 'utils/authUserId';
