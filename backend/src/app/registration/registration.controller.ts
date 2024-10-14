@@ -6,6 +6,9 @@ import registrationResource from './registration.resource';
 import { routeModel } from 'utils/verifyModel';
 import { requestLocale } from 'utils/requestLocale';
 import { catchAndResolve } from 'utils/promiseUtils';
+import eventStream from 'utils/eventStream';
+
+const { handler: events, broadcast } = eventStream();
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
@@ -47,9 +50,11 @@ const store = catchRequestAsync(async (req, res) => {
     registrationService.sendRegistrationManagerNotification(camp, registration),
   );
 
-  res
-    .status(httpStatus.CREATED)
-    .json(resource(registrationResource(registration)));
+  const response = resource(registrationResource(registration));
+
+  res.status(httpStatus.CREATED).json(response);
+
+  broadcast('create', response);
 });
 
 const update = catchRequestAsync(async (req, res) => {
@@ -73,7 +78,11 @@ const update = catchRequestAsync(async (req, res) => {
     );
   }
 
-  res.json(resource(registrationResource(registration)));
+  const response = resource(registrationResource(registration));
+
+  res.json(response);
+
+  broadcast('update', response);
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
@@ -81,6 +90,8 @@ const destroy = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
 
   await registrationService.deleteRegistration(camp, registration);
+
+  broadcast('delete', registration.id);
 
   res.status(httpStatus.NO_CONTENT).send();
 });
@@ -91,4 +102,5 @@ export default {
   store,
   update,
   destroy,
+  events,
 };

@@ -78,10 +78,17 @@ const destroy = {
   }),
 };
 
+const events = {
+  params: Joi.object({
+    campId: Joi.string().required(),
+  }),
+};
+
 export default {
   show,
   index,
   store,
   update,
   destroy,
+  events,
 };

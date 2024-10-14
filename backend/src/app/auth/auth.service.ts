@@ -8,6 +8,7 @@ import { encryptPassword, isPasswordMatch } from 'utils/encryption';
 import { AuthTokensResponse } from 'types/response';
 import prisma from 'client';
 import i18n, { t } from 'config/i18n';
+import { disconnectUserClients } from '../../utils/eventStream';
 
 const loginUserWithEmailAndPassword = async (
   email: string,
@@ -99,6 +100,8 @@ const resetPassword = async (
 
 const logoutAllDevices = async (userId: string) => {
   await tokenService.blacklistTokens(userId);
+
+  disconnectUserClients(userId);
 };
 
 const verifyEmail = async (token: string): Promise<void> => {
