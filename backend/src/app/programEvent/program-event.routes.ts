@@ -3,9 +3,9 @@ import { auth, guard, validate } from 'middlewares';
 import { campManager } from 'guards';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
-import { programPlannerService } from 'services';
-import { programEventController } from 'controllers';
-import { programEventValidation } from 'validations';
+import programPlannerService from './program-event.service';
+import programEventController from './program-event.controller';
+import programEventValidation from './program-event.validation';
 
 const router = express.Router({ mergeParams: true });
 

@@ -1,8 +1,8 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'resources/resource';
-import { programPlannerService } from 'services';
-import { programEventResource } from 'resources';
+import { collection, resource } from 'app/resource';
+import programEventService from './program-event.service';
+import programEventResource from './program-event.resource';
 import { routeModel } from 'utils/verifyModel';
 
 const show = catchRequestAsync(async (req, res) => {
@@ -14,7 +14,7 @@ const show = catchRequestAsync(async (req, res) => {
 const index = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
 
-  const events = await programPlannerService.queryProgramEvent(campId);
+  const events = await programEventService.queryProgramEvent(campId);
   const resources = events.map((value) => programEventResource(value));
 
   res.json(collection(resources));
@@ -24,7 +24,7 @@ const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const data = req.body;
 
-  const event = await programPlannerService.createProgramEvent(campId, {
+  const event = await programEventService.createProgramEvent(campId, {
     title: data.title,
     details: data.details,
     location: data.location,
@@ -42,7 +42,7 @@ const update = catchRequestAsync(async (req, res) => {
   const { programEventId: id } = req.params;
   const data = req.body;
 
-  const event = await programPlannerService.updateProgramEventById(id, {
+  const event = await programEventService.updateProgramEventById(id, {
     title: data.title,
     details: data.details,
     location: data.location,
@@ -59,7 +59,7 @@ const update = catchRequestAsync(async (req, res) => {
 const destroy = catchRequestAsync(async (req, res) => {
   const { programEventId: id } = req.params;
 
-  await programPlannerService.deleteProgramEventById(id);
+  await programEventService.deleteProgramEventById(id);
 
   res.status(httpStatus.NO_CONTENT).send();
 });
