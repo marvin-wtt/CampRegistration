@@ -5,7 +5,6 @@ import notificationService from 'app/notification/notification.service';
 import ApiError from 'utils/ApiError';
 import { TokenType } from '@prisma/client';
 import { encryptPassword, isPasswordMatch } from 'utils/encryption';
-import exclude from 'utils/exclude';
 import { AuthTokensResponse } from 'types/response';
 import prisma from 'client';
 import i18n, { t } from 'config/i18n';
@@ -31,11 +30,7 @@ const loginUserWithEmailAndPassword = async (
     );
   }
 
-  const updatedUser = await userService.updateUserLastSeenByIdWithCamps(
-    user.id,
-  );
-
-  return exclude(updatedUser, ['password']);
+  return await userService.updateUserLastSeenByIdWithCamps(user.id);
 };
 
 const logout = async (refreshToken: string): Promise<void> => {
