@@ -4,7 +4,6 @@ import fileService from 'app/file/file.service';
 import registrationService from 'app/registration/registration.service';
 import tableTemplateService from 'app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
 import { collection, resource } from 'app/resource';
 import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
@@ -17,14 +16,15 @@ import type {
   CampCreateData,
   CampUpdateData,
 } from '@camp-registration/common/entities';
+import { Request, Response } from 'express';
 
-const show = catchRequestAsync(async (req, res) => {
+const show = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
 
   res.json(resource(detailedCampResource(camp)));
-});
+};
 
-const index = catchRequestAsync(async (req, res) => {
+const index = async (req: Request, res: Response) => {
   const query = req.query as CampQuery;
   const camps = await campService.queryCamps(
     {
@@ -47,9 +47,9 @@ const index = catchRequestAsync(async (req, res) => {
   const resources = camps.map((value) => campResource(value));
 
   res.json(collection(resources));
-});
+};
 
-const store = catchRequestAsync(async (req, res) => {
+const store = async (req: Request, res: Response) => {
   const data = req.body as CampCreateData;
   const userId = authUserId(req);
 
@@ -97,9 +97,9 @@ const store = catchRequestAsync(async (req, res) => {
   );
 
   res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
-});
+};
 
-const update = catchRequestAsync(async (req, res) => {
+const update = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
   const data = req.body as CampUpdateData;
 
@@ -127,14 +127,14 @@ const update = catchRequestAsync(async (req, res) => {
   }
 
   res.json(resource(detailedCampResource(updatedCamp)));
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const { campId } = req.params;
   await campService.deleteCampById(campId);
 
   res.status(httpStatus.NO_CONTENT).send();
-});
+};
 
 export default {
   index,
