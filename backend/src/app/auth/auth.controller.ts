@@ -1,5 +1,4 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
 import authService from './auth.service';
 import userService from 'app/user/user.service';
 import tokenService from 'app/token/token.service';
@@ -14,7 +13,7 @@ import { authUserId } from 'utils/authUserId';
 import { catchAndResolve } from 'utils/promiseUtils';
 import authResource from './auth.resource';
 
-const register = catchRequestAsync(async (req, res) => {
+const register = async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
   const locale = requestLocale(req);
 
@@ -37,9 +36,9 @@ const register = catchRequestAsync(async (req, res) => {
     email: user.email,
     locale: user.locale,
   });
-});
+};
 
-const login = catchRequestAsync(async (req, res) => {
+const login = async (req: Request, res: Response) => {
   const { email, password, remember } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
   const tokens = await tokenService.generateAuthTokens(user, remember);
@@ -52,9 +51,9 @@ const login = catchRequestAsync(async (req, res) => {
   const profile = profileResource(user, camps);
 
   res.json(authResource(profile, tokens));
-});
+};
 
-const logout = catchRequestAsync(async (req: Request, res: Response) => {
+const logout = async (req: Request, res: Response) => {
   const refreshToken = req.body.refreshToken ?? extractCookieRefreshToken(req);
 
   await authService.logout(refreshToken);
@@ -62,9 +61,9 @@ const logout = catchRequestAsync(async (req: Request, res: Response) => {
   destroyAuthCookies(res);
 
   res.status(httpStatus.NO_CONTENT).send();
-});
+};
 
-const refreshTokens = catchRequestAsync(async (req, res) => {
+const refreshTokens = async (req: Request, res: Response) => {
   const refreshToken = req.body.refreshToken ?? extractCookieRefreshToken(req);
 
   if (!refreshToken) {
@@ -76,7 +75,7 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
   setAuthCookies(res, tokens);
 
   res.json({ ...tokens });
-});
+};
 
 const extractCookieRefreshToken = (req: Request) => {
   if (req && req.cookies && 'refreshToken' in req.cookies) {
@@ -86,7 +85,7 @@ const extractCookieRefreshToken = (req: Request) => {
   return null;
 };
 
-const forgotPassword = catchRequestAsync(async (req, res) => {
+const forgotPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
 
   const user = await userService.getUserByEmail(email);
@@ -106,16 +105,16 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
   }
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const resetPassword = catchRequestAsync(async (req, res) => {
+const resetPassword = async (req: Request, res: Response) => {
   const { password, token, email } = req.body;
   await authService.resetPassword(token, email, password);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const sendVerificationEmail = catchRequestAsync(async (req, res) => {
+const sendVerificationEmail = async (req: Request, res: Response) => {
   const userId = authUserId(req);
   const user = await userService.getUserById(userId);
   if (!user) {
@@ -130,15 +129,15 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   await authService.sendVerificationEmail(user.email, verifyEmailToken);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const verifyEmail = catchRequestAsync(async (req, res) => {
+const verifyEmail = async (req: Request, res: Response) => {
   const { token } = req.body;
 
   await authService.verifyEmail(token);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
 const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
   const httpOnly = true;

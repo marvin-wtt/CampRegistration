@@ -1,4 +1,3 @@
-import { catchRequestAsync } from 'utils/catchAsync';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
 import { collection, resource } from 'app/resource';
@@ -7,17 +6,18 @@ import managerService from './manager.service';
 import campManagerResource from './manager.resource';
 import { routeModel } from 'utils/verifyModel';
 import { catchAndResolve } from 'utils/promiseUtils';
+import { Request, Response } from 'express';
 
-const index = catchRequestAsync(async (req, res) => {
+const index = async (req: Request, res: Response) => {
   const { campId } = req.params;
 
   const managers = await managerService.getManagers(campId);
   const resources = managers.map((manager) => campManagerResource(manager));
 
   res.status(httpStatus.OK).json(collection(resources));
-});
+};
 
-const store = catchRequestAsync(async (req, res) => {
+const store = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
   const { email } = req.body;
 
@@ -42,9 +42,9 @@ const store = catchRequestAsync(async (req, res) => {
   await catchAndResolve(managerService.sendManagerInvitation(camp, manager));
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const { campId, managerId } = req.params;
 
   const managers = await managerService.getManagers(campId);
@@ -58,7 +58,7 @@ const destroy = catchRequestAsync(async (req, res) => {
   await catchAndResolve(managerService.removeManager(managerId));
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
 export default {
   index,
