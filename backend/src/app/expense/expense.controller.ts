@@ -40,7 +40,7 @@ const store = catchRequestAsync(async (req, res) => {
     category: body.category,
     paidAt: body.paidAt,
     paidBy: body.paidBy,
-    recipient: body.recipient,
+    payee: body.payee,
   });
 
   res.status(httpStatus.CREATED).json(resource(expenseResource(expense)));
@@ -62,7 +62,7 @@ const update = catchRequestAsync(async (req, res) => {
     category: body.category,
     paidAt: body.paidAt,
     paidBy: body.paidBy,
-    recipient: body.recipient,
+    payee: body.payee,
   });
 
   res.json(resource(expenseResource(expense)));

@@ -29,7 +29,7 @@ const store = {
     category: Joi.string().optional(),
     paidAt: Joi.date().optional(),
     paidBy: Joi.string().optional(),
-    recipient: Joi.string().optional(),
+    payee: Joi.string().optional(),
   }),
 };
 
@@ -46,7 +46,7 @@ const update = {
     category: Joi.string().optional(),
     paidAt: Joi.date().optional(),
     paidBy: Joi.string().optional(),
-    recipient: Joi.string().optional(),
+    payee: Joi.string().optional(),
   }),
 };
 

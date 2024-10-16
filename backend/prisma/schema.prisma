@@ -197,7 +197,7 @@ model Expense {
   date          DateTime
   paidAt        DateTime? @map("paid_at")
   paidBy        String?   @map("paid_by")
-  recipient     String?
+  payee         String?
   campId        String    @map("camp_id")
   fileId        String?   @map("file_id")
   camp          Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, map: "expenses_camp_id_foreign")

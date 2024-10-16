@@ -9,7 +9,7 @@ CREATE TABLE `expenses` (
     `date` DATETIME(3) NOT NULL,
     `paid_at` DATETIME(3) NULL,
     `paid_by` VARCHAR(191) NULL,
-    `recipient` VARCHAR(191) NULL,
+    `payee` VARCHAR(191) NULL,
     `camp_id` VARCHAR(191) NOT NULL,
     `file_id` VARCHAR(191) NULL,
 

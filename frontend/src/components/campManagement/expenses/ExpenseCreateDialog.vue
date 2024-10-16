@@ -15,54 +15,63 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
-          <translated-input
+          <q-input
             v-model="data.name"
-            :label="t('fields.name.label')"
+            :label="t('field.name.label')"
             :rules="[
               (val: string | Record<string, string> | undefined) =>
-                !!val || t('fields.name.rules.required'),
+                !!val || t('field.name.rule.required'),
             ]"
             hide-bottom-space
+            collapsed
             outlined
             rounded
-            :locales="props.locales"
           >
             <template #prepend>
               <q-icon name="title" />
             </template>
-          </translated-input>
+          </q-input>
 
-          <translated-input
+          <q-input
             v-model="data.description"
-            :label="t('fields.description.label')"
+            :label="t('field.description.label')"
+            collapsed
             outlined
             rounded
             clearable
-            :locales="props.locales"
           >
             <template #prepend>
               <q-icon name="description" />
             </template>
-          </translated-input>
+          </q-input>
 
-          <q-input
-            v-model.number="data.amount"
-            type="number"
-            :label="t('fields.amount.label')"
-            :rules="[
-              (val: number | undefined) =>
-                !!val || t('fields.amount.rules.required'),
-            ]"
-            hide-bottom-space
-            input-class="text-right"
+          <autocomplete-input
+            v-model="data.category"
+            :label="t('field.category.label')"
+            :options="props.categories"
+            clearable
             outlined
             rounded
-            suffix="€"
+          >
+            <template #prepend>
+              <q-icon name="person" />
+            </template>
+          </autocomplete-input>
+
+          <currency-input
+            v-model="data.amount"
+            :label="t('field.amount.label')"
+            :rules="[
+              (val?: number) => !!val || t('field.amount.rule.required'),
+            ]"
+            hide-bottom-space
+            outlined
+            rounded
           >
             <template #prepend>
               <q-icon name="euro" />
             </template>
-          </q-input>
+          </currency-input>
 
           <!-- Date -->
           <q-input
@@ -103,28 +112,28 @@
             </template>
           </q-input>
 
-          <q-select
+          <autocomplete-input
             v-model="data.paidBy"
-            :label="t('fields.paidBy.label')"
-            :options="paidByOptions"
-            new-value-mode="add-unique"
-            input-debounce="0"
+            :label="t('field.paidBy.label')"
+            :options="props.people"
             clearable
-            use-input
             outlined
             rounded
-            @filter="paidByFilter"
           >
             <template #prepend>
               <q-icon name="person" />
             </template>
-          </q-select>
+          </autocomplete-input>
 
           <!-- paidAt -->
           <q-input
             v-if="data.paidBy"
             v-model="data.paidAt"
             :label="t('field.paidAt.label')"
+            :rules="[
+              (val?: number) => !!val || t('field.amount.paidAt.required'),
+            ]"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -162,8 +171,8 @@
 
           <!-- recipient -->
           <q-input
-            v-model="data.recipient"
-            :label="t('field.recipient.label')"
+            v-model="data.payee"
+            :label="t('field.payee.label')"
             outlined
             rounded
           >
@@ -182,13 +191,13 @@
             outline
             rounded
             color="primary"
-            :label="t('actions.cancel')"
+            :label="t('action.cancel')"
           />
           <q-btn
             type="submit"
             rounded
             color="primary"
-            :label="t('actions.save')"
+            :label="t('action.save')"
           />
         </q-card-actions>
       </q-form>
@@ -199,13 +208,14 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
 import type { ExpenseCreateData } from '@camp-registration/common/entities';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
+import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
 
 const props = defineProps<{
-  locales?: string[];
   people: string[];
+  categories: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -215,7 +225,6 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 const data = reactive<Partial<ExpenseCreateData>>({});
-const paidByOptions = ref<string[]>(props.people);
 
 function onOKClick(): void {
   onDialogOK(data);
@@ -224,15 +233,6 @@ function onOKClick(): void {
 function onCancelClick() {
   onDialogCancel();
 }
-
-function paidByFilter(val: string, update: (cb: () => void) => void) {
-  update(() => {
-    const needle = val.toLowerCase();
-    paidByOptions.value = props.people.filter(
-      (v) => v.toLowerCase().indexOf(needle) > -1,
-    );
-  });
-}
 </script>
 
 <style scoped></style>
@@ -240,20 +240,100 @@ function paidByFilter(val: string, update: (cb: () => void) => void) {
 <i18n lang="yaml" locale="en">
 title: 'Add expense'
 
-fields:
-  name:
-    label: 'Name'
-    rules:
-      required: 'Name is required'
+field:
   amount:
     label: 'Amount'
-    rules:
+    rule:
       required: 'Amount is required'
+  category:
+    label: 'Category'
+  date:
+    label: 'Date'
+  description:
+    label: 'Description'
+  name:
+    label: 'Name'
+    rule:
+      required: 'Name is required'
+  paidAt:
+    label: 'Payment date'
+    rule:
+      required: 'Paid at is required'
+  paidBy:
+    label: 'Paid by'
+  payee:
+    label: 'Payee'
 
-actions:
-  ok: 'Ok'
+action:
+  close: 'Close'
   save: 'Save'
   cancel: 'Cancel'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Ausgabe hinzufügen'
+
+field:
+  amount:
+    label: 'Betrag'
+    rule:
+      required: 'Betrag ist erforderlich'
+  category:
+    label: 'Kategorie'
+  date:
+    label: 'Datum'
+  description:
+    label: 'Beschreibung'
+  name:
+    label: 'Name'
+    rule:
+      required: 'Name ist erforderlich'
+  paidAt:
+    label: 'Zahlungsdatum'
+    rule:
+      required: 'Zahlungsdatum ist erforderlich'
+  paidBy:
+    label: 'Bezahlt von'
+  payee:
+    label: 'Empfänger'
+
+action:
+  close: 'Schließen'
+  save: 'Speichern'
+  cancel: 'Abbrechen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Ajouter une dépense'
+
+field:
+  amount:
+    label: 'Montant'
+    rule:
+      required: 'Le montant est requis'
+  category:
+    label: 'Catégories'
+  date:
+    label: 'Date'
+  description:
+    label: 'Description'
+  name:
+    label: 'Nom'
+    rule:
+      required: 'Le nom est requis'
+  paidAt:
+    label: 'Date de paiement'
+    rule:
+      required: 'La date de paiement est requise'
+  paidBy:
+    label: 'Payé par'
+  payee:
+    label: 'Bénéficiaire'
+
+action:
+  close: 'Fermer'
+  save: 'Enregistrer'
+  cancel: 'Annuler'
 </i18n>
 
 <style lang="scss">

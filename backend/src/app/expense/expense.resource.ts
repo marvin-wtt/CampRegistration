@@ -12,7 +12,7 @@ const expenseResource = (expense: Expense): ExpenseResource => {
     date: expense.date?.toISOString() ?? null,
     paidAt: expense.paidAt?.toISOString() ?? null,
     paidBy: expense.paidBy,
-    recipient: expense.recipient,
+    payee: expense.payee,
     fileId: expense.fileId,
   };
 };

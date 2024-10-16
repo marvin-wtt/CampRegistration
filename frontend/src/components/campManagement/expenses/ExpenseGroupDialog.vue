@@ -18,14 +18,7 @@
       </q-card-section>
 
       <!-- action buttons -->
-      <q-card-actions align="right">
-        <q-btn
-          :label="t('actions.cancel')"
-          color="primary"
-          outline
-          rounded
-          @click="onDialogCancel"
-        />
+      <q-card-actions align="center">
         <q-btn
           :label="t('actions.ok')"
           color="primary"
@@ -51,8 +44,7 @@ const props = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-  useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 </script>
 
 <style scoped></style>

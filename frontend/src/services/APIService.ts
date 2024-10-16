@@ -1,13 +1,14 @@
-import { useAuthService } from 'src/services/AuthService';
-import { useCampService } from 'src/services/CampService';
-import { useRegistrationService } from 'src/services/RegistrationService';
-import { useTableTemplateService } from 'src/services/TableTemplateService';
-import { useUserService } from 'src/services/UserService';
-import { useRoomService } from 'src/services/RoomService';
-import { useCampManagerService } from 'src/services/CampManagerService';
+import { useAuthService } from './AuthService';
+import { useCampService } from './CampService';
+import { useRegistrationService } from './RegistrationService';
+import { useTableTemplateService } from './TableTemplateService';
+import { useUserService } from './UserService';
+import { useRoomService } from './RoomService';
+import { useCampManagerService } from './CampManagerService';
 import axios, { AxiosError } from 'axios';
-import { useFileService } from 'src/services/FileService';
-import { useFeedbackService } from 'src/services/FeedbackService';
+import { useFileService } from './FileService';
+import { useFeedbackService } from './FeedbackService';
+import { useExpenseService } from './ExpenseService.ts';
 
 export function useAPIService() {
   return {
@@ -20,6 +21,7 @@ export function useAPIService() {
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
+    ...useExpenseService(),
   };
 }
 

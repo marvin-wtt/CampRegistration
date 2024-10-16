@@ -1,4 +1,5 @@
 import { Identifiable } from './Identifiable';
+import { UndefinedForNull } from './utils';
 
 export interface Expense extends Identifiable {
   receiptNumber: number | null;
@@ -9,13 +10,9 @@ export interface Expense extends Identifiable {
   date: string;
   paidAt: string | null;
   paidBy: string | null;
-  recipient: string | null;
+  payee: string | null;
   fileId: string | null;
 }
-
-type UndefinedForNull<T> = {
-  [K in keyof T]: T[K] extends null ? undefined : T[K];
-};
 
 export type ExpenseCreateData = UndefinedForNull<Omit<Expense, 'id'>>;
 

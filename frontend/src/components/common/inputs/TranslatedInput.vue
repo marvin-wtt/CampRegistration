@@ -103,6 +103,7 @@ interface Props {
   label?: string;
   locales?: string[];
   always?: boolean;
+  collapsed?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -110,6 +111,7 @@ const props = withDefaults(defineProps<Props>(), {
   label: '',
   locales: undefined,
   always: false,
+  collapsed: false,
 });
 
 const emit = defineEmits<{
@@ -125,7 +127,9 @@ const enabled = computed<boolean>(() => {
 });
 
 function defaultUseTranslations(): boolean {
-  return props.modelValue === undefined || typeof props.modelValue === 'object';
+  return typeof props.modelValue === 'object' || props.modelValue === undefined
+    ? !props.collapsed
+    : false;
 }
 
 function defaultValue(): string | number {

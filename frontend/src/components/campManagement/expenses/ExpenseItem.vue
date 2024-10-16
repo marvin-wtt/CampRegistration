@@ -1,6 +1,9 @@
 <template>
   <!-- TODO Add payment status -->
-  <q-item clickable>
+  <q-item
+    clickable
+    @click="onItemClick"
+  >
     <q-item-section avatar>
       <q-avatar>
         {{ props.expense.receiptNumber ?? '-' }}
@@ -12,8 +15,11 @@
         {{ props.expense.name }}
       </q-item-label>
       <q-item-label caption>
-        {{ d(props.expense.date, 'short') }} &middot;
-        {{ props.expense?.category ?? '-' }}
+        {{ d(props.expense.date, 'short') }}
+        <template v-if="props.expense?.category">
+          &middot;
+          {{ props.expense.category }}
+        </template>
       </q-item-label>
     </q-item-section>
 
@@ -29,12 +35,24 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { Expense } from '@camp-registration/common/entities';
+import { useQuasar } from 'quasar';
+import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
 
 const { d, n } = useI18n();
+const quasar = useQuasar();
 
 const props = defineProps<{
   expense: Expense;
 }>();
+
+function onItemClick() {
+  quasar.dialog({
+    component: ExpenseDetailsDialog,
+    componentProps: {
+      expense: props.expense,
+    },
+  });
+}
 </script>
 
 <style scoped></style>
