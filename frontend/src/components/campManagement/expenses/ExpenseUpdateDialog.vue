@@ -30,6 +30,27 @@
           </q-input>
 
           <q-input
+            v-model.number="data.receiptNumber"
+            type="number"
+            :label="t('field.receiptNumber.label')"
+            :rules="[
+              (val?: number) =>
+                val == null ||
+                (Number.isInteger(val) && val > 0) ||
+                t('validation.receiptNumber.integer'),
+            ]"
+            hide-bottom-space
+            clearable
+            collapsed
+            outlined
+            rounded
+          >
+            <template #prepend>
+              <q-icon name="title" />
+            </template>
+          </q-input>
+
+          <q-input
             v-model="data.description"
             :label="t('field.description.label')"
             collapsed
@@ -179,6 +200,19 @@
             <template #prepend>
               <q-icon name="attach_file" />
             </template>
+
+            <template
+              v-if="!data.file && expense.file"
+              #append
+            >
+              <q-btn
+                icon="undo"
+                size="xs"
+                round
+                flat
+                @click="resetFile()"
+              />
+            </template>
           </q-file>
 
           <!-- recipient -->
@@ -218,12 +252,20 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { reactive, watch } from 'vue';
-import type { ExpenseCreateData } from '@camp-registration/common/entities';
+import { reactive, toRaw, watch } from 'vue';
+import type {
+  Expense,
+  ExpenseUpdateData,
+} from '@camp-registration/common/entities';
 import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
 import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
 import { storeToRefs } from 'pinia';
+import { updateDiff } from 'src/utils/objectDiff.ts';
+
+const props = defineProps<{
+  expense: Expense;
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -234,29 +276,55 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const expensesStore = useExpensesStore();
 const { people, categories } = storeToRefs(expensesStore);
 
-const data = reactive<Partial<ExpenseCreateData>>({
-  date: currentDate(),
-});
+const data = reactive<ExpenseUpdateData>(initialData());
+
+function initialData(): ExpenseUpdateData {
+  const { paidAt, date, file, ...others } = structuredClone(
+    toRaw(props.expense),
+  );
+  const data: ExpenseUpdateData = others;
+
+  if (date) {
+    data.date = formatDateString(date);
+  }
+
+  if (paidAt) {
+    data.paidAt = formatDateString(paidAt);
+  }
+
+  if (file) {
+    data.file = new File([], file.name);
+  }
+
+  return data;
+}
 
 watch(
   () => data.paidBy,
   (value, oldValue) => {
-    if (value == undefined) {
+    if (value == null) {
       // Reset when no one paid yet
-      data.paidAt = undefined;
-    } else if (oldValue == undefined) {
-      // Use now as default
-      data.paidAt = currentDate();
+      data.paidAt = null;
+    } else if (oldValue == undefined && props.expense.paidAt) {
+      // Use default
+      data.paidAt = formatDateString(props.expense.paidAt);
     }
   },
 );
 
-function currentDate(): string {
-  return new Date().toISOString().split('T')[0];
+function formatDateString(date: string): string {
+  return date.split('T')[0];
+}
+
+function resetFile() {
+  data.file = initialData().file;
 }
 
 function onOKClick(): void {
-  expensesStore.storeData(data as ExpenseCreateData);
+  const updateData = updateDiff(initialData(), data) as ExpenseUpdateData;
+
+  expensesStore.updateData(props.expense.id, updateData);
+
   onDialogOK();
 }
 
@@ -268,7 +336,7 @@ function onCancelClick() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Add expense'
+title: 'Update expense'
 
 field:
   amount:
@@ -295,6 +363,10 @@ field:
     label: 'Paid by'
   payee:
     label: 'Payee'
+  receiptNumber:
+    label: 'Receipt Nr.'
+    rule:
+      integer: 'Receipt Nr. must be a positive integer'
 
 action:
   close: 'Close'
@@ -303,7 +375,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Ausgabe hinzufügen'
+title: 'Ausgabe aktualisieren'
 
 field:
   amount:
@@ -330,6 +402,10 @@ field:
     label: 'Bezahlt von'
   payee:
     label: 'Empfänger'
+  receiptNumber:
+    label: 'Beleg-Nr.'
+    rule:
+      integer: 'Beleg-Nr muss eine positive ganze Zahl sein'
 
 action:
   close: 'Schließen'
@@ -338,7 +414,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Ajouter une dépense'
+title: 'Actualiser la dépense'
 
 field:
   amount:
@@ -365,6 +441,10 @@ field:
     label: 'Payé par'
   payee:
     label: 'Bénéficiaire'
+  receiptNumber:
+    label: 'N° de reçu'
+    rule:
+      integer: 'N° de reçu doit être un nombre entier positif'
 
 action:
   close: 'Fermer'

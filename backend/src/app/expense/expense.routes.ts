@@ -1,5 +1,5 @@
 import express from 'express';
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard, multipart, validate } from 'middlewares';
 import { campManager } from 'guards';
 import { verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
@@ -33,6 +33,7 @@ router.post(
   '/',
   auth(),
   guard(campManager),
+  multipart('file'),
   validate(expenseValidation.store),
   expenseController.store,
 );
@@ -40,6 +41,7 @@ router.patch(
   '/:expenseId',
   auth(),
   guard(campManager),
+  multipart('file'),
   validate(expenseValidation.update),
   expenseController.update,
 );

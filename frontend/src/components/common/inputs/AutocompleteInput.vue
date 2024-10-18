@@ -35,8 +35,8 @@ const slots = defineSlots<QSelectSlots>();
 
 const options = ref<unknown[]>();
 
-function setModel(val: string): void {
-  modelValue.value = val;
+function setModel(val: string | null): void {
+  modelValue.value = val?.length === 0 ? null : val;
 }
 
 const attrOptions = computed<string[]>(() => {

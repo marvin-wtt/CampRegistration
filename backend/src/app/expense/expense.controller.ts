@@ -8,6 +8,7 @@ import {
   ExpenseUpdateData,
 } from '@camp-registration/common/entities';
 import { routeModel } from 'utils/verifyModel';
+import fileService from '../file/file.service';
 
 const show = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);
@@ -28,33 +29,30 @@ const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const body = req.body as ExpenseCreateData;
 
-  if (body.fileId) {
-    // TODO Check if file exists
-  }
-
-  const expense = await expenseService.createExpense(campId, {
-    name: body.name,
-    description: body.description,
-    amount: body.amount,
-    date: body.date,
-    category: body.category,
-    paidAt: body.paidAt,
-    paidBy: body.paidBy,
-    payee: body.payee,
-  });
+  const expense = await expenseService.createExpense(
+    campId,
+    {
+      name: body.name,
+      description: body.description,
+      amount: body.amount,
+      date: body.date,
+      category: body.category,
+      paidAt: body.paidAt,
+      paidBy: body.paidBy,
+      payee: body.payee,
+    },
+    req.file,
+  );
 
   res.status(httpStatus.CREATED).json(resource(expenseResource(expense)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { expenseId } = req.params;
+  const expense = routeModel(req.models.expense);
   const body = req.body as ExpenseUpdateData;
 
-  if (body.fileId) {
-    // TODO Check if file exists and delete existing file
-  }
-
-  const expense = await expenseService.updateExpenseById(expenseId, {
+  const updatedExpense = await expenseService.updateExpenseById(expense.id, {
+    receiptNumber: body.receiptNumber,
     name: body.name,
     description: body.description,
     amount: body.amount,
@@ -65,7 +63,11 @@ const update = catchRequestAsync(async (req, res) => {
     payee: body.payee,
   });
 
-  res.json(resource(expenseResource(expense)));
+  if (updatedExpense.file != null && expense.file) {
+    await fileService.deleteFile(expense.file.id);
+  }
+
+  res.json(resource(expenseResource(updatedExpense)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {

@@ -1,7 +1,12 @@
-import { Expense } from '@prisma/client';
+import { Expense, File } from '@prisma/client';
 import type { Expense as ExpenseResource } from '@camp-registration/common/entities';
+import fileResource from 'app/file/file.resource';
 
-const expenseResource = (expense: Expense): ExpenseResource => {
+interface ExpenseWithFile extends Expense {
+  file: File | null;
+}
+
+const expenseResource = (expense: ExpenseWithFile): ExpenseResource => {
   return {
     id: expense.id,
     receiptNumber: expense.receiptNumber,
@@ -13,7 +18,7 @@ const expenseResource = (expense: Expense): ExpenseResource => {
     paidAt: expense.paidAt?.toISOString() ?? null,
     paidBy: expense.paidBy,
     payee: expense.payee,
-    fileId: expense.fileId,
+    file: expense.file ? fileResource(expense.file) : null,
   };
 };
 

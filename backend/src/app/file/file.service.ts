@@ -37,7 +37,7 @@ const mapFields = (
   };
 };
 
-const moveFile = async (file: RequestFile) => {
+const moveFileToStorage = async (file: RequestFile) => {
   const sourcePath = file.path;
 
   const storage = getStorage();
@@ -48,23 +48,37 @@ const moveFile = async (file: RequestFile) => {
 const saveModelFile = async (
   model: ModelData | undefined,
   file: RequestFile,
+  name: string | undefined,
+  field?: string | undefined,
+  accessLevel?: string | undefined,
+) => {
+  // Move file first to ensure that they really exist
+  await moveFileToStorage(file);
+
+  const data = modelFileCreateData(model, file, name, field, accessLevel);
+
+  return prisma.file.create({
+    data,
+  });
+};
+
+const modelFileCreateData = (
+  model: ModelData | undefined,
+  file: RequestFile,
   name?: string | undefined,
   field?: string | undefined,
   accessLevel?: string | undefined,
 ) => {
-  const fileName = name + '.' + file.filename.split('.').pop();
+  const fileName = name
+    ? name + '.' + file.filename.split('.').pop()
+    : undefined;
   const fileData = mapFields(file, fileName, field, accessLevel);
   const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-  // Move file first to ensure that they really exist
-  await moveFile(file);
-
-  return prisma.file.create({
-    data: {
-      ...fileData,
-      ...modelData,
-    },
-  });
+  return {
+    ...fileData,
+    ...modelData,
+  };
 };
 
 const createManyModelFile = async (
@@ -233,6 +247,7 @@ const deleteUnassignedFiles = async (): Promise<number> => {
     where: {
       campId: null,
       registrationId: null,
+      expenseId: null,
       createdAt: { lt: minAge },
     },
     select: {
@@ -394,6 +409,8 @@ const safeJoinFilePath = (rootPath: string, filename: string): string => {
 export default {
   saveModelFile,
   createManyModelFile,
+  modelFileCreateData,
+  moveFileToStorage,
   getModelFile,
   getFileStream,
   queryModelFiles,

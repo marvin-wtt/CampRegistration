@@ -70,7 +70,7 @@ model Camp {
   rooms           Room[]
   templates       TableTemplate[]
   files           File[]
-  Expense         Expense[]
+  expense         Expense[]
 
   @@map("camps")
 }
@@ -172,6 +172,7 @@ model File {
   id              String        @id @unique(map: "files_id_unique") @db.Char(26)
   campId          String?       @map("camp_id") @db.Char(36) // Prisma does not support morth
   registrationId  String?       @map("registration_id") @db.Char(36) // Prisma does not support morth
+  expenseId       String?       @unique @map("expense_id") @db.Char(36) // Prisma does not support morth
   name            String
   originalName    String        @map("original_name")
   field           String?
@@ -182,7 +183,7 @@ model File {
   createdAt       DateTime      @default(now()) @map("created_at")
   camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
   registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  expenses        Expense[]
+  expense         Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@map("files")
 }
@@ -199,9 +200,8 @@ model Expense {
   paidBy        String?   @map("paid_by")
   payee         String?
   campId        String    @map("camp_id")
-  fileId        String?   @map("file_id")
   camp          Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, map: "expenses_camp_id_foreign")
-  file          File?     @relation(fields: [fileId], references: [id], onDelete: Cascade, map: "expenses_file_id_foreign")
+  file          File?
 
   @@map("expenses")
 }

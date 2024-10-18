@@ -1,5 +1,6 @@
 import { Identifiable } from './Identifiable';
 import { UndefinedForNull } from './utils';
+import { ServiceFile } from './ServiceFile';
 
 export interface Expense extends Identifiable {
   receiptNumber: number | null;
@@ -11,9 +12,13 @@ export interface Expense extends Identifiable {
   paidAt: string | null;
   paidBy: string | null;
   payee: string | null;
-  fileId: string | null;
+  file: ServiceFile | null;
 }
 
-export type ExpenseCreateData = UndefinedForNull<Omit<Expense, 'id'>>;
+export type ExpenseCreateData = UndefinedForNull<
+  Omit<Expense, 'id' | 'file'>
+> & {
+  file?: File;
+};
 
 export type ExpenseUpdateData = Partial<ExpenseCreateData>;

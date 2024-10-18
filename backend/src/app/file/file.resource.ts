@@ -1,15 +1,17 @@
 import { File } from '@prisma/client';
-import type { ServiceFile as FileResource } from '@camp-registration/common/entities';
+import type { ServiceFile } from '@camp-registration/common/entities';
+import config from 'config';
 
-const fileResource = (file: File): FileResource => {
+export const fileResource = (file: File): ServiceFile => {
   return {
     id: file.id,
     name: file.originalName,
-    field: file.field,
+    field: file.field ?? null,
     type: file.type,
     size: file.size,
-    accessLevel: file.accessLevel,
+    accessLevel: file.accessLevel ?? null,
     createdAt: file.createdAt.toISOString(),
+    url: `${config.origin}/files/${file.id}`,
   };
 };
 

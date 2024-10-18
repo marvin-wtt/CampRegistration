@@ -25,7 +25,9 @@ export function useExpenseService() {
     campId: string,
     data: ExpenseCreateData,
   ): Promise<Expense> {
-    const response = await api.post(`camps/${campId}/expenses/`, data);
+    const response = await api.post(`camps/${campId}/expenses/`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
 
     return response?.data?.data;
   }
@@ -38,6 +40,7 @@ export function useExpenseService() {
     const response = await api.patch(
       `camps/${campId}/expenses/${expenseId}/`,
       data,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
     );
 
     return response?.data?.data;

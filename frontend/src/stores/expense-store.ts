@@ -8,6 +8,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { computed } from 'vue';
 
 export const useExpensesStore = defineStore('expenses', () => {
   const route = useRoute();
@@ -20,7 +21,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     error,
     reset,
     invalidate,
-    withErrorNotification,
+    withProgressNotification,
     lazyFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
@@ -36,35 +37,35 @@ export const useExpensesStore = defineStore('expenses', () => {
     invalidate();
   });
 
-  async function fetchData(campId?: string) {
-    const cid: string = campId ?? (route.params.camp as string);
-    checkNotNullWithError(cid);
+  async function fetchData() {
+    const campId: string = route.params.camp as string;
+    checkNotNullWithError(campId);
 
     await lazyFetch(async () => {
-      return await apiService.fetchExpenses(cid);
+      return await apiService.fetchExpenses(campId);
     });
   }
 
-  async function storeData(campId: string, createData: ExpenseCreateData) {
+  async function storeData(createData: ExpenseCreateData) {
+    const campId = route.params.camp as string;
     checkNotNullWithError(campId);
 
-    const expense = await apiService.createExpense(campId, createData);
+    return withProgressNotification('create', async () => {
+      const expense = await apiService.createExpense(campId, createData);
 
-    data.value?.push(expense);
+      data.value?.push(expense);
 
-    return expense;
+      return expense;
+    });
   }
 
-  async function updateData(
-    expenseId: string | undefined,
-    updateData: ExpenseUpdateData,
-  ) {
+  async function updateData(expenseId: string, updateData: ExpenseUpdateData) {
     const campId = route.params.camp as string;
 
     const cid = checkNotNullWithError(campId);
     const eid = checkNotNullWithNotification(expenseId);
 
-    return withErrorNotification('update', async () => {
+    return withProgressNotification('update', async () => {
       const expense = await apiService.updateExpense(cid, eid, updateData);
 
       // Replace the registration with a new one
@@ -74,13 +75,13 @@ export const useExpensesStore = defineStore('expenses', () => {
     });
   }
 
-  async function deleteData(expenseId?: string) {
+  async function deleteData(expenseId: string) {
     const campId = route.params.camp as string;
 
     const cid = checkNotNullWithError(campId);
     const eid = checkNotNullWithNotification(expenseId);
 
-    await withErrorNotification('delete', async () => {
+    await withProgressNotification('delete', async () => {
       await apiService.deleteExpense(cid, eid);
 
       // Replace the registration with a new one
@@ -88,9 +89,39 @@ export const useExpensesStore = defineStore('expenses', () => {
     });
   }
 
+  const people = computed<string[]>(() => {
+    if (!data.value) {
+      return [];
+    }
+
+    const names = data.value
+      .map((value) => value.paidBy)
+      .filter((value) => value != null);
+
+    const uniqueNames = [...new Set(names)];
+
+    return uniqueNames.sort((a, b) => a.localeCompare(b));
+  });
+
+  const categories = computed<string[]>(() => {
+    if (!data.value) {
+      return [];
+    }
+
+    const categories = data.value
+      .map((value) => value.category)
+      .filter((value) => value != null);
+
+    const uniqueCategories = [...new Set(categories)];
+
+    return uniqueCategories.sort((a, b) => a.localeCompare(b));
+  });
+
   return {
     reset,
     data,
+    people,
+    categories,
     isLoading,
     error,
     fetchData,

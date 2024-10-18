@@ -29,7 +29,7 @@ declare global {
         room?: Room & { beds: Bed[] };
         bed?: Bed;
         file?: File;
-        expense?: Expense;
+        expense?: Expense & { file: File | null };
       };
     }
   }

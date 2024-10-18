@@ -1,5 +1,8 @@
 <template>
-  <q-page class="column">
+  <page-state-handler
+    :error
+    class="column"
+  >
     <div
       class="absolute fit column"
       :class="tabBarBottom ? 'reverse' : ''"
@@ -72,7 +75,7 @@
         @click="onAddExpense()"
       />
     </q-page-sticky>
-  </q-page>
+  </page-state-handler>
 </template>
 
 <script lang="ts" setup>
@@ -86,6 +89,7 @@ import { useRoute, useRouter } from 'vue-router';
 import ExpensesGroupedPanel from 'components/campManagement/expenses/ExpensesGroupedPanel.vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
 import { useCampDetailsStore } from 'stores/camp-details-store.ts';
+import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
@@ -102,6 +106,10 @@ onMounted(() => {
 });
 
 const tab = ref<string>(initialTab());
+
+const error = computed<string | null>(() => {
+  return campDetailsStore.error || expensesStore.error;
+});
 
 function initialTab(): string {
   const fragment =
@@ -128,34 +136,6 @@ const expenses = computed<Expense[] | undefined>(() => {
     .reverse();
 });
 
-const people = computed<string[]>(() => {
-  if (!expensesStore.data) {
-    return [];
-  }
-
-  const names = expensesStore.data
-    .map((value) => value.paidBy)
-    .filter((value) => value != null);
-
-  const uniqueNames = [...new Set(names)];
-
-  return uniqueNames.sort((a, b) => a.localeCompare(b));
-});
-
-const categories = computed<string[]>(() => {
-  if (!expensesStore.data) {
-    return [];
-  }
-
-  const categories = expensesStore.data
-    .map((value) => value.category)
-    .filter((value) => value != null);
-
-  const uniqueCategories = [...new Set(categories)];
-
-  return uniqueCategories.sort((a, b) => a.localeCompare(b));
-});
-
 const tabBarBottom = computed<boolean>(() => {
   return quasar.platform.has.touch;
 });
@@ -166,19 +146,10 @@ function onAddExpense() {
     return;
   }
 
-  quasar
-    .dialog({
-      component: ExpenseCreateDialog,
-      componentProps: {
-        people: people.value,
-        categories: categories.value,
-      },
-      persistent: true,
-    })
-    .onOk((payload) => {
-      // TODO Show loading and number once completed
-      expensesStore.storeData(campId, payload);
-    });
+  quasar.dialog({
+    component: ExpenseCreateDialog,
+    persistent: true,
+  });
 }
 </script>
 

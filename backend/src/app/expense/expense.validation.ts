@@ -40,13 +40,14 @@ const update = {
   }),
   body: Joi.object<ExpenseUpdateData>({
     name: Joi.string().optional(),
-    description: Joi.string().optional(),
-    amount: Joi.number().optional(),
-    date: Joi.date().optional(),
-    category: Joi.string().optional(),
-    paidAt: Joi.date().optional(),
-    paidBy: Joi.string().optional(),
-    payee: Joi.string().optional(),
+    receiptNumber: Joi.number().integer().positive().allow(null).optional(),
+    description: Joi.string().allow(null, '').optional(),
+    amount: Joi.number().allow(null).optional(),
+    date: Joi.date().allow(null).optional(),
+    category: Joi.string().allow(null).optional(),
+    paidAt: Joi.date().allow(null).optional(),
+    paidBy: Joi.string().allow(null).optional(),
+    payee: Joi.string().allow(null, '').optional(),
   }),
 };
 
