@@ -101,6 +101,12 @@ const createManyModelFile = async (
   });
 };
 
+const getFileById = async (id: string) => {
+  return prisma.file.findUnique({
+    where: { id },
+  });
+};
+
 const getModelFile = async (modelName: string, modelId: string, id: string) => {
   return prisma.file.findFirst({
     where: {
@@ -406,11 +412,31 @@ const safeJoinFilePath = (rootPath: string, filename: string): string => {
   return filePath;
 };
 
+// This is a workaround because prisma does not support polymorphic relations
+const fileModelName = (file: File) => {
+  const modelNames = Object.keys(file)
+    .filter((key) => key.endsWith('Id'))
+    .filter((key) => file[key as keyof File] != null)
+    .map((key) => key.substring(0, key.length - 2));
+
+  if (modelNames.length > 1) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Invalid file model');
+  }
+
+  if (modelNames.length === 0) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'File is temporary');
+  }
+
+  return modelNames[0];
+};
+
 export default {
   saveModelFile,
   createManyModelFile,
   modelFileCreateData,
   moveFileToStorage,
+  fileModelName,
+  getFileById,
   getModelFile,
   getFileStream,
   queryModelFiles,

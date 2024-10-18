@@ -11,7 +11,7 @@ export const fileResource = (file: File): ServiceFile => {
     size: file.size,
     accessLevel: file.accessLevel ?? null,
     createdAt: file.createdAt.toISOString(),
-    url: `${config.origin}/files/${file.id}`,
+    url: `${config.origin}/api/v1/files/${file.id}`,
   };
 };
 

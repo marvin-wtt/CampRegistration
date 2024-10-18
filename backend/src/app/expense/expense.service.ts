@@ -12,6 +12,16 @@ const getExpenseById = async (id: string) => {
   });
 };
 
+const getExpenseWithCampById = async (id: string) => {
+  return prisma.expense.findFirst({
+    where: { id },
+    include: {
+      camp: true,
+      file: true,
+    },
+  });
+};
+
 const queryExpenses = async (campId: string) => {
   return prisma.expense.findMany({
     where: { campId },
