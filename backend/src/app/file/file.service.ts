@@ -37,7 +37,7 @@ const mapFields = (
   };
 };
 
-const moveFile = async (file: RequestFile) => {
+const moveFileToStorage = async (file: RequestFile) => {
   const sourcePath = file.path;
 
   const storage = getStorage();
@@ -48,23 +48,37 @@ const moveFile = async (file: RequestFile) => {
 const saveModelFile = async (
   model: ModelData | undefined,
   file: RequestFile,
+  name: string | undefined,
+  field?: string | undefined,
+  accessLevel?: string | undefined,
+) => {
+  // Move file first to ensure that they really exist
+  await moveFileToStorage(file);
+
+  const data = modelFileCreateData(model, file, name, field, accessLevel);
+
+  return prisma.file.create({
+    data,
+  });
+};
+
+const modelFileCreateData = (
+  model: ModelData | undefined,
+  file: RequestFile,
   name?: string | undefined,
   field?: string | undefined,
   accessLevel?: string | undefined,
 ) => {
-  const fileName = name + '.' + file.filename.split('.').pop();
+  const fileName = name
+    ? name + '.' + file.filename.split('.').pop()
+    : undefined;
   const fileData = mapFields(file, fileName, field, accessLevel);
   const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-  // Move file first to ensure that they really exist
-  await moveFile(file);
-
-  return prisma.file.create({
-    data: {
-      ...fileData,
-      ...modelData,
-    },
-  });
+  return {
+    ...fileData,
+    ...modelData,
+  };
 };
 
 const createManyModelFile = async (
@@ -84,6 +98,12 @@ const createManyModelFile = async (
 
   return prisma.file.createMany({
     data,
+  });
+};
+
+const getFileById = async (id: string) => {
+  return prisma.file.findUnique({
+    where: { id },
   });
 };
 
@@ -233,6 +253,7 @@ const deleteUnassignedFiles = async (): Promise<number> => {
     where: {
       campId: null,
       registrationId: null,
+      expenseId: null,
       createdAt: { lt: minAge },
     },
     select: {
@@ -391,9 +412,31 @@ const safeJoinFilePath = (rootPath: string, filename: string): string => {
   return filePath;
 };
 
+// This is a workaround because prisma does not support polymorphic relations
+const fileModelName = (file: File) => {
+  const modelNames = Object.keys(file)
+    .filter((key) => key.endsWith('Id'))
+    .filter((key) => file[key as keyof File] != null)
+    .map((key) => key.substring(0, key.length - 2));
+
+  if (modelNames.length > 1) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Invalid file model');
+  }
+
+  if (modelNames.length === 0) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'File is temporary');
+  }
+
+  return modelNames[0];
+};
+
 export default {
   saveModelFile,
   createManyModelFile,
+  modelFileCreateData,
+  moveFileToStorage,
+  fileModelName,
+  getFileById,
   getModelFile,
   getFileStream,
   queryModelFiles,

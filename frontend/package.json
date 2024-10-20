@@ -39,6 +39,7 @@
     "survey-creator-core": "^1.12.4",
     "survey-creator-vue": "^1.12.4",
     "survey-vue3-ui": "^1.12.4",
+    "v-money3": "^3.24.1",
     "vue": "^3.4.33",
     "vue-i18n": "^9.13.1",
     "vue-router": "^4.4.0",

@@ -25,7 +25,6 @@ export default configure((ctx) => {
       'language-pack',
       'axios',
       'surveyJS',
-      'apexcharts',
       'notify-defaults',
     ],
 

@@ -170,6 +170,13 @@ const items: NavigationItem[] = [
     to: { name: 'room-planner' },
   },
   {
+    name: 'expenses',
+    preview: true,
+    label: t('expenses'),
+    icon: 'payments',
+    to: { name: 'expenses' },
+  },
+  {
     name: 'tools',
     preview: true,
     label: t('tools'),
