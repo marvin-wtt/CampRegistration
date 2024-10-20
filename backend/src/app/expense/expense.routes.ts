@@ -1,7 +1,7 @@
 import express from 'express';
 import { auth, guard, multipart, validate } from 'middlewares';
 import { campManager } from 'guards';
-import { verifyModelExists } from 'utils/verifyModel';
+import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
 import expenseValidation from './expense.validation';
 import expenseService from './expense.service';
@@ -12,7 +12,8 @@ const router = express.Router({ mergeParams: true });
 router.param(
   'expenseId',
   catchParamAsync(async (req, res, id) => {
-    const expense = await expenseService.getExpenseById(id);
+    const camp = routeModel(req.models.camp);
+    const expense = await expenseService.getExpenseById(camp.id, id);
     req.models.expense = verifyModelExists(expense);
   }),
 );

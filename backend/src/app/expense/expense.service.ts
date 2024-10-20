@@ -5,9 +5,9 @@ import fileService from 'app/file/file.service';
 
 type RequestFile = Express.Multer.File;
 
-const getExpenseById = async (id: string) => {
+const getExpenseById = async (campId: string, id: string) => {
   return prisma.expense.findFirst({
-    where: { id },
+    where: { id, campId },
     include: { file: true },
   });
 };
@@ -104,6 +104,7 @@ const createFileCreateData = (
 
 export default {
   getExpenseById,
+  getExpenseWithCampById,
   queryExpenses,
   createExpense,
   updateExpenseById,

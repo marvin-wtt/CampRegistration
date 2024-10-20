@@ -43,7 +43,7 @@
       side
     >
       <q-btn
-        icon="priority_high"
+        icon="attach_file"
         color="warning"
         flat
         round

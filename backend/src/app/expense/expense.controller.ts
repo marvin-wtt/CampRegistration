@@ -63,7 +63,7 @@ const update = catchRequestAsync(async (req, res) => {
     payee: body.payee,
   });
 
-  if (updatedExpense.file != null && expense.file) {
+  if (expense.file?.id != null && updatedExpense.file?.id != expense.file?.id) {
     await fileService.deleteFile(expense.file.id);
   }
 

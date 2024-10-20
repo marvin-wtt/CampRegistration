@@ -60,7 +60,6 @@
             :value="props.expense.payee ?? '-'"
           />
 
-          <!-- TODO Replace with file name -->
           <expense-details-item
             :label="t('expense.file')"
             :value="expense.file?.name ?? '-'"
@@ -73,13 +72,13 @@
         v-if="showFilePreview"
         class="col-grow"
       >
-        <object
-          :data="expense.file?.url"
-          :type="expense.file?.type"
-          class="fit column justify-center content-center"
-        >
-          <div class="col text-center">No viewer available</div>
-        </object>
+        <iframe
+          :src="expense.file?.url"
+          :title="expense.file?.name"
+          class="fit"
+          style="border: none; width: 100%"
+          width="1000px"
+        />
       </q-card-section>
 
       <q-card-actions
