@@ -1,8 +1,8 @@
 <template>
   <q-page padding>
-    <a class="text-h4">
+    <div class="text-h4 q-pa-sm">
       {{ t('title') }}
-    </a>
+    </div>
 
     <!-- content -->
     <q-list bordered>
@@ -17,6 +17,8 @@
               <q-btn
                 :label="t('fgyo.actions.participation_list')"
                 color="primary"
+                rounded
+                @click="exportParticipants"
               />
             </div>
           </q-card-section>

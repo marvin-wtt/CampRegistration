@@ -9,6 +9,7 @@ import axios, { AxiosError } from 'axios';
 import { useFileService } from './FileService';
 import { useFeedbackService } from './FeedbackService';
 import { useExpenseService } from './ExpenseService.ts';
+import { usePublicFileService } from 'src/services/PublicFileService.ts';
 
 export function useAPIService() {
   return {
@@ -22,6 +23,7 @@ export function useAPIService() {
     ...useFileService(),
     ...useFeedbackService(),
     ...useExpenseService(),
+    ...usePublicFileService(),
   };
 }
 
