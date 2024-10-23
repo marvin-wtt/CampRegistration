@@ -30,11 +30,22 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
+import FGYOParticipationListDialog from 'components/campManagement/tools/partispantList/FGYOParticipationListDialog.vue';
 
 const { t } = useI18n();
+const quasar = useQuasar();
+
+function exportParticipants() {
+  quasar.dialog({
+    component: FGYOParticipationListDialog,
+  });
+}
 </script>
 
 <i18n lang="yaml" locale="en">
+title: 'Tools'
+
 fgyo:
   label: 'Franco-German Youth Office (FGYO)'
   actions:
@@ -42,6 +53,8 @@ fgyo:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+title: 'Werkzeuge'
+
 fgyo:
   label: 'Deutsch-Französische Jugendwerk (DFJW)'
   actions:
@@ -49,6 +62,8 @@ fgyo:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+title: 'Outils'
+
 fgyo:
   label: 'L’Office franco-allemand pour la Jeunesse (OFAJ)'
   actions:
