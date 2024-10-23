@@ -10,6 +10,7 @@ const roomResource = (room: RoomWithBeds): RoomResource => {
   return {
     id: room.id,
     name: room.name,
+    order: room.order,
     beds: room.beds.map((value) => bedResource(value)),
   };
 };

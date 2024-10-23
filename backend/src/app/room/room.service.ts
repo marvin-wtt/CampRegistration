@@ -1,4 +1,4 @@
-import prisma from 'client';
+import prisma, { Prisma } from 'client';
 import { ulid } from 'utils/ulid';
 
 const getRoomById = async (campId: string, id: string) => {
@@ -12,15 +12,25 @@ const queryRooms = async (campId: string) => {
   return prisma.room.findMany({
     where: { campId },
     include: { beds: true },
+    orderBy: {
+      order: 'asc',
+    },
   });
 };
 
-const createRoom = async (campId: string, name: string, capacity: number) => {
+const createRoom = async (
+  campId: string,
+  data: {
+    name: string | Record<string, string>;
+    order?: number;
+  },
+  capacity: number,
+) => {
   return prisma.room.create({
     data: {
       id: ulid(),
-      name,
       campId,
+      ...data,
       beds: {
         createMany: {
           data: Array.from({ length: capacity }).map(() => ({
@@ -33,12 +43,10 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
   });
 };
 
-const updateRoomById = async (roomId: string, name: string) => {
+const updateRoomById = async (roomId: string, data: Prisma.RoomUpdateInput) => {
   return prisma.room.update({
     where: { id: roomId },
-    data: {
-      name,
-    },
+    data,
     include: { beds: true },
   });
 };

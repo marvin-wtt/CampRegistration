@@ -22,7 +22,9 @@ const index = catchRequestAsync(async (req, res) => {
 const store = catchRequestAsync(async (req, res) => {
   const { campId } = req.params;
   const { name, capacity } = req.body;
+
   const room = await roomService.createRoom(campId, name, capacity);
+
   res.status(httpStatus.CREATED).json(resource(roomResource(room)));
 });
 
