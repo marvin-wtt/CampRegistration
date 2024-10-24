@@ -40,10 +40,22 @@
         </div>
       </q-card-section>
 
+      <q-card-section
+        v-if="progress != null"
+        class="q-pa-sm"
+      >
+        <q-linear-progress
+          :value="progress.current / progress.total"
+          stripe
+          rounded
+        />
+      </q-card-section>
+
       <q-card-actions align="center">
         <q-btn
           :label="t('action.cancel')"
           color="primary"
+          :disable="progress != null"
           rounded
           outline
           @click="onDialogCancel"
@@ -51,6 +63,7 @@
         <q-btn
           :label="t('action.export')"
           :loading
+          :disable="progress != null"
           rounded
           color="primary"
           @click="generateFiles"
@@ -101,6 +114,13 @@ const config = computed<FileConfig>(() => {
   return participantListConfig[key];
 });
 
+interface Progress {
+  current: number;
+  total: number;
+}
+
+const progress = ref<Progress | null>(null);
+
 const responsiblePerson = ref<string | undefined>(authStore.user?.name);
 const roleMappings = ref<
   Record<string, keyof FileConfig['fields']['counselors']['role']['values']>
@@ -144,9 +164,15 @@ async function generateFiles() {
     nights,
   );
 
+  progress.value = {
+    current: 0,
+    total: groups.length,
+  };
   for (const group of groups) {
+    progress.value.current++;
     await writeFile(group);
   }
+  progress.value = null;
 
   onDialogOK();
 }
