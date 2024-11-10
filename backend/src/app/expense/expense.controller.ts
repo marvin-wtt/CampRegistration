@@ -50,18 +50,23 @@ const store = catchRequestAsync(async (req, res) => {
 const update = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);
   const body = req.body as ExpenseUpdateData;
+  const file = req.file;
 
-  const updatedExpense = await expenseService.updateExpenseById(expense.id, {
-    receiptNumber: body.receiptNumber,
-    name: body.name,
-    description: body.description,
-    amount: body.amount,
-    date: body.date,
-    category: body.category,
-    paidAt: body.paidAt,
-    paidBy: body.paidBy,
-    payee: body.payee,
-  });
+  const updatedExpense = await expenseService.updateExpenseById(
+    expense.id,
+    {
+      receiptNumber: body.receiptNumber,
+      name: body.name,
+      description: body.description,
+      amount: body.amount,
+      date: body.date,
+      category: body.category,
+      paidAt: body.paidAt,
+      paidBy: body.paidBy,
+      payee: body.payee,
+    },
+    file,
+  );
 
   if (expense.file?.id != null && updatedExpense.file?.id != expense.file?.id) {
     await fileService.deleteFile(expense.file.id);

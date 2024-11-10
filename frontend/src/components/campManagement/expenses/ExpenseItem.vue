@@ -1,14 +1,14 @@
 <template>
-  <!-- TODO Add payment status -->
   <q-item
     clickable
     @click="onItemClick"
   >
-    <q-item-section avatar>
-      <q-avatar
-        :color="avatarColor"
-        :text-color="avatarTextColor"
-      >
+    <q-item-section
+      avatar
+      :style="avatarBorderStyle"
+      class="avatar-border"
+    >
+      <q-avatar>
         {{ props.expense.receiptNumber ?? '-' }}
       </q-avatar>
     </q-item-section>
@@ -27,19 +27,23 @@
     </q-item-section>
 
     <q-item-section
-      v-if="!isPaid"
+      v-if="isUnpaid"
       side
     >
       <q-btn
-        icon="priority_high"
+        icon="euro"
         color="negative"
         flat
         round
         @click.stop
-      />
+      >
+        <q-tooltip>
+          {{ t('tooltip.unpaid') }}
+        </q-tooltip>
+      </q-btn>
     </q-item-section>
     <q-item-section
-      v-else-if="!hasReceipt"
+      v-else-if="missingReceipt"
       side
     >
       <q-btn
@@ -48,11 +52,15 @@
         flat
         round
         @click.stop
-      />
+      >
+        <q-tooltip>
+          {{ t('tooltip.noFile') }}
+        </q-tooltip>
+      </q-btn>
     </q-item-section>
 
     <q-item-section
-      class="text-bold"
+      class="text-bold text-caption"
       side
     >
       {{ n(props.expense.amount, 'currency') }}
@@ -95,11 +103,11 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { Expense } from '@camp-registration/common/entities';
-import { NamedColor, useQuasar } from 'quasar';
+import { useQuasar } from 'quasar';
 import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
 import ExpenseUpdateDialog from 'components/campManagement/expenses/ExpenseUpdateDialog.vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
-import { computed } from 'vue';
+import { computed, StyleValue } from 'vue';
 
 const { t, d, n } = useI18n();
 const quasar = useQuasar();
@@ -109,20 +117,42 @@ const props = defineProps<{
   expense: Expense;
 }>();
 
-const isPaid = computed<boolean>(() => {
-  return props.expense.paidBy == null || props.expense.paidAt === null;
+const isUnpaid = computed<boolean>(() => {
+  if (props.expense.amount === 0) {
+    return false;
+  }
+
+  return props.expense.paidBy == null || props.expense.paidAt == null;
 });
 
-const hasReceipt = computed<boolean>(() => {
-  return props.expense.file != null;
+const missingReceipt = computed<boolean>(() => {
+  return props.expense.file == null;
 });
 
-const avatarColor = computed<NamedColor | undefined>(() => {
-  return isPaid.value ? undefined : 'negative';
-});
+const borderColor = (): string => {
+  // Amount not defined
+  if (props.expense.amount === 0) {
+    return 'grey';
+  }
 
-const avatarTextColor = computed<string | undefined>(() => {
-  return isPaid.value ? undefined : 'white';
+  // Unpaid
+  if (props.expense.paidBy == null || props.expense.paidAt == null) {
+    return '#ff0000';
+  }
+
+  // No receipt
+  if (props.expense.file == null) {
+    return '#f1c037';
+  }
+
+  // Others
+  return 'green';
+};
+
+const avatarBorderStyle = computed<StyleValue>(() => {
+  return {
+    borderLeftColor: borderColor(),
+  };
 });
 
 function onItemClick() {
@@ -176,6 +206,10 @@ dialog:
   delete:
     title: 'Delete { name }?'
     message: 'Are you sure you want to delete this expense permanently?'
+
+tooltip:
+  noFile: 'No file is attached to this expense'
+  unpaid: 'This expense is not paid'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -188,6 +222,10 @@ dialog:
   delete:
     title: '{ name } löschen?'
     message: 'Möchtest du diese Ausgabe wirklich dauerhaft löschen?'
+
+tooltip:
+  noFile: 'Dieser Ausgabe ist keine Datei beigefügt'
+  unpaid: 'Diese Ausgabe ist nicht bezahlt'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -200,6 +238,15 @@ dialog:
   delete:
     title: 'Supprimer { name } ?'
     message: 'Voulez-vous vraiment supprimer cette dépense définitivement ?'
+
+tooltip:
+  noFile: "Aucun fichier n'est joint à cette dépense"
+  unpaid: "Cette dépense n'est pas payée"
 </i18n>
 
-<style scoped></style>
+<style scoped>
+.avatar-border {
+  border-left-width: 2px;
+  border-left-style: solid;
+}
+</style>

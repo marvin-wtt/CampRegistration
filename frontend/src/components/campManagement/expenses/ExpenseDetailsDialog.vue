@@ -40,7 +40,7 @@
 
           <expense-details-item
             :label="t('expense.amount')"
-            :value="props.expense.amount"
+            :value="n(props.expense.amount, 'currency')"
           />
 
           <expense-details-item
@@ -72,12 +72,11 @@
         v-if="showFilePreview"
         class="col-grow"
       >
+        <!-- FIXME Mouse has offset to the right -->
         <iframe
           :src="expense.file?.url"
           :title="expense.file?.name"
-          class="fit"
-          style="border: none; width: 100%"
-          width="1000px"
+          style="border: none; width: 100%; height: 100%"
         />
       </q-card-section>
 
@@ -111,7 +110,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
-const { t, d } = useI18n();
+const { t, d, n } = useI18n();
 
 const showFilePreview = computed<boolean>(() => {
   return !!props.expense.file && quasar.screen.gt.sm;
