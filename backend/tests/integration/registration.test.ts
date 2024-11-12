@@ -470,7 +470,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const file = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
-          registration: { create: RegistrationFactory.build() },
+          registration: {
+            create: RegistrationFactory.build({
+              camp: { create: CampFactory.build() },
+            }),
+          },
         });
 
         const data = {
