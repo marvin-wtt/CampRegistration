@@ -24,7 +24,7 @@ const store = {
   body: Joi.object<ExpenseCreateData>({
     name: Joi.string().required(),
     description: Joi.string().optional(),
-    amount: Joi.number().required(),
+    amount: Joi.number().precision(2).required(),
     date: Joi.date().required(),
     category: Joi.string().optional(),
     paidAt: Joi.date().optional(),
