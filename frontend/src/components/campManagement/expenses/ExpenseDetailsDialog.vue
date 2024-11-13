@@ -63,20 +63,20 @@
           <expense-details-item
             :label="t('expense.file')"
             :value="expense.file?.name ?? '-'"
-            clickable
+            :clickable="!showFilePreview"
+            @click="downloadFile"
           />
         </q-list>
       </q-card-section>
 
       <q-card-section
         v-if="showFilePreview"
-        class="col-grow"
+        class="col-grow relative-position overflow-hidden"
       >
-        <!-- FIXME Mouse has offset to the right -->
         <iframe
           :src="expense.file?.url"
           :title="expense.file?.name"
-          style="border: none; width: 100%; height: 100%"
+          class="file-viewer"
         />
       </q-card-section>
 
@@ -126,6 +126,11 @@ const dialogStyle = computed<StyleValue>(() => {
     maxWidth: '80vw',
   };
 });
+
+function downloadFile() {
+  if (!showFilePreview.value) return;
+  // TODO
+}
 </script>
 
 <i18n lang="yaml" locale="en">
@@ -185,4 +190,15 @@ action:
   ok: 'Ok'
 </i18n>
 
-<style scoped></style>
+<style scoped>
+.file-viewer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+</style>
