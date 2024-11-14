@@ -11,7 +11,16 @@
         {{ t('title') }}
       </q-card-section>
       <q-card-section class="col-shrink">
-        <q-list>
+        <expense-update-form
+          v-if="edit"
+          :expense="props.expense"
+          @close="edit = false"
+        />
+
+        <q-list
+          v-else
+          class="details-list"
+        >
           <expense-details-item
             :label="t('expense.name')"
             :value="props.expense.name ?? '-'"
@@ -28,6 +37,11 @@
           />
 
           <expense-details-item
+            :label="t('expense.amount')"
+            :value="n(props.expense.amount, 'currency')"
+          />
+
+          <expense-details-item
             v-if="props.expense.date"
             :label="t('expense.date')"
             :value="props.expense.date ? d(props.expense.date, 'short') : '-'"
@@ -36,11 +50,6 @@
           <expense-details-item
             :label="t('expense.description')"
             :value="props.expense.description ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.amount')"
-            :value="n(props.expense.amount, 'currency')"
           />
 
           <expense-details-item
@@ -66,6 +75,15 @@
             :clickable="!showFilePreview"
             @click="downloadFile"
           />
+
+          <div class="row justify-center">
+            <q-btn
+              :label="t('action.edit')"
+              color="primary"
+              rounded
+              @click="edit = true"
+            />
+          </div>
         </q-list>
       </q-card-section>
 
@@ -100,7 +118,8 @@ import { Expense } from '@camp-registration/common/entities';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import ExpenseDetailsItem from 'components/campManagement/expenses/ExpenseDetailsItem.vue';
-import { computed, StyleValue } from 'vue';
+import { computed, ref, StyleValue } from 'vue';
+import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
 
 const props = defineProps<{
   expense: Expense;
@@ -111,6 +130,8 @@ defineEmits([...useDialogPluginComponent.emits]);
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const { t, d, n } = useI18n();
+
+const edit = ref<boolean>(false);
 
 const showFilePreview = computed<boolean>(() => {
   return !!props.expense.file && quasar.screen.gt.sm;
@@ -200,5 +221,13 @@ action:
   width: 100%;
   height: 100%;
   border: none;
+}
+
+.details-list {
+  min-width: 281px;
+}
+
+.details-list > .q-item {
+  min-height: 63px;
 }
 </style>
