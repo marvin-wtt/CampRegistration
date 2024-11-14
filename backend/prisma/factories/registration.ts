@@ -9,6 +9,7 @@ export const RegistrationFactory = {
     return {
       id: ulid(),
       data: {},
+      camp: {},
       ...data,
     };
   },
