@@ -178,6 +178,7 @@ const items: NavigationItem[] = [
   },
   {
     name: 'tools',
+    preview: true,
     label: t('tools'),
     icon: 'home_repair_service',
     to: { name: 'tools' },

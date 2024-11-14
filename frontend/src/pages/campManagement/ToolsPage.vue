@@ -12,15 +12,20 @@
         default-opened
       >
         <q-card>
-          <q-card-section>
-            <div class="q-gutter-x-md">
-              <q-btn
-                :label="t('fgyo.actions.participation_list')"
-                color="primary"
-                rounded
-                @click="exportParticipants"
-              />
-            </div>
+          <q-card-section class="q-gutter-x-md">
+            <q-btn
+              :label="t('fgyo.actions.participation_list')"
+              color="primary"
+              rounded
+              @click="exportParticipants"
+            />
+
+            <q-btn
+              :label="t('fgyo.actions.receipts_list')"
+              color="primary"
+              rounded
+              @click="exportExpenses"
+            />
           </q-card-section>
         </q-card>
       </q-expansion-item>
@@ -31,10 +36,17 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
+import FGYOExpenseExportDialog from 'components/campManagement/tools/receiptList/FGYOExpenseExportDialog.vue';
 import FGYOParticipationListDialog from 'components/campManagement/tools/partispantList/FGYOParticipationListDialog.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
+
+function exportExpenses() {
+  quasar.dialog({
+    component: FGYOExpenseExportDialog,
+  });
+}
 
 function exportParticipants() {
   quasar.dialog({
@@ -50,6 +62,7 @@ fgyo:
   label: 'Franco-German Youth Office (FGYO)'
   actions:
     participation_list: 'Generate participation list'
+    receipts_list: 'Generate receipts list'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -59,6 +72,7 @@ fgyo:
   label: 'Deutsch-Französische Jugendwerk (DFJW)'
   actions:
     participation_list: 'Teilnehmerliste generieren'
+    receipts_list: 'Belegliste generieren'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -68,4 +82,5 @@ fgyo:
   label: 'L’Office franco-allemand pour la Jeunesse (OFAJ)'
   actions:
     participation_list: 'Générer la liste des participants'
+    receipts_list: 'Générer la liste des justificatifs'
 </i18n>
