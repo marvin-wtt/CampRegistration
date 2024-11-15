@@ -26,6 +26,7 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@quasar/extras": "^1.16.12",
+    "@tato30/vue-pdf": "^1.11.2",
     "apexcharts": "^3.50.0",
     "axios": "^1.7.4",
     "dom-to-image": "^2.6.0",
@@ -64,7 +65,7 @@
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.27.0",
-    "happy-dom": "^13.0.6",
+    "happy-dom": "^15.11.5",
     "prettier": "^3.3.3",
     "rimraf": "^5.0.9",
     "typescript": "^5.5.3",
