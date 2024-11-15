@@ -10,7 +10,7 @@
       <q-card-section class="text-h5 text-center col-12">
         {{ t('title') }}
       </q-card-section>
-      <q-card-section class="col-shrink">
+      <q-card-section :class="showFilePreview ? 'col-shrink' : 'col'">
         <expense-update-form
           v-if="edit"
           :expense="props.expense"
@@ -76,22 +76,41 @@
             @click="downloadFile"
           />
 
-          <div class="row justify-center">
+          <div class="row justify-center q-gutter-sm">
+            <q-btn
+              :label="t('action.delete')"
+              color="negative"
+              rounded
+              @click="deleteExpense"
+            />
             <q-btn
               :label="t('action.edit')"
               color="primary"
               rounded
-              @click="edit = true"
+              @click="editExpense"
             />
           </div>
         </q-list>
       </q-card-section>
 
       <q-card-section
-        v-if="showFilePreview"
-        class="col-grow relative-position overflow-hidden"
+        v-if="showFilePreview && expense.file != null"
+        class="col-grow relative-position overflow-hidden q-mr-sm"
       >
+        <pdf-viewer
+          v-if="expense.file.type === 'application/pdf'"
+          :url="expense.file.url"
+          class="file-viewer"
+        />
+
+        <image-viewer
+          v-else-if="expense.file.type.startsWith('image')"
+          :url="expense.file.url"
+          class="file-viewer"
+        />
+
         <iframe
+          v-else
           :src="expense.file?.url"
           :title="expense.file?.name"
           class="file-viewer"
@@ -104,6 +123,7 @@
       >
         <q-btn
           :label="t('action.ok')"
+          :disable="edit"
           rounded
           color="primary"
           @click="onDialogCancel"
@@ -120,6 +140,9 @@ import { useI18n } from 'vue-i18n';
 import ExpenseDetailsItem from 'components/campManagement/expenses/ExpenseDetailsItem.vue';
 import { computed, ref, StyleValue } from 'vue';
 import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
+import PdfViewer from 'components/PdfViewer.vue';
+import ImageViewer from 'components/ImageViewer.vue';
+import { useExpensesStore } from 'stores/expense-store.ts';
 
 const props = defineProps<{
   expense: Expense;
@@ -130,11 +153,12 @@ defineEmits([...useDialogPluginComponent.emits]);
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const { t, d, n } = useI18n();
+const expensesStore = useExpensesStore();
 
 const edit = ref<boolean>(false);
 
 const showFilePreview = computed<boolean>(() => {
-  return !!props.expense.file && quasar.screen.gt.sm;
+  return props.expense.file != null && quasar.screen.gt.sm;
 });
 
 const dialogStyle = computed<StyleValue>(() => {
@@ -144,13 +168,39 @@ const dialogStyle = computed<StyleValue>(() => {
 
   return {
     width: '1000px',
-    maxWidth: '80vw',
+    maxWidth: '80dvw',
   };
 });
 
 function downloadFile() {
   if (!showFilePreview.value) return;
   // TODO
+}
+
+function editExpense() {
+  edit.value = true;
+}
+
+function deleteExpense() {
+  quasar
+    .dialog({
+      title: t('dialog.delete.title', { name: props.expense.name }),
+      message: t('dialog.delete.message'),
+      ok: {
+        label: t('action.delete'),
+        rounded: true,
+        color: 'negative',
+      },
+      cancel: {
+        label: t('action.cancel'),
+        color: 'primary',
+        rounded: true,
+        outline: true,
+      },
+    })
+    .onOk(() => {
+      expensesStore.deleteData(props.expense.id);
+    });
 }
 </script>
 
@@ -169,7 +219,15 @@ expense:
   payee: 'Payee'
   receiptNumber: 'Receipt Nr.'
 
+dialog:
+  delete:
+    title: 'Delete { name }?'
+    message: 'Are you sure you want to delete this expense permanently?'
+
 action:
+  cancel: 'Cancel'
+  delete: 'Delete'
+  edit: 'Edit'
   ok: 'Ok'
 </i18n>
 
@@ -188,13 +246,20 @@ expense:
   payee: 'Empfänger'
   receiptNumber: 'Beleg-Nr.'
 
+dialog:
+  delete:
+    title: '{ name } löschen?'
+    message: 'Möchtest du diese Ausgabe wirklich dauerhaft löschen?'
+
 action:
+  cancel: 'Abbrechen'
+  delete: 'Löschen'
+  edit: 'Bearbeitem'
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Détails'
-
 expense:
   amount: 'Montant'
   category: 'Catégorie'
@@ -207,7 +272,15 @@ expense:
   payee: 'Bénéficiaire'
   receiptNumber: 'Numéro de reçu'
 
+dialog:
+  delete:
+    title: 'Supprimer { name } ?'
+    message: 'Voulez-vous vraiment supprimer cette dépense définitivement ?'
+
 action:
+  cancel: 'Annuler'
+  delete: 'Supprimer'
+  edit: 'Editer'
   ok: 'Ok'
 </i18n>
 
@@ -224,7 +297,7 @@ action:
 }
 
 .details-list {
-  min-width: 281px;
+  min-width: 250px;
 }
 
 .details-list > .q-item {
