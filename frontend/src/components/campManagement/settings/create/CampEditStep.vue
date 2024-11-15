@@ -51,7 +51,7 @@ const props = withDefaults(
   defineProps<{
     name: number;
     title?: string;
-    last: boolean;
+    last?: boolean;
   }>(),
   {
     title: '',
