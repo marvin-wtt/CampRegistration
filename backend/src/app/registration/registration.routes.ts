@@ -58,5 +58,12 @@ router.delete(
   validate(registrationValidation.destroy),
   registrationController.destroy,
 );
+router.get(
+  '/events',
+  auth(),
+  guard(campManager),
+  validate(registrationValidation.events),
+  registrationController.events,
+);
 
 export default router;
