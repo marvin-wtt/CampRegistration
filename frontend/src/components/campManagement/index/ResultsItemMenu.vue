@@ -57,7 +57,7 @@
         v-ripple
         class="text-warning"
         clickable
-        @click="emit('enable')"
+        @click="emit('disable')"
       >
         <q-item-section avatar>
           <q-icon name="unpublished" />
