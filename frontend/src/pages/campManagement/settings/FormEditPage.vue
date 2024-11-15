@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { storeToRefs } from 'pinia';
@@ -54,7 +54,7 @@ const error = computed(() => {
   );
 });
 
-onMounted(async () => {
+async function init() {
   await campDetailsStore.fetchData();
   await campFileStore.fetchData();
   await registrationStore.fetchData();
@@ -78,7 +78,8 @@ onMounted(async () => {
   } else {
     showEditor.value = true;
   }
-});
+}
+init();
 
 async function saveForm(form: SurveyJSCampData): Promise<void> {
   const data = {
