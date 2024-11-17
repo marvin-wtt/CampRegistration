@@ -191,7 +191,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from 'components/administration/users/UserCreateDialog.vue';
@@ -215,9 +215,7 @@ const pagination = ref({
   rowsPerPage: 0,
 });
 
-onMounted(async () => {
-  await fetchAll();
-});
+fetchAll();
 
 const rows = computed<User[]>(() => {
   if (!users.value) {

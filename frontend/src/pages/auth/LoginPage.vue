@@ -100,7 +100,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
@@ -120,7 +120,7 @@ const error = computed(() => {
   return authStore.error;
 });
 
-onMounted(() => {
+function init() {
   // Suppress any previous errors
   authStore.reset();
 
@@ -136,7 +136,8 @@ onMounted(() => {
   if (typeof queryEmail === 'string') {
     email.value = queryEmail;
   }
-});
+}
+init();
 
 function login() {
   authStore.login(email.value, password.value, remember.value);

@@ -108,7 +108,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
@@ -127,10 +127,8 @@ const error = computed(() => {
   return authStore.error;
 });
 
-onMounted(() => {
-  // Suppress any previous errors
-  authStore.reset();
-});
+// Suppress any previous errors
+authStore.reset();
 
 const passwordRequirements = {
   min: 8,
