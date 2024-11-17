@@ -19,7 +19,7 @@
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useMeta } from 'quasar';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -39,9 +39,7 @@ useMeta(() => {
   };
 });
 
-onMounted(async () => {
-  await campDetailsStore.fetchData();
-});
+campDetailsStore.fetchData();
 
 const loading = computed<boolean>(() => {
   return campDetailsStore.isLoading;

@@ -82,7 +82,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
@@ -108,10 +108,8 @@ const roomStore = useRoomPlannerStore();
 
 const addLoading = ref(false);
 
-onMounted(async () => {
-  await registrationsStore.fetchData();
-  await roomStore.fetchRooms();
-});
+registrationsStore.fetchData();
+roomStore.fetchRooms();
 
 const loading = computed<boolean>(() => {
   return roomStore.isLoading;

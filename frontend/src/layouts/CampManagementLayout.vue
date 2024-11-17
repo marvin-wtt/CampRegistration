@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -107,7 +107,7 @@ const campDetailStore = useCampDetailsStore();
 
 const { user } = storeToRefs(authStore);
 
-onMounted(async () => {
+async function init() {
   if (!authStore.user) {
     // Fetch user instead of init to force redirect on error
     await authStore.fetchUser();
@@ -115,7 +115,8 @@ onMounted(async () => {
   if (route.params.camp) {
     await campDetailStore.fetchData();
   }
-});
+}
+init();
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;

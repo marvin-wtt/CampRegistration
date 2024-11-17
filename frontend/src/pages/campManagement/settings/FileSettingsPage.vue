@@ -78,7 +78,7 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
 import { QTableColumn } from 'quasar';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
@@ -91,10 +91,8 @@ const quasar = useQuasar();
 const campStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
 
-onMounted(async () => {
-  await campStore.fetchData();
-  await campFileStore.fetchData();
-});
+campStore.fetchData();
+campFileStore.fetchData();
 
 const uploadOngoing = ref(false);
 const deletionOngoing = ref(false);

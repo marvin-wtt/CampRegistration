@@ -7,12 +7,6 @@ declare module '@vue/runtime-core' {
   }
 }
 
-// Resolve url depending on environment
-const apiUrl =
-  window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : window.origin;
-
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
 // If any client changes this (global) instance, it might be a
@@ -20,7 +14,7 @@ const apiUrl =
 // "export default () => {}" function below (which runs individually
 // for each client)
 const api = axios.create({
-  baseURL: `${apiUrl}/api/v1/`,
+  baseURL: `${window.origin}/api/v1/`,
   // Needed for auth
   withCredentials: true,
 });
