@@ -13,8 +13,9 @@ declare module '@vue/runtime-core' {
 // good idea to move this instance creation inside the
 // "export default () => {}" function below (which runs individually
 // for each client)
+const apiUrl = window.origin;
 const api = axios.create({
-  baseURL: `${window.origin}/api/v1/`,
+  baseURL: `${apiUrl}/api/v1/`,
   // Needed for auth
   withCredentials: true,
 });
