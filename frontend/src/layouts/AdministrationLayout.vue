@@ -79,7 +79,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -100,12 +100,10 @@ const authStore = useAuthStore();
 
 const { user } = storeToRefs(authStore);
 
-onMounted(async () => {
-  if (!authStore.user) {
-    // Fetch user instead of init to force redirect on error
-    await authStore.fetchUser();
-  }
-});
+if (!authStore.user) {
+  // Fetch user instead of init to force redirect on error
+  authStore.fetchUser();
+}
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
