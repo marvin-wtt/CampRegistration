@@ -27,8 +27,6 @@ export const useExpensesStore = defineStore('expenses', () => {
     checkNotNullWithNotification,
   } = useServiceHandler<Expense[]>('expense');
 
-  // TODO add i18n
-
   authBus.on('logout', () => {
     reset();
   });
