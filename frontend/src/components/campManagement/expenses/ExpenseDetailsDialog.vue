@@ -10,6 +10,7 @@
       <q-card-section class="text-h5 text-center col-12">
         {{ t('title') }}
       </q-card-section>
+
       <q-card-section :class="showFilePreview ? 'col-shrink' : 'col'">
         <expense-update-form
           v-if="edit"
@@ -135,7 +136,7 @@
 
 <script lang="ts" setup>
 import { Expense } from '@camp-registration/common/entities';
-import { useDialogPluginComponent, useQuasar } from 'quasar';
+import { exportFile, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import ExpenseDetailsItem from 'components/campManagement/expenses/ExpenseDetailsItem.vue';
 import { computed, ref, StyleValue } from 'vue';
@@ -173,8 +174,13 @@ const dialogStyle = computed<StyleValue>(() => {
 });
 
 function downloadFile() {
-  if (!showFilePreview.value) return;
-  // TODO
+  const file = props.expense.file;
+
+  if (file == null || !showFilePreview.value) return;
+
+  exportFile(file.name, file.url, {
+    mimeType: file.type,
+  });
 }
 
 function editExpense() {

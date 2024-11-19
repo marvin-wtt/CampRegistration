@@ -49,22 +49,13 @@
     </div>
 
     <q-scroll-area class="col viewer">
-      <!-- TODO Cross origin should not be needed, only for testing -->
-
       <div class="image-wrapper">
         <img
           ref="imageRef"
           :src="props.url"
-          crossorigin="use-credentials"
           :style="imageStyle"
         />
       </div>
-
-      <!--      <q-img-->
-      <!--        crossorigin="use-credentials"-->
-      <!--        :src="props.url"-->
-      <!--        :style="imageStyle"-->
-      <!--      />-->
     </q-scroll-area>
   </div>
 </template>
