@@ -55,15 +55,15 @@ const update = catchRequestAsync(async (req, res) => {
   const updatedExpense = await expenseService.updateExpenseById(
     expense.id,
     {
-      receiptNumber: body.receiptNumber,
+      receiptNumber: body.receiptNumber ?? null,
       name: body.name,
-      description: body.description,
+      description: body.description ?? null,
       amount: body.amount,
       date: body.date,
-      category: body.category,
-      paidAt: body.paidAt,
-      paidBy: body.paidBy,
-      payee: body.payee,
+      category: body.category ?? null,
+      paidAt: body.paidAt ?? null,
+      paidBy: body.paidBy ?? null,
+      payee: body.payee ?? null,
     },
     file,
   );

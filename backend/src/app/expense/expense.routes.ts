@@ -38,7 +38,7 @@ router.post(
   validate(expenseValidation.store),
   expenseController.store,
 );
-router.patch(
+router.put(
   '/:expenseId',
   auth(),
   guard(campManager),

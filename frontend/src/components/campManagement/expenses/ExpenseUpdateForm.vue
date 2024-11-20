@@ -241,7 +241,6 @@ import type {
 import { reactive, toRaw, watch } from 'vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
 import { storeToRefs } from 'pinia';
-import { updateDiff } from 'src/utils/objectDiff.ts';
 
 const { t } = useI18n();
 const expensesStore = useExpensesStore();
@@ -258,7 +257,8 @@ const emit = defineEmits<{
 const data = reactive<ExpenseUpdateData>(initialData());
 
 function initialData(): ExpenseUpdateData {
-  const { paidAt, date, file, ...others } = structuredClone(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, paidAt, date, file, ...others } = structuredClone(
     toRaw(props.expense),
   );
   const data: ExpenseUpdateData = others;
@@ -300,9 +300,7 @@ function resetFile() {
 }
 
 function onSubmit(): void {
-  const updateData = updateDiff(initialData(), data) as ExpenseUpdateData;
-
-  expensesStore.updateData(props.expense.id, updateData);
+  expensesStore.updateData(props.expense.id, data);
 
   emit('close');
 }

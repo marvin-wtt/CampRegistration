@@ -37,7 +37,7 @@ export function useExpenseService() {
     expenseId: string,
     data: ExpenseUpdateData,
   ): Promise<Expense> {
-    const response = await api.patch(
+    const response = await api.put(
       `camps/${campId}/expenses/${expenseId}/`,
       data,
       { headers: { 'Content-Type': 'multipart/form-data' } },
