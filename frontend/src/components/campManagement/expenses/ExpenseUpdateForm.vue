@@ -251,7 +251,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'close'): void;
+  (e: 'edit', data: ExpenseUpdateData): void;
+  (e: 'cancel'): void;
 }>();
 
 const data = reactive<ExpenseUpdateData>(initialData());
@@ -300,13 +301,11 @@ function resetFile() {
 }
 
 function onSubmit(): void {
-  expensesStore.updateData(props.expense.id, data);
-
-  emit('close');
+  emit('edit', data);
 }
 
 function onReset() {
-  emit('close');
+  emit('cancel');
 }
 </script>
 

@@ -3,6 +3,7 @@ import { request } from '../utils/request';
 import {
   CampFactory,
   CampManagerFactory,
+  FileFactory,
   UserFactory,
 } from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
@@ -12,6 +13,7 @@ import { ulid } from 'ulidx';
 import {
   expenseCreateRequestData,
   expenseMinimal,
+  expenseUpdateRequestData,
 } from '../fixtures/expense/expense.fixture';
 import prisma from '../utils/prisma';
 
@@ -33,6 +35,12 @@ const createCampWithManagerAndToken = async () => {
 };
 
 const createExpenseWithCamp = async (camp: Camp) => {
+  return ExpenseFactory.create({
+    camp: { connect: { id: camp.id } },
+  });
+};
+
+const createExpenseForCamp = async (camp: Camp) => {
   return ExpenseFactory.create({
     camp: { connect: { id: camp.id } },
   });
@@ -90,7 +98,10 @@ describe('/api/v1/camps/:campId/expenses/', () => {
     it('should respond with `401` status code when unauthenticated', async () => {
       const camp = await CampFactory.create();
 
-      await request().get(`/api/v1/camps/${camp.id}/rooms`).send().expect(401);
+      await request()
+        .get(`/api/v1/camps/${camp.id}/expenses`)
+        .send()
+        .expect(401);
     });
   });
 
@@ -173,11 +184,33 @@ describe('/api/v1/camps/:campId/expenses/', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      const roomCount = await prisma.expense.count();
-      expect(roomCount).toBe(1);
+      const expenseCount = await prisma.expense.count();
+      expect(expenseCount).toBe(1);
 
       expect(body).toHaveProperty('data');
       expect(body.data).toHaveProperty('id');
+    });
+
+    it('should respond with `201` status code when file is provided', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      const { body } = await request()
+        .post(`/api/v1/camps/${camp.id}/expenses/`)
+        .field('name', 'Some expense')
+        .field('amount', '42')
+        .field('date', '2024-01-01')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .auth(accessToken, { type: 'bearer' })
+        .expectOrPrint(201);
+
+      expect(body.data).toHaveProperty('id');
+      expect(body.data).toHaveProperty('file');
+
+      const expenseFileCount = await prisma.file.count({
+        where: { expenseId: body.data.id },
+      });
+
+      expect(expenseFileCount).toBe(1);
     });
 
     it.each(expenseCreateRequestData)(
@@ -190,11 +223,9 @@ describe('/api/v1/camps/:campId/expenses/', () => {
           .post(`/api/v1/camps/${camp.id}/expenses/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
-          .expectOrPrint(statusCode);
+          .expect(statusCode);
       },
     );
-
-    it.todo('should respond with `201` status code when file is provided');
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -223,7 +254,166 @@ describe('/api/v1/camps/:campId/expenses/', () => {
     });
   });
 
-  describe('PATCH /api/v1/camps/:campId/expenses/:expenseId', () => {});
+  describe('PUT /api/v1/camps/:campId/expenses/:expenseId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const expense = await createExpenseForCamp(camp);
 
-  describe('DELETE /api/v1/camps/:campId/expenses/:expenseId', () => {});
+      const { body } = await request()
+        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .send(expenseMinimal)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const expenseCount = await prisma.expense.count();
+      expect(expenseCount).toBe(1);
+
+      expect(body).toHaveProperty('data');
+      expect(body.data).toHaveProperty('id');
+    });
+
+    it('should respond with `200` status code when file is provided', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const expense = await createExpenseForCamp(camp);
+
+      const { body } = await request()
+        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .field('name', 'Some expense')
+        .field('amount', '42')
+        .field('date', '2024-01-01')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .auth(accessToken, { type: 'bearer' })
+        .expectOrPrint(200);
+
+      expect(body.data).toHaveProperty('file');
+
+      const expenseFileCount = await prisma.file.count({
+        where: { expenseId: expense.id },
+      });
+
+      expect(expenseFileCount).toBe(1);
+    });
+
+    it('should delete an exisiting file', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const expense = await createExpenseForCamp(camp);
+      // Create file
+      await FileFactory.create({
+        expense: { connect: { id: expense.id } },
+      });
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .send(expenseMinimal)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const expenseFileCount = await prisma.file.count({
+        where: { expenseId: expense.id },
+      });
+
+      expect(expenseFileCount).toBe(0);
+    });
+
+    it.each(expenseUpdateRequestData)(
+      'should validate the request body | $name',
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      async ({ data, statusCode }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const expense = await createExpenseForCamp(camp);
+
+        await request()
+          .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expectOrPrint(statusCode);
+      },
+    );
+
+    it('should respond with `404` status code when expense does not exist', async () => {
+      const camp = await CampFactory.create();
+      const expenseId = ulid();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/expenses/${expenseId}/`)
+        .send(expenseMinimal)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const camp = await CampFactory.create();
+      const expense = await createExpenseForCamp(camp);
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .send(expenseMinimal)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const camp = await CampFactory.create();
+      const expense = await createExpenseForCamp(camp);
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .send(expenseMinimal)
+        .expect(401);
+    });
+  });
+
+  describe('DELETE /api/v1/camps/:campId/expenses/:expenseId', () => {
+    it('should respond with `204` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const expense = await createExpenseForCamp(camp);
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      const expenseCount = await prisma.expense.count();
+      expect(expenseCount).toBe(0);
+    });
+
+    it('should respond with `404` status code when expense does not exist', async () => {
+      const camp = await CampFactory.create();
+      const expenseId = ulid();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/expenses/${expenseId}/`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const camp = await CampFactory.create();
+      const expense = await createExpenseForCamp(camp);
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+
+      const expenseCount = await prisma.expense.count();
+      expect(expenseCount).toBe(1);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const camp = await CampFactory.create();
+      const expense = await createExpenseForCamp(camp);
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .expect(401);
+
+      const expenseCount = await prisma.expense.count();
+      expect(expenseCount).toBe(1);
+    });
+  });
 });

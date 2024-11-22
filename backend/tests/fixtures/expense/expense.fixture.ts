@@ -63,14 +63,6 @@ export const expenseCreateRequestData: RequestData[] = [
   },
   // Invalid
   {
-    name: 'Amount too many decimal places',
-    data: {
-      ...expenseMinimal,
-      amount: 123.456,
-    },
-    statusCode: httpStatus.BAD_REQUEST,
-  },
-  {
     name: 'Amount missing',
     data: removeProps(expenseMinimal, ['amount']),
     statusCode: httpStatus.BAD_REQUEST,
@@ -83,14 +75,6 @@ export const expenseCreateRequestData: RequestData[] = [
   {
     name: 'Date missing',
     data: removeProps(expenseMinimal, ['name']),
-    statusCode: httpStatus.BAD_REQUEST,
-  },
-  {
-    name: 'Amount invalid precision',
-    data: {
-      ...expenseMinimal,
-      amount: 123.456,
-    },
     statusCode: httpStatus.BAD_REQUEST,
   },
   {
@@ -109,11 +93,73 @@ export const expenseCreateRequestData: RequestData[] = [
     },
     statusCode: httpStatus.BAD_REQUEST,
   },
+];
+
+export const expenseUpdateRequestData: RequestData[] = [
+  {
+    name: 'Complete body',
+    data: {
+      name: 'Some expense',
+      description: 'Text expense',
+      amount: 42,
+      date: '2024-01-01',
+      category: 'General',
+      paidAt: '2024-01-01',
+      paidBy: 'Jhon',
+      payee: 'Tom Smith LTT',
+    },
+    statusCode: httpStatus.OK,
+  },
+  {
+    name: 'Minimal body',
+    data: expenseMinimal,
+    statusCode: httpStatus.OK,
+  },
+  {
+    name: 'Negative amount',
+    data: {
+      ...expenseMinimal,
+      amount: -100,
+    },
+    statusCode: httpStatus.OK,
+  },
+  {
+    name: 'Amount with decimals',
+    data: {
+      ...expenseMinimal,
+      amount: 1.11,
+    },
+    statusCode: httpStatus.OK,
+  },
+  // Invalid
+  {
+    name: 'Amount missing',
+    data: removeProps(expenseMinimal, ['amount']),
+    statusCode: httpStatus.BAD_REQUEST,
+  },
+  {
+    name: 'Date missing',
+    data: removeProps(expenseMinimal, ['date']),
+    statusCode: httpStatus.BAD_REQUEST,
+  },
+  {
+    name: 'Date missing',
+    data: removeProps(expenseMinimal, ['name']),
+    statusCode: httpStatus.BAD_REQUEST,
+  },
+  {
+    name: 'Amount as invalid string',
+    data: {
+      ...expenseMinimal,
+      amount: '42,3',
+    },
+    statusCode: httpStatus.BAD_REQUEST,
+  },
   {
     name: 'Date format invalid',
     data: {
       ...expenseMinimal,
-      date: 42,
+      amount: '01.01.2024',
     },
     statusCode: httpStatus.BAD_REQUEST,
   },

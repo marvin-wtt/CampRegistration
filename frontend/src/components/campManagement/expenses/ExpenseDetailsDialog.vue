@@ -15,7 +15,8 @@
         <expense-update-form
           v-if="edit"
           :expense="props.expense"
-          @close="edit = false"
+          @edit="updateExpense"
+          @cancel="edit = false"
         />
 
         <q-list
@@ -135,7 +136,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Expense } from '@camp-registration/common/entities';
+import { Expense, ExpenseUpdateData } from '@camp-registration/common/entities';
 import { exportFile, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import ExpenseDetailsItem from 'components/campManagement/expenses/ExpenseDetailsItem.vue';
@@ -185,6 +186,10 @@ function downloadFile() {
 
 function editExpense() {
   edit.value = true;
+}
+
+function updateExpense(data: ExpenseUpdateData) {
+  expensesStore.updateData(props.expense.id, data);
 }
 
 function deleteExpense() {
