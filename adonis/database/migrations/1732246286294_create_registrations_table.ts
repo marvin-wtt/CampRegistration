@@ -1,0 +1,30 @@
+import { BaseSchema } from '@adonisjs/lucid/schema'
+
+export default class extends BaseSchema {
+  protected tableName = 'registrations'
+
+  async up() {
+    this.schema.createTable(this.tableName, (table) => {
+      table.string('id', 26).primary()
+      table.string('camp_id', 26).nullable().index()
+      table.json('data').notNullable()
+      table.json('camp_data').defaultTo('{}')
+      table.string('locale', 5).defaultTo('en-US')
+      table.boolean('waiting_list').defaultTo(true)
+
+      table
+        .foreign('camp_id')
+        .references('id')
+        .inTable('camps')
+        .onDelete('CASCADE')
+        .onUpdate('CASCADE')
+
+      table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
+      table.timestamp('updated_at', { useTz: true }).nullable()
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
+}
