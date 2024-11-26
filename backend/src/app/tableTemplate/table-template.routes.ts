@@ -1,8 +1,7 @@
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard } from 'middlewares';
 import { campManager } from 'guards';
 import express from 'express';
 import templateController from './table-template.controller';
-import templateValidation from './table-template.validation';
 import tableTemplateService from './table-template.service';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
@@ -18,33 +17,19 @@ router.param(
   }),
 );
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(templateValidation.index),
-  templateController.index,
-);
-router.get(
-  '/:templateId',
-  auth(),
-  guard(campManager),
-  validate(templateValidation.show),
-  templateController.show,
-);
+router.get('/', auth(), guard(campManager), templateController.index);
+router.get('/:templateId', auth(), guard(campManager), templateController.show);
 router.post('/', auth(), guard(campManager), templateController.store);
 router.put(
   '/:templateId',
   auth(),
   guard(campManager),
-  validate(templateValidation.update),
   templateController.update,
 );
 router.delete(
   '/:templateId',
   auth(),
   guard(campManager),
-  validate(templateValidation.destroy),
   templateController.destroy,
 );
 

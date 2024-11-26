@@ -1,9 +1,8 @@
 import express from 'express';
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard } from 'middlewares';
 import { campManager } from 'guards';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
-import bedValidation from './bed.validation';
 import bedService from './bed.service';
 import bedController from './bed.controller';
 
@@ -18,26 +17,8 @@ router.param(
   }),
 );
 
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(bedValidation.store),
-  bedController.store,
-);
-router.patch(
-  '/:bedId',
-  auth(),
-  guard(campManager),
-  validate(bedValidation.update),
-  bedController.update,
-);
-router.delete(
-  '/:bedId',
-  auth(),
-  guard(campManager),
-  validate(bedValidation.destroy),
-  bedController.destroy,
-);
+router.post('/', auth(), guard(campManager), bedController.store);
+router.patch('/:bedId', auth(), guard(campManager), bedController.update);
+router.delete('/:bedId', auth(), guard(campManager), bedController.destroy);
 
 export default router;

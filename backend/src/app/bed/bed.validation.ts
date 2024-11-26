@@ -1,33 +1,33 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    roomId: Joi.string(),
+const store = z.object({
+  params: z.object({
+    campId: z.string(),
+    roomId: z.string(),
   }),
-  body: Joi.object({
-    registrationId: Joi.string().optional(),
+  body: z.object({
+    registrationId: z.string().optional(),
   }),
-};
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string(),
-    roomId: Joi.string(),
-    bedId: Joi.string(),
+const update = z.object({
+  params: z.object({
+    campId: z.string(),
+    roomId: z.string(),
+    bedId: z.string(),
   }),
-  body: Joi.object({
-    registrationId: Joi.string().allow(null),
+  body: z.object({
+    registrationId: z.string().nullable(),
   }),
-};
+});
 
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    roomId: Joi.string().required(),
-    bedId: Joi.string(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string(),
+    roomId: z.string(),
+    bedId: z.string(),
   }),
-};
+});
 
 export default {
   store,

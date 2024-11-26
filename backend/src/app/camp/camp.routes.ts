@@ -1,10 +1,9 @@
 import express, { Request } from 'express';
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard } from 'middlewares';
 import { or, campActive, campManager } from 'guards';
 import { catchParamAsync } from 'utils/catchAsync';
 import { verifyModelExists } from 'utils/verifyModel';
 import { authUserId } from 'utils/authUserId';
-import campValidation from './camp.validation';
 import campController from './camp.controller';
 import campService from './camp.service';
 import managerRoutes from 'app/manager/manager.routes';
@@ -29,7 +28,7 @@ const queryShowAllGuard = (req: Request) => {
   const query = req.query as CampQuery;
 
   // Admins will bypass this guard
-  return query.showAll != true;
+  return query.showAll === undefined;
 };
 
 const referenceCampGuard = (req: Request) => {
@@ -52,38 +51,10 @@ router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
 router.use('/:campId/files', campFileRoutes);
 
-router.get(
-  '/',
-  validate(campValidation.index),
-  guard(queryShowAllGuard),
-  campController.index,
-);
-router.get(
-  '/:campId',
-  guard(or(campManager, campActive)),
-  validate(campValidation.show),
-  campController.show,
-);
-router.post(
-  '/',
-  auth(),
-  validate(campValidation.store),
-  guard(referenceCampGuard),
-  campController.store,
-);
-router.patch(
-  '/:campId',
-  auth(),
-  guard(campManager),
-  validate(campValidation.update),
-  campController.update,
-);
-router.delete(
-  '/:campId',
-  auth(),
-  guard(campManager),
-  validate(campValidation.destroy),
-  campController.destroy,
-);
+router.get('/', guard(queryShowAllGuard), campController.index);
+router.get('/:campId', guard(or(campManager, campActive)), campController.show);
+router.post('/', auth(), guard(referenceCampGuard), campController.store);
+router.patch('/:campId', auth(), guard(campManager), campController.update);
+router.delete('/:campId', auth(), guard(campManager), campController.destroy);
 
 export default router;

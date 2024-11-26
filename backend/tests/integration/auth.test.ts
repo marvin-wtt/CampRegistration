@@ -88,6 +88,25 @@ describe('/api/v1/auth', async () => {
       expect(manager?.invitation).toBeNull();
     });
 
+    it('should set the role to "USER"', async () => {
+      await request()
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
+        })
+        .expect(201);
+
+      const user = await prisma.user.findFirst({
+        where: {
+          email: 'test@email.net',
+        },
+      });
+
+      expect(user.role).toBe('USER');
+    });
+
     it('should respond with a `400` status code if an invalid email body is provided', async () => {
       await request()
         .post('/api/v1/auth/register')
@@ -138,7 +157,7 @@ describe('/api/v1/auth', async () => {
       expect(userCount).toBe(1);
     });
 
-    it('should respond with a `400` status code if the role is set in request body', async () => {
+    it('should ignore the role in request body if set', async () => {
       await request()
         .post('/api/v1/auth/register')
         .send({
@@ -147,11 +166,15 @@ describe('/api/v1/auth', async () => {
           password: 'Password1',
           role: 'ADMIN',
         })
-        .expect(400);
+        .expect(201);
 
-      const userCount = await prisma.user.count();
+      const user = await prisma.user.findFirst({
+        where: {
+          email: 'test@email.net',
+        },
+      });
 
-      expect(userCount).toBe(0);
+      expect(user.role).toBe('USER');
     });
 
     it('should encode the user password', async () => {

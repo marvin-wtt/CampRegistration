@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-import Joi from 'joi';
+import { z } from 'zod';
+import { validateEnv } from 'core/validation/env';
 
 // This must happen before importing the individual configs
 dotenv.config();
@@ -8,22 +9,21 @@ import authConfig from './auth.config';
 import emailConfig from './email.config';
 import storageOptions from './storage.config';
 
-const { value: envVars, error } = Joi.object()
-  .keys({
-    NODE_ENV: Joi.string()
-      .valid('production', 'development', 'test')
-      .required(),
-    APP_PORT: Joi.number().min(0).max(65535).default(8000),
-    APP_URL: Joi.string().uri().required(),
-    APP_NAME: Joi.string().required().description('The name of the app.'),
+const MainEnvSchema = z
+  .object({
+    NODE_ENV: z.enum(['production', 'development', 'test']),
+    APP_PORT: z.coerce
+      .number()
+      .min(0)
+      .max(65535)
+      .describe('The port on which is app listens')
+      .default(8000),
+    APP_URL: z.string().url().describe('URL, where the app is hosted.'),
+    APP_NAME: z.string().readonly().describe('The name of the app.'),
   })
-  .unknown()
-  .prefs({ errors: { label: 'key' } })
-  .validate(process.env);
+  .readonly();
 
-if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
-}
+const envVars = validateEnv(MainEnvSchema);
 
 export default {
   env: envVars.NODE_ENV,

@@ -1,42 +1,45 @@
-import Joi from 'joi';
-import { ServiceFileCreateData } from '@camp-registration/common/entities';
+import { z } from 'zod';
 
-const stream = {
-  params: Joi.object({
-    fileId: Joi.string().required(),
-  }).unknown(),
-  query: Joi.object({
-    download: Joi.boolean(),
+const stream = z.object({
+  params: z.object({
+    fileId: z.string(),
   }),
-};
+  query: z
+    .object({
+      download: z.boolean(),
+    })
+    .partial(),
+});
 
-const show = {
-  params: Joi.object({
-    fileId: Joi.string().required(),
-  }).unknown(),
-};
-
-const index = {
-  query: Joi.object({
-    page: Joi.number().integer(),
-    name: Joi.string(),
-    type: Joi.string(),
+const show = z.object({
+  params: z.object({
+    fileId: z.string(),
   }),
-};
+});
 
-const store = {
-  body: Joi.object<ServiceFileCreateData>({
-    name: Joi.string(),
-    field: Joi.string(),
-    accessLevel: Joi.string(),
+const index = z.object({
+  query: z
+    .object({
+      page: z.number().int().positive(),
+      name: z.string(),
+      type: z.string(),
+    })
+    .partial(),
+});
+
+const store = z.object({
+  body: z.object({
+    name: z.string().optional(),
+    field: z.string().optional(),
+    accessLevel: z.string().optional(),
   }),
-};
+});
 
-const destroy = {
-  params: Joi.object({
-    fileId: Joi.string().required(),
-  }).unknown(),
-};
+const destroy = z.object({
+  params: z.object({
+    fileId: z.string(),
+  }),
+});
 
 export default {
   stream,

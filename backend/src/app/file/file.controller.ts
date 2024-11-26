@@ -3,13 +3,18 @@ import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import fileService from './file.service';
 import httpStatus from 'http-status';
 import ApiError from 'utils/ApiError';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import { Request } from 'express';
 import fileResource from './file.resource';
 import { File } from '@prisma/client';
+import validator from './file.validation';
+import { validateRequest } from 'core/validation/request';
 
 const stream = catchRequestAsync(async (req, res) => {
-  const { download } = req.query;
+  const {
+    query: { download },
+  } = await validateRequest(req, validator.stream);
+
   const file = routeModel(req.models.file);
   const fileStream = await fileService.getFileStream(file);
 
@@ -32,11 +37,11 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const model = verifyModelExists(getRelationModel(req));
+  const {
+    query: { page, name, type },
+  } = await validateRequest(req, validator.index);
 
-  const page = req.query.page ? Number(req.query.page) : undefined;
-  const name = req.query.name as string | undefined;
-  const type = req.query.type as string | undefined;
+  const model = verifyModelExists(getRelationModel(req));
 
   const data = (await fileService.queryModelFiles(
     model,
@@ -57,7 +62,9 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { accessLevel, field, name } = req.body;
+  const {
+    body: { accessLevel, field, name },
+  } = await validateRequest(req, validator.store);
   const file = req.file;
 
   if (!file) {

@@ -3,8 +3,10 @@ import { catchRequestAsync } from 'utils/catchAsync';
 import authService from 'app/auth/auth.service';
 import userService from './user.service';
 import { routeModel } from 'utils/verifyModel';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import userResource from './user.resource';
+import { validateRequest } from 'core/validation/request';
+import validator from './user.validation';
 
 const index = catchRequestAsync(async (req, res) => {
   const users = await userService.queryUsers();
@@ -19,7 +21,10 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { email, password, name, role, locale, locked } = req.body;
+  const {
+    body: { email, password, name, role, locale, locked },
+  } = await validateRequest(req, validator.store);
+
   const user = await userService.createUser({
     name,
     email,
@@ -33,9 +38,10 @@ const store = catchRequestAsync(async (req, res) => {
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { userId } = req.params;
-  const { email, password, name, role, locale, locked, emailVerified } =
-    req.body;
+  const {
+    params: { userId },
+    body: { email, password, name, role, locale, locked, emailVerified },
+  } = await validateRequest(req, validator.update);
 
   if (password || locked) {
     await authService.logoutAllDevices(userId);

@@ -1,92 +1,81 @@
-import Joi from 'joi';
-import {
-  TableTemplate,
-  TableColumnTemplate,
-} from '@camp-registration/common/entities';
+import { z } from 'zod';
+import { translatedValue } from 'core/validation/helper';
 
-const TableTemplateBodySchema = Joi.object<TableTemplate>()
-  .keys({
-    title: Joi.alternatives()
-      .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
-      .required(),
-    columns: Joi.array()
-      .items(
-        Joi.object<TableColumnTemplate>({
-          name: Joi.string().required(),
-          field: Joi.alternatives()
-            .try(Joi.string(), Joi.function())
-            .required(),
-          label: Joi.alternatives()
-            .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
-            .required(),
-          required: Joi.boolean(),
-          align: Joi.string().valid('left', 'right', 'center'),
-          sortable: Joi.boolean(),
-          sortOrder: Joi.string().valid('ad', 'da'),
-          style: Joi.alternatives().try(Joi.string(), Joi.function()),
-          classes: Joi.alternatives().try(Joi.string(), Joi.function()),
-          headerStyle: Joi.string(),
-          headerClasses: Joi.string(),
-          renderAs: Joi.string(),
-          renderOptions: Joi.object().allow(null),
-          isArray: Joi.boolean(),
-          editable: Joi.boolean(),
-          headerVertical: Joi.boolean(),
-          shrink: Joi.boolean(),
-          hideIf: Joi.string().allow(null),
-          showIf: Joi.string().allow(null),
-        }),
-      )
-      .required(),
-    order: Joi.number().required(),
-    filter: Joi.string().allow(null),
-    filterWaitingList: Joi.string().valid('include', 'exclude', 'only'),
-    filterRoles: Joi.array<string>(),
-    printOptions: Joi.object({
-      orientation: Joi.string().valid('portrait', 'landscape'),
+const StringOrFunctionSchema = z.union([z.string(), z.function()]);
+
+const TableTemplateBodySchema = z.object({
+  title: translatedValue(),
+  columns: z.array(
+    z.object({
+      name: z.string(),
+      field: StringOrFunctionSchema,
+      label: translatedValue(),
+      required: z.boolean().optional(),
+      align: z.enum(['left', 'right', 'center']).optional(),
+      sortable: z.boolean().optional(),
+      sortOrder: z.enum(['ad', 'da']).optional(),
+      style: StringOrFunctionSchema.optional(),
+      classes: StringOrFunctionSchema.optional(),
+      headerStyle: z.string().optional(),
+      headerClasses: z.string().optional(),
+      renderAs: z.string().optional(),
+      renderOptions: z.unknown().nullable().optional(),
+      isArray: z.boolean().optional(),
+      editable: z.boolean().optional(),
+      headerVertical: z.boolean().optional(),
+      shrink: z.boolean().optional(),
+      hideIf: z.string().nullable().optional(),
+      showIf: z.string().nullable().optional(),
     }),
-    indexed: Joi.boolean(),
-    actions: Joi.boolean(),
-    sortBy: Joi.string().allow(null),
-    sortDirection: Joi.string().valid('asc', 'desc'),
-    generated: Joi.boolean(),
-  })
-  .options({ stripUnknown: true });
-
-const show = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    templateId: Joi.string().required(),
+  ),
+  order: z.number(),
+  filter: z.string().nullable().optional(),
+  filterWaitingList: z.enum(['include', 'exclude', 'only']).optional(),
+  filterRoles: z.array(z.string()).optional(),
+  printOptions: z.object({
+    orientation: z.enum(['portrait', 'landscape']).optional(),
   }),
-};
+  indexed: z.boolean().optional(),
+  actions: z.boolean().optional(),
+  sortBy: z.string().nullable().optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
+  generated: z.boolean().optional(),
+});
 
-const index = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const show = z.object({
+  params: z.object({
+    campId: z.string(),
+    templateId: z.string(),
   }),
-};
+});
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const index = z.object({
+  params: z.object({
+    campId: z.string(),
+  }),
+});
+
+const store = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
   body: TableTemplateBodySchema,
-};
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    templateId: Joi.string().required(),
+const update = z.object({
+  params: z.object({
+    campId: z.string(),
+    templateId: z.string(),
   }),
   body: TableTemplateBodySchema,
-};
+});
 
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    templateId: Joi.string().required(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string(),
+    templateId: z.string(),
   }),
-};
+});
 
 export default {
   show,

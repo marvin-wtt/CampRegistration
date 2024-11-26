@@ -1,7 +1,6 @@
 import express from 'express';
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard } from 'middlewares';
 import userController from './user.controller';
-import userValidation from './user.validation';
 import userService from './user.service';
 import { verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
@@ -18,26 +17,8 @@ router.param(
 
 router.get('/', auth(), guard(), userController.index);
 router.get('/:userId', auth(), guard(), userController.show);
-router.post(
-  '/',
-  auth(),
-  guard(),
-  validate(userValidation.store),
-  userController.store,
-);
-router.patch(
-  '/:userId',
-  auth(),
-  guard(),
-  validate(userValidation.update),
-  userController.update,
-);
-router.delete(
-  '/:userId',
-  auth(),
-  guard(),
-  validate(userValidation.destroy),
-  userController.destroy,
-);
+router.post('/', auth(), guard(), userController.store);
+router.patch('/:userId', auth(), guard(), userController.update);
+router.delete('/:userId', auth(), guard(), userController.destroy);
 
 export default router;

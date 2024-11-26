@@ -1,4 +1,3 @@
-export { default as validate } from './validate.middleware';
 export * from './error.middleware';
 export {
   authLimiter,

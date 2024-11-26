@@ -144,15 +144,14 @@ describe('/api/v1/camps', () => {
         });
         const accessToken = generateAccessToken(user);
 
-        const { status, body } = await request()
+        const { body } = await request()
           .get(`/api/v1/camps/`)
           .query({
             showAll: true,
           })
           .auth(accessToken, { type: 'bearer' })
-          .send();
-
-        expect(status).toBe(200);
+          .send()
+          .expect(200);
 
         expect(body).toHaveProperty('data');
         expect(body.data.length).toBe(3);
@@ -163,14 +162,13 @@ describe('/api/v1/camps', () => {
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
 
-        const { status } = await request()
+        await request()
           .get(`/api/v1/camps/`)
           .query({
             showAll: true,
           })
-          .send();
-
-        expect(status).toBe(401);
+          .send()
+          .expect(401);
       });
 
       it('should respond with `403` status code when showAll is set and user is not an admin', async () => {
@@ -181,15 +179,14 @@ describe('/api/v1/camps', () => {
         const user = await UserFactory.create();
         const accessToken = generateAccessToken(user);
 
-        const { status } = await request()
+        await request()
           .get(`/api/v1/camps/`)
           .query({
             showAll: true,
           })
           .auth(accessToken, { type: 'bearer' })
-          .send();
-
-        expect(status).toBe(403);
+          .send()
+          .expect(403);
       });
 
       it.skip('should filter by name', async () => {

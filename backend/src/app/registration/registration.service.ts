@@ -9,6 +9,8 @@ import notificationService from 'app/notification/notification.service';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
 import config from 'config';
+import { Request } from 'express';
+import { routeModel } from '../../utils/verifyModel';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -60,6 +62,27 @@ const getParticipantsCountByCountry = async (
   );
 };
 
+const validateRegistrationData = (
+  formHelper: ReturnType<typeof formUtils>,
+): void | never => {
+  if (formHelper.hasDataErrors()) {
+    const errors = formHelper.getDataErrorFields();
+
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `Invalid survey data: ${errors}`,
+    );
+  }
+
+  const unknownDataFields = formHelper.unknownDataFields();
+  if (unknownDataFields.length > 0) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `Unknown fields '${unknownDataFields.join(', ')}'`,
+    );
+  }
+};
+
 const createRegistration = async (
   camp: Camp,
   data: Pick<Registration, 'data' | 'locale'>,
@@ -67,6 +90,9 @@ const createRegistration = async (
   const id = ulid();
   const form = formUtils(camp);
   form.updateData(data.data);
+
+  validateRegistrationData(form);
+
   // Extract files first before the value are mapped to the URL
   const fileIdentifiers = form.getFileIdentifiers();
   form.mapFileValues((value) => {

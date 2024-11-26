@@ -1,9 +1,11 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import tableTemplateService from './table-template.service';
 import tableTemplateResource from './table-template.resource';
 import { routeModel } from 'utils/verifyModel';
+import { validateRequest } from 'core/validation/request';
+import validator from './table-template.validation';
 
 const show = catchRequestAsync(async (req, res) => {
   const template = routeModel(req.models.tableTemplate);
@@ -12,7 +14,10 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  const {
+    params: { campId },
+  } = await validateRequest(req, validator.index);
+
   const templates = await tableTemplateService.queryTemplates(campId);
   const resources = templates.map((value) => tableTemplateResource(value));
 
@@ -20,27 +25,39 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const data = req.body;
-  const template = await tableTemplateService.createTemplate(campId, data);
+  const {
+    params: { campId },
+    body,
+  } = await validateRequest(req, validator.store);
+
+  const template = await tableTemplateService.createTemplate(campId, body);
+
   res
     .status(httpStatus.CREATED)
     .json(resource(tableTemplateResource(template)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { templateId } = req.params;
-  const data = req.body;
+  const {
+    params: { templateId },
+    body,
+  } = await validateRequest(req, validator.update);
+
   const template = await tableTemplateService.updateTemplateById(
     templateId,
-    data,
+    body,
   );
+
   res.json(resource(tableTemplateResource(template)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { templateId } = req.params;
+  const {
+    params: { templateId },
+  } = await validateRequest(req, validator.destroy);
+
   await tableTemplateService.deleteTemplateById(templateId);
+
   res.status(httpStatus.NO_CONTENT).send();
 });
 
