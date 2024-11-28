@@ -31,6 +31,7 @@ const store = catchRequestAsync(async (req, res) => {
   } = await validateRequest(req, validator.store);
 
   const room = await roomService.createRoom(campId, name, capacity);
+
   res.status(httpStatus.CREATED).json(resource(roomResource(room)));
 });
 
@@ -41,6 +42,7 @@ const update = catchRequestAsync(async (req, res) => {
   } = await validateRequest(req, validator.update);
 
   const room = await roomService.updateRoomById(roomId, name);
+
   res.json(resource(roomResource(room)));
 });
 
