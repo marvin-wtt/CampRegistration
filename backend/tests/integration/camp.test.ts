@@ -16,9 +16,10 @@ import {
   campActivePrivate,
   campActivePublic,
   campCreateInternational,
-  campCreateInvalidBody,
+  campCreatedBody,
   campCreateNational,
   campInactive,
+  campUpdateBody,
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
@@ -389,7 +390,7 @@ describe('/api/v1/camps', () => {
     });
 
     describe('invalid request body', () => {
-      it.each(campCreateInvalidBody)(
+      it.each(campCreatedBody)(
         'should validate the request body | $name',
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         async ({ data, expected }) => {
@@ -408,11 +409,9 @@ describe('/api/v1/camps', () => {
       it('should set default form when reference Id is undefined', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
 
-        const data = campCreateNational;
-
         const { body } = await request()
           .post(`/api/v1/camps/`)
-          .send(data)
+          .send(campCreateNational)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
@@ -443,11 +442,9 @@ describe('/api/v1/camps', () => {
       it('should set default themes when reference Id is undefined', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
 
-        const data = campCreateNational;
-
         const { body } = await request()
           .post(`/api/v1/camps/`)
-          .send(data)
+          .send(campCreateNational)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
@@ -478,11 +475,9 @@ describe('/api/v1/camps', () => {
       it('should create default table templates when reference Id is undefined', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
 
-        const data = campCreateNational;
-
         const { body } = await request()
           .post(`/api/v1/camps/`)
-          .send(data)
+          .send(campCreateNational)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
@@ -805,19 +800,27 @@ describe('/api/v1/camps', () => {
       await request().patch(`/api/v1/camps/${camp.id}`).send().expect(401);
     });
 
-    it.todo(
-      'should respond with `400` status code when body is invalid',
-      async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        // TODO Test all fields
+    describe('request body', () => {
+      it.each(campUpdateBody)(
+        'should validate the request body | $name',
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        async ({ data, camp: campData, expected }) => {
+          const campCreateData = {
+            ...campCreateNational,
+            ...campData,
+          };
 
-        await request()
-          .patch(`/api/v1/camps/${camp.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(400);
-      },
-    );
+          const { camp, accessToken } =
+            await createCampWithManagerAndToken(campCreateData);
+
+          await request()
+            .patch(`/api/v1/camps/${camp.id}`)
+            .send(data)
+            .auth(accessToken, { type: 'bearer' })
+            .expectOrPrint(expected);
+        },
+      );
+    });
 
     it('should respond with `404` status code when camp id does not exists', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
