@@ -5,18 +5,15 @@ import registrationService from 'app/registration/registration.service';
 import tableTemplateService from 'app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import { catchRequestAsync } from 'utils/catchAsync';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import { authUserId } from 'utils/authUserId';
 import { routeModel } from 'utils/verifyModel';
 import defaultForm from 'assets/camp/defaultForm';
 import defaultThemes from 'assets/camp/defaultThemes';
 import defaultTemplates from 'assets/camp/defaultTemplates';
 import defaultFiles from 'assets/camp/defaultFiles';
-import type {
-  CampQuery,
-  CampCreateData,
-  CampUpdateData,
-} from '@camp-registration/common/entities';
+import { validateRequest } from 'core/validation/request';
+import validator from './camp.validation';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
@@ -25,7 +22,8 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const query = req.query as CampQuery;
+  const { query } = await validateRequest(req, validator.index);
+
   const camps = await campService.queryCamps(
     {
       public: query.showAll ? undefined : true,
@@ -50,45 +48,45 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const data = req.body as CampCreateData;
+  const { body } = await validateRequest(req, validator.store);
   const userId = authUserId(req);
 
-  const referenceCamp = data.referenceCampId
-    ? await campService.getCampById(data.referenceCampId)
+  const referenceCamp = body.referenceCampId
+    ? await campService.getCampById(body.referenceCampId)
     : undefined;
 
-  const form = data.form ?? referenceCamp?.form ?? defaultForm;
-  const themes = data.themes ?? referenceCamp?.themes ?? defaultThemes;
+  const form = body.form ?? referenceCamp?.form ?? defaultForm;
+  const themes = body.themes ?? referenceCamp?.themes ?? defaultThemes;
 
   // Copy files from reference or use defaults
-  const files = data.referenceCampId
+  const files = body.referenceCampId
     ? await fileService.queryModelFiles({
         name: 'camp',
-        id: data.referenceCampId,
+        id: body.referenceCampId,
       })
     : defaultFiles;
 
   // Copy table templates from reference or use defaults
-  const templates = data.referenceCampId
-    ? await tableTemplateService.queryTemplates(data.referenceCampId)
+  const templates = body.referenceCampId
+    ? await tableTemplateService.queryTemplates(body.referenceCampId)
     : defaultTemplates.map((value) => ({ data: value }));
 
   const camp = await campService.createCamp(
     userId,
     {
-      countries: data.countries,
-      name: data.name,
-      organizer: data.organizer,
-      contactEmail: data.contactEmail,
-      active: data.active ?? false,
-      public: data.public,
-      maxParticipants: data.maxParticipants,
-      startAt: data.startAt,
-      endAt: data.endAt,
-      minAge: data.minAge,
-      maxAge: data.maxAge,
-      price: data.price,
-      location: data.location,
+      countries: body.countries,
+      name: body.name,
+      organizer: body.organizer,
+      contactEmail: body.contactEmail,
+      active: body.active ?? false,
+      public: body.public,
+      maxParticipants: body.maxParticipants,
+      startAt: body.startAt,
+      endAt: body.endAt,
+      minAge: body.minAge,
+      maxAge: body.maxAge,
+      price: body.price,
+      location: body.location,
       form: form,
       themes: themes,
     },
@@ -101,28 +99,28 @@ const store = catchRequestAsync(async (req, res) => {
 
 const update = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
-  const data = req.body as CampUpdateData;
+  const { body } = await validateRequest(req, validator.update(camp));
 
   const updatedCamp = await campService.updateCamp(camp, {
-    countries: data.countries,
-    name: data.name,
-    organizer: data.organizer,
-    contactEmail: data.contactEmail,
-    active: data.active,
-    public: data.public,
-    maxParticipants: data.maxParticipants,
-    startAt: data.startAt,
-    endAt: data.endAt,
-    minAge: data.minAge,
-    maxAge: data.maxAge,
-    price: data.price,
-    location: data.location,
-    form: data.form,
-    themes: data.themes,
+    countries: body.countries,
+    name: body.name,
+    organizer: body.organizer,
+    contactEmail: body.contactEmail,
+    active: body.active,
+    public: body.public,
+    maxParticipants: body.maxParticipants,
+    startAt: body.startAt,
+    endAt: body.endAt,
+    minAge: body.minAge,
+    maxAge: body.maxAge,
+    price: body.price,
+    location: body.location,
+    form: body.form,
+    themes: body.themes,
   });
 
   // Re-generate camp data fields
-  if (data.form) {
+  if (body.form) {
     await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
   }
 
@@ -130,8 +128,9 @@ const update = catchRequestAsync(async (req, res) => {
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  await campService.deleteCampById(campId);
+  const { params } = await validateRequest(req, validator.destroy);
+
+  await campService.deleteCampById(params.campId);
 
   res.status(httpStatus.NO_CONTENT).send();
 });

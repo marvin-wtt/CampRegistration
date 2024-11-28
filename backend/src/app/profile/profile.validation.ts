@@ -1,13 +1,15 @@
-import Joi from 'joi';
-import { PasswordSchema } from '../../validations/custom.validation';
+import { z } from 'zod';
+import { PasswordSchema } from 'core/validation/helper';
 
-const update = {
-  body: Joi.object({
-    email: Joi.string().email(),
-    password: PasswordSchema,
-    name: Joi.string(),
-    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
-  }).min(1),
-};
+const update = z.object({
+  body: z
+    .object({
+      email: z.string().email(),
+      password: PasswordSchema,
+      name: z.string(),
+      locale: z.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
+    })
+    .partial(),
+});
 
 export default { update };

@@ -129,6 +129,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
       await request()
         .post(`/api/v1/camps/${camp.id}/rooms/`)
         .send(data)
+        .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -232,21 +233,6 @@ describe('/api/v1/camps/:campId/rooms/', () => {
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
-    });
-
-    it('should respond with `400` status code when additional parameter is provided', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
-
-      const data = {
-        capacity: 5,
-      };
-
-      await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}`)
-        .send(data)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {

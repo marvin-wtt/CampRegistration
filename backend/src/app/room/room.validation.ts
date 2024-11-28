@@ -1,49 +1,47 @@
-import Joi from 'joi';
+import z from 'zod';
+import { translatedValue } from 'core/validation/helper';
 
-const Translated = Joi.alternatives().try(
-  Joi.string(),
-  Joi.object().pattern(Joi.string(), Joi.string()),
-);
+const show = z.object({
+  params: z.object({
+    campId: z.string(),
+    roomId: z.string(),
+  }),
+});
 
-const show = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    roomId: Joi.string().required(),
+const index = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
-};
+});
 
-const index = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const store = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
-};
+  body: z.object({
+    name: translatedValue(z.string()),
+    capacity: z.number().int().positive().default(1),
+  }),
+});
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const update = z.object({
+  params: z.object({
+    campId: z.string(),
+    roomId: z.string(),
   }),
-  body: Joi.object({
-    name: Translated.required(),
-    capacity: Joi.number().min(1).default(0),
-  }),
-};
+  body: z
+    .object({
+      name: translatedValue(z.string()),
+    })
+    .partial(),
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    roomId: Joi.string().required(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string(),
+    roomId: z.string(),
   }),
-  body: Joi.object({
-    name: Translated,
-  }),
-};
-
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    roomId: Joi.string().required(),
-  }),
-};
+});
 
 export default {
   show,

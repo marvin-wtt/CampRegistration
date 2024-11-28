@@ -1,15 +1,19 @@
 import { catchRequestAsync } from 'utils/catchAsync';
-import { resource } from 'app/resource';
+import { resource } from 'core/resource';
 import bedService from './bed.service';
 import bedResource from './bed.resource';
 import registrationService from 'app/registration/registration.service';
 import httpStatus from 'http-status';
 import { Registration } from '@prisma/client';
 import ApiError from 'utils/ApiError';
+import { validateRequest } from 'core/validation/request';
+import validator from './bed.validation';
 
 const store = catchRequestAsync(async (req, res) => {
-  const { roomId, campId } = req.params;
-  const { registrationId } = req.body;
+  const {
+    params: { campId, roomId },
+    body: { registrationId },
+  } = await validateRequest(req, validator.store);
 
   // Validate registrationId is present
   if (registrationId !== undefined) {
@@ -22,8 +26,10 @@ const store = catchRequestAsync(async (req, res) => {
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { bedId, campId } = req.params;
-  const { registrationId } = req.body;
+  const {
+    params: { campId, bedId },
+    body: { registrationId },
+  } = await validateRequest(req, validator.update);
 
   // Validate registrationId is present
   if (registrationId !== null) {
@@ -36,7 +42,10 @@ const update = catchRequestAsync(async (req, res) => {
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { bedId } = req.params;
+  const {
+    params: { bedId },
+  } = await validateRequest(req, validator.destroy);
+
   await bedService.deleteBedById(bedId);
 
   res.sendStatus(httpStatus.NO_CONTENT);

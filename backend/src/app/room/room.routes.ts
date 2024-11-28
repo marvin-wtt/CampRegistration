@@ -1,9 +1,8 @@
 import express from 'express';
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard } from 'middlewares';
 import { campManager } from 'guards';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
 import { catchParamAsync } from 'utils/catchAsync';
-import roomValidation from './room.validation';
 import roomService from './room.service';
 import roomController from './room.controller';
 import bedRoutes from 'app/bed/bed.routes';
@@ -21,47 +20,11 @@ router.param(
 
 router.use('/:roomId/beds', bedRoutes);
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(roomValidation.index),
-  roomController.index,
-);
-router.get(
-  '/:roomId',
-  auth(),
-  guard(campManager),
-  validate(roomValidation.show),
-  roomController.show,
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(roomValidation.store),
-  roomController.store,
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(roomValidation.store),
-  roomController.store,
-);
-router.patch(
-  '/:roomId',
-  auth(),
-  guard(campManager),
-  validate(roomValidation.update),
-  roomController.update,
-);
-router.delete(
-  '/:roomId',
-  auth(),
-  guard(campManager),
-  validate(roomValidation.destroy),
-  roomController.destroy,
-);
+router.get('/', auth(), guard(campManager), roomController.index);
+router.get('/:roomId', auth(), guard(campManager), roomController.show);
+router.post('/', auth(), guard(campManager), roomController.store);
+router.post('/', auth(), guard(campManager), roomController.store);
+router.patch('/:roomId', auth(), guard(campManager), roomController.update);
+router.delete('/:roomId', auth(), guard(campManager), roomController.destroy);
 
 export default router;

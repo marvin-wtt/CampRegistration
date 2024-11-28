@@ -1,13 +1,13 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-const store = {
-  body: Joi.object({
-    message: Joi.string().required(),
-    location: Joi.string(),
-    userAgent: Joi.string(),
-    email: Joi.string().email(),
+const store = z.object({
+  body: z.object({
+    message: z.string(),
+    location: z.string().optional(),
+    userAgent: z.string().optional(),
+    email: z.string().email().optional(),
   }),
-};
+});
 
 export default {
   store,

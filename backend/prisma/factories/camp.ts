@@ -11,9 +11,8 @@ export const CampFactory = {
     const maxAge = faker.number.int({ min: minAge, max: 21 });
 
     const startAt = faker.date.future();
-    const endAt = faker.date.between({
-      from: startAt.getDate(),
-      to: faker.date.future(),
+    const endAt = faker.date.future({
+      refDate: startAt,
     });
 
     const createdAt = faker.date.past();

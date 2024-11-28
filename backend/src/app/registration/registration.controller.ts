@@ -1,11 +1,13 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import registrationService from './registration.service';
 import registrationResource from './registration.resource';
 import { routeModel } from 'utils/verifyModel';
 import { requestLocale } from 'utils/requestLocale';
 import { catchAndResolve } from 'utils/promiseUtils';
+import { validateRequest } from 'core/validation/request';
+import validator from './registration.validation';
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);
@@ -14,7 +16,10 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  const {
+    params: { campId },
+  } = await validateRequest(req, validator.index);
+
   const registrations = await registrationService.queryRegistrations(campId);
   const resources = registrations.map((value) => registrationResource(value));
 
@@ -22,8 +27,10 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
+  const {
+    body: { data, locale: bodyLocale },
+  } = await validateRequest(req, validator.store);
   const camp = routeModel(req.models.camp);
-  const { data, locale: bodyLocale } = req.body;
   const locale = bodyLocale ?? requestLocale(req);
 
   const registration = await registrationService.createRegistration(camp, {
@@ -53,10 +60,12 @@ const store = catchRequestAsync(async (req, res) => {
 });
 
 const update = catchRequestAsync(async (req, res) => {
+  const {
+    body: { data, waitingList },
+    params: { registrationId },
+  } = await validateRequest(req, validator.update);
   const camp = routeModel(req.models.camp);
   const previousRegistration = routeModel(req.models.registration);
-  const { registrationId } = req.params;
-  const { data, waitingList } = req.body;
 
   const registration = await registrationService.updateRegistrationById(
     camp,
