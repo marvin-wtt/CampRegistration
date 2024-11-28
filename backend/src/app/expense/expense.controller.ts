@@ -1,14 +1,12 @@
 import { catchRequestAsync } from 'utils/catchAsync';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import expenseService from './expense.service';
 import expenseResource from './expense.resource';
 import httpStatus from 'http-status';
-import {
-  ExpenseCreateData,
-  ExpenseUpdateData,
-} from '@camp-registration/common/entities';
 import { routeModel } from 'utils/verifyModel';
-import fileService from '../file/file.service';
+import fileService from 'app/file/file.service';
+import { validateRequest } from 'core/validation/request';
+import validator from './expense.validation';
 
 const show = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);
@@ -17,7 +15,10 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  const {
+    params: { campId },
+  } = await validateRequest(req, validator.index);
+
   const expenses = await expenseService.queryExpenses(campId);
 
   const resources = expenses.map((value) => expenseResource(value));
@@ -26,8 +27,10 @@ const index = catchRequestAsync(async (req, res) => {
 });
 
 const store = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const body = req.body as ExpenseCreateData;
+  const {
+    params: { campId },
+    body,
+  } = await validateRequest(req, validator.store);
 
   const expense = await expenseService.createExpense(
     campId,
@@ -49,21 +52,21 @@ const store = catchRequestAsync(async (req, res) => {
 
 const update = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);
-  const body = req.body as ExpenseUpdateData;
+  const { body } = await validateRequest(req, validator.update);
   const file = req.file;
 
   const updatedExpense = await expenseService.updateExpenseById(
     expense.id,
     {
-      receiptNumber: body.receiptNumber ?? null,
+      receiptNumber: body.receiptNumber,
       name: body.name,
-      description: body.description ?? null,
+      description: body.description,
       amount: body.amount,
       date: body.date,
-      category: body.category ?? null,
-      paidAt: body.paidAt ?? null,
-      paidBy: body.paidBy ?? null,
-      payee: body.payee ?? null,
+      category: body.category,
+      paidAt: body.paidAt,
+      paidBy: body.paidBy,
+      payee: body.payee,
     },
     file,
   );
@@ -76,7 +79,9 @@ const update = catchRequestAsync(async (req, res) => {
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { expenseId } = req.params;
+  const {
+    params: { expenseId },
+  } = await validateRequest(req, validator.destroy);
 
   await expenseService.deleteExpenseById(expenseId);
 

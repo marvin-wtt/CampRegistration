@@ -1,62 +1,60 @@
-import Joi from 'joi';
-import {
-  ExpenseCreateData,
-  ExpenseUpdateData,
-} from '@camp-registration/common/entities';
+import { z } from 'zod';
 
-const show = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    expenseId: Joi.string().required(),
+const show = z.object({
+  params: z.object({
+    campId: z.string(),
+    expenseId: z.string(),
   }),
-};
+});
 
-const index = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const index = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
-};
+});
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const store = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
-  body: Joi.object<ExpenseCreateData>({
-    name: Joi.string().required(),
-    description: Joi.string().optional(),
-    amount: Joi.number().precision(2).required(),
-    date: Joi.date().required(),
-    category: Joi.string().optional(),
-    paidAt: Joi.date().optional(),
-    paidBy: Joi.string().optional(),
-    payee: Joi.string().optional(),
+  body: z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    amount: z.number().multipleOf(0.01),
+    date: z.date(),
+    category: z.string().optional(),
+    paidAt: z.date().optional(),
+    paidBy: z.string().optional(),
+    payee: z.string().optional(),
   }),
-};
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    expenseId: Joi.string().required(),
+const update = z.object({
+  params: z.object({
+    campId: z.string(),
+    expenseId: z.string(),
   }),
-  body: Joi.object<ExpenseUpdateData>({
-    name: Joi.string().required(),
-    receiptNumber: Joi.number().integer().positive().optional(),
-    description: Joi.string().optional(),
-    amount: Joi.number().precision(2).required(),
-    date: Joi.date().required(),
-    category: Joi.string().optional(),
-    paidAt: Joi.date().optional(),
-    paidBy: Joi.string().optional(),
-    payee: Joi.string().optional(),
-  }),
-};
+  body: z
+    .object({
+      name: z.string(),
+      receiptNumber: z.number().int().nonnegative(),
+      description: z.string(),
+      amount: z.number().multipleOf(0.01),
+      date: z.date(),
+      category: z.string(),
+      paidAt: z.date(),
+      paidBy: z.string(),
+      payee: z.string(),
+    })
+    .partial(),
+});
 
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    expenseId: Joi.string().required(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string(),
+    expenseId: z.string(),
   }),
-};
+});
 
 export default {
   show,

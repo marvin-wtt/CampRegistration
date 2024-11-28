@@ -1,6 +1,5 @@
 import express from 'express';
-import { multipart, validate, guard } from 'middlewares';
-import fileValidation from './file.validation';
+import { multipart, guard } from 'middlewares';
 import fileController from './file.controller';
 import { catchParamAsync } from 'utils/catchAsync';
 import { verifyModelExists } from 'utils/verifyModel';
@@ -17,12 +16,7 @@ router.param(
   }),
 );
 
-router.get(
-  '/:fileId',
-  validate(fileValidation.stream),
-  guard(fileAccessGuard),
-  fileController.stream,
-);
+router.get('/:fileId', guard(fileAccessGuard), fileController.stream);
 
 router.post('/', multipart('file'), fileController.store);
 
