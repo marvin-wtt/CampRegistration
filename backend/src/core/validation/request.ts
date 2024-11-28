@@ -9,12 +9,12 @@ import logger from 'config/logger';
 export async function validateRequest<T extends AnyZodObject>(
   req: Request,
   schema: T,
-): Promise<z.infer<T>> {
+): Promise<Readonly<z.infer<T>>> {
   try {
     // It is important to await here to catch the error
     return await schema.readonly().parseAsync(req);
   } catch (err) {
-    // handleFileError(req);
+    handleFileError(req);
 
     if (err instanceof ZodError) {
       const validationError = fromError(err);

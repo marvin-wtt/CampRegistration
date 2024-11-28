@@ -14,7 +14,6 @@ import defaultTemplates from 'assets/camp/defaultTemplates';
 import defaultFiles from 'assets/camp/defaultFiles';
 import { validateRequest } from 'core/validation/request';
 import validator from './camp.validation';
-import ApiError from '../../utils/ApiError';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
@@ -51,20 +50,6 @@ const index = catchRequestAsync(async (req, res) => {
 const store = catchRequestAsync(async (req, res) => {
   const { body } = await validateRequest(req, validator.store);
   const userId = authUserId(req);
-
-  if (body.minAge > body.maxAge) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'Max age must be greater than or equal to min age',
-    );
-  }
-
-  if (body.startAt > body.endAt) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'End date must be after start date',
-    );
-  }
 
   const referenceCamp = body.referenceCampId
     ? await campService.getCampById(body.referenceCampId)
@@ -115,20 +100,6 @@ const store = catchRequestAsync(async (req, res) => {
 const update = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
   const { body } = await validateRequest(req, validator.update);
-
-  if ((body.minAge ?? camp.minAge) >= (body.maxAge ?? camp.maxAge)) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'Max age must be greater than or equal to min age',
-    );
-  }
-
-  if ((body.startAt ?? camp.startAt) <= (body.endAt ?? camp.endAt)) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'End date must be after start date',
-    );
-  }
 
   const updatedCamp = await campService.updateCamp(camp, {
     countries: body.countries,

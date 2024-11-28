@@ -4,12 +4,12 @@ import { translatedValue } from 'core/validation/helper';
 const StringOrFunctionSchema = z.union([z.string(), z.function()]);
 
 const TableTemplateBodySchema = z.object({
-  title: translatedValue(),
+  title: translatedValue(z.string()),
   columns: z.array(
     z.object({
       name: z.string(),
       field: StringOrFunctionSchema,
-      label: translatedValue(),
+      label: translatedValue(z.string()),
       required: z.boolean().optional(),
       align: z.enum(['left', 'right', 'center']).optional(),
       sortable: z.boolean().optional(),

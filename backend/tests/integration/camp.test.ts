@@ -362,7 +362,7 @@ describe('/api/v1/camps', () => {
         .post(`/api/v1/camps/`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
-        .expect(201);
+        .expectOrPrint(201);
 
       // Test response
       await assertCampCreated(data, body);
@@ -765,7 +765,7 @@ describe('/api/v1/camps', () => {
         .patch(`/api/v1/camps/${camp.id}`)
         .send(dataA)
         .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        .expectOrPrint(200);
 
       expect(bodyA).toHaveProperty('data.freePlaces', 8);
 

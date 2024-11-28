@@ -9,8 +9,6 @@ import notificationService from 'app/notification/notification.service';
 import i18n, { t } from 'config/i18n';
 import { translateObject } from 'utils/translateObject';
 import config from 'config';
-import { Request } from 'express';
-import { routeModel } from '../../utils/verifyModel';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -91,6 +89,8 @@ const createRegistration = async (
   const form = formUtils(camp);
   form.updateData(data.data);
 
+  // TODO Should this really be done here?
+  //  Can't we do it at a better place?
   validateRegistrationData(form);
 
   // Extract files first before the value are mapped to the URL

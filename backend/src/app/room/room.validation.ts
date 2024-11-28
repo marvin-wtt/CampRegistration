@@ -19,7 +19,7 @@ const store = z.object({
     campId: z.string(),
   }),
   body: z.object({
-    name: translatedValue(),
+    name: translatedValue(z.string()),
     capacity: z.number().int().positive().default(1),
   }),
 });
@@ -31,7 +31,7 @@ const update = z.object({
   }),
   body: z
     .object({
-      name: translatedValue(),
+      name: translatedValue(z.string()),
     })
     .partial(),
 });

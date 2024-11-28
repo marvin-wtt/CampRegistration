@@ -10,6 +10,6 @@ export const BooleanStringSchema = z.preprocess((val) => {
   return val;
 }, z.coerce.boolean());
 
-export const translatedValue = (valueSchema: ZodType = z.string()) => {
+export const translatedValue = <T extends ZodType>(valueSchema: T) => {
   return z.union([z.record(z.string(), valueSchema), valueSchema]);
 };
