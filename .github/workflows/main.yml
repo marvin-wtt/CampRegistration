@@ -47,6 +47,8 @@ jobs:
       SMTP_USERNAME: user
       SMTP_PASSWORD: password
       EMAIL_FROM: noreply@yourapp.com
+      EMAIL_REPLY_TO: noreply@yourapp.com
+      EMAIL_ADMIN: admin@yourapp.com
 
     steps:
       - name: Checkout code
