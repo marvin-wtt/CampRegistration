@@ -817,20 +817,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should respond with `400` status code when the waiting list field is set', async () => {
+      it('should ignore the waiting list field when set', async () => {
         const camp = await CampFactory.create(campWithMaxParticipantsNational);
 
-        const data = {
-          data: {
+        // Fill camp
+        for (let i = 0; i < 5; i++) {
+          await request()
+            .post(`/api/v1/camps/${camp.id}/registrations`)
+            .send({
+              data: { first_name: `Jhon ${i}` },
+              waitingList: false,
+            })
+            .expect(201);
+        }
+
+        // Assert waiting list
+        await assertRegistration(
+          camp.id,
+          {
             first_name: `Jhon`,
           },
-          waitingList: false,
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send(data)
-          .expect(400);
+          true,
+        );
       });
 
       it('should respond with `409` status code when camp country data is missing for international camp', async () => {

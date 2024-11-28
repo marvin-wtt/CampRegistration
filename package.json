@@ -18,7 +18,6 @@
     "frontend"
   ],
   "dependencies": {
-  },
-  "devDependencies": {
+    "zod-validation-error": "^3.4.0"
   }
 }

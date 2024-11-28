@@ -1,10 +1,9 @@
 import { catchParamAsync } from 'utils/catchAsync';
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import fileValidation from 'app/file/file.validation';
 import fileController from 'app/file/file.controller';
 import fileService from 'app/file/file.service';
 import express, { Request } from 'express';
-import { auth, guard, multipart, validate } from 'middlewares';
+import { auth, guard, multipart } from 'middlewares';
 import { and, or, campManager, campActive } from 'guards';
 
 const router = express.Router({ mergeParams: true });
@@ -31,30 +30,16 @@ const fileAccessMiddleware = async (
 router.get(
   '/:fileId',
   guard(or(campManager, and(fileAccessMiddleware, campActive))),
-  validate(fileValidation.show),
   fileController.stream,
 );
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(fileValidation.index),
-  fileController.index,
-);
+router.get('/', auth(), guard(campManager), fileController.index);
 router.post(
   '/',
   auth(),
   guard(campManager),
   multipart('file'),
-  validate(fileValidation.store),
   fileController.store,
 );
-router.delete(
-  '/:fileId',
-  auth(),
-  guard(campManager),
-  validate(fileValidation.destroy),
-  fileController.destroy,
-);
+router.delete('/:fileId', auth(), guard(campManager), fileController.destroy);
 
 export default router;

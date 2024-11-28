@@ -1,48 +1,46 @@
-import Joi from 'joi';
-import {
-  CampManagerCreateData,
-  CampManagerUpdateData,
-} from '@camp-registration/common/entities';
+import { z } from 'zod';
 
-const index = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const index = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
-};
+});
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const store = z.object({
+  params: z.object({
+    campId: z.string(),
   }),
-  body: Joi.object<CampManagerCreateData>({
-    email: Joi.string().email().required(),
-    role: Joi.string(),
+  body: z.object({
+    email: z.string().email(),
+    role: z.string().optional(),
   }),
-};
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    managerId: Joi.string().required(),
+const update = z.object({
+  params: z.object({
+    campId: z.string(),
+    managerId: z.string(),
   }),
-  body: Joi.object<CampManagerUpdateData>({
-    role: Joi.string(),
-  }),
-};
+  body: z
+    .object({
+      role: z.string(),
+    })
+    .partial(),
+});
 
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    managerId: Joi.string().required(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string(),
+    managerId: z.string(),
   }),
-};
+});
 
-const accept = {
-  params: Joi.object({
-    managerId: Joi.string().required(),
-    token: Joi.string().required(),
+const accept = z.object({
+  params: z.object({
+    managerId: z.string(),
+    token: z.string(),
   }),
-};
+});
 
 export default {
   index,

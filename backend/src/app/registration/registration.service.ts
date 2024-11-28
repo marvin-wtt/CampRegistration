@@ -67,6 +67,27 @@ const getParticipantsCountByCountry = async (
   );
 };
 
+const validateRegistrationData = (
+  formHelper: ReturnType<typeof formUtils>,
+): void | never => {
+  if (formHelper.hasDataErrors()) {
+    const errors = formHelper.getDataErrorFields();
+
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `Invalid survey data: ${errors}`,
+    );
+  }
+
+  const unknownDataFields = formHelper.unknownDataFields();
+  if (unknownDataFields.length > 0) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `Unknown fields '${unknownDataFields.join(', ')}'`,
+    );
+  }
+};
+
 const createRegistration = async (
   camp: Camp,
   data: Pick<Registration, 'data' | 'locale'>,
@@ -74,6 +95,11 @@ const createRegistration = async (
   const id = ulid();
   const form = formUtils(camp);
   form.updateData(data.data);
+
+  // TODO Should this really be done here?
+  //  Can't we do it at a better place?
+  validateRegistrationData(form);
+
   // Extract files first before the value are mapped to the URL
   const fileIdentifiers = form.getFileIdentifiers();
   form.mapFileValues((value) => {

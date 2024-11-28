@@ -3,7 +3,7 @@ import config from 'config';
 
 const saveFeedback = async (
   message: string,
-  location: string,
+  location?: string,
   userAgent?: string,
   email?: string | undefined,
 ) => {

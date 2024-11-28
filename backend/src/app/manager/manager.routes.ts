@@ -1,7 +1,6 @@
 import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import { auth, guard, validate } from 'middlewares';
+import { auth, guard } from 'middlewares';
 import { campManager } from 'guards';
-import managerValidation from './manager.validation';
 import managerController from './manager.controller';
 import managerService from './manager.service';
 import { catchParamAsync } from 'utils/catchAsync';
@@ -18,25 +17,12 @@ router.param(
   }),
 );
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(managerValidation.index),
-  managerController.index,
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  validate(managerValidation.store),
-  managerController.store,
-);
+router.get('/', auth(), guard(campManager), managerController.index);
+router.post('/', auth(), guard(campManager), managerController.store);
 router.delete(
   '/:managerId',
   auth(),
   guard(campManager),
-  validate(managerValidation.destroy),
   managerController.destroy,
 );
 

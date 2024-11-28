@@ -15,7 +15,11 @@ const queryRooms = async (campId: string) => {
   });
 };
 
-const createRoom = async (campId: string, name: string, capacity: number) => {
+const createRoom = async (
+  campId: string,
+  name: string | Record<string, string>,
+  capacity: number,
+) => {
   return prisma.room.create({
     data: {
       id: ulid(),
@@ -33,7 +37,10 @@ const createRoom = async (campId: string, name: string, capacity: number) => {
   });
 };
 
-const updateRoomById = async (roomId: string, name: string) => {
+const updateRoomById = async (
+  roomId: string,
+  name?: string | Record<string, string>,
+) => {
   return prisma.room.update({
     where: { id: roomId },
     data: {

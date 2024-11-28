@@ -1,51 +1,58 @@
-import Joi from 'joi';
-import { PasswordSchema } from 'validations/custom.validation';
+import { z } from 'zod';
+import { PasswordSchema } from 'core/validation/helper';
 
-const register = {
-  body: Joi.object().keys({
-    name: Joi.string().required(),
-    email: Joi.string().required().email(),
+const register = z.object({
+  body: z.object({
+    name: z.string(),
+    email: z.string().email(),
     password: PasswordSchema,
   }),
-};
+});
 
-const login = {
-  body: Joi.object().keys({
-    email: Joi.string().required(),
-    password: Joi.string().required(),
-    remember: Joi.boolean().default(false),
+const login = z.object({
+  body: z.object({
+    email: z.string(),
+    password: z.string(),
+    remember: z.boolean().default(false),
   }),
-};
+});
 
-const refreshTokens = {
-  body: Joi.object().keys({
-    refreshToken: Joi.string(),
+const logout = z.object({
+  body: z.object({
+    refreshToken: z.string().optional(),
   }),
-};
+});
 
-const forgotPassword = {
-  body: Joi.object().keys({
-    email: Joi.string().email().required(),
+const refreshTokens = z.object({
+  body: z.object({
+    refreshToken: z.string().optional(),
   }),
-};
+});
 
-const resetPassword = {
-  body: Joi.object().keys({
-    token: Joi.string().required(),
-    email: Joi.string().email().required(),
+const forgotPassword = z.object({
+  body: z.object({
+    email: z.string().email(),
+  }),
+});
+
+const resetPassword = z.object({
+  body: z.object({
+    token: z.string(),
+    email: z.string().email(),
     password: PasswordSchema,
   }),
-};
+});
 
-const verifyEmail = {
-  body: Joi.object().keys({
-    token: Joi.string().required(),
+const verifyEmail = z.object({
+  body: z.object({
+    token: z.string(),
   }),
-};
+});
 
 export default {
   register,
   login,
+  logout,
   refreshTokens,
   forgotPassword,
   resetPassword,

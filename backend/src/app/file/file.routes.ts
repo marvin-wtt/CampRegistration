@@ -24,11 +24,6 @@ router.get(
   fileController.stream,
 );
 
-router.post(
-  '/',
-  multipart('file'),
-  validate(fileValidation.store),
-  fileController.store,
-);
+router.post('/', multipart('file'), fileController.store);
 
 export default router;

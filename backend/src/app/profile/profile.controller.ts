@@ -6,9 +6,10 @@ import campService from 'app/camp/camp.service';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
 import { authUserId } from 'utils/authUserId';
-import { resource } from 'app/resource';
+import { resource } from 'core/resource';
 import profileResource from './profile.resource';
-import type { ProfileUpdateData } from '@camp-registration/common/entities';
+import { validateRequest } from 'core/validation/request';
+import validator from './profile.validation';
 
 const show = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
@@ -24,8 +25,10 @@ const show = catchRequestAsync(async (req, res) => {
 });
 
 const update = catchRequestAsync(async (req, res) => {
-  const { userId } = req.params;
-  const { name, email, password, locale } = req.body as ProfileUpdateData;
+  const {
+    body: { name, email, password, locale },
+  } = await validateRequest(req, validator.update);
+  const userId = authUserId(req);
 
   // Mark email as unverified if it is updated
   const emailVerified = email !== undefined ? false : undefined;

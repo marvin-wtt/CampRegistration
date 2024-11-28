@@ -1,15 +1,19 @@
 import { catchRequestAsync } from 'utils/catchAsync';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
+import { collection, resource } from 'core/resource';
 import userService from 'app/user/user.service';
 import managerService from './manager.service';
 import campManagerResource from './manager.resource';
 import { routeModel } from 'utils/verifyModel';
 import { catchAndResolve } from 'utils/promiseUtils';
+import validator from './manager.validation';
+import { validateRequest } from 'core/validation/request';
 
 const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  const {
+    params: { campId },
+  } = await validateRequest(req, validator.index);
 
   const managers = await managerService.getManagers(campId);
   const resources = managers.map((manager) => campManagerResource(manager));
@@ -19,7 +23,9 @@ const index = catchRequestAsync(async (req, res) => {
 
 const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
-  const { email } = req.body;
+  const {
+    body: { email },
+  } = await validateRequest(req, validator.store);
 
   const existingCampManager = await managerService.getManagerByEmail(
     camp.id,
@@ -45,7 +51,9 @@ const store = catchRequestAsync(async (req, res) => {
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
-  const { campId, managerId } = req.params;
+  const {
+    params: { campId, managerId },
+  } = await validateRequest(req, validator.destroy);
 
   const managers = await managerService.getManagers(campId);
   if (managers.length <= 1) {
