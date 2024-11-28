@@ -70,6 +70,7 @@ model Camp {
   rooms           Room[]
   templates       TableTemplate[]
   files           File[]
+  expense         Expense[]
 
   @@map("camps")
 }
@@ -99,7 +100,7 @@ model Invitation {
 
 model Registration {
   id          String    @id @unique(map: "registrations_id_unique") @db.Char(26)
-  campId      String?   @map("camp_id") @db.Char(26)
+  campId      String    @map("camp_id") @db.Char(26)
   /// [GenericObject]
   data        Json      @db.Json
   /// [RegistrationCampData]
@@ -108,7 +109,7 @@ model Registration {
   waitingList Boolean   @default(true) @map("waiting_list")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
-  camp        Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  camp        Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed         Bed?
   files       File[]
 
@@ -171,6 +172,7 @@ model File {
   id              String        @id @unique(map: "files_id_unique") @db.Char(26)
   campId          String?       @map("camp_id") @db.Char(36) // Prisma does not support morth
   registrationId  String?       @map("registration_id") @db.Char(36) // Prisma does not support morth
+  expenseId       String?       @unique @map("expense_id") @db.Char(36) // Prisma does not support morth
   name            String
   originalName    String        @map("original_name")
   field           String?
@@ -181,6 +183,25 @@ model File {
   createdAt       DateTime      @default(now()) @map("created_at")
   camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
   registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  expense         Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@map("files")
+}
+
+model Expense {
+  id            String    @id @unique(map: "expenses_id_unique") @db.Char(26)
+  receiptNumber Int?      @map("receipt_number") @db.UnsignedSmallInt
+  name          String
+  description   String?
+  category      String?
+  amount        Decimal
+  date          DateTime
+  paidAt        DateTime? @map("paid_at")
+  paidBy        String?   @map("paid_by")
+  payee         String?
+  campId        String    @map("camp_id")
+  camp          Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, map: "expenses_camp_id_foreign")
+  file          File?
+
+  @@map("expenses")
 }

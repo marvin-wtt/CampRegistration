@@ -7,6 +7,7 @@ export interface ServiceFile extends Identifiable {
   size: number;
   accessLevel: string | null;
   createdAt: string;
+  url: string;
 }
 
 export interface ServiceFileCreateData {
