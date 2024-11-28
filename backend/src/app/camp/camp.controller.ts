@@ -99,7 +99,7 @@ const store = catchRequestAsync(async (req, res) => {
 
 const update = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
-  const { body } = await validateRequest(req, validator.update);
+  const { body } = await validateRequest(req, validator.update(camp));
 
   const updatedCamp = await campService.updateCamp(camp, {
     countries: body.countries,
