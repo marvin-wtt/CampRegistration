@@ -1,4 +1,3 @@
-import { catchRequestAsync } from 'utils/catchAsync';
 import tokenService from 'app/token/token.service';
 import userService from 'app/user/user.service';
 import authService from 'app/auth/auth.service';
@@ -9,8 +8,9 @@ import { authUserId } from 'utils/authUserId';
 import { resource } from 'app/resource';
 import profileResource from './profile.resource';
 import type { ProfileUpdateData } from '@camp-registration/common/entities';
+import { Request, Response } from 'express';
 
-const show = catchRequestAsync(async (req, res) => {
+const show = async (req: Request, res: Response) => {
   const userId = authUserId(req);
   const user = await userService.getUserByIdWithCamps(userId);
   if (!user) {
@@ -21,9 +21,9 @@ const show = catchRequestAsync(async (req, res) => {
   });
 
   res.json(resource(profileResource(user, camps)));
-});
+};
 
-const update = catchRequestAsync(async (req, res) => {
+const update = async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { name, email, password, locale } = req.body as ProfileUpdateData;
 
@@ -49,7 +49,7 @@ const update = catchRequestAsync(async (req, res) => {
   const camps = await campService.getCampsByUserId(userId);
 
   res.json(resource(profileResource(user, camps)));
-});
+};
 
 export default {
   show,
