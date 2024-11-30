@@ -6,7 +6,7 @@ import { Camp, Prisma, Registration } from '@prisma/client';
 import dbJsonPath from 'utils/dbJsonPath';
 import { formUtils } from 'utils/form';
 import notificationService from 'app/notification/notification.service';
-import i18n, { t } from 'config/i18n';
+import i18n, { t } from 'core/i18n';
 import { translateObject } from 'utils/translateObject';
 import config from 'config';
 

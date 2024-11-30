@@ -36,7 +36,7 @@ import {
   campWithAddress,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import mailer from '../../src/config/mail';
+import mailer from '../../src/core/mail';
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (

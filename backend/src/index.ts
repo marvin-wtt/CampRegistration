@@ -2,7 +2,7 @@ import { Server } from 'http';
 import app from './app';
 import prisma from './client';
 import config from './config';
-import logger from './config/logger';
+import logger from './core/logger';
 
 let server: Server;
 prisma.$connect().then(() => {

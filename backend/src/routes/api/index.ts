@@ -4,7 +4,7 @@ import { generalLimiter, maintenance } from 'middlewares';
 import passport from 'passport';
 import ApiError from 'utils/ApiError';
 import httpStatus from 'http-status';
-import morgan from 'config/morgan';
+import morgan from 'core/morgan';
 
 const router = express.Router();
 

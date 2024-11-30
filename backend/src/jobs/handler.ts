@@ -1,5 +1,5 @@
 import Chron from 'croner';
-import logger from '../config/logger';
+import logger from '../core/logger';
 import Cron from 'croner';
 import moment from 'moment';
 

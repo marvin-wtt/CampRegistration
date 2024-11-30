@@ -4,7 +4,7 @@ import fse from 'fs-extra';
 import config from '../../src/config';
 import path from 'path';
 import { stopJobs } from '../../src/jobs';
-import mailer from '../../src/config/mail';
+import mailer from '../../src/core/mail';
 import { Request, Response, NextFunction } from 'express';
 
 const skipMiddleware = (req: Request, res: Response, next: NextFunction) =>

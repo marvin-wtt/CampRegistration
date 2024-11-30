@@ -2,7 +2,7 @@ import prisma from 'client';
 import { ulid } from 'utils/ulid';
 import { Camp, CampManager, Invitation, User } from '@prisma/client';
 import { translateObject } from 'utils/translateObject';
-import i18n, { t } from 'config/i18n';
+import i18n, { t } from 'core/i18n';
 import notificationService from 'app/notification/notification.service';
 
 const campManagerExistsWithUserIdAndCampId = async (
