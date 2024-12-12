@@ -133,6 +133,7 @@ export const campWithFileOptional = {
 export const campWithMaxParticipantsNational = {
   active: true,
   maxParticipants: 5,
+  freePlaces: 5,
   form: createForm([
     {
       name: 'first_name',
@@ -146,6 +147,10 @@ export const campWithMaxParticipantsInternational = {
   active: true,
   countries: ['de', 'fr'],
   maxParticipants: {
+    de: 5,
+    fr: 3,
+  },
+  freePlaces: {
     de: 5,
     fr: 3,
   },
@@ -164,9 +169,36 @@ export const campWithMaxParticipantsInternational = {
   ]),
 };
 
+export const campWithAddress = {
+  active: true,
+  countries: ['de', 'fr'],
+  maxParticipants: {
+    de: 5,
+    fr: 3,
+  },
+  freePlaces: {
+    de: 5,
+    fr: 3,
+  },
+  form: createForm([
+    {
+      name: 'first_name',
+      type: 'text',
+      isRequired: true,
+    },
+    {
+      name: 'address',
+      type: 'text',
+      campDataType: 'address',
+      isRequired: true,
+    },
+  ]),
+};
+
 export const campWithMaxParticipantsRolesNational = {
   active: true,
   maxParticipants: 5,
+  freePlaces: 5,
   form: createForm([
     {
       name: 'first_name',
@@ -186,6 +218,10 @@ export const campWithMaxParticipantsRolesInternational = {
   active: true,
   countries: ['de', 'fr'],
   maxParticipants: {
+    de: 5,
+    fr: 3,
+  },
+  freePlaces: {
     de: 5,
     fr: 3,
   },
@@ -346,6 +382,7 @@ export const campWithContactEmailInternational = {
 export const campWithEmailAndMaxParticipants = {
   ...campPublic,
   maxParticipants: 0,
+  freePlaces: 0,
   form: createForm([
     {
       name: 'email',

@@ -11,9 +11,8 @@ export const CampFactory = {
     const maxAge = faker.number.int({ min: minAge, max: 21 });
 
     const startAt = faker.date.future();
-    const endAt = faker.date.between({
-      from: startAt.getDate(),
-      to: faker.date.future(),
+    const endAt = faker.date.future({
+      refDate: startAt,
     });
 
     const createdAt = faker.date.past();
@@ -21,6 +20,8 @@ export const CampFactory = {
       from: createdAt,
       to: new Date(),
     });
+
+    const maxParticipants = faker.number.int({ min: 1, max: 100 });
 
     return {
       id: ulid(),
@@ -30,7 +31,8 @@ export const CampFactory = {
       name: faker.lorem.word(),
       organizer: faker.company.name(),
       contactEmail: faker.internet.email(),
-      maxParticipants: faker.number.int({ min: 1, max: 100 }),
+      maxParticipants,
+      freePlaces: maxParticipants,
       minAge,
       maxAge,
       startAt,

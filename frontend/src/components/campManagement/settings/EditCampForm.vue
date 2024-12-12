@@ -184,10 +184,10 @@
       :disable="loading"
       :label="t('field.maxAge')"
       :rules="[
-        (val) => !!val || t('validation.maxAge.empty'),
-        (val) =>
+        (val?: number) => !!val || t('validation.maxAge.empty'),
+        (val: number) =>
           (data.minAge && val >= data.minAge) || t('validation.maxAge.min'),
-        (val) => val < 100 || t('validation.minAge.max'),
+        (val: number) => val < 100 || t('validation.minAge.max'),
       ]"
       hide-bottom-space
       outlined
@@ -270,7 +270,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, toRaw } from 'vue';
-import type { Camp } from '@camp-registration/common/dist/node/entities';
+import type { Camp } from '@camp-registration/common/entities';
 
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useI18n } from 'vue-i18n';

@@ -3,7 +3,7 @@ import {
   User as UserModel,
   Camp,
   Registration,
-  Template,
+  TableTemplate,
   CampManager,
   Bed,
   Room,
@@ -12,13 +12,18 @@ import {
 
 declare global {
   namespace Express {
+    interface AuthUser {
+      id: string;
+      role: string;
+    }
+
     interface Request {
-      user: { id: string } | undefined;
+      user?: AuthUser;
       models: {
         user?: UserModel;
         camp?: Camp;
         registration?: Registration;
-        template?: Template;
+        tableTemplate?: TableTemplate;
         manager?: CampManager;
         room?: Room & { beds: Bed[] };
         bed?: Bed;

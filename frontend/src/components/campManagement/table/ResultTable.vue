@@ -150,7 +150,7 @@
 
 <script lang="ts" setup>
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import { QTableColumn } from 'src/types/quasar/QTableColum';
+import { QTableColumn } from 'quasar';
 import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, nextTick, ref, watch } from 'vue';
@@ -172,7 +172,7 @@ import {
   Registration,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import EditResultTemplatesDialog from 'components/campManagement/table/dialogs/template/EditResultTemplatesDialog.vue';
+import TableTemplateIndexDialog from 'components/campManagement/table/dialogs/template/TableTemplateIndexDialog.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
@@ -542,7 +542,7 @@ function prepareTableForExport() {
 function editTemplates() {
   quasar
     .dialog({
-      component: EditResultTemplatesDialog,
+      component: TableTemplateIndexDialog,
       componentProps: {
         templates: props.templates,
         camp: props.camp,

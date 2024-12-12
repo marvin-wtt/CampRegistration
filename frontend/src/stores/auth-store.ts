@@ -76,7 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
     await errorOnFailure(async () => {
       const result = await apiService.login(email, password, remember);
 
-      bus.emit('login', result.user);
+      bus.emit('login', result.profile);
 
       handleTokenRefresh(result.tokens);
 
@@ -88,7 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       await router.push(destination);
 
-      return result.user;
+      return result.profile;
     });
   }
 

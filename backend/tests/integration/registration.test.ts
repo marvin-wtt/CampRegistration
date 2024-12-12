@@ -6,8 +6,9 @@ import {
   FileFactory,
   RegistrationFactory,
   UserFactory,
+  CampManagerFactory,
 } from '../../prisma/factories';
-import { Camp } from '@prisma/client';
+import { Camp, Prisma } from '@prisma/client';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import {
@@ -32,14 +33,16 @@ import {
   campWithContactEmailInternational,
   campWithEmailAndMaxParticipants,
   campWithFormFunctions,
+  campWithAddress,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import { CampManagerFactory } from '../../prisma/factories/manager';
 import mailer from '../../src/config/mail';
 
 describe('/api/v1/camps/:campId/registrations', () => {
-  const createCampWithManagerAndToken = async () => {
-    const camp = await CampFactory.create();
+  const createCampWithManagerAndToken = async (
+    campData: Partial<Prisma.CampCreateInput> = {},
+  ) => {
+    const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
@@ -389,7 +392,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
       });
 
       it('should respond with `400` status code when file is missing', async () => {
@@ -768,23 +771,73 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should respond with `400` status code when the waiting list field is set', async () => {
-        const camp = await CampFactory.create(campWithMaxParticipantsNational);
+      it('should set waiting list when country is provided via address', async () => {
+        const camp = await CampFactory.create(campWithAddress);
 
-        const data = {
-          data: {
+        // Fill camp
+        for (let i = 0; i < 5; i++) {
+          await assertRegistration(
+            camp.id,
+            {
+              first_name: `Jhon ${i}`,
+              address: {
+                country: 'de',
+              },
+            },
+            false,
+          );
+        }
+
+        // Assert waiting list
+        await assertRegistration(
+          camp.id,
+          {
             first_name: `Jhon`,
+            address: {
+              country: 'de',
+            },
           },
-          waitingList: false,
-        };
+          true,
+        );
 
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send(data)
-          .expect(400);
+        // Other nation should not be on waiting list
+        await assertRegistration(
+          camp.id,
+          {
+            first_name: `Jhon`,
+            address: {
+              country: 'fr',
+            },
+          },
+          false,
+        );
       });
 
-      it('should respond with `400` status code when camp country data is missing for international camp', async () => {
+      it('should ignore the waiting list field when set', async () => {
+        const camp = await CampFactory.create(campWithMaxParticipantsNational);
+
+        // Fill camp
+        for (let i = 0; i < 5; i++) {
+          await request()
+            .post(`/api/v1/camps/${camp.id}/registrations`)
+            .send({
+              data: { first_name: `Jhon ${i}` },
+              waitingList: false,
+            })
+            .expect(201);
+        }
+
+        // Assert waiting list
+        await assertRegistration(
+          camp.id,
+          {
+            first_name: `Jhon`,
+          },
+          true,
+        );
+      });
+
+      it('should respond with `409` status code when camp country data is missing for international camp', async () => {
         const camp = await CampFactory.create(campWithoutCountryData);
 
         const data = {
@@ -796,10 +849,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data)
-          .expect(400);
+          .expect(409);
       });
 
-      it('should respond with `400` status code when camp country data is invalid for international camp', async () => {
+      it('should respond with `409` status code when camp country data is invalid for international camp', async () => {
         const camp = await CampFactory.create(campWithoutCountryData);
 
         const data = {
@@ -812,10 +865,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data)
-          .expect(400);
+          .expect(409);
       });
 
-      it('should respond with `400` status code when camp country data is not matching for international camp', async () => {
+      it('should respond with `409` status code when camp country data is not matching for international camp', async () => {
         const camp = await CampFactory.create(campWithoutCountryData);
 
         const data = {
@@ -828,7 +881,138 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data)
-          .expect(400);
+          .expect(409);
+      });
+    });
+
+    describe('free places', () => {
+      it('should decrement free places for national registrations', async () => {
+        const camp = await CampFactory.create(
+          campWithMaxParticipantsRolesNational,
+        );
+
+        const data = {
+          first_name: `Tom`,
+          role: 'participant',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations/`)
+          .send({ data })
+          .expect(201);
+
+        const refCamp = await prisma.camp.findFirst({
+          where: { id: camp.id },
+        });
+        expect(refCamp?.freePlaces).toBe(4);
+      });
+
+      it('should decrement free places for national registrations without role', async () => {
+        const camp = await CampFactory.create(campWithMaxParticipantsNational);
+
+        const data = {
+          first_name: `Tom`,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations/`)
+          .send({ data })
+          .expect(201);
+
+        const refCamp = await prisma.camp.findFirst({
+          where: { id: camp.id },
+        });
+        expect(refCamp?.freePlaces).toBe(4);
+      });
+
+      it('should decrement free places for international registrations', async () => {
+        const camp = await CampFactory.create(
+          campWithMaxParticipantsRolesInternational,
+        );
+        // { fr: 3, de: 5 }
+
+        const data = {
+          first_name: `Tom`,
+          role: 'participant',
+          country: 'de',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations/`)
+          .send({ data })
+          .expect(201);
+
+        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(refCamp?.freePlaces).toStrictEqual({
+          de: 4,
+          fr: 3,
+        });
+      });
+
+      it('should decrement free places for international registrations without role', async () => {
+        const camp = await CampFactory.create(
+          campWithMaxParticipantsInternational,
+        );
+        // { fr: 3, de: 5 }
+
+        const data = {
+          first_name: `Tom`,
+          country: 'fr',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations/`)
+          .send({ data })
+          .expect(201);
+
+        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(refCamp?.freePlaces).toStrictEqual({
+          de: 5,
+          fr: 2,
+        });
+      });
+
+      it('should not decrement free places for non participants and national camps', async () => {
+        const camp = await CampFactory.create(
+          campWithMaxParticipantsRolesNational,
+        );
+
+        const data = {
+          first_name: `Tom`,
+          role: 'counselor',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations/`)
+          .send({ data })
+          .expect(201);
+
+        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(refCamp?.freePlaces).toBe(5);
+      });
+
+      it('should not decrement free places for non participants and international camps', async () => {
+        const camp = await CampFactory.create(
+          campWithMaxParticipantsRolesInternational,
+        );
+        // { fr: 3, de: 5 }
+
+        const data = {
+          first_name: `Tom`,
+          role: 'counselor',
+          country: 'de',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations/`)
+          .send({ data })
+          .expect(201);
+
+        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(refCamp?.freePlaces).toStrictEqual({
+          de: 5,
+          fr: 3,
+        });
       });
     });
 
@@ -963,10 +1147,23 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
   });
 
-  describe('PUT /api/v1/camps/:campId/registrations/:registrationId', () => {
+  describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
     it.todo('should respond with `200` status code when user is camp manager');
 
-    it.todo('should respond with `200` status when waiting list is updated');
+    it('should respond with `200` status when waiting list is updated', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await createRegistration(camp);
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send({
+          waitingList: false,
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it.todo('should not overwrite camp data when updating waiting list ');
 
     it.todo('should upload files if attached');
 
@@ -976,7 +1173,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const registration = await createRegistration(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({
           data: {},
         })
@@ -989,7 +1186,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const registration = await createRegistration(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({})
         .expect(401);
     });
@@ -1027,6 +1224,170 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       const registrationCount = await countRegistrations(camp);
       expect(registrationCount).toBe(0);
+    });
+
+    describe('free places', () => {
+      it('should increment free places for national registrations', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithMaxParticipantsRolesNational,
+        );
+
+        // With role
+        const registrationA = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {
+            role: ['participant'],
+          },
+        });
+
+        // Without role
+        const registrationB = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {},
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationA.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        const campA = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(campA?.freePlaces).toBe(6);
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationB.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        const campB = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(campB?.freePlaces).toBe(7);
+      });
+
+      it('should increment free places for international registrations', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithMaxParticipantsRolesInternational,
+        );
+        // { fr: 3, de: 5 }
+
+        // With role
+        const registrationA = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {
+            role: ['participant'],
+            country: ['de'],
+          },
+        });
+
+        // Without role
+        const registrationB = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {
+            country: ['fr'],
+          },
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationA.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        const campA = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(campA?.freePlaces).toStrictEqual({
+          de: 6,
+          fr: 3,
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationB.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        const campB = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(campB?.freePlaces).toStrictEqual({
+          de: 6,
+          fr: 4,
+        });
+      });
+
+      it('should respond with `409` status code when country is missing for international registrations', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithMaxParticipantsInternational,
+        );
+
+        // With role
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {
+            role: ['participant'],
+          },
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(409);
+      });
+
+      it('should not increment free places for non participants and national camps', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithMaxParticipantsRolesNational,
+        );
+
+        // With role
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {
+            role: ['counselor'],
+          },
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(refCamp?.freePlaces).toBe(5);
+      });
+
+      it('should not increment free places for non participants and national camps', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithMaxParticipantsRolesInternational,
+        );
+
+        // With role
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {},
+          campData: {
+            role: ['counselor'],
+          },
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+        expect(refCamp?.freePlaces).toStrictEqual({
+          de: 5,
+          fr: 3,
+        });
+      });
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {

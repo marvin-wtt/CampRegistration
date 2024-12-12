@@ -6,12 +6,18 @@
   >
     <q-card style="min-width: 350px">
       <q-card-section>
-        <div class="text-h6">
+        <div
+          class="text-h6"
+          data-testid="title"
+        >
           {{ props.title }}
         </div>
       </q-card-section>
 
-      <q-card-section class="q-pt-none">
+      <q-card-section
+        class="q-pt-none"
+        data-testid="message"
+      >
         {{ props.message }}
       </q-card-section>
 
@@ -19,7 +25,10 @@
         {{ t('text.confirm', { label: props.label }) }}
       </q-card-section>
 
-      <q-card-section class="q-pt-none text-center text-bold">
+      <q-card-section
+        class="q-pt-none text-center text-bold data-value"
+        data-testid="value"
+      >
         {{ props.value }}
       </q-card-section>
 
@@ -30,6 +39,7 @@
           autofocus
           rounded
           outlined
+          data-testid="input"
         />
       </q-card-section>
 
@@ -42,13 +52,15 @@
           flat
           outline
           rounded
+          data-testid="cancel"
           @click="onDialogCancel"
         />
         <q-btn
-          :disable="confirmDeleteDisabled"
           :label="t('action.delete')"
+          :disable="confirmDeleteDisabled"
           color="negative"
           rounded
+          data-testid="submit"
           @click="onDialogOK"
         />
       </q-card-actions>
@@ -85,7 +97,12 @@ const confirmDeleteDisabled = computed<boolean>(() => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.data-value {
+  /* Ensure that multiple spaces are shown correctly */
+  white-space: pre-wrap;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 text:

@@ -14,8 +14,8 @@
   },
   "workspaces": [
     "common",
-    "frontend",
     "backend",
+    "frontend",
     "e2e"
   ],
   "devDependencies": {

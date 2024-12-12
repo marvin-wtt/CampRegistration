@@ -7,7 +7,6 @@ export default async () => {
 
   for (const name of modelNames) {
     try {
-      // @ts-expect-error https://github.com/prisma/docs/issues/451
       await prisma[name].deleteMany();
     } catch (e) {
       console.error(`Error while deleting ${name}`);

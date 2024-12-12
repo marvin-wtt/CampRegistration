@@ -1,9 +1,12 @@
-import { describe, expect, it, expectTypeOf } from 'vitest';
-import { CampFactory, UserFactory } from '../../prisma/factories';
+import { describe, expect, it } from 'vitest';
+import {
+  CampFactory,
+  UserFactory,
+  CampManagerFactory,
+  InvitationFactory,
+} from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
-import { CampManagerFactory } from '../../prisma/factories/manager';
-import { InvitationFactory } from '../../prisma/factories/invitation';
 import prisma from '../utils/prisma';
 import { ulid } from 'ulidx';
 
@@ -42,7 +45,6 @@ describe('/api/v1/camps/:campId/managers', () => {
         .expect(200);
 
       expect(body).toHaveProperty('data');
-      expectTypeOf(body.data).toBeArray();
       expect(body.data.length).toBe(2);
       expect(body.data[0]).toEqual({
         id: expect.anything(),

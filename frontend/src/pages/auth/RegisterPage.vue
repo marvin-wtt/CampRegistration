@@ -14,8 +14,8 @@
         <q-card-section class="q-gutter-md">
           <q-input
             v-model="name"
-            :rules="[(val) => !!val || t('fields.name.rules.required')]"
-            :label="t('fields.name.label')"
+            :rules="[(val?: string) => !!val || t('field.name.rule.required')]"
+            :label="t('field.name.label')"
             outlined
             rounded
           >
@@ -28,8 +28,8 @@
             v-model="email"
             type="email"
             autocomplete="email"
-            :rules="[(val) => !!val || t('fields.email.rules.required')]"
-            :label="t('fields.email.label')"
+            :rules="[(val?: string) => !!val || t('field.email.rule.required')]"
+            :label="t('field.email.label')"
             outlined
             rounded
           >
@@ -42,8 +42,8 @@
             v-model="password"
             type="password"
             autocomplete="new-password"
-            :rules="[(val) => !!val || t('fields.password.rules.required')]"
-            :label="t('fields.password.label')"
+            :rules="passwordRules"
+            :label="t('field.password.label')"
             outlined
             rounded
           >
@@ -57,11 +57,10 @@
             type="password"
             autocomplete="new-password"
             :rules="[
-              (val) =>
-                val === password ||
-                t('fields.confirm-password.rules.identical'),
+              (val?: string) =>
+                val === password || t('field.confirm-password.rule.identical'),
             ]"
-            :label="t('fields.confirm-password.label')"
+            :label="t('field.confirm-password.label')"
             outlined
             rounded
           >
@@ -78,7 +77,7 @@
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.register')"
+            :label="t('action.register')"
             rounded
           />
         </q-card-actions>
@@ -97,7 +96,7 @@
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.login')"
+            :label="t('action.login')"
             :to="{ name: 'login' }"
             rounded
             outline
@@ -109,7 +108,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
@@ -128,10 +127,44 @@ const error = computed(() => {
   return authStore.error;
 });
 
-onMounted(() => {
-  // Suppress any previous errors
-  authStore.reset();
-});
+// Suppress any previous errors
+authStore.reset();
+
+const passwordRequirements = {
+  min: 8,
+  max: 26,
+  lowerCase: 1,
+  upperCase: 1,
+  symbol: 1,
+  numeric: 1,
+  requirementCount: 3,
+};
+
+const passwordRules = [
+  (val: string) =>
+    val.length >= passwordRequirements.min ||
+    t('field.password.rule.minLength', { min: passwordRequirements.min }),
+  (val: string) =>
+    val.length <= passwordRequirements.max ||
+    t('field.password.rule.maxLength', { max: passwordRequirements.max }),
+  (val: string) =>
+    (val.match(/[a-z]/g) || []).length >= passwordRequirements.lowerCase ||
+    t('field.password.rule.lowerCase', {
+      count: passwordRequirements.lowerCase,
+    }),
+  (val: string) =>
+    (val.match(/[A-Z]/g) || []).length >= passwordRequirements.upperCase ||
+    t('field.password.rule.upperCase', {
+      count: passwordRequirements.upperCase,
+    }),
+  (val: string) =>
+    (val.match(/[!@#$%^&*()\-_=+\[\\\]{}|;:",.<>?]/g) || []).length >=
+      passwordRequirements.symbol ||
+    t('field.password.rule.symbol', { count: passwordRequirements.symbol }),
+  (val: string) =>
+    (val.match(/[0-9]/g) || []).length >= passwordRequirements.numeric ||
+    t('field.password.rule.numeric', { count: passwordRequirements.numeric }),
+];
 
 function register() {
   authStore.register(name.value, email.value, password.value);
@@ -141,25 +174,31 @@ function register() {
 <i18n lang="yaml" locale="en">
 title: 'Register'
 
-fields:
+field:
   name:
-    label: 'Name'
-    rules:
+    label: 'First and last name'
+    rule:
       required: 'You must provide a name'
   email:
     label: 'Email'
-    rules:
+    rule:
       required: 'You must provide a valid email'
   password:
     label: 'Password'
-    rules:
-      required: 'You must provide a valid password'
+    rule:
+      minLength: 'Minimum length is {min}'
+      maxLength: 'Maximum length is {max}'
+      lowerCase: 'At least {count} lowercase letter(s) required'
+      upperCase: 'At least {count} uppercase letter(s) required'
+      symbol: 'At least {count} symbol(s) required'
+      numeric: 'At least {count} number(s) required'
+      requirementCount: 'At least {count} out of 4 character types required'
   confirm-password:
     label: 'Confirm Password'
-    rules:
+    rule:
       identical: 'Password does not match'
 
-actions:
+action:
   login: 'Login'
   register: 'Register'
 </i18n>
@@ -167,25 +206,31 @@ actions:
 <i18n lang="yaml" locale="de">
 title: 'Registrieren'
 
-fields:
+field:
   name:
-    label: 'Name'
-    rules:
+    label: 'Vor- und Nachname'
+    rule:
       required: 'Sie müssen einen Namen angeben'
   email:
     label: 'E-Mail'
-    rules:
+    rule:
       required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
   password:
     label: 'Passwort'
-    rules:
-      required: 'Sie müssen ein gültiges Passwort angeben'
+    rule:
+      minLength: 'Die Mindestlänge beträgt {min}'
+      maxLength: 'Die Maximallänge beträgt {max}'
+      lowerCase: 'Mindestens {count} Kleinbuchstabe(n) erforderlich'
+      upperCase: 'Mindestens {count} Großbuchstabe(n) erforderlich'
+      symbol: 'Mindestens {count} Symbol(e) erforderlich'
+      numeric: 'Mindestens {count} Zahl(en) erforderlich'
+      requirementCount: 'Mindestens {count} von 4 Zeichenarten erforderlich'
   confirm-password:
     label: 'Passwort bestätigen'
-    rules:
+    rule:
       identical: 'Passwörter stimmen nicht überein'
 
-actions:
+action:
   login: 'Anmelden'
   register: 'Registrieren'
 </i18n>
@@ -195,23 +240,29 @@ title: 'Inscription'
 
 fields:
   name:
-    label: 'Nom'
-    rules:
+    label: 'Nom et prénom'
+    rule:
       required: 'Vous devez fournir un nom'
   email:
     label: 'E-mail'
-    rules:
+    rule:
       required: 'Vous devez fournir une adresse e-mail valide'
   password:
     label: 'Mot de passe'
-    rules:
-      required: 'Vous devez fournir un mot de passe valide'
+    rule:
+      minLength: 'La longueur minimale est de {min}'
+      maxLength: 'La longueur maximale est de {max}'
+      lowerCase: 'Au moins {count} lettre(s) minuscule(s) requise(s)'
+      upperCase: 'Au moins {count} lettre(s) majuscule(s) requise(s)'
+      symbol: 'Au moins {count} symbole(s) requis'
+      numeric: 'Au moins {count} chiffre(s) requis'
+      requirementCount: 'Au moins {count} des 4 types de caractères requis'
   confirm-password:
     label: 'Confirmer le mot de passe'
-    rules:
+    rule:
       identical: 'Les mots de passe ne correspondent pas'
 
-actions:
+action:
   login: 'Connexion'
   register: "S'inscrire"
 </i18n>

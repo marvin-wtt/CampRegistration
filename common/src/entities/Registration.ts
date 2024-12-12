@@ -10,7 +10,8 @@ export interface Registration extends Identifiable, Timestamps {
   files?: Record<string, string>;
 }
 
-export type RegistrationCreateData = unknown;
+export type RegistrationCreateData = Pick<Registration, 'data'> &
+  Pick<Partial<Registration>, 'locale'>;
 
 export type RegistrationUpdateData = Partial<
   Pick<Registration, 'data' | 'waitingList'>

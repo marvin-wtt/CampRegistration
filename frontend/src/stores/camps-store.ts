@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia';
-import type { Camp, CampCreateData } from '@camp-registration/common/entities';
+import type {
+  Camp,
+  CampCreateData,
+  CampUpdateData,
+} from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
@@ -40,9 +44,7 @@ export const useCampsStore = defineStore('camps', () => {
     return lazyFetch(async () => await apiService.fetchCamps());
   }
 
-  async function createEntry(
-    createData: CampCreateData,
-  ): Promise<Camp | undefined> {
+  async function createEntry(createData: CampCreateData): Promise<Camp> {
     return withProgressNotification('update', async () => {
       const newCamp = await apiService.createCamp(createData);
 
@@ -54,7 +56,7 @@ export const useCampsStore = defineStore('camps', () => {
 
   async function updateEntry(
     id: string,
-    updateData: Partial<Camp>,
+    updateData: CampUpdateData,
   ): Promise<Camp | undefined> {
     checkNotNullWithNotification(id);
     return withProgressNotification('update', async () => {

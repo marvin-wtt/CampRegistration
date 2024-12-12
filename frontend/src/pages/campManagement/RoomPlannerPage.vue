@@ -5,6 +5,13 @@
     padding
     class="column"
   >
+    <div
+      v-if="!loading && rooms.length === 0"
+      class="col self-center content-center text-h3 text-center"
+    >
+      {{ t('noEntries') }}
+    </div>
+
     <!-- Content -->
     <div class="row items-start">
       <template v-if="loading">
@@ -56,9 +63,12 @@
         icon="keyboard_arrow_up"
         direction="up"
       >
+        <!-- Room ordering is currently not supported -->
+        <!-- TODO Enable when ordering is supported -->
         <q-fab-action
           color="primary"
           icon="swap_vert"
+          :disable="rooms.length === 0 && false"
           @click="orderRooms"
         />
         <q-fab-action
@@ -72,29 +82,34 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
 import { Roommate, RoomWithRoommates } from 'src/types/Room';
-import ModifyRoomDialog from 'components/campManagement/roomPlanner/dialogs/ModifyRoomDialog.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
-import OrderRoomsDialog from 'components/campManagement/roomPlanner/dialogs/OrderRoomsDialog.vue';
+import RoomOrderDialog from 'components/campManagement/roomPlanner/dialogs/RoomOrderDialog.vue';
+import RoomCreateDialog from 'components/campManagement/roomPlanner/dialogs/RoomCreateDialog.vue';
+import RoomEditDialog from 'components/campManagement/roomPlanner/dialogs/RoomEditDialog.vue';
+import type {
+  RoomCreateData,
+  RoomUpdateData,
+} from '@camp-registration/common/entities';
+import { useI18n } from 'vue-i18n';
 
 const quasar = useQuasar();
+const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomPlannerStore();
 
 const addLoading = ref(false);
 
-onMounted(async () => {
-  await registrationsStore.fetchData();
-  await roomStore.fetchRooms();
-});
+registrationsStore.fetchData();
+roomStore.fetchRooms();
 
 const loading = computed<boolean>(() => {
   return roomStore.isLoading;
@@ -126,38 +141,32 @@ const availablePeople = computed<Roommate[]>(() => {
 });
 
 function addRoom() {
-  const room: Omit<RoomWithRoommates, 'beds'> = {
-    id: 'filled-by-server',
-    name: '',
-    capacity: 0,
-  };
-
   quasar
     .dialog({
-      component: ModifyRoomDialog,
+      component: RoomCreateDialog,
       componentProps: {
-        mode: 'create',
-        room: room,
         locales: locales.value,
       },
     })
-    .onOk((payload) => {
+    .onOk((payload: RoomCreateData) => {
       roomStore.createRoom(payload);
     });
 }
 
 function editRoom(room: RoomWithRoommates): void {
+  const roomUpdate: RoomUpdateData = {
+    name: room.name,
+  };
+
   quasar
     .dialog({
-      component: ModifyRoomDialog,
+      component: RoomEditDialog,
       componentProps: {
-        room: room,
-        mode: 'edit',
-        locales: locales,
+        room: roomUpdate,
+        locales,
       },
-      persistent: true,
     })
-    .onOk((payload: RoomWithRoommates) => {
+    .onOk((payload: RoomUpdateData) => {
       roomStore.updateRoom(room.id, payload);
     });
 }
@@ -165,14 +174,17 @@ function editRoom(room: RoomWithRoommates): void {
 function orderRooms() {
   quasar
     .dialog({
-      component: OrderRoomsDialog,
+      component: RoomOrderDialog,
       componentProps: {
         rooms: rooms.value,
       },
       persistent: true,
     })
     .onOk((payload: RoomWithRoommates[]) => {
-      // TODO Compare changes and update
+      // TODO Rooms needs order property so safe the order
+      payload.forEach((room: RoomWithRoommates) => {
+        roomStore.updateRoom(room.id, room);
+      });
     });
 }
 
@@ -201,7 +213,14 @@ function onBedUpdate(
 }
 </style>
 
-<!-- TODO Translations -->
 <i18n lang="yaml" locale="en">
-title: 'Room Planner'
+noEntries: 'Create new rooms to start'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+noEntries: 'Neue Räume erstellen, um zu beginnen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+noEntries: 'Créer de nouvelles pièces pour commencer'
 </i18n>

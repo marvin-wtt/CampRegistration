@@ -16,7 +16,9 @@
             v-model="email"
             type="email"
             autocomplete="email"
-            :rules="[(val) => !!val || t('fields.email.rules.required')]"
+            :rules="[
+              (val?: string) => !!val || t('fields.email.rules.required'),
+            ]"
             :label="t('fields.email.label')"
             outlined
             rounded
@@ -51,7 +53,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
@@ -63,13 +65,11 @@ const email = ref<string>('');
 const authStore = useAuthStore();
 const { loading } = storeToRefs(authStore);
 
+// Suppress any previous errors
+authStore.reset();
+
 const error = computed(() => {
   return authStore.error;
-});
-
-onMounted(() => {
-  // Suppress any previous errors
-  authStore.reset();
 });
 
 function resetPassword() {

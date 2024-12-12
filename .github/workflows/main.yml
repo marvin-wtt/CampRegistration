@@ -7,10 +7,16 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
 
     services:
       mysql:
@@ -41,6 +47,8 @@ jobs:
       SMTP_USERNAME: user
       SMTP_PASSWORD: password
       EMAIL_FROM: noreply@yourapp.com
+      EMAIL_REPLY_TO: noreply@yourapp.com
+      EMAIL_ADMIN: admin@yourapp.com
 
     steps:
       - name: Checkout code

@@ -16,10 +16,16 @@
 
         <q-space />
 
+        <header-navigation
+          v-if="user"
+          :administration="administrator"
+        />
+
         <q-btn
+          v-else
           :label="t('create')"
           :to="{ name: 'management' }"
-          class="desktop-only"
+          class="gt-sm"
           flat
           rounded
         />
@@ -58,7 +64,8 @@ import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
-import { onMounted } from 'vue';
+import { computed } from 'vue';
+import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -71,10 +78,12 @@ useMeta(() => {
   };
 });
 
-onMounted(() => {
-  if (!authStore.user) {
-    authStore.init();
-  }
+if (!authStore.user) {
+  authStore.init();
+}
+
+const administrator = computed<boolean>(() => {
+  return authStore.user?.role === 'ADMIN';
 });
 
 function logout() {
