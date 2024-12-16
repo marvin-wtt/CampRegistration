@@ -1,16 +1,16 @@
-import prisma from 'client';
+import prisma from '../../client.js';
 import { File, Prisma } from '@prisma/client';
-import config from 'config';
+import config from '#config/index';
 import fs from 'fs';
-import { ulid } from 'utils/ulid';
-import ApiError from 'utils/ApiError';
+import { ulid } from '#utils/ulid';
+import ApiError from '#utils/ApiError';
 import path from 'path';
 import fse from 'fs-extra';
 import httpStatus from 'http-status';
-import { extractKeyFromFieldName } from 'utils/form';
+import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
 import moment from 'moment';
-import logger from 'config/logger';
+import logger from '#core/logger';
 
 type RequestFile = Express.Multer.File;
 

@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { Request, Response, NextFunction } from 'express';
-import ApiError from './ApiError';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
 // TODO Can be removed with express v5.x

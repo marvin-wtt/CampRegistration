@@ -1,6 +1,6 @@
 import express from 'express';
-import { auth, authLimiter, guest } from 'middlewares';
-import authController from './auth.controller';
+import { auth, authLimiter, guest } from '#middlewares/index';
+import authController from './auth.controller.js';
 
 const router = express.Router();
 

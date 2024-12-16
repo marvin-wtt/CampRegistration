@@ -1,13 +1,13 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { validateEnv } from 'core/validation/env';
+import { validateEnv } from '#core/validation/env';
 
 // This must happen before importing the individual configs
 dotenv.config();
 
-import authConfig from './auth.config';
-import emailConfig from './email.config';
-import storageOptions from './storage.config';
+import authConfig from './auth.config.js';
+import emailConfig from './email.config.js';
+import storageOptions from './storage.config.js';
 
 const MainEnvSchema = z
   .object({

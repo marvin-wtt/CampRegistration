@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { validateEnv } from 'core/validation/env';
+import { validateEnv } from '#core/validation/env';
 
 export const AuthEnvSchema = z
   .object({

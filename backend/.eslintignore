@@ -1,6 +1,6 @@
 node_modules
 public
 build
-.eslintrc.js
+.eslintrc.cjs
 vitest.config.integration.ts
 vitest.config.unit.ts

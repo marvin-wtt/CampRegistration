@@ -1,11 +1,11 @@
-import isMinor from './isMinor';
-import isAdult from './isAdult';
-import subtractYears from './subtractYears';
-import htmlDate from './htmlDate';
-import translate from './translate';
-import objectValues from './objectValues';
-import joinStrings from './joinStrings';
-import isWaitingList from './isWaitingList';
+import isMinor from './isMinor.js';
+import isAdult from './isAdult.js';
+import subtractYears from './subtractYears.js';
+import htmlDate from './htmlDate.js';
+import translate from './translate.js';
+import objectValues from './objectValues.js';
+import joinStrings from './joinStrings.js';
+import isWaitingList from './isWaitingList.js';
 
 type FunctionRegistrationParams = {
   name: string;

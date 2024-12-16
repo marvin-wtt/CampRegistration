@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
 import httpStatus from 'http-status';
-import config from 'config';
-import ApiError from 'utils/ApiError';
+import config from '#config/index';
+import ApiError from '#utils/ApiError';
 import { Token, TokenType, User } from '@prisma/client';
-import prisma from 'client';
-import { AuthTokensResponse } from 'types/response';
+import prisma from '../../client.js';
+import { AuthTokensResponse } from '#types/response';
 
 const generateToken = (
   userId: string,

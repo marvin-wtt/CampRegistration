@@ -1,15 +1,15 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import tokenService from 'app/token/token.service';
-import userService from 'app/user/user.service';
-import authService from 'app/auth/auth.service';
-import campService from 'app/camp/camp.service';
-import ApiError from 'utils/ApiError';
+import { catchRequestAsync } from '#utils/catchAsync';
+import tokenService from '#app/token/token.service';
+import userService from '#app/user/user.service';
+import authService from '#app/auth/auth.service';
+import campService from '#app/camp/camp.service';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { authUserId } from 'utils/authUserId';
-import { resource } from 'core/resource';
-import profileResource from './profile.resource';
-import { validateRequest } from 'core/validation/request';
-import validator from './profile.validation';
+import { authUserId } from '#utils/authUserId';
+import { resource } from '#core/resource';
+import profileResource from './profile.resource.js';
+import { validateRequest } from '#core/validation/request';
+import validator from './profile.validation.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);

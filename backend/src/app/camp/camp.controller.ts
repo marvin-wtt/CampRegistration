@@ -1,19 +1,19 @@
-import campService from './camp.service';
-import { campResource, detailedCampResource } from './camp.resource';
-import fileService from 'app/file/file.service';
-import registrationService from 'app/registration/registration.service';
-import tableTemplateService from 'app/tableTemplate/table-template.service';
+import campService from './camp.service.js';
+import { campResource, detailedCampResource } from './camp.resource.js';
+import fileService from '#app/file/file.service';
+import registrationService from '#app/registration/registration.service';
+import tableTemplateService from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
-import { collection, resource } from 'core/resource';
-import { authUserId } from 'utils/authUserId';
-import { routeModel } from 'utils/verifyModel';
-import defaultForm from 'assets/camp/defaultForm';
-import defaultThemes from 'assets/camp/defaultThemes';
-import defaultTemplates from 'assets/camp/defaultTemplates';
-import defaultFiles from 'assets/camp/defaultFiles';
-import { validateRequest } from 'core/validation/request';
-import validator from './camp.validation';
+import { catchRequestAsync } from '#utils/catchAsync';
+import { collection, resource } from '#core/resource';
+import { authUserId } from '#utils/authUserId';
+import { routeModel } from '#utils/verifyModel';
+import defaultForm from '#assets/camp/defaultForm';
+import defaultThemes from '#assets/camp/defaultThemes';
+import defaultTemplates from '#assets/camp/defaultTemplates';
+import defaultFiles from '#assets/camp/defaultFiles';
+import { validateRequest } from '#core/validation/request';
+import validator from './camp.validation.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);

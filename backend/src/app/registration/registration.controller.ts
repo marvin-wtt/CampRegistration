@@ -1,13 +1,13 @@
-import { catchRequestAsync } from 'utils/catchAsync';
+import { catchRequestAsync } from '#utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'core/resource';
-import registrationService from './registration.service';
-import registrationResource from './registration.resource';
-import { routeModel } from 'utils/verifyModel';
-import { requestLocale } from 'utils/requestLocale';
-import { catchAndResolve } from 'utils/promiseUtils';
-import { validateRequest } from 'core/validation/request';
-import validator from './registration.validation';
+import { collection, resource } from '#core/resource';
+import registrationService from './registration.service.js';
+import registrationResource from './registration.resource.js';
+import { routeModel } from '#utils/verifyModel';
+import { requestLocale } from '#utils/requestLocale';
+import { catchAndResolve } from '#utils/promiseUtils';
+import { validateRequest } from '#core/validation/request';
+import validator from './registration.validation.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const registration = routeModel(req.models.registration);

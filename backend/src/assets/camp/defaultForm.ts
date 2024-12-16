@@ -1,5 +1,5 @@
 // TODO Set file IDs
-import config from 'config';
+import config from '#config/index';
 
 const host = config.origin;
 

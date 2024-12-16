@@ -19,7 +19,7 @@ import {
   verifyToken,
 } from '../utils/token';
 import { request } from '../utils/request';
-import mailer from '../../src/config/mail';
+import mailer from '../../src/core/mail';
 
 describe('/api/v1/auth', async () => {
   describe('POST /api/v1/auth/register', () => {
