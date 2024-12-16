@@ -23,6 +23,17 @@
     "strictFunctionTypes": true,
     "noImplicitThis": true,
     "skipLibCheck": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "#*": ["src/*"]
+    }
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "verbose": false
+  },
+  "ts-node": {
+    "swc": true
   }
 }

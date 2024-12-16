@@ -1,4 +1,6 @@
-import { ComponentCollection, FunctionFactory, Serializer } from 'survey-core';
+const { Serializer, ComponentCollection, FunctionFactory } = await import(
+  'survey-core'
+);
 import questions from './questions/index.js';
 import functions from './functions/index.js';
 import properties from './properties/index.js';

@@ -1,4 +1,5 @@
-import { Question, SurveyModel } from 'survey-core';
+const { SurveyModel } = await import('survey-core');
+import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
 import { Camp } from '@prisma/client';
 
