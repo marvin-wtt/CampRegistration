@@ -1,6 +1,6 @@
 import { Request } from 'express';
-export * from './manager.guard';
-export { default as admin } from './admin.guard';
+export * from './manager.guard.js';
+export { default as admin } from './admin.guard.js';
 
 export type GuardFn = (
   req: Request,

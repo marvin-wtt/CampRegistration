@@ -1,16 +1,16 @@
-import { catchParamAsync } from 'utils/catchAsync';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import fileController from 'app/file/file.controller';
-import fileService from 'app/file/file.service';
+import { catchParamAsync } from '#utils/catchAsync';
+import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import fileController from '#app/file/file.controller';
+import fileService from '#app/file/file.service';
 import express, { Request } from 'express';
-import { auth, guard, multipart } from 'middlewares';
-import { and, or, campManager, campActive } from 'guards';
+import { auth, guard, multipart } from '#middlewares/index';
+import { and, or, campManager, campActive } from '#guards/index';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'fileId',
-  catchParamAsync(async (req, res, id) => {
+  catchParamAsync(async (req, _res, id) => {
     const camp = routeModel(req.models.camp);
     const file = await fileService.getModelFile('camp', camp.id, id);
     req.models.file = verifyModelExists(file);

@@ -1,13 +1,13 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import { resource } from 'core/resource';
-import bedService from './bed.service';
-import bedResource from './bed.resource';
-import registrationService from 'app/registration/registration.service';
+import { catchRequestAsync } from '#utils/catchAsync';
+import { resource } from '#core/resource';
+import bedService from './bed.service.js';
+import bedResource from './bed.resource.js';
+import registrationService from '#app/registration/registration.service';
 import httpStatus from 'http-status';
 import { Registration } from '@prisma/client';
-import ApiError from 'utils/ApiError';
-import { validateRequest } from 'core/validation/request';
-import validator from './bed.validation';
+import ApiError from '#utils/ApiError';
+import { validateRequest } from '#core/validation/request';
+import validator from './bed.validation.js';
 
 const store = catchRequestAsync(async (req, res) => {
   const {

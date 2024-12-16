@@ -1,5 +1,5 @@
-import type { Identifiable } from './Identifiable';
-import type { Translatable } from './Translatable';
+import type { Identifiable } from './Identifiable.js';
+import type { Translatable } from './Translatable.js';
 
 export interface ProgramEvent extends Identifiable {
   seriesId?: string;

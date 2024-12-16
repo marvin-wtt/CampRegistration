@@ -1,4 +1,4 @@
-import type { Identifiable } from './Identifiable';
+import type { Identifiable } from './Identifiable.js';
 
 export interface CampManager extends Identifiable {
   name: string | null;

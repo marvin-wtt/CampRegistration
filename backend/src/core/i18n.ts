@@ -1,5 +1,5 @@
 import i18next from 'i18next';
-import resources from 'i18n';
+import resources from '#i18n/index';
 
 export const initI18n = async () => {
   await i18next.init({

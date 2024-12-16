@@ -3,14 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import passport from 'passport';
-import router from './routes';
-import config from './config';
-import morgan from './config/morgan';
-import { errorConverter, errorHandler } from './middlewares';
-import { anonymousStrategy, jwtStrategy } from './config/passport';
+import router from '#routes/index';
+import config from '#config/index';
+import morgan from '#core/morgan';
+import { errorConverter, errorHandler } from '#middlewares/error.middleware';
+import { anonymousStrategy, jwtStrategy } from '#core/passport';
 import cookieParser from 'cookie-parser';
-import { initI18n } from 'config/i18n';
-import { startJobs } from 'jobs';
+import { initI18n } from '#core/i18n';
+import { startJobs } from '#jobs/index';
 
 const app = express();
 

@@ -1,4 +1,4 @@
-import htmlDate from './htmlDate';
+import htmlDate from './htmlDate.js';
 
 const subtractYears = (params: unknown[]): string | null => {
   if (params.length !== 2) {

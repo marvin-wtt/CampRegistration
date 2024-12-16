@@ -1,14 +1,14 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import fileService from './file.service';
+import { catchRequestAsync } from '#utils/catchAsync';
+import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import fileService from './file.service.js';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
-import { collection, resource } from 'core/resource';
+import ApiError from '#utils/ApiError';
+import { collection, resource } from '#core/resource';
 import { Request } from 'express';
-import fileResource from './file.resource';
+import fileResource from './file.resource.js';
 import { File } from '@prisma/client';
-import validator from './file.validation';
-import { validateRequest } from 'core/validation/request';
+import validator from './file.validation.js';
+import { validateRequest } from '#core/validation/request';
 
 const stream = catchRequestAsync(async (req, res) => {
   const {

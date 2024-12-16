@@ -1,6 +1,6 @@
 import express from 'express';
-import { auth } from 'middlewares';
-import profileController from './profile.controller';
+import { auth } from '#middlewares/auth.middleware';
+import profileController from './profile.controller.js';
 
 const router = express.Router({ mergeParams: true });
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PasswordSchema } from 'core/validation/helper';
+import { PasswordSchema } from '#core/validation/helper';
 
 const register = z.object({
   body: z.object({

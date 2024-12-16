@@ -1,17 +1,17 @@
 import express from 'express';
-import { auth, guard } from 'middlewares';
-import { campManager } from 'guards';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import { catchParamAsync } from 'utils/catchAsync';
-import roomService from './room.service';
-import roomController from './room.controller';
-import bedRoutes from 'app/bed/bed.routes';
+import { auth, guard } from '#middlewares/index';
+import { campManager } from '#guards/index';
+import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import { catchParamAsync } from '#utils/catchAsync';
+import roomService from './room.service.js';
+import roomController from './room.controller.js';
+import bedRoutes from '#app/bed/bed.routes';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'roomId',
-  catchParamAsync(async (req, res, id) => {
+  catchParamAsync(async (req, _res, id) => {
     const camp = routeModel(req.models.camp);
     const room = await roomService.getRoomById(camp.id, id);
     req.models.room = verifyModelExists(room);

@@ -1,28 +1,5 @@
-import { type Prisma } from '@prisma/client';
-import prisma from 'client';
-import { ulid } from 'utils/ulid';
-import {
-  baseObjectInputType,
-  baseObjectOutputType,
-  Writeable,
-  ZodArray,
-  ZodBoolean,
-  ZodEnum,
-  ZodFunction,
-  ZodNullable,
-  ZodNumber,
-  ZodObject,
-  ZodOptional,
-  ZodRecord,
-  ZodString,
-  ZodTuple,
-  ZodType,
-  ZodTypeAny,
-  ZodTypeDef,
-  ZodUnion,
-  ZodUnknown,
-} from 'zod';
-import { Output } from 'tsc-alias/dist/utils';
+import prisma from '../../client.js';
+import { ulid } from '#utils/ulid';
 
 const getTemplateById = async (campId: string, id: string) => {
   return prisma.tableTemplate.findFirst({
