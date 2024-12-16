@@ -1,11 +1,11 @@
-import { catchRequestAsync } from 'utils/catchAsync';
+import { catchRequestAsync } from '#utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'core/resource';
-import roomService from './room.service';
-import roomResource from './room.resource';
-import { routeModel } from 'utils/verifyModel';
-import { validateRequest } from 'core/validation/request';
-import validator from './room.validation';
+import { collection, resource } from '#core/resource';
+import roomService from './room.service.js';
+import roomResource from './room.resource.js';
+import { routeModel } from '#utils/verifyModel';
+import { validateRequest } from '#core/validation/request';
+import validator from './room.validation.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const room = routeModel(req.models.room);

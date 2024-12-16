@@ -1,9 +1,9 @@
 import nodemailer, { SendMailOptions } from 'nodemailer';
-import config from './index';
-import logger from './logger';
+import config from './index.js';
+import logger from './logger.js';
 import hbs from 'nodemailer-express-handlebars';
 import { create } from 'express-handlebars';
-import i18n from 'config/i18n';
+import i18n from '#config/i18n';
 import path from 'path';
 
 const transportOptions = () => {

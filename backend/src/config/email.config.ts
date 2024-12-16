@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { validateEnv } from 'core/validation/env';
-import { BooleanStringSchema } from 'core/validation/helper';
+import { validateEnv } from '#core/validation/env';
+import { BooleanStringSchema } from '#core/validation/helper';
 
 export const EmailEnvSchema = z
   .object({

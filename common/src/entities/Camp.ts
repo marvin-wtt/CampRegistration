@@ -1,7 +1,7 @@
-import { SurveyJSCampData } from './SurveyJSCampData';
-import { Identifiable } from './Identifiable';
+import { SurveyJSCampData } from './SurveyJSCampData.js';
+import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
-import { Translatable } from './Translatable';
+import { Translatable } from './Translatable.js';
 
 export interface Camp extends Identifiable {
   public: boolean;

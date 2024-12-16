@@ -1,6 +1,6 @@
-import type { Identifiable } from './Identifiable';
-import type { Translatable } from './Translatable';
-import type { Bed } from './Bed';
+import type { Identifiable } from './Identifiable.js';
+import type { Translatable } from './Translatable.js';
+import type { Bed } from './Bed.js';
 
 export interface Room extends Identifiable {
   name: Translatable;

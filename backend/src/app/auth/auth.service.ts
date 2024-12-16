@@ -1,13 +1,13 @@
 import httpStatus from 'http-status';
-import userService from 'app/user/user.service';
-import tokenService from 'app/token/token.service';
-import notificationService from 'app/notification/notification.service';
-import ApiError from 'utils/ApiError';
+import userService from '#app/user/user.service';
+import tokenService from '#app/token/token.service';
+import notificationService from '#app/notification/notification.service';
+import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
-import { encryptPassword, isPasswordMatch } from 'utils/encryption';
-import { AuthTokensResponse } from 'types/response';
-import prisma from 'client';
-import i18n, { t } from 'config/i18n';
+import { encryptPassword, isPasswordMatch } from '#utils/encryption';
+import { AuthTokensResponse } from '#types/response';
+import prisma from '../../client.js';
+import i18n, { t } from '#config/i18n';
 
 const loginUserWithEmailAndPassword = async (
   email: string,

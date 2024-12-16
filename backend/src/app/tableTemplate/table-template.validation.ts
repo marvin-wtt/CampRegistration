@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { translatedValue } from 'core/validation/helper';
+import { translatedValue } from '#core/validation/helper';
 
 const StringOrFunctionSchema = z.union([z.string(), z.function()]);
 

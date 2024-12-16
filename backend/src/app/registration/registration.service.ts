@@ -1,14 +1,14 @@
-import prisma from 'client';
-import { ulid } from 'utils/ulid';
-import ApiError from 'utils/ApiError';
+import prisma from '../../client.js';
+import { ulid } from '#utils/ulid';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { Camp, Prisma, Registration } from '@prisma/client';
-import dbJsonPath from 'utils/dbJsonPath';
-import { formUtils } from 'utils/form';
-import notificationService from 'app/notification/notification.service';
-import i18n, { t } from 'config/i18n';
-import { translateObject } from 'utils/translateObject';
-import config from 'config';
+import dbJsonPath from '#utils/dbJsonPath';
+import { formUtils } from '#utils/form';
+import notificationService from '#app/notification/notification.service';
+import i18n, { t } from '#config/i18n';
+import { translateObject } from '#utils/translateObject';
+import config from '#config/index';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({

@@ -1,5 +1,5 @@
-import type { Profile } from './Profile';
-import type { AuthTokens } from './AuthTokens';
+import type { Profile } from './Profile.js';
+import type { AuthTokens } from './AuthTokens.js';
 
 export interface Authentication {
   profile: Profile;

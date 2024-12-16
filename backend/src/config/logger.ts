@@ -1,6 +1,6 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
-import config from './index';
+import config from './index.js';
 import path from 'path';
 
 const enumerateErrorFormat = winston.format((info) => {

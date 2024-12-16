@@ -1,5 +1,5 @@
 import { Camp, User } from '@prisma/client';
-import campResource from 'app/camp/camp.resource';
+import campResource from '#app/camp/camp.resource';
 import type { Profile as ProfileResource } from '@camp-registration/common/entities';
 
 export const profileResource = (

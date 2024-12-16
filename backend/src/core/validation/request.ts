@@ -1,10 +1,10 @@
 import { AnyZodObject, z, ZodError } from 'zod';
 import type { Request } from 'express';
 import { fromError } from 'zod-validation-error';
-import ApiError from 'utils/ApiError';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import fileService from 'app/file/file.service';
-import logger from 'config/logger';
+import fileService from '#app/file/file.service';
+import logger from '#config/logger';
 
 export async function validateRequest<T extends AnyZodObject>(
   req: Request,

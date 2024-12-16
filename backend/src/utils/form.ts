@@ -1,9 +1,6 @@
 import { Question, SurveyModel } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import { initSurveyJS } from './surveyJS';
 import { Camp } from '@prisma/client';
-
-initSurveyJS();
 
 type CampWithFreePlaces = Camp & {
   freePlaces: number | Record<string, number>;

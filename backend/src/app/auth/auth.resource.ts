@@ -3,7 +3,7 @@ import type {
   Profile,
   Token,
 } from '@camp-registration/common/entities';
-import { AuthTokensResponse, TokenResponse } from 'types/response';
+import { AuthTokensResponse, TokenResponse } from '#types/response';
 
 export const authResource = (
   profile: Profile,

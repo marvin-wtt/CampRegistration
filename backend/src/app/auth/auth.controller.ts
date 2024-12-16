@@ -1,20 +1,20 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
-import authService from './auth.service';
-import userService from 'app/user/user.service';
-import tokenService from 'app/token/token.service';
+import { catchRequestAsync } from '#utils/catchAsync';
+import authService from './auth.service.js';
+import userService from '#app/user/user.service';
+import tokenService from '#app/token/token.service';
 import { Request, Response } from 'express';
-import { AuthTokensResponse } from 'types/response';
-import config from 'config';
-import profileResource from 'app/profile/profile.resource';
-import ApiError from 'utils/ApiError';
-import managerService from 'app/manager/manager.service';
-import { requestLocale } from 'utils/requestLocale';
-import { authUserId } from 'utils/authUserId';
-import { catchAndResolve } from 'utils/promiseUtils';
-import authResource from './auth.resource';
-import { validateRequest } from 'core/validation/request';
-import validator from './auth.validation';
+import { AuthTokensResponse } from '#types/response';
+import config from '#config/index';
+import profileResource from '#app/profile/profile.resource';
+import ApiError from '#utils/ApiError';
+import managerService from '#app/manager/manager.service';
+import { requestLocale } from '#utils/requestLocale';
+import { authUserId } from '#utils/authUserId';
+import { catchAndResolve } from '#utils/promiseUtils';
+import authResource from './auth.resource.js';
+import { validateRequest } from '#core/validation/request';
+import validator from './auth.validation.js';
 
 const register = catchRequestAsync(async (req, res) => {
   const {

@@ -1,10 +1,10 @@
 import express from 'express';
-import v1routes from './v1';
-import { generalLimiter, maintenance } from 'middlewares';
+import v1routes from './v1.js';
+import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
-import ApiError from 'utils/ApiError';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import morgan from 'config/morgan';
+import morgan from '#config/morgan';
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
 router.use('/v1', v1routes);
 
 // send back a 404 error for any unknown api request
-router.use((req, res, next) => {
+router.use((_req, _res, next) => {
   next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
 });
 

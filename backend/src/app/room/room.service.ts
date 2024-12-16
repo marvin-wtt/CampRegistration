@@ -1,5 +1,5 @@
-import prisma from 'client';
-import { ulid } from 'utils/ulid';
+import prisma from '../../client.js';
+import { ulid } from '#utils/ulid';
 
 const getRoomById = async (campId: string, id: string) => {
   return prisma.room.findFirst({
