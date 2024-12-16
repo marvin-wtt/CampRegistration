@@ -10,7 +10,7 @@ import httpStatus from 'http-status';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
 import moment from 'moment';
-import logger from '#config/logger';
+import logger from '#core/logger';
 
 type RequestFile = Express.Multer.File;
 

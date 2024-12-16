@@ -4,7 +4,7 @@ import { fromError } from 'zod-validation-error';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import fileService from '#app/file/file.service';
-import logger from '#config/logger';
+import logger from '#core/logger';
 
 export async function validateRequest<T extends AnyZodObject>(
   req: Request,

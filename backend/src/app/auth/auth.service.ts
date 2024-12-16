@@ -7,7 +7,7 @@ import { TokenType } from '@prisma/client';
 import { encryptPassword, isPasswordMatch } from '#utils/encryption';
 import { AuthTokensResponse } from '#types/response';
 import prisma from '../../client.js';
-import i18n, { t } from '#config/i18n';
+import i18n, { t } from '#core/i18n';
 
 const loginUserWithEmailAndPassword = async (
   email: string,

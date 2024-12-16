@@ -2,7 +2,7 @@ import { ErrorRequestHandler } from 'express';
 import { Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import config from '#config/index';
-import logger from '#config/logger';
+import logger from '#core/logger';
 import ApiError from '#utils/ApiError';
 
 export const errorConverter: ErrorRequestHandler = (err, _req, _res, next) => {
