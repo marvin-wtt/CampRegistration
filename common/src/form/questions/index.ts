@@ -1,7 +1,7 @@
-import address from './address.question';
-import country from './country.question';
-import dateOfBirth from './dateOfBirth.question';
-import role from './role.question';
+import address from './address.question.js';
+import country from './country.question.js';
+import dateOfBirth from './dateOfBirth.question.js';
+import role from './role.question.js';
 
 const questions = [address, country, dateOfBirth, role];
 

@@ -1,4 +1,4 @@
-import { Identifiable } from './Identifiable';
+import { Identifiable } from './Identifiable.js';
 
 export interface User extends Identifiable {
   email: string;

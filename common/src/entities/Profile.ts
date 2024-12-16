@@ -1,4 +1,4 @@
-import type { Camp } from './Camp';
+import type { Camp } from './Camp.js';
 
 export interface Profile {
   email: string;

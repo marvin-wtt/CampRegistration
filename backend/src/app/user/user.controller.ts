@@ -1,14 +1,14 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
-import authService from 'app/auth/auth.service';
-import userService from './user.service';
-import { routeModel } from 'utils/verifyModel';
-import { collection, resource } from 'core/resource';
-import userResource from './user.resource';
-import { validateRequest } from 'core/validation/request';
-import validator from './user.validation';
+import { catchRequestAsync } from '#utils/catchAsync';
+import authService from '#app/auth/auth.service';
+import userService from './user.service.js';
+import { routeModel } from '#utils/verifyModel';
+import { collection, resource } from '#core/resource';
+import userResource from './user.resource.js';
+import { validateRequest } from '#core/validation/request';
+import validator from './user.validation.js';
 
-const index = catchRequestAsync(async (req, res) => {
+const index = catchRequestAsync(async (_req, res) => {
   const users = await userService.queryUsers();
 
   res.json(collection(users.map(userResource)));

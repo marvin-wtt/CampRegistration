@@ -1,4 +1,4 @@
-import type { Identifiable } from './Identifiable';
+import type { Identifiable } from './Identifiable.js';
 
 export interface TableTemplate extends Identifiable {
   title: string | Record<string, string>;

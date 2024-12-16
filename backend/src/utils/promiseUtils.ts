@@ -1,4 +1,4 @@
-import logger from '../core/logger';
+import logger from '#core/logger';
 
 export async function catchAndResolve<T>(
   promise: Promise<T>,

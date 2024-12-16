@@ -1,9 +1,9 @@
 import { Response } from 'express';
 import morgan from 'morgan';
-import config from 'config';
-import logger from './logger';
+import config from '#config/index';
+import logger from '#core/logger';
 
-morgan.token('message', (req, res: Response) => res.locals.errorMessage || '');
+morgan.token('message', (_req, res: Response) => res.locals.errorMessage || '');
 
 const getIpFormat = () =>
   config.env === 'production' ? ':remote-addr - ' : '';
@@ -13,12 +13,12 @@ const errorResponseFormat = `${getIpFormat()}:method :url :status - :response-ti
 const isTest = config.env === 'test';
 
 export const successHandler = morgan(successResponseFormat, {
-  skip: (req, res) => isTest || res.statusCode >= 400,
+  skip: (_req, res) => isTest || res.statusCode >= 400,
   stream: { write: (message) => logger.info(message.trim()) },
 });
 
 export const errorHandler = morgan(errorResponseFormat, {
-  skip: (req, res) => isTest || res.statusCode < 400,
+  skip: (_req, res) => isTest || res.statusCode < 400,
   stream: { write: (message) => logger.error(message.trim()) },
 });
 

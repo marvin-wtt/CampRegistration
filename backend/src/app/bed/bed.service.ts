@@ -1,4 +1,4 @@
-import prisma from 'client';
+import prisma from '../../client.js';
 import { ulid } from 'utils/ulid';
 
 const getBedById = async (id: string, roomId: string) => {

@@ -1,6 +1,7 @@
 {
   "name": "@camp-registration/common",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
   "description": "Common utils for camp registration",
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
@@ -16,9 +17,7 @@
   "license": "ISC",
   "scripts": {
     "clean": "rimraf ./dist/ && rimraf ./node_modules/",
-    "build": "npm run build:esm && npm run build:node",
-    "build:esm": "tsc --project tsconfig.esm.json",
-    "build:node": "tsc --project tsconfig.node.json",
+    "build": "tsc",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint --ext .js,.ts ./",
@@ -27,24 +26,8 @@
   },
   "main": "dist/index.js",
   "exports": {
-    "./form": {
-      "types": "./dist/node/form/index.d.ts",
-      "node": "./dist/node/form/index.js",
-      "module": "./dist/esm/form/index.js"
-    },
-    "./entities": {
-      "types": "./dist/node/entities/index.d.ts"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "form": [
-        "./dist/node/form/index.d.ts"
-      ],
-      "entities": [
-        "./dist/node/entities/index.d.ts"
-      ]
-    }
+    "./form": "./dist/form/index.js",
+    "./entities": "./dist/entities/index.js"
   },
   "devDependencies": {
     "@types/node": "^20.8.6",
@@ -56,12 +39,14 @@
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.3",
     "rimraf": "^5.0.5",
-    "survey-core": "^1.12.4",
     "typescript": "^5.5.3",
     "vitest": "^1.1.0"
   },
+  "peerDependencies": {
+    "survey-core": "^1.12.14"
+  },
   "engines": {
-    "node": "^20 || ^18 || ^16 || ^14.19",
+    "node": "^20 || ^18",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
   }

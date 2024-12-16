@@ -1,5 +1,5 @@
 import express from 'express';
-import { staticLimiter } from 'middlewares';
+import { staticLimiter } from '#middlewares/rateLimiter.middleware';
 import path from 'path';
 
 const router = express.Router();
@@ -19,7 +19,7 @@ router.use(
 );
 
 // Respond all other get requests with frontend content
-router.get('*', (req, res) => {
+router.get('*', (_req, res) => {
   res.sendFile(path.resolve(spaPath, 'index.html'));
 });
 

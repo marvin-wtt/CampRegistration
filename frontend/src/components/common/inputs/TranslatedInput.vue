@@ -13,11 +13,11 @@
           <q-input
             v-model="value"
             :label="label"
-            :model-modifiers="props.modelModifiers"
-            v-bind="$attrs"
+            :model-modifiers="modifiers"
+            v-bind="attrs"
           >
             <template
-              v-for="(data, name, index) in $slots as unknown as QInputSlots"
+              v-for="(data, name, index) in slots"
               :key="index"
               #[name]
             >
@@ -34,34 +34,62 @@
           v-else
           class="layer2"
         >
-          <q-input
-            v-for="(locale, index) in props.locales"
-            :key="index"
-            v-model="translations[locale]"
-            :label="`${label} (${locale})`"
-            :model-modifiers="props.modelModifiers"
-            clearable
-            v-bind="$attrs"
-            @clear="clearTranslation(locale)"
-          >
-            <template #prepend>
-              <country-icon :locale="locale" />
-            </template>
-
-            <!-- Parent slots -->
-            <template
-              v-for="(
-                data, name, slotIndex
-              ) in $slots as unknown as QInputSlots"
-              :key="slotIndex"
-              #[name]
+          <template v-if="modifiers.number">
+            <!-- Numeric inputs -->
+            <q-input
+              v-for="(locale, index) in props.locales"
+              :key="index"
+              v-model.number="translations[locale]"
+              :label="`${label} (${locale})`"
+              clearable
+              v-bind="attrs"
+              @clear="clearTranslation(locale)"
             >
-              <slot
-                :name="name"
-                v-bind="data"
-              />
-            </template>
-          </q-input>
+              <template #prepend>
+                <country-icon :locale="locale" />
+              </template>
+
+              <!-- Parent slots -->
+              <template
+                v-for="(data, name, slotIndex) in slots"
+                :key="slotIndex"
+                #[name]
+              >
+                <slot
+                  :name="name"
+                  v-bind="data"
+                />
+              </template>
+            </q-input>
+          </template>
+          <!-- Other inputs -->
+          <template v-else>
+            <q-input
+              v-for="(locale, index) in props.locales"
+              :key="index"
+              v-model="translations[locale]"
+              :label="`${label} (${locale})`"
+              clearable
+              v-bind="attrs"
+              @clear="clearTranslation(locale)"
+            >
+              <template #prepend>
+                <country-icon :locale="locale" />
+              </template>
+
+              <!-- Parent slots -->
+              <template
+                v-for="(data, name, slotIndex) in slots"
+                :key="slotIndex"
+                #[name]
+              >
+                <slot
+                  :name="name"
+                  v-bind="data"
+                />
+              </template>
+            </q-input>
+          </template>
         </div>
       </transition>
     </div>
@@ -87,19 +115,21 @@
 
 <script lang="ts" setup>
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useAttrs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { QInputSlots } from 'quasar';
 
 type Translations = Record<string, string | number>;
+type ModelValueType = undefined | string | number | Translations;
 
 const { t } = useI18n();
+const [model, modifiers] = defineModel<ModelValueType>();
+const attrs = useAttrs();
+const slots = defineSlots<QInputSlots>();
 
 type ModelValue = Translations | string | number | undefined | null;
 
 interface Props {
-  modelValue: ModelValue;
-  modelModifiers?: Record<string, boolean>;
   label?: string;
   locales?: string[];
   always?: boolean;
@@ -107,15 +137,14 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelModifiers: undefined,
   label: '',
-  locales: undefined,
+  locales: () => [],
   always: false,
   collapsed: false,
 });
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: ModelValue): void;
+  (e: 'update:modelValue', value: ModelValueType): void;
 }>();
 
 const useTranslations = ref(defaultUseTranslations());
@@ -123,44 +152,47 @@ const value = ref<string | number>(defaultValue());
 const translations = ref<Translations>(defaultTranslations());
 
 const enabled = computed<boolean>(() => {
-  return props.locales !== undefined && props.locales.length > 1;
+  return props.locales.length > 1;
 });
 
 function defaultUseTranslations(): boolean {
-  return typeof props.modelValue === 'object' || props.modelValue === undefined
-    ? !props.collapsed
-    : false;
+  return model.value === undefined || typeof model.value === 'object';
 }
 
 function defaultValue(): string | number {
   // If the model value if an object and there is only one locale, we assume that the object is a translation and
   //  contains a translation for the given locale
   if (
-    props.locales?.length === 1 &&
+    props.locales.length === 1 &&
     props.modelValue &&
-    typeof props.modelValue === 'object'
+    typeof model.value === 'object'
   ) {
-    return props.modelValue[props.locales[0]];
+    return model.value[props.locales[0]];
   }
 
-  return typeof props.modelValue === 'string' ||
-    typeof props.modelValue === 'number'
-    ? props.modelValue
+  return typeof model.value === 'string' || typeof model.value === 'number'
+    ? model.value
     : '';
 }
 
 function defaultTranslations(): Translations {
-  return props.modelValue && typeof props.modelValue === 'object'
-    ? props.modelValue
+  return props.modelValue && typeof model.value === 'object'
+    ? model.value
     : {};
 }
 
+const lastEmittedValue = ref<ModelValueType>();
 watch(
   [translations, value, useTranslations],
   () => {
     const v =
       useTranslations.value && enabled.value ? translations.value : value.value;
-    emit('update:modelValue', v);
+
+    if (v !== lastEmittedValue.value) {
+      lastEmittedValue.value = v;
+
+      emit('update:modelValue', v);
+    }
   },
   { deep: true },
 );
@@ -172,7 +204,7 @@ function clearTranslation(locale: string) {
 }
 
 watch(
-  () => props.modelValue,
+  () => model.value,
   (newValue) => {
     if (typeof newValue === 'string' || typeof newValue === 'number') {
       value.value = newValue;

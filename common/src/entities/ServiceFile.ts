@@ -1,4 +1,4 @@
-import type { Identifiable } from './Identifiable';
+import type { Identifiable } from './Identifiable.js';
 
 export interface ServiceFile extends Identifiable {
   name: string;

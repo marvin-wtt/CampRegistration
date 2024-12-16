@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import ApiError from './ApiError';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
 export const authUserId = (req: Request): string | never => {

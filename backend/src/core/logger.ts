@@ -1,6 +1,6 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
-import config from 'config';
+import config from '#config/index';
 import path from 'path';
 
 const enumerateErrorFormat = winston.format((info) => {
@@ -15,7 +15,7 @@ const fileTransport = new winston.transports.DailyRotateFile({
   datePattern: 'YYYY-MM-DD',
   maxSize: '20m',
   maxFiles: '14d',
-  dirname: path.join(__dirname, '..', '..', 'logs'),
+  dirname: path.join(import.meta.dirname, '..', '..', 'logs'),
 });
 
 const fileErrorTransport = new winston.transports.DailyRotateFile({
@@ -24,7 +24,7 @@ const fileErrorTransport = new winston.transports.DailyRotateFile({
   datePattern: 'YYYY-MM-DD',
   maxSize: '20m',
   maxFiles: '14d',
-  dirname: path.join(__dirname, '..', '..', 'logs'),
+  dirname: path.join(import.meta.dirname, '..', '..', 'logs'),
 });
 
 const consoleTransport = new winston.transports.Console({

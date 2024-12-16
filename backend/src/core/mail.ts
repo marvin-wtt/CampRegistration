@@ -1,9 +1,9 @@
 import nodemailer, { SendMailOptions } from 'nodemailer';
-import config from 'config';
-import logger from './logger';
+import config from '#config/index';
+import logger from '#core/logger';
 import hbs from 'nodemailer-express-handlebars';
 import { create } from 'express-handlebars';
-import i18n from 'core/i18n';
+import i18n from '#core/i18n';
 import path from 'path';
 
 const transportOptions = () => {
@@ -43,7 +43,7 @@ if (config.env !== 'test') {
     );
 }
 
-const viewsPath = path.join(__dirname, '..', 'views', 'emails');
+const viewsPath = path.join(import.meta.dirname, '..', 'views', 'emails');
 
 const options = {
   extName: '.hbs',

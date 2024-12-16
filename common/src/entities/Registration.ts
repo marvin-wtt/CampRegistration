@@ -1,5 +1,5 @@
-import { Identifiable } from './Identifiable';
-import { Timestamps } from './Timestamps';
+import { Identifiable } from './Identifiable.js';
+import { Timestamps } from './Timestamps.js';
 
 export interface Registration extends Identifiable, Timestamps {
   data: Record<string, unknown>;

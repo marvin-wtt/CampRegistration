@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { translatedValue, BooleanStringSchema } from 'core/validation/helper';
+import { translatedValue, BooleanStringSchema } from '#core/validation/helper';
 import { Camp } from '@prisma/client';
 
 const show = z.object({

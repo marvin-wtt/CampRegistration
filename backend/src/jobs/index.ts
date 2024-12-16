@@ -1,9 +1,9 @@
-import { removeExpiredTokens } from 'jobs/tokens.job';
+import { removeExpiredTokens } from '#jobs/tokens.job';
 import {
   deleteTemporaryFiles,
   deleteUnassignedFiles,
   deleteUnusedFiles,
-} from 'jobs/files.job';
+} from '#jobs/files.job';
 import { CronOptions, Cron, scheduledJobs } from 'croner';
 import {
   errorHandler,
@@ -11,7 +11,7 @@ import {
   executionHandler,
   protectionHandler,
   terminationHandler,
-} from './handler';
+} from './handler.js';
 
 const startJobs = () => {
   scheduleJob('expired-token-cleanup', '0 3 * * *', removeExpiredTokens);

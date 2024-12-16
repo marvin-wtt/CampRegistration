@@ -186,7 +186,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     });
   }
 
-  if (options.area === 'preview-tab') {
+  if (options.area === 'preview-tab' || options.area === 'theme-tab') {
     // Set surveyID for dynamic link generation
     survey.surveyId = props.camp.id;
 

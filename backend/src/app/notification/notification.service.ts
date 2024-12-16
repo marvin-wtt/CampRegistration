@@ -1,9 +1,9 @@
-import config from 'config';
-import transport from 'core/mail';
-import { generateQueryString } from 'utils/uri';
+import config from '#config/index';
+import transport from '#core/mail';
+import { generateQueryString } from '#utils/uri';
 import Mail from 'nodemailer/lib/mailer';
-import { t } from 'core/i18n';
-import logger from 'core/logger';
+import { t } from '#core/i18n';
+import logger from '#core/logger';
 
 type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 

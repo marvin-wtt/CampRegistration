@@ -1,25 +1,25 @@
 import express, { Request } from 'express';
-import { auth, guard } from 'middlewares';
-import { or, campActive, campManager } from 'guards';
-import { catchParamAsync } from 'utils/catchAsync';
-import { verifyModelExists } from 'utils/verifyModel';
-import { authUserId } from 'utils/authUserId';
-import campController from './camp.controller';
-import campService from './camp.service';
-import managerRoutes from 'app/manager/manager.routes';
-import managerService from 'app/manager/manager.service';
-import registrationRoutes from 'app/registration/registration.routes';
-import tableTemplateRoutes from 'app/tableTemplate/table-template.routes';
-import roomRoutes from 'app/room/room.routes';
-import campFileRoutes from './camp-files.routes';
-import expenseRoutes from 'app/expense/expense.routes';
+import { auth, guard } from '#middlewares/index';
+import { or, campActive, campManager } from '#guards/index';
+import { catchParamAsync } from '#utils/catchAsync';
+import { verifyModelExists } from '#utils/verifyModel';
+import { authUserId } from '#utils/authUserId';
+import campController from './camp.controller.js';
+import campService from './camp.service.js';
+import managerRoutes from '#app/manager/manager.routes';
+import managerService from '#app/manager/manager.service';
+import registrationRoutes from '#app/registration/registration.routes';
+import tableTemplateRoutes from '#app/tableTemplate/table-template.routes';
+import roomRoutes from '#app/room/room.routes';
+import campFileRoutes from './camp-files.routes.js';
+import expenseRoutes from '#app/expense/expense.routes';
 import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
 
 const router = express.Router();
 
 router.param(
   'campId',
-  catchParamAsync(async (req, res, id) => {
+  catchParamAsync(async (req, _res, id) => {
     const camp = await campService.getCampById(id);
     req.models.camp = verifyModelExists(camp);
   }),

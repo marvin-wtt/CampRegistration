@@ -1,5 +1,5 @@
 import z from 'zod';
-import { translatedValue } from 'core/validation/helper';
+import { translatedValue } from '#core/validation/helper';
 
 const show = z.object({
   params: z.object({

@@ -1,8 +1,8 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import feedbackService from './feedback.service';
-import { catchAndResolve } from 'utils/promiseUtils';
-import validator from './feedback.validation';
-import { validateRequest } from 'core/validation/request';
+import { catchRequestAsync } from '#utils/catchAsync';
+import feedbackService from './feedback.service.js';
+import { catchAndResolve } from '#utils/promiseUtils';
+import validator from './feedback.validation.js';
+import { validateRequest } from '#core/validation/request';
 
 const store = catchRequestAsync(async (req) => {
   const {

@@ -5,7 +5,7 @@ import {
 } from 'passport-jwt';
 import { Strategy as AnonymousStrategy } from 'passport-anonymous';
 import { Request } from 'express';
-import config from 'config';
+import config from '#config/index';
 import { TokenType } from '@prisma/client';
 
 function cookieExtractor(req: Request) {
