@@ -23,7 +23,7 @@
     "db:studio": "prisma studio",
     "dev": "npm run dev:views & npm run dev:serve",
     "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
-    "dev:serve": "cross-env NODE_ENV=development tsx src/index.ts",
+    "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "production": "cross-env NODE_ENV=production node build/index.js"
   },
   "prisma": {
