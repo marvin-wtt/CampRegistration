@@ -4,6 +4,7 @@ import { hasMessage } from 'src/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { isAPIServiceError } from 'src/services/APIService';
+import { useRoute } from 'vue-router';
 
 export interface ProgressOptions {
   progress?: QNotifyCreateOptions;
@@ -18,6 +19,7 @@ export interface ResultOptions {
 
 export function useServiceHandler<T>(storeName?: string) {
   const { t } = useI18n();
+  const route = useRoute();
 
   const serviceNotifications = useServiceNotifications(storeName);
   const { extractErrorText } = useErrorExtractor();
@@ -91,6 +93,16 @@ export function useServiceHandler<T>(storeName?: string) {
     error.value = null;
   }
 
+  function queryParam(modelName: string): string | never {
+    let id = route.params[modelName];
+
+    if (Array.isArray(id)) {
+      id = id[0];
+    }
+
+    return checkNotNullWithError(id);
+  }
+
   return {
     data,
     isLoading,
@@ -103,6 +115,7 @@ export function useServiceHandler<T>(storeName?: string) {
     lazyFetch,
     asyncUpdate,
     checkNotNullWithError,
+    queryParam,
     ...serviceNotifications,
   };
 }

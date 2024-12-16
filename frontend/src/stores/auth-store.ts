@@ -26,6 +26,19 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchUser();
   });
 
+  campBus.on('update', async (updatedCamp) => {
+    if (!data.value) {
+      return;
+    }
+
+    const index = data.value?.camps.findIndex(
+      (camp) => camp.id === updatedCamp.id,
+    );
+    if (index !== undefined && index >= 0) {
+      data.value?.camps.splice(index, 1, updatedCamp);
+    }
+  });
+
   campBus.on('delete', async (campId) => {
     const index = data.value?.camps.findIndex((camp) => camp.id === campId);
     if (index !== undefined && index >= 0) {

@@ -114,7 +114,7 @@ async function saveFile(file: File): Promise<string> {
     return campFileStore.getUrl(file.id, campId);
   }
 
-  const newFile = await api.createCampFile(campId, {
+  const newFile = await campFileStore.createEntry({
     name: file.name.replace(/\.[^/.]+$/, ''),
     field: crypto.randomUUID(),
     file,

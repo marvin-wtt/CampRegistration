@@ -23,9 +23,10 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     reset,
     withProgressNotification,
     withErrorNotification,
-    errorOnFailure,
     checkNotNullWithNotification,
     checkNotNullWithError,
+    queryParam,
+    lazyFetch,
   } = useServiceHandler<ServiceFile[]>('campFiles');
 
   authBus.on('logout', () => {
@@ -36,37 +37,38 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     reset();
   });
 
-  async function fetchData(campId?: string) {
-    campId = campId ?? (route.params.camp as string);
-    const cid = checkNotNullWithError(campId);
+  async function fetchData() {
+    const campId = queryParam('camp');
 
-    await errorOnFailure(async () => {
-      return await apiService.fetchCampFiles(cid);
+    await lazyFetch(async () => {
+      return await apiService.fetchCampFiles(campId);
     });
   }
 
   async function createEntry(
     createData: ServiceFileCreateData,
-    campId?: string,
+    options: { withoutNotifications: boolean },
   ): Promise<ServiceFile | undefined> {
-    campId = campId ?? (route.params.camp as string);
-    const cid = checkNotNullWithNotification(campId);
+    const campId = queryParam('camp');
 
-    return withProgressNotification('create', async () => {
-      const file = await apiService.createCampFile(cid, createData);
+    const createFn = async () => {
+      const file = await apiService.createCampFile(campId, createData);
 
       data.value?.push(file);
 
       return file;
-    });
+    };
+
+    return options.withoutNotifications
+      ? createFn()
+      : withProgressNotification('create', createFn);
   }
 
-  async function deleteEntry(id: string, campId?: string) {
-    campId = campId ?? (route.params.camp as string);
-    const cid = checkNotNullWithNotification(campId);
-    checkNotNullWithNotification(id);
+  async function deleteEntry(id: string) {
+    const campId = queryParam('camp');
+
     await withProgressNotification('delete', async () => {
-      await apiService.deleteCampFile(cid, id);
+      await apiService.deleteCampFile(campId, id);
 
       data.value = data.value?.filter((file) => file.id !== id);
 
