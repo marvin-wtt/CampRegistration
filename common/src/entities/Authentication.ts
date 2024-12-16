@@ -11,5 +11,3 @@ export interface LoginData {
   password: string;
   remember: boolean;
 }
-
-export interface RegistrationData {}
