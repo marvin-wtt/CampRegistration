@@ -1,8 +1,9 @@
-import {
+import pkg from 'survey-core';
+const { Serializer } = pkg;
+import type {
   ICustomQuestionTypeConfiguration,
   ItemValue,
   Question,
-  Serializer,
 } from 'survey-core';
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {

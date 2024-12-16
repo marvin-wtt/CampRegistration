@@ -1,4 +1,5 @@
-import { ComponentCollection, FunctionFactory, Serializer } from 'survey-core';
+import pkg from 'survey-core';
+const { Serializer, ComponentCollection, FunctionFactory } = pkg;
 import questions from './questions/index.js';
 import functions from './functions/index.js';
 import properties from './properties/index.js';
