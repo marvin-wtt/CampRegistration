@@ -1,16 +1,16 @@
 import express from 'express';
-import { auth, guard, multipart } from 'middlewares';
-import { campManager } from 'guards';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import { catchParamAsync } from 'utils/catchAsync';
-import expenseService from './expense.service';
-import expenseController from './expense.controller';
+import { auth, guard, multipart } from '#middlewares/index';
+import { campManager } from '#guards/index';
+import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import { catchParamAsync } from '#utils/catchAsync';
+import expenseService from '#app/expense/expense.service';
+import expenseController from '#app/expense/expense.controller';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'expenseId',
-  catchParamAsync(async (req, res, id) => {
+  catchParamAsync(async (req, _res, id) => {
     const camp = routeModel(req.models.camp);
     const expense = await expenseService.getExpenseById(camp.id, id);
     req.models.expense = verifyModelExists(expense);

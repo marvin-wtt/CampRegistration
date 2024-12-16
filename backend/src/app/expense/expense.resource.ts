@@ -1,6 +1,6 @@
 import { Expense, File } from '@prisma/client';
 import type { Expense as ExpenseResource } from '@camp-registration/common/entities';
-import fileResource from 'app/file/file.resource';
+import fileResource from '#app/file/file.resource';
 
 interface ExpenseWithFile extends Expense {
   file: File | null;

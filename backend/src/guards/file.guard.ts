@@ -1,12 +1,12 @@
 import express, { Request } from 'express';
-import { and, campActive, campManager, GuardFn, or } from './index';
-import { routeModel, verifyModelExists } from '../utils/verifyModel';
-import fileService from 'app/file/file.service';
-import campService from 'app/camp/camp.service';
-import ApiError from '../utils/ApiError';
+import { and, campActive, campManager, GuardFn, or } from './index.js';
+import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import fileService from '#app/file/file.service';
+import campService from '#app/camp/camp.service';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import registrationService from 'app/registration/registration.service';
-import expenseService from 'app/expense/expense.service';
+import registrationService from '#app/registration/registration.service';
+import expenseService from '#app/expense/expense.service';
 
 const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   const file = routeModel(req.models.file);

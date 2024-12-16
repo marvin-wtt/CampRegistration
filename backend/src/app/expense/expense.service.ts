@@ -1,7 +1,7 @@
-import prisma from 'client';
-import { ulid } from 'utils/ulid';
+import prisma from '../../client.js';
+import { ulid } from '#utils/ulid';
 import type { Prisma } from '@prisma/client';
-import fileService from 'app/file/file.service';
+import fileService from '#app/file/file.service';
 
 type RequestFile = Express.Multer.File;
 

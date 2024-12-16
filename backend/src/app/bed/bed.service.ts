@@ -1,5 +1,5 @@
 import prisma from '../../client.js';
-import { ulid } from 'utils/ulid';
+import { ulid } from '#utils/ulid';
 
 const getBedById = async (id: string, roomId: string) => {
   return prisma.bed.findFirst({

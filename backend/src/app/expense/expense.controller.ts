@@ -1,12 +1,12 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import { collection, resource } from 'core/resource';
-import expenseService from './expense.service';
-import expenseResource from './expense.resource';
+import { catchRequestAsync } from '#utils/catchAsync';
+import { collection, resource } from '#core/resource';
+import expenseService from '#app/expense/expense.service';
+import expenseResource from '#app/expense/expense.resource';
 import httpStatus from 'http-status';
-import { routeModel } from 'utils/verifyModel';
-import fileService from 'app/file/file.service';
-import { validateRequest } from 'core/validation/request';
-import validator from './expense.validation';
+import { routeModel } from '#utils/verifyModel';
+import fileService from '#app/file/file.service';
+import { validateRequest } from '#core/validation/request';
+import validator from '#app/expense/expense.validation';
 
 const show = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);

@@ -1,6 +1,6 @@
-import { Identifiable } from './Identifiable';
-import { UndefinedForNull } from './utils';
-import { ServiceFile } from './ServiceFile';
+import { Identifiable } from './Identifiable.js';
+import { UndefinedForNull } from './utils.js';
+import { ServiceFile } from './ServiceFile.js';
 
 export interface Expense extends Identifiable {
   receiptNumber: number | null;
