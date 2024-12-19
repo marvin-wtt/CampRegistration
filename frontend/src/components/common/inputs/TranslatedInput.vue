@@ -127,8 +127,6 @@ const [model, modifiers] = defineModel<ModelValueType>();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
 
-type ModelValue = Translations | string | number | undefined | null;
-
 interface Props {
   label?: string;
   locales?: string[];
@@ -164,7 +162,7 @@ function defaultValue(): string | number {
   //  contains a translation for the given locale
   if (
     props.locales.length === 1 &&
-    props.modelValue &&
+    model.value &&
     typeof model.value === 'object'
   ) {
     return model.value[props.locales[0]];
@@ -176,9 +174,7 @@ function defaultValue(): string | number {
 }
 
 function defaultTranslations(): Translations {
-  return props.modelValue && typeof model.value === 'object'
-    ? model.value
-    : {};
+  return model.value && typeof model.value === 'object' ? model.value : {};
 }
 
 const lastEmittedValue = ref<ModelValueType>();
