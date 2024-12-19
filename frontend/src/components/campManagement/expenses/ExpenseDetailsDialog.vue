@@ -14,9 +14,8 @@
       <q-card-section :class="showFilePreview ? 'col-shrink' : 'col'">
         <expense-update-form
           v-if="edit"
+          v-model="updatedExpense"
           :expense="props.expense"
-          @edit="updateExpense"
-          @cancel="edit = false"
         />
 
         <q-list
@@ -77,21 +76,6 @@
             :clickable="!showFilePreview"
             @click="downloadFile"
           />
-
-          <div class="row justify-center q-gutter-sm">
-            <q-btn
-              :label="t('action.delete')"
-              color="negative"
-              rounded
-              @click="deleteExpense"
-            />
-            <q-btn
-              :label="t('action.edit')"
-              color="primary"
-              rounded
-              @click="editExpense"
-            />
-          </div>
         </q-list>
       </q-card-section>
 
@@ -120,14 +104,34 @@
       </q-card-section>
 
       <q-card-actions
+        v-if="edit"
+        align="center"
+        class="col-12"
+      >
+        <q-btn
+          :label="t('action.cancel')"
+          color="primary"
+          rounded
+          outline
+          @click="onDialogCancel"
+        />
+        <q-btn
+          :label="t('action.save')"
+          color="primary"
+          rounded
+          @click="onSave"
+        />
+      </q-card-actions>
+
+      <q-card-actions
+        v-else
         align="center"
         class="col-12"
       >
         <q-btn
           :label="t('action.ok')"
-          :disable="edit"
-          rounded
           color="primary"
+          rounded
           @click="onDialogCancel"
         />
       </q-card-actions>
@@ -144,20 +148,20 @@ import { computed, ref, StyleValue } from 'vue';
 import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
 import PdfViewer from 'components/PdfViewer.vue';
 import ImageViewer from 'components/ImageViewer.vue';
-import { useExpensesStore } from 'stores/expense-store.ts';
 
 const props = defineProps<{
   expense: Expense;
+  edit?: boolean;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const quasar = useQuasar();
-const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =
+  useDialogPluginComponent();
 const { t, d, n } = useI18n();
-const expensesStore = useExpensesStore();
 
-const edit = ref<boolean>(false);
+const updatedExpense = ref<ExpenseUpdateData>({});
 
 const showFilePreview = computed<boolean>(() => {
   return props.expense.file != null && quasar.screen.gt.sm;
@@ -184,34 +188,8 @@ function downloadFile() {
   });
 }
 
-function editExpense() {
-  edit.value = true;
-}
-
-function updateExpense(data: ExpenseUpdateData) {
-  expensesStore.updateData(props.expense.id, data);
-}
-
-function deleteExpense() {
-  quasar
-    .dialog({
-      title: t('dialog.delete.title', { name: props.expense.name }),
-      message: t('dialog.delete.message'),
-      ok: {
-        label: t('action.delete'),
-        rounded: true,
-        color: 'negative',
-      },
-      cancel: {
-        label: t('action.cancel'),
-        color: 'primary',
-        rounded: true,
-        outline: true,
-      },
-    })
-    .onOk(() => {
-      expensesStore.deleteData(props.expense.id);
-    });
+function onSave() {
+  onDialogOK(updatedExpense.value);
 }
 </script>
 
@@ -230,16 +208,10 @@ expense:
   payee: 'Payee'
   receiptNumber: 'Receipt Nr.'
 
-dialog:
-  delete:
-    title: 'Delete { name }?'
-    message: 'Are you sure you want to delete this expense permanently?'
-
 action:
   cancel: 'Cancel'
-  delete: 'Delete'
-  edit: 'Edit'
   ok: 'Ok'
+  save: 'Save'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -257,16 +229,10 @@ expense:
   payee: 'Empfänger'
   receiptNumber: 'Beleg-Nr.'
 
-dialog:
-  delete:
-    title: '{ name } löschen?'
-    message: 'Möchtest du diese Ausgabe wirklich dauerhaft löschen?'
-
 action:
   cancel: 'Abbrechen'
-  delete: 'Löschen'
-  edit: 'Bearbeitem'
   ok: 'Ok'
+  save: 'Speichern'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -283,16 +249,10 @@ expense:
   payee: 'Bénéficiaire'
   receiptNumber: 'Numéro de reçu'
 
-dialog:
-  delete:
-    title: 'Supprimer { name } ?'
-    message: 'Voulez-vous vraiment supprimer cette dépense définitivement ?'
-
 action:
   cancel: 'Annuler'
-  delete: 'Supprimer'
-  edit: 'Editer'
   ok: 'Ok'
+  save: 'Enregistrer'
 </i18n>
 
 <style scoped>

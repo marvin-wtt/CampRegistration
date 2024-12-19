@@ -48,6 +48,7 @@
             :rules="[
               (val?: string) => !!val || t('field.name.category.required'),
             ]"
+            hide-bottom-space
             :options="categories"
             clearable
             outlined

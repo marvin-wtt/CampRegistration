@@ -43,6 +43,8 @@
           @logout="logout()"
         />
       </q-toolbar>
+
+      <div id="toolbar-content" />
     </q-header>
 
     <q-drawer
@@ -91,7 +93,7 @@ import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
-import { useRoute } from 'vue-router';
+import { RouteLocationRaw, useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
@@ -142,7 +144,7 @@ const miniState = ref<boolean>(true);
 
 interface NavigationItem {
   name: string;
-  to?: string | object;
+  to?: RouteLocationRaw;
   label?: string;
   icon?: string;
   preview?: boolean;

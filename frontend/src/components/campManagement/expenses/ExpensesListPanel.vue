@@ -1,15 +1,11 @@
 <template>
-  <q-tab-panel :name="props.name">
+  <div>
     <q-scroll-area class="fit">
       <div class="row justify-center">
         <div class="col-xs-12 col-sm-11 col-md-8 col-lg-6 col-xl-4 column">
-          <div class="text-h6 q-pa-sm">
-            {{ t('title') }}
-          </div>
-
           <!-- Loading -->
           <q-list
-            v-if="props.expenses == undefined"
+            v-if="props.loading"
             separator
           >
             <q-item
@@ -67,12 +63,46 @@
               v-for="expense in props.expenses"
               :key="expense.id"
               :expense="expense"
-            />
+              @click="emit('show', expense)"
+            >
+              <template #menu>
+                <q-list style="min-width: 100px">
+                  <q-item
+                    v-close-popup
+                    clickable
+                    @click="emit('show', expense)"
+                  >
+                    <q-item-section>
+                      {{ t('menu.show') }}
+                    </q-item-section>
+                  </q-item>
+                  <q-item
+                    v-close-popup
+                    clickable
+                    @click="emit('edit', expense)"
+                  >
+                    <q-item-section>
+                      {{ t('menu.edit') }}
+                    </q-item-section>
+                  </q-item>
+                  <q-item
+                    v-close-popup
+                    clickable
+                    class="text-negative"
+                    @click="emit('delete', expense)"
+                  >
+                    <q-item-section>
+                      {{ t('menu.delete') }}
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </template>
+            </expense-item>
           </q-list>
         </div>
       </div>
     </q-scroll-area>
-  </q-tab-panel>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -83,13 +113,22 @@ import ExpenseItem from 'components/campManagement/expenses/ExpenseItem.vue';
 const { t } = useI18n();
 
 const props = defineProps<{
-  name: string;
-  expenses: Expense[] | undefined;
+  expenses: Expense[];
+  loading: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'edit', expense: Expense): void;
+  (e: 'delete', expense: Expense): void;
+  (e: 'show', expense: Expense): void;
 }>();
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Expenses'
+menu:
+  delete: 'Delete'
+  edit: 'Edit'
+  show: 'Show'
 
 noData:
   line1: 'There are no expenses yet.'
@@ -97,7 +136,10 @@ noData:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Ausgaben'
+menu:
+  delete: 'Löschen'
+  edit: 'Bearbeiten'
+  show: 'Anzeigen'
 
 noData:
   line1: 'Es gibt noch keine Ausgaben.'
@@ -105,11 +147,12 @@ noData:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Dépenses'
+menu:
+  delete: 'Supprimer'
+  edit: 'Editer'
+  show: 'Afficher'
 
 noData:
   line1: "Il n'y a pas encore de dépenses."
   line2: 'Ajoute une nouvelle dépense en appuyant sur le bouton "+".'
 </i18n>
-
-<style scoped></style>

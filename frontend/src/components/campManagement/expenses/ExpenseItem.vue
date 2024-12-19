@@ -1,7 +1,7 @@
 <template>
   <q-item
     clickable
-    @click="onItemClick"
+    @click="emit('click')"
   >
     <q-item-section
       avatar
@@ -65,21 +65,43 @@
     >
       {{ n(props.expense.amount, 'currency') }}
     </q-item-section>
+
+    <q-item-section
+      v-if="slots.menu"
+      side
+    >
+      <q-btn
+        icon="more_vert"
+        dense
+        round
+        flat
+        @click.stop
+      >
+        <q-menu>
+          <slot name="menu" />
+        </q-menu>
+      </q-btn>
+    </q-item-section>
   </q-item>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { Expense } from '@camp-registration/common/entities';
-import { useQuasar } from 'quasar';
-import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
 import { computed, StyleValue } from 'vue';
 
 const { t, d, n } = useI18n();
-const quasar = useQuasar();
 
 const props = defineProps<{
   expense: Expense;
+}>();
+
+const slots = defineSlots<{
+  menu?: () => unknown;
+}>();
+
+const emit = defineEmits<{
+  (e: 'click'): void;
 }>();
 
 const isUnpaid = computed<boolean>(() => {
@@ -119,15 +141,6 @@ const avatarBorderStyle = computed<StyleValue>(() => {
     borderLeftColor: borderColor(),
   };
 });
-
-function onItemClick() {
-  quasar.dialog({
-    component: ExpenseDetailsDialog,
-    componentProps: {
-      expense: props.expense,
-    },
-  });
-}
 </script>
 
 <i18n lang="yaml" locale="en">

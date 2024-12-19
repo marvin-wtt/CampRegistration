@@ -1,11 +1,7 @@
 <template>
-  <q-form
-    class="q-pt-none q-gutter-y-sm column"
-    @submit="onSubmit"
-    @reset="onReset"
-  >
+  <q-form class="q-pt-none q-gutter-y-sm column">
     <q-input
-      v-model="data.name"
+      v-model="model.name"
       :label="t('field.name.label')"
       :rules="[(val?: string) => !!val || t('field.name.rule.required')]"
       hide-bottom-space
@@ -19,7 +15,7 @@
     </q-input>
 
     <q-input
-      v-model.number="data.receiptNumber"
+      v-model.number="model.receiptNumber"
       type="number"
       :label="t('field.receiptNumber.label')"
       :rules="[
@@ -40,7 +36,7 @@
     </q-input>
 
     <autocomplete-input
-      v-model="data.category"
+      v-model="model.category"
       :label="t('field.category.label')"
       :options="categories"
       clearable
@@ -53,7 +49,7 @@
     </autocomplete-input>
 
     <currency-input
-      v-model="data.amount"
+      v-model="model.amount"
       :label="t('field.amount.label')"
       :rules="[(val?: number) => !!val || t('field.amount.rule.required')]"
       hide-bottom-space
@@ -67,7 +63,7 @@
 
     <!-- Date -->
     <q-input
-      v-model="data.date"
+      v-model="model.date"
       :label="t('field.date.label')"
       outlined
       rounded
@@ -86,7 +82,7 @@
             transition-hide="scale"
           >
             <q-date
-              v-model="data.date"
+              v-model="model.date"
               mask="YYYY-MM-DD"
             >
               <div class="row items-center justify-end">
@@ -105,7 +101,7 @@
     </q-input>
 
     <q-input
-      v-model="data.description"
+      v-model="model.description"
       :label="t('field.description.label')"
       collapsed
       outlined
@@ -118,7 +114,7 @@
     </q-input>
 
     <autocomplete-input
-      v-model="data.paidBy"
+      v-model="model.paidBy"
       :label="t('field.paidBy.label')"
       :options="people"
       clearable
@@ -132,8 +128,8 @@
 
     <!-- paidAt -->
     <q-input
-      v-if="data.paidBy"
-      v-model="data.paidAt"
+      v-if="model.paidBy"
+      v-model="model.paidAt"
       :label="t('field.paidAt.label')"
       :rules="[(val?: number) => !!val || t('field.amount.paidAt.required')]"
       hide-bottom-space
@@ -154,7 +150,7 @@
             transition-hide="scale"
           >
             <q-date
-              v-model="data.paidAt"
+              v-model="model.paidAt"
               mask="YYYY-MM-DD"
             >
               <div class="row items-center justify-end">
@@ -174,7 +170,7 @@
 
     <!-- recipient -->
     <q-input
-      v-model="data.payee"
+      v-model="model.payee"
       :label="t('field.payee.label')"
       outlined
       rounded
@@ -186,7 +182,7 @@
 
     <!-- file -->
     <q-file
-      v-model="data.file"
+      v-model="model.file"
       :label="t('field.file.label')"
       accept=".pdf, image/*"
       max-file-size="52428800"
@@ -199,7 +195,7 @@
       </template>
 
       <template
-        v-if="!data.file && expense.file"
+        v-if="!model.file && expense.file"
         #append
       >
         <q-btn
@@ -211,22 +207,6 @@
         />
       </template>
     </q-file>
-
-    <div class="row justify-end no-wrap">
-      <q-btn
-        :label="t('action.cancel')"
-        type="reset"
-        outline
-        rounded
-        color="primary"
-      />
-      <q-btn
-        :label="t('action.save')"
-        type="submit"
-        rounded
-        color="primary"
-      />
-    </div>
   </q-form>
 </template>
 
@@ -238,7 +218,7 @@ import type {
   Expense,
   ExpenseUpdateData,
 } from '@camp-registration/common/entities';
-import { reactive, toRaw, watch } from 'vue';
+import { toRaw, watch, defineModel } from 'vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
 import { storeToRefs } from 'pinia';
 
@@ -246,16 +226,13 @@ const { t } = useI18n();
 const expensesStore = useExpensesStore();
 const { people, categories } = storeToRefs(expensesStore);
 
+const model = defineModel<ExpenseUpdateData>({
+  default: initialData(),
+});
+
 const props = defineProps<{
   expense: Expense;
 }>();
-
-const emit = defineEmits<{
-  (e: 'edit', data: ExpenseUpdateData): void;
-  (e: 'cancel'): void;
-}>();
-
-const data = reactive<ExpenseUpdateData>(initialData());
 
 function initialData(): ExpenseUpdateData {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -280,14 +257,14 @@ function initialData(): ExpenseUpdateData {
 }
 
 watch(
-  () => data.paidBy,
+  () => model.paidBy,
   (value, oldValue) => {
     if (value == null) {
       // Reset when no one paid yet
-      data.paidAt = null;
+      model.paidAt = null;
     } else if (oldValue == undefined && props.expense.paidAt) {
       // Use default
-      data.paidAt = formatDateString(props.expense.paidAt);
+      model.paidAt = formatDateString(props.expense.paidAt);
     }
   },
 );
@@ -297,15 +274,7 @@ function formatDateString(date: string): string {
 }
 
 function resetFile() {
-  data.file = initialData().file;
-}
-
-function onSubmit(): void {
-  emit('edit', data);
-}
-
-function onReset() {
-  emit('cancel');
+  model.file = initialData().file;
 }
 </script>
 
@@ -344,8 +313,6 @@ field:
 
 action:
   close: 'Close'
-  save: 'Save'
-  cancel: 'Cancel'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -381,8 +348,6 @@ field:
 
 action:
   close: 'Schließen'
-  save: 'Speichern'
-  cancel: 'Abbrechen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -418,6 +383,4 @@ field:
 
 action:
   close: 'Fermer'
-  save: 'Enregistrer'
-  cancel: 'Annuler'
 </i18n>
