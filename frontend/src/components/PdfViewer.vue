@@ -100,11 +100,11 @@ const { pdf, pages } = usePDF(
 );
 
 function scaleUp() {
-  scale.value = Math.max(2, scale.value + 0.25);
+  scale.value = Math.min(2, scale.value + 0.25);
 }
 
 function scaleDown() {
-  scale.value = Math.min(0.25, scale.value - 0.25);
+  scale.value = Math.max(0.25, scale.value - 0.25);
 }
 
 function rotateRight() {
