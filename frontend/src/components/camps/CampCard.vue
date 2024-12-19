@@ -103,7 +103,7 @@ function navigateToRegistration() {
 
 <style scoped>
 .camp-card {
-  width: 100%;
+  width: 300px;
   max-width: 300px;
 }
 </style>
