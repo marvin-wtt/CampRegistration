@@ -218,7 +218,7 @@ import type {
   Expense,
   ExpenseUpdateData,
 } from '@camp-registration/common/entities';
-import { toRaw, watch, defineModel } from 'vue';
+import { toRaw, watch, defineModel, onBeforeMount } from 'vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
 import { storeToRefs } from 'pinia';
 
@@ -227,7 +227,11 @@ const expensesStore = useExpensesStore();
 const { people, categories } = storeToRefs(expensesStore);
 
 const model = defineModel<ExpenseUpdateData>({
-  default: initialData(),
+  default: {},
+});
+
+onBeforeMount(() => {
+  model.value = initialData();
 });
 
 const props = defineProps<{
@@ -257,14 +261,14 @@ function initialData(): ExpenseUpdateData {
 }
 
 watch(
-  () => model.paidBy,
+  () => model.value.paidBy,
   (value, oldValue) => {
     if (value == null) {
       // Reset when no one paid yet
-      model.paidAt = null;
+      model.value.paidAt = null;
     } else if (oldValue == undefined && props.expense.paidAt) {
       // Use default
-      model.paidAt = formatDateString(props.expense.paidAt);
+      model.value.paidAt = formatDateString(props.expense.paidAt);
     }
   },
 );
@@ -274,7 +278,7 @@ function formatDateString(date: string): string {
 }
 
 function resetFile() {
-  model.file = initialData().file;
+  model.value.file = initialData().file;
 }
 </script>
 
