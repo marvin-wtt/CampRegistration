@@ -11,13 +11,13 @@ const expenseResource = (expense: ExpenseWithFile): ExpenseResource => {
     id: expense.id,
     receiptNumber: expense.receiptNumber,
     name: expense.name,
-    description: expense.description,
+    description: expense.description ?? null,
     category: expense.category,
     amount: expense.amount.toNumber(),
     date: expense.date?.toISOString() ?? null,
     paidAt: expense.paidAt?.toISOString() ?? null,
-    paidBy: expense.paidBy,
-    payee: expense.payee,
+    paidBy: expense.paidBy ?? null,
+    payee: expense.payee ?? null,
     file: expense.file ? fileResource(expense.file) : null,
   };
 };

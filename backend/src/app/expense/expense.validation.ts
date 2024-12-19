@@ -11,6 +11,9 @@ const index = z.object({
   params: z.object({
     campId: z.string(),
   }),
+  query: z.object({
+    exportType: z.enum(['csv', 'excel-fgyp']).optional(),
+  }),
 });
 
 const store = z.object({
@@ -20,10 +23,10 @@ const store = z.object({
   body: z.object({
     name: z.string(),
     description: z.string().optional(),
-    amount: z.number().multipleOf(0.01),
-    date: z.date(),
-    category: z.string().optional(),
-    paidAt: z.date().optional(),
+    amount: z.coerce.number().multipleOf(0.01),
+    date: z.coerce.date(),
+    category: z.string(),
+    paidAt: z.coerce.date().optional(),
     paidBy: z.string().optional(),
     payee: z.string().optional(),
   }),

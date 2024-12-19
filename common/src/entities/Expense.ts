@@ -6,7 +6,7 @@ export interface Expense extends Identifiable {
   receiptNumber: number | null;
   name: string;
   description: string | null;
-  category: string | null;
+  category: string;
   amount: number;
   date: string;
   paidAt: string | null;

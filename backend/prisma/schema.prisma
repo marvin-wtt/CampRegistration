@@ -193,7 +193,7 @@ model Expense {
   receiptNumber Int?      @map("receipt_number") @db.UnsignedSmallInt
   name          String
   description   String?
-  category      String?
+  category      String
   amount        Decimal
   date          DateTime
   paidAt        DateTime? @map("paid_at")

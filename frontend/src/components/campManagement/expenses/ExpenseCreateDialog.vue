@@ -45,6 +45,9 @@
           <autocomplete-input
             v-model="data.category"
             :label="t('field.category.label')"
+            :rules="[
+              (val?: string) => !!val || t('field.name.category.required'),
+            ]"
             :options="categories"
             clearable
             outlined
@@ -277,6 +280,8 @@ field:
       required: 'Amount is required'
   category:
     label: 'Category'
+    rule:
+      required: 'Category is required'
   date:
     label: 'Date'
   description:
@@ -312,6 +317,8 @@ field:
       required: 'Betrag ist erforderlich'
   category:
     label: 'Kategorie'
+    rule:
+      required: 'Kategorie ist erforderlich'
   date:
     label: 'Datum'
   description:
@@ -346,7 +353,9 @@ field:
     rule:
       required: 'Le montant est requis'
   category:
-    label: 'Catégories'
+    label: 'Catégorie'
+    rule:
+      required: 'La catégorie est requis'
   date:
     label: 'Date'
   description:
