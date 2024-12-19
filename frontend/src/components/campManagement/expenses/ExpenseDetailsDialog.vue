@@ -80,25 +80,25 @@
       </q-card-section>
 
       <q-card-section
-        v-if="showFilePreview && expense.file != null"
+        v-if="showFilePreview && previewFile != null"
         class="col-grow relative-position overflow-hidden q-mr-sm"
       >
         <pdf-viewer
-          v-if="expense.file.type === 'application/pdf'"
-          :url="expense.file.url"
+          v-if="previewFile.type === 'application/pdf'"
+          :url="previewFile.url"
           class="file-viewer"
         />
 
         <image-viewer
-          v-else-if="expense.file.type.startsWith('image')"
-          :url="expense.file.url"
+          v-else-if="previewFile.type.startsWith('image')"
+          :url="previewFile.url"
           class="file-viewer"
         />
 
         <iframe
           v-else
-          :src="expense.file?.url"
-          :title="expense.file?.name"
+          :src="previewFile.url"
+          :title="previewFile.name"
           class="file-viewer"
         />
       </q-card-section>
@@ -165,6 +165,34 @@ const updatedExpense = ref<ExpenseUpdateData>({});
 
 const showFilePreview = computed<boolean>(() => {
   return props.expense.file != null && quasar.screen.gt.sm;
+});
+
+interface SimpleFile {
+  name: string;
+  type: string;
+  url: string;
+}
+
+const previewFile = computed<SimpleFile | null>(() => {
+  if (!props.edit) {
+    return props.expense.file;
+  }
+
+  if (updatedExpense.value.file == null) {
+    return null;
+  }
+
+  if (updatedExpense.value.file.lastModified > 0) {
+    const file = updatedExpense.value.file;
+
+    return {
+      name: file.name,
+      type: file.type,
+      url: URL.createObjectURL(updatedExpense.value.file),
+    };
+  }
+
+  return props.expense.file;
 });
 
 const dialogStyle = computed<StyleValue>(() => {

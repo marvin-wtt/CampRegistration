@@ -254,7 +254,9 @@ function initialData(): ExpenseUpdateData {
   }
 
   if (file) {
-    data.file = new File([], file.name);
+    data.file = new File([], file.name, {
+      lastModified: -1,
+    });
   }
 
   return data;
