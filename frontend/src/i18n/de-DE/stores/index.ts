@@ -5,6 +5,7 @@ import roomPlanner from './room-planner';
 import campManager from './camp-manager';
 import campFiles from './camp-files';
 import user from './user';
+import expense from './expense.ts';
 
 export default {
   camp,
@@ -14,4 +15,5 @@ export default {
   campManager,
   campFiles,
   user,
+  expense,
 };
