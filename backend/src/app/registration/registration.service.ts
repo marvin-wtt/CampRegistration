@@ -19,6 +19,13 @@ const getRegistrationById = async (campId: string, id: string) => {
   });
 };
 
+const getRegistrationWithCampById = async (id: string) => {
+  return prisma.registration.findUnique({
+    where: { id },
+    include: { camp: true },
+  });
+};
+
 const queryRegistrations = async (campId: string) => {
   return prisma.registration.findMany({
     where: { campId },
@@ -526,6 +533,7 @@ const findCampContactEmails = (
 
 export default {
   getRegistrationById,
+  getRegistrationWithCampById,
   getParticipantsCountByCountry,
   getParticipantsCount,
   queryRegistrations,
