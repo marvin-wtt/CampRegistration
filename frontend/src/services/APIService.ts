@@ -10,6 +10,11 @@ import { useFileService } from './FileService';
 import { useFeedbackService } from './FeedbackService';
 import { useExpenseService } from './ExpenseService.ts';
 import { usePublicFileService } from 'src/services/PublicFileService.ts';
+import { api } from 'boot/axios';
+import { convertNullToEmptyString } from 'src/services/convertNullToEmptyString.ts';
+
+// Load middleware
+convertNullToEmptyString(api);
 
 export function useAPIService() {
   return {
