@@ -198,10 +198,11 @@ describe('/api/v1/camps/:campId/expenses/', () => {
         .post(`/api/v1/camps/${camp.id}/expenses/`)
         .field('name', 'Some expense')
         .field('amount', '42')
+        .field('category', 'General')
         .field('date', '2024-01-01')
         .attach('file', `${__dirname}/resources/blank.pdf`)
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(201);
+        .expect(201);
 
       expect(body.data).toHaveProperty('id');
       expect(body.data).toHaveProperty('file');
@@ -254,13 +255,13 @@ describe('/api/v1/camps/:campId/expenses/', () => {
     });
   });
 
-  describe('PUT /api/v1/camps/:campId/expenses/:expenseId', () => {
+  describe('PATCH /api/v1/camps/:campId/expenses/:expenseId', () => {
     it('should respond with `200` status code when user is camp manager', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const expense = await createExpenseForCamp(camp);
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
         .send(expenseMinimal)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -277,13 +278,13 @@ describe('/api/v1/camps/:campId/expenses/', () => {
       const expense = await createExpenseForCamp(camp);
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
         .field('name', 'Some expense')
         .field('amount', '42')
         .field('date', '2024-01-01')
         .attach('file', `${__dirname}/resources/blank.pdf`)
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(200);
+        .expect(200);
 
       expect(body.data).toHaveProperty('file');
 
@@ -294,7 +295,36 @@ describe('/api/v1/camps/:campId/expenses/', () => {
       expect(expenseFileCount).toBe(1);
     });
 
-    it('should delete an exisiting file', async () => {
+    it('should respond with `200` status code when file is replaced', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const expense = await createExpenseForCamp(camp);
+      const originalFile = await FileFactory.create({
+        expense: { connect: { id: expense.id } },
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .auth(accessToken, { type: 'bearer' })
+        .expectOrPrint(200);
+
+      expect(body.data).toHaveProperty('id');
+      expect(body.data).toHaveProperty('file');
+
+      const expenseFileCount = await prisma.file.count({
+        where: { expenseId: body.data.id },
+      });
+
+      expect(expenseFileCount).toBe(1);
+
+      const deletedFile = await prisma.file.findFirst({
+        where: { field: originalFile.id },
+      });
+
+      expect(deletedFile).toBeNull();
+    });
+
+    it('should respond with `200` status code when file is null', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const expense = await createExpenseForCamp(camp);
       // Create file
@@ -303,10 +333,12 @@ describe('/api/v1/camps/:campId/expenses/', () => {
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
-        .send(expenseMinimal)
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .send({
+          file: null,
+        })
         .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        .expectOrPrint(200);
 
       const expenseFileCount = await prisma.file.count({
         where: { expenseId: expense.id },
@@ -323,10 +355,10 @@ describe('/api/v1/camps/:campId/expenses/', () => {
         const expense = await createExpenseForCamp(camp);
 
         await request()
-          .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+          .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
-          .expectOrPrint(statusCode);
+          .expect(statusCode);
       },
     );
 
@@ -336,7 +368,7 @@ describe('/api/v1/camps/:campId/expenses/', () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/expenses/${expenseId}/`)
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expenseId}/`)
         .send(expenseMinimal)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -348,7 +380,7 @@ describe('/api/v1/camps/:campId/expenses/', () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
         .send(expenseMinimal)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -359,7 +391,7 @@ describe('/api/v1/camps/:campId/expenses/', () => {
       const expense = await createExpenseForCamp(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
+        .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
         .send(expenseMinimal)
         .expect(401);
     });

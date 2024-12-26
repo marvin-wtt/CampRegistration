@@ -7,6 +7,7 @@ import { routeModel } from '#utils/verifyModel';
 import fileService from '#app/file/file.service';
 import { validateRequest } from '#core/validation/request';
 import validator from '#app/expense/expense.validation';
+import ApiError from '#utils/ApiError';
 
 const show = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);
@@ -55,6 +56,11 @@ const update = catchRequestAsync(async (req, res) => {
   const { body } = await validateRequest(req, validator.update);
   const file = req.file;
 
+  // This should never happen
+  if (file != null && body.file === null) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file data');
+  }
+
   const updatedExpense = await expenseService.updateExpenseById(
     expense.id,
     {
@@ -71,7 +77,8 @@ const update = catchRequestAsync(async (req, res) => {
     file,
   );
 
-  if (expense.file?.id != null && updatedExpense.file?.id != expense.file?.id) {
+  // Delete existing file if file is present and request file is defined
+  if ((body.file === null || file != null) && expense.file != null) {
     await fileService.deleteFile(expense.file.id);
   }
 

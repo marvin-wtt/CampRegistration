@@ -16,6 +16,7 @@ function removeProps<T extends object, K extends keyof T>(
 export const expenseMinimal = {
   name: 'Some expense',
   amount: 42,
+  category: 'General',
   date: '2024-01-01',
 };
 
@@ -111,14 +112,8 @@ export const expenseUpdateRequestData: RequestData[] = [
     statusCode: httpStatus.OK,
   },
   {
-    name: 'Minimal body',
-    data: expenseMinimal,
-    statusCode: httpStatus.OK,
-  },
-  {
     name: 'Negative amount',
     data: {
-      ...expenseMinimal,
       amount: -100,
     },
     statusCode: httpStatus.OK,
@@ -126,31 +121,51 @@ export const expenseUpdateRequestData: RequestData[] = [
   {
     name: 'Amount with decimals',
     data: {
-      ...expenseMinimal,
       amount: 1.11,
     },
     statusCode: httpStatus.OK,
   },
-  // Invalid
   {
-    name: 'Amount missing',
-    data: removeProps(expenseMinimal, ['amount']),
+    name: 'Paid at null',
+    data: {
+      paidAt: '',
+      paidBy: '',
+    },
+    statusCode: httpStatus.OK,
+  },
+  {
+    name: 'Paid at without paid by',
+    data: {
+      paidAt: '2024-01-01',
+      paidBy: '',
+    },
     statusCode: httpStatus.BAD_REQUEST,
   },
   {
-    name: 'Date missing',
-    data: removeProps(expenseMinimal, ['date']),
+    name: 'Paid by without paid at',
+    data: {
+      paidAt: '',
+      paidBy: 'Jhon',
+    },
     statusCode: httpStatus.BAD_REQUEST,
   },
   {
-    name: 'Date missing',
-    data: removeProps(expenseMinimal, ['name']),
+    name: 'Category null',
+    data: {
+      category: '',
+    },
+    statusCode: httpStatus.BAD_REQUEST,
+  },
+  {
+    name: 'amount null',
+    data: {
+      amount: '',
+    },
     statusCode: httpStatus.BAD_REQUEST,
   },
   {
     name: 'Amount as invalid string',
     data: {
-      ...expenseMinimal,
       amount: '42,3',
     },
     statusCode: httpStatus.BAD_REQUEST,
@@ -158,7 +173,6 @@ export const expenseUpdateRequestData: RequestData[] = [
   {
     name: 'Date format invalid',
     data: {
-      ...expenseMinimal,
       amount: '01.01.2024',
     },
     statusCode: httpStatus.BAD_REQUEST,

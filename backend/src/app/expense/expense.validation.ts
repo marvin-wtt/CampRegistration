@@ -40,16 +40,35 @@ const update = z.object({
   body: z
     .object({
       name: z.string(),
-      receiptNumber: z.number().int().nonnegative(),
-      description: z.string(),
-      amount: z.number().multipleOf(0.01),
-      date: z.date(),
+      receiptNumber: z.coerce.number().int().nonnegative().nullable(),
+      description: z.string().nullable(),
+      amount: z.coerce
+        .number()
+        .multipleOf(0.01)
+        .refine((val) => val !== 0),
+      date: z.coerce.date(),
       category: z.string(),
-      paidAt: z.date(),
-      paidBy: z.string(),
-      payee: z.string(),
+      paidAt: z.coerce.date().nullable(),
+      paidBy: z.string().nullable(),
+      payee: z.string().nullable(),
+      file: z.null(),
     })
-    .partial(),
+    .partial()
+    .superRefine((val, ctx) => {
+      if (val.paidAt === null && val.paidBy !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Paid at must not be null',
+        });
+      }
+
+      if (val.paidAt !== null && val.paidBy === null) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Paid by must not be null',
+        });
+      }
+    }),
 });
 
 const destroy = z.object({

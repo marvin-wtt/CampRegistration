@@ -15,6 +15,7 @@ export const ExpenseFactory = {
         min: -100000,
         fractionDigits: 2,
       }),
+      category: faker.string.alpha(),
       date: faker.date.recent(),
       camp: {},
       ...data,
