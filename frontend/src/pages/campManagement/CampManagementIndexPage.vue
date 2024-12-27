@@ -132,9 +132,13 @@ watch(
 );
 
 function onCreateCamp() {
-  quasar.dialog({
-    component: CampCreateDialog,
-  });
+  quasar
+    .dialog({
+      component: CampCreateDialog,
+    })
+    .onOk(() => {
+      menu.value = 'inactive';
+    });
 }
 
 const activeCamps = computed<Camp[]>(() => {
