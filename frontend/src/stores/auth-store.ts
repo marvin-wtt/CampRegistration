@@ -29,7 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
   campBus.on('delete', async (campId) => {
     const index = data.value?.camps.findIndex((camp) => camp.id === campId);
     if (index !== undefined && index >= 0) {
-      data.value?.camps.splice(index);
+      data.value?.camps.splice(index, 1);
     }
   });
 
