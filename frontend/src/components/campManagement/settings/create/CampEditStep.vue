@@ -4,6 +4,7 @@
     :title="props.title"
     :done="done"
     :header-nav="done"
+    :disable="props.disable"
     :error
     v-bind="$attrs"
   >
@@ -40,7 +41,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const { t } = useI18n();
 
@@ -52,6 +53,7 @@ const props = withDefaults(
     name: number;
     title?: string;
     last?: boolean;
+    disable?: boolean;
   }>(),
   {
     title: '',
@@ -83,6 +85,21 @@ function previousStep() {
   step.value--;
   emit('previous-step');
 }
+
+watch(
+  () => step.value,
+  (value, oldValue) => {
+    if (!props.disable || value !== props.name) {
+      return;
+    }
+
+    if (value > oldValue) {
+      nextStep();
+    } else {
+      previousStep();
+    }
+  },
+);
 </script>
 
 <!-- TODO Add i18n -->
