@@ -127,7 +127,7 @@ function onSave() {
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Details'
+title: 'Edit'
 
 action:
   cancel: 'Cancel'
@@ -135,7 +135,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Details'
+title: 'Bearbeiten'
 
 action:
   cancel: 'Abbrechen'
@@ -143,7 +143,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Détails'
+title: 'Modifier'
 
 action:
   cancel: 'Annuler'
