@@ -15,7 +15,10 @@ export function convertNullToEmptyString(axios: AxiosInstance) {
         const contentType =
           config.headers['Content-Type'] || config.headers['content-type'];
 
-        return contentType.toLowerCase() === 'multipart/form-data';
+        return (
+          contentType != null &&
+          contentType.toLowerCase() === 'multipart/form-data'
+        );
       },
     },
   );
@@ -28,6 +31,10 @@ export function convertNullToEmptyString(axios: AxiosInstance) {
 
     if (Array.isArray(data)) {
       return data.map(transformNullToEmptyString); // Process arrays
+    }
+
+    if (data instanceof File) {
+      return data; // Skip files
     }
 
     if (typeof data === 'object') {
