@@ -61,6 +61,13 @@ const update = catchRequestAsync(async (req, res) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file data');
   }
 
+  // Delete existing file if file is present and request file is defined
+  // Must happen before updating the expense as the file is attached to the expense
+  if ((body.file === null || file != null) && expense.file != null) {
+    console.log(body.file, file, expense.file);
+    await fileService.deleteFile(expense.file.id);
+  }
+
   const updatedExpense = await expenseService.updateExpenseById(
     expense.id,
     {
@@ -76,11 +83,6 @@ const update = catchRequestAsync(async (req, res) => {
     },
     file,
   );
-
-  // Delete existing file if file is present and request file is defined
-  if ((body.file === null || file != null) && expense.file != null) {
-    await fileService.deleteFile(expense.file.id);
-  }
 
   res.json(resource(expenseResource(updatedExpense)));
 });
