@@ -12,119 +12,17 @@
       </q-card-section>
 
       <q-card-section :class="showFilePreview ? 'col-shrink' : 'col'">
-        <expense-update-form
-          v-if="edit"
-          v-model="updatedExpense"
-          :expense="props.expense"
-        />
-
-        <q-list
-          v-else
-          class="details-list"
-        >
-          <expense-details-item
-            :label="t('expense.name')"
-            :value="props.expense.name ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.receiptNumber')"
-            :value="props.expense.receiptNumber ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.category')"
-            :value="props.expense.category ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.amount')"
-            :value="n(props.expense.amount, 'currency')"
-          />
-
-          <expense-details-item
-            v-if="props.expense.date"
-            :label="t('expense.date')"
-            :value="props.expense.date ? d(props.expense.date, 'short') : '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.description')"
-            :value="props.expense.description ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.paidBy')"
-            :value="props.expense.paidBy ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.paidAt')"
-            :value="
-              props.expense.paidAt ? d(props.expense.paidAt, 'short') : '-'
-            "
-          />
-
-          <expense-details-item
-            :label="t('expense.payee')"
-            :value="props.expense.payee ?? '-'"
-          />
-
-          <expense-details-item
-            :label="t('expense.file')"
-            :value="expense.file?.name ?? '-'"
-            :clickable="!showFilePreview"
-            @click="downloadFile"
-          />
-        </q-list>
+        <expense-details-list :expense="expense" />
       </q-card-section>
 
       <q-card-section
-        v-if="showFilePreview && previewFile != null"
+        v-if="showFilePreview && expense.file != null"
         class="col-grow relative-position overflow-hidden q-mr-sm"
       >
-        <pdf-viewer
-          v-if="previewFile.type === 'application/pdf'"
-          :url="previewFile.url"
-          class="file-viewer"
-        />
-
-        <image-viewer
-          v-else-if="previewFile.type.startsWith('image')"
-          :url="previewFile.url"
-          class="file-viewer"
-        />
-
-        <iframe
-          v-else
-          :src="previewFile.url"
-          :title="previewFile.name"
-          class="file-viewer"
-        />
+        <expense-file-viewer :file="expense.file" />
       </q-card-section>
 
       <q-card-actions
-        v-if="edit"
-        align="center"
-        class="col-12"
-      >
-        <q-btn
-          :label="t('action.cancel')"
-          color="primary"
-          rounded
-          outline
-          @click="onDialogCancel"
-        />
-        <q-btn
-          :label="t('action.save')"
-          color="primary"
-          rounded
-          @click="onSave"
-        />
-      </q-card-actions>
-
-      <q-card-actions
-        v-else
         align="center"
         class="col-12"
       >
@@ -140,59 +38,25 @@
 </template>
 
 <script lang="ts" setup>
-import { Expense, ExpenseUpdateData } from '@camp-registration/common/entities';
-import { exportFile, useDialogPluginComponent, useQuasar } from 'quasar';
+import type { Expense } from '@camp-registration/common/entities';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import ExpenseDetailsItem from 'components/campManagement/expenses/ExpenseDetailsItem.vue';
-import { computed, ref, StyleValue } from 'vue';
-import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
-import PdfViewer from 'components/PdfViewer.vue';
-import ImageViewer from 'components/ImageViewer.vue';
+import { computed, StyleValue } from 'vue';
+import ExpenseDetailsList from 'components/campManagement/expenses/ExpenseDetailsList.vue';
+import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
 
-const props = defineProps<{
+const { expense } = defineProps<{
   expense: Expense;
-  edit?: boolean;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const quasar = useQuasar();
-const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =
-  useDialogPluginComponent();
-const { t, d, n } = useI18n();
-
-const updatedExpense = ref<ExpenseUpdateData>({});
+const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
+const { t } = useI18n();
 
 const showFilePreview = computed<boolean>(() => {
-  return props.expense.file != null && quasar.screen.gt.sm;
-});
-
-interface SimpleFile {
-  name: string;
-  type: string;
-  url: string;
-}
-
-const previewFile = computed<SimpleFile | null>(() => {
-  if (!props.edit) {
-    return props.expense.file;
-  }
-
-  if (updatedExpense.value.file == null) {
-    return null;
-  }
-
-  if (updatedExpense.value.file.lastModified > 0) {
-    const file = updatedExpense.value.file;
-
-    return {
-      name: file.name,
-      type: file.type,
-      url: URL.createObjectURL(updatedExpense.value.file),
-    };
-  }
-
-  return props.expense.file;
+  return expense.file != null && quasar.screen.gt.sm;
 });
 
 const dialogStyle = computed<StyleValue>(() => {
@@ -205,101 +69,27 @@ const dialogStyle = computed<StyleValue>(() => {
     maxWidth: '80dvw',
   };
 });
-
-function downloadFile() {
-  const file = props.expense.file;
-
-  if (file == null || !showFilePreview.value) return;
-
-  exportFile(file.name, file.url, {
-    mimeType: file.type,
-  });
-}
-
-function onSave() {
-  onDialogOK(updatedExpense.value);
-}
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Details'
 
-expense:
-  amount: 'Amount'
-  category: 'Category'
-  date: 'Date'
-  description: 'Description'
-  file: 'File'
-  name: 'Name'
-  paidAt: 'Payment date'
-  paidBy: 'Paid by'
-  payee: 'Payee'
-  receiptNumber: 'Receipt Nr.'
-
 action:
-  cancel: 'Cancel'
   ok: 'Ok'
-  save: 'Save'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Details'
 
-expense:
-  amount: 'Betrag'
-  category: 'Kategorie'
-  date: 'Datum'
-  description: 'Beschreibung'
-  file: 'Datei'
-  name: 'Name'
-  paidAt: 'Zahlungsdatum'
-  paidBy: 'Bezahlt von'
-  payee: 'Empfänger'
-  receiptNumber: 'Beleg-Nr.'
-
 action:
-  cancel: 'Abbrechen'
   ok: 'Ok'
-  save: 'Speichern'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Détails'
-expense:
-  amount: 'Montant'
-  category: 'Catégorie'
-  date: 'Date'
-  description: 'Description'
-  file: 'Fiche'
-  name: 'Nom'
-  paidAt: 'Date de paiement'
-  paidBy: 'Payé par'
-  payee: 'Bénéficiaire'
-  receiptNumber: 'Numéro de reçu'
 
 action:
-  cancel: 'Annuler'
   ok: 'Ok'
-  save: 'Enregistrer'
 </i18n>
 
-<style scoped>
-.file-viewer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.details-list {
-  min-width: 250px;
-}
-
-.details-list > .q-item {
-  min-height: 63px;
-}
-</style>
+<style scoped></style>

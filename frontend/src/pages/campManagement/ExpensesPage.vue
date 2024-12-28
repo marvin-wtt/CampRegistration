@@ -71,10 +71,27 @@
         <!-- Title and total -->
         <div class="row justify-center">
           <div class="col-xs-12 col-sm-11 col-md-8 col-lg-6 col-xl-4 column">
-            <div class="row justify-between text-h6 q-pa-sm">
-              <a> {{ t('title') }}:</a>
-              <a>{{ n(filteredTotal, 'currency') }}</a>
-            </div>
+            <q-list>
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-h5">{{ t('title') }}:</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-item-label class="text-h5 text-bold">
+                    {{ n(filteredTotal, 'currency') }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    icon="download"
+                    outline
+                    round
+                    dense
+                    flat
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
           </div>
         </div>
       </div>
@@ -109,17 +126,24 @@
 import { useI18n } from 'vue-i18n';
 import { QSelectOption, useQuasar } from 'quasar';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Expense, ExpenseUpdateData } from '@camp-registration/common/entities';
+import {
+  Expense,
+  ExpenseCreateData,
+  ExpenseUpdateData,
+} from '@camp-registration/common/entities';
 import ExpensesListPanel from 'components/campManagement/expenses/ExpensesListPanel.vue';
 import ExpenseCreateDialog from 'components/campManagement/expenses/ExpenseCreateDialog.vue';
 import { useExpensesStore } from 'stores/expense-store.ts';
 import { useCampDetailsStore } from 'stores/camp-details-store.ts';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
+import ExpenseUpdateDialog from 'components/campManagement/expenses/ExpenseUpdateDialog.vue';
+import { storeToRefs } from 'pinia';
 
 const { t, n } = useI18n();
 const quasar = useQuasar();
 const expensesStore = useExpensesStore();
+const { people, categories } = storeToRefs(expensesStore);
 const campDetailsStore = useCampDetailsStore();
 
 onMounted(() => {
@@ -214,22 +238,35 @@ function onAddExpense() {
     return;
   }
 
-  quasar.dialog({
-    component: ExpenseCreateDialog,
-    persistent: true,
-  });
+  quasar
+    .dialog({
+      component: ExpenseCreateDialog,
+      componentProps: {
+        categories,
+        people,
+      },
+    })
+    .onOk((data: ExpenseCreateData) => {
+      expensesStore.createData(data);
+    });
 }
 
 function onEditExpense(expense: Expense) {
   quasar
     .dialog({
-      component: ExpenseDetailsDialog,
+      component: ExpenseUpdateDialog,
       componentProps: {
         expense,
-        edit: true,
+        categories,
+        people,
       },
     })
     .onOk((data: ExpenseUpdateData) => {
+      // Only send file when modified
+      if (data.file?.lastModified === -1) {
+        delete data.file;
+      }
+
       expensesStore.updateData(expense.id, data);
     });
 }
@@ -280,6 +317,11 @@ dialog:
   delete:
     title: 'Delete expense "{ name }"?'
     message: 'Are you sure you want to delete this expense permanently?'
+
+filter:
+  categories: 'Categories'
+  paidBy: 'Paid By'
+  status: 'Status'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -294,6 +336,11 @@ dialog:
   delete:
     title: 'Ausgabe "{ name }" löschen?'
     message: 'Möchtest du diese Ausgabe wirklich permanent löschen?'
+
+filter:
+  categories: 'Kategorien'
+  paidBy: 'Bezahlt von'
+  status: 'Status'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -308,4 +355,9 @@ dialog:
   delete:
     title: 'Supprimer dépense "{ name }" ?'
     message: 'Voulez-vous vraiment supprimer cette dépense définitivement ?'
+
+filter:
+  categories: 'Catégories'
+  paidBy: 'Payé par'
+  status: 'Statut'
 </i18n>

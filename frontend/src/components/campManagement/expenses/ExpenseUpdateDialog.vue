@@ -18,8 +18,9 @@
         </q-card-section>
 
         <q-card-section :class="showFilePreview ? 'col-shrink' : 'col'">
-          <expense-create-form
-            v-model="expense"
+          <expense-update-form
+            v-model="updatedExpense"
+            :expense="expense"
             :people="people"
             :categories="categories"
           />
@@ -56,14 +57,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { ExpenseCreateData } from '@camp-registration/common/entities';
+import type {
+  Expense,
+  ExpenseUpdateData,
+} from '@camp-registration/common/entities';
 import { QSelectOption, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref, StyleValue } from 'vue';
-import ExpenseCreateForm from 'components/campManagement/expenses/ExpenseCreateForm.vue';
+import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
 import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
 
-const { people, categories } = defineProps<{
+const { expense, people, categories } = defineProps<{
+  expense: Expense;
   people: string[];
   categories: string[] | QSelectOption[];
 }>();
@@ -75,7 +80,7 @@ const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-const expense = ref<Partial<ExpenseCreateData>>({});
+const updatedExpense = ref<ExpenseUpdateData>({});
 
 const showFilePreview = computed<boolean>(() => {
   return previewFile.value != null && quasar.screen.gt.sm;
@@ -88,17 +93,21 @@ interface SimpleFile {
 }
 
 const previewFile = computed<SimpleFile | null>(() => {
-  if (expense.value.file == null) {
+  if (updatedExpense.value.file == null) {
     return null;
   }
 
-  const file = expense.value.file;
+  if (updatedExpense.value.file.lastModified > 0) {
+    const file = updatedExpense.value.file;
 
-  return {
-    name: file.name,
-    type: file.type,
-    url: URL.createObjectURL(expense.value.file),
-  };
+    return {
+      name: file.name,
+      type: file.type,
+      url: URL.createObjectURL(updatedExpense.value.file),
+    };
+  }
+
+  return expense.file;
 });
 
 const dialogStyle = computed<StyleValue>(() => {
@@ -113,7 +122,7 @@ const dialogStyle = computed<StyleValue>(() => {
 });
 
 function onSave() {
-  onDialogOK(expense.value as ExpenseCreateData);
+  onDialogOK(updatedExpense.value);
 }
 </script>
 
@@ -122,7 +131,6 @@ title: 'Details'
 
 action:
   cancel: 'Cancel'
-  ok: 'Ok'
   save: 'Save'
 </i18n>
 

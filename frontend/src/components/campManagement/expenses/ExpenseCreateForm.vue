@@ -1,5 +1,22 @@
 <template>
   <div class="q-pt-none q-gutter-y-sm column">
+    <!-- file -->
+    <q-file
+      v-model="model.file"
+      :label="t('field.file.label')"
+      accept=".pdf, image/*"
+      capture="environment"
+      max-file-size="52428800"
+      clearable
+      outlined
+      rounded
+    >
+      <template #prepend>
+        <q-icon name="attach_file" />
+      </template>
+    </q-file>
+
+    <!-- Name -->
     <q-input
       v-model="model.name"
       :label="t('field.name.label')"
@@ -15,30 +32,24 @@
     </q-input>
 
     <q-input
-      v-model.number="model.receiptNumber"
-      type="number"
-      :label="t('field.receiptNumber.label')"
-      :rules="[
-        (val?: number) =>
-          val == null ||
-          (Number.isInteger(val) && val > 0) ||
-          t('validation.receiptNumber.integer'),
-      ]"
-      hide-bottom-space
-      clearable
+      v-model="model.description"
+      :label="t('field.description.label')"
       collapsed
       outlined
       rounded
+      clearable
     >
       <template #prepend>
-        <q-icon name="title" />
+        <q-icon name="description" />
       </template>
     </q-input>
 
     <autocomplete-input
       v-model="model.category"
       :label="t('field.category.label')"
-      :options="categories"
+      :rules="[(val?: string) => !!val || t('field.name.category.required')]"
+      hide-bottom-space
+      :options="props.categories"
       clearable
       outlined
       rounded
@@ -100,23 +111,10 @@
       </template>
     </q-input>
 
-    <q-input
-      v-model="model.description"
-      :label="t('field.description.label')"
-      collapsed
-      outlined
-      rounded
-      clearable
-    >
-      <template #prepend>
-        <q-icon name="description" />
-      </template>
-    </q-input>
-
     <autocomplete-input
       v-model="model.paidBy"
       :label="t('field.paidBy.label')"
-      :options="people"
+      :options="props.people"
       clearable
       outlined
       rounded
@@ -179,108 +177,45 @@
         <q-icon name="arrow_forward" />
       </template>
     </q-input>
-
-    <!-- file -->
-    <q-file
-      v-model="model.file"
-      :label="t('field.file.label')"
-      accept=".pdf, image/*"
-      capture="environment"
-      max-file-size="52428800"
-      clearable
-      outlined
-      rounded
-    >
-      <template #prepend>
-        <q-icon name="attach_file" />
-      </template>
-
-      <template
-        v-if="!model.file && expense.file"
-        #append
-      >
-        <q-btn
-          icon="undo"
-          size="xs"
-          round
-          flat
-          @click="resetFile()"
-        />
-      </template>
-    </q-file>
   </div>
 </template>
 
 <script lang="ts" setup>
-import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
-import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
 import { useI18n } from 'vue-i18n';
-import type {
-  Expense,
-  ExpenseUpdateData,
-} from '@camp-registration/common/entities';
-import { toRaw, watch, defineModel, onBeforeMount } from 'vue';
+import { defineModel, watch } from 'vue';
+import type { ExpenseCreateData } from '@camp-registration/common/entities';
+import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
+import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
 import { QSelectOption } from 'quasar';
 
 const { t } = useI18n();
 
-const model = defineModel<ExpenseUpdateData>({
-  default: {},
-});
-
-onBeforeMount(() => {
-  model.value = initialData();
+const model = defineModel<Partial<ExpenseCreateData>>({
+  default: {
+    date: new Date().toISOString().split('T')[0],
+  },
 });
 
 const props = defineProps<{
-  expense: Expense;
   people: string[];
   categories: string[] | QSelectOption[];
 }>();
 
-function initialData(): ExpenseUpdateData {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, paidAt, date, file, ...others } = structuredClone(
-    toRaw(props.expense),
-  );
-  const data: ExpenseUpdateData = others;
-
-  if (date) {
-    data.date = formatDateString(date);
-  }
-
-  if (paidAt) {
-    data.paidAt = formatDateString(paidAt);
-  }
-
-  if (file) {
-    data.file = new File([], file.name, {
-      lastModified: -1,
-    });
-  }
-
-  return data;
-}
-
 watch(
   () => model.value.paidBy,
   (value, oldValue) => {
-    if (value == null) {
+    if (value == undefined) {
       // Reset when no one paid yet
       model.value.paidAt = null;
-    } else if (oldValue == undefined && props.expense.paidAt) {
-      // Use default
-      model.value.paidAt = formatDateString(props.expense.paidAt);
+    } else if (oldValue == undefined) {
+      // Use now as default
+      model.value.paidAt = currentDate();
     }
   },
 );
 
-function formatDateString(date: string): string {
-  return date.split('T')[0];
-}
-
-function resetFile() {
-  model.value.file = initialData().file;
+function currentDate(): string {
+  return new Date().toISOString().split('T')[0];
 }
 </script>
 
@@ -294,6 +229,8 @@ field:
       required: 'Amount is required'
   category:
     label: 'Category'
+    rule:
+      required: 'Category is required'
   date:
     label: 'Date'
   description:
@@ -312,10 +249,6 @@ field:
     label: 'Paid by'
   payee:
     label: 'Payee'
-  receiptNumber:
-    label: 'Receipt Nr.'
-    rule:
-      integer: 'Receipt Nr. must be a positive integer'
 
 action:
   close: 'Close'
@@ -329,6 +262,8 @@ field:
       required: 'Betrag ist erforderlich'
   category:
     label: 'Kategorie'
+    rule:
+      required: 'Kategorie ist erforderlich'
   date:
     label: 'Datum'
   description:
@@ -347,10 +282,6 @@ field:
     label: 'Bezahlt von'
   payee:
     label: 'Empfänger'
-  receiptNumber:
-    label: 'Beleg-Nr.'
-    rule:
-      integer: 'Beleg-Nr muss eine positive ganze Zahl sein'
 
 action:
   close: 'Schließen'
@@ -363,7 +294,9 @@ field:
     rule:
       required: 'Le montant est requis'
   category:
-    label: 'Catégories'
+    label: 'Catégorie'
+    rule:
+      required: 'La catégorie est requis'
   date:
     label: 'Date'
   description:
@@ -382,11 +315,15 @@ field:
     label: 'Payé par'
   payee:
     label: 'Bénéficiaire'
-  receiptNumber:
-    label: 'N° de reçu'
-    rule:
-      integer: 'N° de reçu doit être un nombre entier positif'
 
 action:
   close: 'Fermer'
 </i18n>
+
+<style lang="scss">
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>

@@ -44,7 +44,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     });
   }
 
-  async function storeData(createData: ExpenseCreateData) {
+  async function createData(createData: ExpenseCreateData) {
     const campId = route.params.camp as string;
     checkNotNullWithError(campId);
 
@@ -66,7 +66,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     return withProgressNotification('update', async () => {
       const expense = await apiService.updateExpense(cid, eid, updateData);
 
-      // Replace the registration with a new one
+      // Replace the expense with a new one
       data.value = data.value?.map((value) =>
         value.id === expenseId ? expense : value,
       );
@@ -123,7 +123,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     isLoading,
     error,
     fetchData,
-    storeData,
+    createData,
     updateData,
     deleteData,
   };

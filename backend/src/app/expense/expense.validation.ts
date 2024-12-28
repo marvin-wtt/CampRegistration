@@ -42,10 +42,7 @@ const update = z.object({
       name: z.string(),
       receiptNumber: z.coerce.number().int().nonnegative().nullable(),
       description: z.string().nullable(),
-      amount: z.coerce
-        .number()
-        .multipleOf(0.01)
-        .refine((val) => val !== 0),
+      amount: z.coerce.number().multipleOf(0.01),
       date: z.coerce.date(),
       category: z.string(),
       paidAt: z.coerce.date().nullable(),

@@ -286,7 +286,7 @@ describe('/api/v1/camps/:campId/expenses/', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data).toHaveProperty('file');
+      expect(body.data).toHaveProperty('file.url');
 
       const expenseFileCount = await prisma.file.count({
         where: { expenseId: expense.id },
@@ -308,8 +308,7 @@ describe('/api/v1/camps/:campId/expenses/', () => {
         .auth(accessToken, { type: 'bearer' })
         .expectOrPrint(200);
 
-      expect(body.data).toHaveProperty('id');
-      expect(body.data).toHaveProperty('file');
+      expect(body.data).toHaveProperty('file.url');
 
       const expenseFileCount = await prisma.file.count({
         where: { expenseId: body.data.id },
@@ -332,13 +331,15 @@ describe('/api/v1/camps/:campId/expenses/', () => {
         expense: { connect: { id: expense.id } },
       });
 
-      await request()
+      const { body } = await request()
         .patch(`/api/v1/camps/${camp.id}/expenses/${expense.id}/`)
         .send({
           file: null,
         })
         .auth(accessToken, { type: 'bearer' })
         .expectOrPrint(200);
+
+      expect(body.data).toHaveProperty('file', null);
 
       const expenseFileCount = await prisma.file.count({
         where: { expenseId: expense.id },
