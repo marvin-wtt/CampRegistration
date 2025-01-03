@@ -6,8 +6,15 @@ import {
   ReceiptListFileConfig,
   BudgetCategories,
 } from '#app/expense/exporter/excelFGYO/ReceiptListFileConfig';
+import { Response } from 'express';
 
-export const exportExcelFGYO = async (data: Expense[]) => {
+export const exportExcelFGYO = async (data: Expense[], res: Response) => {
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  );
+  res.setHeader('Content-Disposition', 'attachment; filename="expenses.xlsx"');
+
   const config: ReceiptListFileConfig = {};
 
   const { income, eligibleExpenditures, nonEligibleExpenditures } =

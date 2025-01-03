@@ -12,7 +12,7 @@ const index = z.object({
     campId: z.string(),
   }),
   query: z.object({
-    exportType: z.enum(['csv', 'excel-fgyp']).optional(),
+    exportType: z.enum(['csv', 'excel-fgyp', 'json']).optional(),
   }),
 });
 

@@ -8,6 +8,7 @@ import fileService from '#app/file/file.service';
 import { validateRequest } from '#core/validation/request';
 import validator from '#app/expense/expense.validation';
 import ApiError from '#utils/ApiError';
+import { exportExpenses } from '#app/expense/expense.exporter.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const expense = routeModel(req.models.expense);
@@ -18,11 +19,16 @@ const show = catchRequestAsync(async (req, res) => {
 const index = catchRequestAsync(async (req, res) => {
   const {
     params: { campId },
+    query: { exportType },
   } = await validateRequest(req, validator.index);
 
   const expenses = await expenseService.queryExpenses(campId);
-
   const resources = expenses.map((value) => expenseResource(value));
+
+  if (exportType != null && exportType !== 'json') {
+    exportExpenses(exportType, resources, res);
+    return;
+  }
 
   res.json(collection(resources));
 });
@@ -64,7 +70,6 @@ const update = catchRequestAsync(async (req, res) => {
   // Delete existing file if file is present and request file is defined
   // Must happen before updating the expense as the file is attached to the expense
   if ((body.file === null || file != null) && expense.file != null) {
-    console.log(body.file, file, expense.file);
     await fileService.deleteFile(expense.file.id);
   }
 

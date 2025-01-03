@@ -53,11 +53,23 @@ export function useExpenseService() {
     await api.delete(`camps/${campId}/expenses/${expenseId}/`);
   }
 
+  async function exportExpenses(campId: string, type: string): Promise<string> {
+    const response = await api.get(`camps/${campId}/expenses/`, {
+      params: {
+        exportType: type,
+      },
+      responseType: 'text',
+    });
+
+    return response?.data;
+  }
+
   return {
     fetchExpenses,
     fetchExpense,
     createExpense,
     updateExpense,
     deleteExpense,
+    exportExpenses,
   };
 }

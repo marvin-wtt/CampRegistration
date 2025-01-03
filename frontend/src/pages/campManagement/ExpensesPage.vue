@@ -88,6 +88,7 @@
                     round
                     dense
                     flat
+                    @click="onExport"
                   />
                 </q-item-section>
               </q-item>
@@ -300,6 +301,10 @@ function onShowExpense(expense: Expense) {
       expense,
     },
   });
+}
+
+function onExport() {
+  expensesStore.exportData('csv');
 }
 </script>
 

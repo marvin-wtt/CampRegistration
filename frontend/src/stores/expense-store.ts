@@ -9,6 +9,7 @@ import type {
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { computed } from 'vue';
+import { exportFile } from 'quasar';
 
 export const useExpensesStore = defineStore('expenses', () => {
   const route = useRoute();
@@ -87,6 +88,17 @@ export const useExpensesStore = defineStore('expenses', () => {
     });
   }
 
+  async function exportData(type: string) {
+    const campId = route.params.camp as string;
+    const cid = checkNotNullWithError(campId);
+
+    const data = await apiService.exportExpenses(cid, type);
+
+    exportFile('test.csv', data, {
+      mimeType: 'text/csv',
+    });
+  }
+
   const people = computed<string[]>(() => {
     if (!data.value) {
       return [];
@@ -126,5 +138,6 @@ export const useExpensesStore = defineStore('expenses', () => {
     createData,
     updateData,
     deleteData,
+    exportData,
   };
 });
