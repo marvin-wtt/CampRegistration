@@ -23,6 +23,10 @@
           &middot;
           {{ props.expense.category }}
         </template>
+        <template v-if="props.expense?.paidBy">
+          &middot;
+          {{ props.expense.paidBy }}
+        </template>
       </q-item-label>
     </q-item-section>
 

@@ -47,7 +47,7 @@
     <autocomplete-input
       v-model="model.category"
       :label="t('field.category.label')"
-      :rules="[(val?: string) => !!val || t('field.name.category.required')]"
+      :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
       hide-bottom-space
       :options="props.categories"
       clearable

@@ -39,6 +39,8 @@
       v-model="model.category"
       :label="t('field.category.label')"
       :options="categories"
+      :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
+      hide-bottom-space
       clearable
       outlined
       rounded
@@ -294,6 +296,8 @@ field:
       required: 'Amount is required'
   category:
     label: 'Category'
+    rule:
+      required: 'Category is required'
   date:
     label: 'Date'
   description:
@@ -329,6 +333,8 @@ field:
       required: 'Betrag ist erforderlich'
   category:
     label: 'Kategorie'
+    rule:
+      required: 'Kategorie ist erforderlich'
   date:
     label: 'Datum'
   description:
@@ -364,6 +370,8 @@ field:
       required: 'Le montant est requis'
   category:
     label: 'Catégories'
+    rule:
+      required: 'La catégorie est requis'
   date:
     label: 'Date'
   description:

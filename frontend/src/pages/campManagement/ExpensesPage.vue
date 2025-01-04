@@ -40,9 +40,9 @@
             emit-value
             map-options
             multiple
+            clearable
             rounded
             outlined
-            clearable
             class="col-12"
             style="max-width: 300px"
           >
@@ -56,14 +56,32 @@
             :label="t('filter.paidBy')"
             :options="paidByOptions"
             multiple
+            clearable
             rounded
             outlined
-            clearable
             class="col-12"
             style="max-width: 300px"
           >
             <template #prepend>
               <q-icon name="person" />
+            </template>
+          </q-select>
+
+          <q-select
+            v-model="filter.status"
+            :label="t('filter.status')"
+            :options="statusOptions"
+            emit-value
+            map-options
+            multiple
+            clearable
+            rounded
+            outlined
+            class="col-12 no-wrap"
+            style="max-width: 300px"
+          >
+            <template #prepend>
+              <q-icon name="tune" />
             </template>
           </q-select>
         </div>
@@ -163,7 +181,7 @@ const loading = computed<boolean>(() => {
 interface Filter {
   categories?: string[] | null;
   paidBy?: string[] | null;
-  paymentStatus?: 'paid' | 'unpaid' | null;
+  status?: 'unpaid' | 'noReceipt' | null;
 }
 
 const filter = reactive<Filter>({});
@@ -201,7 +219,15 @@ const filteredExpenses = computed<Expense[]>(() => {
   };
 
   const statusFilter = (expense: Expense): boolean => {
-    return true; // TODO
+    if (filter.status?.includes('unpaid') && expense.paidAt != null) {
+      return false;
+    }
+
+    if (filter.status?.includes('noReceipt') && expense.file != null) {
+      return false;
+    }
+
+    return true;
   };
 
   return expenses.value
@@ -231,6 +257,19 @@ const paidByOptions = computed<string[]>(() => {
     .filter((name) => name != null);
 
   return [...new Set(names)].toSorted();
+});
+
+const statusOptions = computed<QSelectOption<Filter['status']>[]>(() => {
+  return [
+    {
+      label: t('statusOptions.unpaid'),
+      value: 'unpaid',
+    },
+    {
+      label: t('statusOptions.noReceipt'),
+      value: 'noReceipt',
+    },
+  ];
 });
 
 function onAddExpense() {
@@ -327,6 +366,10 @@ filter:
   categories: 'Categories'
   paidBy: 'Paid By'
   status: 'Status'
+
+statusOptions:
+  unpaid: 'Unpaid'
+  noReceipt: 'No receipt'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -346,6 +389,10 @@ filter:
   categories: 'Kategorien'
   paidBy: 'Bezahlt von'
   status: 'Status'
+
+statusOptions:
+  unpaid: 'Unbezahlt'
+  noReceipt: 'Kein Beleg'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -365,4 +412,8 @@ filter:
   categories: 'Catégories'
   paidBy: 'Payé par'
   status: 'Statut'
+
+statusOptions:
+  unpaid: 'Non payé'
+  noReceipt: 'Pas de reçu'
 </i18n>
