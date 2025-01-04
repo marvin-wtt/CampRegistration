@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
@@ -111,3 +111,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     updateData,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useCampDetailsStore, import.meta.hot));
+}

@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
@@ -236,3 +236,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     reset,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useRoomPlannerStore, import.meta.hot));
+}

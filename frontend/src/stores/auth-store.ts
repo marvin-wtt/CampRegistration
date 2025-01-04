@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import type { Profile, AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
@@ -198,3 +198,7 @@ export const useAuthStore = defineStore('auth', () => {
     verifyEmail,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));
+}

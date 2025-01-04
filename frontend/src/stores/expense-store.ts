@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import type {
@@ -9,7 +9,7 @@ import type {
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { computed } from 'vue';
-import { exportFile } from 'quasar';
+import { exportFile, QSelectOption } from 'quasar';
 
 export const useExpensesStore = defineStore('expenses', () => {
   const route = useRoute();
@@ -141,3 +141,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     exportData,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useExpensesStore, import.meta.hot));
+}

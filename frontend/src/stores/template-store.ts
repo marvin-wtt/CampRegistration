@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import type {
   TableTemplate,
   TableTemplateCreateData,
@@ -179,3 +179,7 @@ export const useTemplateStore = defineStore('templates', () => {
     updateCollection,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useTemplateStore, import.meta.hot));
+}
