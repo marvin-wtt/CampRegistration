@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import type { Profile, AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
@@ -29,7 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
   campBus.on('delete', async (campId) => {
     const index = data.value?.camps.findIndex((camp) => camp.id === campId);
     if (index !== undefined && index >= 0) {
-      data.value?.camps.splice(index);
+      data.value?.camps.splice(index, 1);
     }
   });
 
@@ -198,3 +198,7 @@ export const useAuthStore = defineStore('auth', () => {
     verifyEmail,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));
+}

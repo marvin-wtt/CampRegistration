@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import type {
   Camp,
   CampCreateData,
@@ -88,3 +88,7 @@ export const useCampsStore = defineStore('camps', () => {
     deleteEntry,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useCampsStore, import.meta.hot));
+}

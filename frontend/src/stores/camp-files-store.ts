@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
@@ -109,3 +109,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     deleteEntry,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useCampFilesStore, import.meta.hot));
+}

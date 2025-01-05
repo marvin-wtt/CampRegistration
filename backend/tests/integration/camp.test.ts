@@ -223,8 +223,6 @@ describe('/api/v1/camps', () => {
 
         expect(status).toBe(200);
 
-        console.log(body.data);
-
         expect(body).toHaveProperty('data');
         expect(body.data.length).toBe(2);
       });
