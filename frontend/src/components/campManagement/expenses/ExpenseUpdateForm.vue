@@ -35,7 +35,7 @@
       </template>
     </q-input>
 
-    <autocomplete-input
+    <expense-category-select
       v-model="model.category"
       :label="t('field.category.label')"
       :options="categories"
@@ -48,7 +48,7 @@
       <template #prepend>
         <q-icon name="person" />
       </template>
-    </autocomplete-input>
+    </expense-category-select>
 
     <currency-input
       v-model="model.amount"
@@ -222,7 +222,8 @@ import type {
   ExpenseUpdateData,
 } from '@camp-registration/common/entities';
 import { toRaw, watch, defineModel, onBeforeMount } from 'vue';
-import { QSelectOption } from 'quasar';
+import ExpenseCategorySelect from 'components/campManagement/expenses/ExpenseCategorySelect.vue';
+import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { t } = useI18n();
 
@@ -237,7 +238,7 @@ onBeforeMount(() => {
 const props = defineProps<{
   expense: Expense;
   people: string[];
-  categories: string[] | QSelectOption[];
+  categories: ExpenseCategory[];
 }>();
 
 function initialData(): ExpenseUpdateData {

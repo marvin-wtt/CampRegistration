@@ -66,11 +66,12 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref, StyleValue } from 'vue';
 import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
 import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
+import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { expense, people, categories } = defineProps<{
   expense: Expense;
   people: string[];
-  categories: string[] | QSelectOption[];
+  categories: ExpenseCategory[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);

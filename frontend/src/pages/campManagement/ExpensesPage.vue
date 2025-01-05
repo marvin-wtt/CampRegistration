@@ -158,6 +158,7 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
 import ExpenseUpdateDialog from 'components/campManagement/expenses/ExpenseUpdateDialog.vue';
 import { storeToRefs } from 'pinia';
+import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { t, n } = useI18n();
 const quasar = useQuasar();
@@ -243,8 +244,8 @@ const filteredTotal = computed<number>(() => {
   );
 });
 
-const categoryOptions = computed<QSelectOption[]>(() => {
-  return [];
+const categoryOptions = computed<ExpenseCategory[]>(() => {
+  return categories.value;
 });
 
 const paidByOptions = computed<string[]>(() => {
@@ -282,8 +283,8 @@ function onAddExpense() {
     .dialog({
       component: ExpenseCreateDialog,
       componentProps: {
-        categories,
-        people,
+        categories: categories.value,
+        people: people.value,
       },
     })
     .onOk((data: ExpenseCreateData) => {
@@ -297,8 +298,8 @@ function onEditExpense(expense: Expense) {
       component: ExpenseUpdateDialog,
       componentProps: {
         expense,
-        categories,
-        people,
+        categories: categories.value,
+        people: people.value,
       },
     })
     .onOk((data: ExpenseUpdateData) => {
@@ -350,7 +351,7 @@ function onExport() {
 <style lang="scss" scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Expenses'
+title: 'Total'
 
 action:
   cancel: 'Cancel'
@@ -373,7 +374,7 @@ statusOptions:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Ausgaben'
+title: 'Gesamt'
 
 action:
   cancel: 'Abbrechen'
@@ -396,7 +397,7 @@ statusOptions:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Dépenses'
+title: 'Total'
 
 action:
   cancel: 'Annuler'

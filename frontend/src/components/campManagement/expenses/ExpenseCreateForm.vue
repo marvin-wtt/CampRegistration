@@ -44,7 +44,7 @@
       </template>
     </q-input>
 
-    <autocomplete-input
+    <expense-category-select
       v-model="model.category"
       :label="t('field.category.label')"
       :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
@@ -57,7 +57,7 @@
       <template #prepend>
         <q-icon name="person" />
       </template>
-    </autocomplete-input>
+    </expense-category-select>
 
     <currency-input
       v-model="model.amount"
@@ -186,7 +186,8 @@ import { defineModel, watch } from 'vue';
 import type { ExpenseCreateData } from '@camp-registration/common/entities';
 import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
 import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
-import { QSelectOption } from 'quasar';
+import ExpenseCategorySelect from 'components/campManagement/expenses/ExpenseCategorySelect.vue';
+import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { t } = useI18n();
 
@@ -198,7 +199,7 @@ const model = defineModel<Partial<ExpenseCreateData>>({
 
 const props = defineProps<{
   people: string[];
-  categories: string[] | QSelectOption[];
+  categories: ExpenseCategory[];
 }>();
 
 watch(

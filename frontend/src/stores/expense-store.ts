@@ -9,7 +9,8 @@ import type {
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { computed } from 'vue';
-import { exportFile, QSelectOption } from 'quasar';
+import { exportFile } from 'quasar';
+import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 export const useExpensesStore = defineStore('expenses', () => {
   const route = useRoute();
@@ -113,7 +114,9 @@ export const useExpensesStore = defineStore('expenses', () => {
     return uniqueNames.sort((a, b) => a.localeCompare(b));
   });
 
-  const categories = computed<string[]>(() => {
+  const categories = computed<ExpenseCategory[]>(() => {
+    // TODO Load presets if exists
+
     if (!data.value) {
       return [];
     }
@@ -124,7 +127,12 @@ export const useExpensesStore = defineStore('expenses', () => {
 
     const uniqueCategories = [...new Set(categories)];
 
-    return uniqueCategories.sort((a, b) => a.localeCompare(b));
+    return uniqueCategories
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({
+        label: value,
+        value,
+      }));
   });
 
   return {
