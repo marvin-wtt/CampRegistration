@@ -8,10 +8,12 @@ import { useCampManagerService } from 'src/services/CampManagerService';
 import axios, { AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
+import { useProfileService } from 'src/services/ProfileService.ts';
 
 export function useAPIService() {
   return {
     ...useAuthService(),
+    ...useProfileService(),
     ...useUserService(),
     ...useCampService(),
     ...useCampManagerService(),

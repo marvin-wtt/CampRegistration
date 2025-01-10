@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import type { Profile, AuthTokens } from '@camp-registration/common/entities';
+import type {
+  Profile,
+  AuthTokens,
+  ProfileUpdateData,
+} from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
@@ -17,6 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     reset: resetDefault,
     withErrorNotification,
+    withProgressNotification,
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
@@ -183,6 +188,27 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  async function updateProfile(profile: ProfileUpdateData) {
+    return withProgressNotification('update-profile', async () => {
+      const updatedProfile = await apiService.updateProfile(profile);
+
+      data.value = updatedProfile;
+
+      return updatedProfile;
+    });
+  }
+
+  async function deleteProfile() {
+    await withProgressNotification('delete-profile', async () => {
+      await apiService.deleteProfile();
+
+      reset();
+      bus.emit('logout');
+
+      await router.push('/');
+    });
+  }
+
   return {
     user: data,
     error,
@@ -190,6 +216,8 @@ export const useAuthStore = defineStore('auth', () => {
     init,
     reset,
     fetchProfile,
+    updateProfile,
+    deleteProfile,
     login,
     logout,
     register,
