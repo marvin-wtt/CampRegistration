@@ -3,7 +3,6 @@ import tokenService from '#app/token/token.service';
 import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
 import campService from '#app/camp/camp.service';
-import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { authUserId } from '#utils/authUserId';
 import { resource } from '#core/resource';
@@ -40,7 +39,7 @@ const update = catchRequestAsync(async (req, res) => {
     emailVerified,
   });
 
-  if (password) {
+  if (password || email) {
     await authService.logoutAllDevices(userId);
   }
 
