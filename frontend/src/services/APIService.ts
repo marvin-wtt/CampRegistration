@@ -8,7 +8,7 @@ import { useCampManagerService } from 'src/services/CampManagerService';
 import axios, { AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
-import { useProfileService } from 'src/services/ProfileService.ts';
+import { useProfileService } from 'src/services/ProfileService';
 
 export function useAPIService() {
   return {

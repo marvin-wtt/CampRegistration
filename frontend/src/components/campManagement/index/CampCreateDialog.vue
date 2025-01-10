@@ -347,10 +347,10 @@ import { computed, ref } from 'vue';
 import type { CampCreateData } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useCampsStore } from 'stores/camps-store';
 
-const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const campStore = useCampsStore();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
@@ -362,7 +362,7 @@ const { to } = useObjectTranslation();
 
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
-  const camps = authStore.user?.camps
+  const camps = profileStore.user?.camps
     .map((camp): QSelectOption => {
       return {
         value: camp.id,

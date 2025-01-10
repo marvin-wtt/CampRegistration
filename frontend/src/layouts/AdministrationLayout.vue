@@ -86,10 +86,11 @@ import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import { useAuthStore } from 'stores/auth-store';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -97,12 +98,12 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
+const { user } = storeToRefs(profileStore);
 
-const { user } = storeToRefs(authStore);
-
-if (!authStore.user) {
+if (!profileStore.user) {
   // Fetch user instead of init to force redirect on error
-  authStore.fetchProfile();
+  profileStore.fetchProfile();
 }
 
 const showDrawer = computed<boolean>(() => {
@@ -167,7 +168,7 @@ const filteredItems = computed<NavigationItem[]>(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 const dev = computed<boolean>(() => {

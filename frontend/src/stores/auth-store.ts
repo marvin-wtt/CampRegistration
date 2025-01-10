@@ -1,42 +1,26 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import type {
-  Profile,
-  AuthTokens,
-  ProfileUpdateData,
-} from '@camp-registration/common/entities';
+import type { AuthTokens } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useProfileStore } from 'stores/profile-store';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const route = useRoute();
   const bus = useAuthBus();
-  const campBus = useCampBus();
+  const profileStore = useProfileStore();
   const {
-    data,
     isLoading,
     error,
     reset: resetDefault,
     withErrorNotification,
-    withProgressNotification,
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
-  } = useServiceHandler<Profile>('user');
-
-  campBus.on('create', async () => {
-    await fetchProfile();
-  });
-
-  campBus.on('delete', async (campId) => {
-    const index = data.value?.camps.findIndex((camp) => camp.id === campId);
-    if (index !== undefined && index >= 0) {
-      data.value?.camps.splice(index);
-    }
-  });
+  } = useServiceHandler<undefined>('auth');
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
@@ -70,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    await fetchProfile();
+    await profileStore.fetchProfile();
   }
 
   async function login(
@@ -78,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
     password: string,
     remember = false,
   ): Promise<void> {
-    await errorOnFailure(async () => {
+    return errorOnFailure(async () => {
       const result = await apiService.login(email, password, remember);
 
       bus.emit('login', result.profile);
@@ -92,8 +76,6 @@ export const useAuthStore = defineStore('auth', () => {
           : { name: 'management' };
 
       await router.push(destination);
-
-      return result.profile;
     });
   }
 
@@ -127,12 +109,6 @@ export const useAuthStore = defineStore('auth', () => {
       const tokens: AuthTokens = await apiService.refreshTokens();
       handleTokenRefresh(tokens);
     }, refreshTime);
-  }
-
-  async function fetchProfile(): Promise<void> {
-    await errorOnFailure(async () => {
-      return await apiService.fetchProfile();
-    });
   }
 
   async function logout(): Promise<void> {
@@ -188,36 +164,11 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
-  async function updateProfile(profile: ProfileUpdateData) {
-    return withProgressNotification('update-profile', async () => {
-      const updatedProfile = await apiService.updateProfile(profile);
-
-      data.value = updatedProfile;
-
-      return updatedProfile;
-    });
-  }
-
-  async function deleteProfile() {
-    await withProgressNotification('delete-profile', async () => {
-      await apiService.deleteProfile();
-
-      reset();
-      bus.emit('logout');
-
-      await router.push('/');
-    });
-  }
-
   return {
-    user: data,
     error,
     loading: isLoading,
     init,
     reset,
-    fetchProfile,
-    updateProfile,
-    deleteProfile,
     login,
     logout,
     register,

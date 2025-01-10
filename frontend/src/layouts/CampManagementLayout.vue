@@ -93,6 +93,7 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
@@ -103,14 +104,15 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(authStore);
+const { user } = storeToRefs(profileStore);
 
 async function init() {
-  if (!authStore.user) {
+  if (!profileStore.user) {
     // Fetch user instead of init to force redirect on error
-    await authStore.fetchProfile();
+    await profileStore.fetchProfile();
   }
   if (route.params.camp) {
     await campDetailStore.fetchData();
@@ -127,7 +129,7 @@ const title = computed(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {

@@ -26,6 +26,7 @@
         <q-item
           v-close-popup
           clickable
+          :to="{ name: 'profile' }"
         >
           <q-item-section avatar>
             <q-icon name="account_circle" />
@@ -152,11 +153,9 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-interface Props {
+const { profile } = defineProps<{
   profile: Profile | undefined;
-}
-
-const props = defineProps<Props>();
+}>();
 
 const emit = defineEmits<{
   (e: 'logout'): void;
@@ -170,11 +169,11 @@ const locales = computed(() => [
 ]);
 
 const authenticated = computed<boolean>(() => {
-  return props.profile !== undefined;
+  return profile !== undefined;
 });
 
 const administrator = computed<boolean>(() => {
-  return props.profile?.role === 'ADMIN';
+  return profile?.role === 'ADMIN';
 });
 
 const darkMode = computed<boolean>(() => {

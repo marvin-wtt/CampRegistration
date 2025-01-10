@@ -91,7 +91,7 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
@@ -101,11 +101,11 @@ import CampCreateDialog from 'components/campManagement/index/CampCreateDialog.v
 const { t } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
-const authStore = useAuthStore();
+const profileStore = useProfileStore();
 
 type MenuState = 'active' | 'draft';
 
-const { user, loading, error } = storeToRefs(authStore);
+const { user, loading, error } = storeToRefs(profileStore);
 
 const menu = ref<MenuState>(getMenuStateFromQueryParameter());
 

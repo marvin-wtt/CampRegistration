@@ -23,7 +23,7 @@ import { useCampFilesStore } from 'stores/camp-files-store';
 import { storeToRefs } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import { useQuasar } from 'quasar';
-import { useRegistrationsStore } from 'stores/registration-store.ts';
+import { useRegistrationsStore } from 'stores/registration-store';
 import FormEditor from 'components/campManagement/settings/form/FormEditor.vue';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { ITheme } from 'survey-core';
