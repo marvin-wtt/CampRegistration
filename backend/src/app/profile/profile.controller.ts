@@ -51,7 +51,16 @@ const update = catchRequestAsync(async (req, res) => {
   res.json(resource(profileResource(user, camps)));
 });
 
+const destroy = catchRequestAsync(async (req, res) => {
+  const userId = authUserId(req);
+
+  await userService.deleteUserById(userId);
+
+  res.status(httpStatus.NO_CONTENT).end();
+});
+
 export default {
   show,
   update,
+  destroy,
 };

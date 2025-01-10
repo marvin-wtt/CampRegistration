@@ -9,6 +9,7 @@ const update = z.object({
       name: z.string(),
       locale: z.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     })
+    .strict()
     .partial(),
 });
 
