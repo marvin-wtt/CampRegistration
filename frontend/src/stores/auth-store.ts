@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
   } = useServiceHandler<Profile>('user');
 
   campBus.on('create', async () => {
-    await fetchUser();
+    await fetchProfile();
   });
 
   campBus.on('delete', async (campId) => {
@@ -65,7 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    await fetchUser();
+    await fetchProfile();
   }
 
   async function login(
@@ -124,7 +124,7 @@ export const useAuthStore = defineStore('auth', () => {
     }, refreshTime);
   }
 
-  async function fetchUser(): Promise<void> {
+  async function fetchProfile(): Promise<void> {
     await errorOnFailure(async () => {
       return await apiService.fetchProfile();
     });
@@ -189,7 +189,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading: isLoading,
     init,
     reset,
-    fetchUser,
+    fetchProfile,
     login,
     logout,
     register,

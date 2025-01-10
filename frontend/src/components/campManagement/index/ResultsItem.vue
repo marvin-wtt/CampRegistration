@@ -224,7 +224,7 @@ function enableAction() {
     await capsStore.updateEntry(props.camp.id, {
       active: true,
     });
-    await authStore.fetchUser();
+    await authStore.fetchProfile();
   });
 }
 
@@ -233,7 +233,7 @@ function disableAction() {
     await capsStore.updateEntry(props.camp.id, {
       active: false,
     });
-    await authStore.fetchUser();
+    await authStore.fetchProfile();
   });
 }
 
