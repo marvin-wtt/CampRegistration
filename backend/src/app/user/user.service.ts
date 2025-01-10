@@ -45,7 +45,7 @@ const queryUsers = async () => {
 };
 
 const getUserByIdWithCamps = (id: string) => {
-  return prisma.user.findUnique({
+  return prisma.user.findUniqueOrThrow({
     where: { id },
     include: {
       camps: {

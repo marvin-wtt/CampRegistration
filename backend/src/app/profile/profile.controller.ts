@@ -13,9 +13,7 @@ import validator from './profile.validation.js';
 const show = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
   const user = await userService.getUserByIdWithCamps(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
+
   const camps = user.camps.map((value) => {
     return value.camp;
   });
