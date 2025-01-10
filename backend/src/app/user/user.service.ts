@@ -61,6 +61,12 @@ const getUserById = async (id: string): Promise<User | null> => {
   });
 };
 
+const getUserByIdOrFail = async (id: string): Promise<User> => {
+  return prisma.user.findUniqueOrThrow({
+    where: { id },
+  });
+};
+
 const updateUserLastSeenById = async (userId: string) => {
   return prisma.user.update({
     where: { id: userId },
@@ -124,6 +130,7 @@ export default {
   createUser,
   queryUsers,
   getUserById,
+  getUserByIdOrFail,
   getUserByIdWithCamps,
   getUserByEmail,
   updateUserById,

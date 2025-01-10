@@ -6,11 +6,20 @@ const update = z.object({
     .object({
       email: z.string().email(),
       password: PasswordSchema,
+      currentPassword: z.string(),
       name: z.string(),
       locale: z.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
     })
     .strict()
-    .partial(),
+    .partial()
+    .superRefine((val, ctx) => {
+      if (val.password && !val.currentPassword) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Missing current password',
+        });
+      }
+    }),
 });
 
 export default { update };

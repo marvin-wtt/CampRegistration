@@ -135,6 +135,7 @@ describe('/api/v1/profile', () => {
     it('should logout all devices when password is updated', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
+        password: bcrypt.hashSync('password', 8),
       });
       const accessToken = generateAccessToken(user);
 
@@ -147,7 +148,7 @@ describe('/api/v1/profile', () => {
         user: { connect: { id: user.id } },
       });
 
-      const data = { password: 'Password1234' };
+      const data = { password: 'Password1234', currentPassword: 'password' };
 
       await request()
         .patch(`/api/v1/profile/`)
@@ -202,11 +203,13 @@ describe('/api/v1/profile', () => {
     it('should encrypt the password', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
+        password: bcrypt.hashSync('password', 8),
       });
       const accessToken = generateAccessToken(user);
 
       const data = {
         password: 'Password1234',
+        currentPassword: 'password',
       };
 
       await request()

@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 type UpdateBodyData = {
   name: string;
@@ -53,9 +54,12 @@ export const profileUpdateBody: UpdateBodyData[] = [
   // password
   {
     name: 'password',
-    user: {},
+    user: {
+      password: bcrypt.hashSync('password', 8),
+    },
     data: {
       password: 'ads322#sdA',
+      currentPassword: 'password',
     },
     expected: 200,
   },
@@ -64,6 +68,23 @@ export const profileUpdateBody: UpdateBodyData[] = [
     user: {},
     data: {
       password: null,
+    },
+    expected: 400,
+  },
+  {
+    name: 'current password missing',
+    user: {},
+    data: {
+      password: 'ads322#sdA',
+    },
+    expected: 400,
+  },
+  {
+    name: 'current password invalid',
+    user: {},
+    data: {
+      password: 'ads322#sdA',
+      currentPassword: 'ads322#sdA',
     },
     expected: 400,
   },

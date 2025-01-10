@@ -8,8 +8,12 @@ export interface Profile {
   camps: Camp[];
 }
 
-export type ProfileCreateData = Omit<Profile, 'id' | 'camps' | 'role'> & {
+type PasswordUpdateData = {
   password: string;
+  currentPassword: string;
 };
 
-export type ProfileUpdateData = Partial<ProfileCreateData>;
+export type ProfileUpdateData = Partial<
+  Omit<Profile, 'id' | 'camps' | 'role'>
+> &
+  (never | PasswordUpdateData);
