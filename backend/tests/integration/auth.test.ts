@@ -178,19 +178,20 @@ describe('/api/v1/auth', async () => {
     });
 
     it('should encode the user password', async () => {
-      await request()
-        .post('/api/v1/auth/register')
-        .send({
-          name: 'testuser',
-          email: 'test@email.net',
-          password: 'Password1',
-        })
-        .expect(201);
+      const data = {
+        name: 'testuser',
+        email: 'test@email.net',
+        password: 'Password1',
+      };
 
-      const user = (await prisma.user.findFirst()) as User;
+      await request().post('/api/v1/auth/register').send(data).expect(201);
+
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { email: data.email },
+      });
 
       expect(user).toBeDefined();
-      expect(bcrypt.compare(user.password, 'password1')).toBeTruthy();
+      expect(bcrypt.compareSync(data.password, user.password)).toBeTruthy();
     });
 
     it('should set USER role as default', async () => {
