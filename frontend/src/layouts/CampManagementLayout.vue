@@ -59,17 +59,29 @@
       @mouseover="miniState = false"
     >
       <q-list padding>
-        <navigation-item
+        <template
           v-for="item in filteredItems"
           :key="item.name"
-          :name="item.name"
-          :label="item.label"
-          :icon="item.icon"
-          :to="item.to"
-          :separated="item.separated"
-          :preview="item.preview"
-          :children="item.children"
-        />
+        >
+          <navigation-item
+            v-if="item.header"
+            :header="item.header"
+            :name="item.name"
+            :label="item.label"
+            :separated="item.separated"
+            :preview="item.preview"
+          />
+          <navigation-item
+            v-else
+            :name="item.name"
+            :label="item.label"
+            :icon="item.icon"
+            :to="item.to"
+            :separated="item.separated"
+            :preview="item.preview"
+            :children="item.children"
+          />
+        </template>
       </q-list>
     </q-drawer>
 
@@ -97,6 +109,7 @@ import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -110,7 +123,7 @@ const campDetailStore = useCampDetailsStore();
 const { user } = storeToRefs(profileStore);
 
 async function init() {
-  if (!profileStore.user) {
+  if (!user.value) {
     // Fetch user instead of init to force redirect on error
     await profileStore.fetchProfile();
   }
@@ -142,17 +155,7 @@ useMeta(() => {
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
-interface NavigationItem {
-  name: string;
-  to?: string | object;
-  label?: string;
-  icon?: string;
-  preview?: boolean;
-  separated?: boolean;
-  children?: NavigationItem[];
-}
-
-const items: NavigationItem[] = [
+const items: NavigationItemProps[] = [
   {
     name: 'participants',
     label: t('participants'),
@@ -214,7 +217,7 @@ const items: NavigationItem[] = [
   },
 ];
 
-const filteredItems = computed<NavigationItem[]>(() => {
+const filteredItems = computed<NavigationItemProps[]>(() => {
   if (dev.value) {
     return items;
   }
