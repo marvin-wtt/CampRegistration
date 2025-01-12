@@ -26,6 +26,26 @@
         </q-input>
 
         <q-input
+          v-model="confirmEamil"
+          :label="t('field.confirmEmail.label')"
+          type="email"
+          autocomplete="email"
+          :rules="[
+            (val?: string) => !!val || t('field.confirmEmail.rule.required'),
+            (val: string) =>
+              val === data.email || t('field.confirmEmail.rule.match'),
+          ]"
+          hide-bottom-space
+          outlined
+          rounded
+          class="settings-input"
+        >
+          <template #before>
+            <q-icon name="email" />
+          </template>
+        </q-input>
+
+        <q-input
           v-model="data.currentPassword"
           :label="t('field.password.label')"
           type="password"
@@ -77,6 +97,8 @@ const data = ref({
   currentPassword: '',
 });
 
+const confirmEamil = ref<string>();
+
 function onSave() {
   emit('save', data.value);
 }
@@ -95,6 +117,11 @@ function onReset() {
 title: 'E-Mail'
 
 field:
+  confirmEmail:
+    label: 'Confirm E-Mail'
+    rule:
+      required: 'The e-mail is required.'
+      match: 'The e-mail does not match.'
   email:
     label: 'E-Mail'
     rule:
@@ -112,6 +139,11 @@ action:
 title: 'E-Mail'
 
 field:
+  confirmEmail:
+    label: 'E-Mail bestätigen'
+    rule:
+      required: 'Die E-Mail ist erforderlich.'
+      match: 'Die E-Mail-Adressen stimmen nicht überein.'
   email:
     label: 'E-Mail'
     rule:
@@ -129,6 +161,11 @@ action:
 title: 'E-mail'
 
 field:
+  confirmEmail:
+    label: 'Confirmer l’e-mail'
+    rule:
+      required: 'L’e-mail est obligatoire.'
+      match: 'Les e-mails ne correspondent pas.'
   email:
     label: 'E-mail'
     rule:
