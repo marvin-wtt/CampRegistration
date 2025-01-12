@@ -14,7 +14,7 @@
     :to="props.to"
     clickable
     :disable="disabled"
-    :icon="props.insertLevel"
+    :inset-level="props.insertLevel"
   >
     <q-item-section
       v-if="props.icon"

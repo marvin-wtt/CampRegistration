@@ -186,7 +186,7 @@ const items: NavigationItemProps[] = [
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
-    to: { name: 'settings' },
+    to: { name: 'management.settings' },
     separated: true,
     children: [
       {

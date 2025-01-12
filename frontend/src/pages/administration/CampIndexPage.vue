@@ -521,7 +521,7 @@ function formatDateTime(dateTime: string): string {
 
 function editCamp(camp: Camp) {
   const routeData = router.resolve({
-    name: 'settings',
+    name: 'edit-camp',
     params: {
       camp: camp.id,
     },

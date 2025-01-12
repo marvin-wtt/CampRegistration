@@ -118,7 +118,7 @@ const routes: RouteRecordRaw[] = [
           },
           {
             path: 'settings',
-            name: 'settings',
+            name: 'management.settings',
             component: () =>
               import('pages/campManagement/settings/SettingsPage.vue'),
             children: [
