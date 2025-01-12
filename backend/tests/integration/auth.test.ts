@@ -474,6 +474,22 @@ describe('/api/v1/auth', async () => {
         .expect(403);
     });
 
+    it('should respond with a `403` status code when user is locked', async () => {
+      await UserFactory.create({
+        email: 'test@email.net',
+        password: 'password',
+        locked: true,
+      });
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(403);
+    });
+
     it('should respond with a `400` status code when given invalid credentials', async () => {
       await createUser();
 
