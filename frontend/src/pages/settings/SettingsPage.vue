@@ -113,4 +113,8 @@ profile: 'Profil'
 security: 'Sécurité'
 </i18n>
 
-<style scoped></style>
+<style>
+.settings-input {
+  max-width: 450px;
+}
+</style>

@@ -1,12 +1,9 @@
 <template>
-  <q-page
-    padding
-    class="q-gutter-md"
-  >
+  <div class="q-gutter-md q-pa-md">
     <password-settings-card @save="updateProfile" />
 
     <two-factor-settings-card />
-  </q-page>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -22,8 +19,4 @@ function updateProfile(data: ProfileUpdateData) {
 }
 </script>
 
-<style>
-.settings-input {
-  max-width: 450px;
-}
-</style>
+<style scoped></style>

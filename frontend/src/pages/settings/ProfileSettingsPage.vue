@@ -1,8 +1,5 @@
 <template>
-  <q-page
-    padding
-    class="q-gutter-md"
-  >
+  <div class="q-gutter-md q-pa-md">
     <template v-if="user">
       <profile-settings-card
         :profile="user"
@@ -21,7 +18,7 @@
       size="xl"
       showing
     />
-  </q-page>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -39,8 +36,4 @@ function updateProfile(data: ProfileUpdateData) {
 }
 </script>
 
-<style>
-.settings-input {
-  max-width: 450px;
-}
-</style>
+<style scoped></style>

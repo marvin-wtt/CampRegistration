@@ -1,8 +1,5 @@
 <template>
-  <q-page
-    padding
-    class="q-gutter-md"
-  >
+  <div class="q-gutter-md q-pa-md">
     <template v-if="user">
       <export-data-settings-card @export="exportData" />
 
@@ -15,7 +12,7 @@
       size="xl"
       showing
     />
-  </q-page>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -53,11 +50,7 @@ function exportData() {
 }
 </script>
 
-<style>
-.settings-input {
-  max-width: 450px;
-}
-</style>
+<style scoped></style>
 
 <i18n lang="yaml" locale="en">
 delete:
