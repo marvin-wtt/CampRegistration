@@ -56,10 +56,10 @@
           :to="{ name: 'settings' }"
         >
           <q-item-section avatar>
-            <q-icon name="settings" />
+            <q-icon name="account_circle" />
           </q-item-section>
           <q-item-section>
-            {{ t('settings') }}
+            {{ t('account') }}
           </q-item-section>
         </q-item>
 
@@ -194,6 +194,7 @@ function logout() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
+account: 'Account'
 username: 'Signed in as'
 camps: 'My camps'
 administration: 'Administration'
@@ -202,10 +203,10 @@ login: 'Login'
 logout: 'Sing out'
 language: 'Language'
 dark_mode: 'Dark Mode'
-settings: 'Settings'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+account: 'Konto'
 username: 'Angemeldet als'
 camps: 'Meine Camps'
 administration: 'Verwaltung'
@@ -214,10 +215,10 @@ login: 'Anmelden'
 logout: 'Abmelden'
 language: 'Sprache'
 dark_mode: 'Dunkelmodus'
-settings: 'Einstellung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+account: 'Compte'
 username: 'Connecté en tant que'
 camps: 'Mes camps'
 administration: 'Administration'
@@ -226,5 +227,4 @@ login: 'Connexion'
 logout: 'Déconnexion'
 language: 'Langue'
 dark_mode: 'Mode sombre'
-settings: 'Réglages'
 </i18n>
