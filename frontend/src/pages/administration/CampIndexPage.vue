@@ -6,6 +6,7 @@
       :loading
       :rows
       :columns
+      :expanded
       :visible-columns="visibleColumns"
       :rows-per-page-options="[0]"
       virtual-scroll
@@ -13,15 +14,15 @@
       class="absolute fit"
     >
       <template #top-right>
-        <div class="row no-wrap q-gutter-x-lg">
+        <div class="row no-wrap q-gutter-x-md">
           <!-- Search -->
           <q-input
             v-model="filterQuery"
-            borderless
+            :placeholder="t('filter.search')"
+            debounce="300"
             rounded
             dense
-            debounce="300"
-            placeholder="Search"
+            outlined
           >
             <template #append>
               <q-icon name="search" />
@@ -45,9 +46,10 @@
           />
 
           <q-btn
-            icon="expand"
+            :icon="expanded.length > 0 ? 'unfold_less' : 'expand'"
             outline
             rounded
+            @click="toggleExpandAll()"
           />
         </div>
       </template>
@@ -74,7 +76,7 @@
             round
             dense
             outline
-            @click="props.expand = !props.expand"
+            @click="toggleExpand(props.key)"
           />
         </q-td>
       </template>
@@ -483,6 +485,19 @@ const visibleColumns = ref([
   'action',
 ]);
 
+const expanded = ref<string[]>([]);
+
+function toggleExpandAll() {
+  expanded.value =
+    expanded.value.length === 0 ? rows.value.map((camp) => camp.id) : [];
+}
+
+function toggleExpand(id: string) {
+  expanded.value = expanded.value.includes(id)
+    ? expanded.value.filter((i) => i !== id)
+    : [...expanded.value, id];
+}
+
 function getMatchScore(text: string, query: string) {
   text = text.toLowerCase();
   query = query.toLowerCase();
@@ -753,6 +768,9 @@ dialog:
     ok: 'Unpublish'
     cancel: 'Cancel'
 
+filter:
+  search: 'Search'
+
 header:
   columns: 'Columns'
 
@@ -820,6 +838,9 @@ dialog:
     ok: 'Zurückziehen'
     cancel: 'Abbrechen'
 
+filter:
+  search: 'Suchen'
+
 header:
   columns: 'Spalten'
 
@@ -886,6 +907,9 @@ dialog:
     message: 'Es-tu sûr de vouloir dépublier { name } ?'
     ok: 'Dépublier'
     cancel: 'Annuler'
+
+filter:
+  search: 'Chercher'
 
 header:
   columns: 'Colonnes'

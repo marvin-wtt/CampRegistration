@@ -12,15 +12,15 @@
       class="absolute fit"
     >
       <template #top-right>
-        <div class="row no-wrap q-gutter-x-lg">
+        <div class="row no-wrap q-gutter-x-md">
           <!-- Search -->
           <q-input
             v-model="filterQuery"
-            borderless
+            :placeholder="t('filter.search')"
+            debounce="300"
+            outlined
             rounded
             dense
-            debounce="300"
-            placeholder="Search"
           >
             <template #append>
               <q-icon name="search" />
@@ -497,6 +497,9 @@ dialog:
     ok: 'Unlock'
     cancel: 'Cancel'
 
+filter:
+  search: 'Search'
+
 header:
   create: 'Create user'
 
@@ -543,6 +546,9 @@ dialog:
     ok: 'Entsperren'
     cancel: 'Abbrechen'
 
+filter:
+  search: 'Suchen'
+
 header:
   create: 'Benutzer erstellen'
 
@@ -588,6 +594,9 @@ dialog:
     message: 'Es-tu sûr de vouloir déverrouiller { name } ?'
     ok: 'Déverrouiller'
     cancel: 'Annuler'
+
+filter:
+  search: 'Chercher'
 
 header:
   create: 'Créer un utilisateur'
