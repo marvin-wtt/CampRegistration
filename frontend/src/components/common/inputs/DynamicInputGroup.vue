@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import { type BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInput from 'components/common/inputs/DynamicInput.vue';
 import { computed } from 'vue';
 

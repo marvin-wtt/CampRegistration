@@ -27,7 +27,7 @@ describe('SafeDeleteDialog', () => {
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(1);
 
-    await inputs[0].setValue('Test Value 1');
+    await inputs[0]!.setValue('Test Value 1');
     expect(wrapper.props().modelValue).toBe('Test Value 1');
   });
 
@@ -45,7 +45,7 @@ describe('SafeDeleteDialog', () => {
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(1);
 
-    await inputs[0].setValue(42);
+    await inputs[0]!.setValue(42);
     expect(wrapper.props().modelValue).toBe(42);
   });
 
@@ -61,8 +61,8 @@ describe('SafeDeleteDialog', () => {
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
 
-    await inputs[0].setValue('Test Value de');
-    await inputs[1].setValue('Test Value fr');
+    await inputs[0]!.setValue('Test Value de');
+    await inputs[1]!.setValue('Test Value fr');
 
     expect(wrapper.props().modelValue).toHaveProperty('de', 'Test Value de');
     expect(wrapper.props().modelValue).toHaveProperty('fr', 'Test Value fr');
@@ -84,8 +84,8 @@ describe('SafeDeleteDialog', () => {
     const inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
 
-    await inputs[0].setValue(42);
-    await inputs[1].setValue(0);
+    await inputs[0]!.setValue(42);
+    await inputs[1]!.setValue(0);
 
     expect(wrapper.props().modelValue).toHaveProperty('de', 42);
     expect(wrapper.props().modelValue).toHaveProperty('fr', 0);

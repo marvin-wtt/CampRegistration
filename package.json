@@ -16,8 +16,5 @@
     "common",
     "backend",
     "frontend"
-  ],
-  "dependencies": {
-    "zod-validation-error": "^3.4.0"
-  }
+  ]
 }

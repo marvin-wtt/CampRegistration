@@ -20,7 +20,7 @@
           icon="info"
         >
           <!-- Countries -->
-          <country-switch
+          <country-select
             v-model="data.countries"
             :disable="loading"
             :label="t('field.countries')"
@@ -33,12 +33,11 @@
             outlined
             rounded
             multiple
-            emit-country
           >
             <template #before>
               <q-icon name="language" />
             </template>
-          </country-switch>
+          </country-select>
 
           <!-- name -->
           <translated-input
@@ -337,20 +336,20 @@
 </template>
 
 <script setup lang="ts">
-import { QSelectOption, useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import CampEditStep from 'components/campManagement/settings/create/CampEditStep.vue';
-import CountrySwitch from 'components/common/CountrySwitch.vue';
+import CountrySelect from 'components/common/CountrySelect.vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
 import { computed, ref } from 'vue';
 import type { CampCreateData } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useCampsStore } from 'stores/camps-store';
 
-const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const campStore = useCampsStore();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
@@ -362,7 +361,7 @@ const { to } = useObjectTranslation();
 
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
-  const camps = authStore.user?.camps
+  const camps = profileStore.user?.camps
     .map((camp): QSelectOption => {
       return {
         value: camp.id,
@@ -381,7 +380,8 @@ async function onComplete() {
     await campStore.createEntry(data.value);
 
     onDialogOK();
-  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (ignored) {
     loading.value = false;
     step.value--;
   }

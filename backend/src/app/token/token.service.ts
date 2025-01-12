@@ -209,20 +209,7 @@ const blacklistTokens = async (userId: string): Promise<void> => {
     data: {
       blacklisted: true,
     },
-    where: {
-      userId,
-      OR: [
-        {
-          type: TokenType.RESET_PASSWORD,
-        },
-        {
-          type: TokenType.ACCESS,
-        },
-        {
-          type: TokenType.REFRESH,
-        },
-      ],
-    },
+    where: { userId },
   });
 };
 

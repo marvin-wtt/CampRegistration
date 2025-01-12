@@ -178,19 +178,20 @@ describe('/api/v1/auth', async () => {
     });
 
     it('should encode the user password', async () => {
-      await request()
-        .post('/api/v1/auth/register')
-        .send({
-          name: 'testuser',
-          email: 'test@email.net',
-          password: 'Password1',
-        })
-        .expect(201);
+      const data = {
+        name: 'testuser',
+        email: 'test@email.net',
+        password: 'Password1',
+      };
 
-      const user = (await prisma.user.findFirst()) as User;
+      await request().post('/api/v1/auth/register').send(data).expect(201);
+
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { email: data.email },
+      });
 
       expect(user).toBeDefined();
-      expect(bcrypt.compare(user.password, 'password1')).toBeTruthy();
+      expect(bcrypt.compareSync(data.password, user.password)).toBeTruthy();
     });
 
     it('should set USER role as default', async () => {
@@ -262,7 +263,7 @@ describe('/api/v1/auth', async () => {
       return UserFactory.create({
         name: 'testuser',
         email: 'test@email.net',
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
     };
 
@@ -309,7 +310,7 @@ describe('/api/v1/auth', async () => {
     it('should respond with camps when successful', async () => {
       const user = await UserFactory.create({
         email: 'manager@email.net',
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
       const camp = await CampFactory.create();
       await CampManagerFactory.create({
@@ -460,7 +461,7 @@ describe('/api/v1/auth', async () => {
       await UserFactory.create({
         email: 'test2@email.net',
         emailVerified: false,
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
 
       await request()
@@ -469,6 +470,22 @@ describe('/api/v1/auth', async () => {
           email: 'test2@email.net',
           password: 'password',
           remember: true,
+        })
+        .expect(403);
+    });
+
+    it('should respond with a `403` status code when user is locked', async () => {
+      await UserFactory.create({
+        email: 'test@email.net',
+        password: 'password',
+        locked: true,
+      });
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(403);
     });

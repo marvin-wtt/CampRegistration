@@ -158,7 +158,7 @@ const passwordRules = [
       count: passwordRequirements.upperCase,
     }),
   (val: string) =>
-    (val.match(/[!@#$%^&*()\-_=+\[\\\]{}|;:",.<>?]/g) || []).length >=
+    (val.match(/[!@#$%^&*()\-_=+[\\\]{}|;:",.<>?]/g) || []).length >=
       passwordRequirements.symbol ||
     t('field.password.rule.symbol', { count: passwordRequirements.symbol }),
   (val: string) =>

@@ -2,13 +2,12 @@ import { api } from 'boot/axios';
 import type {
   AuthTokens,
   Authentication,
-  Profile,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
 import {
-  AxiosError,
-  AxiosRequestConfig,
-  InternalAxiosRequestConfig,
+  type AxiosError,
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
 
@@ -126,12 +125,6 @@ export function useAuthService() {
     });
   }
 
-  async function fetchProfile(): Promise<Profile> {
-    const response = await api.get('profile');
-
-    return response?.data?.data;
-  }
-
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
     onUnauthenticated = handler;
   }
@@ -143,7 +136,6 @@ export function useAuthService() {
     forgotPassword,
     resetPassword,
     verifyEmail,
-    fetchProfile,
     refreshTokens,
     setOnUnauthenticated,
   };
