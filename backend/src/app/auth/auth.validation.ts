@@ -11,7 +11,7 @@ const register = z.object({
 
 const login = z.object({
   body: z.object({
-    email: z.string(),
+    email: z.string().email(),
     password: z.string(),
     remember: z.boolean().default(false),
   }),
