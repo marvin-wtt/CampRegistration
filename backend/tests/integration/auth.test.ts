@@ -263,7 +263,7 @@ describe('/api/v1/auth', async () => {
       return UserFactory.create({
         name: 'testuser',
         email: 'test@email.net',
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
     };
 
@@ -310,7 +310,7 @@ describe('/api/v1/auth', async () => {
     it('should respond with camps when successful', async () => {
       const user = await UserFactory.create({
         email: 'manager@email.net',
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
       const camp = await CampFactory.create();
       await CampManagerFactory.create({
@@ -461,7 +461,7 @@ describe('/api/v1/auth', async () => {
       await UserFactory.create({
         email: 'test2@email.net',
         emailVerified: false,
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
 
       await request()
