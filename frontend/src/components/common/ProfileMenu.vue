@@ -99,7 +99,7 @@
                 @click="updateLocale(localeOption.value)"
               >
                 <q-item-section avatar>
-                  <country-icon :locale="localeOption.country" />
+                  <country-icon :locale="localeOption.value" />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
@@ -161,9 +161,9 @@ const emit = defineEmits<{
 
 // TODO Read from config
 const locales = computed(() => [
-  { label: 'Deutsch', value: 'de-DE', country: 'de' },
-  { label: 'Français', value: 'fr-FR', country: 'fr' },
-  { label: 'English', value: 'en-US', country: 'us' },
+  { label: 'Deutsch', value: 'de-DE' },
+  { label: 'Français', value: 'fr-FR' },
+  { label: 'English', value: 'en-US' },
 ]);
 
 const authenticated = computed<boolean>(() => {

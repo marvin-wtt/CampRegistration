@@ -20,7 +20,7 @@
           icon="info"
         >
           <!-- Countries -->
-          <country-switch
+          <country-select
             v-model="data.countries"
             :disable="loading"
             :label="t('field.countries')"
@@ -33,12 +33,11 @@
             outlined
             rounded
             multiple
-            emit-country
           >
             <template #before>
               <q-icon name="language" />
             </template>
-          </country-switch>
+          </country-select>
 
           <!-- name -->
           <translated-input
@@ -340,7 +339,7 @@
 import { QSelectOption, useDialogPluginComponent } from 'quasar';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import CampEditStep from 'components/campManagement/settings/create/CampEditStep.vue';
-import CountrySwitch from 'components/common/CountrySwitch.vue';
+import CountrySelect from 'components/common/CountrySelect.vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
 import { computed, ref } from 'vue';

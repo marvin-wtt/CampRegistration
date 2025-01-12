@@ -10,10 +10,9 @@ export default boot(({ app }) => {
     locale: Quasar.lang.getLocale(),
     fallbackLocale: 'en',
     globalInjection: true,
-    messages: messages,
-    // TODO Enable and check locales
-    fallbackWarn: false,
-    missingWarn: false,
+    messages,
+    fallbackWarn: true,
+    missingWarn: true,
   });
 
   // Set i18n instance on app
