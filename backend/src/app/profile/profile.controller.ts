@@ -29,7 +29,7 @@ const update = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
 
   // Verify currentPassword matches
-  if (password && currentPassword) {
+  if (currentPassword) {
     const user = await userService.getUserByIdOrFail(userId);
     const match = await authService.isPasswordMatch(
       currentPassword,

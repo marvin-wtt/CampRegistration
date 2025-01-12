@@ -8,9 +8,7 @@ export interface Profile {
   camps: Camp[];
 }
 
-type PasswordUpdateData =
-  | { password: string; currentPassword: string }
-  | { password?: undefined; currentPassword?: undefined };
-
-export type ProfileUpdateData = Partial<Omit<Profile, 'camps' | 'role'>> &
-  PasswordUpdateData;
+export type ProfileUpdateData = Partial<Omit<Profile, 'role' | 'camps'>> & {
+  password?: string;
+  currentPassword?: string;
+};

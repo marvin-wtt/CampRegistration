@@ -65,7 +65,6 @@ describe('/api/v1/profile', () => {
 
       const data = {
         name: 'Anton Tester',
-        email: 'test@example.com',
         locale: 'en-US',
       };
 
@@ -77,7 +76,7 @@ describe('/api/v1/profile', () => {
 
       expect(body.data).toEqual({
         name: data.name,
-        email: data.email,
+        email: user.email,
         locale: data.locale,
         role: 'USER',
         camps: [],
@@ -87,11 +86,13 @@ describe('/api/v1/profile', () => {
     it('should require email verification when email changes', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
+        password: 'password',
       });
       const accessToken = generateAccessToken(user);
 
       const data = {
         email: 'test@example.com',
+        currentPassword: 'password',
       };
 
       await request()
@@ -135,7 +136,7 @@ describe('/api/v1/profile', () => {
     it('should logout all devices when password is updated', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
       const accessToken = generateAccessToken(user);
 
@@ -169,6 +170,7 @@ describe('/api/v1/profile', () => {
     it('should logout all devices when email is updated', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
+        password: 'password',
       });
       const accessToken = generateAccessToken(user);
 
@@ -181,7 +183,7 @@ describe('/api/v1/profile', () => {
         user: { connect: { id: user.id } },
       });
 
-      const data = { email: 'test2@example.com' };
+      const data = { email: 'test2@example.com', currentPassword: 'password' };
 
       await request()
         .patch(`/api/v1/profile/`)
@@ -203,7 +205,7 @@ describe('/api/v1/profile', () => {
     it('should encrypt the password', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
       const accessToken = generateAccessToken(user);
 

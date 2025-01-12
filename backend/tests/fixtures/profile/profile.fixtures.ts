@@ -1,5 +1,4 @@
 import { Prisma } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 type UpdateBodyData = {
   name: string;
@@ -29,25 +28,53 @@ export const profileUpdateBody: UpdateBodyData[] = [
   // email
   {
     name: 'email',
-    user: {},
+    user: {
+      password: 'password',
+    },
     data: {
       email: 'email@example.com',
+      currentPassword: 'password',
     },
     expected: 200,
   },
   {
     name: 'email invalid',
-    user: {},
+    user: {
+      password: 'password',
+    },
     data: {
       email: 'invalid-email.com',
+      currentPassword: 'password',
     },
     expected: 400,
   },
   {
     name: 'email null',
-    user: {},
+    user: {
+      password: 'password',
+    },
     data: {
       email: null,
+      currentPassword: 'password',
+    },
+    expected: 400,
+  },
+  {
+    name: 'email: current password missing',
+    user: {},
+    data: {
+      email: 'email@example.com',
+    },
+    expected: 400,
+  },
+  {
+    name: 'email: current password invalid',
+    user: {
+      password: 'password',
+    },
+    data: {
+      email: 'email@example.com',
+      currentPassword: 'ads322#sdA',
     },
     expected: 400,
   },
@@ -55,7 +82,7 @@ export const profileUpdateBody: UpdateBodyData[] = [
   {
     name: 'password',
     user: {
-      password: bcrypt.hashSync('password', 8),
+      password: 'password',
     },
     data: {
       password: 'ads322#sdA',
@@ -65,14 +92,17 @@ export const profileUpdateBody: UpdateBodyData[] = [
   },
   {
     name: 'password null',
-    user: {},
+    user: {
+      password: 'password',
+    },
     data: {
       password: null,
+      currentPassword: 'password',
     },
     expected: 400,
   },
   {
-    name: 'current password missing',
+    name: 'password: current password missing',
     user: {},
     data: {
       password: 'ads322#sdA',
@@ -80,8 +110,10 @@ export const profileUpdateBody: UpdateBodyData[] = [
     expected: 400,
   },
   {
-    name: 'current password invalid',
-    user: {},
+    name: 'password: current password invalid',
+    user: {
+      password: 'password',
+    },
     data: {
       password: 'ads322#sdA',
       currentPassword: 'ads322#sdA',

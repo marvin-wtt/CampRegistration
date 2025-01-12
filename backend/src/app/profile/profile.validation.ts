@@ -13,7 +13,8 @@ const update = z.object({
     .strict()
     .partial()
     .superRefine((val, ctx) => {
-      if (val.password && !val.currentPassword) {
+      const passwordRequired = val.password || val.email;
+      if (passwordRequired && !val.currentPassword) {
         ctx.addIssue({
           code: 'custom',
           message: 'Missing current password',
