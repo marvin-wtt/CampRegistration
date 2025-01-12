@@ -1,20 +1,27 @@
 <template>
-  <q-icon :name>
-    <slot />
-  </q-icon>
+  <i
+    aria-hidden="true"
+    role="presentation"
+    class="fi country-icon q-icon"
+    :class="className"
+    :style
+  />
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import 'flag-icons/css/flag-icons.min.css';
+import { computed, type StyleValue } from 'vue';
 
 type Props =
   | {
       locale: string;
       country?: never;
+      size?: string;
     }
   | {
       locale?: never;
       country: string;
+      size?: string;
     };
 
 const props = defineProps<Props>();
@@ -23,16 +30,31 @@ const overrides: Record<string, string> = {
   en: 'us', // Use US as default for english
 };
 
-const acceptedValues = ['de', 'fr', 'us'];
+const className = computed<string>(() => {
+  const isoCode = props.country ?? localeToCountry(props.locale);
 
-const name = computed<string>(() => {
-  const filename = props.country ?? localeToCountry(props.locale);
+  return `fi-${isoCode}`;
+});
 
-  if (!acceptedValues.includes(filename)) {
-    return 'question_mark';
+const style = computed<StyleValue | null>(() => {
+  if (!props.size) {
+    return null;
   }
 
-  return `img:/flags/${filename}.svg`;
+  const defaultSizes = {
+    xs: 18,
+    sm: 24,
+    md: 32,
+    lg: 38,
+    xl: 46,
+  } as const;
+
+  return {
+    fontSize:
+      props.size in defaultSizes
+        ? `${defaultSizes[props.size as keyof typeof defaultSizes]!}px`
+        : props.size,
+  };
 });
 
 function localeToCountry(value: string): string {
@@ -53,4 +75,9 @@ function localeToCountry(value: string): string {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.country-icon {
+  width: 1em !important;
+  height: auto !important;
+}
+</style>
