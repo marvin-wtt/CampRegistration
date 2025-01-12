@@ -45,10 +45,10 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useProfileStore } from 'stores/profile-store.ts';
+import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import NavigationItem from 'components/NavigationItem.vue';
-import { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import type { NavigationItemProps } from 'components/NavigationItemProps';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();

@@ -74,7 +74,7 @@ import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
 import { useProfileStore } from 'stores/profile-store';
-import { QTableColumn } from 'quasar';
+import { type QTableColumn } from 'quasar';
 
 const quasar = useQuasar();
 const { t } = useI18n();

@@ -318,7 +318,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableColumn } from 'quasar';
+import { type QTableColumn } from 'quasar';
 import type { Camp, CampUpdateData } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from 'components/common/PageStateHandler.vue';

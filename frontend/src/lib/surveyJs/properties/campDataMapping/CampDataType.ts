@@ -1,5 +1,5 @@
-import { Base, JsonObjectProperty } from 'survey-core';
-import { ISurveyCreatorOptions } from 'survey-creator-core';
+import { type Base, type JsonObjectProperty } from 'survey-core';
+import { type ISurveyCreatorOptions } from 'survey-creator-core';
 
 export interface CampDataType {
   fit: (

@@ -1,8 +1,10 @@
 interface BaseProps {
+  header?: boolean;
   name: string;
-  label?: string;
-  preview?: boolean;
-  separated?: boolean;
+  label?: string | undefined;
+  preview?: boolean | undefined;
+  separated?: boolean | undefined;
+  insertLevel?: number | undefined;
 }
 
 interface HeaderItemProps extends BaseProps {
@@ -10,10 +12,9 @@ interface HeaderItemProps extends BaseProps {
 }
 
 interface LinkItemProps extends BaseProps {
-  header?: false;
-  icon?: string;
-  to?: string | object;
-  children?: LinkItemProps[];
+  icon?: string | undefined;
+  to?: string | object | undefined;
+  children?: LinkItemProps[] | undefined;
 }
 
 export type NavigationItemProps = LinkItemProps | HeaderItemProps;

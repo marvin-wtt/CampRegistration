@@ -5,9 +5,9 @@ import type {
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
 import {
-  AxiosError,
-  AxiosRequestConfig,
-  InternalAxiosRequestConfig,
+  type AxiosError,
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
 

@@ -1,8 +1,8 @@
-import { Component } from 'vue';
+import { type Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import components from 'components/campManagement/table/tableCells';
 import type { AnyElement } from '@camp-registration/common/entities';
-import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 
 type MaybeLazyComponent = Component | (() => Component);
 

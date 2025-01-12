@@ -1,4 +1,4 @@
-import { Question, SurveyModel } from 'survey-core';
+import { type Question, SurveyModel } from 'survey-core';
 
 interface SelectData {
   label: string;

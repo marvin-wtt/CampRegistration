@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue';
-import { QInputSlots } from 'quasar';
+import { type QInputSlots } from 'quasar';
 
 type ModelValueType = string | undefined | null;
 

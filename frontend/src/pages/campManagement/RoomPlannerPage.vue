@@ -30,7 +30,7 @@
           <room-list
             v-for="(room, index) in rooms"
             :key="room.id"
-            v-model="rooms[index]"
+            v-model="rooms[index]!"
             :name="room.name"
             :people="availablePeople"
             class="q-ma-sm"
@@ -87,7 +87,7 @@ import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
-import { Roommate, RoomWithRoommates } from 'src/types/Room';
+import type { Roommate, RoomWithRoommates } from 'src/types/Room';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';

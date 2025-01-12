@@ -103,7 +103,7 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
-import { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();

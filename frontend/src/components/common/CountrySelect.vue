@@ -40,7 +40,7 @@
 import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
-import { QSelectOption, QSelectSlots } from 'quasar';
+import { type QSelectOption, type QSelectSlots } from 'quasar';
 
 const { t } = useI18n();
 

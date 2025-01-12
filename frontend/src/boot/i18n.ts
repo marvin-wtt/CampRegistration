@@ -1,16 +1,16 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app/wrappers';
 import { createI18n } from 'vue-i18n';
 import { Quasar } from 'quasar';
 
 import messages from 'src/i18n';
 
-export default boot(({ app }) => {
+export default defineBoot(({ app }) => {
   const i18n = createI18n({
     legacy: false,
-    locale: Quasar.lang.getLocale(),
+    locale: Quasar.lang.getLocale() ?? 'en',
     fallbackLocale: 'en',
     globalInjection: true,
-    messages,
+    messages: messages,
     fallbackWarn: true,
     missingWarn: true,
   });

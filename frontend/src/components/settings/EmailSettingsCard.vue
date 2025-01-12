@@ -79,7 +79,10 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { Profile, ProfileUpdateData } from '@camp-registration/common/entities';
+import type {
+  Profile,
+  ProfileUpdateData,
+} from '@camp-registration/common/entities';
 import { ref } from 'vue';
 
 const { t } = useI18n();

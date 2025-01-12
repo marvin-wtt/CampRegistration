@@ -14,6 +14,7 @@
     :to="props.to"
     clickable
     :disable="disabled"
+    :icon="props.insertLevel"
   >
     <q-item-section
       v-if="props.icon"
@@ -62,7 +63,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const route = useRoute();
 

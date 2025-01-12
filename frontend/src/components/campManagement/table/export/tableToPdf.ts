@@ -1,5 +1,5 @@
 import { default as JsPdf } from 'jspdf';
-import DomToImage, { Options } from 'dom-to-image';
+import DomToImage, { type Options } from 'dom-to-image';
 
 export interface ExportOptions {
   scale?: number;
@@ -75,7 +75,7 @@ function normalizeMargin(margin: number | number[]): number[] {
   }
 
   if (margin.length == 2) {
-    return [margin[0], margin[1], margin[0], margin[1]];
+    return [margin[0]!, margin[1]!, margin[0]!, margin[1]!];
   }
 
   throw 'Invalid page margin';
@@ -113,15 +113,15 @@ export function createPDF() {
       height: exportOptions.captureHeight,
     };
     const output = {
-      width: doc.internal.pageSize.getWidth() - margin[1] - margin[3],
-      height: doc.internal.pageSize.getHeight() - margin[0] - margin[2],
+      width: doc.internal.pageSize.getWidth() - margin[1]! - margin[3]!,
+      height: doc.internal.pageSize.getHeight() - margin[0]! - margin[2]!,
     };
     const dimension = scaleImage(input, output, exportOptions.page.orientation);
     const headerSpace = exportOptions.page.header ? 5 : 0;
     const pageOptions = {
       format: 'PNG',
-      x: margin[3],
-      y: margin[0] + headerSpace,
+      x: margin[3]!,
+      y: margin[0]! + headerSpace,
       width: dimension.width,
       height: dimension.height,
     };
@@ -142,7 +142,7 @@ export function createPDF() {
     // Add header and footer
     const pageCenter = doc.internal.pageSize.getWidth() / 2;
     if (exportOptions.page.header) {
-      const headerHeight = margin[0] + 1;
+      const headerHeight = margin[0]! + 1;
 
       doc.setFontSize(9);
       doc.text(exportOptions.page.header, pageCenter, headerHeight, {
@@ -151,7 +151,7 @@ export function createPDF() {
     }
 
     if (exportOptions.page.footer) {
-      const footerHeight = doc.internal.pageSize.getHeight() - margin[2] - 1;
+      const footerHeight = doc.internal.pageSize.getHeight() - margin[2]! - 1;
 
       doc.setFontSize(9);
       doc.text(exportOptions.page.footer, pageCenter, footerHeight, {

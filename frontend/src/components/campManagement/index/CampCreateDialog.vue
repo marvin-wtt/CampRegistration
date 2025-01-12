@@ -336,7 +336,7 @@
 </template>
 
 <script setup lang="ts">
-import { QSelectOption, useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import CampEditStep from 'components/campManagement/settings/create/CampEditStep.vue';
 import CountrySelect from 'components/common/CountrySelect.vue';
@@ -380,7 +380,8 @@ async function onComplete() {
     await campStore.createEntry(data.value);
 
     onDialogOK();
-  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (ignored) {
     loading.value = false;
     step.value--;
   }

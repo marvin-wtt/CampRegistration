@@ -109,7 +109,7 @@ import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
-import { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();

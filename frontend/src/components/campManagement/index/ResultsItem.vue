@@ -122,7 +122,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Camp } from '@camp-registration/common/entities';
-import { computed, Ref, ref } from 'vue';
+import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from 'stores/profile-store';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 

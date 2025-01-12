@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useProfileStore } from 'stores/profile-store.ts';
+import { useProfileStore } from 'stores/profile-store';
 import { useQuasar } from 'quasar';
 import DeleteAccountSettingsCard from 'components/settings/DeleteAccountlSettingsCard.vue';
 import { storeToRefs } from 'pinia';

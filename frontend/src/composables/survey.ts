@@ -1,10 +1,10 @@
-import { ITheme, SurveyModel } from 'survey-core';
+import type { ITheme, SurveyModel } from 'survey-core';
 import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { nextTick, Ref, watch, watchEffect } from 'vue';
+import { nextTick, type Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 import { PlainLight, PlainDark } from 'survey-core/themes';
@@ -82,7 +82,7 @@ export const startAutoThemeUpdate = (
 
     let theme: ITheme;
     if (colorPlatte in themes) {
-      theme = themes[colorPlatte];
+      theme = themes[colorPlatte]!;
     } else if (colorPlatte === 'dark' && 'light' in themes) {
       // Try light mode first
       theme = themes.light;

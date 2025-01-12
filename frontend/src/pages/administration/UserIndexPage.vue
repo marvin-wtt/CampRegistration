@@ -183,7 +183,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableColumn } from 'quasar';
+import { type QTableColumn } from 'quasar';
 import type {
   User,
   UserUpdateData,

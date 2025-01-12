@@ -41,7 +41,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
-import { QStepProps } from 'quasar';
+import { type QStepProps } from 'quasar';
 
 const { t } = useI18n();
 

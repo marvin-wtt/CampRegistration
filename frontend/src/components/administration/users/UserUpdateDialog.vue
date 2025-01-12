@@ -95,10 +95,10 @@
 </template>
 
 <script lang="ts" setup>
-import { QForm, QSelectOption, useDialogPluginComponent } from 'quasar';
+import { QForm, type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
-import { User, UserUpdateData } from '@camp-registration/common/entities';
+import type { User, UserUpdateData } from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

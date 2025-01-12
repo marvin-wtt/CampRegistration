@@ -89,7 +89,9 @@ export const useAuthStore = defineStore('auth', () => {
       const tokens: AuthTokens = await apiService.refreshTokens();
       handleTokenRefresh(tokens);
       return true;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (ignored) {
+      /* empty */
     } finally {
       isRefreshingToken = false;
     }

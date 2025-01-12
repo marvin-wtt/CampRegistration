@@ -22,8 +22,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ProfileUpdateData } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store.ts';
+import type { ProfileUpdateData } from '@camp-registration/common/entities';
+import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import ProfileSettingsCard from 'components/settings/ProfileSettingsCard.vue';
 import EmailSettingsCard from 'components/settings/EmailSettingsCard.vue';

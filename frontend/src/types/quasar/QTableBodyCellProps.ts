@@ -1,4 +1,4 @@
-import { NamedColor, QTableColumn } from 'quasar';
+import type { NamedColor, QTableColumn } from 'quasar';
 
 /**
  * @see https://quasar.dev/vue-components/table#qtable-api

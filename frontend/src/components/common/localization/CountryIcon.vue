@@ -42,11 +42,11 @@ function localeToCountry(value: string): string {
       throw new Error(`Invalid value for prop locale: ${value}`);
     }
 
-    value = value.split('-')[1].toLowerCase();
+    value = value.split('-')[1]!.toLowerCase();
   }
 
   if (value in overrides) {
-    return overrides[value];
+    return overrides[value]!;
   }
 
   return value;

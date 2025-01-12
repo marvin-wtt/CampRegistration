@@ -111,10 +111,10 @@
 </template>
 
 <script lang="ts" setup>
-import { QForm, QSelectOption, useDialogPluginComponent } from 'quasar';
+import { QForm, type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
-import { UserCreateData } from '@camp-registration/common/entities';
+import { type UserCreateData } from '@camp-registration/common/entities';
 import { generateRandomPassword } from 'src/utils/passwordGenerator';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
