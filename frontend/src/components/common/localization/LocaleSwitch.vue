@@ -12,7 +12,7 @@
       <country-icon
         class="q-px-xs"
         :locale="scope.opt.value"
-        size="sm"
+        size="xs"
       />
     </template>
 
