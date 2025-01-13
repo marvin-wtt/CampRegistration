@@ -99,7 +99,7 @@ model Invitation {
 
 model Registration {
   id          String    @id @unique(map: "registrations_id_unique") @db.Char(26)
-  campId      String?   @map("camp_id") @db.Char(26)
+  campId      String    @map("camp_id") @db.Char(26)
   /// [GenericObject]
   data        Json      @db.Json
   /// [RegistrationCampData]
@@ -108,9 +108,10 @@ model Registration {
   waitingList Boolean   @default(true) @map("waiting_list")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
-  camp        Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
-  bed         Bed?
-  files       File[]
+
+  camp  Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  bed   Bed?
+  files File[]
 
   @@map("registrations")
 }
