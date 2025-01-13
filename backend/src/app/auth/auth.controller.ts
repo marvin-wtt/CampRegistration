@@ -15,7 +15,7 @@ import { catchAndResolve } from '#utils/promiseUtils';
 import authResource from './auth.resource.js';
 import { validateRequest } from '#core/validation/request';
 import validator from './auth.validation.js';
-import totpService from '#app/profile/totp.service';
+import totpService from '#app/totp/totp.service.js';
 
 const register = catchRequestAsync(async (req, res) => {
   const {

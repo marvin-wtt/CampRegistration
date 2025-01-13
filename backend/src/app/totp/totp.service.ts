@@ -25,7 +25,10 @@ export const generateTOTP = async (user: User) => {
   });
 
   // Generate the URL
-  return totp.toString();
+  return {
+    url: totp.toString(),
+    secret: secret.base32,
+  };
 };
 
 export const validateTOTP = async (user: User, token: string) => {
