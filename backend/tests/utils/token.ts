@@ -36,6 +36,12 @@ export const generateAccessToken = (user: User) => {
   });
 };
 
+export const generateOTPToken = (user: User, remember?: boolean) => {
+  return generateToken(user, TokenType.OTP, {
+    remember,
+  });
+};
+
 export const generateRefreshToken = (user: User) => {
   return generateToken(user, TokenType.REFRESH);
 };

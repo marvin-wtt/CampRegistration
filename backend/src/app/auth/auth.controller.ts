@@ -15,6 +15,7 @@ import { catchAndResolve } from '#utils/promiseUtils';
 import authResource from './auth.resource.js';
 import { validateRequest } from '#core/validation/request';
 import validator from './auth.validation.js';
+import totpService from '#app/profile/totp.service';
 
 const register = catchRequestAsync(async (req, res) => {
   const {
@@ -48,24 +49,64 @@ const login = catchRequestAsync(async (req, res) => {
     body: { email, password, remember },
   } = await validateRequest(req, validator.login);
 
-  const user = await authService.loginUserWithEmailAndPassword(email, password);
-  const tokens = await tokenService.generateAuthTokens(user, remember);
+  const user = await authService.loginWithEmailPassword(email, password);
 
+  // Check if totp is required
+  if (user.twoFactorEnabled) {
+    const token = tokenService.generateTotpToken(user);
+    // Set auth header
+    res.setHeader(
+      'WWW-Authenticate',
+      `OTP realm="${config.appName}", charset="UTF-8"`,
+    );
+
+    res.status(httpStatus.FORBIDDEN).send({
+      token,
+    });
+    return;
+  }
+
+  await sendAuthResponse(res, user.id, remember);
+});
+
+const verifyOTP = catchRequestAsync(async (req, res) => {
+  const {
+    body: { otp, token },
+  } = await validateRequest(req, validator.verifyOTP);
+
+  const { userId } = tokenService.verifyToken(token, 'OTP');
+  const user = await userService.getUserByIdWithCamps(userId);
+  await totpService.verifyTOTP(user, otp);
+
+  await sendAuthResponse(res, userId, true);
+});
+
+const sendAuthResponse = async (
+  res: Response,
+  userId: string,
+  remember: boolean,
+) => {
+  const user = await userService.updateUserLastSeenByIdWithCamps(userId);
+
+  const tokens = await tokenService.generateAuthTokens(user, remember);
   setAuthCookies(res, tokens);
 
-  const camps = user.camps.map((value) => {
-    return value.camp;
-  });
-  const profile = profileResource(user, camps);
+  // Generate response
+  const profile = profileResource(
+    user,
+    user.camps.map((value) => value.camp),
+  );
 
   res.json(authResource(profile, tokens));
-});
+};
 
 const logout = catchRequestAsync(async (req: Request, res: Response) => {
   const { body } = await validateRequest(req, validator.logout);
   const refreshToken = body.refreshToken ?? extractCookieRefreshToken(req);
 
-  await authService.logout(refreshToken);
+  if (refreshToken) {
+    await authService.logout(refreshToken);
+  }
 
   destroyAuthCookies(res);
 
@@ -88,8 +129,12 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
   res.json({ ...tokens });
 });
 
-const extractCookieRefreshToken = (req: Request) => {
-  if (req && req.cookies && 'refreshToken' in req.cookies) {
+const extractCookieRefreshToken = (req: Request): string | null => {
+  if (
+    req.cookies &&
+    'refreshToken' in req.cookies &&
+    typeof req.cookies.refreshToken === 'string'
+  ) {
     return req.cookies.refreshToken;
   }
 
@@ -190,6 +235,7 @@ const destroyAuthCookies = (res: Response) => {
 export default {
   register,
   login,
+  verifyOTP,
   logout,
   refreshTokens,
   forgotPassword,
