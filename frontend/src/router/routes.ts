@@ -72,6 +72,17 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/verify-otp',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'verify-otp',
+        path: '',
+        component: () => import('pages/auth/VerifyOtpPage.vue'),
+      },
+    ],
+  },
+  {
     path: '/management',
     component: () => import('layouts/CampManagementLayout.vue'),
     meta: {

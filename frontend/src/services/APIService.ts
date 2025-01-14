@@ -9,6 +9,7 @@ import axios, { type AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
 import { useProfileService } from 'src/services/ProfileService';
+import { useTotpService } from 'src/services/TotpService';
 
 export function useAPIService() {
   return {
@@ -22,6 +23,7 @@ export function useAPIService() {
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
+    ...useTotpService(),
   };
 }
 

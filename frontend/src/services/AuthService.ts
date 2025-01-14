@@ -99,7 +99,7 @@ export function useAuthService() {
 
   async function forgotPassword(email: string): Promise<void> {
     const response = await api.post('auth/forgot-password', {
-      email: email,
+      email,
     });
 
     return response?.data;
@@ -125,18 +125,46 @@ export function useAuthService() {
     });
   }
 
+  async function verifyOtp(
+    token: string,
+    otp: string,
+    remember?: boolean,
+  ): Promise<Authentication> {
+    const response = await api.post('auth/verify-otp', {
+      token,
+      otp,
+      remember,
+    });
+
+    return response?.data;
+  }
+
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
     onUnauthenticated = handler;
+  }
+
+  function extractOtpTokenFromError(error: unknown): string | undefined {
+    return isCustomAxiosError(error) &&
+      error.response?.status === 403 &&
+      error.response?.headers['www-authenticate']?.includes('OTP') &&
+      error.response?.data &&
+      typeof error.response?.data === 'object' &&
+      'token' in error.response.data &&
+      typeof error.response.data.token === 'string'
+      ? error.response.data.token
+      : undefined;
   }
 
   return {
     login,
     logout,
+    verifyOtp,
     register,
     forgotPassword,
     resetPassword,
     verifyEmail,
     refreshTokens,
     setOnUnauthenticated,
+    extractOtpTokenFromError,
   };
 }

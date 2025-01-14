@@ -17,6 +17,14 @@ const login = z.object({
   }),
 });
 
+const verifyOTP = z.object({
+  body: z.object({
+    token: z.string(),
+    otp: z.string(),
+    remember: z.boolean().default(false),
+  }),
+});
+
 const logout = z.object({
   body: z.object({
     refreshToken: z.string().optional(),
@@ -52,6 +60,7 @@ const verifyEmail = z.object({
 export default {
   register,
   login,
+  verifyOTP,
   logout,
   refreshTokens,
   forgotPassword,

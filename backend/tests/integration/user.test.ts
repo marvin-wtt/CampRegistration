@@ -134,13 +134,11 @@ describe('/api/v1/users/', () => {
         id: expect.anything(),
         name: 'NewName',
         email: 'test@email.com',
-        password: expect.anything(),
         locale: 'en-US',
         role: 'USER',
         locked: false,
         emailVerified: false,
         lastSeen: null,
-        updatedAt: expect.anything(),
         createdAt: expect.anything(),
       });
     });

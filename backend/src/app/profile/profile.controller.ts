@@ -53,7 +53,7 @@ const update = catchRequestAsync(async (req, res) => {
 
   // Logout devices
   if (password || email) {
-    await authService.logoutAllDevices(userId);
+    await authService.revokeAllUserTokens(userId);
   }
 
   // Send email verification
@@ -71,6 +71,10 @@ const destroy = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
 
   await userService.deleteUserById(userId);
+
+  // Clear auth cookies
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
 
   res.status(httpStatus.NO_CONTENT).end();
 });

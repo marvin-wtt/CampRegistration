@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
-import type { AuthTokens } from '@camp-registration/common/entities';
+import type {
+  AuthTokens,
+  Authentication,
+} from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
@@ -20,7 +23,9 @@ export const useAuthStore = defineStore('auth', () => {
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
-  } = useServiceHandler<undefined>('auth');
+  } = useServiceHandler<void>('auth');
+
+  let otpToken: string | undefined = undefined;
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
@@ -63,20 +68,61 @@ export const useAuthStore = defineStore('auth', () => {
     remember = false,
   ): Promise<void> {
     return errorOnFailure(async () => {
-      const result = await apiService.login(email, password, remember);
+      try {
+        const result = await apiService.login(email, password, remember);
 
-      bus.emit('login', result.profile);
+        await handleAuthentication(result);
+      } catch (error) {
+        otpToken = apiService.extractOtpTokenFromError(error);
 
-      handleTokenRefresh(result.tokens);
+        if (otpToken === undefined) {
+          throw error;
+        }
 
-      // Redirect to origin or home route
-      const destination =
-        'origin' in route.query && typeof route.query.origin === 'string'
-          ? decodeURIComponent(route.query.origin)
-          : { name: 'management' };
-
-      await router.push(destination);
+        await router.push({
+          name: 'verify-otp',
+          query: {
+            origin: route.query.origin,
+            remember: remember ? 'true' : undefined,
+          },
+        });
+      }
     });
+  }
+
+  async function verifyOtp(otp: string) {
+    checkNotNullWithError(otp);
+
+    const token = otpToken;
+    if (token === undefined) {
+      await router.push({
+        name: 'login',
+        query: route.query,
+      });
+      return;
+    }
+
+    const remember = route.query.remember === 'true';
+
+    await errorOnFailure(async () => {
+      const result = await apiService.verifyOtp(token, otp, remember);
+
+      await handleAuthentication(result);
+    });
+  }
+
+  async function handleAuthentication(auth: Authentication) {
+    bus.emit('login', auth.profile);
+
+    handleTokenRefresh(auth.tokens);
+
+    // Redirect to origin or home route
+    const destination =
+      'origin' in route.query && typeof route.query.origin === 'string'
+        ? decodeURIComponent(route.query.origin)
+        : { name: 'management' };
+
+    await router.push(destination);
   }
 
   async function refreshTokens(): Promise<boolean> {
@@ -130,9 +176,6 @@ export const useAuthStore = defineStore('auth', () => {
       await apiService.register(name, email, password);
 
       await router.push({ name: 'login' });
-
-      // Return undefined as registration does not log in automatically
-      return undefined;
     });
   }
 
@@ -177,5 +220,6 @@ export const useAuthStore = defineStore('auth', () => {
     forgotPassword,
     resetPassword,
     verifyEmail,
+    verifyOtp,
   };
 });
