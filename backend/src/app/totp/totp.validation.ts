@@ -8,14 +8,14 @@ const setup = z.object({
 
 const enable = z.object({
   body: z.object({
-    totp: z.string(),
+    otp: z.string(),
   }),
 });
 
 const disable = z.object({
   body: z.object({
     password: z.string(),
-    totp: z.string(),
+    otp: z.string(),
   }),
 });
 

@@ -8,10 +8,10 @@ export interface TotpSetupData {
 }
 
 export interface TotpEnableData {
-  totp: string;
+  otp: string;
 }
 
 export interface TotpDisableData {
-  totp: string;
+  otp: string;
   password: string;
 }

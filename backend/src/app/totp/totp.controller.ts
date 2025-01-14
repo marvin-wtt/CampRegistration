@@ -31,19 +31,19 @@ const setup = catchRequestAsync(async (req, res) => {
 
 const enable = catchRequestAsync(async (req, res) => {
   const {
-    body: { totp },
+    body: { otp },
   } = await validateRequest(req, validator.enable);
   const userId = authUserId(req);
   const user = await userService.getUserByIdOrFail(userId);
 
-  await totpService.validateTOTP(user, totp);
+  await totpService.validateTOTP(user, otp);
 
   res.sendStatus(httpStatus.NO_CONTENT);
 });
 
 const disable = catchRequestAsync(async (req, res) => {
   const {
-    body: { password, totp },
+    body: { password, otp },
   } = await validateRequest(req, validator.disable);
 
   const userId = authUserId(req);
@@ -56,7 +56,7 @@ const disable = catchRequestAsync(async (req, res) => {
   }
 
   // Verify TOTP
-  await totpService.verifyTOTP(user, totp);
+  await totpService.verifyTOTP(user, otp);
 
   // Disable
   await totpService.disableTOTP(user);

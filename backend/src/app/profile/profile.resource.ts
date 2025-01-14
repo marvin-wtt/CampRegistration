@@ -10,6 +10,7 @@ export const profileResource = (
     name: user.name,
     email: user.email,
     role: user.role,
+    twoFactorEnabled: user.twoFactorEnabled,
     locale: user.locale,
     camps: camps.map((value) => campResource(value)),
   };
