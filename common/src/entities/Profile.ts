@@ -4,6 +4,7 @@ export interface Profile {
   email: string;
   name: string;
   role: string;
+  twoFactorEnabled: boolean;
   locale: string;
   camps: Camp[];
 }

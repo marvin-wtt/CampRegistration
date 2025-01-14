@@ -99,7 +99,7 @@ export function useAuthService() {
 
   async function forgotPassword(email: string): Promise<void> {
     const response = await api.post('auth/forgot-password', {
-      email: email,
+      email,
     });
 
     return response?.data;

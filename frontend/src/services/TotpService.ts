@@ -7,7 +7,7 @@ import type {
 import { api } from 'boot/axios';
 
 export function useTotpService() {
-  async function generateTotp(data: TotpSetupData): Promise<TotpData> {
+  async function setupTotp(data: TotpSetupData): Promise<TotpData> {
     const response = await api.post('totp/setup', data);
 
     return response?.data?.data;
@@ -26,7 +26,7 @@ export function useTotpService() {
   }
 
   return {
-    generateTotp,
+    setupTotp,
     enableTotp,
     disableTotp,
   };
