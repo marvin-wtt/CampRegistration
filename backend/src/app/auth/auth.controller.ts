@@ -71,14 +71,14 @@ const login = catchRequestAsync(async (req, res) => {
 
 const verifyOTP = catchRequestAsync(async (req, res) => {
   const {
-    body: { otp, token },
+    body: { otp, token, remember },
   } = await validateRequest(req, validator.verifyOTP);
 
   const { userId } = tokenService.verifyToken(token, 'OTP');
   const user = await userService.getUserByIdWithCamps(userId);
   await totpService.verifyTOTP(user, otp);
 
-  await sendAuthResponse(res, userId, true);
+  await sendAuthResponse(res, userId, remember);
 });
 
 const sendAuthResponse = async (

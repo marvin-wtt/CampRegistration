@@ -83,7 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
           name: 'verify-otp',
           query: {
             origin: route.query.origin,
-            remember: remember ? 1 : 0,
+            remember: remember ? 'true' : undefined,
           },
         });
       }
@@ -102,8 +102,10 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
+    const remember = route.query.remember === 'true';
+
     await errorOnFailure(async () => {
-      const result = await apiService.verifyOtp(token, otp);
+      const result = await apiService.verifyOtp(token, otp, remember);
 
       await handleAuthentication(result);
     });

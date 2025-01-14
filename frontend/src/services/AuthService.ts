@@ -128,10 +128,12 @@ export function useAuthService() {
   async function verifyOtp(
     token: string,
     otp: string,
+    remember?: boolean,
   ): Promise<Authentication> {
     const response = await api.post('auth/verify-otp', {
       token,
       otp,
+      remember,
     });
 
     return response?.data;

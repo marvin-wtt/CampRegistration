@@ -21,6 +21,7 @@ const verifyOTP = z.object({
   body: z.object({
     token: z.string(),
     otp: z.string(),
+    remember: z.boolean().default(false),
   }),
 });
 
