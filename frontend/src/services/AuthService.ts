@@ -141,6 +141,18 @@ export function useAuthService() {
     onUnauthenticated = handler;
   }
 
+  function extractOtpTokenFromError(error: unknown): string | undefined {
+    return isCustomAxiosError(error) &&
+      error.response?.status === 403 &&
+      error.response?.headers['www-authenticate']?.includes('OTP') &&
+      error.response?.data &&
+      typeof error.response?.data === 'object' &&
+      'token' in error.response.data &&
+      typeof error.response.data.token === 'string'
+      ? error.response.data.token
+      : undefined;
+  }
+
   return {
     login,
     logout,
@@ -151,5 +163,6 @@ export function useAuthService() {
     verifyEmail,
     refreshTokens,
     setOnUnauthenticated,
+    extractOtpTokenFromError,
   };
 }

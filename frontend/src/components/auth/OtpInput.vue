@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUpdate, ref, useAttrs, watch } from 'vue';
+import { onBeforeUpdate, ref, useAttrs } from 'vue';
 import { QInput } from 'quasar';
 
 const model = defineModel<string>();
@@ -38,12 +38,6 @@ const { length = 6, required = false } = defineProps<{
 
 const fields = ref<QInput[]>([]);
 const fieldValues = ref<string[]>([]);
-
-watch(fieldValues, () => {
-  const nonNullFields = fieldValues.value.filter((value) => value);
-
-  model.value = nonNullFields.length === length ? nonNullFields.join('') : '';
-});
 
 // make sure to reset the refs before each update
 onBeforeUpdate(() => {
@@ -68,10 +62,14 @@ const focus = (index: number) => {
   }
 };
 
-const onUpdate = (value: unknown, index: number) => {
-  if (value) {
-    focus(index + 1);
+const onUpdate = (value: string | number | null, index: number) => {
+  model.value = fieldValues.value.join('');
+
+  if (!value) {
+    return;
   }
+
+  focus(index + 1);
 };
 
 const onKeyUp = (event: KeyboardEvent, index: number) => {
