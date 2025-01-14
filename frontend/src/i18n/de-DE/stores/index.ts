@@ -1,11 +1,11 @@
-import camp from './camp.ts';
-import registration from './registration.ts';
-import template from './template.ts';
-import roomPlanner from './room-planner.ts';
-import campManager from './camp-manager.ts';
-import campFiles from './camp-files.ts';
-import auth from './auth.ts';
-import profile from './profile.ts';
+import camp from './camp';
+import registration from './registration';
+import template from './template';
+import roomPlanner from './room-planner';
+import campManager from './camp-manager';
+import campFiles from './camp-files';
+import auth from './auth';
+import profile from './profile';
 
 export default {
   camp,

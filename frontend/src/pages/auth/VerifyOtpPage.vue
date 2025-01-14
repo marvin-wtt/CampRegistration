@@ -17,7 +17,9 @@
 
         <!-- Description -->
         <q-card-section>
-          <p class="text-subtitle1 text-center">{{ t('description') }}</p>
+          <p class="text-subtitle1 text-center">
+            {{ t('description') }}
+          </p>
         </q-card-section>
 
         <q-card-section class="row justify-center">
