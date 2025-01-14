@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import path from 'path';
 import fse from 'fs-extra';
-import { validateEnv } from 'core/validation/env';
+import { validateEnv } from '#core/validation/env';
 
 export const StorageEnvSchema = z
   .object({

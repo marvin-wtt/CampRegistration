@@ -17,7 +17,5 @@
     "backend",
     "frontend",
     "e2e"
-  ],
-  "devDependencies": {
-  }
+  ]
 }

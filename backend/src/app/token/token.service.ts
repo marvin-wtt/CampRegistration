@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
 import httpStatus from 'http-status';
-import config from 'config';
-import ApiError from 'utils/ApiError';
+import config from '#config/index';
+import ApiError from '#utils/ApiError';
 import { Token, TokenType, User } from '@prisma/client';
-import prisma from 'client';
-import { AuthTokensResponse } from 'types/response';
+import prisma from '#client.js';
+import { AuthTokensResponse } from '#types/response';
 
 const generateToken = (
   userId: string,
@@ -53,13 +53,7 @@ const revokeTokens = async (userId: string, type?: TokenType) => {
   });
 };
 
-/**
- * Verify token and return token doc (or throw an error if it is not valid)
- * @param {string} token
- * @param {string} type
- * @returns {Promise<Token>}
- */
-const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
+const verifyToken = (token: string, type: TokenType) => {
   let payload;
   try {
     // token expiry is checked here
@@ -82,6 +76,18 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token type');
   }
 
+  return {
+    ...payload,
+    userId: payload.sub,
+  };
+};
+
+const verifyDatabaseToken = async (
+  token: string,
+  type: TokenType,
+): Promise<Token> => {
+  const payload = verifyToken(token, type);
+
   const userId = payload.sub;
   const tokenData = await prisma.token.findFirst({
     where: { token, type, userId, blacklisted: false },
@@ -94,12 +100,6 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   return tokenData;
 };
 
-/**
- * Generate auth tokens
- * @param {User} user
- * @param remember
- * @returns {Promise<AuthTokensResponse>}
- */
 const generateAuthTokens = async (
   user: Pick<User, 'id' | 'role'>,
   remember = false,
@@ -164,11 +164,6 @@ const generateRefreshToken = async (user: Pick<User, 'id'>) => {
   };
 };
 
-/**
- * Generate reset password token
- * @param {string} userId
- * @returns {Promise<string>}
- */
 const generateResetPasswordToken = async (
   userId: string,
 ): Promise<string | undefined> => {
@@ -184,11 +179,6 @@ const generateResetPasswordToken = async (
   return resetPasswordToken;
 };
 
-/**
- * Generate verify email token
- * @param {User} user
- * @returns {Promise<string>}
- */
 const generateVerifyEmailToken = async (
   user: Pick<User, 'id'>,
 ): Promise<string> => {
@@ -204,25 +194,17 @@ const generateVerifyEmailToken = async (
   return verifyEmailToken;
 };
 
+const generateTotpToken = (user: Pick<User, 'id'>) => {
+  const expires = moment().add(5, 'minutes');
+  return generateToken(user.id, expires, TokenType.OTP);
+};
+
 const blacklistTokens = async (userId: string): Promise<void> => {
   await prisma.token.updateMany({
     data: {
       blacklisted: true,
     },
-    where: {
-      userId,
-      OR: [
-        {
-          type: TokenType.RESET_PASSWORD,
-        },
-        {
-          type: TokenType.ACCESS,
-        },
-        {
-          type: TokenType.REFRESH,
-        },
-      ],
-    },
+    where: { userId },
   });
 };
 
@@ -246,9 +228,11 @@ export default {
   generateToken,
   saveToken,
   verifyToken,
+  verifyDatabaseToken,
   generateAuthTokens,
   generateResetPasswordToken,
   generateVerifyEmailToken,
+  generateTotpToken,
   blacklistTokens,
   deleteTokenById,
   deleteExpiredTokens,

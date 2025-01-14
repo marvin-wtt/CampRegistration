@@ -1,18 +1,15 @@
 import httpStatus from 'http-status';
-import userService from 'app/user/user.service';
-import tokenService from 'app/token/token.service';
-import notificationService from 'app/notification/notification.service';
-import ApiError from 'utils/ApiError';
+import userService from '#app/user/user.service';
+import tokenService from '#app/token/token.service';
+import notificationService from '#app/notification/notification.service';
+import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
-import { encryptPassword, isPasswordMatch } from 'utils/encryption';
-import { AuthTokensResponse } from 'types/response';
-import prisma from 'client';
-import i18n, { t } from 'config/i18n';
+import { encryptPassword, isPasswordMatch } from '#utils/encryption';
+import { AuthTokensResponse } from '#types/response';
+import prisma from '#/client.js';
+import i18n, { t } from '#core/i18n';
 
-const loginUserWithEmailAndPassword = async (
-  email: string,
-  password: string,
-) => {
+const loginWithEmailPassword = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
 
   if (!user || !(await isPasswordMatch(password, user.password as string))) {
@@ -30,14 +27,10 @@ const loginUserWithEmailAndPassword = async (
     );
   }
 
-  return await userService.updateUserLastSeenByIdWithCamps(user.id);
+  return user;
 };
 
 const logout = async (refreshToken: string): Promise<void> => {
-  if (!refreshToken) {
-    return;
-  }
-
   await prisma.token.updateMany({
     data: {
       blacklisted: true,
@@ -53,7 +46,7 @@ const refreshAuth = async (
   refreshToken: string,
 ): Promise<AuthTokensResponse> => {
   try {
-    const refreshTokenData = await tokenService.verifyToken(
+    const refreshTokenData = await tokenService.verifyDatabaseToken(
       refreshToken,
       TokenType.REFRESH,
     );
@@ -61,14 +54,10 @@ const refreshAuth = async (
 
     await tokenService.deleteTokenById(id);
 
-    // Fetch user because role is required
-    const user = await userService.getUserById(userId);
-    if (!user) {
-      // noinspection ExceptionCaughtLocallyJS
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Token not found');
-    }
-
     await userService.updateUserLastSeenById(userId);
+
+    // Fetch user because role is required
+    const user = await userService.getUserByIdOrFail(userId);
 
     return tokenService.generateAuthTokens(user, true);
   } catch (error) {
@@ -81,7 +70,7 @@ const resetPassword = async (
   email: string,
   password: string,
 ): Promise<void> => {
-  const resetPasswordTokenData = await tokenService.verifyToken(
+  const resetPasswordTokenData = await tokenService.verifyDatabaseToken(
     token,
     TokenType.RESET_PASSWORD,
   );
@@ -94,17 +83,17 @@ const resetPassword = async (
     emailVerified: true,
   });
 
-  await logoutAllDevices(user.id);
+  await revokeAllUserTokens(user.id);
 };
 
-const logoutAllDevices = async (userId: string) => {
+const revokeAllUserTokens = async (userId: string) => {
   await tokenService.blacklistTokens(userId);
 };
 
 const verifyEmail = async (token: string): Promise<void> => {
   let verifyEmailTokenData;
   try {
-    verifyEmailTokenData = await tokenService.verifyToken(
+    verifyEmailTokenData = await tokenService.verifyDatabaseToken(
       token,
       TokenType.VERIFY_EMAIL,
     );
@@ -176,11 +165,11 @@ const sendVerificationEmail = async (to: string, token: string) => {
 };
 
 export default {
-  loginUserWithEmailAndPassword,
+  loginWithEmailPassword,
   isPasswordMatch,
   encryptPassword,
   logout,
-  logoutAllDevices,
+  revokeAllUserTokens,
   refreshAuth,
   resetPassword,
   verifyEmail,

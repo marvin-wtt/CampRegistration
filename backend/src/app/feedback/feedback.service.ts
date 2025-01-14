@@ -1,5 +1,5 @@
-import notificationService from 'app/notification/notification.service';
-import config from 'config';
+import notificationService from '#app/notification/notification.service';
+import config from '#config/index';
 
 const saveFeedback = async (
   message: string,

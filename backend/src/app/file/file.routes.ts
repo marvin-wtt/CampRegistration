@@ -1,6 +1,6 @@
 import express from 'express';
-import { multipart } from 'middlewares';
-import fileController from './file.controller';
+import { multipart } from '#middlewares/index';
+import fileController from './file.controller.js';
 
 const router = express.Router({ mergeParams: true });
 

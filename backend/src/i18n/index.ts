@@ -1,6 +1,6 @@
-import enUS from './en-US';
-import deDE from './de-DE';
-import frFR from './fr-FR';
+import enUS from './en-US/index.js';
+import deDE from './de-DE/index.js';
+import frFR from './fr-FR/index.js';
 
 export default {
   'en-US': enUS,

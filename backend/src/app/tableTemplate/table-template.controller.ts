@@ -1,11 +1,11 @@
-import { catchRequestAsync } from 'utils/catchAsync';
+import { catchRequestAsync } from '#utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'core/resource';
-import tableTemplateService from './table-template.service';
-import tableTemplateResource from './table-template.resource';
-import { routeModel } from 'utils/verifyModel';
-import { validateRequest } from 'core/validation/request';
-import validator from './table-template.validation';
+import { collection, resource } from '#core/resource';
+import tableTemplateService from './table-template.service.js';
+import tableTemplateResource from './table-template.resource.js';
+import { routeModel } from '#utils/verifyModel';
+import { validateRequest } from '#core/validation/request';
+import validator from './table-template.validation.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const template = routeModel(req.models.tableTemplate);

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { Roommate, RoomWithRoommates } from 'src/types/Room';
+import type { Roommate, RoomWithRoommates } from 'src/types/Room';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
   useAuthBus,
@@ -122,8 +122,12 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
   ) {
     const campId = route.params.camp as string;
     const roomId = room.id;
-    const bedId = room.beds[position].id;
+    const bedId = room.beds[position]?.id;
     const registrationId = person?.id ?? null;
+
+    if (bedId === undefined) {
+      return;
+    }
 
     asyncUpdate(() => {
       return withErrorNotification('update-bed', () => {
@@ -132,7 +136,7 @@ export const useRoomPlannerStore = defineStore('room-planner', () => {
     });
 
     // Optimistic update
-    room.beds[position].person = person;
+    room.beds[position]!.person = person;
   }
 
   function mapResponseRoom(room: Room): RoomWithRoommates {

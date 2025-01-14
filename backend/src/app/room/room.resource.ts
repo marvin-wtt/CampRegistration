@@ -1,6 +1,6 @@
 import { Bed, Room } from '@prisma/client';
 import type { Room as RoomResource } from '@camp-registration/common/entities';
-import bedResource from 'app/bed/bed.resource';
+import bedResource from '#app/bed/bed.resource';
 
 interface RoomWithBeds extends Room {
   beds: Bed[];

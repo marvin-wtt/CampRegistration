@@ -10,7 +10,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import { type BaseComponent } from 'components/common/inputs/BaseComponent';
 import {
   QCheckbox,
   QInput,

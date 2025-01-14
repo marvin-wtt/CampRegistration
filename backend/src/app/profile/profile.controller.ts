@@ -1,22 +1,20 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import tokenService from 'app/token/token.service';
-import userService from 'app/user/user.service';
-import authService from 'app/auth/auth.service';
-import campService from 'app/camp/camp.service';
-import ApiError from 'utils/ApiError';
+import { catchRequestAsync } from '#utils/catchAsync';
+import tokenService from '#app/token/token.service';
+import userService from '#app/user/user.service';
+import authService from '#app/auth/auth.service';
+import campService from '#app/camp/camp.service';
 import httpStatus from 'http-status';
-import { authUserId } from 'utils/authUserId';
-import { resource } from 'core/resource';
-import profileResource from './profile.resource';
-import { validateRequest } from 'core/validation/request';
-import validator from './profile.validation';
+import { authUserId } from '#utils/authUserId';
+import { resource } from '#core/resource';
+import profileResource from './profile.resource.js';
+import { validateRequest } from '#core/validation/request';
+import validator from './profile.validation.js';
+import ApiError from '#utils/ApiError.js';
 
 const show = catchRequestAsync(async (req, res) => {
   const userId = authUserId(req);
   const user = await userService.getUserByIdWithCamps(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
+
   const camps = user.camps.map((value) => {
     return value.camp;
   });
@@ -26,9 +24,22 @@ const show = catchRequestAsync(async (req, res) => {
 
 const update = catchRequestAsync(async (req, res) => {
   const {
-    body: { name, email, password, locale },
+    body: { name, email, password, currentPassword, locale },
   } = await validateRequest(req, validator.update);
   const userId = authUserId(req);
+
+  // Verify currentPassword matches
+  if (currentPassword) {
+    const user = await userService.getUserByIdOrFail(userId);
+    const match = await authService.isPasswordMatch(
+      currentPassword,
+      user.password,
+    );
+
+    if (!match) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
+    }
+  }
 
   // Mark email as unverified if it is updated
   const emailVerified = email !== undefined ? false : undefined;
@@ -40,10 +51,12 @@ const update = catchRequestAsync(async (req, res) => {
     emailVerified,
   });
 
-  if (password) {
-    await authService.logoutAllDevices(userId);
+  // Logout devices
+  if (password || email) {
+    await authService.revokeAllUserTokens(userId);
   }
 
+  // Send email verification
   if (emailVerified === false) {
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
     await authService.sendVerificationEmail(user.email, verifyEmailToken);
@@ -54,7 +67,20 @@ const update = catchRequestAsync(async (req, res) => {
   res.json(resource(profileResource(user, camps)));
 });
 
+const destroy = catchRequestAsync(async (req, res) => {
+  const userId = authUserId(req);
+
+  await userService.deleteUserById(userId);
+
+  // Clear auth cookies
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+
+  res.status(httpStatus.NO_CONTENT).end();
+});
+
 export default {
   show,
   update,
+  destroy,
 };

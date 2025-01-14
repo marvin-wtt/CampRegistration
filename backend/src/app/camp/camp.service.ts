@@ -1,10 +1,10 @@
 import { Camp, type Prisma } from '@prisma/client';
-import prisma from 'client';
-import { ulid } from 'utils/ulid';
-import registrationService from 'app/registration/registration.service';
-import { replaceUrlsInObject } from 'utils/replaceUrls';
-import { OptionalByKeys } from 'types/utils';
-import config from 'config';
+import prisma from '../../client.js';
+import { ulid } from '#utils/ulid';
+import registrationService from '#app/registration/registration.service';
+import { replaceUrlsInObject } from '#utils/replaceUrls';
+import { OptionalByKeys } from '#types/utils';
+import config from '#config/index';
 
 const getCampById = (id: string) => {
   return prisma.camp.findFirst({

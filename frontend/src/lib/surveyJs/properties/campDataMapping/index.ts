@@ -1,5 +1,5 @@
-import { CampDataType } from 'src/lib/surveyJs/properties/campDataMapping/CampDataType';
-import { IPropertyGridEditor } from 'survey-creator-core';
+import type { CampDataType } from 'src/lib/surveyJs/properties/campDataMapping/CampDataType';
+import { type IPropertyGridEditor } from 'survey-creator-core';
 import {
   waitingList,
   country,

@@ -62,14 +62,16 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import { useAuthStore } from 'stores/auth-store';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
+const profileStore = useProfileStore();
+const { user } = storeToRefs(profileStore);
 
 useMeta(() => {
   return {
@@ -78,12 +80,12 @@ useMeta(() => {
   };
 });
 
-if (!authStore.user) {
+if (!profileStore.user) {
   authStore.init();
 }
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 function logout() {

@@ -1,14 +1,14 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
-import authService from 'app/auth/auth.service';
-import userService from './user.service';
-import { routeModel } from 'utils/verifyModel';
-import { collection, resource } from 'core/resource';
-import userResource from './user.resource';
-import { validateRequest } from 'core/validation/request';
-import validator from './user.validation';
+import { catchRequestAsync } from '#utils/catchAsync';
+import authService from '#app/auth/auth.service';
+import userService from './user.service.js';
+import { routeModel } from '#utils/verifyModel';
+import { collection, resource } from '#core/resource';
+import userResource from './user.resource.js';
+import { validateRequest } from '#core/validation/request';
+import validator from './user.validation.js';
 
-const index = catchRequestAsync(async (req, res) => {
+const index = catchRequestAsync(async (_req, res) => {
   const users = await userService.queryUsers();
 
   res.json(collection(users.map(userResource)));
@@ -34,7 +34,7 @@ const store = catchRequestAsync(async (req, res) => {
     locked,
   });
 
-  res.status(httpStatus.CREATED).json(resource(user));
+  res.status(httpStatus.CREATED).json(resource(userResource(user)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
@@ -44,7 +44,7 @@ const update = catchRequestAsync(async (req, res) => {
   } = await validateRequest(req, validator.update);
 
   if (password || locked) {
-    await authService.logoutAllDevices(userId);
+    await authService.revokeAllUserTokens(userId);
   }
 
   const user = await userService.updateUserById(userId, {

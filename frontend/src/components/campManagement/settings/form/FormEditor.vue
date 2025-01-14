@@ -12,7 +12,7 @@ import 'survey-creator-core/survey-creator-core.i18n';
 
 import { watchEffect } from 'vue';
 import {
-  ICreatorOptions,
+  type ICreatorOptions,
   localization,
   PropertyGridEditorCollection,
   SurveyCreatorModel,
@@ -20,21 +20,21 @@ import {
 import { useI18n } from 'vue-i18n';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import {
-  Base,
-  ITheme,
-  PageModel,
-  SurveyElement,
-  SurveyModel,
+  type Base,
+  type ITheme,
+  type PageModel,
+  type SurveyElement,
+  type SurveyModel,
 } from 'survey-core';
 import showdown from 'showdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
-import { Panel } from 'survey-core/typings/knockout/kopage';
+import type { Panel } from 'survey-core/typings/knockout/kopage';
 import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { SurveyJSCampData } from '@camp-registration/common/entities';
+import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
 
 const props = defineProps<{
@@ -186,7 +186,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     });
   }
 
-  if (options.area === 'preview-tab') {
+  if (options.area === 'preview-tab' || options.area === 'theme-tab') {
     // Set surveyID for dynamic link generation
     survey.surveyId = props.camp.id;
 

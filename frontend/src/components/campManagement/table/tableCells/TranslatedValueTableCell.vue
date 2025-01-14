@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts" setup>
-import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { computed } from 'vue';
 
