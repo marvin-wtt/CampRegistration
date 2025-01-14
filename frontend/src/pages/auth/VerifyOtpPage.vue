@@ -36,7 +36,7 @@
             v-model="otp"
             :length="6"
             :disable="loading"
-            outline
+            required
           />
         </q-card-section>
 
