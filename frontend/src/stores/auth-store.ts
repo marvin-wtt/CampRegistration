@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
-  } = useServiceHandler<undefined>('auth');
+  } = useServiceHandler<void>('auth');
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
@@ -130,9 +130,6 @@ export const useAuthStore = defineStore('auth', () => {
       await apiService.register(name, email, password);
 
       await router.push({ name: 'login' });
-
-      // Return undefined as registration does not log in automatically
-      return undefined;
     });
   }
 
@@ -166,6 +163,17 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  let otpAuthToken: string = '';
+  async function verifyOtp(otp: string) {
+    checkNotNullWithError(otp);
+
+    await errorOnFailure(async () => {
+      const result = await apiService.verifyOtp(otpAuthToken, otp);
+
+      bus.emit('login', result.profile);
+    });
+  }
+
   return {
     error,
     loading: isLoading,
@@ -177,5 +185,6 @@ export const useAuthStore = defineStore('auth', () => {
     forgotPassword,
     resetPassword,
     verifyEmail,
+    verifyOtp,
   };
 });

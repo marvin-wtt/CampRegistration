@@ -125,6 +125,18 @@ export function useAuthService() {
     });
   }
 
+  async function verifyOtp(
+    token: string,
+    otp: string,
+  ): Promise<Authentication> {
+    const response = await api.post('auth/verify-otp', {
+      token,
+      otp,
+    });
+
+    return response?.data;
+  }
+
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
     onUnauthenticated = handler;
   }
@@ -132,6 +144,7 @@ export function useAuthService() {
   return {
     login,
     logout,
+    verifyOtp,
     register,
     forgotPassword,
     resetPassword,
