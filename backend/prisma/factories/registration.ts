@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
+import prisma from './prisma';
 import { ulid } from 'ulidx';
 
 export const RegistrationFactory = {
@@ -9,6 +9,7 @@ export const RegistrationFactory = {
     return {
       id: ulid(),
       data: {},
+      camp: {},
       ...data,
     };
   },
