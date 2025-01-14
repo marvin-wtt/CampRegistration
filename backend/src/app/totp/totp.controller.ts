@@ -24,6 +24,14 @@ const setup = catchRequestAsync(async (req, res) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
   }
 
+  // Prevent reset
+  if (user.twoFactorEnabled) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Two factor authentication already enabled.',
+    );
+  }
+
   const totp = await totpService.generateTOTP(user);
 
   res.json(resource(totpResource(totp)));
@@ -53,6 +61,13 @@ const disable = catchRequestAsync(async (req, res) => {
   const match = await authService.isPasswordMatch(password, user.password);
   if (!match) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
+  }
+
+  if (!user.twoFactorEnabled) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Two factor authentication not enabled.',
+    );
   }
 
   // Verify TOTP
