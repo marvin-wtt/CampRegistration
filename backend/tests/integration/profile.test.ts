@@ -80,6 +80,7 @@ describe('/api/v1/profile', () => {
         email: user.email,
         locale: data.locale,
         role: 'USER',
+        twoFactorEnabled: false,
         camps: [],
       });
     });

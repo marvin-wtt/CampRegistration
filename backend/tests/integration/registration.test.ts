@@ -467,10 +467,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when file is already assigned to a registration', async () => {
         const camp = await CampFactory.create(campWithFileRequired);
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
         const file = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
-          registration: { create: RegistrationFactory.build() },
+          registration: { connect: { id: registration.id } },
         });
 
         const data = {

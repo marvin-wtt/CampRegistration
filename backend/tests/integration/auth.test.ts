@@ -631,13 +631,14 @@ describe('/api/v1/auth', async () => {
       it('should respond with refresh token when remember is set', async () => {
         const user = await createUser();
         const totp = generateTOTP(user);
-        const token = generateOTPToken(user, true);
+        const token = generateOTPToken(user);
 
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
           .send({
             otp: totp,
             token,
+            remember: true,
           })
           .expect(200);
 
