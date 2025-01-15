@@ -203,7 +203,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QSelectOption, useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref, toRaw } from 'vue';
 import type {
@@ -217,9 +217,9 @@ import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
-import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
-import { PartialBy } from 'src/types';
+import type { PartialBy } from 'src/types';
 
 interface Props {
   column: TableColumnTemplate;

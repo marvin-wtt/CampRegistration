@@ -79,7 +79,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { QInputSlots } from 'quasar';
+import { type QInputSlots } from 'quasar';
 
 const { t } = useI18n();
 

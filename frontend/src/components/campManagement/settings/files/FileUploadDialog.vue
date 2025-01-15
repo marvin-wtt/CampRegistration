@@ -118,7 +118,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QSelectOption, useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref } from 'vue';
 import type { ServiceFileCreateData } from '@camp-registration/common/entities';

@@ -117,7 +117,7 @@
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { computed, ref, useAttrs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { QInputSlots } from 'quasar';
+import { type QInputSlots } from 'quasar';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | string | number | Translations;

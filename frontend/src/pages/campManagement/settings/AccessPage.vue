@@ -73,13 +73,13 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
-import { useAuthStore } from 'stores/auth-store';
-import { QTableColumn } from 'quasar';
+import { useProfileStore } from 'stores/profile-store';
+import { type QTableColumn } from 'quasar';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 const campManagerStore = useCampManagerStore();
-const authStore = useAuthStore();
+const profileStore = useProfileStore();
 
 campManagerStore.fetchData();
 
@@ -127,7 +127,7 @@ const columns: QTableColumn[] = [
 ];
 
 const userEmail = computed<string | undefined>(() => {
-  return authStore.user?.email;
+  return profileStore.user?.email;
 });
 
 const rows = computed<CampManager[]>(() => {

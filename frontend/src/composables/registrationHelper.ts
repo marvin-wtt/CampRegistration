@@ -18,12 +18,12 @@ export function useRegistrationHelper() {
     }
 
     if (index !== undefined) {
-      return campData[keyName].length > index
-        ? campData[keyName][index]
+      return campData[keyName]!.length > index
+        ? campData[keyName]![index]
         : undefined;
     }
 
-    return campData[keyName].find((value) => value != null);
+    return campData[keyName]!.find((value) => value != null);
   }
 
   function unknownValues(
@@ -36,7 +36,7 @@ export function useRegistrationHelper() {
       return [];
     }
 
-    return campData[keyName];
+    return campData[keyName]!;
   }
 
   function stringValue(

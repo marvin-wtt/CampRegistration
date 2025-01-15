@@ -25,7 +25,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 const props = defineProps<TableCellProps>();
 const containerHover = ref<boolean>(false);

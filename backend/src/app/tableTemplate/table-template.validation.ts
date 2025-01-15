@@ -32,9 +32,11 @@ const TableTemplateBodySchema = z.object({
   filter: z.string().nullable().optional(),
   filterWaitingList: z.enum(['include', 'exclude', 'only']).optional(),
   filterRoles: z.array(z.string()).optional(),
-  printOptions: z.object({
-    orientation: z.enum(['portrait', 'landscape']).optional(),
-  }),
+  printOptions: z
+    .object({
+      orientation: z.enum(['portrait', 'landscape']).optional(),
+    })
+    .optional(),
   indexed: z.boolean().optional(),
   actions: z.boolean().optional(),
   sortBy: z.string().nullable().optional(),

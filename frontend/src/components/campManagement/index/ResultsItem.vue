@@ -122,12 +122,12 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Camp } from '@camp-registration/common/entities';
-import { computed, Ref, ref } from 'vue';
-import { useAuthStore } from 'stores/auth-store';
+import { computed, type Ref, ref } from 'vue';
+import { useProfileStore } from 'stores/profile-store';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 
 const capsStore = useCampsStore();
-const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const router = useRouter();
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -224,7 +224,7 @@ function enableAction() {
     await capsStore.updateEntry(props.camp.id, {
       active: true,
     });
-    await authStore.fetchUser();
+    await profileStore.fetchProfile();
   });
 }
 
@@ -233,7 +233,7 @@ function disableAction() {
     await capsStore.updateEntry(props.camp.id, {
       active: false,
     });
-    await authStore.fetchUser();
+    await profileStore.fetchProfile();
   });
 }
 
