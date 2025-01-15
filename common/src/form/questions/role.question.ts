@@ -2,13 +2,9 @@ import type {
   ICustomQuestionTypeConfiguration,
   ItemValue,
   Question,
-  Serializer as SerializerType,
 } from 'survey-core';
-
-let Serializer: typeof SerializerType;
-(async () => {
-  Serializer = (await import('survey-core')).Serializer;
-})();
+import pkg from 'survey-core';
+const { Serializer } = pkg;
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];
