@@ -13,8 +13,10 @@
   "scripts": {
     "start": "npm --prefix ../backend run dev:serve",
     "run": "cypress run",
-    "ui": "npx cypress open",
-    "test": "npx start-server-and-test start http://localhost:3000 run"
+    "run:ui": "cypress open",
+    "test": "start-server-and-test start http://localhost:3000 run",
+    "dev": "./scripts/run-end-to-end.sh",
+    "dev:run": "npm run start & npm run run:ui"
   },
   "devDependencies": {
     "cypress": "^13.6.2",

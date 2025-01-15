@@ -10,6 +10,7 @@
     "build:views": "mkdirp ./build/views/emails/ && mjml ./src/views/templates/emails/* -o ./build/views/emails/",
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
+    "db:reset": "npx prisma db push --force-reset --accept-data-loss",
     "test": "npm run test:int",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
