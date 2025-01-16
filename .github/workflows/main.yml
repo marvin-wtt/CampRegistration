@@ -14,9 +14,37 @@ on:
       - ready_for_review
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+  install:
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cypress install
+        uses: cypress-io/github-action@v6
+        with:
+          runTests: false
+          build: npm run build --workspaces --if-present
+
+      - name: Save build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          if-no-files-found: error
+          path: |
+            */build/
+            */dist/
+
+  test-backend:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+    needs: install
+
+    strategy:
+      matrix:
+        version: [20, 22]
 
     services:
       mysql:
@@ -24,7 +52,7 @@ jobs:
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
-        options: >- 
+        options: >-
           --health-cmd "mysqladmin ping"
           --health-interval 10s 
           --health-timeout 5s 
@@ -35,7 +63,7 @@ jobs:
     # Env setup for tests - not deployment
     env:
       APP_PORT: 3000
-      APP_URL: http://localhost:9000
+      APP_URL: http://localhost:3000
       APP_NAME: Test App
       DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
       TMP_DIR: tests/tmp/storage/tmp/
@@ -52,21 +80,104 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Migrate test database
+        run: npm run migrate --workspace backend
+
+      - name: Test workspaces
+        run: npm run test --workspace backend
+
+  test-frontend:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+    needs: install
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build workspaces
-        run: npm run build --workspaces
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
+        with:
+          name: build
 
       - name: Migrate test database
-        run: npm run migrate --workspaces --if-present
+        run: npm run migrate --workspace backend
 
       - name: Test workspaces
-        run: npm run test --workspaces --if-present
+        run: npm run test --workspace backend
+
+  test-e2e:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+    needs: install
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: admin123
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 3
+        ports:
+          - 3306:3306
+    env:
+      APP_PORT: 3001
+      APP_URL: http://localhost:3001
+      APP_NAME: Test App
+      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      TMP_DIR: tests/tmp/storage/tmp/
+      UPLOAD_DIR: tests/tmp/storage/uploads/
+      STORAGE_LOCATION: local
+      JWT_SECRET: aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpP
+      SMTP_HOST: localhost
+      SMTP_PORT: 587
+      SMTP_USERNAME: user
+      SMTP_PASSWORD: password
+      EMAIL_FROM: noreply@yourapp.com
+      EMAIL_REPLY_TO: noreply@yourapp.com
+      EMAIL_ADMIN: admin@yourapp.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Migrate test database
+        run: npm run migrate --workspace backend
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm start
+          browser: chrome
