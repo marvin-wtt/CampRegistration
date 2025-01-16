@@ -14,10 +14,5 @@ if ! $DIR/wait-for-it.sh "${host_port}"  --strict -- echo '🟢 - Database is re
   exit 1
 fi
 
-if ! npm run db:reset -w ../backend; then
-  echo '🔴 - Resetting database failed. Exiting...'
-  exit 1
-fi
-
 # Start test
 npm run dev:run

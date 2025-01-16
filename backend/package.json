@@ -11,6 +11,10 @@
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
     "db:reset": "npx prisma db push --force-reset --accept-data-loss",
+    "db:truncate": "tsx prisma/scripts/truncate.ts",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
     "test": "npm run test:int",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",
@@ -20,15 +24,13 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
     "dev": "npm run dev:views & npm run dev:serve",
     "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
     "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
-    "production": "cross-env NODE_ENV=production node build/index.js"
+    "production": "NODE_ENV=production node build/index.js"
   },
   "prisma": {
-    "seed": "ts-node prisma/seeders/index.ts"
+    "seed": "tsx prisma/seeders/index.ts"
   },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
