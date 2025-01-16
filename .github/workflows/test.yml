@@ -140,6 +140,7 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          project: ./e2e
           build: npm run build-and-migrate
           start: npm run production -w backend
           browser: chrome
