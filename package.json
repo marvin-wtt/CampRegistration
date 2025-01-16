@@ -2,7 +2,8 @@
   "name": "camp-registration",
   "version": "0.0.1",
   "scripts": {
-    "depoly": "./post-deploy.sh"
+    "depoly": "./post-deploy.sh",
+    "build": "npm run build -ws --if-present"
   },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",

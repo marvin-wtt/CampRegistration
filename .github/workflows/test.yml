@@ -140,6 +140,6 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          build: npm run build -w common && npm run build -w frontend && npm run build -w backend && npm run migrate -w backend
+          build: npm run build && npm run migrate -w backend
           start: npm run production -w backend
           browser: chrome
