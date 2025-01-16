@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        version: [20, 22]
+        version: [ 20, 22 ]
 
     services:
       mysql:
@@ -140,6 +140,6 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          build: npm run build --workspaces && npm run migrate --workspace backend
-          start: npm run production --workspace backend
+          build: npm run build -w common && npm run build -w frontend && npm run build -w backend && npm run migrate -w backend
+          start: npm run production -w backend
           browser: chrome
