@@ -11,10 +11,10 @@
     "directory": "e2e"
   },
   "scripts": {
-    "start": "npm --prefix ../backend run dev:serve",
+    "start": "npm --prefix ../backend run production",
     "run": "cypress run",
     "run:ui": "cypress open",
-    "test": "start-server-and-test start http://localhost:3000 run",
+    "test": "start-server-and-test start http://localhost:3001 run",
     "dev": "./scripts/run-end-to-end.sh",
     "dev:run": "npm run start & npm run run:ui"
   },
