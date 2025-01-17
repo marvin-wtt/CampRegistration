@@ -592,7 +592,7 @@ describe('/api/v1/camps', () => {
 
       it('should replace file URLs in the form', async () => {
         const fileUrl = (id: string): string => {
-          return `http://localhost:9000/files/${id}`;
+          return `http://localhost:3000/files/${id}`;
         };
 
         const createForm = (fileId1: string, fileId2: string) => {

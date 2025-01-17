@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker/locale/de';
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
+import prisma from './prisma';
 import { ulid } from 'ulidx';
 
 export const CampFactory = {
