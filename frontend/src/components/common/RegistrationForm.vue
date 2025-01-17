@@ -3,6 +3,7 @@
     v-if="model"
     id="survey"
     :model="model"
+    data-test="registration-form"
   />
 </template>
 
