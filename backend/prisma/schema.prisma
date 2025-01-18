@@ -78,13 +78,15 @@ model Camp {
 }
 
 model CampManager {
-  id           String      @id @unique(map: "camp_managers_id_unique") @db.Char(26)
-  campId       String      @map("camp_id") @db.Char(26)
-  userId       String?     @map("user_id") @db.Char(26)
-  invitationId String?     @map("invitation_id") @db.Char(26)
-  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
-  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
-  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
+  id           String    @id @unique(map: "camp_managers_id_unique") @db.Char(26)
+  campId       String    @map("camp_id") @db.Char(26)
+  userId       String?   @map("user_id") @db.Char(26)
+  invitationId String?   @map("invitation_id") @db.Char(26)
+  expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
+
+  camp       Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
+  invitation Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
 
   @@index([campId], map: "camp_managers_camp_id_foreign")
   @@index([userId], map: "camp_managers_user_id_foreign")

@@ -5,11 +5,16 @@ export interface CampManager extends Identifiable {
   email: string;
   role: string;
   status: string;
+  expiresAt: string | null;
 }
 
 export interface CampManagerCreateData {
   email: string;
   role?: string;
+  expiresAt?: string;
 }
 
-export type CampManagerUpdateData = Partial<CampManagerCreateData>;
+export interface CampManagerUpdateData {
+  role?: string;
+  expiresAt?: string | null;
+}
