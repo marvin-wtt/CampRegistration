@@ -59,7 +59,7 @@
               {{ t('expiresAt.expired') }}
             </a>
             <template v-else>
-              {{ d(props.row.expiresAt, 'short') }}
+              {{ d(props.row.expiresAt, 'dateTime') }}
             </template>
           </q-td>
           <q-td
