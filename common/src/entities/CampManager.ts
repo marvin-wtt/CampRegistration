@@ -10,8 +10,8 @@ export interface CampManager extends Identifiable {
 
 export interface CampManagerCreateData {
   email: string;
-  role?: string;
-  expiresAt?: string;
+  role?: string | undefined;
+  expiresAt?: string | undefined;
 }
 
 export interface CampManagerUpdateData {

@@ -1,11 +1,11 @@
 <template>
-  <page-state-handler :error="error">
+  <page-state-handler :error>
     <q-table
       :title="t('title')"
-      :columns="columns"
-      :rows="rows"
-      :loading="loading"
-      :pagination="pagination"
+      :columns
+      :rows
+      :loading
+      :pagination
       class="absolute fit"
       flat
     >
@@ -20,34 +20,51 @@
       </template>
 
       <template #body="props">
-        <q-tr :props="props">
+        <q-tr :props>
           <q-td
             key="name"
-            :props="props"
+            :props
           >
             {{ props.row.name }}
           </q-td>
           <q-td
             key="email"
-            :props="props"
+            :props
           >
             {{ props.row.email }}
           </q-td>
           <q-td
             key="role"
-            :props="props"
+            :props
           >
             {{ t('role.' + props.row.role) }}
           </q-td>
           <q-td
             key="status"
-            :props="props"
+            :props
           >
             {{ t('status.' + props.row.status) }}
           </q-td>
           <q-td
+            key="expiresAt"
+            :props
+          >
+            <template v-if="props.row.expiresAt == null">
+              {{ t('expiresAt.never') }}
+            </template>
+            <a
+              v-else-if="new Date(props.row.expiresAt) < new Date()"
+              class="text-warning"
+            >
+              {{ t('expiresAt.expired') }}
+            </a>
+            <template v-else>
+              {{ d(props.row.expiresAt, 'short') }}
+            </template>
+          </q-td>
+          <q-td
             key="action"
-            :props="props"
+            :props
           >
             <q-btn
               v-if="userEmail !== props.row.email"
@@ -68,20 +85,34 @@
 import { useI18n } from 'vue-i18n';
 import { useCampManagerStore } from 'stores/camp-manager-store';
 import { computed } from 'vue';
-import type { CampManager } from '@camp-registration/common/entities';
+import type {
+  CampManager,
+  CampManagerCreateData,
+} from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
 import { useProfileStore } from 'stores/profile-store';
 import { type QTableColumn } from 'quasar';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 
 const quasar = useQuasar();
-const { t } = useI18n();
+const { t, d } = useI18n();
 const campManagerStore = useCampManagerStore();
 const profileStore = useProfileStore();
+const campDetailsStore = useCampDetailsStore();
 
 campManagerStore.fetchData();
+campDetailsStore.fetchData();
+
+const error = computed<string | null>(() => {
+  return campManagerStore.error ?? campDetailsStore.error;
+});
+
+const loading = computed<boolean>(() => {
+  return campManagerStore.isLoading || campDetailsStore.isLoading;
+});
 
 const pagination = {
   page: 1,
@@ -118,6 +149,13 @@ const columns: QTableColumn[] = [
     align: 'center',
   },
   {
+    name: 'expiresAt',
+    required: true,
+    label: t('column.expiresAt'),
+    field: 'expiresAt',
+    align: 'center',
+  },
+  {
     name: 'action',
     required: true,
     label: '',
@@ -134,25 +172,19 @@ const rows = computed<CampManager[]>(() => {
   return campManagerStore.data ?? [];
 });
 
-const error = computed(() => {
-  return campManagerStore.error;
-});
-
-const loading = computed<boolean>(() => {
-  return campManagerStore.isLoading;
-});
-
 function showAddDialog() {
+  const date = new Date(campDetailsStore.data?.endAt ?? '');
+  date.setHours(23, 59, 59, 999);
+
   quasar
     .dialog({
       component: AddCampManagerDialog,
       componentProps: {
-        title: t('dialog.add.title'),
-        message: t('dialog.add.message'),
+        date: date.toISOString(),
       },
     })
-    .onOk((email) => {
-      campManagerStore.createData(email);
+    .onOk((data: CampManagerCreateData) => {
+      campManagerStore.createData(data);
     });
 }
 
@@ -180,9 +212,6 @@ action:
   add: 'Add'
 
 dialog:
-  add:
-    title: 'Grant Access'
-    message: 'Enter the email addressQuestion:'
   delete:
     title: 'Remove Access'
     message: 'Are you sure you want to remove this person?'
@@ -190,9 +219,14 @@ dialog:
 
 column:
   email: 'Email'
+  expiresAt: 'Expires at'
   name: 'Name'
   role: 'Role'
   status: 'Status'
+
+expiresAt:
+  never: 'Never'
+  expired: 'Expired'
 
 status:
   accepted: 'Accepted'
@@ -209,9 +243,6 @@ action:
   add: 'Hinzufügen'
 
 dialog:
-  add:
-    title: 'Zugriff gewähren'
-    message: 'Geben Sie die E-Mail-Adresse ein:'
   delete:
     title: 'Zugriff entfernen'
     message: 'Möchten Sie diese Person wirklich entfernen?'
@@ -238,9 +269,6 @@ action:
   add: 'Ajouter'
 
 dialog:
-  add:
-    title: "Accorder l'accès"
-    message: "Entrez l'adresse e-mail :"
   delete:
     title: "Supprimer l'accès"
     message: 'Êtes-vous sûr de vouloir supprimer cette personne ?'

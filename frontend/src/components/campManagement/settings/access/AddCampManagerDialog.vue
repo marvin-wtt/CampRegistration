@@ -7,15 +7,15 @@
     <q-card style="min-width: 350px">
       <q-card-section>
         <div class="text-h6">
-          {{ props.title }}
+          {{ t('title') }}
         </div>
       </q-card-section>
 
       <q-card-section class="q-pt-none">
-        {{ props.message }}
+        {{ t('description') }}
       </q-card-section>
 
-      <q-card-section class="q-pt-none">
+      <q-card-section class="q-pt-none q-gutter-md">
         <q-input
           v-model="email"
           type="email"
@@ -24,6 +24,21 @@
           autofocus
           rounded
           outlined
+        />
+
+        <q-checkbox
+          v-if="expiresAt === null"
+          v-model="expiresAt"
+          :label="t('input.showExpiresAt')"
+          :true-value="date"
+          :false-value="null"
+        />
+
+        <date-time-input
+          v-else
+          v-model="expiresAt"
+          :label="t('input.expiresAt')"
+          clearable
         />
       </q-card-section>
 
@@ -53,31 +68,40 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
+import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
+import type { CampManagerCreateData } from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-interface Props {
-  title: string;
-  message: string;
-}
-
-const props = defineProps<Props>();
+const { date } = defineProps<{
+  date: string;
+}>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref<string>('');
+const expiresAt = ref<string | null>(null);
 
 function onInvite() {
-  onDialogOK(email.value);
+  const data: CampManagerCreateData = {
+    email: email.value,
+    expiresAt: expiresAt.value ?? undefined,
+  };
+
+  onDialogOK(data);
 }
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
+title: 'Grant Access'
+
 input:
   email: 'Email'
+  expiresAt: 'Expiration Date'
+  showExpiresAt: 'Set access expiration'
 
 action:
   invite: 'Invite'
@@ -85,8 +109,12 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+title: 'Zugriff gewähren'
+
 input:
   email: 'E-Mail'
+  expiresAt: 'Ablaufdatum'
+  showExpiresAt: 'Zugriffsbeschränkung festlegen'
 
 action:
   invite: 'Einladen'
@@ -94,8 +122,12 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+title: "Accorder l'accès"
+
 input:
   email: 'E-Mail'
+  expiresAt: "Date d'expiration"
+  showExpiresAt: "Définir une expiration de l'accès"
 
 action:
   invite: 'Inviter'

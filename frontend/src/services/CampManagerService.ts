@@ -2,6 +2,7 @@ import { api } from 'boot/axios';
 import type {
   Camp,
   CampManager,
+  CampManagerCreateData,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
 
@@ -14,11 +15,9 @@ export function useCampManagerService() {
 
   async function createCampManager(
     campId: string,
-    email: string,
+    data: CampManagerCreateData,
   ): Promise<CampManager> {
-    const response = await api.post(`camps/${campId}/managers/`, {
-      email,
-    });
+    const response = await api.post(`camps/${campId}/managers/`, data);
 
     return response?.data?.data;
   }

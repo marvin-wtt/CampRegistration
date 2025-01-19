@@ -3,7 +3,10 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
-import type { CampManager } from '@camp-registration/common/entities';
+import type {
+  CampManager,
+  CampManagerCreateData,
+} from '@camp-registration/common/entities';
 
 export const useCampManagerStore = defineStore('campManager', () => {
   const route = useRoute();
@@ -39,14 +42,13 @@ export const useCampManagerStore = defineStore('campManager', () => {
     });
   }
 
-  async function createData(email: string) {
+  async function createData(newData: CampManagerCreateData) {
     const campId = route.params.camp as string;
 
     checkNotNullWithError(campId);
-    checkNotNullWithNotification(email);
 
     await withProgressNotification('create', async () => {
-      const campManager = await api.createCampManager(campId, email);
+      const campManager = await api.createCampManager(campId, newData);
 
       data.value?.push(campManager);
     });
