@@ -1,0 +1,23 @@
+{
+  "messageTemplates": [
+    {
+      "name": "registration_confirmation",
+      "subject": "Your Registration for {{ camp.name }} is Confirmed!",
+      "priority": "high",
+      "body": "<p>Dear {{ registration.campData.first_name }},</p><p>We are thrilled to confirm your registration for <strong>{{ camp.name }}</strong>! Get ready for an exciting and unforgettable camp experience.</p><p>Here are the details of your registration:</p><ul><li>Camp Name: {{ camp.name }}</li><li>Camp Dates: {{ camp.dates }}</li><li>Location: {{ camp.location }}</li></ul><p>We'll be sending more information as the camp date approaches. If you have any questions, feel free to contact us at <a href='mailto:{{ camp.contact_email }}'>{{ camp.contact_email }}</a>.</p><p>We can't wait to see you at camp!</p><p>Best regards,<br>{{ camp.organization_name }}</p>"
+
+    },
+    {
+      "name": "waiting_list_notification",
+      "subject": "You're on the Waiting List for {{ camp.name }}",
+      "priority": "medium",
+      "body": "<p>Dear {{ registration.campData.first_name }},</p><p>Thank you for your interest in <strong>{{ camp.name }}</strong>. Unfortunately, the camp is currently full, and your registration has been placed on our waiting list.</p><p>If a spot becomes available, we will notify you right away. In the meantime, if you have any questions, please reach out to us at <a href='mailto:{{ camp.contact_email }}'>{{ camp.contact_email }}</a>.</p><p>We appreciate your patience and hope to see you at camp!</p><p>Best regards,<br>{{ camp.organization_name }}</p>"
+    },
+    {
+      "name": "registration_notification",
+      "subject": "New Camper Registered for {{ camp.name }}",
+      "priority": "high",
+      "body": "<p>Dear Counselor,</p><p>We wanted to inform you that a new camper, <strong>{{ registration.campData.first_name }} {{ registration.campData.last_name }}</strong>, has been successfully registered for <strong>{{ camp.name }}</strong>.</p><p>Here are the details of the camper:</p><ul><li>Name: {{ registration.campData.first_name }} {{ registration.campData.last_name }}</li><li>Age: {{ registration.campData.age }}</li><li>Parent/Guardian: {{ registration.campData.guardian_name }}</li></ul><p>Please prepare to welcome this camper and ensure they have a fantastic experience at camp. For any further information, you can contact the camp administration at <a href='mailto:{{ camp.contact_email }}'>{{ camp.contact_email }}</a>.</p><p>Thank you for your dedication and support!</p><p>Best regards,<br>{{ camp.organization_name }}</p>"
+    }
+  ]
+}

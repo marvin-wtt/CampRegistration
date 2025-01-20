@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh Lpr lff">
+  <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
     <q-header
@@ -55,10 +55,24 @@
       bordered
       mini-to-overlay
       show-if-above
-      @mouseout="miniState = true"
-      @mouseover="miniState = false"
+      @mouseleave="miniState = true"
+      @mouseenter="miniState = false"
     >
       <q-list padding>
+        <q-item>
+          <q-item-section
+            v-if="miniState"
+            avatar
+          >
+            <q-icon name="home" />
+          </q-item-section>
+          <q-item-section>
+            {{ campName }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator />
+
         <template
           v-for="item in filteredItems"
           :key="item.name"
@@ -138,7 +152,11 @@ const showDrawer = computed<boolean>(() => {
 });
 
 const title = computed(() => {
-  return showDrawer.value ? campDetailStore.data?.name : t('app_name');
+  return showDrawer.value ? campName.value : t('app_name');
+});
+
+const campName = computed<string | undefined>(() => {
+  return to(campDetailStore.data?.name);
 });
 
 const administrator = computed<boolean>(() => {
@@ -167,7 +185,7 @@ const items: NavigationItemProps[] = [
     preview: true,
     label: t('contact'),
     icon: 'email',
-    to: undefined,
+    to: { name: 'management.camp.contact' },
   },
   {
     name: 'room_planner',
