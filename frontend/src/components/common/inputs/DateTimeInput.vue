@@ -5,7 +5,7 @@
     hide-bottom-space
     outlined
     rounded
-    v-bind="$attrs"
+    v-bind="attrs"
   >
     <template #append>
       <q-icon
@@ -80,25 +80,65 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { type QInputSlots } from 'quasar';
+import { useAttrs } from 'vue';
 
+const attrs = useAttrs();
 const { t } = useI18n();
 
-const modelValue = defineModel<string | number>();
+type ModelValue = string | null | undefined;
+
+const modelValue = defineModel<ModelValue>({
+  get: isoToDateTime,
+  set: dateTimeToIso,
+});
+
+function isoToDateTime(isoDate: ModelValue): ModelValue {
+  if (!isoDate) {
+    return isoDate;
+  }
+
+  const date = new Date(isoDate);
+
+  // Extract parts of the date
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  // Return in "YYYY-MM-DD HH:mm" format
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function dateTimeToIso(dateTime: ModelValue): ModelValue {
+  if (!dateTime) {
+    return dateTime;
+  }
+
+  // Replace " " with "T" to make it a valid ISO string and append seconds/milliseconds
+  const isoString = dateTime.replace(' ', 'T') + ':00.000Z';
+
+  // Parse the resulting string to ensure validity and return it
+  const date = new Date(isoString);
+
+  // Convert back to ISO string
+  return date.toISOString();
+}
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
 actions:
-  ok: Ok
+  ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="en">
 actions:
-  ok: Ok
+  ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="en">
 actions:
-  ok: Ok
+  ok: 'Ok'
 </i18n>
