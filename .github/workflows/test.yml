@@ -103,6 +103,10 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
 
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+
     services:
       mysql:
         image: mysql:8.0
@@ -144,7 +148,7 @@ jobs:
           build: npm run build-and-migrate
           start: npm run production -w backend
           wait-on: 'http://localhost:3001'
-          browser: chrome
+          browser: ${{ matrix.browser }}
           # Records to Cypress Cloud
           # https://docs.cypress.io/guides/cloud/projects#Set-up-a-project-to-record
           record: true
