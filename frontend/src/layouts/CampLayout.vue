@@ -10,7 +10,7 @@
             to="/"
             style="text-decoration: none; color: inherit"
           >
-            {{ t('app_name') }}
+            {{ title }}
           </router-link>
         </q-toolbar-title>
 
@@ -67,17 +67,26 @@ import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const { user } = storeToRefs(profileStore);
+const campDetailStore = useCampDetailsStore();
+const { data: camp } = storeToRefs(campDetailStore);
 
 useMeta(() => {
   return {
-    title: 'Camps',
+    title: camp.value ? to(camp.value.name) : t('camps'),
     titleTemplate: (title) => `${title} | ${t('app_name')}`,
   };
+});
+
+const title = computed<string>(() => {
+  return camp.value ? to(camp.value.name) : t('app_name');
 });
 
 if (!profileStore.user) {
