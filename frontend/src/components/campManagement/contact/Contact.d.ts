@@ -1,4 +1,4 @@
-import { Registration } from '@camp-registration/common/dist/node/entities';
+import type { Registration } from '@camp-registration/common/dist/node/entities';
 
 interface GroupContact {
   type: 'group';

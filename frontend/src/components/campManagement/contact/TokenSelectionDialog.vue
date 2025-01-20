@@ -53,9 +53,9 @@
 </template>
 
 <script lang="ts" setup>
-import { QSelectOption, useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { Token } from 'components/campManagement/contact/Token';
+import { type Token } from 'components/campManagement/contact/Token';
 import { computed, ref } from 'vue';
 
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();

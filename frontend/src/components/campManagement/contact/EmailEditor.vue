@@ -34,11 +34,16 @@
 </template>
 
 <script lang="ts" setup>
-import { QEditor, QEditorProps, QSelectOption, useQuasar } from 'quasar';
+import {
+  QEditor,
+  type QEditorProps,
+  type QSelectOption,
+  useQuasar,
+} from 'quasar';
 import EditorColorPicker from 'components/campManagement/contact/EditorColorPicker.vue';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref, watch } from 'vue';
-import { Token } from 'components/campManagement/contact/Token';
+import { type Token } from 'components/campManagement/contact/Token';
 import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 
 const quasar = useQuasar();

@@ -68,13 +68,13 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { QSelectProps } from 'quasar';
-import { Registration } from '@camp-registration/common/entities';
+import { type QSelectProps } from 'quasar';
+import type { Registration } from '@camp-registration/common/entities';
 import { computed, ref, watch } from 'vue';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { NamedColor } from 'quasar/dist/types/api/color';
+import type { NamedColor } from 'quasar';
 import { formatPersonName } from 'src/utils/formatters';
-import { Contact } from 'components/campManagement/contact/Contact';
+import { type Contact } from 'components/campManagement/contact/Contact';
 
 const { t } = useI18n();
 const { fullName, role, country } = useRegistrationHelper();

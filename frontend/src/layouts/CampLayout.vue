@@ -97,10 +97,6 @@ const administrator = computed<boolean>(() => {
   return profileStore.user?.role === 'ADMIN';
 });
 
-const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
-});
-
 function logout() {
   authStore.logout();
 }

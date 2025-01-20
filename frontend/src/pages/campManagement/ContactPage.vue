@@ -103,12 +103,12 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import { Camp, Registration } from '@camp-registration/common/entities';
+import type { Camp, Registration } from '@camp-registration/common/entities';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
-import { Contact } from 'components/campManagement/contact/Contact';
-import { Token } from 'components/campManagement/contact/Token';
-import { QSelectOption, useQuasar } from 'quasar';
-import { QRejectedEntry } from 'quasar/dist/types/api/qfile';
+import type { Contact } from 'components/campManagement/contact/Contact';
+import type { Token } from 'components/campManagement/contact/Token';
+import { type QSelectOption, useQuasar } from 'quasar';
+import { type QRejectedEntry } from 'quasar';
 
 const quasar = useQuasar();
 const { t } = useI18n();

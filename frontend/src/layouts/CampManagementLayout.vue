@@ -160,10 +160,6 @@ const campName = computed<string | undefined>(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
-});
-
-const administrator = computed<boolean>(() => {
   return profileStore.user?.role === 'ADMIN';
 });
 

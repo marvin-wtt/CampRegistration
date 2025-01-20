@@ -1,4 +1,4 @@
-import { QSelectOption } from 'quasar';
+import type { QSelectOption } from 'quasar';
 
 export interface Token {
   label?: string;
