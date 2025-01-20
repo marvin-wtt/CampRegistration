@@ -1,5 +1,5 @@
-import type { Identifiable } from './Identifiable';
-import { ServiceFile } from './ServiceFile';
+import type { Identifiable } from './Identifiable.js';
+import { ServiceFile } from './ServiceFile.js';
 
 export interface Message extends Identifiable {
   recipients: string;
@@ -21,4 +21,4 @@ export interface MessageCreateData {
   attachments?: string[];
 }
 
-export type MessageUpdateData = {};
+export interface MessageUpdateData {}

@@ -1,6 +1,6 @@
 import { Message, File } from '@prisma/client';
 import type { Message as MessageResource } from '@camp-registration/common/entities';
-import fileResource from './file.rescource';
+import fileResource from '#app/file/file.resource.js';
 
 interface MessageWithRelations extends Message {
   attachments: {

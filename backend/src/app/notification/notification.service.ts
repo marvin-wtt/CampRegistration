@@ -4,7 +4,7 @@ import { generateQueryString } from '#utils/uri';
 import Mail from 'nodemailer/lib/mailer';
 import { t } from '#core/i18n';
 import logger from '#core/logger';
-import i18n from '#config/i18n';
+import i18n from '#core/i18n';
 
 type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 

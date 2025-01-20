@@ -1,11 +1,11 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import { routeModel } from 'utils/verifyModel';
-import { messageService } from 'services';
+import { catchRequestAsync } from '#utils/catchAsync';
+import { routeModel } from '#utils/verifyModel';
+import messageService from './message.service.js';
 import httpStatus from 'http-status';
-import { resource } from 'resources/resource';
-import { messageResource } from 'resources';
+import { resource } from '#core/resource';
+import messageResource from './message.resource.js';
 import { MessageCreateData } from '@camp-registration/common/entities';
-import registrationService from '../services/registration.service';
+import registrationService from '#app/registration/registration.service';
 
 const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);

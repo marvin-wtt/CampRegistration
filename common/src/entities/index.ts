@@ -15,7 +15,7 @@ export * from './Room.js';
 export * from './ServiceFile.js';
 export * from './TableTemplate.js';
 export * from './User.js';
-export * from './Message';
+export * from './Message.js';
 
 // Types
 export * from './AuthTokens.js';

@@ -1,10 +1,10 @@
-import prisma from '../client';
-import { ulid } from '../utils/ulid';
+import prisma from '#client.js';
+import { ulid } from '#utils/ulid';
 import { MessageTemplate } from '@prisma/client';
 import dlv from 'dlv';
-import { notificationService } from 'services';
+import notificationService from '#app/notification/notification.service';
 import { Attachment } from 'nodemailer/lib/mailer';
-import logger from '../config/logger';
+import logger from '#core/logger';
 
 type MessageContext = Record<string, string | object>;
 
