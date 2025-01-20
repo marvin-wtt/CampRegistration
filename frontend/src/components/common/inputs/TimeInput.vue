@@ -53,7 +53,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { QInputSlots, QPopupProxy } from 'quasar';
+import { type QInputSlots, type QPopupProxy } from 'quasar';
 
 const { t } = useI18n();
 

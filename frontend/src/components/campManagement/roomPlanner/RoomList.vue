@@ -50,7 +50,7 @@
     </q-item>
 
     <room-list-item
-      v-for="(bed, index) in room.beds"
+      v-for="(_, index) in room.beds"
       :key="index"
       v-model="room.beds[index].person"
       :options="options"
@@ -65,7 +65,7 @@
 import RoomListItem from 'components/campManagement/roomPlanner/RoomListItem.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Roommate, RoomWithRoommates } from 'src/types/Room';
+import type { Roommate, RoomWithRoommates } from 'src/types/Room';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { t } = useI18n();

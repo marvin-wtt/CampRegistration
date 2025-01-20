@@ -58,25 +58,35 @@
       @mouseleave="miniState = true"
       @mouseenter="miniState = false"
     >
-      <q-scroll-area class="fit">
-        <q-list padding>
-          <q-item>
-            <q-item-section
-              v-if="miniState"
-              avatar
-            >
-              <q-icon name="home" />
-            </q-item-section>
-            <q-item-section>
-              {{ campName }}
-            </q-item-section>
-          </q-item>
+      <q-list padding>
+        <q-item>
+          <q-item-section
+            v-if="miniState"
+            avatar
+          >
+            <q-icon name="home" />
+          </q-item-section>
+          <q-item-section>
+            {{ campName }}
+          </q-item-section>
+        </q-item>
 
-          <q-separator />
+        <q-separator />
 
+        <template
+          v-for="item in filteredItems"
+          :key="item.name"
+        >
           <navigation-item
-            v-for="item in filteredItems"
-            :key="item.name"
+            v-if="item.header"
+            :header="item.header"
+            :name="item.name"
+            :label="item.label"
+            :separated="item.separated"
+            :preview="item.preview"
+          />
+          <navigation-item
+            v-else
             :name="item.name"
             :label="item.label"
             :icon="item.icon"
@@ -85,8 +95,8 @@
             :preview="item.preview"
             :children="item.children"
           />
-        </q-list>
-      </q-scroll-area>
+        </template>
+      </q-list>
     </q-drawer>
 
     <q-page-container>
@@ -109,9 +119,11 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -119,17 +131,21 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(authStore);
+const { user } = storeToRefs(profileStore);
 
-if (!authStore.user) {
-  // Fetch user instead of init to force redirect on error
-  authStore.fetchUser();
+async function init() {
+  if (!user.value) {
+    // Fetch user instead of init to force redirect on error
+    await profileStore.fetchProfile();
+  }
+  if (route.params.camp) {
+    await campDetailStore.fetchData();
+  }
 }
-if (route.params.camp) {
-  campDetailStore.fetchData();
-}
+init();
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
@@ -147,6 +163,10 @@ const administrator = computed<boolean>(() => {
   return authStore.user?.role === 'ADMIN';
 });
 
+const administrator = computed<boolean>(() => {
+  return profileStore.user?.role === 'ADMIN';
+});
+
 useMeta(() => {
   return {
     title: to(title.value),
@@ -157,17 +177,7 @@ useMeta(() => {
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
-interface NavigationItem {
-  name: string;
-  to?: string | object;
-  label?: string;
-  icon?: string;
-  preview?: boolean;
-  separated?: boolean;
-  children?: NavigationItem[];
-}
-
-const items: NavigationItem[] = [
+const items: NavigationItemProps[] = [
   {
     name: 'participants',
     label: t('participants'),
@@ -198,7 +208,7 @@ const items: NavigationItem[] = [
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
-    to: { name: 'settings' },
+    to: { name: 'management.settings' },
     separated: true,
     children: [
       {
@@ -229,7 +239,7 @@ const items: NavigationItem[] = [
   },
 ];
 
-const filteredItems = computed<NavigationItem[]>(() => {
+const filteredItems = computed<NavigationItemProps[]>(() => {
   if (dev.value) {
     return items;
   }
@@ -306,11 +316,13 @@ notifications: 'Notifications'
   height: 0.5rem;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.1s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
@@ -335,5 +347,18 @@ notifications: 'Notifications'
 }
 
 ::-webkit-scrollbar-corner {
+}
+
+/* Hide number input arrows */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 </style>

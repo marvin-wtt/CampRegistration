@@ -13,16 +13,19 @@ datasource db {
 }
 
 model User {
-  id            String    @id @unique(map: "users_id_unique") @db.Char(26)
-  name          String    @db.VarChar(255)
-  email         String    @unique(map: "users_email_unique") @db.VarChar(255)
-  emailVerified Boolean   @default(false) @map("email_verified")
-  password      String    @db.VarChar(255)
-  role          Role      @default(USER)
-  locale        String    @default("en-US") @db.VarChar(5)
-  locked        Boolean   @default(false)
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime? @updatedAt @map("updated_at")
+  id               String    @id @unique(map: "users_id_unique") @db.Char(26)
+  name             String    @db.VarChar(255)
+  email            String    @unique(map: "users_email_unique") @db.VarChar(255)
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  password         String    @db.VarChar(255)
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  totpSecret       String?   @map("totp_secret") @db.Char(32)
+  role             Role      @default(USER)
+  locale           String    @default("en-US") @db.VarChar(5)
+  locked           Boolean   @default(false)
+  lastSeen         DateTime? @map("last_seen")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
 
   camps  CampManager[]
   tokens Token[]
@@ -82,7 +85,7 @@ model CampManager {
   userId       String? @map("user_id") @db.Char(26)
   invitationId String? @map("invitation_id") @db.Char(26)
 
-  camp       Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
+  expiresAt  DateTime?   @map("expires_at") @db.DateTime(0)  camp       Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
   user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
   invitation Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
 
@@ -103,7 +106,7 @@ model Invitation {
 
 model Registration {
   id                  String                @id @unique(map: "registrations_id_unique") @db.Char(26)
-  campId              String?               @map("camp_id") @db.Char(26)
+  campId              String                @map("camp_id") @db.Char(26)
   /// [GenericObject]
   data                Json                  @db.Json
   /// [RegistrationCampData]
@@ -112,7 +115,7 @@ model Registration {
   waitingList         Boolean               @default(true) @map("waiting_list")
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime?             @updatedAt @map("updated_at")
-  camp                Camp?                 @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  camp                Camp                  @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed                 Bed?
   files               File[]
   MessageRegistration MessageRegistration[]
@@ -148,6 +151,7 @@ model TableTemplate {
   campId String @map("camp_id") @db.Char(26)
   /// [TableTemplates]
   data   Json   @db.Json
+  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_camp_id_foreign")
 
   camp Camp @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_camp_id_foreign")
 
@@ -174,6 +178,7 @@ enum TokenType {
   REFRESH
   RESET_PASSWORD
   VERIFY_EMAIL
+  OTP
 }
 
 model File {

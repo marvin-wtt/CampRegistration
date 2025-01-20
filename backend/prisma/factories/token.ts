@@ -1,6 +1,6 @@
 import { fakerDE as faker } from '@faker-js/faker';
 import { Prisma, TokenType } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
+import prisma from './prisma';
 
 type PartialExcept<T, K extends keyof T> = Partial<Omit<T, K>> & Pick<T, K>;
 

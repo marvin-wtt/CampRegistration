@@ -54,17 +54,29 @@
       @mouseover="miniState = false"
     >
       <q-list padding>
-        <navigation-item
+        <template
           v-for="item in filteredItems"
           :key="item.name"
-          :name="item.name"
-          :label="item.label"
-          :icon="item.icon"
-          :to="item.to"
-          :separated="item.separated"
-          :preview="item.preview"
-          :children="item.children"
-        />
+        >
+          <navigation-item
+            v-if="item.header"
+            :header="item.header"
+            :name="item.name"
+            :label="item.label"
+            :separated="item.separated"
+            :preview="item.preview"
+          />
+          <navigation-item
+            v-else
+            :name="item.name"
+            :label="item.label"
+            :icon="item.icon"
+            :to="item.to"
+            :separated="item.separated"
+            :preview="item.preview"
+            :children="item.children"
+          />
+        </template>
       </q-list>
     </q-drawer>
 
@@ -79,17 +91,19 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import { useAuthStore } from 'stores/auth-store';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -97,15 +111,13 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
+const { user } = storeToRefs(profileStore);
 
-const { user } = storeToRefs(authStore);
-
-onMounted(async () => {
-  if (!authStore.user) {
-    // Fetch user instead of init to force redirect on error
-    await authStore.fetchUser();
-  }
-});
+if (!profileStore.user) {
+  // Fetch user instead of init to force redirect on error
+  profileStore.fetchProfile();
+}
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
@@ -125,17 +137,7 @@ useMeta(() => {
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
-interface NavigationItem {
-  name: string;
-  to?: string | object;
-  label?: string;
-  icon?: string;
-  preview?: boolean;
-  separated?: boolean;
-  children?: NavigationItem[];
-}
-
-const items: NavigationItem[] = [
+const items: NavigationItemProps[] = [
   {
     name: 'users',
     label: t('users'),
@@ -158,7 +160,7 @@ const items: NavigationItem[] = [
   },
 ];
 
-const filteredItems = computed<NavigationItem[]>(() => {
+const filteredItems = computed<NavigationItemProps[]>(() => {
   if (dev.value) {
     return items;
   }
@@ -169,7 +171,7 @@ const filteredItems = computed<NavigationItem[]>(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 const dev = computed<boolean>(() => {

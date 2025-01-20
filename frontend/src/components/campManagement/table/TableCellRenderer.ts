@@ -1,5 +1,5 @@
-import { Component } from 'vue';
-import { CTableColumnTemplate } from 'src/types/CTableTemplate';
+import { type Component } from 'vue';
+import type { CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 
 export class TableCellRenderer {

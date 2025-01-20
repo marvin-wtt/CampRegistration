@@ -1,8 +1,8 @@
 import multer, { Field } from 'multer';
-import config from 'config';
+import config from '#config/index';
 import { NextFunction, Request, Response } from 'express';
-import { dynamic } from 'middlewares';
-import { fileService } from 'services';
+import dynamic from './dynamic.middleware.js';
+import fileService from '#app/file/file.service';
 
 type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
 
@@ -14,10 +14,10 @@ const upload = (fields: ParameterType) => {
   const tmpDir = config.storage.tmpDir;
 
   const tmpStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (_req, _file, cb) => {
       cb(null, tmpDir);
     },
-    filename: (req, file, cb) => {
+    filename: (_req, file, cb) => {
       const fileName = fileService.generateFileName(file.originalname);
       cb(null, fileName);
     },
@@ -61,7 +61,7 @@ const resolveMulterMiddleware = (
 
 const formatterMiddleware = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
   // Convert null prototypes to objects

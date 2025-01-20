@@ -20,7 +20,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { QInputSlots } from 'quasar';
+import { type QInputSlots } from 'quasar';
 
 interface Props {
   modelValue: string | object | undefined;

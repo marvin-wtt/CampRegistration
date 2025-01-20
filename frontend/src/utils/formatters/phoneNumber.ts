@@ -3,7 +3,7 @@ export function formatPhoneNumber(
   country?: string,
 ): string {
   if (
-    !phoneNumber.match(/^([+0])\d[\d\-\/\s]+$/g) ||
+    !phoneNumber.match(/^([+0])\d[\d\-/\s]+$/g) ||
     (!phoneNumber.startsWith('+') && !phoneNumber.startsWith('0'))
   ) {
     return phoneNumber;

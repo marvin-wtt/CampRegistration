@@ -4,17 +4,23 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
 
@@ -25,10 +31,11 @@ jobs:
       run: npm run build -workspace common
 
     - name: Run lint
-      run: npm run lint --workspaces
+      run: npm run lint --workspaces --if-present
 
   format:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
 
     steps:
       - name: Checkout code
@@ -43,4 +50,4 @@ jobs:
         run: npm ci
 
       - name: Run format
-        run: npm run format:check --workspaces
+        run: npm run format:check --workspaces --if-present

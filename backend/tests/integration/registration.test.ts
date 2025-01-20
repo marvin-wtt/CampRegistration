@@ -36,7 +36,7 @@ import {
   campWithAddress,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import mailer from '../../src/config/mail';
+import mailer from '../../src/core/mail';
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
@@ -215,6 +215,52 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body).toHaveProperty('data.data.role', data.role);
     });
 
+    it('should respond with `201` status code when form has camp variables', async () => {
+      const camp = await CampFactory.create(campWithCampVariable);
+
+      const validData = {
+        first_name: 'Jhon',
+        age: 11,
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: validData })
+        .expect(201);
+
+      const invalidData = {
+        first_name: 'Jhon',
+        age: 5,
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: invalidData })
+        .expect(400);
+    });
+
+    it('should respond with `201` status code when form has custom functions', async () => {
+      const camp = await CampFactory.create(campWithFormFunctions);
+
+      const validData = {
+        date: '2000-01-01',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: validData })
+        .expect(201);
+
+      const invalidData = {
+        date: '2001-01-01',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send({ data: invalidData })
+        .expect(400);
+    });
+
     it('should respond with `401` status code when camp is not active', async () => {
       const camp = await CampFactory.create({
         active: false,
@@ -255,52 +301,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       await request()
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send(data)
-        .expect(400);
-    });
-
-    it('should work with camp variables', async () => {
-      const camp = await CampFactory.create(campWithCampVariable);
-
-      const validData = {
-        first_name: 'Jhon',
-        age: 11,
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: validData })
-        .expect(201);
-
-      const invalidData = {
-        first_name: 'Jhon',
-        age: 5,
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: invalidData })
-        .expect(400);
-    });
-
-    it('should work with form functions', async () => {
-      const camp = await CampFactory.create(campWithFormFunctions);
-
-      const validData = {
-        date: '2000-01-01',
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: validData })
-        .expect(201);
-
-      const invalidData = {
-        date: '2001-01-01',
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: invalidData })
         .expect(400);
     });
 
@@ -392,7 +392,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
       });
 
       it('should respond with `400` status code when file is missing', async () => {
@@ -467,10 +467,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when file is already assigned to a registration', async () => {
         const camp = await CampFactory.create(campWithFileRequired);
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
         const file = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
-          registration: { create: RegistrationFactory.build() },
+          registration: { connect: { id: registration.id } },
         });
 
         const data = {
@@ -593,7 +596,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const { body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
 
         expect(body).toHaveProperty('data.waitingList', expected);
       };
@@ -813,20 +816,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should respond with `400` status code when the waiting list field is set', async () => {
+      it('should ignore the waiting list field when set', async () => {
         const camp = await CampFactory.create(campWithMaxParticipantsNational);
 
-        const data = {
-          data: {
+        // Fill camp
+        for (let i = 0; i < 5; i++) {
+          await request()
+            .post(`/api/v1/camps/${camp.id}/registrations`)
+            .send({
+              data: { first_name: `Jhon ${i}` },
+              waitingList: false,
+            })
+            .expect(201);
+        }
+
+        // Assert waiting list
+        await assertRegistration(
+          camp.id,
+          {
             first_name: `Jhon`,
           },
-          waitingList: false,
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send(data)
-          .expect(400);
+          true,
+        );
       });
 
       it('should respond with `409` status code when camp country data is missing for international camp', async () => {
@@ -891,7 +902,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations/`)
           .send({ data })
-          .expectOrPrint(201);
+          .expect(201);
 
         const refCamp = await prisma.camp.findFirst({
           where: { id: camp.id },

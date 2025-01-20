@@ -1,7 +1,7 @@
-import { SurveyJSCampData } from './SurveyJSCampData';
-import { Identifiable } from './Identifiable';
-import { ITheme } from 'survey-core/typings/themes';
-import { Translatable } from './Translatable';
+import { SurveyJSCampData } from './SurveyJSCampData.js';
+import { Identifiable } from './Identifiable.js';
+import { ITheme } from 'survey-core';
+import { Translatable } from './Translatable.js';
 
 export interface Camp extends Identifiable {
   public: boolean;
@@ -28,7 +28,9 @@ export interface CampDetails extends Camp {
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
   'id' | 'freePlaces'
->;
+> & {
+  referenceCampId?: string;
+};
 
 export type CampUpdateData = Partial<CampCreateData>;
 

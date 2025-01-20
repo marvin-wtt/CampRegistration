@@ -3,7 +3,7 @@ import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import {
+import type {
   ServiceFileCreateData,
   ServiceFile,
 } from '@camp-registration/common/entities';

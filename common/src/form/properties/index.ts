@@ -1,18 +1,7 @@
-import campDataType from './campDataType';
+import campDataType from './campDataType.js';
+import { PropertyDefinition } from './ProptertyDefinition.js';
 
-type PropertyRegistration = {
-  className: string;
-  propertyInfo: Record<string, unknown> & {
-    name: string;
-  };
-};
-
-const properties: PropertyRegistration[] = [
-  {
-    className: 'question',
-    propertyInfo: campDataType,
-  },
-];
+const properties: PropertyDefinition[] = [campDataType];
 
 export { campDataType, properties };
 

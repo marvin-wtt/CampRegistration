@@ -1,4 +1,4 @@
-import { RouteRecordRaw } from 'vue-router';
+import { type RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -72,6 +72,17 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/verify-otp',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'verify-otp',
+        path: '',
+        component: () => import('pages/auth/VerifyOtpPage.vue'),
+      },
+    ],
+  },
+  {
     path: '/management',
     component: () => import('layouts/CampManagementLayout.vue'),
     meta: {
@@ -123,7 +134,7 @@ const routes: RouteRecordRaw[] = [
           },
           {
             path: 'settings',
-            name: 'settings',
+            name: 'management.settings',
             component: () =>
               import('pages/campManagement/settings/SettingsPage.vue'),
             children: [
@@ -185,7 +196,35 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-
+  {
+    path: '/settings',
+    component: () => import('layouts/CampManagementLayout.vue'),
+    meta: {
+      auth: true,
+      hideDrawer: true,
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('pages/settings/SettingsPage.vue'),
+        children: [
+          {
+            path: 'account',
+            component: () => import('pages/settings/AccountSettingsPage.vue'),
+          },
+          {
+            name: 'settings',
+            path: 'profile',
+            component: () => import('pages/settings/ProfileSettingsPage.vue'),
+          },
+          {
+            path: 'security',
+            component: () => import('pages/settings/SecuritySettingsPage.vue'),
+          },
+        ],
+      },
+    ],
+  },
   // Always leave this as last one,
   // but you can also remove it
   {

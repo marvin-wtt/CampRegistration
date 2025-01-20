@@ -10,7 +10,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import { type BaseComponent } from 'components/common/inputs/BaseComponent';
 import {
   QCheckbox,
   QInput,
@@ -37,9 +37,9 @@ const component = computed(() => {
       return QSlider;
     case 'toggle':
       return QToggle;
+    default:
+      return undefined;
   }
-
-  return undefined;
 });
 
 interface Props {

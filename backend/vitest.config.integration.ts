@@ -8,8 +8,8 @@ export default defineConfig({
   test: {
     include: ['tests/integration/**/*.test.ts'],
     poolOptions: {
-      threads: {
-        singleThread: true,
+      forks: {
+        singleFork: true,
       },
     },
     setupFiles: ['tests/utils/setup.ts'],

@@ -12,15 +12,15 @@
       class="absolute fit"
     >
       <template #top-right>
-        <div class="row no-wrap q-gutter-x-lg">
+        <div class="row no-wrap q-gutter-x-md">
           <!-- Search -->
           <q-input
             v-model="filterQuery"
-            borderless
+            :placeholder="t('filter.search')"
+            debounce="300"
+            outlined
             rounded
             dense
-            debounce="300"
-            placeholder="Search"
           >
             <template #append>
               <q-icon name="search" />
@@ -59,6 +59,12 @@
       <template #body-cell-status="props">
         <q-td :props="props">
           {{ getUserStatus(props.row) }}
+        </q-td>
+      </template>
+
+      <template #body-cell-lastSeen="props">
+        <q-td :props="props">
+          {{ props.value ? formatDateTime(props.value) : t('lastSeen.never') }}
         </q-td>
       </template>
 
@@ -177,7 +183,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableColumn } from 'quasar';
+import { type QTableColumn } from 'quasar';
 import type {
   User,
   UserUpdateData,
@@ -185,7 +191,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from 'components/administration/users/UserCreateDialog.vue';
@@ -209,9 +215,7 @@ const pagination = ref({
   rowsPerPage: 0,
 });
 
-onMounted(async () => {
-  await fetchAll();
-});
+fetchAll();
 
 const rows = computed<User[]>(() => {
   if (!users.value) {
@@ -235,7 +239,7 @@ const rows = computed<User[]>(() => {
     .sort((a, b) => b.score - a.score);
 });
 
-const columns: QTableColumn<User>[] = [
+const columns = computed<QTableColumn<User>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
@@ -264,6 +268,13 @@ const columns: QTableColumn<User>[] = [
     align: 'left',
   },
   {
+    name: 'lastSeen',
+    label: t('column.lastSeen'),
+    field: 'lastSeen',
+    align: 'left',
+    sortable: true,
+  },
+  {
     name: 'createdAt',
     label: t('column.createdAt'),
     field: 'createdAt',
@@ -276,7 +287,7 @@ const columns: QTableColumn<User>[] = [
     field: 'id',
     align: 'center',
   },
-];
+]);
 
 function getMatchScore(text: string, query: string) {
   text = text.toLowerCase();
@@ -465,6 +476,7 @@ column:
   action: 'Action'
   createdAt: 'Created At'
   email: 'Email'
+  lastSeen: 'Last seen'
   name: 'Name'
   role: 'Role'
   status: 'Status'
@@ -485,8 +497,14 @@ dialog:
     ok: 'Unlock'
     cancel: 'Cancel'
 
+filter:
+  search: 'Search'
+
 header:
   create: 'Create user'
+
+lastSeen:
+  never: 'Never'
 
 status:
   active: 'Active'
@@ -507,6 +525,7 @@ column:
   action: 'Aktion'
   createdAt: 'Erstellt am'
   email: 'E-Mail'
+  lastSeen: 'Zuletzt gesehen'
   name: 'Name'
   role: 'Rolle'
   status: 'Status'
@@ -527,8 +546,14 @@ dialog:
     ok: 'Entsperren'
     cancel: 'Abbrechen'
 
+filter:
+  search: 'Suchen'
+
 header:
   create: 'Benutzer erstellen'
+
+lastSeen:
+  never: 'Niemals'
 
 status:
   active: 'Aktiv'
@@ -549,6 +574,7 @@ column:
   action: 'Action'
   createdAt: 'Créé le'
   email: 'E-mail'
+  lastSeen: 'Dernière vue'
   name: 'Nom'
   role: 'Rôle'
   status: 'Statut'
@@ -569,8 +595,14 @@ dialog:
     ok: 'Déverrouiller'
     cancel: 'Annuler'
 
+filter:
+  search: 'Chercher'
+
 header:
   create: 'Créer un utilisateur'
+
+lastSeen:
+  never: 'Jamais'
 
 status:
   active: 'Actif'

@@ -1,5 +1,5 @@
-import { fileService } from 'services';
-import logger from 'config/logger';
+import fileService from '#app/file/file.service';
+import logger from '#core/logger';
 
 export const deleteUnusedFiles = async () => {
   const fileCount = await fileService.deleteUnreferencedFiles();

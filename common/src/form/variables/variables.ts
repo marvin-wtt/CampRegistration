@@ -39,6 +39,8 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   model.setVariable('camp.location', t(data.location));
   model.setVariable('camp.price', data.price);
   model.setVariable('camp.freePlaces', data.freePlaces);
+
+  model.setVariable('_validationEnabled', model.validationEnabled);
 };
 
 const converter = (locale: string) => {

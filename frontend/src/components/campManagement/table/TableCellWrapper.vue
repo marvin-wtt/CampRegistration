@@ -22,6 +22,7 @@
         }"
       />
       <!-- Add non breaking space to remain height constrains -->
+      <!-- eslint-disable-next-line no-irregular-whitespace -->
       <template v-if="!value"> </template>
     </div>
   </div>
@@ -41,9 +42,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
+import type { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import type { CampDetails } from '@camp-registration/common/entities';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 
 interface Props {
   renderer: TableCellRenderer;

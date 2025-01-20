@@ -12,6 +12,7 @@ import {
 import {
   generateAccessToken,
   generateExpiredToken,
+  generateOTPToken,
   generateRefreshToken,
   generateResetPasswordToken,
   generateToken,
@@ -19,7 +20,8 @@ import {
   verifyToken,
 } from '../utils/token';
 import { request } from '../utils/request';
-import mailer from '../../src/config/mail';
+import mailer from '../../src/core/mail';
+import * as OTPAuth from 'otpauth';
 
 describe('/api/v1/auth', async () => {
   describe('POST /api/v1/auth/register', () => {
@@ -88,6 +90,25 @@ describe('/api/v1/auth', async () => {
       expect(manager?.invitation).toBeNull();
     });
 
+    it('should set the role to "USER"', async () => {
+      await request()
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
+        })
+        .expect(201);
+
+      const user = await prisma.user.findFirst({
+        where: {
+          email: 'test@email.net',
+        },
+      });
+
+      expect(user.role).toBe('USER');
+    });
+
     it('should respond with a `400` status code if an invalid email body is provided', async () => {
       await request()
         .post('/api/v1/auth/register')
@@ -138,7 +159,7 @@ describe('/api/v1/auth', async () => {
       expect(userCount).toBe(1);
     });
 
-    it('should respond with a `400` status code if the role is set in request body', async () => {
+    it('should ignore the role in request body if set', async () => {
       await request()
         .post('/api/v1/auth/register')
         .send({
@@ -147,27 +168,32 @@ describe('/api/v1/auth', async () => {
           password: 'Password1',
           role: 'ADMIN',
         })
-        .expect(400);
+        .expect(201);
 
-      const userCount = await prisma.user.count();
+      const user = await prisma.user.findFirst({
+        where: {
+          email: 'test@email.net',
+        },
+      });
 
-      expect(userCount).toBe(0);
+      expect(user.role).toBe('USER');
     });
 
     it('should encode the user password', async () => {
-      await request()
-        .post('/api/v1/auth/register')
-        .send({
-          name: 'testuser',
-          email: 'test@email.net',
-          password: 'Password1',
-        })
-        .expect(201);
+      const data = {
+        name: 'testuser',
+        email: 'test@email.net',
+        password: 'Password1',
+      };
 
-      const user = (await prisma.user.findFirst()) as User;
+      await request().post('/api/v1/auth/register').send(data).expect(201);
+
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { email: data.email },
+      });
 
       expect(user).toBeDefined();
-      expect(bcrypt.compare(user.password, 'password1')).toBeTruthy();
+      expect(bcrypt.compareSync(data.password, user.password)).toBeTruthy();
     });
 
     it('should set USER role as default', async () => {
@@ -239,7 +265,7 @@ describe('/api/v1/auth', async () => {
       return UserFactory.create({
         name: 'testuser',
         email: 'test@email.net',
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
     };
 
@@ -286,7 +312,7 @@ describe('/api/v1/auth', async () => {
     it('should respond with camps when successful', async () => {
       const user = await UserFactory.create({
         email: 'manager@email.net',
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
       const camp = await CampFactory.create();
       await CampManagerFactory.create({
@@ -320,7 +346,9 @@ describe('/api/v1/auth', async () => {
       expect(body).toHaveProperty('tokens.access.token');
       expect(body).toHaveProperty('tokens.access.expires');
 
-      expect(verifyToken(body.tokens.access.token)).toBeDefined();
+      const tokenData = verifyToken(body.tokens.access.token);
+      expect(tokenData).toBeDefined();
+      expect(tokenData['type']).toBe('ACCESS');
     });
 
     it('should store the refresh token when remember is set', async () => {
@@ -390,7 +418,9 @@ describe('/api/v1/auth', async () => {
       expect(body).toHaveProperty('tokens.refresh.token');
       expect(body).toHaveProperty('tokens.refresh.expires');
 
-      expect(verifyToken(body.tokens.refresh.token)).toBeDefined();
+      const tokenData = verifyToken(body.tokens.refresh.token);
+      expect(tokenData).toBeDefined();
+      expect(tokenData['type']).toBe('REFRESH');
     });
 
     it('should set access token and refresh token as cookie with remember when successful', async () => {
@@ -413,11 +443,55 @@ describe('/api/v1/auth', async () => {
       );
     });
 
+    it('should update user last seen time', async () => {
+      const { id } = await createUser();
+
+      const timestamp = new Date().getTime();
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
+    });
+
+    it('should respond with a `403` status code when 2fA is enabled', async () => {
+      await UserFactory.create({
+        email: 'test@email.net',
+        password: 'password',
+        twoFactorEnabled: true,
+      });
+
+      const { body, headers } = await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(403);
+
+      expect(body).toHaveProperty('token');
+
+      const tokenData = verifyToken(body.token);
+      expect(tokenData).toBeDefined();
+      expect(tokenData['type']).toBe('OTP');
+
+      expect(headers).toHaveProperty('www-authenticate');
+    });
+
     it('should respond with a `403` status code when email is not verified', async () => {
       await UserFactory.create({
         email: 'test2@email.net',
         emailVerified: false,
-        password: bcrypt.hashSync('password', 8),
+        password: 'password',
       });
 
       await request()
@@ -426,6 +500,22 @@ describe('/api/v1/auth', async () => {
           email: 'test2@email.net',
           password: 'password',
           remember: true,
+        })
+        .expect(403);
+    });
+
+    it('should respond with a `403` status code when user is locked', async () => {
+      await UserFactory.create({
+        email: 'test@email.net',
+        password: 'password',
+        locked: true,
+      });
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
         })
         .expect(403);
     });
@@ -469,6 +559,141 @@ describe('/api/v1/auth', async () => {
       await Promise.all(Array.from({ length: 10 }, sendRequest));
 
       await sendRequest().expect(429);
+    });
+  });
+
+  describe('POST /api/v1/auth/verify-otp', () => {
+    const createUser = async () => {
+      const secret = new OTPAuth.Secret();
+
+      return UserFactory.create({
+        email: 'test@email.net',
+        password: 'password',
+        twoFactorEnabled: true,
+        totpSecret: secret.base32,
+      });
+    };
+
+    const generateTOTP = (user: User) => {
+      const totp = new OTPAuth.TOTP({
+        secret: OTPAuth.Secret.fromBase32(user.totpSecret),
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+      });
+
+      return totp.generate();
+    };
+
+    it('should respond with a `200` status code when totp is correct', async () => {
+      const user = await createUser();
+      const totp = generateTOTP(user);
+      const token = generateOTPToken(user);
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: totp,
+          token,
+        })
+        .expect(200);
+    });
+
+    describe('response', () => {
+      it('should respond with access token', async () => {
+        const user = await createUser();
+        const totp = generateTOTP(user);
+        const token = generateOTPToken(user);
+
+        const { body, headers } = await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: totp,
+            token,
+          })
+          .expect(200);
+
+        //  Body
+        expect(body).toHaveProperty('tokens.access.token');
+        expect(body).toHaveProperty('tokens.access.expires');
+
+        // Cookies
+        expect(headers['set-cookie']).toContainEqual(
+          expect.stringMatching(/^accessToken.*/),
+        );
+
+        // Token content
+        const tokenData = verifyToken(body.tokens.access.token);
+        expect(tokenData).toBeDefined();
+        expect(tokenData['type']).toBe('ACCESS');
+      });
+
+      it('should respond with refresh token when remember is set', async () => {
+        const user = await createUser();
+        const totp = generateTOTP(user);
+        const token = generateOTPToken(user);
+
+        const { body, headers } = await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: totp,
+            token,
+            remember: true,
+          })
+          .expect(200);
+
+        //  Body
+        expect(body).toHaveProperty('tokens.refresh.token');
+        expect(body).toHaveProperty('tokens.refresh.expires');
+
+        // Cookies
+        expect(headers['set-cookie']).toContainEqual(
+          expect.stringMatching(/^accessToken.*/),
+        );
+
+        // Token content
+        const tokenData = verifyToken(body.tokens.refresh.token);
+        expect(tokenData).toBeDefined();
+        expect(tokenData['type']).toBe('REFRESH');
+
+        // DB
+        const dbToken = await prisma.token.findFirst({
+          where: {
+            type: 'REFRESH',
+            token: body.tokens.refresh.token,
+            userId: user.id,
+          },
+        });
+        expect(dbToken).toBeDefined();
+      });
+    });
+
+    it('should respond with a `400` status code when totp is invalid', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: '123456',
+          token,
+        })
+        .expect(400);
+    });
+
+    it('should respond with a `400` status code when token is invalid', async () => {
+      const user = await createUser();
+      const totp = generateTOTP(user);
+
+      const token = generateAccessToken(user);
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: totp,
+          token,
+        })
+        .expect(400);
     });
   });
 
@@ -632,6 +857,30 @@ describe('/api/v1/auth', async () => {
       expect(setCookie).toContainEqual(
         expect.stringMatching(/^refreshToken.*/),
       );
+    });
+
+    it('should update user last seen time', async () => {
+      const {
+        refreshToken,
+        user: { id },
+      } = await createUserWithToken();
+
+      const timestamp = new Date().getTime();
+
+      const data = {
+        refreshToken,
+      };
+
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
+        .expect(200);
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
     });
 
     it('should respond with `400` status code when the user has no refresh token', async () => {

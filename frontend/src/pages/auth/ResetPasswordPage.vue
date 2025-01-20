@@ -1,25 +1,48 @@
 <template>
   <q-page
-    padding
-    class="fit row justify-center content-center"
+    class="row justify-center"
+    :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
-    <!-- content -->
-    <q-card class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3">
-      <q-card-section>
-        <a class="text-h4">
+    <q-card
+      class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
+      :flat="quasar.screen.lt.sm"
+    >
+      <q-form
+        class="fit column justify-center no-wrap"
+        @submit="resetPassword"
+      >
+        <!-- Title -->
+        <q-card-section class="text-h4 text-bold text-center">
           {{ t('title') }}
-        </a>
-      </q-card-section>
-      <q-form @submit="resetPassword">
+        </q-card-section>
+
+        <!-- Description -->
+        <q-card-section>
+          <p class="text-subtitle1 text-center">
+            {{ t('description') }}
+          </p>
+        </q-card-section>
+
+        <!-- Avatar -->
+        <q-card-section class="row justify-center">
+          <q-avatar
+            icon="vpn_key"
+            color="primary"
+            text-color="white"
+            size="100px"
+          />
+        </q-card-section>
+
         <q-card-section class="q-gutter-md">
           <q-input
             v-model="password"
+            :label="t('field.password.label')"
             type="password"
             autocomplete="new-password"
             :rules="[
-              (val?: string) => !!val || t('fields.password.rules.required'),
+              (val?: string) => !!val || t('field.password.rules.required'),
             ]"
-            :label="t('fields.password.label')"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -30,14 +53,15 @@
 
           <q-input
             v-model="confirmPassword"
+            :label="t('field.confirm-password.label')"
             type="password"
             autocomplete="new-password"
+            :disable="loading"
             :rules="[
               (val?: string) =>
-                val === password ||
-                t('fields.confirm-password.rules.identical'),
+                val === password || t('field.confirm-password.rule.identical'),
             ]"
-            :label="t('fields.confirm-password.label')"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -49,12 +73,12 @@
 
         <q-card-actions>
           <q-btn
-            :loading="loading"
+            :label="t('action.register')"
             type="submit"
+            :loading
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.register')"
             rounded
           />
         </q-card-actions>
@@ -71,27 +95,23 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
+import { useQuasar } from 'quasar';
 
+const quasar = useQuasar();
 const { t } = useI18n();
+
+const authStore = useAuthStore();
+const { loading, error } = storeToRefs(authStore);
 
 const password = ref<string>('');
 const confirmPassword = ref<string>('');
 
-const authStore = useAuthStore();
-const { loading } = storeToRefs(authStore);
-
-const error = computed(() => {
-  return authStore.error;
-});
-
-onMounted(() => {
-  // Suppress any previous errors
-  authStore.reset();
-});
+// Suppress any previous errors
+authStore.reset();
 
 function resetPassword() {
   authStore.resetPassword(password.value);
@@ -101,50 +121,56 @@ function resetPassword() {
 <i18n lang="yaml" locale="en">
 title: 'Reset Password'
 
-fields:
+description: 'Create a new password to regain access to your account.'
+
+field:
   password:
-    label: 'Password'
-    rules:
+    label: 'New Password'
+    rule:
       required: 'You must provide a valid password'
   confirm-password:
     label: 'Confirm Password'
-    rules:
+    rule:
       identical: 'Password does not match'
 
-actions:
+action:
   register: 'Reset Password'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Passwort zurücksetzen'
 
-fields:
+describe: 'Erstellen Sie ein neues Passwort, um wieder Zugriff auf Ihr Konto zu erhalten.'
+
+field:
   password:
-    label: 'Passwort'
-    rules:
+    label: 'Neues Passwort'
+    rule:
       required: 'Sie müssen ein gültiges Passwort angeben'
   confirm-password:
     label: 'Passwort bestätigen'
-    rules:
+    rule:
       identical: 'Passwort stimmt nicht überein'
 
-actions:
+action:
   register: 'Passwort zurücksetzen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Réinitialiser le mot de passe'
 
-fields:
+describe: "Créez un nouveau mot de passe pour retrouver l'accès à votre compte."
+
+field:
   password:
-    label: 'Mot de passe'
-    rules:
+    label: 'Nouveau mot de passe'
+    rule:
       required: 'Vous devez fournir un mot de passe valide'
   confirm-password:
     label: 'Confirmer le mot de passe'
-    rules:
+    rule:
       identical: 'Les mots de passe ne correspondent pas'
 
-actions:
+action:
   register: 'Réinitialiser le mot de passe'
 </i18n>

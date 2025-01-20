@@ -62,7 +62,7 @@ describe('/api/v1/users/', () => {
 
   describe('GET /api/v1/users/:userId', () => {
     it('should respond with `200` status code when user is admin', async () => {
-      const { accessToken, user: adminUser } = await createAdminWithToken();
+      const { accessToken } = await createAdminWithToken();
       const user = await UserFactory.create();
 
       const { body } = await request()
@@ -79,6 +79,7 @@ describe('/api/v1/users/', () => {
         role: user.role,
         locked: user.locked,
         emailVerified: user.emailVerified,
+        lastSeen: null,
         createdAt: expect.anything(),
       });
     });
@@ -133,12 +134,11 @@ describe('/api/v1/users/', () => {
         id: expect.anything(),
         name: 'NewName',
         email: 'test@email.com',
-        password: expect.anything(),
         locale: 'en-US',
         role: 'USER',
         locked: false,
         emailVerified: false,
-        updatedAt: expect.anything(),
+        lastSeen: null,
         createdAt: expect.anything(),
       });
     });

@@ -1,4 +1,4 @@
-import { isMinor } from './';
+import isMinor from './isMinor.js';
 
 const isAdult = (params: unknown[]) => {
   const minor = isMinor(params);

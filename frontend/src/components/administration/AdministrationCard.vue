@@ -35,7 +35,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { RouteLocationRaw, useRouter } from 'vue-router';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 
 const router = useRouter();
 
