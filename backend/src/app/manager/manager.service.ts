@@ -11,7 +11,10 @@ const campManagerExistsWithUserIdAndCampId = async (
 ): Promise<boolean> => {
   return prisma.campManager
     .findFirst({
-      where: { campId, userId },
+      where: {
+        campId,
+        userId,
+      },
     })
     .then((value) => value !== null);
 };
@@ -29,6 +32,12 @@ const getManagers = async (campId: string) => {
 const getManagerById = async (campId: string, id: string) => {
   return prisma.campManager.findFirst({
     where: { id, campId },
+  });
+};
+
+const getManagerByUserId = async (campId: string, userId: string) => {
+  return prisma.campManager.findFirst({
+    where: { userId, campId },
   });
 };
 
@@ -60,12 +69,17 @@ const resolveManagerInvitations = async (email: string, userId: string) => {
   });
 };
 
-const addManager = async (campId: string, userId: string) => {
+const addManager = async (
+  campId: string,
+  userId: string,
+  expiresAt?: string,
+) => {
   return prisma.campManager.create({
     data: {
       id: ulid(),
       campId,
       userId,
+      expiresAt,
     },
     include: {
       user: true,
@@ -74,17 +88,37 @@ const addManager = async (campId: string, userId: string) => {
   });
 };
 
-const inviteManager = async (campId: string, email: string) => {
+const inviteManager = async (
+  campId: string,
+  email: string,
+  expiresAt?: string,
+) => {
   return prisma.campManager.create({
     data: {
       id: ulid(),
       camp: { connect: { id: campId } },
+      expiresAt,
       invitation: {
         create: {
           id: ulid(),
           email,
         },
       },
+    },
+    include: {
+      invitation: true,
+      user: true,
+    },
+  });
+};
+
+const updateManagerById = async (id: string, expiresAt?: string | null) => {
+  return prisma.campManager.update({
+    where: {
+      id,
+    },
+    data: {
+      expiresAt,
     },
     include: {
       invitation: true,
@@ -145,8 +179,10 @@ export default {
   getManagers,
   getManagerByEmail,
   getManagerById,
+  getManagerByUserId,
   addManager,
   inviteManager,
+  updateManagerById,
   resolveManagerInvitations,
   campManagerExistsWithUserIdAndCampId,
   removeManager,

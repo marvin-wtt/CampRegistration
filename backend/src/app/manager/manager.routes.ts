@@ -19,6 +19,12 @@ router.param(
 
 router.get('/', auth(), guard(campManager), managerController.index);
 router.post('/', auth(), guard(campManager), managerController.store);
+router.patch(
+  '/:managerId',
+  auth(),
+  guard(campManager),
+  managerController.update,
+);
 router.delete(
   '/:managerId',
   auth(),

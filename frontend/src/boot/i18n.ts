@@ -2,7 +2,7 @@ import { defineBoot } from '#q-app/wrappers';
 import { createI18n } from 'vue-i18n';
 import { Quasar } from 'quasar';
 
-import messages from 'src/i18n';
+import { messages, datetimeFormats, numberFormats } from 'src/i18n';
 
 export default defineBoot(({ app }) => {
   const i18n = createI18n({
@@ -10,7 +10,9 @@ export default defineBoot(({ app }) => {
     locale: Quasar.lang.getLocale() ?? 'en',
     fallbackLocale: 'en',
     globalInjection: true,
-    messages: messages,
+    messages,
+    datetimeFormats,
+    numberFormats,
     fallbackWarn: true,
     missingWarn: true,
   });

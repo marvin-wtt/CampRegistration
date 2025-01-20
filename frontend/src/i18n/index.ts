@@ -1,12 +1,3 @@
-import enUS from './en-US';
-import deDE from './de-DE';
-import frFR from './fr-FR';
-
-export default {
-  'en-US': enUS,
-  en: enUS,
-  'de-DE': deDE,
-  de: deDE,
-  'fr-FR': frFR,
-  fr: frFR,
-};
+export { default as messages } from './messages';
+export { default as numberFormats } from './numberFormats';
+export { default as datetimeFormats } from './datetimeFormats';
