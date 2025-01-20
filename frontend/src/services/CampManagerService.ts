@@ -1,6 +1,5 @@
 import { api } from 'boot/axios';
 import type {
-  Camp,
   CampManager,
   CampManagerCreateData,
   CampManagerUpdateData,
@@ -26,7 +25,7 @@ export function useCampManagerService() {
     campId: string,
     id: string,
     data: CampManagerUpdateData,
-  ): Promise<Camp> {
+  ): Promise<CampManager> {
     const response = await api.patch(`camps/${campId}/managers/${id}/`, data);
 
     return response?.data?.data;

@@ -68,12 +68,48 @@
           >
             <q-btn
               v-if="userEmail !== props.row.email"
-              icon="delete"
+              aria-label="actions"
+              icon="more_vert"
+              color="primary"
               round
-              outline
               size="xs"
-              @click="showDeleteDialog(props.row)"
-            />
+            >
+              <q-menu>
+                <q-list style="min-width: 150px">
+                  <q-item
+                    clickable
+                    v-close-popup
+                    @click="showEditDialog(props.row)"
+                  >
+                    <q-item-section avatar>
+                      <q-icon
+                        name="edit"
+                        size="sm"
+                      />
+                    </q-item-section>
+                    <q-item-section>
+                      {{ t('action.edit') }}
+                    </q-item-section>
+                  </q-item>
+                  <q-item
+                    clickable
+                    v-close-popup
+                    class="text-negative"
+                    @click="showDeleteDialog(props.row)"
+                  >
+                    <q-item-section avatar>
+                      <q-icon
+                        name="delete"
+                        size="sm"
+                      />
+                    </q-item-section>
+                    <q-item-section>
+                      {{ t('action.delete') }}
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
           </q-td>
         </q-tr>
       </template>
@@ -88,14 +124,16 @@ import { computed } from 'vue';
 import type {
   CampManager,
   CampManagerCreateData,
+  CampManagerUpdateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import AddCampManagerDialog from 'components/campManagement/settings/access/AddCampManagerDialog.vue';
+import CampManagerCreateDialog from 'components/campManagement/settings/access/CampManagerCreateDialog.vue';
 import { useProfileStore } from 'stores/profile-store';
 import { type QTableColumn } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
@@ -178,13 +216,26 @@ function showAddDialog() {
 
   quasar
     .dialog({
-      component: AddCampManagerDialog,
+      component: CampManagerCreateDialog,
       componentProps: {
         date: date.toISOString(),
       },
     })
     .onOk((data: CampManagerCreateData) => {
       campManagerStore.createData(data);
+    });
+}
+
+function showEditDialog(manager: CampManager) {
+  quasar
+    .dialog({
+      component: CampManagerUpdateDialog,
+      componentProps: {
+        expiresAt: manager.expiresAt,
+      },
+    })
+    .onOk((payload: CampManagerUpdateData) => {
+      campManagerStore.updateData(manager.id, payload);
     });
 }
 
@@ -210,6 +261,8 @@ title: 'Access'
 
 action:
   add: 'Add'
+  delete: 'Delete'
+  edit: 'Edit'
 
 dialog:
   delete:
@@ -241,6 +294,8 @@ title: 'Zugriff'
 
 action:
   add: 'Hinzufügen'
+  delete: 'Löschen'
+  edit: 'Bearbeiten'
 
 dialog:
   delete:
@@ -253,6 +308,10 @@ column:
   name: 'Name'
   role: 'Rolle'
   status: 'Status'
+
+expiresAt:
+  never: 'Nie'
+  expired: 'Abgelaufen'
 
 status:
   accepted: 'Akzeptiert'
@@ -267,6 +326,8 @@ title: 'Accès'
 
 action:
   add: 'Ajouter'
+  delete: 'Suprimer'
+  edit: 'Modifier'
 
 dialog:
   delete:
@@ -279,6 +340,10 @@ column:
   name: 'Nom'
   role: 'Rôle'
   status: 'Statut'
+
+expiresAt:
+  never: 'Jamais'
+  expired: 'Expiré'
 
 status:
   accepted: 'Accepté'

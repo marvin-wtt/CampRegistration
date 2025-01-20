@@ -6,6 +6,7 @@ import { useAuthBus, useCampBus } from 'src/composables/bus';
 import type {
   CampManager,
   CampManagerCreateData,
+  CampManagerUpdateData,
 } from '@camp-registration/common/entities';
 
 export const useCampManagerStore = defineStore('campManager', () => {
@@ -54,17 +55,25 @@ export const useCampManagerStore = defineStore('campManager', () => {
     });
   }
 
-  async function updateData(managerId: string, role: string) {
+  async function updateData(
+    managerId: string,
+    updateData: CampManagerUpdateData,
+  ) {
     const campId = route.params.camp as string;
 
     checkNotNullWithError(campId);
     checkNotNullWithNotification(managerId);
-    checkNotNullWithNotification(role);
 
     await withProgressNotification('delete', async () => {
-      await api.updateCampManager(campId, managerId, {
-        role,
-      });
+      const manager = await api.updateCampManager(
+        campId,
+        managerId,
+        updateData,
+      );
+
+      data.value = data.value?.map((value) =>
+        value.id === manager.id ? manager : value,
+      );
     });
   }
 
