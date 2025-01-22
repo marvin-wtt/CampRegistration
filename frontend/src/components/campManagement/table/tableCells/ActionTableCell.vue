@@ -116,7 +116,7 @@ function accept(): void {
     .onOk(async () => {
       const id = registration.value.id;
       await registrationStore.updateData(id, {
-        waitingList: true,
+        waitingList: false,
       });
     });
 }
