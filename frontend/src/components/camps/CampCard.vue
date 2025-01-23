@@ -47,16 +47,20 @@
           />
           {{ props.camp.minAge }} - {{ props.camp.maxAge }} years
         </div>
-        <div class="col q-col-gutter-sm">
+        <div class="col q-col-gutter-sm row no-wrap">
           <q-icon
             name="language"
             size="sm"
           />
-          <country-icon
+          <div
             v-for="locale in props.camp.countries"
             :key="locale"
-            :locale="locale"
-          />
+          >
+            <country-icon
+              :locale
+              size="xs"
+            />
+          </div>
         </div>
         <div>
           <q-icon

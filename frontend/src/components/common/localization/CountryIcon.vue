@@ -1,5 +1,6 @@
 <template>
   <i
+    :aria-label="props.country ?? props.locale"
     aria-hidden="true"
     role="presentation"
     class="fi country-icon q-icon"

@@ -6,12 +6,11 @@ import type {
 } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useCampBus } from 'src/composables/bus';
 
 export const useCampsStore = defineStore('camps', () => {
   const apiService = useAPIService();
   const bus = useCampBus();
-  const authBus = useAuthBus();
   const {
     data,
     isLoading,
@@ -22,23 +21,15 @@ export const useCampsStore = defineStore('camps', () => {
     checkNotNullWithNotification,
   } = useServiceHandler<Camp[]>('camp');
 
-  authBus.on('logout', () => {
+  // Always fetch again since the permissions could have changed
+  bus.on('create', reload);
+  bus.on('update', reload);
+  bus.on('delete', reload);
+
+  async function reload() {
     reset();
-  });
-
-  bus.on('create', (camp) => {
-    data.value?.push(camp);
-  });
-
-  bus.on('update', (camp) => {
-    data.value = data.value?.map((value) =>
-      value.id === camp.id ? camp : value,
-    );
-  });
-
-  bus.on('delete', (campId) => {
-    data.value = data.value?.filter((camp) => camp.id !== campId);
-  });
+    return fetchData();
+  }
 
   async function fetchData() {
     return lazyFetch(async () => await apiService.fetchCamps());

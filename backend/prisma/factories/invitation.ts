@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
 import prisma from './prisma';
-import { ulid } from 'ulidx';
 import { faker } from '@faker-js/faker/locale/de';
 
 export const InvitationFactory = {
@@ -8,7 +7,6 @@ export const InvitationFactory = {
     data: Partial<Prisma.InvitationCreateInput> = {},
   ): Prisma.InvitationCreateInput => {
     return {
-      id: ulid(),
       email: faker.internet.email(),
       ...data,
     };

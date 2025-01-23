@@ -1,5 +1,4 @@
-import prisma from '../../client.js';
-import { ulid } from '#utils/ulid';
+import prisma from '#client.js';
 import { Camp, CampManager, Invitation, User } from '@prisma/client';
 import { translateObject } from '#utils/translateObject';
 import i18n, { t } from '#core/i18n';
@@ -76,7 +75,6 @@ const addManager = async (
 ) => {
   return prisma.campManager.create({
     data: {
-      id: ulid(),
       campId,
       userId,
       expiresAt,
@@ -95,12 +93,10 @@ const inviteManager = async (
 ) => {
   return prisma.campManager.create({
     data: {
-      id: ulid(),
       camp: { connect: { id: campId } },
       expiresAt,
       invitation: {
         create: {
-          id: ulid(),
           email,
         },
       },

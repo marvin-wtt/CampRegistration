@@ -11,7 +11,7 @@
           v-model="menu"
           :options="[
             { label: t('menu.active'), value: 'active' },
-            { label: t('menu.draft'), value: 'draft' },
+            { label: t('menu.inactive'), value: 'inactive' },
           ]"
           class="my-custom-toggle"
           no-caps
@@ -71,12 +71,12 @@
             </q-tab-panel>
 
             <q-tab-panel
-              name="draft"
+              name="inactive"
               class="q-pa-none"
             >
               <results-list
                 :loading="loading"
-                :camps="draftCamps"
+                :camps="inactiveCamps"
               />
             </q-tab-panel>
           </q-tab-panels>
@@ -88,9 +88,9 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
@@ -101,24 +101,44 @@ import CampCreateDialog from 'components/campManagement/index/CampCreateDialog.v
 const { t } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
+const router = useRouter();
 const profileStore = useProfileStore();
 
-type MenuState = 'active' | 'draft';
+type MenuState = 'active' | 'inactive';
 
 const { user, loading, error } = storeToRefs(profileStore);
 
 const menu = ref<MenuState>(getMenuStateFromQueryParameter());
 
 function getMenuStateFromQueryParameter(): MenuState {
-  const page = route.query.page;
+  const state = route.hash?.substring(1);
 
-  return page && typeof page === 'string' ? (page as MenuState) : 'active';
+  return state && isMenuState(state) ? state : 'active';
 }
 
+function isMenuState(state: string): state is MenuState {
+  const allowed = ['active', 'inactive'];
+
+  return allowed.includes(state);
+}
+
+watch(
+  () => menu.value,
+  (value) => {
+    router.replace({
+      hash: '#' + value,
+    });
+  },
+);
+
 function onCreateCamp() {
-  quasar.dialog({
-    component: CampCreateDialog,
-  });
+  quasar
+    .dialog({
+      component: CampCreateDialog,
+    })
+    .onOk(() => {
+      menu.value = 'inactive';
+    });
 }
 
 const activeCamps = computed<Camp[]>(() => {
@@ -130,7 +150,7 @@ const activeCamps = computed<Camp[]>(() => {
   return camps.filter((value) => value.active).sort(sortCamps);
 });
 
-const draftCamps = computed<Camp[]>(() => {
+const inactiveCamps = computed<Camp[]>(() => {
   if (user.value == undefined) {
     return [];
   }
@@ -154,7 +174,7 @@ actions:
   create: 'Create new'
 
 menu:
-  draft: 'Draft'
+  inactive: 'Inactive'
   active: 'Active'
 </i18n>
 
@@ -165,7 +185,7 @@ actions:
   create: 'Neu erstellen'
 
 menu:
-  draft: 'Entwurf'
+  inactive: 'Inaktiv'
   active: 'Aktiv'
 </i18n>
 
@@ -176,7 +196,7 @@ actions:
   create: 'Créer un nouveau'
 
 menu:
-  draft: 'Brouillon'
+  inactive: 'Inactif'
   active: 'Active'
 </i18n>
 

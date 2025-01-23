@@ -1,4 +1,4 @@
-import prisma from '../../client.js';
+import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';

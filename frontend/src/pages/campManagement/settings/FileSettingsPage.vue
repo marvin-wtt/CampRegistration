@@ -1,14 +1,14 @@
 <template>
-  <page-state-handler :error="error">
+  <page-state-handler :error>
     <q-table
       v-model:selected="selected"
       v-model:pagination="pagination"
-      :loading="isLoading"
+      :loading
       :title="t('title')"
       class="absolute fit"
       flat
-      :columns="columns"
-      :rows="rows"
+      :columns
+      :rows
       selection="multiple"
       virtual-scroll
       :rows-per-page-options="[0]"
@@ -153,7 +153,7 @@ const rows = computed(() => {
   return files.map((file) => mapColumnData(file));
 });
 
-const isLoading = computed<boolean>(() => {
+const loading = computed<boolean>(() => {
   return campStore.isLoading || campFileStore.isLoading;
 });
 
@@ -195,9 +195,7 @@ function deleteFiles() {
 }
 
 function downloadFiles() {
-  selected.value.forEach((file) =>
-    campFileStore.downloadFile(file, campStore.data?.id),
-  );
+  selected.value.forEach((file) => campFileStore.downloadFile(file));
 }
 
 function copyLink(url: string) {

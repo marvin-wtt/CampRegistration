@@ -1,5 +1,4 @@
-import prisma from '../../client.js';
-import { ulid } from '#utils/ulid';
+import prisma from '#client.js';
 
 const getRoomById = async (campId: string, id: string) => {
   return prisma.room.findFirst({
@@ -22,14 +21,11 @@ const createRoom = async (
 ) => {
   return prisma.room.create({
     data: {
-      id: ulid(),
       name,
       campId,
       beds: {
         createMany: {
-          data: Array.from({ length: capacity }).map(() => ({
-            id: ulid(),
-          })),
+          data: Array.from({ length: capacity }).map(() => ({})),
         },
       },
     },
