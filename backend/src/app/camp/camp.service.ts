@@ -105,7 +105,8 @@ const createCamp = async (
   // Copy templates from reference camp with new id
   const templateData = templates.map((template) => ({
     ...template,
-    // Override camp id
+    // Override id and camp id
+    id: undefined,
     campId: undefined,
   }));
 
