@@ -8,8 +8,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marvin-wtt/CampRegistration",
+    "url": "https://github.com/marvin-wtt/CampRegistration.git",
     "directory": "frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/marvin-wtt/CampRegistration/issues"
   },
   "scripts": {
     "postinstall": "quasar prepare",

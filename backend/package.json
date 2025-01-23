@@ -38,8 +38,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marvin-wtt/CampRegistration",
+    "url": "https://github.com/marvin-wtt/CampRegistration.git",
     "directory": "backend"
+  },
+  "bugs": {
+    "url": "https://github.com/marvin-wtt/CampRegistration/issues"
   },
   "imports": {
     "#app/*": "./src/app/*.js",
