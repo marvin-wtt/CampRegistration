@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./build/ && rimraf ./node_modules/",
-    "build": "prisma generate && tsc && tsc-alias && npm run build:views",
+    "build": "prisma generate && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
     "build:views": "mkdirp ./build/views/emails/ && mjml ./src/views/templates/emails/* -o ./build/views/emails/",
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
@@ -27,7 +27,7 @@
     "dev": "npm run dev:views & npm run dev:serve",
     "dev:views": "mjml --watch ./src/views/templates/emails/* -o ./src/views/emails/ ",
     "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
-    "production": "NODE_ENV=production node build/index.js"
+    "production": "NODE_ENV=production node build/entry.cjs"
   },
   "prisma": {
     "seed": "tsx prisma/seeders/index.ts"
