@@ -1,5 +1,5 @@
 import { Camp, type Prisma } from '@prisma/client';
-import prisma from '../../client.js';
+import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import registrationService from '#app/registration/registration.service';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
@@ -97,7 +97,7 @@ const createCamp = async (
   const fileData = files.map((file) => ({
     ...file,
     // Use id from file map if present
-    id: file.id ? (fileIdMap.get(file.id) ?? ulid()) : ulid(),
+    id: file.id ? fileIdMap.get(file.id) : undefined,
     // Override camp id
     campId: undefined,
   }));
@@ -105,18 +105,16 @@ const createCamp = async (
   // Copy templates from reference camp with new id
   const templateData = templates.map((template) => ({
     ...template,
-    id: ulid(),
     // Override camp id
     campId: undefined,
   }));
 
   return prisma.camp.create({
     data: {
-      id: ulid(),
       freePlaces,
       ...data,
       form,
-      campManager: { create: { userId, id: ulid() } },
+      campManager: { create: { userId } },
       templates: { createMany: { data: templateData } },
       files: { createMany: { data: fileData } },
     },
