@@ -1,4 +1,4 @@
-import {
+import type {
   QCheckboxProps,
   QInputProps,
   QOptionGroupProps,

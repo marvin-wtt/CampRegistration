@@ -1,24 +1,39 @@
 <template>
   <q-page
-    padding
-    class="fit row justify-center content-center"
+    class="row justify-center"
+    :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
-    <!-- content -->
-    <q-card class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3">
-      <q-card-section>
-        <a class="text-h4">
+    <q-card
+      class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
+      :flat="quasar.screen.lt.sm"
+    >
+      <q-form
+        class="fit column justify-center no-wrap"
+        @submit="login"
+      >
+        <q-card-section class="text-h4 text-bold text-center">
           {{ t('title') }}
-        </a>
-      </q-card-section>
-      <q-form @submit="login">
+        </q-card-section>
+
+        <q-card-section class="row justify-center">
+          <q-avatar
+            icon="account_circle"
+            color="primary"
+            text-color="white"
+            size="100px"
+          />
+        </q-card-section>
+
         <q-card-section class="q-gutter-md">
           <q-input
             v-model="email"
             type="email"
             autocomplete="username"
+            :disable="loading"
             :rules="[
               (val: string) => !!val || t('fields.email.rules.required'),
             ]"
+            hide-bottom-space
             :label="t('fields.email.label')"
             outlined
             rounded
@@ -30,12 +45,14 @@
 
           <q-input
             v-model="password"
+            :label="t('fields.password.label')"
             type="password"
             autocomplete="current-password"
+            :disable="loading"
             :rules="[
               (val: string) => !!val || t('fields.password.rules.required'),
             ]"
-            :label="t('fields.password.label')"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -44,18 +61,18 @@
             </template>
           </q-input>
 
-          <div class="row justify-between">
+          <div class="row justify-between reverse-wrap">
             <q-checkbox
               v-model="remember"
               :label="t('fields.remember')"
-              class="col-shrink"
               :disable="loading"
+              class="col-shrink q-pa-sm"
             />
 
             <router-link
               :to="{ name: 'forgot-password' }"
               style="text-decoration: none; color: inherit"
-              class="col-shrink flex justify-center content-center"
+              class="col-shrink flex justify-center content-center q-pa-sm text-primary"
             >
               {{ t('actions.forgot_password') }}
             </router-link>
@@ -64,12 +81,12 @@
 
         <q-card-actions>
           <q-btn
-            :loading="loading"
+            :label="t('actions.login')"
             type="submit"
+            :loading
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.login')"
             rounded
           />
         </q-card-actions>
@@ -80,8 +97,6 @@
         >
           {{ error }}
         </q-card-section>
-
-        <q-separator spaced />
 
         <q-card-section class="text-center">
           <q-btn
@@ -105,13 +120,15 @@ import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
+import { useQuasar } from 'quasar';
 
+const quasar = useQuasar();
 const { t } = useI18n();
 const route = useRoute();
 
 const email = ref<string>('');
 const password = ref<string>('');
-const remember = ref<boolean>(false);
+const remember = ref<boolean>(route.query.remember === 'true');
 
 const authStore = useAuthStore();
 const { loading } = storeToRefs(authStore);
@@ -137,6 +154,7 @@ function init() {
     email.value = queryEmail;
   }
 }
+
 init();
 
 function login() {

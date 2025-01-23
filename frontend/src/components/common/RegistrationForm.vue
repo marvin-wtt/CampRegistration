@@ -3,6 +3,7 @@
     v-if="model"
     id="survey"
     :model="model"
+    data-test="registration-form"
   />
 </template>
 
@@ -34,9 +35,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  data: undefined,
   moderation: false,
-  files: undefined,
 });
 
 const emit = defineEmits<{
@@ -168,6 +167,7 @@ function createModel(campId: string, form: object): SurveyModel {
     try {
       await props.submitFn(campId, registration);
       options.showDataSavingSuccess();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e: unknown) {
       options.showSaveError('Error');
     }

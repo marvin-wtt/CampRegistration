@@ -10,7 +10,7 @@
             to="/"
             style="text-decoration: none; color: inherit"
           >
-            {{ t('app_name') }}
+            {{ title }}
           </router-link>
         </q-toolbar-title>
 
@@ -62,28 +62,39 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import { useAuthStore } from 'stores/auth-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
+const profileStore = useProfileStore();
+const { user } = storeToRefs(profileStore);
+const campDetailStore = useCampDetailsStore();
+const { data: camp } = storeToRefs(campDetailStore);
 
 useMeta(() => {
   return {
-    title: 'Camps',
+    title: camp.value ? to(camp.value.name) : t('camps'),
     titleTemplate: (title) => `${title} | ${t('app_name')}`,
   };
 });
 
-if (!authStore.user) {
+const title = computed<string>(() => {
+  return camp.value ? to(camp.value.name) : t('app_name');
+});
+
+if (!profileStore.user) {
   authStore.init();
 }
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 function logout() {

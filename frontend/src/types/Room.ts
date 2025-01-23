@@ -6,10 +6,10 @@ import type {
 
 export interface Roommate extends Identifiable {
   name: string;
-  age?: number;
-  gender?: string;
-  country?: string;
-  participant?: boolean;
+  age?: number | undefined;
+  gender?: string | undefined;
+  country?: string | undefined;
+  participant?: boolean | undefined;
 }
 
 interface BedWithRoommate extends Omit<Bed, 'registrationId'> {

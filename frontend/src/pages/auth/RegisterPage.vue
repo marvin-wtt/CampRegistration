@@ -1,21 +1,35 @@
 <template>
   <q-page
-    padding
-    class="fit row justify-center content-center"
+    class="row justify-center"
+    :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
-    <!-- content -->
-    <q-card class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3">
-      <q-card-section>
-        <a class="text-h4">
+    <q-card
+      class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
+      :flat="quasar.screen.lt.sm"
+    >
+      <q-form
+        class="fit column justify-center no-wrap"
+        @submit="register"
+      >
+        <q-card-section class="text-h4 text-bold text-center">
           {{ t('title') }}
-        </a>
-      </q-card-section>
-      <q-form @submit="register">
+        </q-card-section>
+
+        <q-card-section class="row justify-center">
+          <q-avatar
+            icon="how_to_reg"
+            color="primary"
+            text-color="white"
+            size="100px"
+          />
+        </q-card-section>
+
         <q-card-section class="q-gutter-md">
           <q-input
             v-model="name"
-            :rules="[(val?: string) => !!val || t('field.name.rule.required')]"
             :label="t('field.name.label')"
+            :rules="[(val?: string) => !!val || t('field.name.rule.required')]"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -26,10 +40,11 @@
 
           <q-input
             v-model="email"
+            :label="t('field.email.label')"
             type="email"
             autocomplete="email"
             :rules="[(val?: string) => !!val || t('field.email.rule.required')]"
-            :label="t('field.email.label')"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -40,10 +55,11 @@
 
           <q-input
             v-model="password"
+            :label="t('field.password.label')"
             type="password"
             autocomplete="new-password"
             :rules="passwordRules"
-            :label="t('field.password.label')"
+            hide-bottom-space
             outlined
             rounded
           >
@@ -89,8 +105,6 @@
           {{ error }}
         </q-card-section>
 
-        <q-separator spaced />
-
         <q-card-section class="text-center">
           <q-btn
             color="primary"
@@ -112,7 +126,9 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
+import { useQuasar } from 'quasar';
 
+const quasar = useQuasar();
 const { t } = useI18n();
 
 const name = ref<string>('');
@@ -158,7 +174,7 @@ const passwordRules = [
       count: passwordRequirements.upperCase,
     }),
   (val: string) =>
-    (val.match(/[!@#$%^&*()\-_=+\[\\\]{}|;:",.<>?]/g) || []).length >=
+    (val.match(/[!@#$%^&*()\-_=+[\\\]{}|;:",.<>?]/g) || []).length >=
       passwordRequirements.symbol ||
     t('field.password.rule.symbol', { count: passwordRequirements.symbol }),
   (val: string) =>

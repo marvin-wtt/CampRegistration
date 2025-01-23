@@ -1,5 +1,8 @@
-import { QNotifyCreateOptions, useQuasar } from 'quasar';
-import { QNotifyUpdateOptions } from 'quasar';
+import {
+  type QNotifyCreateOptions,
+  type QNotifyUpdateOptions,
+  useQuasar,
+} from 'quasar';
 import { hasMessage } from 'src/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
@@ -161,6 +164,7 @@ function useServiceNotifications(storeName?: string) {
         return async (_: string, fn: () => Promise<T>) => {
           try {
             return await fn();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (ignored: unknown) {
             return undefined;
           }

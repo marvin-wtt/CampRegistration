@@ -5,13 +5,16 @@ import { useTableTemplateService } from 'src/services/TableTemplateService';
 import { useUserService } from 'src/services/UserService';
 import { useRoomService } from 'src/services/RoomService';
 import { useCampManagerService } from 'src/services/CampManagerService';
-import axios, { AxiosError } from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
+import { useProfileService } from 'src/services/ProfileService';
+import { useTotpService } from 'src/services/TotpService';
 
 export function useAPIService() {
   return {
     ...useAuthService(),
+    ...useProfileService(),
     ...useUserService(),
     ...useCampService(),
     ...useCampManagerService(),
@@ -20,6 +23,7 @@ export function useAPIService() {
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
+    ...useTotpService(),
   };
 }
 

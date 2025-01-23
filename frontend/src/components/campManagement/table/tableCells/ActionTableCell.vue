@@ -51,7 +51,7 @@ import EditResultComponent from 'components/campManagement/table/dialogs/EditRes
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
-import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { Registration } from '@camp-registration/common/entities';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
@@ -116,7 +116,7 @@ function accept(): void {
     .onOk(async () => {
       const id = registration.value.id;
       await registrationStore.updateData(id, {
-        waitingList: true,
+        waitingList: false,
       });
     });
 }

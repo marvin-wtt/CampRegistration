@@ -11,17 +11,16 @@ const managerResource = (
 ): CampManagerResource => {
   const { user, invitation } = manager;
 
-  const name: string | null = user ? user.name : null;
   const email: string = invitation ? invitation.email : (user?.email ?? '');
-  const status: string = user ? 'accepted' : 'pending';
   const role = 'manager';
 
   return {
     id: manager.id,
-    name,
+    name: user ? user.name : null,
     email,
-    status,
+    status: user ? 'accepted' : 'pending',
     role,
+    expiresAt: manager.expiresAt?.toISOString() ?? null,
   };
 };
 

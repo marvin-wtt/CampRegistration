@@ -10,6 +10,7 @@ router.use(authLimiter);
 // Route definitions
 router.post('/register', guest(), authController.register);
 router.post('/login', authController.login);
+router.post('/verify-otp', authController.verifyOTP);
 router.post('/logout', auth(), authController.logout);
 router.post('/refresh-tokens', authController.refreshTokens);
 router.post('/forgot-password', guest(), authController.forgotPassword);

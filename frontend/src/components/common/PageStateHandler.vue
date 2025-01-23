@@ -81,7 +81,7 @@ const pageError = computed<boolean>(() => {
   return errorMessage.value != null;
 });
 
-const errorMessage = computed<string | null>(() => {
+const errorMessage = computed<string | undefined>(() => {
   return props.error
     ? Array.isArray(props.error)
       ? props.error[0]

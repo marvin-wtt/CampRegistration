@@ -45,7 +45,7 @@ const queryUsers = async () => {
 };
 
 const getUserByIdWithCamps = (id: string) => {
-  return prisma.user.findUnique({
+  return prisma.user.findUniqueOrThrow({
     where: { id },
     include: {
       camps: {
@@ -57,6 +57,12 @@ const getUserByIdWithCamps = (id: string) => {
 
 const getUserById = async (id: string): Promise<User | null> => {
   return prisma.user.findUnique({
+    where: { id },
+  });
+};
+
+const getUserByIdOrFail = async (id: string): Promise<User> => {
+  return prisma.user.findUniqueOrThrow({
     where: { id },
   });
 };
@@ -124,6 +130,7 @@ export default {
   createUser,
   queryUsers,
   getUserById,
+  getUserByIdOrFail,
   getUserByIdWithCamps,
   getUserByEmail,
   updateUserById,

@@ -3,7 +3,8 @@ import type {
   ItemValue,
   Question,
 } from 'survey-core';
-const { Serializer } = await import('survey-core');
+import pkg from 'survey-core';
+const { Serializer } = pkg;
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];
@@ -67,7 +68,7 @@ const roleQuestion: RoleQuestionConfiguration = {
 
     // Allow user to override the initial value with custom labels
     const defaultValues = this.initialChoices.filter(
-      (item) => !value?.some((it) => it.value === item.value) ?? true,
+      (item) => !value.some((it) => it.value === item.value),
     );
     question.questionWrapper.choices = [...defaultValues, ...value];
   },

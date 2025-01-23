@@ -19,4 +19,5 @@ export * from './User.js';
 // Types
 export * from './AuthTokens.js';
 export * from './Authentication.js';
+export * from './Totp.js';
 export * from './SurveyJSCampData.js';

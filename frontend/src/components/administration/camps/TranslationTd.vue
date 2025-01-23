@@ -27,11 +27,11 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { computed } from 'vue';
-import { Translatable } from '@camp-registration/common/entities';
+import type { Translatable } from '@camp-registration/common/entities';
 
 const { to } = useObjectTranslation();
 

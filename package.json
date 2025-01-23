@@ -2,7 +2,10 @@
   "name": "camp-registration",
   "version": "0.0.1",
   "scripts": {
-    "depoly": "./post-deploy.sh"
+    "depoly": "./post-deploy.sh",
+    "build": "npm run build -ws --if-present",
+    "migrate": "npm run migrate -ws --if-present",
+    "build-and-migrate": "run-s build migrate"
   },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
@@ -15,9 +18,10 @@
   "workspaces": [
     "common",
     "backend",
-    "frontend"
+    "frontend",
+    "e2e"
   ],
-  "dependencies": {
-    "zod-validation-error": "^3.4.0"
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
   }
 }

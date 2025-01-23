@@ -34,7 +34,7 @@ const store = catchRequestAsync(async (req, res) => {
     locked,
   });
 
-  res.status(httpStatus.CREATED).json(resource(user));
+  res.status(httpStatus.CREATED).json(resource(userResource(user)));
 });
 
 const update = catchRequestAsync(async (req, res) => {
@@ -44,7 +44,7 @@ const update = catchRequestAsync(async (req, res) => {
   } = await validateRequest(req, validator.update);
 
   if (password || locked) {
-    await authService.logoutAllDevices(userId);
+    await authService.revokeAllUserTokens(userId);
   }
 
   const user = await userService.updateUserById(userId, {

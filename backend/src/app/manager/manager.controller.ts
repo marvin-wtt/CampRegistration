@@ -24,7 +24,7 @@ const index = catchRequestAsync(async (req, res) => {
 const store = catchRequestAsync(async (req, res) => {
   const camp = routeModel(req.models.camp);
   const {
-    body: { email },
+    body: { email, expiresAt },
   } = await validateRequest(req, validator.store);
 
   const existingCampManager = await managerService.getManagerByEmail(
@@ -42,12 +42,26 @@ const store = catchRequestAsync(async (req, res) => {
 
   const manager =
     user === null
-      ? await managerService.inviteManager(camp.id, email)
-      : await managerService.addManager(camp.id, user.id);
+      ? await managerService.inviteManager(camp.id, email, expiresAt)
+      : await managerService.addManager(camp.id, user.id, expiresAt);
 
   await catchAndResolve(managerService.sendManagerInvitation(camp, manager));
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
+});
+
+const update = catchRequestAsync(async (req, res) => {
+  const manager = routeModel(req.models.manager);
+  const {
+    body: { expiresAt },
+  } = await validateRequest(req, validator.update);
+
+  const updatedManager = await managerService.updateManagerById(
+    manager.id,
+    expiresAt,
+  );
+
+  res.status(httpStatus.OK).json(resource(campManagerResource(updatedManager)));
 });
 
 const destroy = catchRequestAsync(async (req, res) => {
@@ -71,5 +85,6 @@ const destroy = catchRequestAsync(async (req, res) => {
 export default {
   index,
   store,
+  update,
   destroy,
 };

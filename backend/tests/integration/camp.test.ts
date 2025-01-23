@@ -363,7 +363,7 @@ describe('/api/v1/camps', () => {
         .post(`/api/v1/camps/`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(201);
+        .expect(201);
 
       // Test response
       await assertCampCreated(data, body);
@@ -592,7 +592,7 @@ describe('/api/v1/camps', () => {
 
       it('should replace file URLs in the form', async () => {
         const fileUrl = (id: string): string => {
-          return `http://localhost:9000/files/${id}`;
+          return `http://localhost:3000/files/${id}`;
         };
 
         const createForm = (fileId1: string, fileId2: string) => {
@@ -760,7 +760,7 @@ describe('/api/v1/camps', () => {
         .patch(`/api/v1/camps/${camp.id}`)
         .send(dataA)
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(200);
+        .expect(200);
 
       expect(bodyA).toHaveProperty('data.freePlaces', 8);
 
@@ -817,7 +817,7 @@ describe('/api/v1/camps', () => {
             .patch(`/api/v1/camps/${camp.id}`)
             .send(data)
             .auth(accessToken, { type: 'bearer' })
-            .expectOrPrint(expected);
+            .expect(expected);
         },
       );
     });

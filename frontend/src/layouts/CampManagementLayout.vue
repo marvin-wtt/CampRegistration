@@ -59,17 +59,29 @@
       @mouseover="miniState = false"
     >
       <q-list padding>
-        <navigation-item
+        <template
           v-for="item in filteredItems"
           :key="item.name"
-          :name="item.name"
-          :label="item.label"
-          :icon="item.icon"
-          :to="item.to"
-          :separated="item.separated"
-          :preview="item.preview"
-          :children="item.children"
-        />
+        >
+          <navigation-item
+            v-if="item.header"
+            :header="item.header"
+            :name="item.name"
+            :label="item.label"
+            :separated="item.separated"
+            :preview="item.preview"
+          />
+          <navigation-item
+            v-else
+            :name="item.name"
+            :label="item.label"
+            :icon="item.icon"
+            :to="item.to"
+            :separated="item.separated"
+            :preview="item.preview"
+            :children="item.children"
+          />
+        </template>
       </q-list>
     </q-drawer>
 
@@ -93,9 +105,11 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -103,14 +117,15 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(authStore);
+const { user } = storeToRefs(profileStore);
 
 async function init() {
-  if (!authStore.user) {
+  if (!user.value) {
     // Fetch user instead of init to force redirect on error
-    await authStore.fetchUser();
+    await profileStore.fetchProfile();
   }
   if (route.params.camp) {
     await campDetailStore.fetchData();
@@ -127,7 +142,7 @@ const title = computed(() => {
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
@@ -140,17 +155,7 @@ useMeta(() => {
 const drawer = ref<boolean>(false);
 const miniState = ref<boolean>(true);
 
-interface NavigationItem {
-  name: string;
-  to?: string | object;
-  label?: string;
-  icon?: string;
-  preview?: boolean;
-  separated?: boolean;
-  children?: NavigationItem[];
-}
-
-const items: NavigationItem[] = [
+const items: NavigationItemProps[] = [
   {
     name: 'participants',
     label: t('participants'),
@@ -181,7 +186,7 @@ const items: NavigationItem[] = [
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
-    to: { name: 'settings' },
+    to: { name: 'management.settings' },
     separated: true,
     children: [
       {
@@ -212,7 +217,7 @@ const items: NavigationItem[] = [
   },
 ];
 
-const filteredItems = computed<NavigationItem[]>(() => {
+const filteredItems = computed<NavigationItemProps[]>(() => {
   if (dev.value) {
     return items;
   }
