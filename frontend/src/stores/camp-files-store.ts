@@ -24,7 +24,6 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     withProgressNotification,
     withErrorNotification,
     checkNotNullWithNotification,
-    checkNotNullWithError,
     queryParam,
     lazyFetch,
   } = useServiceHandler<ServiceFile[]>('campFiles');
@@ -33,7 +32,12 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     reset();
   });
 
-  campBus.on('change', () => {
+  campBus.on('change', (_camp, oldCamp) => {
+    // Prevent reset when this is the initial page load
+    if (!oldCamp) {
+      return;
+    }
+
     reset();
   });
 
@@ -47,8 +51,8 @@ export const useCampFilesStore = defineStore('campFiles', () => {
 
   async function createEntry(
     createData: ServiceFileCreateData,
-    options: { withoutNotifications: boolean },
-  ): Promise<ServiceFile | undefined> {
+    options?: { withoutNotifications: boolean },
+  ): Promise<ServiceFile> {
     const campId = queryParam('camp');
 
     const createFn = async () => {
@@ -59,7 +63,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
       return file;
     };
 
-    return options.withoutNotifications
+    return options?.withoutNotifications
       ? createFn()
       : withProgressNotification('create', createFn);
   }
@@ -78,12 +82,11 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     });
   }
 
-  async function downloadFile(file: ServiceFile, campId?: string) {
-    campId = campId ?? (route.params.camp as string | undefined);
-    const cid = checkNotNullWithError(campId);
+  async function downloadFile(file: ServiceFile) {
+    const campId = queryParam('camp');
 
     await withErrorNotification('download', async () => {
-      const blob = await apiService.downloadCampFile(cid, file.id);
+      const blob = await apiService.downloadCampFile(campId, file.id);
 
       exportFile(file.name, blob, {
         mimeType: file.type,

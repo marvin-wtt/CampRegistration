@@ -109,7 +109,7 @@ async function saveFile(file: File): Promise<string> {
 
   // When file is selected via custom picker, then the file is already present on the server
   if ('id' in file && typeof file.id === 'string') {
-    return campFileStore.getUrl(file.id, campId);
+    return campFileStore.getUrl(file.id);
   }
 
   const newFile = await campFileStore.createEntry({
@@ -119,7 +119,7 @@ async function saveFile(file: File): Promise<string> {
     accessLevel: 'public',
   });
 
-  return campFileStore.getUrl(newFile.id, campId);
+  return campFileStore.getUrl(newFile.id);
 }
 </script>
 
