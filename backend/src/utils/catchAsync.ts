@@ -1,13 +1,8 @@
-import { RequestHandler } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
 // TODO Can be removed with express v5.x
-export const catchRequestAsync =
-  (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-  };
 
 export const catchMiddlewareAsync =
   (fn: (req: Request, res: Response) => Promise<void> | void) =>
