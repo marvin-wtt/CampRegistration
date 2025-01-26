@@ -18,22 +18,26 @@ declare global {
       role: string;
     }
 
+    interface Models {
+      user?: UserModel;
+      camp?: Camp;
+      registration?: Registration;
+      tableTemplate?: TableTemplate;
+      manager?: CampManager;
+      room?: Room & { beds: Bed[] };
+      bed?: Bed;
+      file?: File;
+    }
+
     interface Request {
       user?: AuthUser;
-      models: {
-        user?: UserModel;
-        camp?: Camp;
-        registration?: Registration;
-        tableTemplate?: TableTemplate;
-        manager?: CampManager;
-        room?: Room & { beds: Bed[] };
-        bed?: Bed;
-        file?: File;
-      };
+      models: Models;
 
       validate: <T extends AnyZodObject>(
         schema: T,
       ) => Promise<Readonly<z.infer<T>>>;
+
+      model: <K extends keyof Models>(name: K) => Models[K];
     }
   }
 }
