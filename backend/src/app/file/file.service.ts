@@ -1,4 +1,4 @@
-import prisma from '../../client.js';
+import prisma from '#client.js';
 import { File, Prisma } from '@prisma/client';
 import config from '#config/index';
 import fs from 'fs';
@@ -26,7 +26,6 @@ const mapFields = (
   accessLevel?: string,
 ): Prisma.FileCreateInput => {
   return {
-    id: ulid(),
     type: file.mimetype,
     originalName: name ?? file.originalname,
     name: file.filename,
@@ -77,7 +76,6 @@ const createManyModelFile = async (
     return {
       ...file,
       ...modelData,
-      id: ulid(),
       createdAt: undefined,
     };
   });

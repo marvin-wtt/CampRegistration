@@ -1,16 +1,15 @@
-import { catchRequestAsync } from '#utils/catchAsync';
 import { routeModel, verifyModelExists } from '#utils/verifyModel';
 import fileService from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { collection, resource } from '#core/resource';
-import { Request } from 'express';
+import { type Request, type Response } from 'express';
 import fileResource from './file.resource.js';
-import { File } from '@prisma/client';
+import type { File } from '@prisma/client';
 import validator from './file.validation.js';
 import { validateRequest } from '#core/validation/request';
 
-const stream = catchRequestAsync(async (req, res) => {
+const stream = async (req: Request, res: Response) => {
   const {
     query: { download },
   } = await validateRequest(req, validator.stream);
@@ -28,15 +27,15 @@ const stream = catchRequestAsync(async (req, res) => {
   );
 
   fileStream.pipe(res); // Pipe the file stream to the response
-});
+};
 
-const show = catchRequestAsync(async (req, res) => {
+const show = async (req: Request, res: Response) => {
   const file = routeModel(req.models.file);
 
   res.status(httpStatus.OK).json(fileResource(file));
-});
+};
 
-const index = catchRequestAsync(async (req, res) => {
+const index = async (req: Request, res: Response) => {
   const {
     query: { page, name, type },
   } = await validateRequest(req, validator.index);
@@ -59,9 +58,9 @@ const index = catchRequestAsync(async (req, res) => {
 
   const response = collection(data.map((value) => fileResource(value)));
   res.status(httpStatus.OK).json(response);
-});
+};
 
-const store = catchRequestAsync(async (req, res) => {
+const store = async (req: Request, res: Response) => {
   const {
     body: { accessLevel, field, name },
   } = await validateRequest(req, validator.store);
@@ -82,15 +81,15 @@ const store = catchRequestAsync(async (req, res) => {
 
   const response = resource(fileResource(data));
   res.status(httpStatus.CREATED).json(response);
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const file = routeModel(req.models.file);
 
   await fileService.deleteFile(file.id);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
 interface ModelData {
   id: string;

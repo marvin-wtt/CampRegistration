@@ -1,4 +1,3 @@
-import { catchRequestAsync } from '#utils/catchAsync';
 import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
 import registrationService from './registration.service.js';
@@ -8,14 +7,15 @@ import { requestLocale } from '#utils/requestLocale';
 import { catchAndResolve } from '#utils/promiseUtils';
 import { validateRequest } from '#core/validation/request';
 import validator from './registration.validation.js';
+import { type Request, type Response } from 'express';
 
-const show = catchRequestAsync(async (req, res) => {
+const show = async (req: Request, res: Response) => {
   const registration = routeModel(req.models.registration);
 
   res.json(resource(registrationResource(registration)));
-});
+};
 
-const index = catchRequestAsync(async (req, res) => {
+const index = async (req: Request, res: Response) => {
   const {
     params: { campId },
   } = await validateRequest(req, validator.index);
@@ -24,9 +24,9 @@ const index = catchRequestAsync(async (req, res) => {
   const resources = registrations.map((value) => registrationResource(value));
 
   res.json(collection(resources));
-});
+};
 
-const store = catchRequestAsync(async (req, res) => {
+const store = async (req: Request, res: Response) => {
   const {
     body: { data, locale: bodyLocale },
   } = await validateRequest(req, validator.store);
@@ -57,9 +57,9 @@ const store = catchRequestAsync(async (req, res) => {
   res
     .status(httpStatus.CREATED)
     .json(resource(registrationResource(registration)));
-});
+};
 
-const update = catchRequestAsync(async (req, res) => {
+const update = async (req: Request, res: Response) => {
   const {
     body: { data, waitingList },
     params: { registrationId },
@@ -83,16 +83,16 @@ const update = catchRequestAsync(async (req, res) => {
   }
 
   res.json(resource(registrationResource(registration)));
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
   const registration = routeModel(req.models.registration);
 
   await registrationService.deleteRegistration(camp, registration);
 
   res.status(httpStatus.NO_CONTENT).send();
-});
+};
 
 export default {
   index,

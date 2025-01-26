@@ -13,7 +13,7 @@ datasource db {
 }
 
 model User {
-  id               String    @id @unique(map: "users_id_unique") @db.Char(26)
+  id               String    @id @unique(map: "users_id_unique") @default(ulid()) @db.Char(26)
   name             String    @db.VarChar(255)
   email            String    @unique(map: "users_email_unique") @db.VarChar(255)
   emailVerified    Boolean   @default(false) @map("email_verified")
@@ -39,7 +39,7 @@ enum Role {
 }
 
 model Camp {
-  id              String    @id @unique(map: "camps_id_unique") @db.Char(26)
+  id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
   active          Boolean
   public          Boolean
   /// ![Array<string>]
@@ -80,7 +80,7 @@ model Camp {
 }
 
 model CampManager {
-  id           String    @id @unique(map: "camp_managers_id_unique") @db.Char(26)
+  id           String    @id @unique(map: "camp_managers_id_unique") @default(ulid()) @db.Char(26)
   campId       String    @map("camp_id") @db.Char(26)
   userId       String?   @map("user_id") @db.Char(26)
   invitationId String?   @map("invitation_id") @db.Char(26)
@@ -97,16 +97,15 @@ model CampManager {
 }
 
 model Invitation {
-  id    String @id @unique(map: "invitations_id_unique") @db.Char(26)
+  id    String @id @unique(map: "invitations_id_unique") @default(ulid()) @db.Char(26)
   email String @db.VarChar(255)
-
   campManager CampManager[]
 
   @@map("camp_manager_invitations")
 }
 
 model Registration {
-  id                  String                @id @unique(map: "registrations_id_unique") @db.Char(26)
+  id                  String                @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
   campId              String                @map("camp_id") @db.Char(26)
   /// [GenericObject]
   data                Json                  @db.Json
@@ -125,7 +124,7 @@ model Registration {
 }
 
 model Room {
-  id     String @id @unique(map: "rooms_id_unique") @db.Char(26)
+  id     String @id @unique(map: "rooms_id_unique") @default(ulid()) @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
   /// [StringOrTranslation]
   name   Json   @db.Json
@@ -137,7 +136,7 @@ model Room {
 }
 
 model Bed {
-  id             String  @id @unique @db.Char(26)
+  id             String  @id @unique @default(ulid()) @db.Char(26)
   roomId         String  @map("room_id") @db.Char(26)
   registrationId String? @unique(map: "beds_registration_id_unique") @map("registration_id") @db.Char(26)
 
@@ -148,7 +147,7 @@ model Bed {
 }
 
 model TableTemplate {
-  id     String @id @unique(map: "table_templates_id_unique") @db.Char(26)
+  id     String @id @unique(map: "table_templates_id_unique") @default(ulid()) @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
   /// [TableTemplates]
   data   Json   @db.Json
@@ -182,7 +181,7 @@ enum TokenType {
 }
 
 model File {
-  id              String   @id @unique(map: "files_id_unique") @db.Char(26)
+  id              String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
   campId          String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
   registrationId  String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
   name            String

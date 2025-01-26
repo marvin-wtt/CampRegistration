@@ -1,5 +1,4 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from '#utils/catchAsync';
 import authService from '#app/auth/auth.service';
 import userService from './user.service.js';
 import { routeModel } from '#utils/verifyModel';
@@ -7,20 +6,21 @@ import { collection, resource } from '#core/resource';
 import userResource from './user.resource.js';
 import { validateRequest } from '#core/validation/request';
 import validator from './user.validation.js';
+import { type Request, type Response } from 'express';
 
-const index = catchRequestAsync(async (_req, res) => {
+const index = async (_req: Request, res: Response) => {
   const users = await userService.queryUsers();
 
   res.json(collection(users.map(userResource)));
-});
+};
 
-const show = catchRequestAsync(async (req, res) => {
+const show = async (req: Request, res: Response) => {
   const user = routeModel(req.models.user);
 
   res.json(resource(userResource(user)));
-});
+};
 
-const store = catchRequestAsync(async (req, res) => {
+const store = async (req: Request, res: Response) => {
   const {
     body: { email, password, name, role, locale, locked },
   } = await validateRequest(req, validator.store);
@@ -35,9 +35,9 @@ const store = catchRequestAsync(async (req, res) => {
   });
 
   res.status(httpStatus.CREATED).json(resource(userResource(user)));
-});
+};
 
-const update = catchRequestAsync(async (req, res) => {
+const update = async (req: Request, res: Response) => {
   const {
     params: { userId },
     body: { email, password, name, role, locale, locked, emailVerified },
@@ -58,14 +58,14 @@ const update = catchRequestAsync(async (req, res) => {
   });
 
   res.json(resource(user));
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const { userId } = req.params;
   await userService.deleteUserById(userId);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
 export default {
   index,

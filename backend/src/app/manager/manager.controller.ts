@@ -1,4 +1,3 @@
-import { catchRequestAsync } from '#utils/catchAsync';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
@@ -9,8 +8,9 @@ import { routeModel } from '#utils/verifyModel';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './manager.validation.js';
 import { validateRequest } from '#core/validation/request';
+import { type Request, type Response } from 'express';
 
-const index = catchRequestAsync(async (req, res) => {
+const index = async (req: Request, res: Response) => {
   const {
     params: { campId },
   } = await validateRequest(req, validator.index);
@@ -19,9 +19,9 @@ const index = catchRequestAsync(async (req, res) => {
   const resources = managers.map((manager) => campManagerResource(manager));
 
   res.status(httpStatus.OK).json(collection(resources));
-});
+};
 
-const store = catchRequestAsync(async (req, res) => {
+const store = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
   const {
     body: { email, expiresAt },
@@ -48,9 +48,9 @@ const store = catchRequestAsync(async (req, res) => {
   await catchAndResolve(managerService.sendManagerInvitation(camp, manager));
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
-});
+};
 
-const update = catchRequestAsync(async (req, res) => {
+const update = async (req: Request, res: Response) => {
   const manager = routeModel(req.models.manager);
   const {
     body: { expiresAt },
@@ -62,9 +62,9 @@ const update = catchRequestAsync(async (req, res) => {
   );
 
   res.status(httpStatus.OK).json(resource(campManagerResource(updatedManager)));
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const {
     params: { campId, managerId },
   } = await validateRequest(req, validator.destroy);
@@ -80,7 +80,7 @@ const destroy = catchRequestAsync(async (req, res) => {
   await catchAndResolve(managerService.removeManager(managerId));
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
 export default {
   index,

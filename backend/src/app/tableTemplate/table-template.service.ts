@@ -1,5 +1,4 @@
-import prisma from '../../client.js';
-import { ulid } from '#utils/ulid';
+import prisma from '#client.js';
 
 const getTemplateById = async (campId: string, id: string) => {
   return prisma.tableTemplate.findFirst({
@@ -16,7 +15,6 @@ const queryTemplates = async (campId: string) => {
 const createTemplate = async (campId: string, data: object) => {
   return prisma.tableTemplate.create({
     data: {
-      id: ulid(),
       data,
       campId,
     },
@@ -26,7 +24,6 @@ const createTemplate = async (campId: string, data: object) => {
 const createManyTemplates = async (campId: string, templates: object[]) => {
   const data = templates.map((template) => {
     return {
-      id: ulid(),
       data: template,
       campId,
     };

@@ -1,7 +1,6 @@
 import { fakerDE as faker } from '@faker-js/faker';
 import { Prisma } from '@prisma/client';
 import prisma from './prisma';
-import { ulid } from 'ulidx';
 import bcrypt from 'bcryptjs';
 
 export const UserFactory = {
@@ -9,7 +8,6 @@ export const UserFactory = {
     data: Partial<Prisma.UserCreateInput> = {},
   ): Prisma.UserCreateInput => {
     return {
-      id: ulid(),
       name: faker.person.fullName(),
       email: faker.internet.email(),
       emailVerified: true,

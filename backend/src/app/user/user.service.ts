@@ -1,8 +1,7 @@
 import { type Prisma, User } from '@prisma/client';
 import httpStatus from 'http-status';
-import prisma from '../../client.js';
+import prisma from '#client.js';
 import ApiError from '#utils/ApiError';
-import { ulid } from '#utils/ulid';
 import { encryptPassword } from '#utils/encryption';
 import { UserUpdateData } from '@camp-registration/common/entities';
 
@@ -18,7 +17,6 @@ const createUser = async (
 
   return prisma.user.create({
     data: {
-      id: ulid(),
       name: data.name,
       email: data.email,
       password: await encryptPassword(data.password),

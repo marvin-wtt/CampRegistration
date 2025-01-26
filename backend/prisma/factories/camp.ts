@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker/locale/de';
 import { Prisma } from '@prisma/client';
 import prisma from './prisma';
-import { ulid } from 'ulidx';
 
 export const CampFactory = {
   build: (
@@ -24,7 +23,6 @@ export const CampFactory = {
     const maxParticipants = faker.number.int({ min: 1, max: 100 });
 
     return {
-      id: ulid(),
       public: faker.datatype.boolean(),
       active: faker.datatype.boolean(),
       countries: ['de'],

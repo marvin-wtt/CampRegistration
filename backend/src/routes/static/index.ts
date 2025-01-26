@@ -19,7 +19,7 @@ router.use(
 );
 
 // Respond all other get requests with frontend content
-router.get('*', (_req, res) => {
+router.get('*splat', (_req, res) => {
   res.sendFile(path.resolve(spaPath, 'index.html'));
 });
 

@@ -43,7 +43,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(200);
+        .expect(200);
 
       expect(body).toHaveProperty('data');
       expect(body.data.length).toBe(2);
@@ -73,7 +73,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(403);
+        .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
@@ -82,7 +82,7 @@ describe('/api/v1/camps/:campId/managers', () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
-        .expectOrPrint(401);
+        .expect(401);
     });
   });
 
@@ -100,7 +100,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           email: 'invited@email.net',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(201);
+        .expect(201);
 
       expect(body).toHaveProperty('data');
       expect(body.data).toEqual({
@@ -138,7 +138,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           expiresAt: new Date(Date.UTC(2030, 0)).toISOString(),
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(201);
+        .expect(201);
 
       expect(body).toHaveProperty('data');
       expect(body.data).toEqual({
@@ -171,7 +171,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           email: 'invited@email.net',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(201);
+        .expect(201);
 
       expect(body).toHaveProperty('data');
       expect(body.data).toEqual({
@@ -207,7 +207,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           expiresAt: new Date(Date.UTC(2030, 0)).toISOString(),
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(201);
+        .expect(201);
 
       expect(body).toHaveProperty('data');
       expect(body.data).toEqual({
@@ -243,14 +243,14 @@ describe('/api/v1/camps/:campId/managers', () => {
           email: 'invalid-email',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
 
       // No email
       await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
     });
 
     it('should respond with `400` status code when expires at is invalid', async () => {
@@ -263,7 +263,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           expiresAt: 'invalid-data',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
     });
 
     it('should respond with `400` status code when invited is already manager', async () => {
@@ -281,7 +281,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
     });
 
     it('should respond with `400` status code when invited is already invited', async () => {
@@ -301,7 +301,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
@@ -325,7 +325,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           email: 'invited@email.net',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(403);
+        .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
@@ -338,7 +338,7 @@ describe('/api/v1/camps/:campId/managers', () => {
       await request()
         .post(`/api/v1/camps/${camp.id}/managers`)
         .send(data)
-        .expectOrPrint(401);
+        .expect(401);
     });
   });
 
@@ -353,7 +353,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           expiresAt: new Date(Date.UTC(2030, 0)).toISOString(),
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(200);
+        .expect(200);
 
       expect(body).toHaveProperty('data.expiresAt', '2030-01-01T00:00:00.000Z');
     });
@@ -368,7 +368,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           expiresAt: null,
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(200);
+        .expect(200);
 
       expect(body).toHaveProperty('data.expiresAt', null);
     });
@@ -384,7 +384,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           expiresAt: 'invalid-data',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
@@ -408,7 +408,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           email: 'invited@email.net',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(403);
+        .expect(403);
     });
 
     it('should respond with `403` status code when manager expired', async () => {
@@ -428,7 +428,7 @@ describe('/api/v1/camps/:campId/managers', () => {
           email: 'invited@email.net',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(403);
+        .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
@@ -443,7 +443,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .send({
           email: 'invited@email.net',
         })
-        .expectOrPrint(401);
+        .expect(401);
     });
 
     it('should respond with `404` status code when manager does not exist', async () => {
@@ -454,7 +454,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .patch(`/api/v1/camps/${camp.id}/managers/${managerId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(404);
+        .expect(404);
     });
   });
 
@@ -470,7 +470,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(204);
+        .expect(204);
 
       const count = await prisma.campManager.count({
         where: { campId: camp.id },
@@ -490,7 +490,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(204);
+        .expect(204);
 
       const count = await prisma.campManager.count({
         where: { campId: camp.id },
@@ -507,7 +507,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(400);
+        .expect(400);
 
       const count = await prisma.campManager.count({
         where: { campId: camp.id },
@@ -528,7 +528,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(403);
+        .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
@@ -541,7 +541,7 @@ describe('/api/v1/camps/:campId/managers', () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
         .send()
-        .expectOrPrint(401);
+        .expect(401);
     });
 
     it('should respond with `404` status code when manager does not exist', async () => {
@@ -552,7 +552,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         .delete(`/api/v1/camps/${camp.id}/managers/${managerId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(404);
+        .expect(404);
     });
   });
 });
