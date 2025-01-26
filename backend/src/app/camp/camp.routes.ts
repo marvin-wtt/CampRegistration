@@ -2,7 +2,6 @@ import express, { Request } from 'express';
 import { auth, guard } from '#middlewares/index';
 import { or, campActive, campManager } from '#guards/index';
 import { catchParamAsync } from '#utils/catchAsync';
-import { verifyModelExists } from '#utils/verifyModel';
 import { authUserId } from '#utils/authUserId';
 import campController from './camp.controller.js';
 import campService from './camp.service.js';
@@ -20,7 +19,7 @@ router.param(
   'campId',
   catchParamAsync(async (req, _res, id) => {
     const camp = await campService.getCampById(id);
-    req.models.camp = verifyModelExists(camp);
+    req.setModelOrFail('camp', camp);
   }),
 );
 

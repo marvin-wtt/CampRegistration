@@ -1,6 +1,5 @@
 import express from 'express';
 import { catchParamAsync } from '#utils/catchAsync';
-import { verifyModelExists } from '#utils/verifyModel';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
 import fileController from '#app/file/file.controller';
@@ -18,7 +17,7 @@ router.param(
       registration.id,
       id,
     );
-    req.models.file = verifyModelExists(file);
+    req.setModelOrFail('file', file);
   }),
 );
 

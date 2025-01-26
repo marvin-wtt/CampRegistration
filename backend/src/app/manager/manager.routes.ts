@@ -1,4 +1,3 @@
-import { verifyModelExists } from '#utils/verifyModel';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
 import managerController from './manager.controller.js';
@@ -13,7 +12,7 @@ router.param(
   catchParamAsync(async (req, _res, id) => {
     const camp = req.modelOrFail('camp');
     const manager = await managerService.getManagerById(camp.id, id);
-    req.models.manager = verifyModelExists(manager);
+    req.setModelOrFail('manager', manager);
   }),
 );
 

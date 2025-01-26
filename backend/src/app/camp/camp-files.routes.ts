@@ -1,5 +1,4 @@
 import { catchParamAsync } from '#utils/catchAsync';
-import { verifyModelExists } from '#utils/verifyModel';
 import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
 import express, { Request } from 'express';
@@ -13,7 +12,7 @@ router.param(
   catchParamAsync(async (req, _res, id) => {
     const camp = req.modelOrFail('camp');
     const file = await fileService.getModelFile('camp', camp.id, id);
-    req.models.file = verifyModelExists(file);
+    req.setModelOrFail('file', file);
   }),
 );
 

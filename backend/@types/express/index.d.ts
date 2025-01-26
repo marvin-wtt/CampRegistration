@@ -37,8 +37,17 @@ declare global {
         schema: T,
       ) => Promise<Readonly<z.infer<T>>>;
 
+      // Models
       model: <K extends keyof Models>(name: K) => Models[K];
       modelOrFail: <K extends keyof Models>(name: K) => NonNullable<Models[K]>;
+      setModel: <K extends keyof Models>(
+        name: K,
+        value: NonNullable<Models[K]>,
+      ) => void;
+      setModelOrFail: <K extends keyof Models>(
+        name: K,
+        value: Models[K] | null,
+      ) => void;
     }
   }
 }

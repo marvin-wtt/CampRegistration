@@ -3,7 +3,6 @@ import { auth, guard } from '#middlewares/index';
 import { campActive, campManager } from '#guards/index';
 import express from 'express';
 import registrationService from './registration.service.js';
-import { verifyModelExists } from '#utils/verifyModel';
 import { catchParamAsync } from '#utils/catchAsync';
 import registrationFiles from './registration-files.routes.js';
 
@@ -17,7 +16,7 @@ router.param(
       camp.id,
       id,
     );
-    req.models.registration = verifyModelExists(registration);
+    req.setModelOrFail('registration', registration);
   }),
 );
 

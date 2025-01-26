@@ -1,4 +1,3 @@
-import { verifyModelExists } from '#utils/verifyModel';
 import fileService from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
@@ -39,7 +38,10 @@ const index = async (req: Request, res: Response) => {
     query: { page, name, type },
   } = await req.validate(validator.index);
 
-  const model = verifyModelExists(getRelationModel(req));
+  const model = getRelationModel(req);
+  if (!model) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'No relation model found');
+  }
 
   const data = (await fileService.queryModelFiles(
     model,
@@ -96,15 +98,17 @@ interface ModelData {
 }
 
 const getRelationModel = (req: Request): ModelData | undefined => {
-  if (req.models.registration) {
+  const registration = req.model('registration');
+  if (registration) {
     return {
-      id: req.models.registration.id,
+      id: registration.id,
       name: 'registration',
     };
   }
-  if (req.models.camp) {
+  const camp = req.model('camp');
+  if (camp) {
     return {
-      id: req.models.camp.id,
+      id: camp.id,
       name: 'camp',
     };
   }

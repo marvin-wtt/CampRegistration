@@ -1,7 +1,6 @@
 import express from 'express';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import { verifyModelExists } from '#utils/verifyModel';
 import { catchParamAsync } from '#utils/catchAsync';
 import roomService from './room.service.js';
 import roomController from './room.controller.js';
@@ -14,7 +13,7 @@ router.param(
   catchParamAsync(async (req, _res, id) => {
     const camp = req.modelOrFail('camp');
     const room = await roomService.getRoomById(camp.id, id);
-    req.models.room = verifyModelExists(room);
+    req.setModelOrFail('room', room);
   }),
 );
 
