@@ -12,14 +12,13 @@ import { requestLocale } from '#utils/requestLocale';
 import { authUserId } from '#utils/authUserId';
 import { catchAndResolve } from '#utils/promiseUtils';
 import authResource from './auth.resource.js';
-import { validateRequest } from '#core/validation/request';
 import validator from './auth.validation.js';
 import totpService from '#app/totp/totp.service.js';
 
 const register = async (req: Request, res: Response) => {
   const {
     body: { name, email, password },
-  } = await validateRequest(req, validator.register);
+  } = await req.validate(validator.register);
   const locale = requestLocale(req);
 
   const user = await userService.createUser({
@@ -46,7 +45,7 @@ const register = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const {
     body: { email, password, remember },
-  } = await validateRequest(req, validator.login);
+  } = await req.validate(validator.login);
 
   const user = await authService.loginWithEmailPassword(email, password);
 
@@ -71,7 +70,7 @@ const login = async (req: Request, res: Response) => {
 const verifyOTP = async (req: Request, res: Response) => {
   const {
     body: { otp, token, remember },
-  } = await validateRequest(req, validator.verifyOTP);
+  } = await req.validate(validator.verifyOTP);
 
   const { userId } = tokenService.verifyToken(token, 'OTP');
   const user = await userService.getUserByIdWithCamps(userId);
@@ -100,7 +99,7 @@ const sendAuthResponse = async (
 };
 
 const logout = async (req: Request, res: Response) => {
-  const { body } = await validateRequest(req, validator.logout);
+  const { body } = await req.validate(validator.logout);
   const refreshToken = body.refreshToken ?? extractCookieRefreshToken(req);
 
   if (refreshToken) {
@@ -113,7 +112,7 @@ const logout = async (req: Request, res: Response) => {
 };
 
 const refreshTokens = async (req: Request, res: Response) => {
-  const { body } = await validateRequest(req, validator.refreshTokens);
+  const { body } = await req.validate(validator.refreshTokens);
 
   const refreshToken = body.refreshToken ?? extractCookieRefreshToken(req);
 
@@ -143,7 +142,7 @@ const extractCookieRefreshToken = (req: Request): string | null => {
 const forgotPassword = async (req: Request, res: Response) => {
   const {
     body: { email },
-  } = await validateRequest(req, validator.forgotPassword);
+  } = await req.validate(validator.forgotPassword);
 
   const user = await userService.getUserByEmail(email);
   if (!user) {
@@ -167,7 +166,7 @@ const forgotPassword = async (req: Request, res: Response) => {
 const resetPassword = async (req: Request, res: Response) => {
   const {
     body: { password, token, email },
-  } = await validateRequest(req, validator.resetPassword);
+  } = await req.validate(validator.resetPassword);
 
   await authService.resetPassword(token, email, password);
 
@@ -194,7 +193,7 @@ const sendVerificationEmail = async (req: Request, res: Response) => {
 const verifyEmail = async (req: Request, res: Response) => {
   const {
     body: { token },
-  } = await validateRequest(req, validator.verifyEmail);
+  } = await req.validate(validator.verifyEmail);
 
   await authService.verifyEmail(token);
 

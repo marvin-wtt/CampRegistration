@@ -7,13 +7,12 @@ import campManagerResource from './manager.resource.js';
 import { routeModel } from '#utils/verifyModel';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './manager.validation.js';
-import { validateRequest } from '#core/validation/request';
 import { type Request, type Response } from 'express';
 
 const index = async (req: Request, res: Response) => {
   const {
     params: { campId },
-  } = await validateRequest(req, validator.index);
+  } = await req.validate(validator.index);
 
   const managers = await managerService.getManagers(campId);
   const resources = managers.map((manager) => campManagerResource(manager));
@@ -25,7 +24,7 @@ const store = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
   const {
     body: { email, expiresAt },
-  } = await validateRequest(req, validator.store);
+  } = await req.validate(validator.store);
 
   const existingCampManager = await managerService.getManagerByEmail(
     camp.id,
@@ -54,7 +53,7 @@ const update = async (req: Request, res: Response) => {
   const manager = routeModel(req.models.manager);
   const {
     body: { expiresAt },
-  } = await validateRequest(req, validator.update);
+  } = await req.validate(validator.update);
 
   const updatedManager = await managerService.updateManagerById(
     manager.id,
@@ -67,7 +66,7 @@ const update = async (req: Request, res: Response) => {
 const destroy = async (req: Request, res: Response) => {
   const {
     params: { campId, managerId },
-  } = await validateRequest(req, validator.destroy);
+  } = await req.validate(validator.destroy);
 
   const managers = await managerService.getManagers(campId);
   if (managers.length <= 1) {

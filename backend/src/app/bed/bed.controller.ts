@@ -5,7 +5,6 @@ import registrationService from '#app/registration/registration.service';
 import httpStatus from 'http-status';
 import { Registration } from '@prisma/client';
 import ApiError from '#utils/ApiError';
-import { validateRequest } from '#core/validation/request';
 import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
 
@@ -13,7 +12,7 @@ const store = async (req: Request, res: Response) => {
   const {
     params: { campId, roomId },
     body: { registrationId },
-  } = await validateRequest(req, validator.store);
+  } = await req.validate(validator.store);
 
   // Validate registrationId is present
   if (registrationId !== undefined) {
@@ -29,7 +28,7 @@ const update = async (req: Request, res: Response) => {
   const {
     params: { campId, bedId },
     body: { registrationId },
-  } = await validateRequest(req, validator.update);
+  } = await req.validate(validator.update);
 
   // Validate registrationId is present
   if (registrationId !== null) {
@@ -44,7 +43,7 @@ const update = async (req: Request, res: Response) => {
 const destroy = async (req: Request, res: Response) => {
   const {
     params: { bedId },
-  } = await validateRequest(req, validator.destroy);
+  } = await req.validate(validator.destroy);
 
   await bedService.deleteBedById(bedId);
 

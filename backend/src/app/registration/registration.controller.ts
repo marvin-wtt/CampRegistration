@@ -5,7 +5,6 @@ import registrationResource from './registration.resource.js';
 import { routeModel } from '#utils/verifyModel';
 import { requestLocale } from '#utils/requestLocale';
 import { catchAndResolve } from '#utils/promiseUtils';
-import { validateRequest } from '#core/validation/request';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
 
@@ -18,7 +17,7 @@ const show = async (req: Request, res: Response) => {
 const index = async (req: Request, res: Response) => {
   const {
     params: { campId },
-  } = await validateRequest(req, validator.index);
+  } = await req.validate(validator.index);
 
   const registrations = await registrationService.queryRegistrations(campId);
   const resources = registrations.map((value) => registrationResource(value));
@@ -29,7 +28,7 @@ const index = async (req: Request, res: Response) => {
 const store = async (req: Request, res: Response) => {
   const {
     body: { data, locale: bodyLocale },
-  } = await validateRequest(req, validator.store);
+  } = await req.validate(validator.store);
   const camp = routeModel(req.models.camp);
   const locale = bodyLocale ?? requestLocale(req);
 
@@ -63,7 +62,7 @@ const update = async (req: Request, res: Response) => {
   const {
     body: { data, waitingList },
     params: { registrationId },
-  } = await validateRequest(req, validator.update);
+  } = await req.validate(validator.update);
   const camp = routeModel(req.models.camp);
   const previousRegistration = routeModel(req.models.registration);
 

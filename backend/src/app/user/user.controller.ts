@@ -4,7 +4,6 @@ import userService from './user.service.js';
 import { routeModel } from '#utils/verifyModel';
 import { collection, resource } from '#core/resource';
 import userResource from './user.resource.js';
-import { validateRequest } from '#core/validation/request';
 import validator from './user.validation.js';
 import { type Request, type Response } from 'express';
 
@@ -23,7 +22,7 @@ const show = async (req: Request, res: Response) => {
 const store = async (req: Request, res: Response) => {
   const {
     body: { email, password, name, role, locale, locked },
-  } = await validateRequest(req, validator.store);
+  } = await req.validate(validator.store);
 
   const user = await userService.createUser({
     name,
@@ -41,7 +40,7 @@ const update = async (req: Request, res: Response) => {
   const {
     params: { userId },
     body: { email, password, name, role, locale, locked, emailVerified },
-  } = await validateRequest(req, validator.update);
+  } = await req.validate(validator.update);
 
   if (password || locked) {
     await authService.revokeAllUserTokens(userId);
