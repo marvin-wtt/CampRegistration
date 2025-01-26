@@ -8,8 +8,17 @@ import fileRoutes from '#app/file/file.routes';
 import totpRoutes from '#app/totp/totp.routes';
 import httpStatus from 'http-status';
 import routeModels from '#middlewares/model.middleware';
+import emptyBody from '#middlewares/body.middleware';
+import validation from '#middlewares/validate.middleware';
 
 const router = express.Router();
+
+// Backwards compatibility with express 4.
+// Validation fails otherwise due to body being undefined
+router.use(emptyBody);
+
+// Validation
+router.use(validation);
 
 // Initialize models
 router.use(routeModels);
