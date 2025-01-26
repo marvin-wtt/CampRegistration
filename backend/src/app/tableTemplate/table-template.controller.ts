@@ -3,7 +3,6 @@ import { collection, resource } from '#core/resource';
 import tableTemplateService from './table-template.service.js';
 import tableTemplateResource from './table-template.resource.js';
 import { routeModel } from '#utils/verifyModel';
-import { validateRequest } from '#core/validation/request';
 import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
 
@@ -16,7 +15,7 @@ const show = async (req: Request, res: Response) => {
 const index = async (req: Request, res: Response) => {
   const {
     params: { campId },
-  } = await validateRequest(req, validator.index);
+  } = await req.validate(validator.index);
 
   const templates = await tableTemplateService.queryTemplates(campId);
   const resources = templates.map((value) => tableTemplateResource(value));
@@ -28,7 +27,7 @@ const store = async (req: Request, res: Response) => {
   const {
     params: { campId },
     body,
-  } = await validateRequest(req, validator.store);
+  } = await req.validate(validator.store);
 
   const template = await tableTemplateService.createTemplate(campId, body);
 
@@ -41,7 +40,7 @@ const update = async (req: Request, res: Response) => {
   const {
     params: { templateId },
     body,
-  } = await validateRequest(req, validator.update);
+  } = await req.validate(validator.update);
 
   const template = await tableTemplateService.updateTemplateById(
     templateId,
@@ -54,7 +53,7 @@ const update = async (req: Request, res: Response) => {
 const destroy = async (req: Request, res: Response) => {
   const {
     params: { templateId },
-  } = await validateRequest(req, validator.destroy);
+  } = await req.validate(validator.destroy);
 
   await tableTemplateService.deleteTemplateById(templateId);
 

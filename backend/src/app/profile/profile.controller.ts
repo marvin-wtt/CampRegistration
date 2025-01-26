@@ -6,7 +6,6 @@ import httpStatus from 'http-status';
 import { authUserId } from '#utils/authUserId';
 import { resource } from '#core/resource';
 import profileResource from './profile.resource.js';
-import { validateRequest } from '#core/validation/request';
 import validator from './profile.validation.js';
 import ApiError from '#utils/ApiError.js';
 import { type Request, type Response } from 'express';
@@ -25,7 +24,7 @@ const show = async (req: Request, res: Response) => {
 const update = async (req: Request, res: Response) => {
   const {
     body: { name, email, password, currentPassword, locale },
-  } = await validateRequest(req, validator.update);
+  } = await req.validate(validator.update);
   const userId = authUserId(req);
 
   // Verify currentPassword matches

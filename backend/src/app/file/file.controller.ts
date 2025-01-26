@@ -7,12 +7,11 @@ import { type Request, type Response } from 'express';
 import fileResource from './file.resource.js';
 import type { File } from '@prisma/client';
 import validator from './file.validation.js';
-import { validateRequest } from '#core/validation/request';
 
 const stream = async (req: Request, res: Response) => {
   const {
     query: { download },
-  } = await validateRequest(req, validator.stream);
+  } = await req.validate(validator.stream);
 
   const file = routeModel(req.models.file);
   const fileStream = await fileService.getFileStream(file);
@@ -38,7 +37,7 @@ const show = async (req: Request, res: Response) => {
 const index = async (req: Request, res: Response) => {
   const {
     query: { page, name, type },
-  } = await validateRequest(req, validator.index);
+  } = await req.validate(validator.index);
 
   const model = verifyModelExists(getRelationModel(req));
 
@@ -63,7 +62,7 @@ const index = async (req: Request, res: Response) => {
 const store = async (req: Request, res: Response) => {
   const {
     body: { accessLevel, field, name },
-  } = await validateRequest(req, validator.store);
+  } = await req.validate(validator.store);
   const file = req.file;
 
   if (!file) {
