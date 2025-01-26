@@ -1,10 +1,9 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from '#utils/catchAsync';
 import authService from './auth.service.js';
 import userService from '#app/user/user.service';
 import tokenService from '#app/token/token.service';
-import { Request, Response } from 'express';
-import { AuthTokensResponse } from '#types/response';
+import { type Request, type Response } from 'express';
+import type { AuthTokensResponse } from '#types/response';
 import config from '#config/index';
 import profileResource from '#app/profile/profile.resource';
 import ApiError from '#utils/ApiError';
@@ -17,7 +16,7 @@ import { validateRequest } from '#core/validation/request';
 import validator from './auth.validation.js';
 import totpService from '#app/totp/totp.service.js';
 
-const register = catchRequestAsync(async (req, res) => {
+const register = async (req: Request, res: Response) => {
   const {
     body: { name, email, password },
   } = await validateRequest(req, validator.register);
@@ -42,9 +41,9 @@ const register = catchRequestAsync(async (req, res) => {
     email: user.email,
     locale: user.locale,
   });
-});
+};
 
-const login = catchRequestAsync(async (req, res) => {
+const login = async (req: Request, res: Response) => {
   const {
     body: { email, password, remember },
   } = await validateRequest(req, validator.login);
@@ -67,9 +66,9 @@ const login = catchRequestAsync(async (req, res) => {
   }
 
   await sendAuthResponse(res, user.id, remember);
-});
+};
 
-const verifyOTP = catchRequestAsync(async (req, res) => {
+const verifyOTP = async (req: Request, res: Response) => {
   const {
     body: { otp, token, remember },
   } = await validateRequest(req, validator.verifyOTP);
@@ -79,7 +78,7 @@ const verifyOTP = catchRequestAsync(async (req, res) => {
   await totpService.verifyTOTP(user, otp);
 
   await sendAuthResponse(res, userId, remember);
-});
+};
 
 const sendAuthResponse = async (
   res: Response,
@@ -100,7 +99,7 @@ const sendAuthResponse = async (
   res.json(authResource(profile, tokens));
 };
 
-const logout = catchRequestAsync(async (req: Request, res: Response) => {
+const logout = async (req: Request, res: Response) => {
   const { body } = await validateRequest(req, validator.logout);
   const refreshToken = body.refreshToken ?? extractCookieRefreshToken(req);
 
@@ -111,9 +110,9 @@ const logout = catchRequestAsync(async (req: Request, res: Response) => {
   destroyAuthCookies(res);
 
   res.status(httpStatus.NO_CONTENT).send();
-});
+};
 
-const refreshTokens = catchRequestAsync(async (req, res) => {
+const refreshTokens = async (req: Request, res: Response) => {
   const { body } = await validateRequest(req, validator.refreshTokens);
 
   const refreshToken = body.refreshToken ?? extractCookieRefreshToken(req);
@@ -127,7 +126,7 @@ const refreshTokens = catchRequestAsync(async (req, res) => {
   setAuthCookies(res, tokens);
 
   res.json({ ...tokens });
-});
+};
 
 const extractCookieRefreshToken = (req: Request): string | null => {
   if (
@@ -141,7 +140,7 @@ const extractCookieRefreshToken = (req: Request): string | null => {
   return null;
 };
 
-const forgotPassword = catchRequestAsync(async (req, res) => {
+const forgotPassword = async (req: Request, res: Response) => {
   const {
     body: { email },
   } = await validateRequest(req, validator.forgotPassword);
@@ -163,9 +162,9 @@ const forgotPassword = catchRequestAsync(async (req, res) => {
   }
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const resetPassword = catchRequestAsync(async (req, res) => {
+const resetPassword = async (req: Request, res: Response) => {
   const {
     body: { password, token, email },
   } = await validateRequest(req, validator.resetPassword);
@@ -173,9 +172,9 @@ const resetPassword = catchRequestAsync(async (req, res) => {
   await authService.resetPassword(token, email, password);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const sendVerificationEmail = catchRequestAsync(async (req, res) => {
+const sendVerificationEmail = async (req: Request, res: Response) => {
   const userId = authUserId(req);
   const user = await userService.getUserById(userId);
   if (!user) {
@@ -190,9 +189,9 @@ const sendVerificationEmail = catchRequestAsync(async (req, res) => {
   await authService.sendVerificationEmail(user.email, verifyEmailToken);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const verifyEmail = catchRequestAsync(async (req, res) => {
+const verifyEmail = async (req: Request, res: Response) => {
   const {
     body: { token },
   } = await validateRequest(req, validator.verifyEmail);
@@ -200,7 +199,7 @@ const verifyEmail = catchRequestAsync(async (req, res) => {
   await authService.verifyEmail(token);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
 const setAuthCookies = (res: Response, tokens: AuthTokensResponse) => {
   const httpOnly = true;

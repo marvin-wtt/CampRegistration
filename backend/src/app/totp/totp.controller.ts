@@ -1,4 +1,3 @@
-import { catchRequestAsync } from '#utils/catchAsync';
 import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
 import totpService from './totp.service.js';
@@ -9,8 +8,9 @@ import { validateRequest } from '#core/validation/request';
 import validator from './totp.validation.js';
 import totpResource from './totp.resource.js';
 import ApiError from '#utils/ApiError.js';
+import { type Request, type Response } from 'express';
 
-const setup = catchRequestAsync(async (req, res) => {
+const setup = async (req: Request, res: Response) => {
   const {
     body: { password },
   } = await validateRequest(req, validator.setup);
@@ -35,9 +35,9 @@ const setup = catchRequestAsync(async (req, res) => {
   const totp = await totpService.generateTOTP(user);
 
   res.json(resource(totpResource(totp)));
-});
+};
 
-const enable = catchRequestAsync(async (req, res) => {
+const enable = async (req: Request, res: Response) => {
   const {
     body: { otp },
   } = await validateRequest(req, validator.enable);
@@ -47,9 +47,9 @@ const enable = catchRequestAsync(async (req, res) => {
   await totpService.validateTOTP(user, otp);
 
   res.sendStatus(httpStatus.NO_CONTENT);
-});
+};
 
-const disable = catchRequestAsync(async (req, res) => {
+const disable = async (req: Request, res: Response) => {
   const {
     body: { password, otp },
   } = await validateRequest(req, validator.disable);
@@ -77,7 +77,7 @@ const disable = catchRequestAsync(async (req, res) => {
   await totpService.disableTOTP(user);
 
   res.status(httpStatus.NO_CONTENT).end();
-});
+};
 
 export default {
   setup,

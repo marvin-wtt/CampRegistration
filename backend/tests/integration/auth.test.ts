@@ -698,7 +698,7 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('POST /api/v1/auth/logout', () => {
-    it('should respond with a `200` status code when the user is authenticated', async () => {
+    it('should respond with a `204` status code when the user is authenticated', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()

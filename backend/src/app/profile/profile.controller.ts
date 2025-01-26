@@ -1,4 +1,3 @@
-import { catchRequestAsync } from '#utils/catchAsync';
 import tokenService from '#app/token/token.service';
 import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
@@ -10,8 +9,9 @@ import profileResource from './profile.resource.js';
 import { validateRequest } from '#core/validation/request';
 import validator from './profile.validation.js';
 import ApiError from '#utils/ApiError.js';
+import { type Request, type Response } from 'express';
 
-const show = catchRequestAsync(async (req, res) => {
+const show = async (req: Request, res: Response) => {
   const userId = authUserId(req);
   const user = await userService.getUserByIdWithCamps(userId);
 
@@ -20,9 +20,9 @@ const show = catchRequestAsync(async (req, res) => {
   });
 
   res.json(resource(profileResource(user, camps)));
-});
+};
 
-const update = catchRequestAsync(async (req, res) => {
+const update = async (req: Request, res: Response) => {
   const {
     body: { name, email, password, currentPassword, locale },
   } = await validateRequest(req, validator.update);
@@ -65,9 +65,9 @@ const update = catchRequestAsync(async (req, res) => {
   const camps = await campService.getCampsByUserId(userId);
 
   res.json(resource(profileResource(user, camps)));
-});
+};
 
-const destroy = catchRequestAsync(async (req, res) => {
+const destroy = async (req: Request, res: Response) => {
   const userId = authUserId(req);
 
   await userService.deleteUserById(userId);
@@ -77,7 +77,7 @@ const destroy = catchRequestAsync(async (req, res) => {
   res.clearCookie('refreshToken');
 
   res.status(httpStatus.NO_CONTENT).end();
-});
+};
 
 export default {
   show,
