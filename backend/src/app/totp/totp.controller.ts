@@ -4,7 +4,6 @@ import totpService from './totp.service.js';
 import httpStatus from 'http-status';
 import { authUserId } from '#utils/authUserId';
 import { resource } from '#core/resource';
-import { validateRequest } from '#core/validation/request';
 import validator from './totp.validation.js';
 import totpResource from './totp.resource.js';
 import ApiError from '#utils/ApiError.js';
@@ -13,7 +12,7 @@ import { type Request, type Response } from 'express';
 const setup = async (req: Request, res: Response) => {
   const {
     body: { password },
-  } = await validateRequest(req, validator.setup);
+  } = await req.validate(validator.setup);
 
   const userId = authUserId(req);
   const user = await userService.getUserByIdOrFail(userId);
@@ -40,7 +39,7 @@ const setup = async (req: Request, res: Response) => {
 const enable = async (req: Request, res: Response) => {
   const {
     body: { otp },
-  } = await validateRequest(req, validator.enable);
+  } = await req.validate(validator.enable);
   const userId = authUserId(req);
   const user = await userService.getUserByIdOrFail(userId);
 
@@ -52,7 +51,7 @@ const enable = async (req: Request, res: Response) => {
 const disable = async (req: Request, res: Response) => {
   const {
     body: { password, otp },
-  } = await validateRequest(req, validator.disable);
+  } = await req.validate(validator.disable);
 
   const userId = authUserId(req);
   const user = await userService.getUserByIdOrFail(userId);

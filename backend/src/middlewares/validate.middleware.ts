@@ -1,10 +1,15 @@
+import { NextFunction, Request, Response } from 'express';
 import { AnyZodObject, z, ZodError } from 'zod';
-import type { Request } from 'express';
 import { fromError } from 'zod-validation-error';
-import ApiError from '#utils/ApiError';
+import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
-import fileService from '#app/file/file.service';
-import logger from '#core/logger';
+import fileService from '#app/file/file.service.js';
+import logger from '#core/logger.js';
+
+const validate = (req: Request, _res: Response, next: NextFunction) => {
+  req.validate = (schema) => validateRequest(req, schema);
+  next();
+};
 
 export async function validateRequest<T extends AnyZodObject>(
   req: Request,
@@ -48,3 +53,5 @@ const extractRequestFiles = (req: Request): Express.Multer.File[] => {
 
   return files;
 };
+
+export default validate;

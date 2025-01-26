@@ -11,7 +11,6 @@ import defaultForm from '#assets/camp/defaultForm';
 import defaultThemes from '#assets/camp/defaultThemes';
 import defaultTemplates from '#assets/camp/defaultTemplates';
 import defaultFiles from '#assets/camp/defaultFiles';
-import { validateRequest } from '#core/validation/request';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 
@@ -22,7 +21,7 @@ const show = async (req: Request, res: Response) => {
 };
 
 const index = async (req: Request, res: Response) => {
-  const { query } = await validateRequest(req, validator.index);
+  const { query } = await req.validate(validator.index);
 
   const camps = await campService.queryCamps(
     {
@@ -48,7 +47,7 @@ const index = async (req: Request, res: Response) => {
 };
 
 const store = async (req: Request, res: Response) => {
-  const { body } = await validateRequest(req, validator.store);
+  const { body } = await req.validate(validator.store);
   const userId = authUserId(req);
 
   const referenceCamp = body.referenceCampId
@@ -99,7 +98,7 @@ const store = async (req: Request, res: Response) => {
 
 const update = async (req: Request, res: Response) => {
   const camp = routeModel(req.models.camp);
-  const { body } = await validateRequest(req, validator.update(camp));
+  const { body } = await req.validate(validator.update(camp));
 
   const updatedCamp = await campService.updateCamp(camp, {
     countries: body.countries,
@@ -128,7 +127,7 @@ const update = async (req: Request, res: Response) => {
 };
 
 const destroy = async (req: Request, res: Response) => {
-  const { params } = await validateRequest(req, validator.destroy);
+  const { params } = await req.validate(validator.destroy);
 
   await campService.deleteCampById(params.campId);
 

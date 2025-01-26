@@ -9,6 +9,7 @@ import {
   Room,
   File,
 } from '@prisma/client';
+import { AnyZodObject, z } from 'zod';
 
 declare global {
   namespace Express {
@@ -29,6 +30,10 @@ declare global {
         bed?: Bed;
         file?: File;
       };
+
+      validate: <T extends AnyZodObject>(
+        schema: T,
+      ) => Promise<Readonly<z.infer<T>>>;
     }
   }
 }
