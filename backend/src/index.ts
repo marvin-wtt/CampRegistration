@@ -7,7 +7,8 @@ import logger from '#core/logger';
 let server: Server;
 prisma.$connect().then(() => {
   logger.info('Connected to SQL Database');
-  server = app.listen(config.port, () => {
+  // TODO Error handling
+  server = app.listen(config.port, '', () => {
     logger.info(`Listening to port ${config.port}`);
   });
 });
