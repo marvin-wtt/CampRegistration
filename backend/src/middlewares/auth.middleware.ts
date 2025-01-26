@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import { Request } from 'express';
+import { type Request } from 'express';
 import { catchMiddlewareAsync } from '#utils/catchAsync';
 
 export const auth = () => {

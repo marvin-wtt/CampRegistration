@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
-// TODO Can be removed with express v5.x
-
+// These are convenience methods to make them more robust
+//  Since express 5, express handles async await and these methods are no longer required
 export const catchMiddlewareAsync =
   (fn: (req: Request, res: Response) => Promise<void> | void) =>
   (req: Request, res: Response, next: NextFunction) => {
