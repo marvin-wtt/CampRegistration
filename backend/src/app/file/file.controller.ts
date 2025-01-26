@@ -1,4 +1,4 @@
-import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import { verifyModelExists } from '#utils/verifyModel';
 import fileService from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
@@ -13,7 +13,7 @@ const stream = async (req: Request, res: Response) => {
     query: { download },
   } = await req.validate(validator.stream);
 
-  const file = routeModel(req.models.file);
+  const file = req.modelOrFail('file');
   const fileStream = await fileService.getFileStream(file);
 
   // Set response headers for image display
@@ -29,7 +29,7 @@ const stream = async (req: Request, res: Response) => {
 };
 
 const show = async (req: Request, res: Response) => {
-  const file = routeModel(req.models.file);
+  const file = req.modelOrFail('file');
 
   res.status(httpStatus.OK).json(fileResource(file));
 };
@@ -83,7 +83,7 @@ const store = async (req: Request, res: Response) => {
 };
 
 const destroy = async (req: Request, res: Response) => {
-  const file = routeModel(req.models.file);
+  const file = req.modelOrFail('file');
 
   await fileService.deleteFile(file.id);
 

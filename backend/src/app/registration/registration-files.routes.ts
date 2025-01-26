@@ -1,6 +1,6 @@
 import express from 'express';
 import { catchParamAsync } from '#utils/catchAsync';
-import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import { verifyModelExists } from '#utils/verifyModel';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
 import fileController from '#app/file/file.controller';
@@ -12,7 +12,7 @@ const router = express.Router({ mergeParams: true });
 router.param(
   'fileId',
   catchParamAsync(async (req, _res, id) => {
-    const registration = routeModel(req.models.registration);
+    const registration = req.modelOrFail('registration');
     const file = await fileService.getModelFile(
       'registration',
       registration.id,

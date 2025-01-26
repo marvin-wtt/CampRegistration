@@ -3,7 +3,7 @@ import { auth, guard } from '#middlewares/index';
 import { campActive, campManager } from '#guards/index';
 import express from 'express';
 import registrationService from './registration.service.js';
-import { routeModel, verifyModelExists } from '#utils/verifyModel';
+import { verifyModelExists } from '#utils/verifyModel';
 import { catchParamAsync } from '#utils/catchAsync';
 import registrationFiles from './registration-files.routes.js';
 
@@ -12,7 +12,7 @@ const router = express.Router({ mergeParams: true });
 router.param(
   'registrationId',
   catchParamAsync(async (req, _res, id) => {
-    const camp = routeModel(req.models.camp);
+    const camp = req.modelOrFail('camp');
     const registration = await registrationService.getRegistrationById(
       camp.id,
       id,

@@ -6,7 +6,6 @@ import tableTemplateService from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
 import { authUserId } from '#utils/authUserId';
-import { routeModel } from '#utils/verifyModel';
 import defaultForm from '#assets/camp/defaultForm';
 import defaultThemes from '#assets/camp/defaultThemes';
 import defaultTemplates from '#assets/camp/defaultTemplates';
@@ -15,7 +14,7 @@ import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 
 const show = async (req: Request, res: Response) => {
-  const camp = routeModel(req.models.camp);
+  const camp = req.modelOrFail('camp');
 
   res.json(resource(detailedCampResource(camp)));
 };
@@ -97,7 +96,7 @@ const store = async (req: Request, res: Response) => {
 };
 
 const update = async (req: Request, res: Response) => {
-  const camp = routeModel(req.models.camp);
+  const camp = req.modelOrFail('camp');
   const { body } = await req.validate(validator.update(camp));
 
   const updatedCamp = await campService.updateCamp(camp, {

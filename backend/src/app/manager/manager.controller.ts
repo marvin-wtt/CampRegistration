@@ -4,7 +4,6 @@ import { collection, resource } from '#core/resource';
 import userService from '#app/user/user.service';
 import managerService from './manager.service.js';
 import campManagerResource from './manager.resource.js';
-import { routeModel } from '#utils/verifyModel';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './manager.validation.js';
 import { type Request, type Response } from 'express';
@@ -21,7 +20,7 @@ const index = async (req: Request, res: Response) => {
 };
 
 const store = async (req: Request, res: Response) => {
-  const camp = routeModel(req.models.camp);
+  const camp = req.modelOrFail('camp');
   const {
     body: { email, expiresAt },
   } = await req.validate(validator.store);
@@ -50,7 +49,7 @@ const store = async (req: Request, res: Response) => {
 };
 
 const update = async (req: Request, res: Response) => {
-  const manager = routeModel(req.models.manager);
+  const manager = req.modelOrFail('manager');
   const {
     body: { expiresAt },
   } = await req.validate(validator.update);
