@@ -6,7 +6,8 @@ export default (req: Request, _res: Response, next: NextFunction) => {
   req.models = {};
 
   // eslint-disable-next-line security/detect-object-injection
-  req.model = (key) => routeModel(req.models[key]);
+  req.model = (key) => req.models[key];
+  req.modelOrFail = (key) => routeModel(req.model(key));
 
   next();
 };
