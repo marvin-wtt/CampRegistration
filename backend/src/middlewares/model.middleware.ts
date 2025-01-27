@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError';
+import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
 
 export const routeModel = <T>(model: T): NonNullable<T> => {
@@ -10,12 +10,12 @@ export const routeModel = <T>(model: T): NonNullable<T> => {
   return model;
 };
 
-export const verifyModelExists = <T>(
+export const verifyModel = <T>(
   model: T | undefined | null,
-): T | never => {
-  if (model != null) {
-    return model;
+): NonNullable<T> | never => {
+  if (model == null) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Model not found');
   }
 
-  throw new ApiError(httpStatus.NOT_FOUND, 'Model not found');
+  return model;
 };

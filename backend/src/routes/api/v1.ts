@@ -7,14 +7,11 @@ import feedbackRoutes from '#app/feedback/feedback.routes';
 import fileRoutes from '#app/file/file.routes';
 import totpRoutes from '#app/totp/totp.routes';
 import httpStatus from 'http-status';
+import extensions from '#middlewares/extension.middleware';
 
 const router = express.Router();
 
-// Initialize models
-router.use((req, _res, next) => {
-  req.models = {};
-  next();
-});
+router.use(extensions);
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);

@@ -7,8 +7,6 @@ import router from '#routes/index';
 import config from '#config/index';
 import morgan from '#core/morgan';
 import { errorConverter, errorHandler } from '#middlewares/error.middleware';
-import emptyBody from '#middlewares/body.middleware';
-import validation from '#middlewares/validate.middleware';
 import { anonymousStrategy, jwtStrategy } from '#core/passport';
 import cookieParser from 'cookie-parser';
 import { initI18n } from '#core/i18n';
@@ -48,13 +46,6 @@ app.options('*splat', cors());
 
 // use forwarded ip address from reverse proxy - required for throttling and logging
 app.enable('trust proxy');
-
-// Backwards compatibility with express 4.
-// Validation fails otherwise due to body being undefined
-app.use(emptyBody);
-
-// Validation
-app.use(validation);
 
 // authentication
 app.use(passport.initialize());

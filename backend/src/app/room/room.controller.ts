@@ -2,12 +2,11 @@ import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
 import roomService from './room.service.js';
 import roomResource from './room.resource.js';
-import { routeModel } from '#utils/verifyModel';
 import validator from './room.validation.js';
 import { type Request, type Response } from 'express';
 
 const show = async (req: Request, res: Response) => {
-  const room = routeModel(req.models.room);
+  const room = req.modelOrFail('room');
 
   res.json(resource(roomResource(room)));
 };

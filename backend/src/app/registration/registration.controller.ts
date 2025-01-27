@@ -2,14 +2,12 @@ import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
 import registrationService from './registration.service.js';
 import registrationResource from './registration.resource.js';
-import { routeModel } from '#utils/verifyModel';
-import { requestLocale } from '#utils/requestLocale';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
 
 const show = async (req: Request, res: Response) => {
-  const registration = routeModel(req.models.registration);
+  const registration = req.modelOrFail('registration');
 
   res.json(resource(registrationResource(registration)));
 };
@@ -29,8 +27,8 @@ const store = async (req: Request, res: Response) => {
   const {
     body: { data, locale: bodyLocale },
   } = await req.validate(validator.store);
-  const camp = routeModel(req.models.camp);
-  const locale = bodyLocale ?? requestLocale(req);
+  const camp = req.modelOrFail('camp');
+  const locale = bodyLocale ?? req.preferredLocale();
 
   const registration = await registrationService.createRegistration(camp, {
     data,
@@ -63,8 +61,8 @@ const update = async (req: Request, res: Response) => {
     body: { data, waitingList },
     params: { registrationId },
   } = await req.validate(validator.update);
-  const camp = routeModel(req.models.camp);
-  const previousRegistration = routeModel(req.models.registration);
+  const camp = req.modelOrFail('camp');
+  const previousRegistration = req.modelOrFail('registration');
 
   const registration = await registrationService.updateRegistrationById(
     camp,
@@ -85,8 +83,8 @@ const update = async (req: Request, res: Response) => {
 };
 
 const destroy = async (req: Request, res: Response) => {
-  const camp = routeModel(req.models.camp);
-  const registration = routeModel(req.models.registration);
+  const camp = req.modelOrFail('camp');
+  const registration = req.modelOrFail('registration');
 
   await registrationService.deleteRegistration(camp, registration);
 
