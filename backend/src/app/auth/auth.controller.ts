@@ -8,7 +8,6 @@ import config from '#config/index';
 import profileResource from '#app/profile/profile.resource';
 import ApiError from '#utils/ApiError';
 import managerService from '#app/manager/manager.service';
-import { requestLocale } from '#utils/requestLocale';
 import { catchAndResolve } from '#utils/promiseUtils';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
@@ -18,7 +17,7 @@ const register = async (req: Request, res: Response) => {
   const {
     body: { name, email, password },
   } = await req.validate(validator.register);
-  const locale = requestLocale(req);
+  const locale = req.preferredLocale();
 
   const user = await userService.createUser({
     name,

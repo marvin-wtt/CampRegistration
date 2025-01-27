@@ -2,7 +2,6 @@ import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
 import registrationService from './registration.service.js';
 import registrationResource from './registration.resource.js';
-import { requestLocale } from '#utils/requestLocale';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
@@ -29,7 +28,7 @@ const store = async (req: Request, res: Response) => {
     body: { data, locale: bodyLocale },
   } = await req.validate(validator.store);
   const camp = req.modelOrFail('camp');
-  const locale = bodyLocale ?? requestLocale(req);
+  const locale = bodyLocale ?? req.preferredLocale();
 
   const registration = await registrationService.createRegistration(camp, {
     data,

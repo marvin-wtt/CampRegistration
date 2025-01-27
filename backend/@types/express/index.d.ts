@@ -33,12 +33,16 @@ declare global {
       user?: AuthUser;
       models: Models;
 
+      // Validation
       validate: <T extends AnyZodObject>(
         schema: T,
       ) => Promise<Readonly<z.infer<T>>>;
 
       // Auth
       authUserId: () => string;
+
+      // i18n
+      preferredLocale: () => string;
 
       // Models
       model: <K extends keyof Models>(name: K) => Models[K];

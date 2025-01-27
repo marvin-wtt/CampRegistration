@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
-import { routeModel, verifyModel } from '#middlewares/model.middleware.js';
-import { validateRequest } from '#middlewares/validate.middleware.js';
-import { authUserId } from '#middlewares/auth.middleware.js';
+import { routeModel, verifyModel } from '#middlewares/model.middleware';
+import { validateRequest } from '#middlewares/validate.middleware';
+import { authUserId } from '#middlewares/auth.middleware';
+import { requestLocale } from '#middlewares/i18n.middleware';
 
 export default (req: Request, _res: Response, next: NextFunction) => {
   // ---------------------------------------------------------------------------
@@ -36,6 +37,11 @@ export default (req: Request, _res: Response, next: NextFunction) => {
   // eslint-disable-next-line security/detect-object-injection
   req.setModel = (key, value) => (req.models[key] = value);
   req.setModelOrFail = (key, value) => req.setModel(key, verifyModel(value));
+
+  // ---------------------------------------------------------------------------
+  // i18n
+  // ---------------------------------------------------------------------------
+  req.preferredLocale = () => requestLocale(req);
 
   // ---------------------------------------------------------------------------
 
