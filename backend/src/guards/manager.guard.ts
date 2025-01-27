@@ -1,9 +1,8 @@
 import managerService from '#app/manager/manager.service';
 import { Request } from 'express';
-import { authUserId } from '#utils/authUserId';
 
 export const campManager = async (req: Request): Promise<boolean | string> => {
-  const userId = authUserId(req);
+  const userId = req.authUserId();
   const campId = req.modelOrFail('camp').id;
 
   const manager = await managerService.getManagerByUserId(campId, userId);

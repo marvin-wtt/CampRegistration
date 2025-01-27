@@ -5,7 +5,6 @@ import registrationService from '#app/registration/registration.service';
 import tableTemplateService from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
-import { authUserId } from '#utils/authUserId';
 import defaultForm from '#assets/camp/defaultForm';
 import defaultThemes from '#assets/camp/defaultThemes';
 import defaultTemplates from '#assets/camp/defaultTemplates';
@@ -47,7 +46,7 @@ const index = async (req: Request, res: Response) => {
 
 const store = async (req: Request, res: Response) => {
   const { body } = await req.validate(validator.store);
-  const userId = authUserId(req);
+  const userId = req.authUserId();
 
   const referenceCamp = body.referenceCampId
     ? await campService.getCampById(body.referenceCampId)

@@ -10,12 +10,16 @@ import httpStatus from 'http-status';
 import routeModels from '#middlewares/model.middleware';
 import emptyBody from '#middlewares/body.middleware';
 import validation from '#middlewares/validate.middleware';
+import auth from '#middlewares/auth.middleware';
 
 const router = express.Router();
 
 // Backwards compatibility with express 4.
 // Validation fails otherwise due to body being undefined
 router.use(emptyBody);
+
+// Auth
+router.use(auth);
 
 // Validation
 router.use(validation);

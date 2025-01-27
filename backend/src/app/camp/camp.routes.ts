@@ -2,7 +2,6 @@ import express, { Request } from 'express';
 import { auth, guard } from '#middlewares/index';
 import { or, campActive, campManager } from '#guards/index';
 import { catchParamAsync } from '#utils/catchAsync';
-import { authUserId } from '#utils/authUserId';
 import campController from './camp.controller.js';
 import campService from './camp.service.js';
 import managerRoutes from '#app/manager/manager.routes';
@@ -31,7 +30,7 @@ const queryShowAllGuard = (req: Request) => {
 };
 
 const referenceCampGuard = (req: Request) => {
-  const userId = authUserId(req);
+  const userId = req.authUserId();
   const { referenceCampId } = req.body as CampCreateData;
 
   if (!referenceCampId) {

@@ -37,6 +37,9 @@ declare global {
         schema: T,
       ) => Promise<Readonly<z.infer<T>>>;
 
+      // Auth
+      authUserId: () => string;
+
       // Models
       model: <K extends keyof Models>(name: K) => Models[K];
       modelOrFail: <K extends keyof Models>(name: K) => NonNullable<Models[K]>;
