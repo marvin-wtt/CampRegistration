@@ -2,7 +2,6 @@ import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
 import totpService from './totp.service.js';
 import httpStatus from 'http-status';
-import { authUserId } from '#utils/authUserId';
 import { resource } from '#core/resource';
 import validator from './totp.validation.js';
 import totpResource from './totp.resource.js';
@@ -14,7 +13,7 @@ const setup = async (req: Request, res: Response) => {
     body: { password },
   } = await req.validate(validator.setup);
 
-  const userId = authUserId(req);
+  const userId = req.authUserId();
   const user = await userService.getUserByIdOrFail(userId);
 
   // Verify password
@@ -40,7 +39,7 @@ const enable = async (req: Request, res: Response) => {
   const {
     body: { otp },
   } = await req.validate(validator.enable);
-  const userId = authUserId(req);
+  const userId = req.authUserId();
   const user = await userService.getUserByIdOrFail(userId);
 
   await totpService.validateTOTP(user, otp);
@@ -53,7 +52,7 @@ const disable = async (req: Request, res: Response) => {
     body: { password, otp },
   } = await req.validate(validator.disable);
 
-  const userId = authUserId(req);
+  const userId = req.authUserId();
   const user = await userService.getUserByIdOrFail(userId);
 
   // Verify password

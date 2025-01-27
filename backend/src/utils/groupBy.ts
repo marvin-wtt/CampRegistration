@@ -1,4 +1,4 @@
-// Can be replaced by Object.groupBy() in the future
+// Can be replaced by Object.groupBy() in node 21+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/groupBy
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

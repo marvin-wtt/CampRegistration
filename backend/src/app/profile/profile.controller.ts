@@ -3,7 +3,6 @@ import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
 import campService from '#app/camp/camp.service';
 import httpStatus from 'http-status';
-import { authUserId } from '#utils/authUserId';
 import { resource } from '#core/resource';
 import profileResource from './profile.resource.js';
 import validator from './profile.validation.js';
@@ -11,7 +10,7 @@ import ApiError from '#utils/ApiError.js';
 import { type Request, type Response } from 'express';
 
 const show = async (req: Request, res: Response) => {
-  const userId = authUserId(req);
+  const userId = req.authUserId();
   const user = await userService.getUserByIdWithCamps(userId);
 
   const camps = user.camps.map((value) => {
@@ -25,7 +24,7 @@ const update = async (req: Request, res: Response) => {
   const {
     body: { name, email, password, currentPassword, locale },
   } = await req.validate(validator.update);
-  const userId = authUserId(req);
+  const userId = req.authUserId();
 
   // Verify currentPassword matches
   if (currentPassword) {
@@ -67,7 +66,7 @@ const update = async (req: Request, res: Response) => {
 };
 
 const destroy = async (req: Request, res: Response) => {
-  const userId = authUserId(req);
+  const userId = req.authUserId();
 
   await userService.deleteUserById(userId);
 

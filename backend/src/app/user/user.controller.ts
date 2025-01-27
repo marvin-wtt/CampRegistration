@@ -1,7 +1,6 @@
 import httpStatus from 'http-status';
 import authService from '#app/auth/auth.service';
 import userService from './user.service.js';
-import { routeModel } from '#utils/verifyModel';
 import { collection, resource } from '#core/resource';
 import userResource from './user.resource.js';
 import validator from './user.validation.js';
@@ -14,7 +13,7 @@ const index = async (_req: Request, res: Response) => {
 };
 
 const show = async (req: Request, res: Response) => {
-  const user = routeModel(req.models.user);
+  const user = req.modelOrFail('user');
 
   res.json(resource(userResource(user)));
 };

@@ -3,6 +3,16 @@ import ApiError from '#utils/ApiError';
 import { type Request } from 'express';
 import { catchMiddlewareAsync } from '#utils/catchAsync';
 
+export const authUserId = (req: Request): string | never => {
+  if (!req.isAuthenticated() || req.user === undefined) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
+  }
+
+  const user = req.user as { id: string };
+
+  return user.id;
+};
+
 export const auth = () => {
   return catchMiddlewareAsync((req: Request) => {
     if (req.isUnauthenticated()) {

@@ -2,12 +2,11 @@ import httpStatus from 'http-status';
 import { collection, resource } from '#core/resource';
 import tableTemplateService from './table-template.service.js';
 import tableTemplateResource from './table-template.resource.js';
-import { routeModel } from '#utils/verifyModel';
 import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
 
 const show = async (req: Request, res: Response) => {
-  const template = routeModel(req.models.tableTemplate);
+  const template = req.modelOrFail('tableTemplate');
 
   res.json(resource(tableTemplateResource(template)));
 };
