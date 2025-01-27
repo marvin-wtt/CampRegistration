@@ -2,11 +2,7 @@ import pkg from 'survey-core';
 const { SurveyModel } = pkg;
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import { Camp } from '@prisma/client';
-
-type CampWithFreePlaces = Camp & {
-  freePlaces: number | Record<string, number>;
-};
+import type { Camp } from '@prisma/client';
 
 type TemporaryFileIdentifier = {
   id: string;
@@ -17,8 +13,7 @@ export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';
-  // TODO Camp with free places required here!
-  setVariables(survey, camp as CampWithFreePlaces);
+  setVariables(survey, camp);
 
   const updateData = (data?: unknown) => {
     survey.data = typeof data !== 'object' ? {} : data;
