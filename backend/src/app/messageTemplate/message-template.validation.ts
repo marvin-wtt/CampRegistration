@@ -4,7 +4,7 @@ import { translatedValue } from '#core/validation/helper';
 const show = z.object({
   params: z.object({
     campId: z.string(),
-    messageTemplateName: z.string(),
+    messageTemplateId: z.string(),
   }),
 });
 
@@ -30,7 +30,7 @@ const store = z.object({
 const update = z.object({
   params: z.object({
     campId: z.string(),
-    messageTemplateName: z.string(),
+    messageTemplateId: z.string(),
   }),
   body: z
     .object({
@@ -44,7 +44,7 @@ const update = z.object({
 const destroy = z.object({
   params: z.object({
     campId: z.string(),
-    messageTemplateName: z.string(),
+    messageTemplateId: z.string(),
   }),
 });
 
