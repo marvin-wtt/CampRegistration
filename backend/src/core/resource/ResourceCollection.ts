@@ -1,13 +1,18 @@
 import { JsonResource } from '#core/resource/JsonResource';
 
-export class ResourceCollection<T extends object> extends JsonResource<T[]> {
+export abstract class ResourceCollection<T extends object> extends JsonResource<
+  T[]
+> {
+  protected abstract resourceClass: typeof JsonResource<T>;
+
+  constructor(data: T[]) {
+    super(data);
+  }
+
   /**
-   * Override this in subclasses to transform the raw data
-   * into the final shape that should be exposed.
+   * Transform the collection into an array of JSON objects.
    */
   public transform(): object[] {
-    // By default, just return the raw data as is.
-    // Subclasses should override to format/transform as needed.
-    return this.data;
+    return this.data.map((item) => new this.resourceClass(item).transform());
   }
 }

@@ -6,7 +6,7 @@ export class AnonymousResourceCollection<
 > extends ResourceCollection<T> {
   constructor(
     data: T[],
-    private resourceClass: typeof JsonResource<T>,
+    protected resourceClass: typeof JsonResource<T>,
   ) {
     super(data);
   }
