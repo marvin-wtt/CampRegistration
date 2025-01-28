@@ -1,35 +1,38 @@
 import { Camp } from '@prisma/client';
 import type {
-  Camp as CampResource,
-  CampDetails as CampDetailsResource,
+  Camp as CampResourceData,
+  CampDetails as CampDetailsResourceData,
 } from '@camp-registration/common/entities';
+import { JsonResource } from '#core/resource/JsonResource.js';
 
-export const campResource = (camp: Camp): CampResource => {
-  return {
-    id: camp.id,
-    public: camp.public,
-    active: camp.active,
-    countries: camp.countries,
-    name: camp.name,
-    organizer: camp.organizer,
-    contactEmail: camp.contactEmail,
-    maxParticipants: camp.maxParticipants,
-    minAge: camp.minAge,
-    maxAge: camp.maxAge,
-    startAt: camp.startAt.toISOString(),
-    endAt: camp.endAt.toISOString(),
-    price: camp.price ?? null,
-    location: camp.location ?? null,
-    freePlaces: camp.freePlaces ?? null,
-  };
-};
+export class CampResource extends JsonResource<Camp> {
+  transform(): CampResourceData {
+    return {
+      id: this.data.id,
+      public: this.data.public,
+      active: this.data.active,
+      countries: this.data.countries,
+      name: this.data.name,
+      organizer: this.data.organizer,
+      contactEmail: this.data.contactEmail,
+      maxParticipants: this.data.maxParticipants,
+      minAge: this.data.minAge,
+      maxAge: this.data.maxAge,
+      startAt: this.data.startAt.toISOString(),
+      endAt: this.data.endAt.toISOString(),
+      price: this.data.price ?? null,
+      location: this.data.location ?? null,
+      freePlaces: this.data.freePlaces ?? null,
+    };
+  }
+}
 
-export const detailedCampResource = (camp: Camp): CampDetailsResource => {
-  return {
-    ...campResource(camp),
-    form: camp.form,
-    themes: camp.themes,
-  };
-};
-
-export default campResource;
+export class CampDetailsResource extends JsonResource<Camp> {
+  transform(): CampDetailsResourceData {
+    return {
+      ...new CampResource(this.data).transform(),
+      form: this.data.form,
+      themes: this.data.themes,
+    };
+  }
+}
