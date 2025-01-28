@@ -1,5 +1,5 @@
 import prisma from '#client.js';
-import type { Prisma } from '@prisma/client';
+import type { MessageTemplate, Prisma } from '@prisma/client';
 
 class MessageTemplateService {
   async getMessageTemplateById(id: string, campId: string) {
@@ -8,6 +8,12 @@ class MessageTemplateService {
         id,
         campId,
       },
+    });
+  }
+
+  async queryMessageTemplates(campId: string) {
+    return prisma.messageTemplate.findMany({
+      where: { campId },
     });
   }
 
@@ -23,12 +29,26 @@ class MessageTemplateService {
   async createTemplate(
     campId: string,
     data: Omit<Prisma.MessageTemplateCreateInput, 'camp'>,
-  ) {
+  ): Promise<MessageTemplate> {
     return prisma.messageTemplate.create({
       data: {
         campId,
         ...data,
       },
+    });
+  }
+
+  async updateMessageTemplate(
+    id: string,
+    campId: string,
+    data: Prisma.MessageTemplateUpdateInput,
+  ) {
+    return prisma.messageTemplate.update({
+      where: {
+        id,
+        campId,
+      },
+      data,
     });
   }
 

@@ -3,18 +3,26 @@ import validator from './message-template.validation.js';
 import service from './message-template.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError.js';
+import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource.js';
 
 class MessageTemplateController {
   async show(req: Request, res: Response) {
-    const {} = await req.validate(validator.show);
-    // TODO
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+    await req.validate(validator.show);
+    const template = req.modelOrFail('messageTemplate');
+
+    res.status(httpStatus.OK).resource(new MessageTemplateResource(template));
   }
 
   async index(req: Request, res: Response) {
-    const {} = await req.validate(validator.index);
-    // TODO
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
+
+    const templates = await service.queryMessageTemplates(campId);
+
+    res
+      .status(httpStatus.OK)
+      .resource(MessageTemplateResource.collection(templates));
   }
 
   async store(req: Request, res: Response) {
@@ -38,14 +46,28 @@ class MessageTemplateController {
       priority,
     });
 
-    // TODO Use resource
-    res.status(httpStatus.CREATED).json(template);
+    res
+      .status(httpStatus.CREATED)
+      .resource(new MessageTemplateResource(template));
   }
 
   async update(req: Request, res: Response) {
-    const {} = await req.validate(validator.update);
-    // TODO
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+    const {
+      params: { campId, messageTemplateId },
+      body: { subject, body, priority },
+    } = await req.validate(validator.update);
+
+    const template = await service.updateMessageTemplate(
+      messageTemplateId,
+      campId,
+      {
+        subject,
+        body,
+        priority,
+      },
+    );
+
+    res.status(httpStatus.OK).resource(new MessageTemplateResource(template));
   }
 
   async destroy(req: Request, res: Response) {
