@@ -4,7 +4,7 @@ import { validateRequest } from '#middlewares/validate.middleware';
 import { authUserId } from '#middlewares/auth.middleware';
 import { requestLocale } from '#middlewares/i18n.middleware';
 
-export default (req: Request, _res: Response, next: NextFunction) => {
+export default (req: Request, res: Response, next: NextFunction) => {
   // ---------------------------------------------------------------------------
   // Backwards compatibility with express 4.
   // ---------------------------------------------------------------------------
@@ -44,6 +44,11 @@ export default (req: Request, _res: Response, next: NextFunction) => {
   req.preferredLocale = () => requestLocale(req);
 
   // ---------------------------------------------------------------------------
+  // Response
+  // ---------------------------------------------------------------------------
 
+  res.resource = (resource) => res.json(resource.toJSON());
+
+  // ---------------------------------------------------------------------------
   next();
 };

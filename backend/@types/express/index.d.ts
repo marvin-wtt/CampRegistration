@@ -11,6 +11,7 @@ import {
   File,
 } from '@prisma/client';
 import { AnyZodObject, z } from 'zod';
+import type { JsonResource } from '#core/resource/JsonResource';
 
 declare global {
   namespace Express {
@@ -57,6 +58,10 @@ declare global {
         name: K,
         value: Models[K] | null,
       ) => void;
+    }
+
+    interface Response {
+      resource: <T, O>(resource: JsonResource<T, O>) => Response;
     }
   }
 }
