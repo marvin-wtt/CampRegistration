@@ -4,8 +4,9 @@ import service from './message-template.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError.js';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource.js';
+import { BaseController } from '#core/controller/BaseController.js';
 
-class MessageTemplateController {
+class MessageTemplateController extends BaseController {
   async show(req: Request, res: Response) {
     await req.validate(validator.show);
     const template = req.modelOrFail('messageTemplate');

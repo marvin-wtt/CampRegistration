@@ -5,6 +5,7 @@ import registrationResource from './registration.resource.js';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
+import registrationMessages from '#app/registration/registration.messages.js';
 
 const show = async (req: Request, res: Response) => {
   const registration = req.modelOrFail('registration');
@@ -38,17 +39,17 @@ const store = async (req: Request, res: Response) => {
   // Notify participant
   if (registration.waitingList) {
     await catchAndResolve(
-      registrationService.sendWaitingListConfirmation(camp, registration),
+      registrationMessages.sendWaitingListNotification(camp, registration),
     );
   } else {
     await catchAndResolve(
-      registrationService.sendRegistrationConfirmation(camp, registration),
+      registrationMessages.sendRegistrationConfirmation(camp, registration),
     );
   }
 
   // Notify contact email
   await catchAndResolve(
-    registrationService.sendRegistrationManagerNotification(camp, registration),
+    registrationMessages.notifyContactEmail(camp, registration),
   );
 
   res

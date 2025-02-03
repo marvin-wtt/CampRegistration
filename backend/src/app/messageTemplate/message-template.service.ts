@@ -1,5 +1,6 @@
 import prisma from '#client.js';
 import type { MessageTemplate, Prisma } from '@prisma/client';
+import * as handlebars from 'handlebars';
 
 class MessageTemplateService {
   async getMessageTemplateById(id: string, campId: string) {
@@ -59,6 +60,24 @@ class MessageTemplateService {
         campId,
       },
     });
+  }
+
+  createCompiler(template: string): (context: unknown) => string {
+    return handlebars.compile(template, {
+      knownHelpersOnly: true,
+      knownHelpers: {
+        if: true,
+        unless: true,
+        each: true,
+        with: true,
+      },
+    });
+  }
+
+  compileText(template: string, context: object) {
+    const compile = this.createCompiler(template);
+
+    return compile(context);
   }
 }
 

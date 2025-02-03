@@ -1,10 +1,8 @@
 import fileService from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import { collection, resource } from '#core/resource';
-import { type Request, type Response } from 'express';
-import fileResource from './file.resource.js';
-import type { File } from '@prisma/client';
+import type { Request, Response } from 'express';
+import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 
 const stream = async (req: Request, res: Response) => {
@@ -30,7 +28,7 @@ const stream = async (req: Request, res: Response) => {
 const show = async (req: Request, res: Response) => {
   const file = req.modelOrFail('file');
 
-  res.status(httpStatus.OK).json(fileResource(file));
+  res.resource(new FileResource(file));
 };
 
 const index = async (req: Request, res: Response) => {
@@ -43,7 +41,7 @@ const index = async (req: Request, res: Response) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'No relation model found');
   }
 
-  const data = (await fileService.queryModelFiles(
+  const data = await fileService.queryModelFiles(
     model,
     {
       name,
@@ -55,10 +53,9 @@ const index = async (req: Request, res: Response) => {
       sortBy: 'id',
       sortType: 'asc',
     },
-  )) as File[];
+  );
 
-  const response = collection(data.map((value) => fileResource(value)));
-  res.status(httpStatus.OK).json(response);
+  res.resource(FileResource.collection(data));
 };
 
 const store = async (req: Request, res: Response) => {
@@ -80,8 +77,7 @@ const store = async (req: Request, res: Response) => {
     accessLevel ?? 'private',
   );
 
-  const response = resource(fileResource(data));
-  res.status(httpStatus.CREATED).json(response);
+  res.status(httpStatus.CREATED).resource(new FileResource(data));
 };
 
 const destroy = async (req: Request, res: Response) => {

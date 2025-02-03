@@ -1,6 +1,7 @@
-import { Message, File } from '@prisma/client';
-import type { Message as MessageResource } from '@camp-registration/common/entities';
-import fileResource from '#app/file/file.resource.js';
+import type { Message, File } from '@prisma/client';
+import type { Message as MessageResourceData } from '@camp-registration/common/entities';
+import { FileResource } from '#app/file/file.resource';
+import { JsonResource } from '#core/resource/JsonResource';
 
 interface MessageWithRelations extends Message {
   attachments: {
@@ -8,24 +9,23 @@ interface MessageWithRelations extends Message {
   }[];
 }
 
-const messageResource = (message: MessageWithRelations): MessageResource => {
-  const attachments =
-    message.attachments
-      ?.map((attachment) => attachment.file)
-      .map(fileResource) ?? null;
-  const sentAt = message.sentAt?.toISOString() ?? null;
-
-  return {
-    id: message.id,
-    recipients: message.recipients,
-    replyTo: message.replyTo,
-    subject: message.subject,
-    body: message.body,
-    priority: message.priority,
-    sentAt,
-    createdAt: message.createdAt.toISOString(),
-    attachments,
-  };
-};
-
-export default messageResource;
+export class MessageResource extends JsonResource<
+  MessageWithRelations,
+  MessageResourceData
+> {
+  transform() {
+    return {
+      id: this.data.id,
+      recipients: this.data.recipients,
+      replyTo: this.data.replyTo,
+      subject: this.data.subject,
+      body: this.data.body,
+      priority: this.data.priority,
+      sentAt: this.data.sentAt?.toISOString() ?? null,
+      createdAt: this.data.createdAt.toISOString(),
+      attachments: FileResource.collection(
+        this.data.attachments.map((v) => v.file),
+      ).transform(),
+    };
+  }
+}

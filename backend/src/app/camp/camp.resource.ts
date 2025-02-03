@@ -5,8 +5,8 @@ import type {
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource.js';
 
-export class CampResource extends JsonResource<Camp> {
-  transform(): CampResourceData {
+export class CampResource extends JsonResource<Camp, CampResourceData> {
+  transform() {
     return {
       id: this.data.id,
       public: this.data.public,

@@ -1,31 +1,39 @@
-import { catchRequestAsync } from '#utils/catchAsync';
-import { routeModel } from '#utils/verifyModel';
 import messageService from './message.service.js';
 import httpStatus from 'http-status';
-import { resource } from '#core/resource';
-import messageResource from './message.resource.js';
-import { MessageCreateData } from '@camp-registration/common/entities';
+import { MessageResource } from './message.resource.js';
 import registrationService from '#app/registration/registration.service';
+import { BaseController } from '#core/controller/BaseController.js';
+import type { Request, Response } from 'express';
 
-const store = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
-  const body = req.body as MessageCreateData;
+class MessageController extends BaseController {
+  async store(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const { body } = await req.validate();
 
-  // TODO External addresses
+    const registrations = await registrationService.queryRegistrationsByIds(
+      body.registrations,
+    );
+    const messageData = registrations.map((registration) => {
+      const recipients =
+        registrationService.extractRegistrationEmails(registration);
 
-  // TODO Get files from storage
+      return {
+        recipients,
+        replyTo: body.replyTo,
+        subject: body.subject,
+        body: body.body,
+        priority: body.priority,
+        context: {
+          camp,
+        },
+        locale: registration.locale,
+        registrationId: registration.id,
+        attachments: undefined,
+      };
+    });
 
-  const registrations = await registrationService.queryRegistrationsByIds(
-    body.registrations,
-  );
-
-  const messageData = registrations.map((registration) => {
-    const locale = registrationService.extractRegistrationCountry(registration);
-    const recipients =
-      registrationService.extractRegistrationEmails(registration);
-
-    return {
-      recipients,
+    const message = await messageService.sendMessage({
+      recipients: '',
       replyTo: body.replyTo,
       subject: body.subject,
       body: body.body,
@@ -33,29 +41,13 @@ const store = catchRequestAsync(async (req, res) => {
       context: {
         camp,
       },
-      locale,
-      registrationId: registration.id,
+      locale: undefined,
+      registrationId: undefined,
       attachments: undefined,
-    };
-  });
+    });
 
-  const message = await messageService.sendMessage({
-    recipients: '',
-    replyTo: body.replyTo,
-    subject: body.subject,
-    body: body.body,
-    priority: body.priority,
-    context: {
-      camp,
-    },
-    locale: undefined,
-    registrationId: undefined,
-    attachments: undefined,
-  });
+    res.status(httpStatus.CREATED).resource(new MessageResource(message));
+  }
+}
 
-  res.status(httpStatus.CREATED).json(resource(messageResource(message)));
-});
-
-export default {
-  store,
-};
+export default new MessageController();

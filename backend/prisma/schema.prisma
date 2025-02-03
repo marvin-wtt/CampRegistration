@@ -116,9 +116,10 @@ model Registration {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
 
-  camp  Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
-  bed   Bed?
-  files File[]
+  camp     Camp                @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  bed      Bed?
+  files    File[]
+  messages MessageReceipient[]
 
   @@map("registrations")
 }
@@ -200,19 +201,35 @@ model File {
 }
 
 model Message {
-  id         String    @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  templateId String?   @map("message_template_id") @db.Char(36)
-  recipients String
-  replyTo    String    @map("reply_to")
+  id         String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  templateId String?  @map("message_template_id") @db.Char(36)
+  replyTo    String?  @map("reply_to")
   subject    String
   body       String
-  priority   String    @default("normal")
-  sentAt     DateTime?
-  createdAt  DateTime  @default(now()) @map("created_at")
+  priority   String   @default("normal")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  template MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template    MessageTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  receipients MessageReceipient[]
 
   @@map("messages")
+}
+
+model MessageReceipient {
+  id             String    @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  messageId      String    @map("message_id") @db.Char(36)
+  registrationId String    @map("registration_id") @db.Char(36)
+  email          String
+  subject        String
+  body           String
+  sentAt         DateTime? @map("sent_at")
+  bouncedAt      DateTime? @map("bounced_at")
+  deliveredAt    DateTime? @map("delivered_at")
+
+  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  registration Registration @relation(fields: [registrationId], references: [id])
+
+  @@map("message_recipients")
 }
 
 model MessageTemplate {

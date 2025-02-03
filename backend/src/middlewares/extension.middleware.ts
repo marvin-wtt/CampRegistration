@@ -47,7 +47,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
   // Response
   // ---------------------------------------------------------------------------
 
-  res.resource = (resource) => res.json(resource.toJSON());
+  res.resource = (resource) => res.json(resource.toObject());
 
   // ---------------------------------------------------------------------------
   next();

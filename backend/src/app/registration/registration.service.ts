@@ -9,6 +9,9 @@ import notificationService from '#app/notification/notification.service';
 import messageService from '#app/message/message.service';
 import config from '#config/index';
 import logger from '#core/logger';
+import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import mailService from '#app/mail/mail.service.js';
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -306,184 +309,16 @@ const registrationRoleFilter = (
   };
 };
 
-const sendRegistrationConfirmation = async (
-  camp: Camp,
-  registration: Registration,
-) => {
-  await sendMessageByTemplate('registration_confirmation', camp, registration);
-};
-
-const sendWaitingListConfirmation = async (
-  camp: Camp,
-  registration: Registration,
-) => {
-  await sendMessageByTemplate('waiting_list_notification', camp, registration);
-};
-
-const sendRegistrationManagerNotification = async (
-  camp: Camp,
-  registration: Registration,
-) => {
-  // Swap recipients and replyTo as the message is not sent to the registration
-  const {
-    recipients: replyTo,
-    replyTo: recipients,
-    country,
-  } = getRegistrationConfirmationRegistrationData(camp, registration);
-  const name = 'registration_notification';
-
-  const template = await messageService.getMessageTemplate(
-    camp.id,
-    name,
-    country,
-  );
-
-  if (!template) {
-    logger.warn(
-      `No message template found with name '${name}' for camp '${camp.id}'. Locale: '${country}'`,
-    );
-    return;
-  }
-
-  const url = notificationService.generateUrl(`management/${camp.id}`);
-  const context = {
-    camp,
-    registration,
-    url,
-  };
-
-  const dataAttachment = {
-    filename: 'data.json',
-    contentType: 'application/json',
-    content: JSON.stringify(registration),
-  };
-
-  await messageService.sendMessageWithTemplate(template, {
-    recipients,
-    replyTo: Array.isArray(replyTo) ? replyTo.join(',') : replyTo,
-    context,
-    attachments: [dataAttachment],
-  });
-};
-
-const sendMessageByTemplate = async (
-  name: string,
-  camp: Camp,
-  registration: Registration,
-) => {
-  const { recipients, replyTo, country } =
-    getRegistrationConfirmationRegistrationData(camp, registration);
-
-  const template = await messageService.getMessageTemplate(
-    camp.id,
-    name,
-    country,
-  );
-
-  if (!template) {
-    logger.warn(
-      `No message template found with name '${name}' for camp '${camp.id}'. Locale: '${country}'`,
-    );
-    return;
-  }
-
-  const context = {
-    camp,
-    registration,
-  };
-
-  await messageService.sendMessageWithTemplate(template, {
-    context,
-    recipients,
-    replyTo,
-  });
-};
-
-const getRegistrationConfirmationRegistrationData = (
-  camp: Camp,
-  registration: Registration,
-) => {
-  const accessor = registrationCampDataAccessor(registration.campData);
-
-  const recipients = accessor.emails();
-  const country = accessor.country(camp.countries);
-  const replyTo = findCampContactEmails(camp.contactEmail, country);
-
-  return {
-    recipients,
-    replyTo,
-    country,
-  };
-};
-
-const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
-  const emails = (): string | string[] => {
-    return campData['email']?.filter((value): value is string => {
-      return !!value && typeof value === 'string';
-    });
-  };
-
-  const country = (options?: string[]): string | undefined => {
-    const country = campData['country']?.find(
-      (value: unknown): value is string => {
-        return (
-          typeof value === 'string' && (!options || options.includes(value))
-        );
-      },
-    );
-
-    if (country) {
-      return country;
-    }
-
-    // Try address instead
-    const address = campData['address']?.find(
-      (value: unknown): value is { country: string } => {
-        if (!value || typeof value !== 'object' || !('country' in value)) {
-          return false;
-        }
-
-        return (
-          typeof value.country === 'string' &&
-          (!options || options.includes(value.country))
-        );
-      },
-    );
-
-    return address?.country;
-  };
-
-  return {
-    emails,
-    country,
-  };
-};
-
-const findCampContactEmails = (
-  contactEmail: Record<string, string> | string,
-  country: string | undefined,
-): string => {
-  if (typeof contactEmail === 'string') {
-    return contactEmail;
-  }
-
-  if (!country) {
-    return Object.values(contactEmail).join(',');
-  }
-
-  return contactEmail[country];
-};
-
 const extractRegistrationCountry = (
   registration: Registration,
 ): string | undefined => {
-  return registrationCampDataAccessor(registration.campData).country();
+  return new RegistrationCampDataHelper(registration.campData).country();
 };
 
 const extractRegistrationEmails = (
   registration: Registration,
 ): string[] | string => {
-  return registrationCampDataAccessor(registration.campData).emails();
+  return new RegistrationCampDataHelper(registration.campData).emails();
 };
 
 export default {
@@ -496,9 +331,6 @@ export default {
   updateRegistrationById,
   deleteRegistration,
   updateRegistrationCampDataByCamp,
-  sendRegistrationConfirmation,
-  sendWaitingListConfirmation,
-  sendRegistrationManagerNotification,
   extractRegistrationCountry,
   extractRegistrationEmails,
 };

@@ -1,185 +1,92 @@
 import prisma from '#client.js';
-import { ulid } from '#utils/ulid';
-import { MessageTemplate } from '@prisma/client';
-import dlv from 'dlv';
-import notificationService from '#app/notification/notification.service';
-import { Attachment } from 'nodemailer/lib/mailer';
-import logger from '#core/logger';
+import type { Prisma, Camp, Message, Registration } from '@prisma/client';
+import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
+import mailService from '#app/mail/mail.service.js';
 
-type MessageContext = Record<string, string | object>;
+type MessageCreateInput = Pick<
+  Prisma.MessageCreateInput,
+  'subject' | 'body' | 'priority' | 'replyTo'
+>;
 
-type MessageFileType = Attachment;
-
-interface MessageData {
-  recipients: string | string[];
+interface RecipientCreateData {
+  messageId: string;
+  registrationId: string;
+  email: string;
   subject: string;
   body: string;
-  context: MessageContext;
-  replyTo: string;
-  priority?: string;
-  attachments?: MessageFileType[];
-  locale?: string;
-  registrationId?: string;
 }
 
-const sendMessages = async (messageData: MessageData[]) => {
-  const data = messageData.map((data) => {
-    const body = compileMessageBody(data.body, data.context);
-    const recipients = Array.isArray(data.recipients)
-      ? data.recipients.join(',')
-      : data.recipients;
-    // Link message to registration
-    const registrations = data.registrationId
-      ? { create: { registrationId: data.registrationId } }
-      : undefined;
+class MessageService {
+  async createMessage(data: MessageCreateInput) {
+    return prisma.message.create({
+      data,
+    });
+  }
 
-    return {
-      id: ulid(),
-      ...data,
-      body,
-      recipients,
-      ...registrations,
+  async queryRecipients(messageId: string) {
+    return prisma.messageReceipient.findMany({
+      where: { messageId },
+    });
+  }
+
+  async createManyRecipients(data: RecipientCreateData[]) {
+    await prisma.messageReceipient.createMany({
+      data,
+    });
+  }
+
+  async sendMessageToRegistrations(
+    camp: Camp,
+    registrations: Registration | Registration[],
+    message: Message,
+  ) {
+    registrations = Array.isArray(registrations)
+      ? registrations
+      : [registrations];
+
+    // Create compiler
+    const subjectCompiler = messageTemplateService.createCompiler(
+      message.subject,
+    );
+    const bodyCompiler = messageTemplateService.createCompiler(message.body);
+    // Compiler context
+    const globalContext = {
+      camp,
     };
-  });
 
-  const messages = await prisma.message.createMany({
-    data,
-  });
-};
+    // Create recipients
+    const recipientData = registrations.flatMap((registration) => {
+      // Compile text
+      const context = {
+        ...globalContext,
+        registration,
+      };
 
-const sendMessage = async (data: MessageData) => {
-  const body = compileMessageBody(data.body, data.context);
-  const recipients = Array.isArray(data.recipients)
-    ? data.recipients.join(',')
-    : data.recipients;
+      const subject = subjectCompiler(context);
+      const body = bodyCompiler(context);
 
-  // Link message to registration
-  const registrations = data.registrationId
-    ? { create: { registrationId: data.registrationId } }
-    : undefined;
+      // Extract emails
+      const helper = new RegistrationCampDataHelper(registration.campData);
+      const emails = helper.emails();
 
-  const include = {
-    attachments: {
-      include: {
-        file: true,
-      },
-    },
-  };
-
-  const message = await prisma.message.create({
-    data: {
-      id: ulid(),
-      replyTo: data.replyTo,
-      subject: data.subject,
-      recipients,
-      body,
-      priority: data.priority,
-      registrations,
-    },
-    include,
-  });
-
-  try {
-    await notificationService.sendEmail({
-      to: message.recipients,
-      replyTo: message.replyTo,
-      subject: message.subject,
-      template: 'message',
-      context: {
-        body: message.body,
-      },
+      // Map fields
+      return emails.map((email) => ({
+        messageId: message.id,
+        registrationId: registration.id,
+        subject,
+        body,
+        email,
+      }));
     });
 
-    return prisma.message.update({
-      data: {
-        sentAt: new Date(),
-      },
-      where: {
-        id: message.id,
-      },
-      include,
-    });
-  } catch (reason) {
-    logger.warn('Failed to send message: ' + reason);
-    // TODO add job that sends emails again later
+    await this.createManyRecipients(recipientData);
+
+    // Fetch all created recipients
+    const recipients = await this.queryRecipients(message.id);
+
+    await mailService.sendAll(message, recipients);
   }
+}
 
-  return message;
-};
-
-/**
- * Searches the message template with name for a camp.
- * If the template was not found and a locale was specified, a template with
- * the provided name and any locale for the camp will be returned.
- *
- *
- * @param campId The camp id of the template
- * @param name The name of the template
- * @param locale The locale, if there are multiple locales present
- * @return The template or null, if no matching template was found
- */
-const getMessageTemplate = async (
-  campId: string,
-  name: string,
-  locale?: string,
-) => {
-  const template = await prisma.messageTemplate.findFirst({
-    where: {
-      name,
-      campId,
-      locale,
-    },
-  });
-
-  if (template || !locale) {
-    return template;
-  }
-
-  return prisma.messageTemplate.findFirst({
-    where: {
-      name,
-      campId,
-    },
-  });
-};
-
-type WithOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-
-const sendMessageWithTemplate = async (
-  template: MessageTemplate,
-  data: WithOptional<MessageData, 'body' | 'subject' | 'priority'>,
-) => {
-  return sendMessage({
-    body: template.body,
-    subject: template.subject,
-    priority: template.priority,
-    ...data,
-  });
-};
-
-const compileMessageBody = (
-  body: string,
-  tokens: MessageContext,
-  locale?: string,
-): string => {
-  return body.replace(/{{\s*(.*?)\s*}}/g, (match, path) => {
-    const value = dlv(tokens, path, path);
-
-    if (value === path || typeof value !== 'object') {
-      return value;
-    }
-
-    // Check if the object is a translation
-    if (locale && locale in value && typeof value.locale === 'string') {
-      return value[locale];
-    }
-
-    return value;
-  });
-};
-
-export default {
-  getMessageTemplate,
-  sendMessage,
-  sendMessageWithTemplate,
-};
+export default new MessageService();
