@@ -94,3 +94,21 @@ description: 'To proceed, open your authenticator app and enter the 6-digit code
 actions:
   verify: 'Verify'
 </i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'OTP-Verifizierung'
+
+description: 'Um fortzufahren, öffnen Sie Ihre Authentifizierungs-App und geben Sie den angezeigten 6-stelligen Code ein.'
+
+actions:
+  verify: 'Verifizieren'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Vérification OTP'
+
+description: "Pour continuer, ouvrez votre application d’authentification et saisissez le code à 6 chiffres affiché."
+
+actions:
+  verify: 'Vérifier'
+</i18n>
