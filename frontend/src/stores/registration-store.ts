@@ -13,6 +13,7 @@ import {
   useCampBus,
   useRegistrationBus,
 } from 'src/composables/bus';
+import { v7 as uuid } from 'uuid';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -64,7 +65,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
     return apiService.createTemporaryFile({
       file,
-      field: crypto.randomUUID(),
+      field: uuid(),
     });
   }
 
