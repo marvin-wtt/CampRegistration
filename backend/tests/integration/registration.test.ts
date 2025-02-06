@@ -409,7 +409,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expect(body).toHaveProperty(`data.id`);
         expect(body).toHaveProperty(`data.data.some_files`);
-        expect(body.data.data.some_filea).toHaveLength(2);
+        expect(body.data.data.some_files).toHaveLength(2);
 
         const expectedUrl = (fileId: string) =>
           `/api/v1/camps/${camp.id}/registrations/${body.data.id}/files/${fileId}/`;
