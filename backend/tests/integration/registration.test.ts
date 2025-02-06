@@ -422,12 +422,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         ).toBeTruthy();
 
         const updatedFiles = await prisma.file.findMany({
-          where: { campId: camp.id },
+          where: { registrationId: body.data.id },
         });
 
         expect(updatedFiles).toHaveLength(2);
-        expect(updatedFiles[0].registrationId).toBe(body.data.id);
-        expect(updatedFiles[1].registrationId).toBe(body.data.id);
       });
 
       it('should respond with `201` status code when file is optional', async () => {
