@@ -25,6 +25,30 @@ const run = async () => {
       ],
     },
   });
+
+  await CampFactory.create({
+    id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
+    name: 'Files Camp',
+    public: true,
+    active: true,
+    form: {
+      name: 'Files test camp',
+      description: 'Camp without special fields or translations',
+      elements: [
+        {
+          name: 'first_name',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'files',
+          type: 'file',
+          required: true,
+          allowMultiple: true,
+        },
+      ],
+    },
+  });
 };
 
 export default {
