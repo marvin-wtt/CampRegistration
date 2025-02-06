@@ -138,7 +138,7 @@ function orderUpwards(item: T) {
   if (index == 0) {
     return;
   }
-  const previous = modelValue.value[index - 1];
+  const previous = modelValue.value[index - 1]!;
 
   // Swap position for animation
   modelValue.value.splice(index, 1, previous);
@@ -157,7 +157,7 @@ function orderDownwards(item: T) {
   if (index == modelValue.value.length - 1) {
     return;
   }
-  const next = modelValue.value[index + 1];
+  const next = modelValue.value[index + 1]!;
 
   // Swap position for animation
   modelValue.value.splice(index, 1, next);

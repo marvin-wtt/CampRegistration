@@ -8,10 +8,8 @@
         @submit="onOKClick"
         @reset="onCancelClick"
       >
-        <q-card-section>
-          <div class="text-h6">
-            {{ t(`title`) }}
-          </div>
+        <q-card-section class="text-h6">
+          {{ t(`title`) }}
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
@@ -35,13 +33,13 @@
             outline
             rounded
             color="primary"
-            :label="t('actions.cancel')"
+            :label="t('action.cancel')"
           />
           <q-btn
             type="submit"
             rounded
             color="primary"
-            :label="t('actions.save')"
+            :label="t('action.save')"
           />
         </q-card-actions>
       </q-form>
@@ -53,28 +51,23 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
-import type { RoomUpdateData } from '@camp-registration/common/entities';
+import type { RoomUpdateData, Room } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
 const props = defineProps<{
-  room: RoomUpdateData;
+  room: Room;
   locales?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
-
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedRoom = reactive<RoomUpdateData>(props.room);
+const modifiedRoom = reactive<RoomUpdateData>({
+  name: props.room.name,
+});
 
 function onOKClick(): void {
   onDialogOK(modifiedRoom);
@@ -96,7 +89,7 @@ fields:
     rules:
       required: 'Name is required'
 
-actions:
+action:
   save: 'Save'
   cancel: 'Cancel'
 </i18n>
@@ -109,7 +102,7 @@ fields:
     rules:
       required: 'Name ist erforderlich'
 
-actions:
+action:
   save: 'Speichern'
   cancel: 'Abbrechen'
 </i18n>
@@ -122,7 +115,7 @@ fields:
     rules:
       required: 'Le nom est requis'
 
-actions:
+action:
   save: 'Enregistrer'
   cancel: 'Annuler'
 </i18n>
