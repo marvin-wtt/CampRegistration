@@ -34,6 +34,7 @@ import {
   campWithEmailAndMaxParticipants,
   campWithFormFunctions,
   campWithAddress,
+  campWithMultipleFilesRequired,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import mailer from '../../src/core/mail';
@@ -380,6 +381,53 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         expect(updatedFile.registrationId).toBe(body.data.id);
+      });
+
+      it('should respond with `201` status code when form has multiple files', async () => {
+        const camp = await CampFactory.create(campWithMultipleFilesRequired);
+        const file1 = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const file2 = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        const data = {
+          some_field: 'Some value',
+          some_files: [
+            `${file1.id}#${file1.field}`,
+            `${file2.id}#${file2.field}`,
+          ],
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(body).toHaveProperty(`data.id`);
+        expect(body).toHaveProperty(`data.data.some_files`);
+        expect(body.data.data.some_filea).toHaveLength(2);
+
+        const expectedUrl = (fileId: string) =>
+          `/api/v1/camps/${camp.id}/registrations/${body.data.id}/files/${fileId}/`;
+
+        expect(
+          body.data.data.some_files[0].endsWith(expectedUrl(file1.id)),
+        ).toBeTruthy();
+        expect(
+          body.data.data.some_files[1].endsWith(expectedUrl(file2.id)),
+        ).toBeTruthy();
+
+        const updatedFiles = await prisma.file.findMany({
+          where: { campId: camp.id },
+        });
+
+        expect(updatedFiles).toHaveLength(2);
+        expect(updatedFiles[0].registrationId).toBe(body.data.id);
+        expect(updatedFiles[1].registrationId).toBe(body.data.id);
       });
 
       it('should respond with `201` status code when file is optional', async () => {
