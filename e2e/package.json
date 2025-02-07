@@ -19,7 +19,7 @@
     "dev:run": "npm run start & npm run run:ui"
   },
   "devDependencies": {
-    "cypress": "^13.6.2",
+    "cypress": "^14.0.2",
     "start-server-and-test": "^2.0.3",
     "typescript": "^5.7.3"
   }
