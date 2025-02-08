@@ -51,7 +51,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
-import type { RoomUpdateData, Room } from '@camp-registration/common/entities';
+import type { Room, Translatable } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
 const props = defineProps<{
@@ -65,7 +65,7 @@ const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const modifiedRoom = reactive<RoomUpdateData>({
+const modifiedRoom = reactive<{ name: Translatable }>({
   name: props.room.name,
 });
 

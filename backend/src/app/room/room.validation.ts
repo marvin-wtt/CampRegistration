@@ -32,6 +32,7 @@ const update = z.object({
   body: z
     .object({
       name: translatedValue(z.string()),
+      sortOrder: z.number(),
     })
     .partial(),
 });

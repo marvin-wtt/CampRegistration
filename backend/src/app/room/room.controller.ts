@@ -36,10 +36,10 @@ const store = async (req: Request, res: Response) => {
 const update = async (req: Request, res: Response) => {
   const {
     params: { roomId },
-    body: { name },
+    body: { name, sortOrder },
   } = await req.validate(validator.update);
 
-  const room = await roomService.updateRoomById(roomId, name);
+  const room = await roomService.updateRoomById(roomId, name, sortOrder);
 
   res.json(resource(roomResource(room)));
 };
