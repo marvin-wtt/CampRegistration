@@ -1,4 +1,9 @@
-import { type PanelModel, type Question, SurveyModel } from 'survey-core';
+import {
+  type PageModel,
+  type PanelModel,
+  type Question,
+  SurveyModel,
+} from 'survey-core';
 
 interface SelectData {
   label: string;
@@ -53,6 +58,11 @@ function collectSelectData(
   // Skip certain question types (e.g., "expression")
   if (IGNORED_TYPES.has(question.getType())) {
     return [];
+  }
+
+  // Use page title as default parent title
+  if (!parentTitle) {
+    parentTitle = (question.page as PageModel)?.title;
   }
 
   // Build the primary entry for the current question
