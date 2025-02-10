@@ -24,8 +24,13 @@ declare global {
       file?: File;
     }
 
+    interface AuthUser {
+      id: string;
+      role: string;
+    }
+
     interface Request {
-      user?: UserModel;
+      user?: AuthUser;
       models: Models;
 
       // Validation
@@ -35,7 +40,6 @@ declare global {
 
       // Auth
       authUserId: () => string;
-      authUser: () => UserModel;
 
       // i18n
       preferredLocale: () => string;
