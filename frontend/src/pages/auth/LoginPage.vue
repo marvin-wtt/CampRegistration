@@ -74,14 +74,14 @@
               style="text-decoration: none; color: inherit"
               class="col-shrink flex justify-center content-center q-pa-sm text-primary"
             >
-              {{ t('actions.forgot_password') }}
+              {{ t('action.forgot_password') }}
             </router-link>
           </div>
         </q-card-section>
 
         <q-card-actions>
           <q-btn
-            :label="t('actions.login')"
+            :label="t('action.login')"
             type="submit"
             :loading
             color="primary"
@@ -103,7 +103,7 @@
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.register')"
+            :label="t('action.register')"
             :to="{ name: 'register' }"
             rounded
             outline
