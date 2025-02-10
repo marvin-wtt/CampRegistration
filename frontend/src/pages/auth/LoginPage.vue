@@ -176,7 +176,7 @@ fields:
       required: 'You must provide a valid password'
   remember: 'Stay logged in'
 
-actions:
+action:
   login: 'Login'
   register: 'Register'
   forgot_password: 'Forgot password ?'
@@ -196,7 +196,7 @@ fields:
       required: 'Sie müssen ein gültiges Passwort angeben'
   remember: 'Angemeldet bleiben'
 
-actions:
+action:
   login: 'Anmelden'
   register: 'Registrieren'
   forgot_password: 'Passwort vergessen?'
@@ -216,7 +216,7 @@ fields:
       required: 'Vous devez fournir un mot de passe valide'
   remember: 'Rester connecté'
 
-actions:
+action:
   login: 'Connexion'
   register: "S'inscrire"
   forgot_password: 'Mot de passe oublié ?'

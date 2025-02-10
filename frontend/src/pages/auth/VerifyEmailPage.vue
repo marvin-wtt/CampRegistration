@@ -54,6 +54,18 @@
         >
           {{ error }}
         </q-card-section>
+
+        <q-card-section class="text-center">
+          <q-btn
+            color="primary"
+            size="lg"
+            class="full-width"
+            :label="t('action.login')"
+            :to="{ name: 'login' }"
+            rounded
+            outline
+          />
+        </q-card-section>
       </q-form>
     </q-card>
   </q-page>
@@ -109,6 +121,7 @@ async function sendVerificationEmail() {
 title: 'Verify your email'
 description: 'We have sent a verification email to your email address. Please click on the link in the email to verify your account.'
 action:
+  login: 'Login'
   resend: 'Resend'
   resendIn: 'Resend in {time}s'
 </i18n>
@@ -117,6 +130,7 @@ action:
 title: 'E-Mail bestätigen'
 description: 'Wir haben eine Bestätigungs-E-Mail an Ihre Adresse gesendet. Bitte klicken Sie auf den Link, um Ihr Konto zu verifizieren.'
 action:
+  login: 'Anmelden'
   resend: 'Erneut senden'
   resendIn: 'Erneut senden in {time}s'
 </i18n>
@@ -125,6 +139,7 @@ action:
 title: 'Vérifiez votre adresse e-mail'
 description: 'Nous vous avons envoyé un e-mail de vérification à votre adresse. Veuillez cliquer sur le lien pour vérifier votre compte.'
 action:
+  login: 'Connexion'
   resend: 'Renvoyer'
   resendIn: 'Renvoyer dans {time}s'
 </i18n>

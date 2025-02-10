@@ -154,13 +154,20 @@ export function useAuthService() {
     partialAuthType: string;
   }
 
+  interface PartialAuthError {
+    response: {
+      status: 403;
+      data: PartialAuthResponse;
+    };
+  }
+
   function extractPartialAuthResponse(
     error: unknown,
   ): PartialAuthResponse | undefined {
-    return isPartialAuthResponse(error) ? error : undefined;
+    return isPartialAuthResponse(error) ? error.response.data : undefined;
   }
 
-  function isPartialAuthResponse(error: unknown): error is PartialAuthResponse {
+  function isPartialAuthResponse(error: unknown): error is PartialAuthError {
     return (
       isCustomAxiosError(error) &&
       // Forbidden

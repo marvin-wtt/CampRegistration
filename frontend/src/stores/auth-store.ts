@@ -74,7 +74,6 @@ export const useAuthStore = defineStore('auth', () => {
         await handleAuthentication(result);
       } catch (error) {
         const response = apiService.extractPartialAuthResponse(error);
-
         if (!response) {
           throw error;
         }
@@ -94,7 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
               },
             });
             break;
-          case 'SEND_VERIFY_EMAIL':
+          case 'EMAIL_NOT_VERIFIED':
             await router.push({
               name: 'verify-email',
             });
