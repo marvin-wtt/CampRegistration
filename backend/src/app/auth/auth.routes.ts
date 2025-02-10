@@ -15,11 +15,7 @@ router.post('/logout', auth(), authController.logout);
 router.post('/refresh-tokens', authController.refreshTokens);
 router.post('/forgot-password', guest(), authController.forgotPassword);
 router.post('/reset-password', guest(), authController.resetPassword);
-router.post(
-  '/send-verification-email',
-  auth(),
-  authController.sendVerificationEmail,
-);
+router.post('/send-verification-email', authController.sendVerificationEmail);
 router.post('/verify-email', authController.verifyEmail);
 
 export default router;
