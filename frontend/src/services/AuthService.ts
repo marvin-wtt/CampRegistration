@@ -125,6 +125,12 @@ export function useAuthService() {
     });
   }
 
+  async function sendEmailVerify(token: string): Promise<void> {
+    await api.post('auth/send-verification-email', {
+      token,
+    });
+  }
+
   async function verifyOtp(
     token: string,
     otp: string,
@@ -143,16 +149,35 @@ export function useAuthService() {
     onUnauthenticated = handler;
   }
 
-  function extractOtpTokenFromError(error: unknown): string | undefined {
-    return isCustomAxiosError(error) &&
+  interface PartialAuthResponse {
+    token: string;
+    partialAuthType: string;
+  }
+
+  function extractPartialAuthResponse(
+    error: unknown,
+  ): PartialAuthResponse | undefined {
+    return isPartialAuthResponse(error) ? error : undefined;
+  }
+
+  function isPartialAuthResponse(error: unknown): error is PartialAuthResponse {
+    return (
+      isCustomAxiosError(error) &&
+      // Forbidden
       error.response?.status === 403 &&
-      error.response?.headers['www-authenticate']?.includes('OTP') &&
-      error.response?.data &&
+      // Data
+      error.response?.data != null &&
       typeof error.response?.data === 'object' &&
+      // Status
+      'status' in error.response.data &&
+      error.response.data.status === 'PARTIAL_AUTH' &&
+      // Partial auth type
+      'partialAuthType' in error.response.data &&
+      typeof error.response.data.partialAuthType === 'string' &&
+      // Token
       'token' in error.response.data &&
       typeof error.response.data.token === 'string'
-      ? error.response.data.token
-      : undefined;
+    );
   }
 
   return {
@@ -163,8 +188,9 @@ export function useAuthService() {
     forgotPassword,
     resetPassword,
     verifyEmail,
+    sendEmailVerify,
     refreshTokens,
     setOnUnauthenticated,
-    extractOtpTokenFromError,
+    extractPartialAuthResponse,
   };
 }

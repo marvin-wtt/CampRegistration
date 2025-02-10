@@ -25,7 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
     checkNotNullWithError,
   } = useServiceHandler<void>('auth');
 
-  let otpToken: string | undefined = undefined;
+  let partialAuthToken: string | undefined = undefined;
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let isRefreshingToken = false;
@@ -73,19 +73,35 @@ export const useAuthStore = defineStore('auth', () => {
 
         await handleAuthentication(result);
       } catch (error) {
-        otpToken = apiService.extractOtpTokenFromError(error);
+        const response = apiService.extractPartialAuthResponse(error);
 
-        if (otpToken === undefined) {
+        if (!response) {
           throw error;
         }
 
-        await router.push({
-          name: 'verify-otp',
-          query: {
-            origin: route.query.origin,
-            remember: remember ? 'true' : undefined,
-          },
-        });
+        partialAuthToken = response.token;
+        if (partialAuthToken === undefined) {
+          throw error;
+        }
+
+        switch (response.partialAuthType) {
+          case 'TOTP_REQUIRED':
+            await router.push({
+              name: 'verify-otp',
+              query: {
+                origin: route.query.origin,
+                remember: remember ? 'true' : undefined,
+              },
+            });
+            break;
+          case 'SEND_VERIFY_EMAIL':
+            await router.push({
+              name: 'verify-email',
+            });
+            break;
+          default:
+            throw error;
+        }
       }
     });
   }
@@ -93,7 +109,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function verifyOtp(otp: string) {
     checkNotNullWithError(otp);
 
-    const token = otpToken;
+    const token = partialAuthToken;
     if (token === undefined) {
       await router.push({
         name: 'login',
@@ -209,6 +225,21 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  async function sendVerifyEmail() {
+    const token = partialAuthToken;
+    if (token === undefined) {
+      await router.push({
+        name: 'login',
+        query: route.query,
+      });
+      return;
+    }
+
+    await errorOnFailure(async () => {
+      await apiService.sendEmailVerify(token);
+    });
+  }
+
   return {
     error,
     loading: isLoading,
@@ -220,6 +251,7 @@ export const useAuthStore = defineStore('auth', () => {
     forgotPassword,
     resetPassword,
     verifyEmail,
+    sendVerifyEmail,
     verifyOtp,
   };
 });

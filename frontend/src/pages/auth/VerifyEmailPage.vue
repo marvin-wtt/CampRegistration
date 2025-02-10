@@ -98,8 +98,8 @@ function startCountdown() {
   }, 1000);
 }
 
-function sendVerificationEmail() {
-  // TODO
+async function sendVerificationEmail() {
+  await authStore.sendVerifyEmail();
 
   startCountdown();
 }
