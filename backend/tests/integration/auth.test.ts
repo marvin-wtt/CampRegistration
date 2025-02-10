@@ -514,7 +514,7 @@ describe('/api/v1/auth', async () => {
       expect(tokenData['type']).toBe('SEND_VERIFY_EMAIL');
 
       expect(body).toHaveProperty('status', 'PARTIAL_AUTH');
-      expect(body).toHaveProperty('partialAuthType', 'TOTP_REQUIRED');
+      expect(body).toHaveProperty('partialAuthType', 'EMAIL_NOT_VERIFIED');
     });
 
     it('should respond with a `403` status code when user is locked', async () => {
