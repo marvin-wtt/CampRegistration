@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { routeModel, verifyModel } from '#middlewares/model.middleware';
 import { validateRequest } from '#middlewares/validate.middleware';
-import { authUserId } from '#middlewares/auth.middleware';
+import { authUser, authUserId } from '#middlewares/auth.middleware';
 import { requestLocale } from '#middlewares/i18n.middleware';
 
 export default (req: Request, _res: Response, next: NextFunction) => {
@@ -16,6 +16,7 @@ export default (req: Request, _res: Response, next: NextFunction) => {
   // Auth
   // ---------------------------------------------------------------------------
 
+  req.authUser = () => authUser(req);
   req.authUserId = () => authUserId(req);
 
   // ---------------------------------------------------------------------------

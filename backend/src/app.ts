@@ -2,12 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import passport from 'passport';
 import router from '#routes/index';
 import config from '#config/index';
 import morgan from '#core/morgan';
 import { errorConverter, errorHandler } from '#middlewares/error.middleware';
-import { anonymousStrategy, jwtStrategy } from '#core/passport';
+import { initializePassport } from '#core/passport';
 import cookieParser from 'cookie-parser';
 import { initI18n } from '#core/i18n';
 import { startJobs } from '#jobs/index';
@@ -48,9 +47,7 @@ app.options('*splat', cors());
 app.enable('trust proxy');
 
 // authentication
-app.use(passport.initialize());
-passport.use(jwtStrategy);
-passport.use(anonymousStrategy);
+app.use(initializePassport());
 
 // localization
 initI18n();

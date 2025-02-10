@@ -40,6 +40,10 @@ export const generateOTPToken = (user: User) => {
   return generateToken(user, TokenType.OTP);
 };
 
+export const generateSendVerifyEmailToken = (user: User) => {
+  return generateToken(user, TokenType.SEND_VERIFY_EMAIL);
+};
+
 export const generateRefreshToken = (user: User) => {
   return generateToken(user, TokenType.REFRESH);
 };

@@ -13,11 +13,6 @@ import { AnyZodObject, z } from 'zod';
 
 declare global {
   namespace Express {
-    interface AuthUser {
-      id: string;
-      role: string;
-    }
-
     interface Models {
       user?: UserModel;
       camp?: Camp;
@@ -30,7 +25,7 @@ declare global {
     }
 
     interface Request {
-      user?: AuthUser;
+      user?: UserModel;
       models: Models;
 
       // Validation
@@ -40,6 +35,7 @@ declare global {
 
       // Auth
       authUserId: () => string;
+      authUser: () => UserModel;
 
       // i18n
       preferredLocale: () => string;
