@@ -1171,7 +1171,7 @@ describe('/api/v1/auth', async () => {
         .expect(204);
     });
 
-    it('should respond with `401` status code when the token is invalid', async () => {
+    it('should respond with `400` status code when the token is invalid', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
@@ -1180,7 +1180,7 @@ describe('/api/v1/auth', async () => {
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
         .send({ token })
-        .expect(401);
+        .expect(400);
     });
 
     it('should respond with `400` status code when user does not exist anymore', async () => {
