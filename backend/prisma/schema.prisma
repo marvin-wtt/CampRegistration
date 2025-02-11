@@ -172,6 +172,7 @@ enum TokenType {
   RESET_PASSWORD
   VERIFY_EMAIL
   OTP
+  SEND_VERIFY_EMAIL
 }
 
 model File {

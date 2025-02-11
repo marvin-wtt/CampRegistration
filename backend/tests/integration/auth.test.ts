@@ -15,6 +15,7 @@ import {
   generateOTPToken,
   generateRefreshToken,
   generateResetPasswordToken,
+  generateSendVerifyEmailToken,
   generateToken,
   generateVerifyEmailToken,
   verifyToken,
@@ -485,6 +486,9 @@ describe('/api/v1/auth', async () => {
       expect(tokenData['type']).toBe('OTP');
 
       expect(headers).toHaveProperty('www-authenticate');
+
+      expect(body).toHaveProperty('status', 'PARTIAL_AUTH');
+      expect(body).toHaveProperty('partialAuthType', 'TOTP_REQUIRED');
     });
 
     it('should respond with a `403` status code when email is not verified', async () => {
@@ -494,7 +498,7 @@ describe('/api/v1/auth', async () => {
         password: 'password',
       });
 
-      await request()
+      const { body } = await request()
         .post('/api/v1/auth/login')
         .send({
           email: 'test2@email.net',
@@ -502,6 +506,15 @@ describe('/api/v1/auth', async () => {
           remember: true,
         })
         .expect(403);
+
+      expect(body).toHaveProperty('token');
+
+      const tokenData = verifyToken(body.token);
+      expect(tokenData).toBeDefined();
+      expect(tokenData['type']).toBe('SEND_VERIFY_EMAIL');
+
+      expect(body).toHaveProperty('status', 'PARTIAL_AUTH');
+      expect(body).toHaveProperty('partialAuthType', 'EMAIL_NOT_VERIFIED');
     });
 
     it('should respond with a `403` status code when user is locked', async () => {
@@ -1150,27 +1163,31 @@ describe('/api/v1/auth', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
-      const accessToken = generateAccessToken(user);
+      const token = generateSendVerifyEmailToken(user);
 
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
+        .send({ token })
         .expect(204);
     });
 
-    it('should respond with `401` status code when the user is unauthenticated', async () => {
-      await request()
-        .post(`/api/v1/auth/send-verification-email/`)
-        .send()
-        .expect(401);
-    });
-
-    it('should respond with `401` status code when user does not exist anymore', async () => {
+    it('should respond with `400` status code when the token is invalid', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
-      const accessToken = generateAccessToken(user);
+      const token = generateAccessToken(user);
+
+      await request()
+        .post(`/api/v1/auth/send-verification-email/`)
+        .send({ token })
+        .expect(400);
+    });
+
+    it('should respond with `400` status code when user does not exist anymore', async () => {
+      const user = await UserFactory.create({
+        emailVerified: false,
+      });
+      const token = generateSendVerifyEmailToken(user);
       // Delete user to simulate expired token
       await prisma.user.delete({
         where: { id: user.id },
@@ -1178,21 +1195,19 @@ describe('/api/v1/auth', async () => {
 
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(401);
+        .send({ token })
+        .expect(400);
     });
 
     it('should respond with `400` status code when the email is already verified', async () => {
       const user = await UserFactory.create({
         emailVerified: true,
       });
-      const accessToken = generateAccessToken(user);
+      const token = generateSendVerifyEmailToken(user);
 
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
+        .send({ token })
         .expect(400);
     });
 
@@ -1200,12 +1215,11 @@ describe('/api/v1/auth', async () => {
       const user = await UserFactory.create({
         emailVerified: false,
       });
-      const accessToken = generateAccessToken(user);
+      const token = generateSendVerifyEmailToken(user);
 
       await request()
         .post(`/api/v1/auth/send-verification-email/`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
+        .send({ token })
         .expect(204);
 
       expect(mailer.sendMail).toBeCalledTimes(1);
@@ -1214,19 +1228,6 @@ describe('/api/v1/auth', async () => {
           to: user.email,
         }),
       );
-    });
-
-    it('should respond with `204` status code when the user authenticated via cookie', async () => {
-      const user = await UserFactory.create({
-        emailVerified: false,
-      });
-      const accessToken = generateAccessToken(user);
-
-      await request()
-        .post(`/api/v1/auth/send-verification-email/`)
-        .send()
-        .set('Cookie', `accessToken=${accessToken}; HttpOnly`)
-        .expect(204);
     });
   });
 

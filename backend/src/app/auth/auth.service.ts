@@ -20,13 +20,6 @@ const loginWithEmailPassword = async (email: string, password: string) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Account is locked');
   }
 
-  if (!user.emailVerified) {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      'Please confirm your email to login.',
-    );
-  }
-
   return user;
 };
 

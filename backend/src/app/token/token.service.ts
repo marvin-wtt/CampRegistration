@@ -199,6 +199,19 @@ const generateTotpToken = (user: Pick<User, 'id'>) => {
   return generateToken(user.id, expires, TokenType.OTP);
 };
 
+const generateSendVerifyEmailToken = (user: Pick<User, 'id'>) => {
+  const expires = moment().add(5, 'minutes');
+  return generateToken(user.id, expires, TokenType.SEND_VERIFY_EMAIL);
+};
+
+const verifyTotpToken = (token: string) => {
+  return verifyToken(token, TokenType.OTP);
+};
+
+const verifySendVerifyEmailToken = (token: string) => {
+  return verifyToken(token, TokenType.SEND_VERIFY_EMAIL);
+};
+
 const blacklistTokens = async (userId: string): Promise<void> => {
   await prisma.token.updateMany({
     data: {
@@ -225,14 +238,14 @@ const deleteTokenById = async (id: number) => {
 };
 
 export default {
-  generateToken,
-  saveToken,
-  verifyToken,
   verifyDatabaseToken,
+  verifyTotpToken,
+  verifySendVerifyEmailToken,
   generateAuthTokens,
   generateResetPasswordToken,
   generateVerifyEmailToken,
   generateTotpToken,
+  generateSendVerifyEmailToken,
   blacklistTokens,
   deleteTokenById,
   deleteExpiredTokens,

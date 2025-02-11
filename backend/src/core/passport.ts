@@ -8,6 +8,8 @@ import { Request } from 'express';
 
 import config from '#config/index';
 import { TokenType } from '@prisma/client';
+import passport from 'passport';
+import userService from '#app/user/user.service.js';
 
 function cookieExtractor(req: Request) {
   if (req && req.cookies && 'accessToken' in req.cookies) {
@@ -30,14 +32,19 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
     return;
   }
 
-  const user = {
-    id: payload.sub,
-    role: payload.role,
-  };
+  const user = await userService.getUserById(payload.sub);
 
   done(null, user);
 };
 
-export const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
+const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
 
-export const anonymousStrategy = new AnonymousStrategy();
+const anonymousStrategy = new AnonymousStrategy();
+
+export function initializePassport() {
+  const handler = passport.initialize();
+  passport.use(jwtStrategy);
+  passport.use(anonymousStrategy);
+
+  return handler;
+}

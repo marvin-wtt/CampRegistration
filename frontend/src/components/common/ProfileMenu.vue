@@ -40,7 +40,7 @@
           v-if="administrator"
           v-close-popup
           clickable
-          :to="{ name: 'administrator' }"
+          :to="{ name: 'administration' }"
         >
           <q-item-section avatar>
             <q-icon name="manage_accounts" />
