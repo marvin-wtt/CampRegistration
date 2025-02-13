@@ -60,6 +60,7 @@
         <q-btn
           :label="t('action.reset')"
           type="reset"
+          :disable="isModified"
           outlined
           rounded
         />
@@ -75,7 +76,7 @@ import type {
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -90,6 +91,12 @@ const emit = defineEmits<{
 const data = ref<Pick<ProfileUpdateData, 'name' | 'locale'>>({
   name: profile.name,
   locale: profile.locale,
+});
+
+const isModified = computed<boolean>(() => {
+  return (
+    data.value.name !== profile.name || data.value.locale !== profile.locale
+  );
 });
 
 function onSave() {
