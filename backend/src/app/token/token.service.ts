@@ -53,7 +53,7 @@ const revokeTokens = async (userId: string, type?: TokenType) => {
   });
 };
 
-const verifyToken = (token: string, type: TokenType) => {
+const verifyToken = (token: string, type: TokenType, scope?: string) => {
   let payload;
   try {
     // token expiry is checked here
@@ -73,6 +73,10 @@ const verifyToken = (token: string, type: TokenType) => {
   }
 
   if (payload.type !== type) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token type');
+  }
+
+  if (scope !== undefined && payload.scope !== scope) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token type');
   }
 
@@ -196,20 +200,24 @@ const generateVerifyEmailToken = async (
 
 const generateTotpToken = (user: Pick<User, 'id'>) => {
   const expires = moment().add(5, 'minutes');
-  return generateToken(user.id, expires, TokenType.OTP);
+  return generateToken(user.id, expires, TokenType.RESTRICTED_ACCESS, {
+    scope: 'OTP',
+  });
 };
 
 const generateSendVerifyEmailToken = (user: Pick<User, 'id'>) => {
   const expires = moment().add(5, 'minutes');
-  return generateToken(user.id, expires, TokenType.SEND_VERIFY_EMAIL);
+  return generateToken(user.id, expires, TokenType.RESTRICTED_ACCESS, {
+    scope: 'SEND_VERIFY_EMAIL',
+  });
 };
 
 const verifyTotpToken = (token: string) => {
-  return verifyToken(token, TokenType.OTP);
+  return verifyToken(token, TokenType.RESTRICTED_ACCESS, 'OTP');
 };
 
 const verifySendVerifyEmailToken = (token: string) => {
-  return verifyToken(token, TokenType.SEND_VERIFY_EMAIL);
+  return verifyToken(token, TokenType.RESTRICTED_ACCESS, 'SEND_VERIFY_EMAIL');
 };
 
 const blacklistTokens = async (userId: string): Promise<void> => {
