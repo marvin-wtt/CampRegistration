@@ -37,11 +37,15 @@ export const generateAccessToken = (user: User) => {
 };
 
 export const generateOTPToken = (user: User) => {
-  return generateToken(user, TokenType.OTP);
+  return generateToken(user, TokenType.RESTRICTED_ACCESS, {
+    scope: 'OTP',
+  });
 };
 
 export const generateSendVerifyEmailToken = (user: User) => {
-  return generateToken(user, TokenType.SEND_VERIFY_EMAIL);
+  return generateToken(user, TokenType.RESTRICTED_ACCESS, {
+    scope: 'SEND_VERIFY_EMAIL',
+  });
 };
 
 export const generateRefreshToken = (user: User) => {

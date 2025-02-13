@@ -483,7 +483,8 @@ describe('/api/v1/auth', async () => {
 
       const tokenData = verifyToken(body.token);
       expect(tokenData).toBeDefined();
-      expect(tokenData['type']).toBe('OTP');
+      expect(tokenData['type']).toBe('RESTRICTED_ACCESS');
+      expect(tokenData['scope']).toBe('OTP');
 
       expect(headers).toHaveProperty('www-authenticate');
 
@@ -511,7 +512,8 @@ describe('/api/v1/auth', async () => {
 
       const tokenData = verifyToken(body.token);
       expect(tokenData).toBeDefined();
-      expect(tokenData['type']).toBe('SEND_VERIFY_EMAIL');
+      expect(tokenData['type']).toBe('RESTRICTED_ACCESS');
+      expect(tokenData['scope']).toBe('SEND_VERIFY_EMAIL');
 
       expect(body).toHaveProperty('status', 'PARTIAL_AUTH');
       expect(body).toHaveProperty('partialAuthType', 'EMAIL_NOT_VERIFIED');
