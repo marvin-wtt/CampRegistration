@@ -116,10 +116,10 @@ model Registration {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
 
-  camp     Camp                @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed      Bed?
   files    File[]
-  messages MessageReceipient[]
+  messages Message[]
 
   @@map("registrations")
 }
@@ -201,33 +201,31 @@ model File {
 }
 
 model Message {
-  id         String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  templateId String?  @map("message_template_id") @db.Char(36)
-  replyTo    String?  @map("reply_to")
-  subject    String
-  body       String
-  priority   String   @default("normal")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id             String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  templateId     String?  @map("message_template_id") @db.Char(36)
+  registrationId String?  @map("registration_id") @db.Char(36)
+  replyTo        String?  @map("reply_to")
+  subject        String
+  body           String
+  priority       String   @default("normal")
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  template    MessageTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  receipients MessageReceipient[]
+  template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  registration Registration?    @relation(fields: [registrationId], references: [id])
+  status       MessageStatus?
 
   @@map("messages")
 }
 
-model MessageReceipient {
-  id             String    @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  messageId      String    @map("message_id") @db.Char(36)
-  registrationId String    @map("registration_id") @db.Char(36)
-  email          String
-  subject        String
-  body           String
-  sentAt         DateTime? @map("sent_at")
-  bouncedAt      DateTime? @map("bounced_at")
-  deliveredAt    DateTime? @map("delivered_at")
+model MessageStatus {
+  id          String    @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  messageId   String    @unique @map("message_id") @db.Char(36)
+  email       String
+  sentAt      DateTime? @map("sent_at")
+  bouncedAt   DateTime? @map("bounced_at")
+  deliveredAt DateTime? @map("delivered_at")
 
-  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  registration Registration @relation(fields: [registrationId], references: [id])
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@map("message_recipients")
 }
@@ -235,18 +233,19 @@ model MessageReceipient {
 model MessageTemplate {
   id        String   @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
   campId    String   @map("camp_id") @db.Char(36)
-  name      String
+  event     String?
+  priority  String   @default("normal")
+  /// [StringOrTranslation]
+  replyTo   String?  @map("reply_to")
   /// [StringOrTranslation]
   subject   Json
   /// [StringOrTranslation]
   body      Json
-  priority  String   @default("normal")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
   messages Message[]
 
-  @@unique([campId, name])
   @@map("message_templates")
 }

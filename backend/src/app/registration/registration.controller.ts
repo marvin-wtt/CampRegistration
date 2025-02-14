@@ -76,7 +76,7 @@ const update = async (req: Request, res: Response) => {
 
   if (previousRegistration.waitingList && !registration.waitingList) {
     await catchAndResolve(
-      registrationService.sendRegistrationConfirmation(camp, registration),
+      registrationMessages.sendRegistrationConfirmation(camp, registration),
     );
   }
 

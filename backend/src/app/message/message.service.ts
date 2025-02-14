@@ -1,21 +1,19 @@
 import prisma from '#client.js';
-import type { Prisma, Camp, Message, Registration } from '@prisma/client';
+import type {
+  Prisma,
+  Camp,
+  Registration,
+  MessageTemplate,
+} from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 import mailService from '#app/mail/mail.service.js';
+import { translateObject } from '#utils/translateObject.js';
 
 type MessageCreateInput = Pick<
   Prisma.MessageCreateInput,
   'subject' | 'body' | 'priority' | 'replyTo'
 >;
-
-interface RecipientCreateData {
-  messageId: string;
-  registrationId: string;
-  email: string;
-  subject: string;
-  body: string;
-}
 
 class MessageService {
   async createMessage(data: MessageCreateInput) {
@@ -24,68 +22,65 @@ class MessageService {
     });
   }
 
-  async queryRecipients(messageId: string) {
-    return prisma.messageReceipient.findMany({
-      where: { messageId },
-    });
-  }
-
-  async createManyRecipients(data: RecipientCreateData[]) {
-    await prisma.messageReceipient.createMany({
-      data,
-    });
-  }
-
-  async sendMessageToRegistrations(
+  async createTemplateMessage(
+    template: MessageTemplate,
     camp: Camp,
-    registrations: Registration | Registration[],
-    message: Message,
+    registration: Registration,
   ) {
-    registrations = Array.isArray(registrations)
-      ? registrations
-      : [registrations];
+    const helper = new RegistrationCampDataHelper(registration.campData);
+    const country = helper.country(camp.countries);
 
     // Create compiler
     const subjectCompiler = messageTemplateService.createCompiler(
-      message.subject,
+      translateObject(template.subject, country),
     );
-    const bodyCompiler = messageTemplateService.createCompiler(message.body);
-    // Compiler context
-    const globalContext = {
+    const bodyCompiler = messageTemplateService.createCompiler(
+      translateObject(template.body, country),
+    );
+
+    const context = {
       camp,
+      registration,
     };
 
-    // Create recipients
-    const recipientData = registrations.flatMap((registration) => {
-      // Compile text
-      const context = {
-        ...globalContext,
-        registration,
-      };
-
-      const subject = subjectCompiler(context);
-      const body = bodyCompiler(context);
-
-      // Extract emails
-      const helper = new RegistrationCampDataHelper(registration.campData);
-      const emails = helper.emails();
-
-      // Map fields
-      return emails.map((email) => ({
-        messageId: message.id,
-        registrationId: registration.id,
-        subject,
-        body,
-        email,
-      }));
+    const message = await prisma.message.create({
+      data: {
+        registration: { connect: { id: registration.id } },
+        template: { connect: { id: template.id } },
+        replyTo: translateObject(camp.contactEmail, country),
+        subject: subjectCompiler(context),
+        body: bodyCompiler(context),
+      },
     });
 
-    await this.createManyRecipients(recipientData);
+    const emails = helper.emails();
 
-    // Fetch all created recipients
-    const recipients = await this.queryRecipients(message.id);
+    await mailService.sendMessages(message, emails);
+  }
 
-    await mailService.sendAll(message, recipients);
+  async createEventMessage(
+    event: string,
+    camp: Camp,
+    registration: Registration,
+  ) {
+    const template = await messageTemplateService.getMessageTemplateByName(
+      event,
+      camp.id,
+    );
+
+    // Only send email when template is present
+    // No template means, that emails are disabled
+    if (!template) {
+      return;
+    }
+
+    return this.createTemplateMessage(template, camp, registration);
+  }
+
+  async getMessageById(id: string) {
+    return prisma.message.findUniqueOrThrow({
+      where: { id },
+    });
   }
 }
 

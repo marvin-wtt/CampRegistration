@@ -16,12 +16,10 @@ export class MessageResource extends JsonResource<
   transform() {
     return {
       id: this.data.id,
-      recipients: this.data.recipients,
       replyTo: this.data.replyTo,
       subject: this.data.subject,
       body: this.data.body,
       priority: this.data.priority,
-      sentAt: this.data.sentAt?.toISOString() ?? null,
       createdAt: this.data.createdAt.toISOString(),
       attachments: FileResource.collection(
         this.data.attachments.map((v) => v.file),

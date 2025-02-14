@@ -18,11 +18,11 @@ class MessageTemplateService {
     });
   }
 
-  async getMessageTemplateByName(name: string, campId: string) {
+  async getMessageTemplateByName(event: string, campId: string) {
     return prisma.messageTemplate.findFirst({
       where: {
-        name,
         campId,
+        event,
       },
     });
   }
