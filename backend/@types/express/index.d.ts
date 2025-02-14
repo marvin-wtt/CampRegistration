@@ -15,11 +15,6 @@ import type { JsonResource } from '#core/resource/JsonResource';
 
 declare global {
   namespace Express {
-    interface AuthUser {
-      id: string;
-      role: string;
-    }
-
     interface Models {
       user?: UserModel;
       camp?: Camp;
@@ -30,6 +25,11 @@ declare global {
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
+    }
+
+    interface AuthUser {
+      id: string;
+      role: string;
     }
 
     interface Request {

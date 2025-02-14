@@ -72,6 +72,17 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/verify-email',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'verify-email',
+        path: '',
+        component: () => import('pages/auth/VerifyEmailPage.vue'),
+      },
+    ],
+  },
+  {
     path: '/verify-otp',
     component: () => import('layouts/AuthenticationLayout.vue'),
     children: [

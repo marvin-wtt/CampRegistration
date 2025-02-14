@@ -56,9 +56,15 @@ const login = async (req: Request, res: Response) => {
       `OTP realm="${config.appName}", charset="UTF-8"`,
     );
 
-    res.status(httpStatus.FORBIDDEN).send({
-      token,
-    });
+    sendPartialAuthResponse(res, token, 'TOTP_REQUIRED');
+    return;
+  }
+
+  // Check if email is required
+  if (!user.emailVerified) {
+    const token = tokenService.generateSendVerifyEmailToken(user);
+
+    sendPartialAuthResponse(res, token, 'EMAIL_NOT_VERIFIED');
     return;
   }
 
@@ -70,7 +76,7 @@ const verifyOTP = async (req: Request, res: Response) => {
     body: { otp, token, remember },
   } = await req.validate(validator.verifyOTP);
 
-  const { userId } = tokenService.verifyToken(token, 'OTP');
+  const { userId } = tokenService.verifyTotpToken(token);
   const user = await userService.getUserByIdWithCamps(userId);
   await totpService.verifyTOTP(user, otp);
 
@@ -94,6 +100,18 @@ const sendAuthResponse = async (
   );
 
   res.json(authResource(profile, tokens));
+};
+
+const sendPartialAuthResponse = (
+  res: Response,
+  token: string,
+  type: string,
+) => {
+  res.status(httpStatus.FORBIDDEN).send({
+    status: 'PARTIAL_AUTH',
+    partialAuthType: type,
+    token,
+  });
 };
 
 const logout = async (req: Request, res: Response) => {
@@ -172,11 +190,12 @@ const resetPassword = async (req: Request, res: Response) => {
 };
 
 const sendVerificationEmail = async (req: Request, res: Response) => {
-  const userId = req.authUserId();
-  const user = await userService.getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid auth state');
-  }
+  const {
+    body: { token },
+  } = await req.validate(validator.sendEmailVerification);
+
+  const { userId } = tokenService.verifySendVerifyEmailToken(token);
+  const user = await userService.getUserByIdWithCamps(userId);
 
   if (user.emailVerified) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');

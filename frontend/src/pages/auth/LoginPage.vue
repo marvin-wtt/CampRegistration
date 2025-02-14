@@ -74,14 +74,14 @@
               style="text-decoration: none; color: inherit"
               class="col-shrink flex justify-center content-center q-pa-sm text-primary"
             >
-              {{ t('actions.forgot_password') }}
+              {{ t('action.forgot_password') }}
             </router-link>
           </div>
         </q-card-section>
 
         <q-card-actions>
           <q-btn
-            :label="t('actions.login')"
+            :label="t('action.login')"
             type="submit"
             :loading
             color="primary"
@@ -103,7 +103,7 @@
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('actions.register')"
+            :label="t('action.register')"
             :to="{ name: 'register' }"
             rounded
             outline
@@ -176,7 +176,7 @@ fields:
       required: 'You must provide a valid password'
   remember: 'Stay logged in'
 
-actions:
+action:
   login: 'Login'
   register: 'Register'
   forgot_password: 'Forgot password ?'
@@ -196,7 +196,7 @@ fields:
       required: 'Sie müssen ein gültiges Passwort angeben'
   remember: 'Angemeldet bleiben'
 
-actions:
+action:
   login: 'Anmelden'
   register: 'Registrieren'
   forgot_password: 'Passwort vergessen?'
@@ -216,7 +216,7 @@ fields:
       required: 'Vous devez fournir un mot de passe valide'
   remember: 'Rester connecté'
 
-actions:
+action:
   login: 'Connexion'
   register: "S'inscrire"
   forgot_password: 'Mot de passe oublié ?'
