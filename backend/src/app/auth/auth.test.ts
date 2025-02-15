@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
-import prisma from '../utils/prisma';
+import prisma from '../../../tests/utils/prisma.js';
 import { TokenType, User } from '@prisma/client';
 import {
   CampFactory,
@@ -8,7 +8,7 @@ import {
   TokenFactory,
   CampManagerFactory,
   InvitationFactory,
-} from '../../prisma/factories';
+} from '../../../prisma/factories/index.js';
 import {
   generateAccessToken,
   generateExpiredToken,
@@ -19,9 +19,9 @@ import {
   generateToken,
   generateVerifyEmailToken,
   verifyToken,
-} from '../utils/token';
-import { request } from '../utils/request';
-import mailer from '../../src/core/mail';
+} from '../../../tests/utils/token.js';
+import { request } from '../../../tests/utils/request.js';
+import mailer from '#core/mail';
 import * as OTPAuth from 'otpauth';
 
 describe('/api/v1/auth', async () => {

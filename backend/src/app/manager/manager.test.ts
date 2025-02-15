@@ -4,10 +4,10 @@ import {
   UserFactory,
   CampManagerFactory,
   InvitationFactory,
-} from '../../prisma/factories';
-import { generateAccessToken } from '../utils/token';
-import { request } from '../utils/request';
-import prisma from '../utils/prisma';
+} from '../../../prisma/factories/index.js';
+import { generateAccessToken } from '../../../tests/utils/token.js';
+import { request } from '../../../tests/utils/request.js';
+import prisma from '../../../tests/utils/prisma.js';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/camps/:campId/managers', () => {

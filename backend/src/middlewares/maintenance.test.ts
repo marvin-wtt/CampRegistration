@@ -1,5 +1,5 @@
 import { afterAll, describe, it } from 'vitest';
-import { request } from '../utils/request';
+import { request } from '../../tests/utils/request.js';
 
 const resetEmvVariables = () => {
   process.env.MAINTENANCE_MODE = undefined;
