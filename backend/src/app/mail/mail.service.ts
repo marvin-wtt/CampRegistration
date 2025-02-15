@@ -64,7 +64,7 @@ class MailService {
       priority: data.priority,
       subject: data.subject,
       body: html,
-      attachments: undefined, // TODO
+      attachments: data.attachments,
     });
   }
 
@@ -85,7 +85,7 @@ class MailService {
       priority: data.priority,
       subject: data.subject,
       body: html,
-      attachments: undefined, // TODO
+      attachments: data.attachments,
     });
   }
 
@@ -103,7 +103,7 @@ class MailService {
       priority: data.priority ?? 'normal',
       subject: data.subject,
       body: data.body,
-      attachments: undefined, // TODO
+      attachments: data.attachments,
     });
   }
 

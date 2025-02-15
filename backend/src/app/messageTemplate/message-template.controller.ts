@@ -29,19 +29,22 @@ class MessageTemplateController extends BaseController {
   async store(req: Request, res: Response) {
     const {
       params: { campId },
-      body: { name, subject, body, priority },
+      body: { event, subject, body, priority },
     } = await req.validate(validator.store);
 
-    const existing = await service.getMessageTemplateByName(name, campId);
-    if (existing) {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'Message template already exists',
-      );
+    // Duplicate events for the same camp are not allowed
+    if (event) {
+      const existing = await service.getMessageTemplateByName(event, campId);
+      if (existing) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'Message template already exists',
+        );
+      }
     }
 
     const template = await service.createTemplate(campId, {
-      name,
+      event,
       subject,
       body,
       priority,

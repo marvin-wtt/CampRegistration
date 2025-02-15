@@ -4,7 +4,7 @@ import { translatedValue } from '#core/validation/helper';
 const show = z.object({
   params: z.object({
     campId: z.string(),
-    messageTemplateId: z.string(),
+    messageId: z.string(),
   }),
 });
 
@@ -19,32 +19,21 @@ const store = z.object({
   params: z.object({
     campId: z.string(),
   }),
-  body: z.object({
-    event: z.string().optional(),
-    subject: translatedValue(z.string()),
-    body: translatedValue(z.string()),
-    priority: z.enum(['low', 'normal', 'high']).optional(),
-  }),
+  body: z.object({}),
 });
 
 const update = z.object({
   params: z.object({
     campId: z.string(),
-    messageTemplateId: z.string(),
+    messageId: z.string(),
   }),
-  body: z
-    .object({
-      subject: translatedValue(z.string()),
-      body: translatedValue(z.string()),
-      priority: z.enum(['low', 'normal', 'high']),
-    })
-    .partial(),
+  body: z.object({}).partial(),
 });
 
 const destroy = z.object({
   params: z.object({
     campId: z.string(),
-    messageTemplateId: z.string(),
+    messageId: z.string(),
   }),
 });
 
