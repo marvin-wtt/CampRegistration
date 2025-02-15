@@ -6,10 +6,7 @@ export default defineConfig({
   // @ts-ignore
   plugins: [tsconfigPaths()],
   test: {
-    include: [
-      'src/**/*.integration.{test,spec}.{js,mjs,cjs,ts,mts}',
-      'tests/integration/**/*.test.ts',
-    ],
+    include: ['tests/integration/**/*.test.ts'],
     poolOptions: {
       forks: {
         singleFork: true,

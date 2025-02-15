@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import prisma from '../../../tests/utils/prisma.js';
-import { generateAccessToken } from '../../../tests/utils/token.js';
+import prisma from '../utils/prisma';
+import { generateAccessToken } from '../utils/token';
 import {
   CampFactory,
   UserFactory,
@@ -8,7 +8,7 @@ import {
   RegistrationFactory,
   TableTemplateFactory,
   FileFactory,
-} from '../../../prisma/factories/index.js';
+} from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
 import { ulid } from 'ulidx';
@@ -20,9 +20,9 @@ import {
   campCreateNational,
   campInactive,
   campUpdateBody,
-} from '../../../tests/fixtures/camp/camp.fixtures.js';
-import { request } from '../../../tests/utils/request.js';
-import { campWithMaxParticipantsRolesInternational } from '../../../tests/fixtures/registration/camp.fixtures.js';
+} from '../fixtures/camp/camp.fixtures';
+import { request } from '../utils/request';
+import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 

@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { request } from '../../../tests/utils/request.js';
+import { request } from '../utils/request';
 import {
   CampFactory,
   CampManagerFactory,
   TokenFactory,
   UserFactory,
-} from '../../../prisma/factories/index.js';
-import { generateAccessToken } from '../../../tests/utils/token.js';
-import prisma from '../../../tests/utils/prisma.js';
+} from '../../prisma/factories';
+import { generateAccessToken } from '../utils/token';
+import prisma from '../utils/prisma';
 import { TokenType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { profileUpdateBody } from '../../../tests/fixtures/profile/profile.fixtures.js';
+import { profileUpdateBody } from '../fixtures/profile/profile.fixtures';
 
 describe('/api/v1/profile', () => {
   describe('GET /api/v1/profile/', () => {

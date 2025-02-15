@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import prisma from '../../../tests/utils/prisma.js';
-import { generateAccessToken } from '../../../tests/utils/token.js';
+import prisma from '../utils/prisma';
+import { generateAccessToken } from '../utils/token';
 import {
   CampFactory,
   FileFactory,
   RegistrationFactory,
   UserFactory,
   CampManagerFactory,
-} from '../../../prisma/factories/index.js';
+} from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
@@ -35,9 +35,9 @@ import {
   campWithFormFunctions,
   campWithAddress,
   campWithMultipleFilesRequired,
-} from '../../../tests/fixtures/registration/camp.fixtures.js';
-import { request } from '../../../tests/utils/request.js';
-import mailer from '#core/mail';
+} from '../fixtures/registration/camp.fixtures';
+import { request } from '../utils/request';
+import mailer from '../../src/core/mail';
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (

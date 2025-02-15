@@ -6,10 +6,7 @@ export default defineConfig({
   // @ts-ignore
   plugins: [tsconfigPaths()],
   test: {
-    include: [
-      'src/**/*.unit.{test,spec}.{js,mjs,cjs,ts,mts}',
-      'tests/unit/**/*.test.ts',
-    ],
+    include: ['tests/unit/**/*.test.ts'],
     coverage: {
       enabled: true,
       include: ['src/*'],

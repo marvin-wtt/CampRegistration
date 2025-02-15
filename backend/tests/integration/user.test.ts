@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { UserFactory } from '../../../prisma/factories/index.js';
-import { request } from '../../../tests/utils/request.js';
-import prisma from '../../../tests/utils/prisma.js';
-import { generateAccessToken } from '../../../tests/utils/token.js';
+import { UserFactory } from '../../prisma/factories';
+import { request } from '../utils/request';
+import prisma from '../utils/prisma';
+import { generateAccessToken } from '../utils/token';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/users/', () => {
