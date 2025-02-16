@@ -1,7 +1,7 @@
 import type { Message } from '@prisma/client';
-import { NodeMailer } from '#app/mail/node.mailer.js';
 import config from '#config/index';
 import renderer from '#core/renderer/index.js';
+import { MailFactory } from '#app/mail/mail.factory.js';
 
 type MailAddress = string | { name: string; address: string };
 
@@ -44,8 +44,9 @@ class MailService {
   private mailer: IMailer;
 
   constructor() {
-    // TODO Load mailer form config
-    this.mailer = new NodeMailer();
+    const factory = new MailFactory();
+
+    this.mailer = factory.createMailer();
   }
 
   async sendTemplateMail(data: TemplateMailData): Promise<void> {
