@@ -11,7 +11,8 @@ import managerService from '#app/manager/manager.service';
 import { catchAndResolve } from '#utils/promiseUtils';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
-import totpService from '#app/totp/totp.service.js';
+import totpService from '#app/totp/totp.service';
+import authMessages from '#app/auth/auth.messages';
 
 const register = async (req: Request, res: Response) => {
   const {
@@ -30,7 +31,7 @@ const register = async (req: Request, res: Response) => {
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
   await catchAndResolve(
-    authService.sendVerificationEmail(user.email, verifyEmailToken),
+    authMessages.sendVerificationEmail(user, verifyEmailToken),
   );
 
   res.status(httpStatus.CREATED).json({
@@ -173,7 +174,7 @@ const forgotPassword = async (req: Request, res: Response) => {
   );
 
   if (resetPasswordToken !== undefined) {
-    await authService.sendResetPasswordEmail(email, resetPasswordToken);
+    await authMessages.sendResetPasswordEmail(user, resetPasswordToken);
   }
 
   res.sendStatus(httpStatus.NO_CONTENT);
@@ -202,7 +203,7 @@ const sendVerificationEmail = async (req: Request, res: Response) => {
   }
 
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  await authService.sendVerificationEmail(user.email, verifyEmailToken);
+  await authMessages.sendVerificationEmail(user, verifyEmailToken);
 
   res.sendStatus(httpStatus.NO_CONTENT);
 };
