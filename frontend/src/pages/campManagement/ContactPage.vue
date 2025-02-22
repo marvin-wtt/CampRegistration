@@ -21,34 +21,7 @@
         rounded
         dense
       />
-      <div class="row q-mt-none q-gutter-sm">
-        <q-input
-          v-model="replyTo"
-          type="email"
-          :label="t('input.replyTo.label')"
-          :rules="[
-            (val?: Contact[]) =>
-              (!!val && val.length > 0) || t('input.to.replyTo.required'),
-          ]"
-          hide-bottom-space
-          class="col-grow"
-          outlined
-          rounded
-          dense
-        />
 
-        <q-select
-          v-model="priority"
-          :label="t('input.priority')"
-          :options="priorityOptions"
-          class="col-xs-12 col-sm-2"
-          emit-value
-          map-options
-          outlined
-          rounded
-          dense
-        />
-      </div>
       <q-input
         v-model="subject"
         :label="t('input.subject.label')"
@@ -64,19 +37,39 @@
         dense
       />
 
-      <q-file
-        v-model="attachments"
-        :label="t('input.attachments')"
-        max-file-size="20000000"
-        max-total-size="20000000"
-        multiple
-        append
-        use-chips
-        outlined
-        rounded
-        dense
-        @rejected="onAttachmentRejected"
-      />
+      <expand-slide
+        expand-label="Show more"
+        contract-label="Show less"
+      >
+        <div class="row q-mt-none q-gutter-sm">
+          <q-input
+            v-model="replyTo"
+            type="email"
+            :label="t('input.replyTo.label')"
+            :rules="[
+              (val?: Contact[]) =>
+                (!!val && val.length > 0) || t('input.to.replyTo.required'),
+            ]"
+            hide-bottom-space
+            class="col-grow"
+            outlined
+            rounded
+            dense
+          />
+
+          <q-select
+            v-model="priority"
+            :label="t('input.priority')"
+            :options="priorityOptions"
+            class="col-xs-12 col-sm-2"
+            emit-value
+            map-options
+            outlined
+            rounded
+            dense
+          />
+        </div>
+      </expand-slide>
 
       <email-editor
         v-model="text"
@@ -84,15 +77,36 @@
         class="col-grow"
       />
 
-      <q-btn
-        :label="t('send')"
-        type="submit"
-        icon="send"
-        color="primary"
-        :disabled="sendBtnDisabled"
-        rounded
-        class="q-mt-sm self-end"
-      />
+      <div class="row q-gutter-sm justify-between">
+        <q-file
+          v-model="attachments"
+          :label="t('input.attachments')"
+          max-file-size="20000000"
+          max-total-size="20000000"
+          multiple
+          append
+          use-chips
+          outlined
+          rounded
+          dense
+          class="col-xs-12 col-sm-auto"
+          style="max-width: 600px"
+          @rejected="onAttachmentRejected"
+        >
+          <template #prepend>
+            <q-icon name="attach_file" />
+          </template>
+        </q-file>
+
+        <q-btn
+          :label="t('action.send')"
+          type="submit"
+          icon="send"
+          color="primary"
+          class="col-xs-12 col-sm-auto"
+          rounded
+        />
+      </div>
     </q-form>
   </page-state-handler>
 </template>
@@ -109,12 +123,17 @@ import type { Contact } from 'components/campManagement/contact/Contact';
 import type { Token } from 'components/campManagement/contact/Token';
 import { type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
+import ExpandSlide from 'components/common/ExpandSlide.vue';
+import { useCampDetailsStore } from 'stores/camp-details-store';
+import { extractFormFields } from 'src/utils/surveyJS';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 
 const registrationStore = useRegistrationsStore();
+const campDetailsStore = useCampDetailsStore();
 
+campDetailsStore.fetchData();
 registrationStore.fetchData();
 
 const to = ref<Contact[]>([]);
@@ -123,7 +142,9 @@ const subject = ref<string>();
 const attachments = ref<File[]>();
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 
-const text = ref<string>('');
+const text = ref<string>(
+  'This is a test for {{ camp.name }}, and should render',
+);
 
 const campTokens: (keyof Camp)[] = [
   'name',
@@ -150,7 +171,9 @@ const tokens = computed<Token[]>(() => [
   {
     key: 'registration',
     label: t('token.registration.label'),
-    items: [],
+    items: !campDetailsStore.data
+      ? []
+      : extractFormFields(campDetailsStore.data.form, 'data'),
   },
 ]);
 
@@ -180,8 +203,6 @@ const loading = computed<boolean>(() => {
 const registrations = computed<Registration[]>(() => {
   return registrationStore.data ?? [];
 });
-
-const sendBtnDisabled = computed<boolean>(() => text.value.trim().length === 0);
 
 function onAttachmentRejected(entities: QRejectedEntry[]) {
   entities.forEach((entity: QRejectedEntry) => {
@@ -218,6 +239,9 @@ function send() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
+action:
+  send: 'Send'
+
 error:
   attachment:
     default: 'File not allowed'
