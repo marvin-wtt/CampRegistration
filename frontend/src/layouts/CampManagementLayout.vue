@@ -10,7 +10,7 @@
           flat
           icon="menu"
           round
-          @click="drawer = !drawer"
+          @click="floatingDrawer = !floatingDrawer"
         />
         <q-toolbar-title>
           <q-skeleton
@@ -47,10 +47,10 @@
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :mini="miniState"
+      :mini="miniState && floatingDrawer"
       :width="220"
       bordered
-      mini-to-overlay
+      :mini-to-overlay="floatingDrawer"
       show-if-above
       class="column no-wrap"
       @mouseleave="miniState = true"
@@ -59,7 +59,7 @@
       <q-list padding>
         <q-item>
           <q-item-section
-            v-if="miniState"
+            v-if="miniState && floatingDrawer"
             avatar
           >
             <q-icon name="home" />
@@ -176,6 +176,7 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
+const floatingDrawer = ref<boolean>(true);
 const miniState = ref<boolean>(true);
 
 const items: NavigationItemProps[] = [
