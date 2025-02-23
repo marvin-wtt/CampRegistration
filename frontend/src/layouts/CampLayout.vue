@@ -3,7 +3,7 @@
     <!-- Be sure to play with the Layout demo on docs -->
 
     <!-- (Optional) The Header -->
-    <q-header elevated>
+    <q-header bordered>
       <q-toolbar>
         <q-toolbar-title>
           <router-link

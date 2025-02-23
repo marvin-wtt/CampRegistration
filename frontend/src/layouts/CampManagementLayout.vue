@@ -2,10 +2,7 @@
   <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
-    <q-header
-      class="bg-primary text-white"
-      elevated
-    >
+    <q-header bordered>
       <q-toolbar>
         <q-btn
           v-if="showDrawer"
