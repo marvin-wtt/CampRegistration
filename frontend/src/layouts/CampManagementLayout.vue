@@ -49,12 +49,12 @@
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
       :mini="miniState"
       :width="220"
       bordered
       mini-to-overlay
       show-if-above
+      class="column no-wrap"
       @mouseleave="miniState = true"
       @mouseenter="miniState = false"
     >
@@ -71,31 +71,39 @@
           </q-item-section>
         </q-item>
 
-        <q-separator />
+        <q-separator spaced />
 
-        <template
+        <navigation-item
           v-for="item in filteredItems"
           :key="item.name"
+          v-bind="item"
+        />
+      </q-list>
+
+      <q-space />
+
+      <q-list padding>
+        <q-item
+          clickable
+          :to="{ name: 'imprint' }"
         >
-          <navigation-item
-            v-if="item.header"
-            :header="item.header"
-            :name="item.name"
-            :label="item.label"
-            :separated="item.separated"
-            :preview="item.preview"
-          />
-          <navigation-item
-            v-else
-            :name="item.name"
-            :label="item.label"
-            :icon="item.icon"
-            :to="item.to"
-            :separated="item.separated"
-            :preview="item.preview"
-            :children="item.children"
-          />
-        </template>
+          <q-item-section>
+            <q-item-label>
+              {{ t('footer.imprint') }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          clickable
+          :to="{ name: 'privacy-policy' }"
+        >
+          <q-item-section>
+            <q-item-label>
+              {{ t('footer.privacy_policy') }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -116,7 +124,7 @@ import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useMeta, useQuasar } from 'quasar';
+import { useMeta } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
@@ -125,7 +133,6 @@ import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
-const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
@@ -261,6 +268,10 @@ function logout() {
 </script>
 
 <i18n lang="yaml" locale="en">
+footer:
+  imprint: 'Imprint'
+  privacy_policy: 'Privacy Policy'
+
 access: 'Access'
 contact: 'Contact'
 dashboard: 'Dashboard'
@@ -279,6 +290,10 @@ notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+footer:
+  imprint: 'Impressum'
+  privacy_policy: 'Datenschutzerklärung'
+
 access: 'Zugriff'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
@@ -297,6 +312,10 @@ notifications: 'Benachrichtigungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+footer:
+  imprint: 'Mentions légales'
+  privacy_policy: 'Politique de confidentialité'
+
 access: 'Accès'
 contact: 'Contacter'
 dashboard: 'Dashboard'
