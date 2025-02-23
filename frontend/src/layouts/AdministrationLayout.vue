@@ -31,6 +31,7 @@
           class="q-px-md gt-xs"
           dense
           rounded
+          unelevated
         />
 
         <profile-menu

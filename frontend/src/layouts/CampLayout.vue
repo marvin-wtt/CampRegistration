@@ -30,11 +30,12 @@
           rounded
         />
 
-        <language-switch
+        <locale-switch
           borderless
           class="q-px-md"
           dense
           rounded
+          unelevated
         />
 
         <profile-menu
@@ -57,7 +58,7 @@
 </template>
 
 <script lang="ts" setup>
-import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
+import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
