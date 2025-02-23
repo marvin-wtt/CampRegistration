@@ -24,6 +24,7 @@
           :label="t('filter')"
           :options="countries"
           borderless
+          rounded
           clearable
           dense
           multiple
@@ -40,6 +41,7 @@
           :label="t('template')"
           :options="templates"
           borderless
+          rounded
           dense
           map-options
           option-label="title"
@@ -68,6 +70,7 @@
           v-if="!printing"
           dense
           flat
+          round
           icon="more_vert"
         >
           <q-menu>
