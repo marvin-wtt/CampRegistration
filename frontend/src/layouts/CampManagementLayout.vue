@@ -184,7 +184,7 @@ const items: NavigationItemProps[] = [
     name: 'contact',
     preview: true,
     label: t('contact'),
-    icon: 'email',
+    icon: 'send',
     to: { name: 'management.camp.contact' },
   },
   {
@@ -208,10 +208,22 @@ const items: NavigationItemProps[] = [
     separated: true,
     children: [
       {
+        name: 'access',
+        label: t('access'),
+        icon: 'key',
+        to: { name: 'access' },
+      },
+      {
         name: 'edit',
         label: t('edit'),
         icon: 'edit',
         to: { name: 'edit-camp' },
+      },
+      {
+        name: 'email-templates',
+        label: t('email_templates'),
+        icon: 'email',
+        to: { name: 'edit-email-templates' },
       },
       {
         name: 'files',
@@ -224,12 +236,6 @@ const items: NavigationItemProps[] = [
         label: t('form'),
         icon: 'feed',
         to: { name: 'edit-form' },
-      },
-      {
-        name: 'access',
-        label: t('access'),
-        icon: 'key',
-        to: { name: 'access' },
       },
     ],
   },
@@ -259,6 +265,7 @@ access: 'Access'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
+email_templates: 'Email templates'
 files: 'Files'
 form: 'Registration Form'
 expenses: 'Expenses'
@@ -276,6 +283,7 @@ access: 'Zugriff'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
+email_templates: 'E-Mail-Vorlagen'
 files: 'Dateien'
 expenses: 'Ausgaben'
 form: 'Anmeldeformular'
@@ -293,6 +301,7 @@ access: 'Accès'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
+email_templates: "Modèles d'e-mails"
 files: 'Fichiers'
 expenses: 'Dépenses'
 form: "formulaire d'inscription"

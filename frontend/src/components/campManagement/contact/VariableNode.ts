@@ -45,7 +45,7 @@ const Variable = Node.create<VariableOptions>({
   group: 'inline',
   inline: true,
   selectable: false,
-  draggable: false,
+  draggable: true,
   atom: true,
 
   addOptions() {

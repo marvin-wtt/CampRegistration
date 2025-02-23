@@ -162,6 +162,14 @@ const routes: RouteRecordRaw[] = [
                   import('pages/campManagement/settings/EditCampPage.vue'),
               },
               {
+                path: 'emails',
+                name: 'edit-email-templates',
+                component: () =>
+                  import(
+                    'pages/campManagement/settings/EmailTemplateEditPage.vue'
+                  ),
+              },
+              {
                 path: 'files',
                 name: 'edit-files',
                 component: () =>

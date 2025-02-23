@@ -3,192 +3,219 @@
     v-if="editor"
     class="column q-gutter-sm"
   >
-    <div>
-      <bubble-menu
-        :editor
-        :tippy-options="{ duration: 100 }"
-        class="bubble-menu q-pa-xs"
-      >
-        <div class="row q-gutter-xs no-wrap">
-          <q-btn
-            icon="format_bold"
-            :color="editor.isActive('bold') ? 'primary' : 'grey'"
-            :outline="!editor.isActive('bold')"
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().toggleBold().run()"
-          >
+    <bubble-menu
+      :editor
+      :tippy-options="{ duration: 100 }"
+      class="bubble-menu q-pa-xs"
+    >
+      <div class="row q-gutter-xs no-wrap">
+        <q-btn
+          icon="format_bold"
+          :color="editor.isActive('bold') ? 'primary' : undefined"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().toggleBold().run()"
+        >
+          <q-tooltip :delay="200">
+            {{ t('tooltip.formatBold') }}
+          </q-tooltip>
+        </q-btn>
+        <q-btn
+          icon="format_italic"
+          :color="editor.isActive('italic') ? 'primary' : undefined"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().toggleItalic().run()"
+        />
+        <q-btn
+          icon="format_underlined"
+          :color="editor.isActive('underline') ? 'primary' : undefined"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().toggleUnderline().run()"
+        />
+        <q-btn
+          icon="strikethrough_s"
+          :color="editor.isActive('strike') ? 'primary' : undefined"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().toggleStrike().run()"
+        />
+
+        <q-separator vertical />
+
+        <!-- TODO Set tooltip -->
+        <!-- https://github.com/quasarframework/quasar/issues/16955 -->
+        <q-btn-dropdown
+          size="xs"
+          split
+          :menu-offset="[0, 10]"
+          dense
+          rounded
+          unelevated
+          @click="toggleTextColor()"
+        >
+          <template #label>
+            <q-icon
+              name="format_color_text"
+              :style="{ color: colors.text }"
+            />
             <q-tooltip :delay="200">
-              {{ t('tooltip.formatBold') }}
+              {{ t('tooltip.formatColorText') }}
             </q-tooltip>
-          </q-btn>
-          <q-btn
-            icon="format_italic"
-            :color="editor.isActive('italic') ? 'primary' : 'grey'"
-            :outline="!editor.isActive('italic')"
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().toggleItalic().run()"
-          />
-          <q-btn
-            icon="format_underlined"
-            :color="editor.isActive('underline') ? 'primary' : 'grey'"
-            :outline="!editor.isActive('underline')"
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().toggleUnderline().run()"
-          />
-          <q-btn
-            icon="strikethrough_s"
-            :color="editor.isActive('strike') ? 'primary' : 'grey'"
-            :outline="!editor.isActive('strike')"
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().toggleStrike().run()"
-          />
+          </template>
+          <template #default>
+            <q-color
+              v-model="colors.text"
+              default-view="palette"
+              no-header
+              @click.stop
+              @change="toggleHighLightColor()"
+            />
+          </template>
+        </q-btn-dropdown>
 
-          <q-separator vertical />
+        <!-- TODO Set tooltip -->
+        <!-- https://github.com/quasarframework/quasar/issues/16955 -->
+        <q-btn-dropdown
+          size="xs"
+          split
+          :menu-offset="[0, 10]"
+          dense
+          rounded
+          unelevated
+          @click="toggleHighLightColor()"
+        >
+          <template #label>
+            <q-icon
+              name="format_color_fill"
+              :style="{ color: colors.highlight }"
+            />
+            <q-tooltip :delay="200">
+              {{ t('tooltip.formatColorFill') }}
+            </q-tooltip>
+          </template>
+          <template #default>
+            <q-color
+              v-model="colors.highlight"
+              default-view="palette"
+              no-header
+              @click.stop
+              @change="toggleHighLightColor()"
+            />
+          </template>
+        </q-btn-dropdown>
 
-          <!-- TODO Set tooltip -->
-          <!-- https://github.com/quasarframework/quasar/issues/16955 -->
-          <q-btn-dropdown
-            size="xs"
-            color="grey"
-            outline
-            split
-            :menu-offset="[0, 10]"
-            dense
-            rounded
-            unelevated
-            @click="toggleTextColor()"
-          >
-            <template #label>
-              <q-icon
-                name="format_color_text"
-                :style="{ color: colors.text }"
-              />
-              <q-tooltip :delay="200">
-                {{ t('tooltip.formatColorText') }}
-              </q-tooltip>
-            </template>
-            <template #default>
-              <q-color
-                v-model="colors.text"
-                default-view="palette"
-                no-header
-                @click.stop
-                @change="toggleHighLightColor()"
-              />
-            </template>
-          </q-btn-dropdown>
+        <q-separator vertical />
 
-          <!-- TODO Set tooltip -->
-          <!-- https://github.com/quasarframework/quasar/issues/16955 -->
-          <q-btn-dropdown
-            size="xs"
-            color="grey"
-            outline
-            split
-            :menu-offset="[0, 10]"
-            dense
-            rounded
-            unelevated
-            @click="toggleHighLightColor()"
-          >
-            <template #label>
-              <q-icon
-                name="format_color_fill"
-                :style="{ color: colors.highlight }"
-              />
-              <q-tooltip :delay="200">
-                {{ t('tooltip.formatColorFill') }}
-              </q-tooltip>
-            </template>
-            <template #default>
-              <q-color
-                v-model="colors.highlight"
-                default-view="palette"
-                no-header
-                @click.stop
-                @change="toggleHighLightColor()"
-              />
-            </template>
-          </q-btn-dropdown>
+        <q-btn
+          icon="format_list_bulleted"
+          :color="editor.isActive('bulletList') ? 'primary' : undefined"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().toggleBulletList().run()"
+        />
+        <q-btn
+          icon="format_list_numbered"
+          :color="editor.isActive('orderedList') ? 'primary' : undefined"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().toggleOrderedList().run()"
+        />
+        <q-btn
+          v-if="editor.can().liftListItem('listItem')"
+          icon="format_indent_decrease"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().liftListItem('listItem').run()"
+        />
+        <q-btn
+          v-if="editor.can().sinkListItem('listItem')"
+          icon="format_indent_increase"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().sinkListItem('listItem').run()"
+        />
 
-          <q-separator vertical />
+        <q-separator vertical />
 
-          <q-btn
-            icon="format_list_bulleted"
-            :color="editor.isActive('bulletList') ? 'primary' : 'grey'"
-            :outline="!editor.isActive('bulletList')"
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().toggleBulletList().run()"
-          />
-          <q-btn
-            icon="format_list_numbered"
-            :color="editor.isActive('orderedList') ? 'primary' : 'grey'"
-            :outline="!editor.isActive('orderedList')"
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().toggleOrderedList().run()"
-          />
-          <q-btn
-            v-if="editor.can().liftListItem('listItem')"
-            icon="format_indent_decrease"
-            color="grey"
-            outline
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().liftListItem('listItem').run()"
-          />
-          <q-btn
-            v-if="editor.can().sinkListItem('listItem')"
-            icon="format_indent_increase"
-            color="grey"
-            outline
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().sinkListItem('listItem').run()"
-          />
+        <q-btn
+          icon="format_clear"
+          size="xs"
+          round
+          unelevated
+          @click="editor.chain().focus().unsetAllMarks().run()"
+        />
+      </div>
+    </bubble-menu>
 
-          <q-separator vertical />
+    <floating-menu
+      :editor="editor"
+      :tippy-options="{ duration: 100 }"
+      class="floating-menu q-pa-xs"
+    >
+      <div class="row q-gutter-xs no-wrap">
+        <q-btn
+          icon="horizontal_rule"
+          size="xs"
+          round
+          unelevated
+        />
 
-          <q-btn
-            icon="format_clear"
-            color="grey"
-            outline
-            size="xs"
-            round
-            unelevated
-            @click="editor.chain().focus().unsetAllMarks().run()"
-          />
-        </div>
-      </bubble-menu>
+        <q-btn
+          icon="format_list_bulleted"
+          size="xs"
+          round
+          unelevated
+        />
 
-      <!--      <floating-menu>-->
-      <!--        &lt;!&ndash; TODO &ndash;&gt;-->
-      <!--      </floating-menu>-->
-    </div>
+        <q-btn
+          icon="format_list_numbered"
+          size="xs"
+          round
+          unelevated
+        />
+      </div>
+    </floating-menu>
 
     <!-- Action buttons -->
-    <div class="col-shrink">
+    <div class="col-shrink row q-gutter-xs">
       <q-btn
         label="Add token"
         icon="add"
-        size="sm"
+        size="xs"
         unelevated
         outline
         rounded
         @click="onAddToken"
+      />
+
+      <q-separator vertical />
+
+      <q-btn
+        icon="undo"
+        :disable="!editor.can().undo()"
+        round
+        outline
+        size="xs"
+        @click="editor.chain().focus().undo().run()"
+      />
+
+      <q-btn
+        icon="redo"
+        :disable="!editor.can().redo()"
+        round
+        outline
+        size="xs"
+        @click="editor.chain().focus().redo().run()"
       />
     </div>
 
@@ -202,16 +229,9 @@
 </template>
 
 <script lang="ts" setup>
-import { useQuasar, debounce, QSelectOption } from 'quasar';
+import { useQuasar, debounce } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  reactive,
-  ref,
-  watch,
-} from 'vue';
+import { computed, onBeforeUnmount, reactive, watch } from 'vue';
 import { type Token } from 'components/campManagement/contact/Token';
 import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
@@ -227,6 +247,7 @@ import ListItem from '@tiptap/extension-list-item';
 import Placeholder from '@tiptap/extension-placeholder';
 import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
+import Typography from '@tiptap/extension-typography';
 import Variable from './VariableNode';
 
 const quasar = useQuasar();
@@ -293,6 +314,7 @@ const editor = useEditor({
     Variable.configure({
       variables: variables.value,
     }),
+    Typography,
   ],
   content: model.value,
   onUpdate: () => {
@@ -336,6 +358,19 @@ function onAddToken() {
 <style lang="scss">
 /* Basic editor styles */
 
+.floating-menu {
+  border: 1px solid gray;
+  border-radius: 20px;
+}
+
+.body--light .floating-menu {
+  background-color: $grey-3;
+}
+
+.body--dark .floating-menu {
+  background-color: $grey-7;
+}
+
 .variable {
   border-width: 1px;
   border-style: solid;
@@ -356,43 +391,39 @@ function onAddToken() {
   }
 }
 
-.body--light {
-  .variable {
-    background-color: $grey-1;
-    border-color: $grey-3;
-    color: black;
+.body--light .variable {
+  background-color: $grey-1;
+  border-color: $grey-3;
+  color: black;
 
-    &:hover {
-      background-color: $grey-4;
-    }
+  &:hover {
+    background-color: $grey-4;
+  }
 
-    .variable-label {
-      color: $grey-7;
-    }
+  .variable-label {
+    color: $grey-7;
+  }
 
-    .variable-category {
-      color: $primary;
-    }
+  .variable-category {
+    color: $primary;
   }
 }
 
-.body--dark {
-  .variable {
-    background-color: $dark;
-    border-color: $grey-7;
-    color: white;
+.body--dark .variable {
+  background-color: $dark;
+  border-color: $grey-7;
+  color: white;
 
-    &:hover {
-      background-color: $grey-9;
-    }
+  &:hover {
+    background-color: $grey-9;
+  }
 
-    .variable-label {
-      color: $grey-2;
-    }
+  .variable-label {
+    color: $grey-2;
+  }
 
-    .variable-category {
-      color: $primary;
-    }
+  .variable-category {
+    color: $primary;
   }
 }
 
@@ -502,35 +533,31 @@ function onAddToken() {
   }
 
   /* Placeholder (at the top) */
-  /* p.is-editor-empty:first-child::before {
+  p.is-editor-empty:first-child::before {
     color: var(--gray-4);
     content: attr(data-placeholder);
     float: left;
     height: 0;
     pointer-events: none;
-  }*/
+  }
 
   /* Placeholder (on every new line) */
-  .is-empty::before {
+  /*.is-empty::before {
     color: $grey-4;
     content: attr(data-placeholder);
     float: left;
     height: 0;
     pointer-events: none;
-  }
+  }*/
 }
 
 /* Bubble menu */
-.body--light {
-  .bubble-menu {
-    background: white;
-  }
+.body--light .bubble-menu {
+  background: white;
 }
 
-.body--dark {
-  .bubble-menu {
-    background: $dark;
-  }
+.body--dark .bubble-menu {
+  background: $dark;
 }
 
 .bubble-menu {
