@@ -1,5 +1,4 @@
 import { Node, mergeAttributes, InputRule, PasteRule } from '@tiptap/core';
-import { Plugin, PluginKey } from 'prosemirror-state';
 
 export interface VariableDefinition {
   value: string;
@@ -35,10 +34,11 @@ function resolveProperties(
   const found = variables.find((item) => item.value === value);
   return found
     ? { label: found.label, category: found.category ?? null }
-    : { label: null, category: null };
+    : { label: value, category: null };
 }
 
-const VARIABLE_INPUT_REGEX = /(?:^|\s)({{\s*)([a-zA-Z0-9_.]+)?(\s*}})$/;
+const VARIABLE_INPUT_REGEX = /({{\s*)([a-zA-Z0-9_.]+)?(\s*}})$/;
+const VARIABLE_PASTE_REGEX = /({{\s*([a-zA-Z0-9_.]+)\s*}})/g;
 
 const Variable = Node.create<VariableOptions>({
   name: 'variable',
@@ -152,7 +152,7 @@ const Variable = Node.create<VariableOptions>({
   addPasteRules() {
     return [
       new PasteRule({
-        find: VARIABLE_INPUT_REGEX,
+        find: VARIABLE_PASTE_REGEX,
         handler: ({ state, range, match }) => {
           const value = match[2];
           if (!value) {
@@ -167,36 +167,6 @@ const Variable = Node.create<VariableOptions>({
             range.to,
             this.type.create({ value, label, category }),
           );
-        },
-      }),
-    ];
-  },
-
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: new PluginKey('variablePreprocessor'),
-        appendTransaction: (transactions, oldState, newState) => {
-          let tr = newState.tr;
-          let modified = false;
-          // Traverse the document looking for text nodes.
-          newState.doc.descendants((node, pos) => {
-            if (node.isText && node.text) {
-              const regex = /{{\s*([a-zA-Z0-9_.]+)\s*}}/g;
-              let match;
-              while ((match = regex.exec(node.text)) !== null) {
-                const fullMatch = match[0];
-                const variableValue = match[1];
-                const start = pos + match.index;
-                const end = start + fullMatch.length;
-                // Create a variable node with only the value; the label and category will be looked up on render.
-                const variableNode = this.type.create({ value: variableValue });
-                tr = tr.replaceWith(start, end, variableNode);
-                modified = true;
-              }
-            }
-          });
-          return modified ? tr : null;
         },
       }),
     ];

@@ -71,9 +71,9 @@
         </div>
       </expand-slide>
 
-      <email-editor
+      <registration-email-editor
         v-model="text"
-        :tokens
+        :form="campDetailsStore.data?.form"
         class="col-grow"
       />
 
@@ -117,15 +117,13 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type { Camp, Registration } from '@camp-registration/common/entities';
-import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
+import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from 'components/campManagement/contact/Contact';
-import type { Token } from 'components/campManagement/contact/Token';
 import { type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
 import ExpandSlide from 'components/common/ExpandSlide.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { extractFormFields } from 'src/utils/surveyJS';
+import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -145,37 +143,6 @@ const priority = ref<'high' | 'normal' | 'low'>('normal');
 const text = ref<string>(
   'This is a test for {{ camp.name }}, and should render',
 );
-
-const campTokens: (keyof Camp)[] = [
-  'name',
-  'organizer',
-  'countries',
-  'contactEmail',
-  'startAt',
-  'endAt',
-  'minAge',
-  'maxAge',
-  'maxParticipants',
-  'location',
-];
-
-const tokens = computed<Token[]>(() => [
-  {
-    key: 'camp',
-    label: t('token.camp.label'),
-    items: campTokens.map((value) => ({
-      label: t(`token.camp.item.${value}`),
-      value,
-    })),
-  },
-  {
-    key: 'registration',
-    label: t('token.registration.label'),
-    items: !campDetailsStore.data
-      ? []
-      : extractFormFields(campDetailsStore.data.form, 'data'),
-  },
-]);
 
 const priorityOptions = computed<QSelectOption[]>(() => [
   {
@@ -269,24 +236,6 @@ priority:
   high: 'High'
   low: 'Low'
   normal: 'Normal'
-
-token:
-  camp:
-    label: 'Camp'
-    item:
-      countries: 'Countries'
-      name: 'Name'
-      organizer: 'Organizer'
-      contactEmail: 'Contact email'
-      maxParticipants: 'Maximum number of participants'
-      startAt: 'Start time'
-      endAt: 'End time'
-      minAge: 'Minimum age'
-      maxAge: 'Maximum age'
-      location: 'Location'
-      price: 'Price'
-  registration:
-    label: 'Registration'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -317,24 +266,6 @@ priority:
   high: 'Hoch'
   low: 'Niedrig'
   normal: 'Normal'
-
-token:
-  camp:
-    label: 'Camp'
-    item:
-      countries: 'Länder'
-      name: 'Name'
-      organizer: 'Veranstalter'
-      contactEmail: 'Kontakt-E-Mail'
-      maxParticipants: 'Maximale Teilnehmerzahl'
-      startAt: 'Startzeit'
-      endAt: 'Endzeit'
-      minAge: 'Mindestalter'
-      maxAge: 'Höchstalter'
-      location: 'Ort'
-      price: 'Preis'
-  registration:
-    label: 'Anmeldung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -365,22 +296,4 @@ priority:
   high: 'Élevée'
   low: 'Basse'
   normal: 'Normale'
-
-token:
-  camp:
-    label: 'Camp'
-    item:
-      countries: 'Pays'
-      name: 'Nom'
-      organizer: 'Organisateur'
-      contactEmail: 'E-mail de contact'
-      maxParticipants: 'Nombre maximum de participants'
-      startAt: 'Heure de début'
-      endAt: 'Heure de fin'
-      minAge: 'Âge minimum'
-      maxAge: 'Âge maximum'
-      location: 'Lieu'
-      price: 'Prix'
-  registration:
-    label: 'Inscription'
 </i18n>

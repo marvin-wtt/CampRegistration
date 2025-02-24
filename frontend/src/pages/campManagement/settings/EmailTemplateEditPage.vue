@@ -44,6 +44,7 @@
               round
               dense
               unelevated
+              @click.stop
             >
               <q-menu>
                 <q-list style="min-width: 200px">
@@ -91,8 +92,6 @@
             />
           </q-item-section>
         </q-item>
-
-        <!-- TODO Add button -->
       </q-list>
     </div>
   </page-state-handler>
@@ -103,9 +102,14 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
+import MessageEditDialog from 'components/campManagement/settings/emails/MessageEditDialog.vue';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 
 const quasar = useQuasar();
 const { t } = useI18n();
+const campDetailsStore = useCampDetailsStore();
+
+campDetailsStore.fetchData();
 
 interface MessageTemplate {
   id?: string | undefined;
@@ -163,9 +167,17 @@ const templates = computed<MessageTemplate[]>(() => {
 function addTemplate(event: string) {
   // TODO Fetch default text from server
 
+  const camp = campDetailsStore.data;
+  if (!camp) return;
+
   quasar
     .dialog({
-      // TODO
+      component: MessageEditDialog,
+      componentProps: {
+        form: camp.form,
+        countries: camp.countries,
+        // TODO
+      },
     })
     .onOk((message) => {
       // TODO
@@ -175,9 +187,19 @@ function addTemplate(event: string) {
 function editTemplate(id: string | undefined) {
   if (!id) return;
 
+  const camp = campDetailsStore.data;
+  if (!camp) return;
+
   quasar
     .dialog({
-      // TODO
+      component: MessageEditDialog,
+      componentProps: {
+        form: camp.form,
+        countries: camp.countries,
+        // TODO
+        subject: '',
+        body: '',
+      },
     })
     .onOk((message) => {
       // TODO
