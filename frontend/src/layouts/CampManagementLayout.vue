@@ -10,7 +10,7 @@
           flat
           icon="menu"
           round
-          @click="floatingDrawer = !floatingDrawer"
+          @click="toggleDrawer"
         />
         <q-toolbar-title>
           <q-skeleton
@@ -48,7 +48,7 @@
       v-model="drawer"
       :breakpoint="599.99"
       :mini="miniState && floatingDrawer"
-      :width="220"
+      :width="300"
       bordered
       :mini-to-overlay="floatingDrawer"
       show-if-above
@@ -122,7 +122,7 @@ import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useMeta } from 'quasar';
+import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
@@ -131,6 +131,7 @@ import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
+const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
@@ -260,6 +261,14 @@ const filteredItems = computed<NavigationItemProps[]>(() => {
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
+
+function toggleDrawer() {
+  if (quasar.screen.lt.sm) {
+    drawer.value = !drawer.value;
+  } else {
+    floatingDrawer.value = !floatingDrawer.value;
+  }
+}
 
 function logout() {
   authStore.logout();
