@@ -13,4 +13,11 @@ export default {
     unavailable: 'Service temporarily unavailable. Please try again later.',
     unknown: 'Service temporary not available.',
   },
+
+  country: {
+    de: 'Germany',
+    fr: 'France',
+    us: 'USA',
+    pl: 'Poland',
+  },
 };
