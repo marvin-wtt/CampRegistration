@@ -1,22 +1,29 @@
 import type { Identifiable } from './Identifiable.js';
 import { ServiceFile } from './ServiceFile.js';
+import { Translatable } from './Translatable.js';
 
-export interface MessageTemplate extends Identifiable {
-  name: string;
-  subject: string;
-  body: string;
+export interface MessageTemplate extends Identifiable<string | null> {
+  event: string | null;
+  subject: Translatable;
+  body: Translatable;
+  replyTo: string | null;
   priority: string;
   attachments: ServiceFile[] | null;
+  updatedAt: string | null;
+  createdAt: string | null;
 }
 
 export interface MessageTemplateCreateData {
-  subject: string;
-  body: string;
+  event: string;
+  subject: Translatable;
+  body: Translatable;
   priority?: string | undefined;
+  attachments?: File[] | string[] | undefined;
 }
 
 export interface MessageTemplateUpdateData {
-  subject?: string | undefined;
-  body?: string | undefined;
+  subject?: Translatable | undefined;
+  body?: Translatable | undefined;
   priority?: string | undefined | null;
+  attachments?: File[] | string[] | undefined | null;
 }

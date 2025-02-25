@@ -15,49 +15,129 @@
           {{ t('page.title') }}
         </q-card-section>
 
-        <q-card-section v-if="props.countries.length > 0">
-          <country-select
-            v-model="country"
-            :label="t('field.country')"
-            :countries="props.countries"
-            rounded
+        <q-card-section class="row">
+          <q-list
+            v-if="
+              typeof message.subject !== 'string' &&
+              typeof message.body !== 'string'
+            "
+            bordered
             outlined
-          />
-        </q-card-section>
+            separator
+            dense
+            class="col-grow"
+          >
+            <q-expansion-item
+              v-for="(country, i) in props.countries"
+              :key="country"
+              group="country"
+              :default-opened="i === 0"
+            >
+              <template #header>
+                <q-item-section avatar>
+                  <country-icon
+                    :country="country"
+                    size="sm"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  {{ t('country.' + country) }}
+                </q-item-section>
+              </template>
 
-        <q-card-section class="col">
-          <registration-email-editor
-            v-model="selectedSubject"
-            :label="t('field.subject.label')"
-            :placeholder="t('field.subject.placeholder')"
-            :rules="[
-              (val?: string) => !!val || t('field.subject.rule.required'),
-              (val: string) =>
-                val.trim() !== '<p></p>' || t('field.subject.rule.required'),
-            ]"
-            hide-bottom-space
-            :form
-            single-line
-            outlined
-            rounded
-          />
-        </q-card-section>
+              <template #default>
+                <q-card class="column no-wrap">
+                  <q-card-section class="col">
+                    <registration-email-editor
+                      v-model="message.subject[country]!"
+                      :label="t('field.subject.label')"
+                      :placeholder="t('field.subject.placeholder')"
+                      :rules="[
+                        (val?: string) =>
+                          !!val || t('field.subject.rule.required'),
+                        (val: string) =>
+                          val.trim() !== '<p></p>' ||
+                          t('field.subject.rule.required'),
+                      ]"
+                      hide-bottom-space
+                      :form
+                      single-line
+                      outlined
+                      rounded
+                    />
+                  </q-card-section>
 
-        <q-card-section class="col-grow">
-          <registration-email-editor
-            v-model="selectedBody"
-            :label="t('field.body.label')"
-            :placeholder="t('field.body.placeholder')"
-            :rules="[
-              (val?: string) => !!val || t('field.body.rule.required'),
-              (val: string) =>
-                val.trim() !== '<p></p>' || t('field.body.rule.required'),
-            ]"
-            hide-bottom-space
-            :form
-            outlined
-            rounded
-          />
+                  <q-card-section class="col-grow">
+                    <registration-email-editor
+                      v-model="message.body[country]!"
+                      :label="t('field.body.label')"
+                      :placeholder="t('field.body.placeholder')"
+                      :rules="[
+                        (val?: string) =>
+                          !!val || t('field.body.rule.required'),
+                        (val: string) =>
+                          val.trim() !== '<p></p>' ||
+                          t('field.body.rule.required'),
+                      ]"
+                      hide-bottom-space
+                      :form
+                      outlined
+                      rounded
+                    />
+                  </q-card-section>
+                </q-card>
+              </template>
+            </q-expansion-item>
+          </q-list>
+
+          <div
+            v-if="
+              typeof message.subject === 'string' &&
+              typeof message.body === 'string'
+            "
+            class="col-grow column no-wrap q-gutter-sm"
+          >
+            <registration-email-editor
+              v-model="message.subject"
+              :label="t('field.subject.label')"
+              :placeholder="t('field.subject.placeholder')"
+              :rules="[
+                (val?: string) => !!val || t('field.subject.rule.required'),
+                (val: string) =>
+                  val.trim() !== '<p></p>' || t('field.subject.rule.required'),
+              ]"
+              hide-bottom-space
+              :form
+              single-line
+              outlined
+              rounded
+            />
+
+            <registration-email-editor
+              v-model="message.body"
+              :label="t('field.body.label')"
+              :placeholder="t('field.body.placeholder')"
+              :rules="[
+                (val?: string) => !!val || t('field.body.rule.required'),
+                (val: string) =>
+                  val.trim() !== '<p></p>' || t('field.body.rule.required'),
+              ]"
+              hide-bottom-space
+              :form
+              outlined
+              rounded
+            />
+          </div>
+
+          <div
+            v-if="props.countries.length > 1"
+            class="self-center q-ml-sm"
+          >
+            <translation-toggle-btn
+              :model-value="translated"
+              @click="toggleTranslations"
+            />
+          </div>
         </q-card-section>
 
         <q-card-actions
@@ -86,10 +166,11 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive } from 'vue';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
-import CountrySelect from 'components/common/CountrySelect.vue';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -104,37 +185,44 @@ const props = defineProps<{
   countries: string[];
 }>();
 
-const country = ref<string>(props.countries[0]!);
-
-const selectedSubject = computed<string>({
-  get: (): string =>
-    typeof props.subject === 'string'
-      ? props.subject
-      : (props.subject[country.value] ?? ''),
-  set: (value: string) =>
-    typeof message.subject === 'string'
-      ? (message.subject = value)
-      : (message.subject[country.value] = value),
-});
-
-const selectedBody = computed<string>({
-  get: (): string =>
-    typeof props.body === 'string'
-      ? props.body
-      : (props.body[country.value] ?? ''),
-  set: (value: string) =>
-    typeof message.body === 'string'
-      ? (message.body = value)
-      : (message.body[country.value] = value),
-});
-
 const message = reactive({
-  subject: props.subject ?? '',
-  body: props.body ?? '',
+  subject: props.subject,
+  body: props.body,
 });
+
+const translated = computed<boolean>(() => {
+  return (
+    typeof message.subject !== 'string' && typeof message.body !== 'string'
+  );
+});
+
+function toggleTranslations() {
+  if (translated.value) {
+    message.subject = defaultString(props.subject);
+    message.body = defaultString(props.body);
+  } else {
+    message.subject = defaultObject(props.subject);
+    message.body = defaultObject(props.body);
+
+    // Set empty string as default value
+    for (const country in props.countries) {
+      message.subject[country] = message.subject[country] ?? '';
+      message.body[country] = message.body[country] ?? '';
+    }
+  }
+}
+
+function defaultObject(
+  value: string | Record<string, string>,
+): Record<string, string> {
+  return typeof value === 'string' ? {} : value;
+}
+
+function defaultString(value: string | Record<string, string>): string {
+  return typeof value === 'string' ? value : '';
+}
 
 function onSave() {
-  // TODO Validate all translations
   onDialogOK(message);
 }
 </script>
@@ -150,12 +238,12 @@ field:
   country: 'Edit template for participants from:'
   subject:
     label: 'Subject:'
-    placeholder: ''
+    placeholder: 'Type your subject here...'
     rule:
       required: 'The subject is required'
   body:
     label: 'Message:'
-    placeholder: ''
+    placeholder: 'Type your messages here...'
     rule:
       required: 'The message is required'
 

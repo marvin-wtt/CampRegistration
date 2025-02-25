@@ -5,6 +5,7 @@ import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError.js';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource.js';
 import { BaseController } from '#core/controller/BaseController.js';
+import defaultTemplates from '#assets/camp/messageTemplates';
 
 class MessageTemplateController extends BaseController {
   async show(req: Request, res: Response) {
@@ -20,6 +21,15 @@ class MessageTemplateController extends BaseController {
     } = await req.validate(validator.index);
 
     const templates = await service.queryMessageTemplates(campId);
+
+    // TODO How to append the defaults?
+    const defaults = Object.entries(defaultTemplates)
+      .filter(([event]) => templates.find((t) => t.event === event))
+      .map(([event, { subject, body }]) => ({
+        event,
+        subject,
+        body,
+      }));
 
     res
       .status(httpStatus.OK)

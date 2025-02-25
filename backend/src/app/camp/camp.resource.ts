@@ -27,8 +27,11 @@ export class CampResource extends JsonResource<Camp, CampResourceData> {
   }
 }
 
-export class CampDetailsResource extends JsonResource<Camp> {
-  transform(): CampDetailsResourceData {
+export class CampDetailsResource extends JsonResource<
+  Camp,
+  CampDetailsResourceData
+> {
+  transform() {
     return {
       ...new CampResource(this.data).transform(),
       form: this.data.form,

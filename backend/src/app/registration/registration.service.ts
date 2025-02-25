@@ -5,12 +5,7 @@ import httpStatus from 'http-status';
 import { Camp, Prisma, Registration } from '@prisma/client';
 import dbJsonPath from '#utils/dbJsonPath';
 import { formUtils } from '#utils/form';
-import notificationService from '#app/notification/notification.service';
-import messageService from '#app/message/message.service';
 import config from '#config/index';
-import logger from '#core/logger';
-import messageTemplateService from '#app/messageTemplate/message-template.service.js';
-import mailService from '#app/mail/mail.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 
 const getRegistrationById = async (campId: string, id: string) => {
@@ -53,8 +48,9 @@ const getParticipantsCountByCountry = async (
 
   const getCountry = (registration: Registration): string => {
     return (
-      registrationCampDataAccessor(registration.campData).country(countries) ??
-      'unknown'
+      new RegistrationCampDataHelper(registration.campData).country(
+        countries,
+      ) ?? 'unknown'
     );
   };
 
@@ -182,7 +178,7 @@ const calculateFreePlaces = (
     return freePlaces >= 0 ? freePlaces : undefined;
   }
 
-  const country = registrationCampDataAccessor(campData).country(
+  const country = new RegistrationCampDataHelper(campData)(campData).country(
     camp.countries,
   );
 

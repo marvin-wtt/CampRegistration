@@ -235,7 +235,6 @@ model MessageTemplate {
   campId    String   @map("camp_id") @db.Char(36)
   event     String?
   priority  String   @default("normal")
-  /// [StringOrTranslation]
   replyTo   String?  @map("reply_to")
   /// [StringOrTranslation]
   subject   Json

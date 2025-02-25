@@ -6,14 +6,17 @@ export class MessageTemplateResource extends JsonResource<
   MessageTemplate,
   MessageTemplateData
 > {
-  transform() {
+  transform(): MessageTemplateData {
     return {
-      id: this.data.id,
-      name: this.data.name,
+      id: this.data.id ?? null,
+      event: this.data.event ?? null,
       subject: this.data.subject,
       body: this.data.body,
-      priority: this.data.priority,
+      priority: this.data.priority ?? 'normal',
+      replyTo: this.data.replyTo ?? null,
       attachments: null, // TODO
+      updatedAt: this.data.updatedAt?.toISOString() ?? null,
+      createdAt: this.data.createdAt?.toISOString() ?? null,
     };
   }
 }

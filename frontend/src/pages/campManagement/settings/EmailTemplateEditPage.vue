@@ -13,11 +13,45 @@
         </p>
       </div>
 
-      <q-list>
+      <q-list v-if="loading">
         <q-item
-          v-for="{ id, name, label, description, icon } in templates"
+          v-for="i in 6"
+          :key="i"
+        >
+          <q-item-section avatar>
+            <q-skeleton
+              type="circle"
+              size="30px"
+            />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>
+              <q-skeleton
+                type="text"
+                width="200px"
+              />
+            </q-item-label>
+            <q-item-label caption>
+              <q-skeleton
+                type="text"
+                width="500px"
+              />
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-skeleton
+              type="circle"
+              size="30px"
+            />
+          </q-item-section>
+        </q-item>
+      </q-list>
+
+      <q-list v-else>
+        <q-item
+          v-for="{ id, name, label, description, icon, loading } in templates"
           :key="name"
-          :clickable="!!id"
+          :clickable="!!id && !loading"
           :aria-label="!!id ? t('action.edit') : undefined"
           @click="editTemplate(id)"
         >
@@ -44,6 +78,7 @@
               round
               dense
               unelevated
+              :loading
               @click.stop
             >
               <q-menu>
@@ -68,10 +103,13 @@
                     @click="deleteTemplate(id)"
                   >
                     <q-item-section avatar>
-                      <q-icon name="delete" />
+                      <q-icon
+                        name="delete"
+                        color="negative"
+                      />
                     </q-item-section>
                     <q-item-section>
-                      <q-item-label>
+                      <q-item-label class="text-negative">
                         {{ t('action.delete') }}
                       </q-item-label>
                     </q-item-section>
@@ -104,6 +142,7 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import MessageEditDialog from 'components/campManagement/settings/emails/MessageEditDialog.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import type { MessageTemplate } from '@camp-registration/common/entities';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -111,15 +150,20 @@ const campDetailsStore = useCampDetailsStore();
 
 campDetailsStore.fetchData();
 
-interface MessageTemplate {
+interface CMessageTemplate {
   id?: string | undefined;
   label: string;
   icon?: string;
   name: string;
   description: string;
+  loading: boolean;
 }
 
-const templates = computed<MessageTemplate[]>(() => {
+const loading = computed<boolean>(() => {
+  return false;
+});
+
+const templates = computed<CMessageTemplate[]>(() => {
   return [
     {
       id: 'TODO',
@@ -127,6 +171,7 @@ const templates = computed<MessageTemplate[]>(() => {
       icon: 'o_assignment_turned_in',
       label: t('template.registration_submitted.label'),
       description: t('template.registration_submitted.description'),
+      loading: false,
     },
     {
       id: 'TODO',
@@ -134,6 +179,7 @@ const templates = computed<MessageTemplate[]>(() => {
       icon: 'check_circle',
       label: t('template.registration_confirmed.label'),
       description: t('template.registration_confirmed.description'),
+      loading: true,
     },
     {
       id: 'TODO',
@@ -141,6 +187,7 @@ const templates = computed<MessageTemplate[]>(() => {
       icon: 'hourglass_empty',
       label: t('template.registration_waitlisted.label'),
       description: t('template.registration_waitlisted.description'),
+      loading: false,
     },
     {
       id: 'TODO',
@@ -148,21 +195,26 @@ const templates = computed<MessageTemplate[]>(() => {
       icon: 'verified_user',
       label: t('template.registration_waitlist_accepted.label'),
       description: t('template.registration_waitlist_accepted.description'),
+      loading: false,
     },
     {
       name: 'registration-updated',
       icon: 'edit',
       label: t('template.registration_updated.label'),
       description: t('template.registration_updated.description'),
+      loading: false,
     },
     {
       name: 'registration-canceled',
       icon: 'cancel',
       label: t('template.registration_canceled.label'),
       description: t('template.registration_canceled.description'),
+      loading: false,
     },
   ];
 });
+
+function withProgress(fn: () => Promise<MessageTemplate>) {}
 
 function addTemplate(event: string) {
   // TODO Fetch default text from server
@@ -197,8 +249,14 @@ function editTemplate(id: string | undefined) {
         form: camp.form,
         countries: camp.countries,
         // TODO
-        subject: '',
-        body: '',
+        subject: {
+          de: '',
+          fr: '',
+        },
+        body: {
+          de: '',
+          fr: '',
+        },
       },
     })
     .onOk((message) => {
