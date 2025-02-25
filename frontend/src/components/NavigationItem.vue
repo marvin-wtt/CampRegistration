@@ -32,6 +32,7 @@
         align="top"
         floating
         rounded
+        color="secondary"
       >
         Preview
       </q-badge>
