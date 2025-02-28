@@ -7,6 +7,7 @@ import campManagerResource from './manager.resource.js';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './manager.validation.js';
 import { type Request, type Response } from 'express';
+import managerMessages from '#app/manager/manager.messages';
 
 const index = async (req: Request, res: Response) => {
   const {
@@ -43,7 +44,7 @@ const store = async (req: Request, res: Response) => {
       ? await managerService.inviteManager(camp.id, email, expiresAt)
       : await managerService.addManager(camp.id, user.id, expiresAt);
 
-  await catchAndResolve(managerService.sendManagerInvitation(camp, manager));
+  await catchAndResolve(managerMessages.sendManagerInvitation(camp, manager));
 
   res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
 };

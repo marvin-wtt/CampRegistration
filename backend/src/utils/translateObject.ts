@@ -1,8 +1,8 @@
-export const translateObject = (
-  value: Record<string, string> | string,
+export const translateObject = <T>(
+  value: Record<string, T> | T,
   locale: string | undefined,
-): string => {
-  if (typeof value === 'string') {
+): T => {
+  if (typeof value !== 'object' || !value) {
     return value;
   }
 
@@ -12,7 +12,7 @@ export const translateObject = (
 
   const key = locale.split('-')[0];
   if (key in value) {
-    return value[key];
+    return value[key as keyof typeof value] as T;
   }
 
   return Object.values(value)[0];

@@ -5,10 +5,8 @@ import httpStatus from 'http-status';
 import { Camp, Prisma, Registration } from '@prisma/client';
 import dbJsonPath from '#utils/dbJsonPath';
 import { formUtils } from '#utils/form';
-import notificationService from '#app/notification/notification.service';
-import i18n, { t } from '#core/i18n';
-import { translateObject } from '#utils/translateObject';
 import config from '#config/index';
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 
 const getRegistrationById = async (campId: string, id: string) => {
   return prisma.registration.findFirst({
@@ -16,6 +14,12 @@ const getRegistrationById = async (campId: string, id: string) => {
     include: {
       bed: { include: { room: true } },
     },
+  });
+};
+
+const queryRegistrationsByIds = async (ids: string[]) => {
+  return prisma.registration.findMany({
+    where: { id: { in: ids } },
   });
 };
 
@@ -44,8 +48,9 @@ const getParticipantsCountByCountry = async (
 
   const getCountry = (registration: Registration): string => {
     return (
-      registrationCampDataAccessor(registration.campData).country(countries) ??
-      'unknown'
+      new RegistrationCampDataHelper(registration.campData).country(
+        countries,
+      ) ?? 'unknown'
     );
   };
 
@@ -173,7 +178,7 @@ const calculateFreePlaces = (
     return freePlaces >= 0 ? freePlaces : undefined;
   }
 
-  const country = registrationCampDataAccessor(campData).country(
+  const country = new RegistrationCampDataHelper(campData)(campData).country(
     camp.countries,
   );
 
@@ -300,228 +305,16 @@ const registrationRoleFilter = (
   };
 };
 
-const sendRegistrationConfirmation = async (
-  camp: Camp,
+const extractRegistrationCountry = (
   registration: Registration,
-) => {
-  const { to, replyTo, campName, participantName } =
-    getRegistrationConfirmationRegistrationData(camp, registration);
-
-  await i18n.changeLanguage(registration.locale);
-  const subject = t('registration:email.confirmation.subject');
-  const template = 'registration-confirmation';
-
-  const context = {
-    camp: {
-      name: campName,
-    },
-    participantName,
-  };
-
-  await notificationService.sendEmail({
-    to,
-    replyTo,
-    subject,
-    template,
-    context,
-  });
+): string | undefined => {
+  return new RegistrationCampDataHelper(registration.campData).country();
 };
 
-const sendWaitingListConfirmation = async (
-  camp: Camp,
+const extractRegistrationEmails = (
   registration: Registration,
-) => {
-  const { to, replyTo, campName, participantName } =
-    getRegistrationConfirmationRegistrationData(camp, registration);
-
-  await i18n.changeLanguage(registration.locale);
-  const subject = t('registration:email.waitingListConfirmation.subject');
-  const template = 'registration-waiting-list-confirmation';
-
-  const context = {
-    camp: {
-      name: campName,
-    },
-    participantName,
-  };
-
-  await notificationService.sendEmail({
-    to,
-    replyTo,
-    subject,
-    template,
-    context,
-  });
-};
-
-const sendRegistrationManagerNotification = async (
-  camp: Camp,
-  registration: Registration,
-) => {
-  const accessor = registrationCampDataAccessor(registration.campData);
-  const country = accessor.country(camp.countries);
-
-  const to = findCampContactEmails(camp.contactEmail, country);
-  const replyTo = accessor.emails();
-  const campName = translateObject(camp.name, country);
-  const participantName = accessor.name();
-
-  await i18n.changeLanguage(country);
-  const subject = t('registration:email.managerNotification.subject');
-  const template = 'registration-manager-notification';
-
-  const dataAttachment = {
-    filename: 'data.json',
-    contentType: 'application/json',
-    content: JSON.stringify(registration),
-  };
-
-  const url = notificationService.generateUrl(`management/${camp.id}`);
-
-  const context = {
-    camp: {
-      name: campName,
-    },
-    participantName,
-    url,
-  };
-
-  await notificationService.sendEmail({
-    to,
-    replyTo,
-    subject,
-    template,
-    context,
-    attachments: [dataAttachment],
-  });
-};
-
-const getRegistrationConfirmationRegistrationData = (
-  camp: Camp,
-  registration: Registration,
-) => {
-  const accessor = registrationCampDataAccessor(registration.campData);
-
-  const to = accessor.emails();
-  const country = accessor.country(camp.countries);
-  const replyTo = findCampContactEmails(camp.contactEmail, country);
-  const participantName = accessor.firstName() ?? accessor.name();
-  const campName = translateObject(camp.name, registration.locale);
-
-  return {
-    to,
-    replyTo,
-    participantName,
-    campName,
-  };
-};
-
-const registrationCampDataAccessor = (campData: Record<string, unknown[]>) => {
-  const emails = (): string | string[] => {
-    return campData['email']?.filter((value): value is string => {
-      return !!value && typeof value === 'string';
-    });
-  };
-
-  const country = (options?: string[]): string | undefined => {
-    const country = campData['country']?.find(
-      (value: unknown): value is string => {
-        return (
-          typeof value === 'string' && (!options || options.includes(value))
-        );
-      },
-    );
-
-    if (country) {
-      return country;
-    }
-
-    // Try address instead
-    const address = campData['address']?.find(
-      (value: unknown): value is { country: string } => {
-        if (!value || typeof value !== 'object' || !('country' in value)) {
-          return false;
-        }
-
-        return (
-          typeof value.country === 'string' &&
-          (!options || options.includes(value.country))
-        );
-      },
-    );
-
-    return address?.country;
-  };
-
-  const firstName = (): string | undefined => {
-    if (!('first_name' in campData) || campData.first_name.length === 0) {
-      return undefined;
-    }
-
-    return campData.first_name.find((value): value is string => {
-      return typeof value === 'string';
-    });
-  };
-
-  const lastName = (): string | undefined => {
-    if (!('last_name' in campData) || campData.last_name.length === 0) {
-      return undefined;
-    }
-
-    return campData.last_name.find((value): value is string => {
-      return typeof value === 'string';
-    });
-  };
-
-  const fullName = (): string | undefined => {
-    if (!('full_name' in campData) || campData.full_name.length === 0) {
-      return undefined;
-    }
-
-    return campData.full_name.find((value): value is string => {
-      return typeof value === 'string';
-    });
-  };
-
-  const name = (): string | undefined => {
-    const full = fullName();
-    const first = firstName();
-    const last = lastName();
-
-    if (full) {
-      return full;
-    }
-
-    if (first !== undefined && last !== undefined) {
-      return `${first} ${last}`;
-    }
-
-    return first !== undefined ? first : last;
-  };
-
-  return {
-    emails,
-    country,
-    name,
-    firstName,
-    lastName,
-    fullName,
-  };
-};
-
-const findCampContactEmails = (
-  contactEmail: Record<string, string> | string,
-  country: string | undefined,
-): string | string[] => {
-  if (typeof contactEmail === 'string') {
-    return contactEmail;
-  }
-
-  if (!country) {
-    return Object.values(contactEmail);
-  }
-
-  return contactEmail[country];
+): string[] | string => {
+  return new RegistrationCampDataHelper(registration.campData).emails();
 };
 
 export default {
@@ -529,11 +322,11 @@ export default {
   getParticipantsCountByCountry,
   getParticipantsCount,
   queryRegistrations,
+  queryRegistrationsByIds,
   createRegistration,
   updateRegistrationById,
   deleteRegistration,
   updateRegistrationCampDataByCamp,
-  sendRegistrationConfirmation,
-  sendWaitingListConfirmation,
-  sendRegistrationManagerNotification,
+  extractRegistrationCountry,
+  extractRegistrationEmails,
 };

@@ -6,8 +6,9 @@ import httpStatus from 'http-status';
 import { resource } from '#core/resource';
 import profileResource from './profile.resource.js';
 import validator from './profile.validation.js';
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
+import authMessages from '#app/auth/auth.messages';
 
 const show = async (req: Request, res: Response) => {
   const userId = req.authUserId();
@@ -57,7 +58,7 @@ const update = async (req: Request, res: Response) => {
   // Send email verification
   if (emailVerified === false) {
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    await authService.sendVerificationEmail(user.email, verifyEmailToken);
+    await authMessages.sendVerificationEmail(user, verifyEmailToken);
   }
 
   const camps = await campService.getCampsByUserId(userId);
