@@ -1,5 +1,6 @@
 <template>
   <page-state-handler
+    :error
     class="row justify-center"
     padding
   >
@@ -49,7 +50,7 @@
 
       <q-list v-else>
         <q-item
-          v-for="{ id, name, label, description, icon, loading } in templates"
+          v-for="{ id, event: name, loading } in templates"
           :key="name"
           :clickable="!!id && !loading"
           :aria-label="!!id ? t('action.edit') : undefined"
@@ -57,17 +58,17 @@
         >
           <q-item-section avatar>
             <q-icon
-              :name="icon ?? 'mail_outline'"
+              :name="TEMPLATE_ICONS[name] ?? 'mail_outline'"
               color="primary"
             />
           </q-item-section>
 
           <q-item-section>
             <q-item-label>
-              {{ label }}
+              {{ t(`template.${name ?? 'default'}.label`) }}
             </q-item-label>
             <q-item-label caption>
-              {{ description }}
+              {{ t(`template.${name ?? 'default'}.description`) }}
             </q-item-label>
           </q-item-section>
 
@@ -79,6 +80,7 @@
               dense
               unelevated
               :loading
+              :disable="loading"
               @click.stop
             >
               <q-menu>
@@ -137,82 +139,80 @@
 
 <script setup lang="ts">
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed } from 'vue';
+import { computed, onBeforeMount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import MessageEditDialog from 'components/campManagement/settings/emails/MessageEditDialog.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import type { MessageTemplate } from '@camp-registration/common/entities';
+import { useAPIService } from 'src/services/APIService';
+import { useServiceHandler } from 'src/composables/serviceHandler';
 
+const {
+  queryParam,
+  data,
+  withResultNotification,
+  forceFetch,
+  isLoading,
+  error,
+} = useServiceHandler<MessageTemplate[]>('message_templates');
+
+const api = useAPIService();
 const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
 
-campDetailsStore.fetchData();
+onBeforeMount(() => {
+  campDetailsStore.fetchData();
+  loadData();
+});
+
+const TEMPLATE_ICONS: Record<string, string> = {
+  registration_submitted: 'o_assignment_turned_in',
+  registration_confirmed: 'check_circle',
+  registration_waitlisted: 'hourglass_empty',
+  registration_waitlist_accepted: 'verified_user',
+  registration_updated: 'edit',
+  registration_canceled: 'cancel',
+};
 
 interface CMessageTemplate {
-  id?: string | undefined;
-  label: string;
-  icon?: string;
-  name: string;
-  description: string;
+  id: string | null;
+  event: string;
   loading: boolean;
 }
 
 const loading = computed<boolean>(() => {
-  return false;
+  return isLoading.value;
 });
 
+function loadData() {
+  forceFetch(async () => {
+    return api.fetchMessageTemplates(queryParam('camp'));
+  });
+}
+
 const templates = computed<CMessageTemplate[]>(() => {
-  return [
-    {
-      id: 'TODO',
-      name: 'registration-submitted',
-      icon: 'o_assignment_turned_in',
-      label: t('template.registration_submitted.label'),
-      description: t('template.registration_submitted.description'),
-      loading: false,
-    },
-    {
-      id: 'TODO',
-      name: 'registration-confirmed',
-      icon: 'check_circle',
-      label: t('template.registration_confirmed.label'),
-      description: t('template.registration_confirmed.description'),
-      loading: true,
-    },
-    {
-      id: 'TODO',
-      name: 'registration-waitlisted',
-      icon: 'hourglass_empty',
-      label: t('template.registration_waitlisted.label'),
-      description: t('template.registration_waitlisted.description'),
-      loading: false,
-    },
-    {
-      id: 'TODO',
-      name: 'registration-waitlist-accepted',
-      icon: 'verified_user',
-      label: t('template.registration_waitlist_accepted.label'),
-      description: t('template.registration_waitlist_accepted.description'),
-      loading: false,
-    },
-    {
-      name: 'registration-updated',
-      icon: 'edit',
-      label: t('template.registration_updated.label'),
-      description: t('template.registration_updated.description'),
-      loading: false,
-    },
-    {
-      name: 'registration-canceled',
-      icon: 'cancel',
-      label: t('template.registration_canceled.label'),
-      description: t('template.registration_canceled.description'),
-      loading: false,
-    },
-  ];
+  if (!data.value) {
+    return [];
+  }
+
+  return data.value
+    .filter(templateHasEvent)
+    .map((template): CMessageTemplate => {
+      return {
+        ...template,
+        loading: false,
+      };
+    });
+  //
 });
+
+function templateHasEvent(
+  template: MessageTemplate,
+): template is MessageTemplate & { event: string } {
+  return template.event !== null;
+}
 
 function withProgress(fn: () => Promise<MessageTemplate>) {}
 
@@ -222,16 +222,24 @@ function addTemplate(event: string) {
   const camp = campDetailsStore.data;
   if (!camp) return;
 
+  const template = data.value?.find((template) => template.event === event);
+  if (!template) {
+    console.log(event, template, data.value);
+    return;
+  }
+
   quasar
     .dialog({
       component: MessageEditDialog,
       componentProps: {
         form: camp.form,
         countries: camp.countries,
-        // TODO
+        subject: template.subject,
+        body: template.body,
       },
     })
     .onOk((message) => {
+      console.log(message);
       // TODO
     });
 }

@@ -67,7 +67,7 @@ export class ResourceCollection<
   TOutput,
   TResource extends JsonResource<TInput, TOutput>,
 > extends JsonResource<TResource[], TOutput[]> {
-  constructor(data: TResource[], metaData: ResourceMetadata) {
+  constructor(data: TResource[], metaData: ResourceMetadata = {}) {
     super(data, metaData);
   }
 
@@ -77,5 +77,9 @@ export class ResourceCollection<
    */
   public transform(): TOutput[] {
     return this.data.map((resource) => resource.transform());
+  }
+
+  public entries(): TResource[] {
+    return this.data;
   }
 }

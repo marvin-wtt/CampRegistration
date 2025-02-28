@@ -3,7 +3,11 @@ import validator from './message-template.validation.js';
 import service from './message-template.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError.js';
-import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource.js';
+import {
+  MessageTemplateCollection,
+  MessageTemplateDefaultResource,
+  MessageTemplateResource,
+} from '#app/messageTemplate/message-template.resource.js';
 import { BaseController } from '#core/controller/BaseController.js';
 import defaultTemplates from '#assets/camp/messageTemplates';
 
@@ -22,10 +26,10 @@ class MessageTemplateController extends BaseController {
 
     const templates = await service.queryMessageTemplates(campId);
 
-    // TODO How to append the defaults?
     const defaults = Object.entries(defaultTemplates)
-      .filter(([event]) => templates.find((t) => t.event === event))
+      .filter(([event]) => !templates.find((t) => t.event === event))
       .map(([event, { subject, body }]) => ({
+        // TODO Only return needed keys
         event,
         subject,
         body,
@@ -33,7 +37,12 @@ class MessageTemplateController extends BaseController {
 
     res
       .status(httpStatus.OK)
-      .resource(MessageTemplateResource.collection(templates));
+      .resource(
+        new MessageTemplateCollection([
+          ...MessageTemplateResource.collection(templates).entries(),
+          ...MessageTemplateDefaultResource.collection(defaults).entries(),
+        ]),
+      );
   }
 
   async store(req: Request, res: Response) {

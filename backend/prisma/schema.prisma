@@ -185,6 +185,7 @@ model File {
   id              String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
   campId          String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
   registrationId  String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
+  messageId       String?  @map("message_id") @db.Char(36) // Prisma does not support morth
   name            String
   originalName    String   @map("original_name")
   field           String?
@@ -196,6 +197,7 @@ model File {
 
   camp         Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
   registration Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  message      Message?      @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@map("files")
 }
@@ -213,6 +215,7 @@ model Message {
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   registration Registration?    @relation(fields: [registrationId], references: [id])
   status       MessageStatus?
+  files        File[]
 
   @@map("messages")
 }

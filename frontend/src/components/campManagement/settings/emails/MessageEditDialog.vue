@@ -15,7 +15,7 @@
           {{ t('page.title') }}
         </q-card-section>
 
-        <q-card-section class="row">
+        <q-card-section class="row no-wrap">
           <q-list
             v-if="
               typeof message.subject !== 'string' &&
@@ -131,7 +131,7 @@
 
           <div
             v-if="props.countries.length > 1"
-            class="self-center q-ml-sm"
+            class="col-shrink self-center q-ml-sm"
           >
             <translation-toggle-btn
               :model-value="translated"

@@ -62,11 +62,12 @@ const Variable = Node.create<VariableOptions>({
       value: {
         default: null,
         parseHTML: function (element) {
-          return element.getAttribute('data-value');
+          const content = element.innerHTML.trim();
+          return content.substring(2, content.length - 2).trim();
         },
         renderHTML: (attributes) => {
           if (!attributes.value) return {};
-          return { 'data-value': attributes.value };
+          return { 'data-variable': true };
         },
       },
     };
@@ -75,33 +76,56 @@ const Variable = Node.create<VariableOptions>({
   parseHTML() {
     return [
       {
-        tag: 'span.variable[data-value]',
+        tag: 'span[data-variable]',
       },
     ];
   },
 
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node }) {
     const { value } = node.attrs;
-    const { label, category } = resolveProperties(
-      this.options.variables,
-      value,
-    );
 
-    return [
-      'span',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        'data-value': value,
-        'data-label': label,
-        'data-category': category,
-        'aria-label': `${category} | ${label}`,
-      }),
-      // Optionally display the category.
-      category
-        ? ['span', { class: 'variable-category' }, `${category} | `]
-        : '',
-      // Variable label element.
-      ['span', { class: 'variable-label' }, label],
-    ];
+    return ['span', { 'data-variable': true }, `{{ ${value} }}`];
+  },
+
+  addNodeView() {
+    return ({ node, HTMLAttributes }) => {
+      const { value } = node.attrs;
+      const { label, category } = resolveProperties(
+        this.options.variables,
+        node.attrs.value,
+      );
+
+      const dom = document.createElement('span');
+
+      dom.classList.add('variable');
+      const attrs = mergeAttributes(
+        this.options.HTMLAttributes,
+        HTMLAttributes,
+        {
+          'aria-label': `${category} | ${label}`,
+        },
+      );
+
+      for (const [name, val] of Object.entries(attrs)) {
+        dom.setAttribute(name, val);
+      }
+
+      if (category) {
+        const categoryEl = document.createElement('span');
+        categoryEl.innerHTML = category;
+        categoryEl.classList.add('variable-category');
+        dom.append(categoryEl);
+      }
+
+      const labelEl = document.createElement('span');
+      labelEl.innerHTML = label ?? value;
+      labelEl.classList.add('variable-label');
+      dom.append(labelEl);
+
+      return {
+        dom,
+      };
+    };
   },
 
   renderText({ node }) {

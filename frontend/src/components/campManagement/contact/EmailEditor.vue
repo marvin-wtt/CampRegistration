@@ -7,12 +7,12 @@
     <template #control="{ focused }">
       <div
         v-if="editor"
-        class="column q-gutter-sm fit no-wrap"
+        class="column q-gutter-sm no-wrap"
       >
         <bubble-menu
           :editor
           :tippy-options="{ duration: 100 }"
-          class="bubble-menu q-pa-xs"
+          class="col-shrink bubble-menu q-pa-xs"
         >
           <div class="row q-gutter-xs no-wrap">
             <q-btn
@@ -205,7 +205,7 @@
         <div class="col-grow">
           <editor-content
             :editor
-            class="fit editor"
+            class="editor fit"
           />
         </div>
       </div>
@@ -308,7 +308,7 @@ const editor = useEditor({
     }),
     Typography,
   ],
-  content: model.value,
+  content: wrapTemplateVariables(model.value),
   onUpdate: ({ editor }) => {
     // TODO Debounce
     model.value = editor.getHTML();
@@ -325,8 +325,14 @@ watch(model, (value) => {
     return;
   }
 
-  editor.value?.commands.setContent(value, false);
+  editor.value?.commands.setContent(wrapTemplateVariables(value), false);
 });
+
+function wrapTemplateVariables(html: string): string {
+  // This regex matches patterns like {{ some.variable }}
+  const regex = /(\{\{\s*[a-zA-Z0-9_.]+\s*}})/g;
+  return html.replace(regex, '<span data-variable>$1</span>');
+}
 
 function onAddToken() {
   quasar
