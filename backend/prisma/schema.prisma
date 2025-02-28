@@ -207,8 +207,8 @@ model Message {
   templateId     String?  @map("message_template_id") @db.Char(36)
   registrationId String?  @map("registration_id") @db.Char(36)
   replyTo        String?  @map("reply_to")
-  subject        String
-  body           String
+  subject        String   @db.MediumText
+  body           String   @db.MediumText
   priority       String   @default("normal")
   createdAt      DateTime @default(now()) @map("created_at")
 

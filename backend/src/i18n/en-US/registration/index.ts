@@ -6,7 +6,7 @@ export default {
       text: {
         title: 'Hello,',
         information:
-          '{{ registration.fullName }} registered for {{ camp.name }}.',
+          '{{ registration.firstName }} {{ registration.lastName }} registered for {{ camp.name }}.',
         button: 'View Registrations',
         greeting: 'Best regards,',
         teamName: '$t(appName) team',

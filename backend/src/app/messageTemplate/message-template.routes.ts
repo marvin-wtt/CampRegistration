@@ -9,9 +9,9 @@ const router = express.Router({ mergeParams: true });
 
 router.param(
   'messageTemplateId',
-  catchParamAsync(async (req, _res, name) => {
+  catchParamAsync(async (req, _res, id) => {
     const camp = req.modelOrFail('camp');
-    const template = await service.getMessageTemplateById(camp.id, name);
+    const template = await service.getMessageTemplateById(camp.id, id);
     req.setModel('messageTemplate', template);
   }),
 );

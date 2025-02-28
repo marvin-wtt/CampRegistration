@@ -39,11 +39,11 @@ const store = async (req: Request, res: Response) => {
   // Notify participant
   if (registration.waitingList) {
     await catchAndResolve(
-      registrationMessages.sendWaitingListNotification(camp, registration),
+      registrationMessages.sendRegistrationWaitlisted(camp, registration),
     );
   } else {
     await catchAndResolve(
-      registrationMessages.sendRegistrationConfirmation(camp, registration),
+      registrationMessages.sendRegistrationConfirmed(camp, registration),
     );
   }
 
@@ -76,7 +76,7 @@ const update = async (req: Request, res: Response) => {
 
   if (previousRegistration.waitingList && !registration.waitingList) {
     await catchAndResolve(
-      registrationMessages.sendRegistrationConfirmation(camp, registration),
+      registrationMessages.sendRegistrationConfirmed(camp, registration),
     );
   }
 

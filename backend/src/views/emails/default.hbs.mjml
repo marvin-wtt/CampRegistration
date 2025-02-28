@@ -25,7 +25,9 @@
     </mj-section>
     <mj-section background-color="#F2F2F2" mj-class="main-section">
       <mj-column vertical-align="middle" width="100%">
-        {{{ main }}}
+        <mj-text>
+          {{{ body }}}
+        </mj-text>
       </mj-column>
     </mj-section>
     <mj-section mj-class="bottom-section">

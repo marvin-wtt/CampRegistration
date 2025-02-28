@@ -2,6 +2,7 @@ import type { Message } from '@prisma/client';
 import config from '#config/index';
 import renderer from '#core/renderer/index.js';
 import { MailFactory } from '#app/mail/mail.factory.js';
+import logger from '#core/logger.js';
 
 type MailAddress = string | { name: string; address: string };
 
@@ -75,7 +76,7 @@ class MailService {
     const html = await renderer.renderContent({
       subject: data.subject,
       preview: '', // TODO
-      main: data.body,
+      body: data.body,
       footer: '', // TODO
     });
 
@@ -119,11 +120,19 @@ class MailService {
   }
 
   async sendMessages(message: Message, emails: string[]): Promise<void> {
-    await Promise.allSettled(
-      emails.map(async (recipient) => {
-        return this.sendMessage(message, recipient);
-      }),
+    const results = await Promise.allSettled(
+      emails.map((recipient) => this.sendMessage(message, recipient)),
     );
+
+    // Log errors
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        logger.error(
+          `Failed to send message to ${emails[index]}:`,
+          result.reason,
+        );
+      }
+    });
   }
 }
 

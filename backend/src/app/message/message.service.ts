@@ -9,6 +9,7 @@ import messageTemplateService from '#app/messageTemplate/message-template.servic
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 import mailService from '#app/mail/mail.service.js';
 import { translateObject } from '#utils/translateObject.js';
+import logger from '#core/logger.js';
 
 type MessageCreateInput = Pick<
   Prisma.MessageCreateInput,
@@ -28,7 +29,7 @@ class MessageService {
     registration: Registration,
   ) {
     const helper = new RegistrationCampDataHelper(registration.campData);
-    const country = helper.country(camp.countries);
+    const country = helper.country(camp.countries) ?? camp.countries[0];
 
     // Create compiler
     const subjectCompiler = messageTemplateService.createCompiler(
@@ -71,6 +72,7 @@ class MessageService {
     // Only send email when template is present
     // No template means, that emails are disabled
     if (!template) {
+      logger.debug('Not sending email because template not found');
       return;
     }
 

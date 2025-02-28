@@ -7,7 +7,7 @@
     <template #control="{ focused }">
       <div
         v-if="editor"
-        class="column q-gutter-sm no-wrap"
+        class="column col-12 q-gutter-sm no-wrap"
       >
         <bubble-menu
           :editor
@@ -169,7 +169,7 @@
         <!-- Action buttons -->
         <div
           v-if="focused"
-          class="col-shrink row q-gutter-xs q-pb-sm"
+          class="col-shrink row q-gutter-xs"
         >
           <q-btn
             label="Add token"
@@ -202,7 +202,14 @@
           />
         </div>
 
-        <div class="col-grow">
+        <div
+          v-if="focused"
+          class="col-shrink"
+        >
+          <q-separator inset />
+        </div>
+
+        <div class="col">
           <editor-content
             :editor
             class="editor fit"
@@ -311,7 +318,7 @@ const editor = useEditor({
   content: wrapTemplateVariables(model.value),
   onUpdate: ({ editor }) => {
     // TODO Debounce
-    model.value = editor.getHTML();
+    model.value = unwrapTemplateVariables(editor.getHTML());
   },
 });
 
@@ -332,6 +339,14 @@ function wrapTemplateVariables(html: string): string {
   // This regex matches patterns like {{ some.variable }}
   const regex = /(\{\{\s*[a-zA-Z0-9_.]+\s*}})/g;
   return html.replace(regex, '<span data-variable>$1</span>');
+}
+
+function unwrapTemplateVariables(html: string): string {
+  // This regex matches the <span data-variable> wrapper around the template pattern.
+  const regex =
+    /<span\b(?=[^>]*\bdata-variable\b)[^>]*>(\{\{\s*[a-zA-Z0-9_.]+\s*}})<\/span>/g;
+
+  return html.replace(regex, '$1');
 }
 
 function onAddToken() {

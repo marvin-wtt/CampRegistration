@@ -1,9 +1,9 @@
 import prisma from '#client.js';
 import type { MessageTemplate, Prisma } from '@prisma/client';
-import * as handlebars from 'handlebars';
+import Handlebars from 'handlebars';
 
 class MessageTemplateService {
-  async getMessageTemplateById(id: string, campId: string) {
+  async getMessageTemplateById(campId: string, id: string) {
     return prisma.messageTemplate.findFirstOrThrow({
       where: {
         id,
@@ -63,7 +63,7 @@ class MessageTemplateService {
   }
 
   createCompiler(template: string): (context: unknown) => string {
-    return handlebars.compile(template, {
+    return Handlebars.compile(template, {
       knownHelpersOnly: true,
       knownHelpers: {
         if: true,

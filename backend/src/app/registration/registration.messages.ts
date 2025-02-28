@@ -7,17 +7,17 @@ import mailService from '#app/mail/mail.service';
 import i18n, { t } from '#core/i18n';
 
 class RegistrationMessages {
-  async sendRegistrationConfirmation(camp: Camp, registration: Registration) {
+  async sendRegistrationConfirmed(camp: Camp, registration: Registration) {
     return messageService.createEventMessage(
-      'registration:confirmation',
+      'registration_confirmed',
       camp,
       registration,
     );
   }
 
-  async sendWaitingListNotification(camp: Camp, registration: Registration) {
+  async sendRegistrationWaitlisted(camp: Camp, registration: Registration) {
     return messageService.createEventMessage(
-      'registration:waiting_list',
+      'registration_waitlisted',
       camp,
       registration,
     );
@@ -25,7 +25,7 @@ class RegistrationMessages {
 
   async notifyContactEmail(camp: Camp, registration: Registration) {
     const helper = new RegistrationCampDataHelper(registration.campData);
-    const country = helper.country(camp.countries);
+    const country = helper.country(camp.countries) ?? camp.countries[0];
 
     const attachment = {
       filename: 'data.json',
@@ -53,7 +53,6 @@ class RegistrationMessages {
         // Add additional fields to registration to simplify camp data access
         firstName: helper.firstName(),
         lastName: helper.lastName(),
-        fullName: helper.fullName(),
         url,
         ...registration,
       },

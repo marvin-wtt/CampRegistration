@@ -155,7 +155,7 @@ const {
   forceFetch,
   isLoading,
   error,
-} = useServiceHandler<MessageTemplate[]>('message_templates');
+} = useServiceHandler<MessageTemplate[]>();
 
 const api = useAPIService();
 const quasar = useQuasar();
@@ -176,8 +176,16 @@ const TEMPLATE_ICONS: Record<string, string> = {
   registration_canceled: 'cancel',
 };
 
-interface CMessageTemplate {
-  id: string | null;
+const TEMPLATE_ORDER: string[] = [
+  'registration_submitted',
+  'registration_confirmed',
+  'registration_waitlisted',
+  'registration_waitlist_accepted',
+  'registration_updated',
+  'registration_canceled',
+];
+
+interface CMessageTemplate extends MessageTemplate {
   event: string;
   loading: boolean;
 }
@@ -204,7 +212,11 @@ const templates = computed<CMessageTemplate[]>(() => {
         ...template,
         loading: false,
       };
-    });
+    })
+    .toSorted(
+      (a, b) =>
+        TEMPLATE_ORDER.indexOf(a.event) - TEMPLATE_ORDER.indexOf(b.event),
+    );
   //
 });
 
@@ -214,19 +226,31 @@ function templateHasEvent(
   return template.event !== null;
 }
 
-function withProgress(fn: () => Promise<MessageTemplate>) {}
+function findTemplateByEvent(event: string): CMessageTemplate {
+  const template = templates.value.find((template) => template.event === event);
+  if (!template) {
+    throw new Error('No message template found for event: ' + event);
+  }
+
+  return template;
+}
+
+function findTemplateById(id: string): CMessageTemplate {
+  const template = templates.value.find((template) => template.id === id);
+  if (!template) {
+    throw new Error('No message template found with id: ' + id);
+  }
+
+  return template;
+}
 
 function addTemplate(event: string) {
-  // TODO Fetch default text from server
-
   const camp = campDetailsStore.data;
-  if (!camp) return;
-
-  const template = data.value?.find((template) => template.event === event);
-  if (!template) {
-    console.log(event, template, data.value);
-    return;
+  if (!camp) {
+    throw new Error('No camp details loaded!');
   }
+
+  const template = findTemplateByEvent(event);
 
   quasar
     .dialog({
@@ -238,9 +262,16 @@ function addTemplate(event: string) {
         body: template.body,
       },
     })
-    .onOk((message) => {
-      console.log(message);
-      // TODO
+    .onOk(async (message) => {
+      await withResultNotification('create', async () => {
+        return api.createMessageTemplate(camp.id, {
+          event,
+          subject: message.subject,
+          body: message.body,
+        });
+      });
+
+      loadData();
     });
 }
 
@@ -250,32 +281,41 @@ function editTemplate(id: string | undefined) {
   const camp = campDetailsStore.data;
   if (!camp) return;
 
+  const template = findTemplateById(id);
+
   quasar
     .dialog({
       component: MessageEditDialog,
       componentProps: {
         form: camp.form,
         countries: camp.countries,
-        // TODO
-        subject: {
-          de: '',
-          fr: '',
-        },
-        body: {
-          de: '',
-          fr: '',
-        },
+        subject: template.subject,
+        body: template.body,
       },
     })
-    .onOk((message) => {
-      // TODO
+    .onOk(async (message) => {
+      await withResultNotification('update', async () => {
+        return api.updateMessageTemplate(camp.id, id, {
+          subject: message.subject,
+          body: message.body,
+        });
+      });
+
+      loadData();
     });
 }
 
-function deleteTemplate(id: string | undefined) {
+async function deleteTemplate(id: string | undefined) {
   if (!id) return;
 
-  // TODO
+  const camp = campDetailsStore.data;
+  if (!camp) return;
+
+  await withResultNotification('delete', async () => {
+    return api.deleteMessageTemplate(camp.id, id);
+  });
+
+  loadData();
 }
 </script>
 
@@ -290,6 +330,17 @@ action:
 page:
   title: 'Registration Events'
   description: 'Manage and edit the email templates for each registration event.'
+
+request:
+  create:
+    success: 'Message template created successfully'
+    error: 'Failed to create message template'
+  update:
+    success: 'Message template updated successfully'
+    error: 'Failed to update message template'
+  delete:
+    success: 'Message template deleted successfully'
+    error: 'Failed to delete message template'
 
 template:
   registration_submitted:
@@ -322,6 +373,17 @@ page:
   title: 'Anmeldeereignisse'
   description: 'Verwalten und bearbeiten Sie die E-Mail-Vorlagen für jedes Anmeldeereignis.'
 
+request:
+  create:
+    success: 'Nachrichtenvorlage wurde erfolgreich erstellt'
+    error: 'Fehler beim Erstellen der Nachrichtenvorlage'
+  update:
+    success: 'Nachrichtenvorlage wurde erfolgreich aktualisiert'
+    error: 'Fehler beim Aktualisieren der Nachrichtenvorlage'
+  delete:
+    success: 'Nachrichtenvorlage wurde erfolgreich gelöscht'
+    error: 'Fehler beim Löschen der Nachrichtenvorlage'
+
 template:
   registration_submitted:
     label: 'Anmeldung Eingereicht'
@@ -352,6 +414,17 @@ action:
 page:
   title: "Événements d'Inscription"
   description: "Gérez et modifiez les modèles d'e-mails pour chaque événement d'inscription."
+
+request:
+  create:
+    success: 'Le modèle de message a été créé avec succès'
+    error: 'Échec de la création du modèle de message'
+  update:
+    success: 'Le modèle de message a été mis à jour avec succès'
+    error: 'Échec de la mise à jour du modèle de message'
+  delete:
+    success: 'Le modèle de message a été supprimé avec succès'
+    error: 'Échec de la suppression du modèle de message'
 
 template:
   registration_submitted:

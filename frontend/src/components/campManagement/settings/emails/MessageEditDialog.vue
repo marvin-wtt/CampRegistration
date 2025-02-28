@@ -25,7 +25,7 @@
             outlined
             separator
             dense
-            class="col-grow"
+            class="col"
           >
             <q-expansion-item
               v-for="(country, i) in props.countries"

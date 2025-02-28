@@ -13,8 +13,8 @@ export default defineBoot(({ app }) => {
     messages,
     datetimeFormats,
     numberFormats,
-    fallbackWarn: true,
-    missingWarn: true,
+    fallbackWarn: false,
+    missingWarn: false,
   });
 
   // Set i18n instance on app

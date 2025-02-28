@@ -6,7 +6,7 @@ import config from '#config/index';
 interface RenderContentOptions {
   preview: string;
   subject: string;
-  main: string;
+  body: string;
   footer: string;
 }
 
@@ -34,7 +34,7 @@ export class EmailRenderer {
     this.viewEngine = create({
       partialsDir: this.getViewDirectory('partials'),
       layoutsDir: this.getViewDirectory('layouts'),
-      defaultLayout: 'default',
+      defaultLayout: undefined,
       helpers: {
         t: i18n.t,
       },
@@ -51,10 +51,10 @@ export class EmailRenderer {
 
   async renderContent(options: RenderContentOptions): Promise<string> {
     return this.renderFile({
-      fileName: 'dynamic-content',
+      fileName: 'default',
       subject: options.subject,
       context: {
-        main: options.main,
+        body: options.body,
         footer: options.footer,
       },
     });
