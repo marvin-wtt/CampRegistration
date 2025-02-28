@@ -22,21 +22,6 @@
         dense
       />
 
-      <q-input
-        v-model="subject"
-        :label="t('input.subject.label')"
-        :rules="[
-          (val?: string) =>
-            (!!val && val.length > 0) || t('input.subject.rule.required'),
-        ]"
-        :maxlength="988"
-        hide-bottom-space
-        autogrow
-        outlined
-        rounded
-        dense
-      />
-
       <expand-slide
         expand-label="Show more"
         contract-label="Show less"
@@ -72,9 +57,25 @@
       </expand-slide>
 
       <registration-email-editor
+        v-model="subject"
+        :form="campDetailsStore.data?.form"
+        :label="t('input.subject.label')"
+        :rules="[
+          (val?: string) =>
+            (!!val && val.length > 0) || t('input.subject.rule.required'),
+        ]"
+        hide-bottom-space
+        rounded
+        outlined
+        singleLine
+      />
+
+      <registration-email-editor
         v-model="text"
         :form="campDetailsStore.data?.form"
         class="col-grow"
+        rounded
+        outlined
       />
 
       <div class="row q-gutter-sm justify-between">
@@ -136,7 +137,7 @@ registrationStore.fetchData();
 
 const to = ref<Contact[]>([]);
 const replyTo = ref<string>();
-const subject = ref<string>();
+const subject = ref<string>('');
 const attachments = ref<File[]>();
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 
