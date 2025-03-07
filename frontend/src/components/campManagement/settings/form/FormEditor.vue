@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 // Style
-import 'survey-core/defaultV2.min.css';
+import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
 import 'survey-core/survey.i18n';
@@ -17,18 +17,19 @@ import {
   PropertyGridEditorCollection,
   SurveyCreatorModel,
 } from 'survey-creator-core';
+import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import {
   type Base,
   type ITheme,
   type PageModel,
+  type PanelModel,
   type SurveyElement,
   type SurveyModel,
 } from 'survey-core';
 import showdown from 'showdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
-import type { Panel } from 'survey-core/typings/knockout/kopage';
 import type {
   CampDetails,
   ServiceFile,
@@ -90,8 +91,7 @@ const creatorOptions: ICreatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
-  isAutoSave: true,
-  themeForPreview: 'defaultV2',
+  autoSaveEnabled: true,
   showThemeTab: true,
   showJSONEditorTab: !props.restrictedAccess,
 };
@@ -103,7 +103,7 @@ const markdownConverter = new showdown.Converter({
 const creator = new SurveyCreatorModel(creatorOptions);
 
 creator.JSON = props.camp.form;
-creator.theme = props.camp.themes['light'];
+creator.theme = props.camp.themes['light'] ?? {};
 
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
@@ -118,10 +118,10 @@ if (props.restrictedAccess) {
 }
 
 watchEffect(() => {
-  creator.locale = locale.value.split(/[-_]/)[0];
+  creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
 });
 
-creator.onPropertyValidationCustomError.add((_, options) => {
+creator.onPropertyDisplayCustomError.add((_, options) => {
   if (!['name', 'valueName'].includes(options.propertyName)) {
     return;
   }
@@ -206,7 +206,7 @@ creator.onUploadFile.add((_, options) => {
     return;
   }
 
-  const file = files[0];
+  const file = files[0]!;
 
   props
     .saveFileFunc(file)
@@ -258,7 +258,8 @@ creator.onElementAllowOperations.add((_, options) => {
     options.allowDelete = false;
   }
   if (obj.isPage || obj.isPanel) {
-    options.allowDelete = (obj as Panel | PageModel).questions.length === 0;
+    options.allowDelete =
+      (obj as PanelModel | PageModel).questions.length === 0;
   }
 });
 
@@ -278,7 +279,7 @@ creator.onConfigureTablePropertyEditor.add((_, options) => {
   options.allowAddRemoveItems = options.propertyName !== 'columns';
 });
 
-creator.onGetPropertyReadOnly.add((_, options) => {
+creator.onPropertyGetReadOnly.add((_, options) => {
   if (!props.restrictedAccess) {
     return;
   }
@@ -287,10 +288,10 @@ creator.onGetPropertyReadOnly.add((_, options) => {
     options.readOnly = true;
   }
   // Disallow restricted users to modify the `name` property for questions and matrix columns
-  const obj = options.obj as SurveyElement;
+  const obj = options.element as SurveyElement;
   const disallowedProperties = ['name', 'campDataType'];
   if (disallowedProperties.includes(options.property.name)) {
-    options.readOnly = obj.isQuestion || isObjColumn(options.obj);
+    options.readOnly = obj.isQuestion || isObjColumn(options.element);
   }
 });
 
