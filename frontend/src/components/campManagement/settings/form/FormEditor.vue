@@ -10,7 +10,7 @@ import 'survey-creator-core/survey-creator-core.min.css';
 import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
-import { watchEffect } from 'vue';
+import { watch, watchEffect } from 'vue';
 import {
   type ICreatorOptions,
   localization,
@@ -28,6 +28,10 @@ import {
   type SurveyElement,
   type SurveyModel,
 } from 'survey-core';
+import SurveyCreatorTheme from 'survey-creator-core/themes';
+import { registerCreatorTheme } from 'survey-creator-core';
+import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
+import { registerSurveyTheme } from 'survey-creator-core';
 import showdown from 'showdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
@@ -91,6 +95,7 @@ const creatorOptions: ICreatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
+  showCreatorThemeSettings: false,
   autoSaveEnabled: true,
   showThemeTab: true,
   showJSONEditorTab: !props.restrictedAccess,
@@ -99,6 +104,9 @@ const creatorOptions: ICreatorOptions = {
 const markdownConverter = new showdown.Converter({
   openLinksInNewWindow: true,
 });
+
+registerSurveyTheme(SurveyTheme);
+registerCreatorTheme(SurveyCreatorTheme);
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
@@ -121,6 +129,32 @@ watchEffect(() => {
   creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
 });
 
+watch(() => quasar.dark.isActive, applyCreatorTheme);
+
+// Creator theme
+applyCreatorTheme(quasar.dark.isActive);
+
+function applyCreatorTheme(isDark: boolean) {
+  const theme = isDark
+    ? SurveyCreatorTheme.DefaultDark
+    : {
+        themeName: 'default-light',
+        cssVariables: {},
+      };
+
+  creator.applyCreatorTheme({
+    themeName: theme.themeName,
+    isLight: !isDark,
+    cssVariables: {
+      ...theme.cssVariables,
+      '--sjs-primary-background-500': undefined,
+      '--sjs-secondary-background-500': undefined,
+      '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
+    },
+  });
+}
+
+// Restrict valueName characters
 creator.onPropertyDisplayCustomError.add((_, options) => {
   if (!['name', 'valueName'].includes(options.propertyName)) {
     return;
@@ -232,6 +266,7 @@ creator.onOpenFileChooser.add((_, options) => {
 });
 
 let previousColorPalette: string | undefined;
+// FIXME This does not work
 creator.themeEditor.onThemeSelected.add((_, options) => {
   const colorPalette = options.theme.colorPalette;
   if (colorPalette === previousColorPalette) {
@@ -253,7 +288,7 @@ creator.onElementAllowOperations.add((_, options) => {
   // Disallow restricted users to change question types, delete questions, or copy them
   options.allowChangeType = false;
   options.allowCopy = false;
-  const obj = options.obj as SurveyElement;
+  const obj = options.element as SurveyElement;
   if (obj.isQuestion) {
     options.allowDelete = false;
   }
@@ -300,4 +335,9 @@ function isObjColumn(obj: Base) {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+body {
+  --sjs-primary-background-500: $primary;
+  --sjs-secondary-background-500: $secondary;
+}
+</style>
