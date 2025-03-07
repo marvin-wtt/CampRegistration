@@ -56,7 +56,10 @@ class MailService {
     const html = await renderer.renderFile({
       subject: data.subject,
       fileName: data.template,
-      context: data.context,
+      context: {
+        ...data.context,
+        email: data.to,
+      },
     });
 
     // Send email via mailer

@@ -30,7 +30,7 @@ const run = async (prisma: PrismaClient) => {
             create: {
               id: ulid(),
               campId: camp.id,
-              name: templateName,
+              event: templateName,
               locale: country,
               subject: template.subject,
               body: template.body,

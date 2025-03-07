@@ -4,6 +4,7 @@ import {
   Camp,
   Registration,
   TableTemplate,
+  Message,
   MessageTemplate,
   CampManager,
   Bed,
@@ -20,6 +21,7 @@ declare global {
       camp?: Camp;
       registration?: Registration;
       tableTemplate?: TableTemplate;
+      message?: Message;
       messageTemplate?: MessageTemplate;
       manager?: CampManager;
       room?: Room & { beds: Bed[] };

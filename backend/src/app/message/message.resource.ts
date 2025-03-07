@@ -4,7 +4,7 @@ import { FileResource } from '#app/file/file.resource';
 import { JsonResource } from '#core/resource/JsonResource';
 
 interface MessageWithRelations extends Message {
-  attachments: {
+  attachments?: {
     file: File;
   }[];
 }
@@ -21,9 +21,12 @@ export class MessageResource extends JsonResource<
       body: this.data.body,
       priority: this.data.priority,
       createdAt: this.data.createdAt.toISOString(),
-      attachments: FileResource.collection(
-        this.data.attachments.map((v) => v.file),
-      ).transform(),
+      attachments:
+        this.data.attachments !== undefined
+          ? FileResource.collection(
+              this.data.attachments.map((v) => v.file),
+            ).transform()
+          : [],
     };
   }
 }

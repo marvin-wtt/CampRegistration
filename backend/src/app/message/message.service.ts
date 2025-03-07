@@ -4,12 +4,14 @@ import type {
   Camp,
   Registration,
   MessageTemplate,
+  Message,
 } from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 import mailService from '#app/mail/mail.service.js';
 import { translateObject } from '#utils/translateObject.js';
-import logger from '#core/logger.js';
+import ApiError from '#utils/ApiError.js';
+import httpStatus from 'http-status';
 
 type MessageCreateInput = Pick<
   Prisma.MessageCreateInput,
@@ -17,17 +19,11 @@ type MessageCreateInput = Pick<
 >;
 
 class MessageService {
-  async createMessage(data: MessageCreateInput) {
-    return prisma.message.create({
-      data,
-    });
-  }
-
   async createTemplateMessage(
     template: MessageTemplate,
     camp: Camp,
     registration: Registration,
-  ) {
+  ): Promise<Message> {
     const helper = new RegistrationCampDataHelper(registration.campData);
     const country = helper.country(camp.countries) ?? camp.countries[0];
 
@@ -57,6 +53,8 @@ class MessageService {
     const emails = helper.emails();
 
     await mailService.sendMessages(message, emails);
+
+    return message;
   }
 
   async createEventMessage(
@@ -72,16 +70,23 @@ class MessageService {
     // Only send email when template is present
     // No template means, that emails are disabled
     if (!template) {
-      logger.debug('Not sending email because template not found');
-      return;
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Template event "${event}" not found`,
+      );
     }
 
     return this.createTemplateMessage(template, camp, registration);
   }
 
-  async getMessageById(id: string) {
+  async getMessageById(campId: string, id: string) {
     return prisma.message.findUniqueOrThrow({
-      where: { id },
+      where: {
+        id,
+        registration: {
+          campId,
+        },
+      },
     });
   }
 }

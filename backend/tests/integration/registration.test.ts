@@ -38,6 +38,7 @@ import {
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import mailer from '../../src/core/mail';
+import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
@@ -1065,9 +1066,19 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
     });
 
-    describe('sends notification', () => {
+    describe('sends messages', () => {
+      const createCampWithEmail = async (
+        campData: Parameters<(typeof CampFactory)['create']>[0],
+        templateData?: Parameters<(typeof MessageTemplateFactory)['create']>[0],
+      ) => {
+        const camp = await CampFactory.create(campData);
+        const template = await MessageTemplateFactory.create(templateData);
+
+        return { camp, template };
+      };
+
       it('should send a confirmation email to the user', async () => {
-        const camp = await CampFactory.create(campWithEmail);
+        const { camp } = await createCampWithEmail(campWithEmail);
 
         const data = {
           email: 'test@example.com',
@@ -1089,7 +1100,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to multiple emails', async () => {
-        const camp = await CampFactory.create(campWithMultipleEmails);
+        const { camp } = await createCampWithEmail(campWithMultipleEmails);
 
         const data = {
           email: 'test@example.com',
@@ -1111,7 +1122,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a copy to the contact email for national camp', async () => {
-        const camp = await CampFactory.create(campWithEmail);
+        const { camp } = await createCampWithEmail(campWithEmail);
 
         const data = {
           email: 'test@example.com',
@@ -1123,6 +1134,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
+        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: camp.contactEmail,
@@ -1132,7 +1144,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a copy to the contact emails for international camp', async () => {
-        const camp = await CampFactory.create(
+        const { camp } = await createCampWithEmail(
           campWithContactEmailInternational,
         );
 
@@ -1146,6 +1158,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(201);
 
         const expectedEmail = campWithContactEmailInternational.contactEmail.de;
+        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: expectedEmail,
@@ -1187,6 +1200,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
+        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: [data.email],
@@ -1212,7 +1226,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(200);
     });
 
-    it.todo('should not overwrite camp data when updating waiting list ');
+    it.todo('should not overwrite camp data when updating waiting list');
 
     it.todo('should upload files if attached');
 
@@ -1253,9 +1267,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(404);
     });
 
-    it.todo(
-      'should send a confirmation to the user if the waiting list status chnages',
-    );
+    describe('sends messages', () => {
+      it.todo('should send update email when available');
+
+      it.todo('should send waiting list confirmation when available');
+    });
 
     describe.todo('update camp data');
   });
@@ -1475,6 +1491,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .delete(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
         .expect(404);
+    });
+
+    describe('sends messages', () => {
+      it.todo('should send cancel email when available');
     });
   });
 });

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { translatedValue } from '#core/validation/helper';
 
 const show = z.object({
   params: z.object({
@@ -19,15 +18,25 @@ const store = z.object({
   params: z.object({
     campId: z.string(),
   }),
-  body: z.object({}),
+  body: z.union([
+    z.object({
+      registrationIds: z.array(z.string()),
+      subject: z.string(),
+      body: z.string(),
+      priority: z.string(),
+    }),
+    z.object({
+      registrationId: z.string(),
+      event: z.string(),
+    }),
+  ]),
 });
 
-const update = z.object({
+const resend = z.object({
   params: z.object({
     campId: z.string(),
     messageId: z.string(),
   }),
-  body: z.object({}).partial(),
 });
 
 const destroy = z.object({
@@ -41,6 +50,6 @@ export default {
   show,
   index,
   store,
-  update,
+  resend,
   destroy,
 };
