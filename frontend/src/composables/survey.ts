@@ -48,16 +48,18 @@ export function startAutoDataUpdate(
     setVariables(model, data);
 
     // Set file variables
-    files?.forEach((file) => {
-      if (!file.field) {
-        return;
-      }
+    if (data && files) {
+      files.forEach((file) => {
+        if (!file.field) {
+          return;
+        }
 
-      const name = `_file:${file.field}`;
-      const url = api.getCampFileUrl(model.surveyId, file.id);
+        const name = `_file:${file.field}`;
+        const url = api.getCampFileUrl(data.id, file.id);
 
-      model.setVariable(name, url);
-    });
+        model.setVariable(name, url);
+      });
+    }
   };
 }
 
