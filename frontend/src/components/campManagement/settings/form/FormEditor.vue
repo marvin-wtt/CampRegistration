@@ -211,7 +211,7 @@ creator.saveThemeFunc = (
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
 
-  if (options.area === 'preview-tab' || options.area === 'designer-tab') {
+  if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     // Convert markdown to html
     survey.onTextMarkdown.add((_, options) => {
       const str = markdownConverter.makeHtml(options.text);
@@ -220,10 +220,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     });
   }
 
-  if (options.area === 'preview-tab' || options.area === 'theme-tab') {
-    // Set surveyID for dynamic link generation
-    survey.surveyId = props.camp.id;
-
+  if (['preview-tab', 'theme-tab'].includes(options.area)) {
     setVariables(survey, props.camp);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.camp);
@@ -265,19 +262,26 @@ creator.onOpenFileChooser.add((_, options) => {
     });
 });
 
+const themes: {
+  dark?: ITheme;
+  light?: ITheme;
+} = {};
 let previousColorPalette: string | undefined;
-// FIXME This does not work
-creator.themeEditor.onThemeSelected.add((_, options) => {
-  const colorPalette = options.theme.colorPalette;
-  if (colorPalette === previousColorPalette) {
+creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
+  const colorPalette = theme.colorPalette;
+  if (!colorPalette || (colorPalette !== 'dark' && colorPalette !== 'light')) {
     return;
   }
-  previousColorPalette = colorPalette;
 
-  const themes = props.camp.themes;
-  if (themes && colorPalette && colorPalette in themes) {
-    const mewTheme = themes[colorPalette];
-    creator.themeEditor.model.setTheme(colorPalette, mewTheme);
+  if (theme.colorPalette === previousColorPalette) {
+    themes[colorPalette] = theme;
+    return;
+  }
+  previousColorPalette = theme.colorPalette;
+
+  const mewTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
+  if (mewTheme) {
+    themeModel.setTheme(mewTheme);
   }
 });
 
