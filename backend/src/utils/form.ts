@@ -1,5 +1,4 @@
-import pkg from 'survey-core';
-const { SurveyModel } = pkg;
+import { SurveyModel } from 'survey-core';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
 import type { Camp } from '@prisma/client';

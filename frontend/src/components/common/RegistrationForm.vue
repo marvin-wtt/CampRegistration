@@ -1,5 +1,5 @@
 <template>
-  <survey
+  <survey-component
     v-if="model"
     id="survey"
     :model="model"
@@ -8,12 +8,13 @@
 </template>
 
 <script lang="ts" setup>
-import 'survey-core/defaultV2.min.css';
+import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import showdown from 'showdown';
 import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
+import { SurveyComponent } from 'survey-vue3-ui';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
@@ -71,13 +72,6 @@ onMounted(async () => {
   const modelForm = props.moderation ? createModerationForm(form) : form;
   model.value = createModel(id, modelForm);
 
-  // TODO Remove with next surveyJs release
-  if (props.moderation) {
-    // https://github.com/surveyjs/survey-library/issues/8708
-    model.value.ignoreValidation = true;
-    model.value.validationEnabled = false;
-  }
-
   if (props.data) {
     model.value.data = props.data;
   }
@@ -100,7 +94,6 @@ function createModerationForm(form: object) {
 
 function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
-  survey.surveyId = campId;
   survey.locale = locale.value;
 
   // Handle file uploads
@@ -161,12 +154,11 @@ function createModel(campId: string, form: object): SurveyModel {
 
     mapFileQuestionValues(sender);
 
-    const campId = sender.surveyId;
     const registration = sender.data ?? {};
 
     try {
       await props.submitFn(campId, registration);
-      options.showDataSavingSuccess();
+      options.showSaveSuccess();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e: unknown) {
       options.showSaveError('Error');
