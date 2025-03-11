@@ -139,6 +139,9 @@ jobs:
       EMAIL_ADMIN: admin@yourapp.com
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
