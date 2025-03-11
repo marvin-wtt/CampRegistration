@@ -2,7 +2,7 @@ import { SurveyModel } from 'survey-core';
 
 type Translatable<T = string> = T | Record<string, T>;
 
-export type Data = {
+export interface Data {
   countries: string[];
   name: Translatable;
   organizer: Translatable;
@@ -15,7 +15,7 @@ export type Data = {
   location: Translatable;
   price: number;
   freePlaces: Translatable<number> | null;
-};
+}
 
 export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   if (!data) {
@@ -52,6 +52,7 @@ const converter = (locale: string) => {
 
     try {
       return toDateString(date, locale);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (ignored) {
       return toDateString(date, fallbackLocale);
     }
@@ -70,6 +71,7 @@ const converter = (locale: string) => {
       typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
     try {
       return toTimeString(date, locale);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (ignored) {
       return toTimeString(date, fallbackLocale);
     }
