@@ -3,11 +3,13 @@
     :model-value="model"
     stack-label
     dense
+    class="email-editor"
+    :class="singleLine ? '' : 'email-editor__multiline'"
   >
     <template #control="{ focused }">
       <div
         v-if="editor"
-        class="column col-12 q-gutter-sm no-wrap"
+        class="column fit q-gutter-sm no-wrap"
       >
         <bubble-menu
           :editor
@@ -34,7 +36,11 @@
               round
               unelevated
               @click="editor.chain().focus().toggleItalic().run()"
-            />
+            >
+              <q-tooltip :delay="200">
+                {{ t('tooltip.formatItalic') }}
+              </q-tooltip>
+            </q-btn>
             <q-btn
               icon="format_underlined"
               :color="editor.isActive('underline') ? 'primary' : undefined"
@@ -42,7 +48,11 @@
               round
               unelevated
               @click="editor.chain().focus().toggleUnderline().run()"
-            />
+            >
+              <q-tooltip :delay="200">
+                {{ t('tooltip.formatUnderlined') }}
+              </q-tooltip>
+            </q-btn>
             <q-btn
               icon="strikethrough_s"
               :color="editor.isActive('strike') ? 'primary' : undefined"
@@ -50,7 +60,11 @@
               round
               unelevated
               @click="editor.chain().focus().toggleStrike().run()"
-            />
+            >
+              <q-tooltip :delay="200">
+                {{ t('tooltip.formatStrikethrough') }}
+              </q-tooltip>
+            </q-btn>
 
             <q-separator vertical />
 
@@ -127,7 +141,11 @@
                 round
                 unelevated
                 @click="editor.chain().focus().toggleBulletList().run()"
-              />
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.formatBulleted') }}
+                </q-tooltip>
+              </q-btn>
               <q-btn
                 icon="format_list_numbered"
                 :color="editor.isActive('orderedList') ? 'primary' : undefined"
@@ -135,7 +153,11 @@
                 round
                 unelevated
                 @click="editor.chain().focus().toggleOrderedList().run()"
-              />
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.formatOrdered') }}
+                </q-tooltip>
+              </q-btn>
               <q-btn
                 v-if="editor.can().liftListItem('listItem')"
                 icon="format_indent_decrease"
@@ -143,7 +165,11 @@
                 round
                 unelevated
                 @click="editor.chain().focus().liftListItem('listItem').run()"
-              />
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.formatIndentDecrease') }}
+                </q-tooltip>
+              </q-btn>
               <q-btn
                 v-if="editor.can().sinkListItem('listItem')"
                 icon="format_indent_increase"
@@ -151,7 +177,11 @@
                 round
                 unelevated
                 @click="editor.chain().focus().sinkListItem('listItem').run()"
-              />
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.formatIndentIncrease') }}
+                </q-tooltip>
+              </q-btn>
             </template>
 
             <q-separator vertical />
@@ -162,7 +192,11 @@
               round
               unelevated
               @click="editor.chain().focus().unsetAllMarks().run()"
-            />
+            >
+              <q-tooltip :delay="200">
+                {{ t('tooltip.formatClear') }}
+              </q-tooltip>
+            </q-btn>
           </div>
         </bubble-menu>
 
@@ -172,14 +206,18 @@
           class="col-shrink row q-gutter-xs"
         >
           <q-btn
-            label="Add token"
+            :label="t('token.label')"
             icon="add"
             size="xs"
             unelevated
             outline
             rounded
             @click="onAddToken"
-          />
+          >
+            <q-tooltip :delay="200">
+              {{ t('tooltip.addToken') }}
+            </q-tooltip>
+          </q-btn>
 
           <q-separator vertical />
 
@@ -190,7 +228,11 @@
             outline
             size="xs"
             @click="editor.chain().focus().undo().run()"
-          />
+          >
+            <q-tooltip :delay="200">
+              {{ t('tooltip.undo') }}
+            </q-tooltip>
+          </q-btn>
 
           <q-btn
             icon="redo"
@@ -199,7 +241,11 @@
             outline
             size="xs"
             @click="editor.chain().focus().redo().run()"
-          />
+          >
+            <q-tooltip :delay="200">
+              {{ t('tooltip.redo') }}
+            </q-tooltip>
+          </q-btn>
         </div>
 
         <div
@@ -368,8 +414,21 @@ function onAddToken() {
 </script>
 
 <style lang="scss">
-/* Basic editor styles */
+.email-editor {
+  .q-field__label {
+    padding-left: 10px;
+  }
+}
 
+/* Form style */
+.email-editor__multiline {
+  .q-field__control {
+    display: flex;
+    height: 100%;
+  }
+}
+
+/* Basic editor styles */
 .floating-menu {
   border: 1px solid gray;
   border-radius: 20px;
@@ -568,31 +627,73 @@ function onAddToken() {
   border: 1px solid gray;
   border-radius: 20px;
 }
-
-/* Bubble menu */
-/* TODO Replace variables for dark mode */
 </style>
 
 <i18n lang="yaml" locale="en">
 placeholder: 'Type your message here...'
 
-definition:
-  token:
-    tip: 'Add a variable'
+token:
+  label: 'Variables'
+
+tooltip:
+  formatBold: 'Bold'
+  formatItalic: 'Italic'
+  formatUnderlined: 'Underlined'
+  formatStrikethrough: 'Strikethrough'
+  formatColorText: 'Text color'
+  formatColorFill: 'Highlight color'
+  formatBulleted: 'Bulleted list'
+  formatOrdered: 'Ordered list'
+  formatIndentDecrease: 'Decrease indent'
+  formatIndentIncrease: 'Increase indent'
+  formatClear: 'Clear formatting'
+  addToken: 'Add token'
+  undo: 'Undo'
+  redo: 'Redo'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 placeholder: 'Gib hier deine Nachricht ein...'
 
-definition:
-  token:
-    tip: 'Füge eine Variable hinzu'
+token:
+  label: 'Variablen'
+
+tooltip:
+  formatBold: 'Fett'
+  formatItalic: 'Kursiv'
+  formatUnderlined: 'Unterstrichen'
+  formatStrikethrough: 'Durchgestrichen'
+  formatColorText: 'Textfarbe'
+  formatColorFill: 'Hervorhebungsfarbe'
+  formatBulleted: 'Aufzählungsliste'
+  formatOrdered: 'Nummerierte Liste'
+  formatIndentDecrease: 'Einzug verkleinern'
+  formatIndentIncrease: 'Einzug vergrößern'
+  formatClear: 'Formatierung löschen'
+  addToken: 'Variable hinzufügen'
+  undo: 'Rückgängig'
+  redo: 'Wiederholen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 placeholder: 'Tapez votre message ici...'
 
-definition:
-  token:
-    tip: 'Ajouter une variable'
+token:
+  label: 'Variables'
+
+tooltip:
+  formatBold: 'Gras'
+  formatItalic: 'Italique'
+  formatUnderlined: 'Souligné'
+  formatStrikethrough: 'Barré'
+  formatColorText: 'Couleur du texte'
+  formatColorFill: 'Couleur de surlignage'
+  formatBulleted: 'Liste à puces'
+  formatOrdered: 'Liste numérotée'
+  formatIndentDecrease: 'Diminuer le retrait'
+  formatIndentIncrease: 'Augmenter le retrait'
+  formatClear: 'Effacer la mise en forme'
+  addToken: 'Ajouter un jeton'
+  undo: 'Annuler'
+  redo: 'Rétablir'
 </i18n>

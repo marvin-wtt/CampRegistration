@@ -72,6 +72,7 @@
 
       <registration-email-editor
         v-model="text"
+        :label="t('input.message.label')"
         :form="campDetailsStore.data?.form"
         class="col-grow"
         rounded
@@ -220,6 +221,9 @@ error:
 
 input:
   attachments: 'Attachments:'
+  message:
+    label: 'Message:'
+    required: 'A message is required'
   priority: 'Priority:'
   replyTo:
     label: 'Reply To:'
@@ -250,6 +254,9 @@ error:
 
 input:
   attachments: 'Anhänge:'
+  message:
+    label: 'Nachricht:'
+    required: 'Eine Nachricht ist erforderlich'
   priority: 'Priorität:'
   replyTo:
     label: 'Antwort an:'
@@ -280,6 +287,9 @@ error:
 
 input:
   attachments: 'Pièces jointes:'
+  message:
+    label: 'Message:'
+    required: 'Un message est requis'
   priority: 'Priorité:'
   replyTo:
     label: 'Répondre à:'
