@@ -2,10 +2,7 @@ import questions from './questions/index.js';
 import functions from './functions/index.js';
 import properties from './properties/index.js';
 import { setVariables } from './variables/index.js';
-// import pkg from 'survey-core';
-const { Serializer, ComponentCollection, FunctionFactory } = await import(
-  'survey-core'
-);
+import { Serializer, ComponentCollection, FunctionFactory } from 'survey-core';
 
 for (const component of questions) {
   ComponentCollection.Instance.remove(component.name);

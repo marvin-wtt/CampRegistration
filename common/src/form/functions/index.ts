@@ -7,11 +7,11 @@ import objectValues from './objectValues.js';
 import joinStrings from './joinStrings.js';
 import isWaitingList from './isWaitingList.js';
 
-type FunctionRegistrationParams = {
+interface FunctionRegistrationParams {
   name: string;
   func: (params: unknown[]) => unknown;
   isAsync?: boolean;
-};
+}
 
 const functions: FunctionRegistrationParams[] = [
   {
