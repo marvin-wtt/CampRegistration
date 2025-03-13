@@ -1,14 +1,14 @@
 import mailService from '#app/mail/mail.service';
 import i18n, { t } from '#core/i18n.js';
-import notificationService from '#app/notification/notification.service';
 import type { User } from '@prisma/client';
+import { BaseMessages } from '#core/BaseMessages.js';
 
-class AuthMessages {
+class AuthMessages extends BaseMessages {
   async sendVerificationEmail(user: User, token: string) {
     await i18n.changeLanguage(user?.locale);
 
     const subject = t('auth:email.verifyEmail.subject');
-    const url = notificationService.generateUrl('login', {
+    const url = this.generateUrl('login', {
       email: user.email,
       token,
     });
@@ -29,7 +29,7 @@ class AuthMessages {
     await i18n.changeLanguage(user?.locale);
 
     const subject = t('auth:email.resetPassword.subject');
-    const url = notificationService.generateUrl('reset-password', {
+    const url = this.generateUrl('reset-password', {
       email: user.email,
       token,
     });

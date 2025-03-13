@@ -2,11 +2,11 @@ import { Camp, Registration } from '@prisma/client';
 import messageService from '#app/message/message.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 import { translateObject } from '#utils/translateObject.js';
-import notificationService from '#app/notification/notification.service.js';
 import mailService from '#app/mail/mail.service';
 import i18n, { t } from '#core/i18n';
+import { BaseMessages } from '#core/BaseMessages.js';
 
-class RegistrationMessages {
+class RegistrationMessages extends BaseMessages {
   async sendRegistrationConfirmed(camp: Camp, registration: Registration) {
     return messageService.createEventMessage(
       'registration_confirmed',
@@ -36,8 +36,7 @@ class RegistrationMessages {
     await i18n.changeLanguage(country);
     const subject = t('registration:email.managerNotification.subject');
 
-    // TODO This should not happen by notification service
-    const url = notificationService.generateUrl(`management/${camp.id}`);
+    const url = this.generateUrl(`management/${camp.id}`);
 
     const context = {
       camp: {

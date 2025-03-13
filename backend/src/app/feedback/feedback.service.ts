@@ -1,4 +1,4 @@
-import notificationService from '#app/notification/notification.service';
+import mailService from '#app/mail/mail.service.js';
 import config from '#config/index';
 
 class FeedbackService {
@@ -14,7 +14,7 @@ class FeedbackService {
       userAgent,
     };
 
-    await notificationService.sendEmail({
+    await mailService.sendTemplateMail({
       to: config.email.admin,
       subject: 'New Feedback',
       template: 'feedback',
