@@ -1,17 +1,15 @@
 import type { Message, File } from '@prisma/client';
-import type { Message as MessageResourceData } from '@camp-registration/common/entities';
+import type { Message as MessageData } from '@camp-registration/common/entities';
 import { FileResource } from '#app/file/file.resource';
 import { JsonResource } from '#core/resource/JsonResource';
 
-interface MessageWithRelations extends Message {
-  attachments?: {
-    file: File;
-  }[];
+export interface MessageWithFiles extends Message {
+  files?: File[];
 }
 
 export class MessageResource extends JsonResource<
-  MessageWithRelations,
-  MessageResourceData
+  MessageWithFiles,
+  MessageData
 > {
   transform() {
     return {
@@ -22,10 +20,8 @@ export class MessageResource extends JsonResource<
       priority: this.data.priority,
       createdAt: this.data.createdAt.toISOString(),
       attachments:
-        this.data.attachments !== undefined
-          ? FileResource.collection(
-              this.data.attachments.map((v) => v.file),
-            ).transform()
+        this.data.files !== undefined
+          ? FileResource.collection(this.data.files).transform()
           : [],
     };
   }

@@ -1,60 +1,60 @@
 import messageService from './message.service.js';
 import httpStatus from 'http-status';
-import { MessageResource } from './message.resource.js';
+import { MessageResource, MessageWithFiles } from './message.resource.js';
 import registrationService from '#app/registration/registration.service';
 import { BaseController } from '#core/controller/BaseController.js';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import ApiError from '#utils/ApiError.js';
+import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 
 class MessageController extends BaseController {
-  async index(req: Request, res: Response) {
-    // TODO
+  async index(_req: Request, res: Response) {
+    res.status(httpStatus.NOT_IMPLEMENTED);
   }
 
-  async show(request: Request, response: Response): Promise<void> {
-    // TODO
+  async show(_req: Request, res: Response): Promise<void> {
+    res.status(httpStatus.NOT_IMPLEMENTED);
   }
 
   async store(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
     const { body } = await req.validate(validator.store);
 
-    if ('event' in body) {
-      const registration = await registrationService.getRegistrationById(
-        camp.id,
-        body.registrationId,
-      );
+    const registrations = await registrationService.getRegistrationsByIds(
+      camp.id,
+      body.registrationIds,
+    );
 
-      if (registration == null) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid registration id');
-      }
+    const template = await messageTemplateService.createTemplate(camp.id, {
+      subject: body.subject,
+      body: body.body,
+      priority: body.priority,
+      replyTo: body.replyTo,
+    });
 
-      const message = await messageService.createEventMessage(
-        body.event,
-        camp,
-        registration,
-      );
+    const messages: MessageWithFiles[] = await Promise.all(
+      registrations.map((registration) =>
+        messageService.createTemplateMessage(template, camp, registration),
+      ),
+    );
 
-      res.status(httpStatus.CREATED).resource(new MessageResource(message));
-      return;
-    } else {
-      // TODO
-    }
+    res
+      .status(httpStatus.CREATED)
+      .resource(MessageResource.collection(messages));
   }
 
   async resend(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
-    const message = req.modelOrFail('message');
+    const requestMessage = req.modelOrFail('message');
     await req.validate(validator.resend);
 
-    // TODO
+    const message = await messageService.resendMessage(camp, requestMessage);
 
     res.status(httpStatus.CREATED).resource(new MessageResource(message));
   }
 
-  async destroy(req: Request, res: Response) {
-    // TODO
+  async destroy(_req: Request, res: Response) {
+    res.status(httpStatus.NOT_IMPLEMENTED);
   }
 }
 

@@ -1,10 +1,10 @@
 import prisma from '#client.js';
 import type {
-  Prisma,
   Camp,
   Registration,
   MessageTemplate,
   Message,
+  File,
 } from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
@@ -12,18 +12,14 @@ import mailService from '#app/mail/mail.service.js';
 import { translateObject } from '#utils/translateObject.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
-
-type MessageCreateInput = Pick<
-  Prisma.MessageCreateInput,
-  'subject' | 'body' | 'priority' | 'replyTo'
->;
+import registrationService from '#app/registration/registration.service.js';
 
 class MessageService {
   async createTemplateMessage(
     template: MessageTemplate,
     camp: Camp,
     registration: Registration,
-  ): Promise<Message> {
+  ): Promise<Message & { files: File[] }> {
     const helper = new RegistrationCampDataHelper(registration.campData);
     const country = helper.country(camp.countries) ?? camp.countries[0];
 
@@ -48,13 +44,30 @@ class MessageService {
         subject: subjectCompiler(context),
         body: bodyCompiler(context),
       },
+      include: {
+        files: true,
+      },
     });
 
-    const emails = helper.emails();
-
-    await mailService.sendMessages(message, emails);
+    await this.sendMessageToRegistration(message, registration);
 
     return message;
+  }
+
+  private async sendMessageToRegistration(
+    message: Message,
+    registration: Registration,
+  ) {
+    // Filter duplicate emails
+    const emails = [
+      ...new Set(
+        new RegistrationCampDataHelper(registration.campData)
+          .emails()
+          .map((value) => value.trim().toLowerCase()),
+      ),
+    ];
+
+    await mailService.sendMessages(message, emails);
   }
 
   async createEventMessage(
@@ -75,6 +88,38 @@ class MessageService {
         `Template event "${event}" not found`,
       );
     }
+
+    return this.createTemplateMessage(template, camp, registration);
+  }
+
+  async resendMessage(camp: Camp, message: Message) {
+    if (!message.registrationId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Message does not belong to a registration',
+      );
+    }
+
+    const registration = await registrationService.getRegistrationById(
+      camp.id,
+      message.registrationId,
+    );
+    // This should never happen
+    if (!registration) {
+      throw new ApiError(httpStatus.CONFLICT, 'Invalid registration id');
+    }
+
+    if (!message.templateId) {
+      await this.sendMessageToRegistration(message, registration);
+
+      return message;
+    }
+
+    // Regenerate message
+    const template = await messageTemplateService.getMessageTemplateById(
+      camp.id,
+      message.templateId,
+    );
 
     return this.createTemplateMessage(template, camp, registration);
   }

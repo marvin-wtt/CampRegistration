@@ -18,18 +18,13 @@ const store = z.object({
   params: z.object({
     campId: z.string(),
   }),
-  body: z.union([
-    z.object({
-      registrationIds: z.array(z.string()),
-      subject: z.string(),
-      body: z.string(),
-      priority: z.string(),
-    }),
-    z.object({
-      registrationId: z.string(),
-      event: z.string(),
-    }),
-  ]),
+  body: z.object({
+    registrationIds: z.array(z.string()).min(1),
+    subject: z.string(),
+    body: z.string(),
+    priority: z.string(),
+    replyTo: z.string().email().optional(),
+  }),
 });
 
 const resend = z.object({
