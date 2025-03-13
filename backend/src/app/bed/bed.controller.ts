@@ -1,73 +1,66 @@
-import { resource } from '#core/resource';
 import bedService from './bed.service.js';
-import bedResource from './bed.resource.js';
 import registrationService from '#app/registration/registration.service';
 import httpStatus from 'http-status';
-import { Registration } from '@prisma/client';
 import ApiError from '#utils/ApiError';
 import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
+import { BedResource } from '#app/bed/bed.resource.js';
 
-const store = async (req: Request, res: Response) => {
-  const {
-    params: { campId, roomId },
-    body: { registrationId },
-  } = await req.validate(validator.store);
+class BedController {
+  async store(req: Request, res: Response) {
+    const {
+      params: { campId, roomId },
+      body: { registrationId },
+    } = await req.validate(validator.store);
 
-  // Validate registrationId is present
-  if (registrationId !== undefined) {
-    await getRegistrationOrFail(campId, registrationId);
+    // Validate registrationId is present
+    if (registrationId !== undefined) {
+      await this.getRegistrationOrFail(campId, registrationId);
+    }
+
+    const bed = await bedService.createBed(roomId, registrationId);
+
+    res.status(httpStatus.CREATED).resource(new BedResource(bed));
   }
 
-  const bed = await bedService.createBed(roomId, registrationId);
+  async update(req: Request, res: Response) {
+    const {
+      params: { campId, bedId },
+      body: { registrationId },
+    } = await req.validate(validator.update);
 
-  res.status(httpStatus.CREATED).json(resource(bedResource(bed)));
-};
+    // Validate registrationId is present
+    if (registrationId !== null) {
+      await this.getRegistrationOrFail(campId, registrationId);
+    }
 
-const update = async (req: Request, res: Response) => {
-  const {
-    params: { campId, bedId },
-    body: { registrationId },
-  } = await req.validate(validator.update);
+    const bed = await bedService.updateBedById(bedId, registrationId);
 
-  // Validate registrationId is present
-  if (registrationId !== null) {
-    await getRegistrationOrFail(campId, registrationId);
+    res.resource(new BedResource(bed));
   }
 
-  const bed = await bedService.updateBedById(bedId, registrationId);
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { bedId },
+    } = await req.validate(validator.destroy);
 
-  res.json(resource(bedResource(bed)));
-};
+    await bedService.deleteBedById(bedId);
 
-const destroy = async (req: Request, res: Response) => {
-  const {
-    params: { bedId },
-  } = await req.validate(validator.destroy);
-
-  await bedService.deleteBedById(bedId);
-
-  res.sendStatus(httpStatus.NO_CONTENT);
-};
-
-const getRegistrationOrFail = async (
-  campId: string,
-  registrationId: string,
-): Promise<Registration> => {
-  const registration = await registrationService.getRegistrationById(
-    campId,
-    registrationId,
-  );
-
-  if (registration === null) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid registration id');
+    res.sendStatus(httpStatus.NO_CONTENT);
   }
 
-  return registration;
-};
+  private async getRegistrationOrFail(campId: string, registrationId: string) {
+    const registration = await registrationService.getRegistrationById(
+      campId,
+      registrationId,
+    );
 
-export default {
-  store,
-  update,
-  destroy,
-};
+    if (registration === null) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid registration id');
+    }
+
+    return registration;
+  }
+}
+
+export default new BedController();
