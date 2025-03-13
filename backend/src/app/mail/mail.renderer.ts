@@ -1,7 +1,7 @@
 import { create, type ExpressHandlebars } from 'express-handlebars';
-import i18n from '#core/i18n';
+import i18n from '#core/i18n.js';
 import path from 'path';
-import config from '#config/index';
+import config from '#config/index.js';
 
 interface RenderContentOptions {
   preview: string;
@@ -16,7 +16,7 @@ interface RenderFileOptions {
   context: Record<string, unknown>;
 }
 
-export class EmailRenderer {
+export class MailRenderer {
   private static readonly EXTENSION = '.hbs';
 
   private readonly viewEngine: ExpressHandlebars;
@@ -46,7 +46,7 @@ export class EmailRenderer {
   }
 
   private getView(name: string) {
-    return path.join(this.viewsPath, name + EmailRenderer.EXTENSION);
+    return path.join(this.viewsPath, name + MailRenderer.EXTENSION);
   }
 
   async renderContent(options: RenderContentOptions): Promise<string> {
@@ -77,4 +77,4 @@ export class EmailRenderer {
   }
 }
 
-export default new EmailRenderer();
+export default new MailRenderer();

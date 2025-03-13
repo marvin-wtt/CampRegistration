@@ -1,6 +1,6 @@
 import type { Message } from '@prisma/client';
 import config from '#config/index';
-import renderer from '#core/renderer/index.js';
+import renderer from '#app/mail/mail.renderer.js';
 import { MailFactory } from '#app/mail/mail.factory.js';
 import logger from '#core/logger.js';
 
