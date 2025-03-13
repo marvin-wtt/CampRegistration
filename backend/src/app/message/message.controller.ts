@@ -34,7 +34,7 @@ class MessageController extends BaseController {
 
     const messages: MessageWithFiles[] = await Promise.all(
       registrations.map((registration) =>
-        messageService.createTemplateMessage(template, camp, registration),
+        messageService.sendTemplateMessage(template, camp, registration),
       ),
     );
 

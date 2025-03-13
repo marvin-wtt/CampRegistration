@@ -15,7 +15,7 @@ import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service.js';
 
 class MessageService {
-  async createTemplateMessage(
+  async sendTemplateMessage(
     template: MessageTemplate,
     camp: Camp,
     registration: Registration,
@@ -70,7 +70,7 @@ class MessageService {
     await mailService.sendMessages(message, emails);
   }
 
-  async createEventMessage(
+  async sendEventMessage(
     event: string,
     camp: Camp,
     registration: Registration,
@@ -89,7 +89,7 @@ class MessageService {
       );
     }
 
-    return this.createTemplateMessage(template, camp, registration);
+    return this.sendTemplateMessage(template, camp, registration);
   }
 
   async resendMessage(camp: Camp, message: Message) {
@@ -121,7 +121,7 @@ class MessageService {
       message.templateId,
     );
 
-    return this.createTemplateMessage(template, camp, registration);
+    return this.sendTemplateMessage(template, camp, registration);
   }
 
   async getMessageById(campId: string, id: string) {

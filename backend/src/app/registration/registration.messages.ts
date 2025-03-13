@@ -8,7 +8,7 @@ import { BaseMessages } from '#core/BaseMessages.js';
 
 class RegistrationMessages extends BaseMessages {
   async sendRegistrationConfirmed(camp: Camp, registration: Registration) {
-    return messageService.createEventMessage(
+    return messageService.sendEventMessage(
       'registration_confirmed',
       camp,
       registration,
@@ -16,7 +16,7 @@ class RegistrationMessages extends BaseMessages {
   }
 
   async sendRegistrationWaitlisted(camp: Camp, registration: Registration) {
-    return messageService.createEventMessage(
+    return messageService.sendEventMessage(
       'registration_waitlisted',
       camp,
       registration,
