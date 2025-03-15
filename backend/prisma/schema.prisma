@@ -72,8 +72,8 @@ model Camp {
   campManager      CampManager[]
   registrations    Registration[]
   rooms            Room[]
-  templates        TableTemplate[]
-  messageTempaltes MessageTemplate[]
+  tableTemplates   TableTemplate[]
+  messageTemplates MessageTemplate[]
   files            File[]
 
   @@map("camps")

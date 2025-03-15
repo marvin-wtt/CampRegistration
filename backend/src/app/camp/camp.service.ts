@@ -79,7 +79,8 @@ class CampService {
   async createCamp(
     userId: string,
     data: Omit<Prisma.CampCreateInput, 'id' | 'freePlaces'>,
-    templates: TableTemplateCreateData = [],
+    tableTemplates: TableTemplateCreateData = [],
+    messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
   ) {
     const freePlaces = data.maxParticipants;
@@ -97,24 +98,35 @@ class CampService {
       campId: undefined,
     }));
 
-    // Copy templates from reference camp with new id
-    const templateData = templates.map((template) => ({
-      ...template,
-      // Override id and camp id
-      id: undefined,
-      campId: undefined,
-    }));
-
     return prisma.camp.create({
       data: {
         freePlaces,
         ...data,
         form,
         campManager: { create: { userId } },
-        templates: { createMany: { data: templateData } },
+        tableTemplates: { createMany: { data: this.stripIds(tableTemplates) } },
+        messageTemplates: {
+          createMany: { data: this.stripIds(messageTemplates) },
+        },
         files: { createMany: { data: fileData } },
       },
     });
+  }
+
+  /**
+   * Removes the id and the camp id of the relational data.
+   * These fields are replaced by prisma during insertion.
+   * @param data The create data
+   */
+  private stripIds<T extends { id?: string; campId?: string }>(
+    data: T[],
+  ): (T & { id: undefined; campId: undefined })[] {
+    return data.map((value) => ({
+      ...value,
+      // Override id and camp id
+      id: undefined,
+      campId: undefined,
+    }));
   }
 
   private async replaceFormFileUrls(
@@ -214,6 +226,10 @@ class CampService {
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyCampInput,
+  'id'
+>[];
+type MessageTemplateCreateData = OptionalByKeys<
+  Prisma.MessageTemplateCreateManyCampInput,
   'id'
 >[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];

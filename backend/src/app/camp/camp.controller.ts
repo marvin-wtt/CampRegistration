@@ -6,11 +6,13 @@ import tableTemplateService from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import defaultForm from '#assets/camp/form';
 import defaultThemes from '#assets/camp/themes';
-import defaultTemplates from '#assets/camp/tableTemplates';
+import defaultTableTemplates from '#assets/camp/tableTemplates';
+import defaultMessageTemplates from '#assets/camp/messageTemplates';
 import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/BaseController.js';
+import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 
 class CampController extends BaseController {
   async show(req: Request, res: Response) {
@@ -63,9 +65,15 @@ class CampController extends BaseController {
       : defaultFiles;
 
     // Copy table templates from reference or use defaults
-    const templates = body.referenceCampId
+    const tableTemplates = body.referenceCampId
       ? await tableTemplateService.queryTemplates(body.referenceCampId)
-      : defaultTemplates.map((value) => ({ data: value }));
+      : defaultTableTemplates.map((value) => ({ data: value }));
+
+    const messageTemplates = body.referenceCampId
+      ? await messageTemplateService.queryMessageTemplates(body.referenceCampId)
+      : defaultMessageTemplates.filter(
+          ({ includeOnCreate }) => includeOnCreate,
+        );
 
     const camp = await campService.createCamp(
       userId,
@@ -86,7 +94,8 @@ class CampController extends BaseController {
         form: form,
         themes: themes,
       },
-      templates,
+      tableTemplates,
+      messageTemplates,
       files,
     );
 

@@ -26,14 +26,9 @@ class MessageTemplateController extends BaseController {
 
     const templates = await service.queryMessageTemplates(campId);
 
-    const defaults = Object.entries(defaultTemplates)
-      .filter(([event]) => !templates.find((t) => t.event === event))
-      .map(([event, { subject, body }]) => ({
-        // TODO Only return needed keys
-        event,
-        subject,
-        body,
-      }));
+    const defaults = defaultTemplates.filter(
+      ({ event }) => !templates.find((t) => t.event === event),
+    );
 
     res
       .status(httpStatus.OK)

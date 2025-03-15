@@ -1,5 +1,6 @@
-export default {
+const messageTemplates = {
   registration_submitted: {
+    includeOnCreate: true,
     subject: {
       en: 'Registration Received – {{ camp.name }}',
       de: 'Anmeldung erhalten – {{ camp.name }}',
@@ -21,6 +22,7 @@ export default {
     },
   },
   registration_confirmed: {
+    includeOnCreate: true,
     subject: {
       en: 'Registration Confirmed – Welcome to {{ camp.name }}!',
       de: 'Anmeldung bestätigt – Willkommen im Camp {{ camp.name }}!',
@@ -42,6 +44,7 @@ export default {
     },
   },
   registration_waitlisted: {
+    includeOnCreate: true,
     subject: {
       en: 'Registration Waitlisted – {{ camp.name }}',
       de: 'Anmeldung auf Warteliste – {{ camp.name }}',
@@ -63,6 +66,7 @@ export default {
     },
   },
   registration_waitlist_accepted: {
+    includeOnCreate: true,
     subject: {
       en: "Waitlist Registration Accepted – You're In for {{ camp.name }}",
       de: 'Wartelistenanmeldung akzeptiert – Du bist dabei bei {{ camp.name }}',
@@ -84,6 +88,7 @@ export default {
     },
   },
   registration_updated: {
+    includeOnCreate: true,
     subject: {
       en: 'Registration Updated – Check Your Details for {{ camp.name }}',
       de: 'Anmeldung aktualisiert – Überprüfe deine Daten für {{ camp.name }}',
@@ -105,6 +110,7 @@ export default {
     },
   },
   registration_canceled: {
+    includeOnCreate: true,
     subject: {
       en: 'Registration Canceled – {{ camp.name }}',
       de: 'Anmeldung storniert – {{ camp.name }}',
@@ -123,3 +129,8 @@ export default {
     },
   },
 };
+
+export default Object.entries(messageTemplates).map(([event, template]) => ({
+  ...template,
+  event,
+}));
