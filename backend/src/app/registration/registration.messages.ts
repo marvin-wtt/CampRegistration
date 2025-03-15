@@ -2,7 +2,7 @@ import { Camp, Registration } from '@prisma/client';
 import messageService from '#app/message/message.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 import { translateObject } from '#utils/translateObject.js';
-import mailService from '#app/mail/mail.service';
+import mailService from '#core/mail/mail.service';
 import i18n, { t } from '#core/i18n';
 import { BaseMessages } from '#core/BaseMessages.js';
 

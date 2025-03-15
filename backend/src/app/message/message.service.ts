@@ -8,7 +8,7 @@ import type {
 } from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
-import mailService from '#app/mail/mail.service.js';
+import mailService from '#core/mail/mail.service.js';
 import { translateObject } from '#utils/translateObject.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';

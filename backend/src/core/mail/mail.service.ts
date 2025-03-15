@@ -1,7 +1,7 @@
 import type { Message } from '@prisma/client';
-import config from '#config/index';
-import renderer from '#app/mail/mail.renderer.js';
-import { MailFactory } from '#app/mail/mail.factory.js';
+import config from '#config/index.js';
+import renderer from '#core/mail/mail.renderer.js';
+import { MailFactory } from '#core/mail/mail.factory.js';
 import logger from '#core/logger.js';
 
 type MailAddress = string | { name: string; address: string };
@@ -42,12 +42,22 @@ const isMailPriority = (value: string): value is MailPriority => {
 };
 
 class MailService {
-  private mailer: IMailer;
+  private mailer: IMailer | undefined;
 
-  constructor() {
+  constructor() {}
+
+  async connect() {
     const factory = new MailFactory();
 
-    this.mailer = factory.createMailer();
+    try {
+      this.mailer = await factory.createMailer();
+      logger.info(`Connected to mailer: ${this.mailer.name()}`);
+    } catch (error) {
+      logger.warn(
+        'Unable to connect to email server. Make sure you have configured the mailer',
+      );
+      logger.warn(error);
+    }
   }
 
   async sendTemplateMail(data: TemplateMailData): Promise<void> {
@@ -95,6 +105,10 @@ class MailService {
   }
 
   private async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
+    if (!this.mailer) {
+      throw Error('Mailer not ready!');
+    }
+
     const from = {
       name: config.appName,
       address: config.email.from,

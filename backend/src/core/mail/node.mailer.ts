@@ -1,27 +1,38 @@
-import { IMailer, AdvancedMailPayload } from '#app/mail/mail.service';
-import nodemailer, { type Transporter } from 'nodemailer';
+import { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
+import nodemailer, { SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index.js';
 
 export class NodeMailer implements IMailer {
   private transport: Transporter;
 
   constructor() {
-    const sendmailOptions = {
-      sendmail: true,
-      newline: 'unix',
-      smtp: undefined,
-    };
-
-    const options = config.email.smtp.host
-      ? config.email.smtp
-      : sendmailOptions;
+    const transportConfig = this.getConfig();
 
     // Create transport
-    this.transport = nodemailer.createTransport({
+    this.transport = nodemailer.createTransport(transportConfig);
+  }
+
+  private getConfig() {
+    const mailOptions: SendMailOptions = {
       from: config.email.from,
       replyTo: config.email.replyTo,
-      ...options,
-    });
+    };
+
+    // SMTP
+    if (config.email.smtp.host) {
+      return {
+        ...config.email.smtp,
+        ...mailOptions,
+      };
+    }
+
+    // Sendmail
+    return {
+      sendmail: true,
+      newline: 'unix',
+      ...mailOptions,
+      smtp: undefined,
+    };
   }
 
   name(): string {

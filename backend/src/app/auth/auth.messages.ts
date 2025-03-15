@@ -1,4 +1,4 @@
-import mailService from '#app/mail/mail.service';
+import mailService from '#core/mail/mail.service';
 import i18n, { t } from '#core/i18n.js';
 import type { User } from '@prisma/client';
 import { BaseMessages } from '#core/BaseMessages.js';

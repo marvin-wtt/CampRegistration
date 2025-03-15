@@ -1,4 +1,4 @@
-import mailService from '#app/mail/mail.service.js';
+import mailService from '#core/mail/mail.service.js';
 import config from '#config/index';
 
 class FeedbackService {
