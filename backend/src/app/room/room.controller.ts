@@ -3,8 +3,9 @@ import roomService from './room.service.js';
 import { RoomResource } from './room.resource.js';
 import validator from './room.validation.js';
 import { type Request, type Response } from 'express';
+import { BaseController } from '#core/BaseController.js';
 
-class RoomController {
+class RoomController extends BaseController {
   async show(req: Request, res: Response) {
     const room = req.modelOrFail('room');
 

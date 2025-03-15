@@ -7,8 +7,9 @@ import { catchAndResolve } from '#utils/promiseUtils';
 import validator from '#app/manager/manager.validation';
 import { type Request, type Response } from 'express';
 import managerMessages from '#app/manager/manager.messages';
+import { BaseController } from '#core/BaseController.js';
 
-class ManagerController {
+class ManagerController extends BaseController {
   async index(req: Request, res: Response) {
     const {
       params: { campId },

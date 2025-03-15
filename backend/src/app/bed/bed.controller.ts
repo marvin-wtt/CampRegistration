@@ -5,8 +5,9 @@ import ApiError from '#utils/ApiError';
 import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
 import { BedResource } from '#app/bed/bed.resource.js';
+import { BaseController } from '#core/BaseController.js';
 
-class BedController {
+class BedController extends BaseController {
   async store(req: Request, res: Response) {
     const {
       params: { campId, roomId },

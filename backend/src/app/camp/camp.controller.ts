@@ -10,7 +10,7 @@ import defaultTemplates from '#assets/camp/tableTemplates';
 import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
-import { BaseController } from '#core/controller/BaseController';
+import { BaseController } from '#core/BaseController.js';
 
 class CampController extends BaseController {
   async show(req: Request, res: Response) {

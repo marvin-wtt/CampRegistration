@@ -8,8 +8,9 @@ import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
 import registrationMessages from '#app/registration/registration.messages.js';
+import { BaseController } from '#core/BaseController.js';
 
-class RegistrationController {
+class RegistrationController extends BaseController {
   async show(req: Request, res: Response) {
     const registration = req.modelOrFail('registration');
 

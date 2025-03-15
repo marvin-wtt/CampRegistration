@@ -2,7 +2,7 @@ import messageService from './message.service.js';
 import httpStatus from 'http-status';
 import { MessageResource, MessageWithFiles } from './message.resource.js';
 import registrationService from '#app/registration/registration.service';
-import { BaseController } from '#core/controller/BaseController.js';
+import { BaseController } from '#core/BaseController.js';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
