@@ -3,6 +3,7 @@ import config from '#config/index.js';
 import renderer from '#core/mail/mail.renderer.js';
 import { MailFactory } from '#core/mail/mail.factory.js';
 import logger from '#core/logger.js';
+import { NoOpMailer } from '#core/mail/noop.mailer.js';
 
 type MailAddress = string | { name: string; address: string };
 
@@ -30,7 +31,7 @@ export interface AdvancedMailPayload extends MailPayload {
 }
 
 export interface IMailer {
-  sendEmail(payload: AdvancedMailPayload): Promise<void>;
+  sendMail(payload: AdvancedMailPayload): Promise<void>;
 
   isAvailable(): Promise<boolean>;
 
@@ -42,9 +43,12 @@ const isMailPriority = (value: string): value is MailPriority => {
 };
 
 class MailService {
-  private mailer: IMailer | undefined;
+  private mailer: IMailer;
 
-  constructor() {}
+  constructor() {
+    // Use the noop mailer as default to support operation without mail server
+    this.mailer = new NoOpMailer();
+  }
 
   async connect() {
     const factory = new MailFactory();
@@ -105,17 +109,13 @@ class MailService {
   }
 
   private async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
-    if (!this.mailer) {
-      throw Error('Mailer not ready!');
-    }
-
     const from = {
       name: config.appName,
       address: config.email.from,
     };
 
     // Send email via mailer
-    await this.mailer.sendEmail({
+    await this.mailer.sendMail({
       from,
       to: data.to,
       replyTo: data.replyTo ?? config.email.replyTo,

@@ -39,7 +39,7 @@ export class NodeMailer implements IMailer {
     return 'SMTP-Mailer';
   }
 
-  async sendEmail(payload: AdvancedMailPayload): Promise<void> {
+  async sendMail(payload: AdvancedMailPayload): Promise<void> {
     return await this.transport.sendMail({
       to: payload.to,
       replyTo: payload.replyTo,
