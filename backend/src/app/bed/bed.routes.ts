@@ -4,6 +4,7 @@ import { campManager } from '#guards/manager.guard';
 import { catchParamAsync } from '#utils/catchAsync';
 import bedService from './bed.service.js';
 import bedController from './bed.controller.js';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -16,8 +17,23 @@ router.param(
   }),
 );
 
-router.post('/', auth(), guard(campManager), bedController.store);
-router.patch('/:bedId', auth(), guard(campManager), bedController.update);
-router.delete('/:bedId', auth(), guard(campManager), bedController.destroy);
+router.post(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(bedController, 'store'),
+);
+router.patch(
+  '/:bedId',
+  auth(),
+  guard(campManager),
+  controller(bedController, 'update'),
+);
+router.delete(
+  '/:bedId',
+  auth(),
+  guard(campManager),
+  controller(bedController, 'destroy'),
+);
 
 export default router;

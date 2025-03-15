@@ -1,9 +1,10 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import express from 'express';
-import controller from './message.controller.js';
+import messageController from './message.controller.js';
 import service from './message.service.js';
 import { catchParamAsync } from '#utils/catchAsync';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -16,15 +17,35 @@ router.param(
   }),
 );
 
-router.get('/', auth(), guard(campManager), controller.index);
-router.get('/:messageId', auth(), guard(campManager), controller.show);
-router.post('/', auth(), guard(campManager), controller.store);
+router.get(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(messageController, 'index'),
+);
+router.get(
+  '/:messageId',
+  auth(),
+  guard(campManager),
+  controller(messageController, 'show'),
+);
+router.post(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(messageController, 'store'),
+);
 router.post(
   '/:messageId/resend',
   auth(),
   guard(campManager),
-  controller.resend,
+  controller(messageController, 'resend'),
 );
-router.delete('/:messageId', auth(), guard(campManager), controller.destroy);
+router.delete(
+  '/:messageId',
+  auth(),
+  guard(campManager),
+  controller(messageController, 'destroy'),
+);
 
 export default router;

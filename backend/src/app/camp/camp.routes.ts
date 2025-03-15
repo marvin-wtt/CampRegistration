@@ -12,6 +12,7 @@ import roomRoutes from '#app/room/room.routes';
 import campFileRoutes from './camp-files.routes.js';
 import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
 import messageTemplateRoutes from '#app/messageTemplate/message-template.routes';
+import { controller } from '#utils/bindController';
 
 const router = express.Router();
 
@@ -51,10 +52,29 @@ router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
 router.use('/:campId/files', campFileRoutes);
 
-router.get('/', guard(queryShowAllGuard), campController.index);
-router.get('/:campId', guard(or(campManager, campActive)), campController.show);
-router.post('/', auth(), guard(referenceCampGuard), campController.store);
-router.patch('/:campId', auth(), guard(campManager), campController.update);
-router.delete('/:campId', auth(), guard(campManager), campController.destroy);
+router.get('/', guard(queryShowAllGuard), controller(campController, 'index'));
+router.get(
+  '/:campId',
+  guard(or(campManager, campActive)),
+  controller(campController, 'show'),
+);
+router.post(
+  '/',
+  auth(),
+  guard(referenceCampGuard),
+  controller(campController, 'store'),
+);
+router.patch(
+  '/:campId',
+  auth(),
+  guard(campManager),
+  controller(campController, 'update'),
+);
+router.delete(
+  '/:campId',
+  auth(),
+  guard(campManager),
+  controller(campController, 'destroy'),
+);
 
 export default router;
