@@ -107,13 +107,16 @@ describe('/api/v1/camps/:campId/messages', () => {
           to: registration.campData.email[0],
           subject: expect.stringContaining(renderedSubject),
           body: expect.stringContaining(renderedBody),
-          // TODO reply to
+          replyTo: camp.contactEmail,
         }),
       );
     });
 
     it.todo(
       'should respond with `201` status code with translated camp fields',
+      async () => {
+        // TODO Translated reply to
+      },
     );
 
     it.todo('should respond with `201` status code with multiple emails');
