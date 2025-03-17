@@ -46,7 +46,7 @@ const referenceCampGuard = (req: Request) => {
 };
 
 router.use('/:campId/registrations', registrationRoutes);
-router.use('/:campId/templates', tableTemplateRoutes);
+router.use('/:campId/table-templates', tableTemplateRoutes);
 router.use('/:campId/message-templates', messageTemplateRoutes);
 router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
