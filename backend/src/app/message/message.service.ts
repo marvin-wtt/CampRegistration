@@ -44,7 +44,9 @@ class MessageService {
       data: {
         registration: { connect: { id: registration.id } },
         template: { connect: { id: template.id } },
-        replyTo: translateObject(camp.contactEmail, country),
+        replyTo:
+          template.replyTo ?? translateObject(camp.contactEmail, country),
+        priority: template.priority,
         subject: subjectCompiler(context),
         body: bodyCompiler(context),
       },
