@@ -23,6 +23,7 @@ import {
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
+import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -481,8 +482,6 @@ describe('/api/v1/camps', () => {
 
         expect(files.length).not.toBe(0);
       });
-
-      it.todo('should create default message templates');
     });
 
     describe('reference id', () => {
@@ -572,7 +571,46 @@ describe('/api/v1/camps', () => {
         ).toBeTruthy();
       });
 
-      it.todo('should copy all message templates from the referenced camp');
+      it('should copy all table templates from the referenced camp', async () => {
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken();
+
+        await MessageTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          event: 'registration_confirmed',
+        });
+        await MessageTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          event: 'registration_waitlist_accepted',
+        });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.messageTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).toBe(2);
+        expect(
+          templates.some((value) => value.event === 'registration_confirmed'),
+        ).toBeTruthy();
+        expect(
+          templates.some(
+            (value) => value.event === 'registration_waitlist_accepted',
+          ),
+        ).toBeTruthy();
+      });
 
       it('should copy all files from the referenced camp', async () => {
         const { camp: referenceCamp, accessToken } =
