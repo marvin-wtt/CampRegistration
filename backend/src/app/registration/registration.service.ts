@@ -120,11 +120,7 @@ class RegistrationService {
     const formData = form.data();
     const campData = form.extractCampData();
 
-    const freePlaces = await this.calculateFreePlaces(
-      camp,
-      campData,
-      'decrement',
-    );
+    const freePlaces = this.calculateFreePlaces(camp, campData, 'decrement');
     const waitingList = freePlaces === undefined;
 
     const fileConnects = fileIdentifiers.map((identifier) => {
@@ -168,11 +164,11 @@ class RegistrationService {
    * @throws ApiError if the free places has multiple entries but the country is
    *    missing in the camp data
    */
-  private async calculateFreePlaces(
+  private calculateFreePlaces(
     camp: Camp,
     campData: Registration['campData'],
     direction: 'increment' | 'decrement',
-  ): Promise<Camp['freePlaces'] | undefined> {
+  ): Camp['freePlaces'] | undefined {
     const updateValue = (val: number) =>
       direction === 'increment' ? ++val : --val;
     let { freePlaces } = { ...camp };
@@ -182,6 +178,7 @@ class RegistrationService {
       return freePlaces;
     }
 
+    // FIXME Check actual count when free places are zero (waiting list)
     if (typeof freePlaces === 'number') {
       // Update free places
       freePlaces = updateValue(freePlaces);
@@ -208,7 +205,7 @@ class RegistrationService {
     return freePlaces[country] >= 0 ? freePlaces : undefined;
   }
 
-  updateCampFreePlaces(camp: Camp, freePlaces: Camp['freePlaces']) {
+  private updateCampFreePlaces(camp: Camp, freePlaces: Camp['freePlaces']) {
     return async (transaction: PrismaTransaction) => {
       return transaction.camp.update({
         data: {

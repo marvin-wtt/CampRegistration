@@ -1,10 +1,10 @@
 import { Camp, Registration } from '@prisma/client';
-import messageService from '#app/message/message.service.js';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
-import { translateObject } from '#utils/translateObject.js';
+import messageService from '#app/message/message.service';
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
+import { translateObject, objectValueOrAll } from '#utils/translateObject';
 import mailService from '#core/mail/mail.service';
 import i18n, { t } from '#core/i18n';
-import { BaseMessages } from '#core/BaseMessages.js';
+import { BaseMessages } from '#core/BaseMessages';
 
 class RegistrationMessages extends BaseMessages {
   async sendRegistrationConfirmed(camp: Camp, registration: Registration) {
@@ -25,15 +25,10 @@ class RegistrationMessages extends BaseMessages {
 
   async notifyContactEmail(camp: Camp, registration: Registration) {
     const helper = new RegistrationCampDataHelper(registration.campData);
-    const country = helper.country(camp.countries) ?? camp.countries[0];
+    const country = helper.country(camp.countries);
 
-    const attachment = {
-      filename: 'data.json',
-      contentType: 'application/json',
-      content: JSON.stringify(registration),
-    };
-
-    await i18n.changeLanguage(country);
+    const locale = country ?? registration.locale ?? camp.countries[0];
+    await i18n.changeLanguage(locale);
     const subject = t('registration:email.managerNotification.subject');
 
     const url = this.generateUrl(`management/${camp.id}`);
@@ -42,11 +37,11 @@ class RegistrationMessages extends BaseMessages {
       camp: {
         ...camp,
         // Translate values
-        name: translateObject(camp.name, country),
-        organizer: translateObject(camp.organizer, country),
-        contactEmail: translateObject(camp.contactEmail, country),
-        maxParticipants: translateObject(camp.maxParticipants, country),
-        location: translateObject(camp.location, country),
+        name: translateObject(camp.name, locale),
+        organizer: translateObject(camp.organizer, locale),
+        contactEmail: translateObject(camp.contactEmail, locale),
+        maxParticipants: translateObject(camp.maxParticipants, locale),
+        location: translateObject(camp.location, locale),
       },
       registration: {
         // Add additional fields to registration to simplify camp data access
@@ -57,10 +52,16 @@ class RegistrationMessages extends BaseMessages {
       },
     };
 
+    const attachment = {
+      filename: 'data.json',
+      contentType: 'application/json',
+      content: JSON.stringify(registration),
+    };
+
     await mailService.sendTemplateMail({
       template: 'registration-manager-notification',
-      to: translateObject(camp.contactEmail, country),
-      replyTo: helper.emails(),
+      to: objectValueOrAll(camp.contactEmail, country),
+      replyTo: messageService.uniqueEmails(helper.emails()),
       subject,
       context,
       attachments: [attachment],

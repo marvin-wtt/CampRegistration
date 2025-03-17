@@ -1,4 +1,4 @@
-const messageTemplates = {
+const messageTemplatesObj = {
   registration_submitted: {
     includeOnCreate: true,
     subject: {
@@ -130,7 +130,12 @@ const messageTemplates = {
   },
 };
 
-export default Object.entries(messageTemplates).map(([event, template]) => ({
-  ...template,
-  event,
-}));
+export const messageTemplates = Object.entries(messageTemplatesObj).map(
+  ([event, { subject, body }]) => ({
+    subject,
+    body,
+    event,
+  }),
+);
+
+export default messageTemplates;

@@ -446,6 +446,24 @@ describe('/api/v1/camps', () => {
         expect(templates.length).not.toBe(0);
       });
 
+      it('should create default message templates', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.messageTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).not.toBe(0);
+      });
+
       it('should create default files', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
 

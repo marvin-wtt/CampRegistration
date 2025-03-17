@@ -71,9 +71,7 @@ class CampController extends BaseController {
 
     const messageTemplates = body.referenceCampId
       ? await messageTemplateService.queryMessageTemplates(body.referenceCampId)
-      : defaultMessageTemplates.filter(
-          ({ includeOnCreate }) => includeOnCreate,
-        );
+      : defaultMessageTemplates;
 
     const camp = await campService.createCamp(
       userId,

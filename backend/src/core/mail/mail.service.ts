@@ -137,6 +137,10 @@ class MailService {
   }
 
   async sendMessages(message: Message, emails: string[]): Promise<void> {
+    if (emails.length === 0) {
+      throw new Error('Failed to send email. No recipient defined.');
+    }
+
     const results = await Promise.allSettled(
       emails.map((recipient) => this.sendMessage(message, recipient)),
     );

@@ -15,6 +15,10 @@ import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service.js';
 
 class MessageService {
+  public uniqueEmails(emails: string[]): string[] {
+    return [...new Set(emails.map((value) => value.trim().toLowerCase()))];
+  }
+
   async sendTemplateMessage(
     template: MessageTemplate,
     camp: Camp,
@@ -59,13 +63,9 @@ class MessageService {
     registration: Registration,
   ) {
     // Filter duplicate emails
-    const emails = [
-      ...new Set(
-        new RegistrationCampDataHelper(registration.campData)
-          .emails()
-          .map((value) => value.trim().toLowerCase()),
-      ),
-    ];
+    const emails = this.uniqueEmails(
+      new RegistrationCampDataHelper(registration.campData).emails(),
+    );
 
     await mailService.sendMessages(message, emails);
   }

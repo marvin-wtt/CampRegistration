@@ -129,7 +129,7 @@ class CampService {
     }));
   }
 
-  private async replaceFormFileUrls(
+  private replaceFormFileUrls(
     form: object,
     fileIds: string[],
     fileIdMap: Map<string, string>,

@@ -2,7 +2,11 @@ export class RegistrationCampDataHelper {
   constructor(private readonly campData: Record<string, unknown[]>) {}
 
   emails(): string[] {
-    return this.campData['email']?.filter((value): value is string => {
+    if (!('email' in this.campData)) {
+      return [];
+    }
+
+    return this.campData['email'].filter((value): value is string => {
       return !!value && typeof value === 'string';
     });
   }

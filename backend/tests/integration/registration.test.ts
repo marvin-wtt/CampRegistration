@@ -37,8 +37,10 @@ import {
   campWithMultipleFilesRequired,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import mailer from '../../src/core/mail';
+import { NoOpMailer } from '../../src/core/mail/noop.mailer';
 import { MessageTemplateFactory } from '../../prisma/factories/message-template';
+
+const mailer = NoOpMailer.prototype;
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
@@ -1072,13 +1074,18 @@ describe('/api/v1/camps/:campId/registrations', () => {
         templateData?: Parameters<(typeof MessageTemplateFactory)['create']>[0],
       ) => {
         const camp = await CampFactory.create(campData);
-        const template = await MessageTemplateFactory.create(templateData);
+        const template = await MessageTemplateFactory.create({
+          ...templateData,
+          camp: { connect: { id: camp.id } },
+        });
 
         return { camp, template };
       };
 
       it('should send a confirmation email to the user', async () => {
-        const { camp } = await createCampWithEmail(campWithEmail);
+        const { camp } = await createCampWithEmail(campWithEmail, {
+          event: 'registration_confirmed',
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1093,14 +1100,16 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: [data.email],
+            to: data.email,
             replyTo: camp.contactEmail,
           }),
         );
       });
 
       it('should send a confirmation email to multiple emails', async () => {
-        const { camp } = await createCampWithEmail(campWithMultipleEmails);
+        const { camp } = await createCampWithEmail(campWithMultipleEmails, {
+          event: 'registration_confirmed',
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1115,7 +1124,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: expect.arrayContaining([data.email, data.emailGuardian]),
+            to: data.email,
+            replyTo: camp.contactEmail,
+          }),
+        );
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.emailGuardian,
             replyTo: camp.contactEmail,
           }),
         );
@@ -1167,7 +1183,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a copy to all contact emails if country missing', async () => {
-        const camp = await CampFactory.create(
+        const { camp } = await createCampWithEmail(
           campWithContactEmailInternational,
         );
 
@@ -1189,7 +1205,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a waiting list information to the user', async () => {
-        const camp = await CampFactory.create(campWithEmailAndMaxParticipants);
+        const { camp } = await createCampWithEmail(
+          campWithEmailAndMaxParticipants,
+          { event: 'registration_waitlisted' },
+        );
 
         const data = {
           email: 'test@example.com',
@@ -1203,7 +1222,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: [data.email],
+            to: data.email,
           }),
         );
       });

@@ -21,7 +21,10 @@ export class MessageTemplateResource extends JsonResource<
   }
 }
 
-type MessageTemplateDefault = Pick<MessageTemplate, 'body' | 'subject'> & {
+export type MessageTemplateDefault = Pick<
+  MessageTemplate,
+  'body' | 'subject'
+> & {
   event: string;
 };
 

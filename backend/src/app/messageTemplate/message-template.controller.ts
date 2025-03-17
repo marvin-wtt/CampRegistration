@@ -5,6 +5,7 @@ import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError.js';
 import {
   MessageTemplateCollection,
+  MessageTemplateDefault,
   MessageTemplateDefaultResource,
   MessageTemplateResource,
 } from '#app/messageTemplate/message-template.resource.js';
@@ -26,7 +27,7 @@ class MessageTemplateController extends BaseController {
 
     const templates = await service.queryMessageTemplates(campId);
 
-    const defaults = defaultTemplates.filter(
+    const defaults: MessageTemplateDefault[] = defaultTemplates.filter(
       ({ event }) => !templates.find((t) => t.event === event),
     );
 
