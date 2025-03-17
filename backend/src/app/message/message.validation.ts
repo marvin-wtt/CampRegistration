@@ -20,9 +20,9 @@ const store = z.object({
   }),
   body: z.object({
     registrationIds: z.array(z.string().ulid()).min(1),
-    subject: z.string(),
-    body: z.string(),
-    priority: z.string(),
+    subject: z.string().trim().min(1),
+    body: z.string().trim().min(1),
+    priority: z.enum(['high', 'normal', 'low']).optional(),
     replyTo: z.string().email().optional(),
   }),
 });

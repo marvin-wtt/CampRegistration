@@ -10,8 +10,9 @@ import registrationRoutes from '#app/registration/registration.routes';
 import tableTemplateRoutes from '#app/tableTemplate/table-template.routes';
 import roomRoutes from '#app/room/room.routes';
 import campFileRoutes from './camp-files.routes.js';
-import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
+import messageRoutes from '#app/message/message.routes';
 import messageTemplateRoutes from '#app/messageTemplate/message-template.routes';
+import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 
 const router = express.Router();
@@ -47,6 +48,7 @@ const referenceCampGuard = (req: Request) => {
 
 router.use('/:campId/registrations', registrationRoutes);
 router.use('/:campId/table-templates', tableTemplateRoutes);
+router.use('/:campId/messages', messageRoutes);
 router.use('/:campId/message-templates', messageTemplateRoutes);
 router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);

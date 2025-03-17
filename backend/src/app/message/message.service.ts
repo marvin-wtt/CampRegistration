@@ -125,7 +125,7 @@ class MessageService {
   }
 
   async getMessageById(campId: string, id: string) {
-    return prisma.message.findUniqueOrThrow({
+    return prisma.message.findUnique({
       where: {
         id,
         registration: {

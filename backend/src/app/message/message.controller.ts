@@ -9,11 +9,11 @@ import messageTemplateService from '#app/messageTemplate/message-template.servic
 
 class MessageController extends BaseController {
   async index(_req: Request, res: Response) {
-    res.status(httpStatus.NOT_IMPLEMENTED);
+    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
   async show(_req: Request, res: Response): Promise<void> {
-    res.status(httpStatus.NOT_IMPLEMENTED);
+    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
   async store(req: Request, res: Response) {
@@ -54,7 +54,7 @@ class MessageController extends BaseController {
   }
 
   async destroy(_req: Request, res: Response) {
-    res.status(httpStatus.NOT_IMPLEMENTED);
+    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 }
 

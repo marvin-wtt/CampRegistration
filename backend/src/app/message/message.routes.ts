@@ -13,7 +13,7 @@ router.param(
   catchParamAsync(async (req, _res, id) => {
     const camp = req.modelOrFail('camp');
     const message = await service.getMessageById(camp.id, id);
-    req.setModel('message', message);
+    req.setModelOrFail('message', message);
   }),
 );
 

@@ -17,9 +17,7 @@ class ManagerMessages extends BaseMessages {
     const to = user?.email ?? manager.invitation?.email;
 
     /* c8-ignore-next */
-    if (!to) {
-      return;
-    }
+    if (!to) return;
 
     const campName = translateObject(camp.name, user?.locale);
     const url = this.generateUrl(`management/${camp.id}/`);
