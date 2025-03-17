@@ -5,7 +5,7 @@ const RoleSchema = z.enum(['USER', 'ADMIN']);
 
 const show = z.object({
   params: z.object({
-    userId: z.number().int().positive(),
+    userId: z.string().ulid(),
   }),
 });
 
@@ -38,7 +38,7 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    userId: z.string(),
+    userId: z.string().ulid(),
   }),
   body: z
     .object({
@@ -58,7 +58,7 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    userId: z.string(),
+    userId: z.string().ulid(),
   }),
 });
 

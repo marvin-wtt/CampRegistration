@@ -4,7 +4,7 @@ import { Camp } from '@prisma/client';
 
 const show = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
 });
 
@@ -64,7 +64,7 @@ const store = z.object({
       price: z.number().multipleOf(0.01).nonnegative(),
       form: z.record(z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
-      referenceCampId: z.string().optional(),
+      referenceCampId: z.string().ulid().optional(),
     })
     .superRefine((val, ctx) => {
       const recordKeys = [
@@ -113,7 +113,7 @@ const store = z.object({
 const update = (camp: Camp) =>
   z.object({
     params: z.object({
-      campId: z.string(),
+      campId: z.string().ulid(),
     }),
     body: z
       .object({
@@ -186,7 +186,7 @@ const update = (camp: Camp) =>
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
 });
 
