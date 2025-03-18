@@ -1,9 +1,9 @@
-import { Camp, type Prisma } from '@prisma/client';
+import type { Camp, Prisma } from '@prisma/client';
 import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import registrationService from '#app/registration/registration.service';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
-import { OptionalByKeys } from '#types/utils';
+import type { OptionalByKeys } from '#types/utils';
 import config from '#config/index';
 
 class CampService {
@@ -209,17 +209,17 @@ class CampService {
     const countByCountry =
       await registrationService.getParticipantsCountByCountry(id, countries);
 
-    return Object.entries(freePlaces).reduce(
+    return Object.entries(freePlaces).reduce<Record<string, number>>(
       (result, [country, maxParticipants]) => {
         const free =
-          countByCountry[country] !== undefined
+          country in countByCountry
             ? maxParticipants - countByCountry[country]
             : maxParticipants;
 
         result[country] = Math.max(0, free);
         return result;
       },
-      {} as Record<string, number>,
+      {},
     );
   }
 }

@@ -18,5 +18,3 @@ export interface MessageCreateData {
   priority?: string;
   attachments?: string[];
 }
-
-export interface MessageUpdateData {}

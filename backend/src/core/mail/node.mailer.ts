@@ -1,5 +1,5 @@
-import { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
-import nodemailer, { SendMailOptions, type Transporter } from 'nodemailer';
+import type { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
+import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index.js';
 
 export class NodeMailer implements IMailer {
@@ -40,7 +40,7 @@ export class NodeMailer implements IMailer {
   }
 
   async sendMail(payload: AdvancedMailPayload): Promise<void> {
-    return await this.transport.sendMail({
+    await this.transport.sendMail({
       to: payload.to,
       replyTo: payload.replyTo,
       from: payload.from,

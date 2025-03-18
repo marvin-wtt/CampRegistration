@@ -6,7 +6,7 @@ import { type Request, type Response } from 'express';
 import { BaseController } from '#core/BaseController.js';
 
 class RoomController extends BaseController {
-  async show(req: Request, res: Response) {
+  show(req: Request, res: Response) {
     const room = req.modelOrFail('room');
 
     res.resource(new RoomResource(room));

@@ -1,7 +1,7 @@
 import prisma from '#client.js';
-import { File, Prisma } from '@prisma/client';
+import type { File, Prisma } from '@prisma/client';
 import config from '#config/index';
-import fs from 'fs';
+import type fs from 'fs';
 import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import path from 'path';
@@ -47,11 +47,13 @@ const moveFile = async (file: RequestFile) => {
 const saveModelFile = async (
   model: ModelData | undefined,
   file: RequestFile,
-  name?: string | undefined,
-  field?: string | undefined,
-  accessLevel?: string | undefined,
+  name?: string,
+  field?: string,
+  accessLevel?: string,
 ) => {
-  const fileName = name + '.' + file.filename.split('.').pop();
+  const fileName = name
+    ? name + fileNameExtension(file.filename)
+    : file.filename;
   const fileData = mapFields(file, fileName, field, accessLevel);
   const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
@@ -64,6 +66,16 @@ const saveModelFile = async (
       ...modelData,
     },
   });
+};
+
+const fileNameExtension = (fileName: string): string => {
+  if (!fileName.includes('.')) {
+    return '';
+  }
+
+  const extension = fileName.split('.').pop() ?? '';
+
+  return `.${extension}`;
 };
 
 const createManyModelFile = async (
@@ -187,7 +199,7 @@ const deleteTempFile = async (fileName: string) => {
 
 const generateFileName = (originalName: string): string => {
   const fileName = ulid();
-  const fileExtension = originalName.split('.').pop();
+  const fileExtension = fileNameExtension(originalName);
 
   return `${fileName}.${fileExtension}`;
 };
@@ -199,6 +211,7 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
     return 0;
   }
 
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const fileNames = await fse.readdir(uploadDir);
   const fileModels = await prisma.file.findMany({
     where: {
@@ -217,6 +230,7 @@ const deleteUnreferencedFiles = async (): Promise<number> => {
   await Promise.all(
     filesToDelete.map((fileName) => {
       const filePath = path.join(uploadDir, fileName);
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       return fse.unlink(filePath);
     }),
   );
@@ -270,6 +284,7 @@ const deleteUnassignedFiles = async (): Promise<number> => {
 const deleteTempFiles = async () => {
   const { tmpDir } = config.storage;
 
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const fileNames = await fse.readdir(tmpDir);
   const currentTime = Date.now();
 
@@ -290,6 +305,7 @@ const deleteTempFiles = async () => {
   const results = await Promise.all(
     fileNames.filter(isOlderThanOneHour).map((fileName) => {
       const filePath = path.join(tmpDir, fileName);
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       return fse.unlink(filePath);
     }),
   );
@@ -349,10 +365,12 @@ class DiskStorage implements StorageStrategy {
   stream(file: File) {
     const filePath = safeJoinFilePath(this.storageDir, file.name);
 
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     if (!fse.existsSync(filePath)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
     }
 
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     return fse.createReadStream(filePath);
   }
 }
@@ -362,12 +380,12 @@ class StaticStorage extends DiskStorage {
     super(config.storage.staticDir);
   }
 
-  async moveToStorage() {
-    throw 'Static storage may not be accessed';
+  moveToStorage(): Promise<void> {
+    throw new Error('Static storage may not be accessed');
   }
 
-  async remove() {
-    throw 'Static storage may not be modified';
+  remove(): Promise<void> {
+    throw new Error('Static storage may not be modified');
   }
 }
 

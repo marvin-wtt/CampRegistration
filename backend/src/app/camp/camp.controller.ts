@@ -15,7 +15,7 @@ import { BaseController } from '#core/BaseController.js';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 
 class CampController extends BaseController {
-  async show(req: Request, res: Response) {
+  show(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
 
     res.resource(new CampDetailsResource(camp));
@@ -81,7 +81,7 @@ class CampController extends BaseController {
         organizer: body.organizer,
         contactEmail: body.contactEmail,
         active: body.active ?? false,
-        public: body.public,
+        public: body.public ?? false,
         maxParticipants: body.maxParticipants,
         startAt: body.startAt,
         endAt: body.endAt,

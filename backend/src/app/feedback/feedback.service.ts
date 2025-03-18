@@ -6,7 +6,7 @@ class FeedbackService {
     message: string,
     location?: string,
     userAgent?: string,
-    email?: string | undefined,
+    email?: string,
   ) {
     const context = {
       message,

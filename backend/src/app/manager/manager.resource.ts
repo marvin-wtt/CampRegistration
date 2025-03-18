@@ -1,4 +1,4 @@
-import { CampManager, Invitation, User } from '@prisma/client';
+import type { CampManager, Invitation, User } from '@prisma/client';
 import type { CampManager as CampManagerData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource.js';
 

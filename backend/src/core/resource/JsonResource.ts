@@ -12,7 +12,7 @@ export abstract class JsonResource<TInput, TOutput> {
    */
   public abstract transform(): TOutput;
 
-  public withMeta(metadata: ResourceMetadata): JsonResource<TInput, TOutput> {
+  public withMeta(metadata: ResourceMetadata): this {
     this.metadata = metadata;
 
     return this;

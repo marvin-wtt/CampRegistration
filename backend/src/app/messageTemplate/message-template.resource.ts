@@ -16,7 +16,7 @@ export class MessageTemplateResource extends JsonResource<
       replyTo: this.data.replyTo ?? null,
       attachments: null, // TODO
       updatedAt: this.data.updatedAt.toISOString() ?? null,
-      createdAt: this.data.createdAt.toISOString() ?? null,
+      createdAt: this.data.createdAt.toISOString(),
     };
   }
 }

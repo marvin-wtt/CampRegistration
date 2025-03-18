@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, RequestHandler } from 'express';
+import type { NextFunction, Request, Response, RequestHandler } from 'express';
 
 const dynamicMiddleware = (middlewares: RequestHandler[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -11,7 +11,7 @@ const dynamicMiddleware = (middlewares: RequestHandler[]) => {
       }
 
       try {
-        middlewares[index](req, res, (err: unknown) => {
+        await middlewares[index](req, res, (err: unknown) => {
           if (err) {
             next(err);
             return;

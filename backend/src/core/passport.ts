@@ -1,10 +1,10 @@
 import {
   Strategy as JwtStrategy,
   ExtractJwt,
-  VerifyCallback,
+  type VerifyCallback,
 } from 'passport-jwt';
 import { Strategy as AnonymousStrategy } from 'passport-anonymous';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 import config from '#config/index';
 import { TokenType } from '@prisma/client';

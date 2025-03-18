@@ -1,9 +1,9 @@
-import { type Prisma, User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import httpStatus from 'http-status';
 import prisma from '#client.js';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#utils/encryption';
-import { UserUpdateData } from '@camp-registration/common/entities';
+import type { UserUpdateData } from '@camp-registration/common/entities';
 
 const createUser = async (
   data: Pick<

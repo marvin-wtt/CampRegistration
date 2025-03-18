@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import registrationService from './registration.service.js';
-import {
+import type {
   RegistrationResource,
   RegistrationWithBed,
 } from './registration.resource.js';

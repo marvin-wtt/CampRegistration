@@ -1,4 +1,4 @@
-import { Camp, Registration } from '@prisma/client';
+import type { Camp, Registration } from '@prisma/client';
 import messageService from '#app/message/message.service';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { translateObject, objectValueOrAll } from '#utils/translateObject';

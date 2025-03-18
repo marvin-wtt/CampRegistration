@@ -1,13 +1,9 @@
-import { Camp, User } from '@prisma/client';
+import type { Camp, User } from '@prisma/client';
 import { CampResource } from '#app/camp/camp.resource';
-import type {
-  Profile,
-  Profile as ProfileResourceData,
-} from '@camp-registration/common/entities';
+import type { Profile as ProfileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource.js';
-import { undefined } from 'zod';
 
-interface Profile {
+interface UserWithCamps {
   user: Omit<User, 'password'>;
   camps: Camp[];
 }
@@ -27,7 +23,7 @@ export const profileResource = (
 };
 
 export class ProfileResource extends JsonResource<
-  Profile,
+  UserWithCamps,
   ProfileResourceData
 > {
   transform(): ProfileResourceData {

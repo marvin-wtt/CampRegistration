@@ -4,13 +4,13 @@ import tokenService from '#app/token/token.service';
 import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
 import { encryptPassword, isPasswordMatch } from '#utils/encryption';
-import { AuthTokensResponse } from '#types/response';
+import type { AuthTokensResponse } from '#types/response';
 import prisma from '#/client.js';
 
 const loginWithEmailPassword = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
 
-  if (!user || !(await isPasswordMatch(password, user.password as string))) {
+  if (!user || !(await isPasswordMatch(password, user.password))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Incorrect email or password.');
   }
 
@@ -50,7 +50,8 @@ const refreshAuth = async (
     // Fetch user because role is required
     const user = await userService.getUserByIdOrFail(userId);
 
-    return tokenService.generateAuthTokens(user, true);
+    return await tokenService.generateAuthTokens(user, true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }

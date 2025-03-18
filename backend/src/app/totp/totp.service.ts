@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import * as OTPAuth from 'otpauth';
 import config from '#config/index.js';
 import prisma from '#client.js';
@@ -32,7 +32,7 @@ export const generateTOTP = async (user: User) => {
 };
 
 export const validateTOTP = async (user: User, token: string) => {
-  await verifyTOTP(user, token);
+  verifyTOTP(user, token);
 
   // Enable 2FA after validation
   await prisma.user.update({
@@ -43,8 +43,8 @@ export const validateTOTP = async (user: User, token: string) => {
   });
 };
 
-export const verifyTOTP = async (user: User, token: string) => {
-  if (!user?.totpSecret) {
+export const verifyTOTP = (user: User, token: string) => {
+  if (!user.totpSecret) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'TOTP setup required');
   }
 

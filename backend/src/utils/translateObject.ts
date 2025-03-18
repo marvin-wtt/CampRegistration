@@ -16,7 +16,7 @@ export const objectValueOrAll = <T>(
   }
 
   if (!locale) {
-    return Object.values(value);
+    return Object.values(value) as T[];
   }
 
   const key = locale.split('-')[0];
@@ -24,5 +24,5 @@ export const objectValueOrAll = <T>(
     return value[key as keyof typeof value] as T;
   }
 
-  return Object.values(value);
+  return Object.values(value) as T[];
 };

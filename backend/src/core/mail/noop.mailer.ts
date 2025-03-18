@@ -1,14 +1,20 @@
 // src/mailers/NoOpMailer.ts
-import { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
+import type { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
 import logger from '#core/logger.js';
 
 export class NoOpMailer implements IMailer {
-  public async sendMail(payload: AdvancedMailPayload): Promise<void> {
+  public sendMail(payload: AdvancedMailPayload): void {
     // Do nothing or log. Useful for testing or fallback scenarios.
-    logger.debug(`No-op email to: ${payload.to}, subject: ${payload.subject}`);
+    logger.debug(
+      `No-op email to: ${this.mailToString(payload.to)}, subject: ${payload.subject}`,
+    );
   }
 
-  public async isAvailable(): Promise<boolean> {
+  private mailToString(mail: AdvancedMailPayload['to']): string {
+    return typeof mail === 'object' ? mail.address : mail;
+  }
+
+  public isAvailable(): boolean {
     return true;
   }
 

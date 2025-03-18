@@ -2,7 +2,7 @@ import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { Camp, Prisma, Registration } from '@prisma/client';
+import type { Camp, Prisma, Registration } from '@prisma/client';
 import dbJsonPath from '#utils/dbJsonPath';
 import { formUtils } from '#utils/form';
 import config from '#config/index';

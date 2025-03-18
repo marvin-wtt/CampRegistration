@@ -1,4 +1,4 @@
-import { TableTemplate } from '@prisma/client';
+import type { TableTemplate } from '@prisma/client';
 
 type TableTemplateInput = Pick<TableTemplate, 'id' | 'data'>;
 

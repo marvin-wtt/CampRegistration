@@ -234,17 +234,17 @@ model MessageStatus {
 }
 
 model MessageTemplate {
-  id        String   @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
-  campId    String   @map("camp_id") @db.Char(36)
+  id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
+  campId    String    @map("camp_id") @db.Char(36)
   event     String?
-  priority  String   @default("normal")
-  replyTo   String?  @map("reply_to")
+  priority  String    @default("normal")
+  replyTo   String?   @map("reply_to")
   /// [StringOrTranslation]
   subject   Json
   /// [StringOrTranslation]
   body      Json
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
 
   camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
   messages Message[]

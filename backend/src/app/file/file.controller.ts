@@ -25,7 +25,7 @@ const stream = async (req: Request, res: Response) => {
   fileStream.pipe(res); // Pipe the file stream to the response
 };
 
-const show = async (req: Request, res: Response) => {
+const show = (req: Request, res: Response) => {
   const file = req.modelOrFail('file');
 
   res.resource(new FileResource(file));

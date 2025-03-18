@@ -1,4 +1,4 @@
-import { Camp } from '@prisma/client';
+import type { Camp } from '@prisma/client';
 import type {
   Camp as CampResourceData,
   CampDetails as CampDetailsResourceData,
@@ -6,7 +6,7 @@ import type {
 import { JsonResource } from '#core/resource/JsonResource.js';
 
 export class CampResource extends JsonResource<Camp, CampResourceData> {
-  transform() {
+  transform(): CampResourceData {
     return {
       id: this.data.id,
       public: this.data.public,
@@ -20,7 +20,7 @@ export class CampResource extends JsonResource<Camp, CampResourceData> {
       maxAge: this.data.maxAge,
       startAt: this.data.startAt.toISOString(),
       endAt: this.data.endAt.toISOString(),
-      price: this.data.price ?? null,
+      price: this.data.price,
       location: this.data.location ?? null,
       freePlaces: this.data.freePlaces ?? null,
     };

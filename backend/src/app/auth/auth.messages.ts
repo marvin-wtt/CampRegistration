@@ -5,7 +5,7 @@ import { BaseMessages } from '#core/BaseMessages.js';
 
 class AuthMessages extends BaseMessages {
   async sendVerificationEmail(user: User, token: string) {
-    await i18n.changeLanguage(user?.locale);
+    await i18n.changeLanguage(user.locale);
 
     const subject = t('auth:email.verifyEmail.subject');
     const url = this.generateUrl('login', {
@@ -26,7 +26,7 @@ class AuthMessages extends BaseMessages {
   }
 
   async sendResetPasswordEmail(user: User, token: string) {
-    await i18n.changeLanguage(user?.locale);
+    await i18n.changeLanguage(user.locale);
 
     const subject = t('auth:email.resetPassword.subject');
     const url = this.generateUrl('reset-password', {

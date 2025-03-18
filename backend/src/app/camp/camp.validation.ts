@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { translatedValue, BooleanStringSchema } from '#core/validation/helper';
-import { Camp } from '@prisma/client';
+import type { Camp } from '@prisma/client';
 
 const show = z.object({
   params: z.object({
@@ -43,8 +43,8 @@ function validateRecordKeys(
 const store = z.object({
   body: z
     .object({
-      active: z.boolean().default(false),
-      public: z.boolean().default(false),
+      active: z.boolean(),
+      public: z.boolean(),
       countries: z.array(z.string().length(2)).min(1),
       name: translatedValue(z.string()),
       organizer: translatedValue(z.string()),

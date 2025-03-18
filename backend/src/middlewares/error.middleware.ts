@@ -1,4 +1,4 @@
-import { ErrorRequestHandler } from 'express';
+import type { ErrorRequestHandler } from 'express';
 import { Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import config from '#config/index';

@@ -11,7 +11,7 @@ export class MessageResource extends JsonResource<
   MessageWithFiles,
   MessageData
 > {
-  transform() {
+  transform(): MessageData {
     return {
       id: this.data.id,
       replyTo: this.data.replyTo,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LocaleSchema } from '#core/validation/helper.js';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
@@ -21,10 +22,7 @@ const store = z.object({
   }),
   body: z.object({
     data: RegistrationDataSchema,
-    locale: z
-      .string()
-      .regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/)
-      .optional(),
+    locale: LocaleSchema.optional(),
   }),
 });
 

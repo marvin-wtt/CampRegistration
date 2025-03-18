@@ -1,4 +1,4 @@
-import express, { Request } from 'express';
+import express, { type Request } from 'express';
 import { auth, guard } from '#middlewares/index';
 import { or, campActive, campManager } from '#guards/index';
 import { catchParamAsync } from '#utils/catchAsync';
@@ -12,7 +12,10 @@ import roomRoutes from '#app/room/room.routes';
 import campFileRoutes from './camp-files.routes.js';
 import messageRoutes from '#app/message/message.routes';
 import messageTemplateRoutes from '#app/messageTemplate/message-template.routes';
-import { CampCreateData, CampQuery } from '@camp-registration/common/entities';
+import type {
+  CampCreateData,
+  CampQuery,
+} from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 
 const router = express.Router();

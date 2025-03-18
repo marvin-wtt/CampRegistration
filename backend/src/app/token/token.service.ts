@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
-import moment, { Moment } from 'moment';
+import moment, { type Moment } from 'moment';
 import httpStatus from 'http-status';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
-import { Token, TokenType, User } from '@prisma/client';
+import type { Token, TokenType, User } from '@prisma/client';
 import prisma from '#client.js';
-import { AuthTokensResponse } from '#types/response';
+import type { AuthTokensResponse } from '#types/response';
 
 const generateToken = (
   userId: string,
@@ -58,6 +58,7 @@ const verifyToken = (token: string, type: TokenType, scope?: string) => {
   try {
     // token expiry is checked here
     payload = jwt.verify(token, config.jwt.secret);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (ignored) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
   }

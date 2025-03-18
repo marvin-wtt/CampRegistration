@@ -1,5 +1,5 @@
-import { Request } from 'express';
-import { AnyZodObject, z, ZodError } from 'zod';
+import type { Request } from 'express';
+import { type AnyZodObject, type z, ZodError } from 'zod';
 import { fromError } from 'zod-validation-error';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
@@ -29,7 +29,7 @@ export async function validateRequest<T extends AnyZodObject>(
 const handleFileError = (req: Request) => {
   const files = extractRequestFiles(req);
   files.forEach((file) => {
-    fileService.deleteTempFile(file.filename).catch((reason) => {
+    fileService.deleteTempFile(file.filename).catch((reason: unknown) => {
       logger.error(`Failed to delete tmp file: ${file.filename}: ${reason}`);
     });
   });
@@ -43,7 +43,11 @@ const extractRequestFiles = (req: Request): Express.Multer.File[] => {
   }
 
   if (req.files) {
-    files.push(...Object.values(req.files).flat());
+    if (Array.isArray(req.files)) {
+      files.push(...req.files);
+    } else {
+      files.push(...Object.values(req.files).flat());
+    }
   }
 
   return files;

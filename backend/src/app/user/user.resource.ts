@@ -1,4 +1,4 @@
-import { User, Role } from '@prisma/client';
+import type { User, Role } from '@prisma/client';
 import type { User as UserResource } from '@camp-registration/common/entities';
 
 const userResource = (user: Pick<User, keyof UserResource>): UserResource => {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PasswordSchema } from '#core/validation/helper';
+import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
 
 const RoleSchema = z.enum(['USER', 'ADMIN']);
 
@@ -28,10 +28,7 @@ const store = z.object({
     password: PasswordSchema,
     name: z.string(),
     role: RoleSchema.optional(),
-    locale: z
-      .string()
-      .regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/)
-      .optional(),
+    locale: LocaleSchema.optional(),
     locked: z.boolean().optional(),
   }),
 });
@@ -46,10 +43,7 @@ const update = z.object({
       password: PasswordSchema,
       name: z.string(),
       role: RoleSchema,
-      locale: z
-        .string()
-        .regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/)
-        .optional(),
+      locale: LocaleSchema.optional(),
       locked: z.boolean(),
       emailVerified: z.boolean(),
     })

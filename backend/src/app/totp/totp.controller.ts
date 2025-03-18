@@ -69,7 +69,7 @@ const disable = async (req: Request, res: Response) => {
   }
 
   // Verify TOTP
-  await totpService.verifyTOTP(user, otp);
+  totpService.verifyTOTP(user, otp);
 
   // Disable
   await totpService.disableTOTP(user);

@@ -31,9 +31,9 @@ export interface AdvancedMailPayload extends MailPayload {
 }
 
 export interface IMailer {
-  sendMail(payload: AdvancedMailPayload): Promise<void>;
+  sendMail(payload: AdvancedMailPayload): Promise<void> | void;
 
-  isAvailable(): Promise<boolean>;
+  isAvailable(): Promise<boolean> | boolean;
 
   name(): string;
 }

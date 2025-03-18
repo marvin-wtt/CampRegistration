@@ -79,7 +79,7 @@ const verifyOTP = async (req: Request, res: Response) => {
 
   const { userId } = tokenService.verifyTotpToken(token);
   const user = await userService.getUserByIdWithCamps(userId);
-  await totpService.verifyTOTP(user, otp);
+  totpService.verifyTOTP(user, otp);
 
   await sendAuthResponse(res, userId, remember);
 };
@@ -145,12 +145,14 @@ const refreshTokens = async (req: Request, res: Response) => {
 };
 
 const extractCookieRefreshToken = (req: Request): string | null => {
+  const cookies: unknown = req.cookies ?? null;
   if (
-    req.cookies &&
-    'refreshToken' in req.cookies &&
-    typeof req.cookies.refreshToken === 'string'
+    cookies &&
+    typeof cookies === 'object' &&
+    'refreshToken' in cookies &&
+    typeof cookies.refreshToken === 'string'
   ) {
-    return req.cookies.refreshToken;
+    return cookies.refreshToken;
   }
 
   return null;

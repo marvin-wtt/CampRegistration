@@ -1,5 +1,5 @@
 import { NodeMailer } from '#core/mail/node.mailer.js';
-import { IMailer } from '#core/mail/mail.service.js';
+import type { IMailer } from '#core/mail/mail.service.js';
 
 export class MailFactory {
   // Mailers that are used in descending order
@@ -11,7 +11,7 @@ export class MailFactory {
         if (await mailer.isAvailable()) {
           return mailer;
         }
-      } catch (_error) {
+      } catch (ignored) {
         // Ignored
       }
     }

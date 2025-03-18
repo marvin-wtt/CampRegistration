@@ -1,7 +1,7 @@
 import { catchParamAsync } from '#utils/catchAsync';
 import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
-import express, { Request } from 'express';
+import express, { type Request } from 'express';
 import { auth, guard, multipart } from '#middlewares/index';
 import { and, or, campManager, campActive } from '#guards/index';
 
@@ -16,9 +16,7 @@ router.param(
   }),
 );
 
-const fileAccessMiddleware = async (
-  req: Request,
-): Promise<boolean | string> => {
+const fileAccessMiddleware = (req: Request): boolean | string => {
   const file = req.modelOrFail('file');
 
   // Camp managers always have access to all files

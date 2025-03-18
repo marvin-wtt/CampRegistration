@@ -12,7 +12,7 @@ const index = async (_req: Request, res: Response) => {
   res.json(collection(users.map(userResource)));
 };
 
-const show = async (req: Request, res: Response) => {
+const show = (req: Request, res: Response) => {
   const user = req.modelOrFail('user');
 
   res.json(resource(userResource(user)));
