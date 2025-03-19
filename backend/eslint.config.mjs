@@ -6,7 +6,15 @@ import security from 'eslint-plugin-security';
 
 export default tseslint.config(
   eslint.configs.recommended,
-  tseslint.configs.strict,
+  tseslint.configs.strictTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   tseslint.configs.stylistic,
   security.configs.recommended,
   {
@@ -22,5 +30,9 @@ export default tseslint.config(
       ],
       'security/detect-object-injection': 'off',
     },
+  },
+  {
+    files: ['**/*.js', '**/*.cjs'],
+    extends: [tseslint.configs.disableTypeChecked],
   },
 );
