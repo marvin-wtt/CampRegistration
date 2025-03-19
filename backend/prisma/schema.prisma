@@ -44,26 +44,26 @@ model Camp {
   public          Boolean
   /// ![Array<string>]
   countries       Json      @db.Json
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   name            Json      @db.Json
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   organizer       Json      @db.Json
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   contactEmail    Json      @map("contact_email") @db.Json
-  /// [NumberOrTranslation]
+  /// ![number | Record<string, number>]
   maxParticipants Json      @map("max_participants") @db.Json
-  /// [NumberOrTranslation]
+  /// ![number | Record<string, number>]
   freePlaces      Json      @map("free_places") @db.Json
   minAge          Int       @map("min_age") @db.UnsignedInt
   maxAge          Int       @map("max_age") @db.UnsignedInt
   startAt         DateTime  @map("start_at") @db.DateTime(0)
   endAt           DateTime  @map("end_at") @db.DateTime(0)
   price           Float
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   location        Json?     @db.Json
-  /// [GenericObject]
+  /// ![Record<string, unknown>]
   form            Json      @db.Json
-  /// [GenericObject]
+  /// ![Record<string, unknown>]
   themes          Json      @default("{}") @db.Json
   version         Int       @default(1) @db.UnsignedInt
   createdAt       DateTime? @default(now()) @map("created_at")
@@ -107,9 +107,9 @@ model Invitation {
 model Registration {
   id          String    @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
   campId      String    @map("camp_id") @db.Char(26)
-  /// [GenericObject]
+  /// ![Record<string, unknown>]
   data        Json      @db.Json
-  /// [RegistrationCampData]
+  /// ![Record<string, unknown[]>]
   campData    Json      @default("{}") @map("camp_data") @db.Json
   locale      String    @default("en-US") @db.VarChar(5)
   waitingList Boolean   @default(true) @map("waiting_list")
@@ -127,7 +127,7 @@ model Registration {
 model Room {
   id     String @id @unique(map: "rooms_id_unique") @default(ulid()) @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   name   Json   @db.Json
 
   camp Camp  @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
@@ -150,7 +150,7 @@ model Bed {
 model TableTemplate {
   id     String @id @unique(map: "table_templates_id_unique") @default(ulid()) @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
-  /// [TableTemplates]
+  /// ![Record<string, unknown>]
   data   Json   @db.Json
 
   camp Camp @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_camp_id_foreign")
@@ -239,9 +239,9 @@ model MessageTemplate {
   event     String?
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   subject   Json
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   body      Json
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")

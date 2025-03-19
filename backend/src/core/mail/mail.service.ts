@@ -4,39 +4,13 @@ import renderer from '#core/mail/mail.renderer.js';
 import { MailFactory } from '#core/mail/mail.factory.js';
 import logger from '#core/logger.js';
 import { NoOpMailer } from '#core/mail/noop.mailer.js';
-
-type MailAddress = string | { name: string; address: string };
-
-type MailPriority = 'low' | 'normal' | 'high';
-
-export interface MailPayload {
-  to: MailAddress;
-  replyTo?: MailAddress | MailAddress[] | undefined;
-  priority?: MailPriority | undefined;
-  subject: string;
-  body: string; // The compiled text/HTML
-  attachments?: { filename: string; content: Buffer | string }[] | undefined;
-}
-
-export interface TemplateMailData extends Omit<MailPayload, 'body'> {
-  template: string;
-  context: Record<string, unknown>;
-}
-
-export interface AdvancedMailPayload extends MailPayload {
-  from: MailAddress;
-  inReplyTo?: MailAddress | undefined;
-  references?: string | string[] | undefined;
-  messageId?: string | undefined;
-}
-
-export interface IMailer {
-  sendMail(payload: AdvancedMailPayload): Promise<void> | void;
-
-  isAvailable(): Promise<boolean> | boolean;
-
-  name(): string;
-}
+import type {
+  AdvancedMailPayload,
+  IMailer,
+  MailPayload,
+  MailPriority,
+  TemplateMailData,
+} from '#core/mail/mail.types';
 
 const isMailPriority = (value: string): value is MailPriority => {
   return ['low', 'normal', 'high'].includes(value);

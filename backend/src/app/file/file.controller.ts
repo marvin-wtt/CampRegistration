@@ -11,7 +11,7 @@ const stream = async (req: Request, res: Response) => {
   } = await req.validate(validator.stream);
 
   const file = req.modelOrFail('file');
-  const fileStream = await fileService.getFileStream(file);
+  const fileStream = fileService.getFileStream(file);
 
   // Set response headers for image display
   res.contentType(file.type);

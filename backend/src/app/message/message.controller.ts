@@ -1,6 +1,6 @@
 import messageService from './message.service.js';
 import httpStatus from 'http-status';
-import { MessageResource, MessageWithFiles } from './message.resource.js';
+import { MessageResource, type MessageWithFiles } from './message.resource.js';
 import registrationService from '#app/registration/registration.service';
 import { BaseController } from '#core/BaseController.js';
 import type { Request, Response } from 'express';
@@ -8,11 +8,11 @@ import validator from '#app/message/message.validation';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 
 class MessageController extends BaseController {
-  async index(_req: Request, res: Response) {
+  index(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
-  async show(_req: Request, res: Response): Promise<void> {
+  show(_req: Request, res: Response): Promise<void> {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
@@ -53,7 +53,7 @@ class MessageController extends BaseController {
     res.status(httpStatus.CREATED).resource(new MessageResource(message));
   }
 
-  async destroy(_req: Request, res: Response) {
+  destroy(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 }

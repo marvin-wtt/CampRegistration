@@ -146,7 +146,7 @@ const queryFilesByIds = async (fileIds: string[]) => {
   });
 };
 
-const getFileStream = async (file: File) => {
+const getFileStream = (file: File) => {
   const storage = getStorage(file.storageLocation);
   return storage.stream(file);
 };

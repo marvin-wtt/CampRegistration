@@ -1,8 +1,8 @@
 import httpStatus from 'http-status';
 import registrationService from './registration.service.js';
-import type {
+import {
   RegistrationResource,
-  RegistrationWithBed,
+  type RegistrationWithBed,
 } from './registration.resource.js';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './registration.validation.js';
@@ -11,7 +11,7 @@ import registrationMessages from '#app/registration/registration.messages.js';
 import { BaseController } from '#core/BaseController.js';
 
 class RegistrationController extends BaseController {
-  async show(req: Request, res: Response) {
+  show(req: Request, res: Response) {
     const registration = req.modelOrFail('registration');
 
     res.resource(new RegistrationResource(registration));

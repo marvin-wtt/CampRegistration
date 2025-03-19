@@ -1,5 +1,8 @@
-// src/mailers/NoOpMailer.ts
-import type { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
+import type {
+  IMailer,
+  AdvancedMailPayload,
+  MailAddress,
+} from '#core/mail/mail.types';
 import logger from '#core/logger.js';
 
 export class NoOpMailer implements IMailer {
@@ -10,8 +13,14 @@ export class NoOpMailer implements IMailer {
     );
   }
 
-  private mailToString(mail: AdvancedMailPayload['to']): string {
-    return typeof mail === 'object' ? mail.address : mail;
+  private mailToString(mails: AdvancedMailPayload['to']): string {
+    const converter = (mail: MailAddress): string => {
+      return typeof mail === 'object' ? mail.address : mail;
+    };
+
+    return Array.isArray(mails)
+      ? mails.map(converter).join(', ')
+      : converter(mails);
   }
 
   public isAvailable(): boolean {

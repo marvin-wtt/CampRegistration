@@ -5,7 +5,7 @@ import tableTemplateResource from './table-template.resource.js';
 import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
 
-const show = async (req: Request, res: Response) => {
+const show = (req: Request, res: Response) => {
   const template = req.modelOrFail('tableTemplate');
 
   res.json(resource(tableTemplateResource(template)));

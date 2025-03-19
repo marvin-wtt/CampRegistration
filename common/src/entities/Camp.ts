@@ -15,7 +15,7 @@ export interface Camp extends Identifiable {
   endAt: string;
   minAge: number;
   maxAge: number;
-  location: Translatable;
+  location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
 }

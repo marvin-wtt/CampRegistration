@@ -63,14 +63,11 @@ class RegistrationService {
     };
 
     // Count the participants for each country
-    return participants.reduce(
-      (result, curr) => {
-        const country = getCountry(curr);
-        result[country] = (result[country] || 0) + 1;
-        return result;
-      },
-      {} as Record<string, number>,
-    );
+    return participants.reduce<Record<string, number>>((result, curr) => {
+      const country = getCountry(curr);
+      result[country] = (result[country] || 0) + 1;
+      return result;
+    }, {});
   }
 
   private validateRegistrationData(

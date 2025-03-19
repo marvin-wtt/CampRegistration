@@ -1,4 +1,4 @@
-import type { IMailer, AdvancedMailPayload } from '#core/mail/mail.service.js';
+import type { IMailer, AdvancedMailPayload } from '#core/mail/mail.types';
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index.js';
 

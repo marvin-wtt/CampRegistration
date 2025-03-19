@@ -11,22 +11,12 @@ export class RegistrationCampDataHelper {
     });
   }
 
-  country(acceptedCountries?: string[]): string | undefined {
-    const country = this.campData['country']?.find(
-      (value: unknown): value is string => {
-        return (
-          typeof value === 'string' &&
-          (!acceptedCountries || acceptedCountries.includes(value))
-        );
-      },
-    );
-
-    if (country) {
-      return country;
+  address(acceptedCountries?: string[]): { country: string } | undefined {
+    if (!('address' in this.campData)) {
+      return undefined;
     }
 
-    // Try address instead
-    const address = this.campData['address']?.find(
+    return this.campData['address'].find(
       (value: unknown): value is { country: string } => {
         if (!value || typeof value !== 'object' || !('country' in value)) {
           return false;
@@ -38,8 +28,23 @@ export class RegistrationCampDataHelper {
         );
       },
     );
+  }
 
-    return address?.country;
+  country(acceptedCountries?: string[]): string | undefined {
+    if (!('country' in this.campData)) {
+      return this.address(acceptedCountries)?.country;
+    }
+
+    const country = this.campData['country'].find(
+      (value: unknown): value is string => {
+        return (
+          typeof value === 'string' &&
+          (!acceptedCountries || acceptedCountries.includes(value))
+        );
+      },
+    );
+
+    return country ?? this.address(acceptedCountries)?.country;
   }
 
   firstName(): string | undefined {

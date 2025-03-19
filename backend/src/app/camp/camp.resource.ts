@@ -22,7 +22,7 @@ export class CampResource extends JsonResource<Camp, CampResourceData> {
       endAt: this.data.endAt.toISOString(),
       price: this.data.price,
       location: this.data.location ?? null,
-      freePlaces: this.data.freePlaces ?? null,
+      freePlaces: this.data.freePlaces,
     };
   }
 }
@@ -31,11 +31,12 @@ export class CampDetailsResource extends JsonResource<
   Camp,
   CampDetailsResourceData
 > {
-  transform() {
+  transform(): CampDetailsResourceData {
     return {
       ...new CampResource(this.data).transform(),
-      form: this.data.form,
-      themes: this.data.themes,
+      // TODO Replace prisma schema with correct definition
+      form: this.data.form as unknown as CampDetailsResourceData['form'],
+      themes: this.data.themes as unknown as CampDetailsResourceData['themes'],
     };
   }
 }

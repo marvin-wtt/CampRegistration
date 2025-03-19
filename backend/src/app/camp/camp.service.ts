@@ -197,19 +197,17 @@ class CampService {
     maxParticipants: Camp['maxParticipants'],
     countries: Camp['countries'],
   ) {
-    const freePlaces = maxParticipants as Record<string, number> | number;
-
     // Simple query for national camps
-    if (typeof freePlaces === 'number') {
+    if (typeof maxParticipants === 'number') {
       const participants = await registrationService.getParticipantsCount(id);
 
-      return Math.max(0, freePlaces - participants);
+      return Math.max(0, maxParticipants - participants);
     }
 
     const countByCountry =
       await registrationService.getParticipantsCountByCountry(id, countries);
 
-    return Object.entries(freePlaces).reduce<Record<string, number>>(
+    return Object.entries(maxParticipants).reduce<Record<string, number>>(
       (result, [country, maxParticipants]) => {
         const free =
           country in countByCountry

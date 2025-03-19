@@ -30,7 +30,9 @@ const handleFileError = (req: Request) => {
   const files = extractRequestFiles(req);
   files.forEach((file) => {
     fileService.deleteTempFile(file.filename).catch((reason: unknown) => {
-      logger.error(`Failed to delete tmp file: ${file.filename}: ${reason}`);
+      logger.error(
+        `Failed to delete tmp file: ${file.filename}: ${String(reason)}`,
+      );
     });
   });
 };

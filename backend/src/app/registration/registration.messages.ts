@@ -27,7 +27,7 @@ class RegistrationMessages extends BaseMessages {
     const helper = new RegistrationCampDataHelper(registration.campData);
     const country = helper.country(camp.countries);
 
-    const locale = country ?? registration.locale ?? camp.countries[0];
+    const locale = country ?? registration.locale;
     await i18n.changeLanguage(locale);
     const subject = t('registration:email.managerNotification.subject');
 
