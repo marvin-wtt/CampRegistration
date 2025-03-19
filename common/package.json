@@ -20,7 +20,7 @@
     "build": "tsc",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "lint": "eslint --ext .js,.ts ./",
+    "lint": "eslint src",
     "format": "prettier --write \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,scss,html,md,json}\" --ignore-path .gitignore"
   },
