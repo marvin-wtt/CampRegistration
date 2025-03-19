@@ -130,10 +130,10 @@ class CampService {
   }
 
   private replaceFormFileUrls(
-    form: object,
+    form: Record<string, unknown>,
     fileIds: string[],
     fileIdMap: Map<string, string>,
-  ) {
+  ): Record<string, unknown> {
     return replaceUrlsInObject(form, (url) => {
       const urlObj = new URL(url);
 

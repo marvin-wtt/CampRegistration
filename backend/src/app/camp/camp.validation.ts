@@ -43,8 +43,8 @@ function validateRecordKeys(
 const store = z.object({
   body: z
     .object({
-      active: z.boolean(),
-      public: z.boolean(),
+      active: z.boolean().optional(),
+      public: z.boolean().optional(),
       countries: z.array(z.string().length(2)).min(1),
       name: translatedValue(z.string()),
       organizer: translatedValue(z.string()),
@@ -136,7 +136,7 @@ const update = (camp: Camp) =>
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),
         price: z.number().nonnegative().multipleOf(0.01),
-        form: z.unknown(),
+        form: z.record(z.unknown()),
         themes: z.record(z.string(), z.unknown()),
       })
       .partial()
@@ -153,6 +153,7 @@ const update = (camp: Camp) =>
         for (const key of recordKeys) {
           const value = val[key] ?? camp[key];
           if (
+            value &&
             typeof value === 'object' &&
             !validateRecordKeys(value, val.countries ?? camp.countries)
           ) {

@@ -3,7 +3,18 @@ import morgan from 'morgan';
 import config from '#config/index';
 import logger from '#core/logger';
 
-morgan.token('message', (_req, res: Response) => res.locals.errorMessage || '');
+const extractMessage = (res: Response): string | undefined => {
+  if (
+    'errorMessage' in res.locals &&
+    typeof res.locals.errorMessage === 'string'
+  ) {
+    return res.locals.errorMessage;
+  }
+
+  return undefined;
+};
+
+morgan.token('message', (_req, res: Response) => extractMessage(res) || '');
 
 const getIpFormat = () =>
   config.env === 'production' ? ':remote-addr - ' : '';
