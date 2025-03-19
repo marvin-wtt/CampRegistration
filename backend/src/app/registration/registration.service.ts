@@ -202,7 +202,10 @@ class RegistrationService {
     return freePlaces[country] >= 0 ? freePlaces : undefined;
   }
 
-  private updateCampFreePlaces(camp: Camp, freePlaces: Camp['freePlaces']) {
+  private updateCampFreePlaces(
+    camp: Camp,
+    freePlaces: Prisma.CampUpdateArgs['data']['freePlaces'],
+  ) {
     return async (transaction: PrismaTransaction) => {
       return transaction.camp.update({
         data: {
@@ -283,11 +286,11 @@ export default new RegistrationService();
 
 const isParticipant = (campData: Record<string, unknown[]>): boolean => {
   // If no role is set, it is considered to be participant
-  if (!('role' in campData) || campData['role'].length === 0) {
+  if (!('role' in campData) || campData.role.length === 0) {
     return true;
   }
 
-  return campData['role'].some((role) => role === 'participant');
+  return campData.roles.some((role) => role === 'participant');
 };
 
 const registrationRoleFilter = (

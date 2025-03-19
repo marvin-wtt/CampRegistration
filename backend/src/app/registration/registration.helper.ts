@@ -6,7 +6,7 @@ export class RegistrationCampDataHelper {
       return [];
     }
 
-    return this.campData['email'].filter((value): value is string => {
+    return this.campData.email.filter((value): value is string => {
       return !!value && typeof value === 'string';
     });
   }
@@ -16,7 +16,7 @@ export class RegistrationCampDataHelper {
       return undefined;
     }
 
-    return this.campData['address'].find(
+    return this.campData.address.find(
       (value: unknown): value is { country: string } => {
         if (!value || typeof value !== 'object' || !('country' in value)) {
           return false;
@@ -35,7 +35,7 @@ export class RegistrationCampDataHelper {
       return this.address(acceptedCountries)?.country;
     }
 
-    const country = this.campData['country'].find(
+    const country = this.campData.country.find(
       (value: unknown): value is string => {
         return (
           typeof value === 'string' &&
@@ -98,6 +98,6 @@ export class RegistrationCampDataHelper {
       return `${firstName} ${lastName}`;
     }
 
-    return firstName !== undefined ? firstName : lastName;
+    return firstName ?? lastName;
   };
 }

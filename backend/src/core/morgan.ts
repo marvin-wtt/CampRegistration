@@ -14,7 +14,7 @@ const extractMessage = (res: Response): string | undefined => {
   return undefined;
 };
 
-morgan.token('message', (_req, res: Response) => extractMessage(res) || '');
+morgan.token('message', (_req, res: Response) => extractMessage(res) ?? '');
 
 const getIpFormat = () =>
   config.env === 'production' ? ':remote-addr - ' : '';
