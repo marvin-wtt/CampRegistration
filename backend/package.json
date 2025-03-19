@@ -21,7 +21,7 @@
     "test:int": "vitest -c ./vitest.config.integration.ts",
     "test:int:ui": "./scripts/run-integration.sh --ui",
     "lint": "eslint src",
-    "lint:fix": "eslint . --fix",
+    "lint:fix": "eslint src --fix",
     "format": "prettier --write \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
     "dev": "npm run dev:views & npm run dev:serve",
