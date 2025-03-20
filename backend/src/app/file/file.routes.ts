@@ -5,6 +5,6 @@ import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
-router.post('/', multipart('file'), controller(fileController, 'stream'));
+router.post('/', multipart('file'), controller(fileController, 'store'));
 
 export default router;
