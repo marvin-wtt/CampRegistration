@@ -36,17 +36,18 @@ const isPayload = (
   payload: unknown,
 ): payload is { type: string; sub: string } => {
   return (
-    typeof payload !== 'object' ||
-    !payload ||
-    !('type' in payload) ||
-    !('sub' in payload) ||
-    typeof payload.sub !== 'string'
+    typeof payload === 'object' &&
+    payload !== null &&
+    'type' in payload &&
+    typeof payload.type === 'string' &&
+    'sub' in payload &&
+    typeof payload.sub === 'string'
   );
 };
 
 const jwtVerify: VerifyCallback = (payload: unknown, done) => {
   if (!isPayload(payload)) {
-    done('Invalid payload data');
+    done(`Invalid payload data: ${JSON.stringify(payload)}`);
     return;
   }
 

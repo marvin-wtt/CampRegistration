@@ -290,7 +290,7 @@ const isParticipant = (campData: Record<string, unknown[]>): boolean => {
     return true;
   }
 
-  return campData.roles.some((role) => role === 'participant');
+  return campData.role.some((role) => role === 'participant');
 };
 
 const registrationRoleFilter = (
