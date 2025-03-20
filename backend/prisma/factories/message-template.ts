@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from './prisma';
-import { faker } from '@faker-js/faker/locale/de';
+import { faker } from '@faker-js/faker/locale/en';
 
 export const MessageTemplateFactory = {
   build: (
