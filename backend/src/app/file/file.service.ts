@@ -48,12 +48,8 @@ class FileService {
   };
 
   private async moveFile(file: RequestFile) {
-    const sourcePath = file.path;
-
     // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?
-    await this.storageRegistry
-      .getStorage()
-      .moveToStorage(sourcePath, file.filename);
+    await this.storageRegistry.getStorage().moveToStorage(file.filename);
   }
 
   async saveModelFile(

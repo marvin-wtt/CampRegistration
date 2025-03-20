@@ -33,13 +33,9 @@ export class DiskStorage implements Storage {
     await fse.remove(filePath);
   }
 
-  async moveToStorage(sourcePath: string, filename: string) {
-    const { tmpDir } = config.storage;
+  async moveToStorage(filename: string) {
+    const sourcePath = this.safeJoinFilePath(config.storage.tmpDir, filename);
     const destinationPath = this.safeJoinFilePath(this.storageDir, filename);
-
-    if (!this.isDirectoryPathValid(sourcePath, tmpDir)) {
-      throw new Error('Invalid file data');
-    }
 
     await fse.ensureDir(this.storageDir);
     await fse.move(sourcePath, destinationPath, {
