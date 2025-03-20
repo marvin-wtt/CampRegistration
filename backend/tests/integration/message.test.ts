@@ -58,25 +58,87 @@ describe('/api/v1/camps/:campId/messages', () => {
     return { user, accessToken, camp };
   };
 
+  describe.todo('POST /api/v1/camps/:campId/messages/:messageId/resend');
+
   describe('POST /api/v1/camps/:campId/messages/', () => {
+    const assertMessages = async (
+      actual: any,
+      expected: {
+        body: string;
+        subject: string;
+        priority: string;
+        to: string[];
+        replyTo: string | string[];
+      }[],
+    ) => {
+      expect(actual.data).toHaveLength(expected.length);
+
+      const emailCount = expected.reduce((acc, curr) => {
+        return acc + curr.to.length;
+      }, 0);
+
+      expect(mailer.sendMail).toHaveBeenCalledTimes(emailCount);
+
+      for (const [i, value] of expected.entries()) {
+        expect(actual.data[i]).toHaveProperty('id');
+        expect(actual.data[i]).toHaveProperty('subject', value.subject);
+        expect(actual.data[i]).toHaveProperty('body', value.body);
+        expect(actual.data[i]).toHaveProperty('priority', value.priority);
+
+        const model = await prisma.message.findUnique({
+          where: { id: actual.data[i].id },
+        });
+
+        expect(model).toBeDefined();
+        expect(model).toHaveProperty('subject', value.subject);
+        expect(model).toHaveProperty('body', value.body);
+        expect(model).toHaveProperty('priority', value.priority);
+
+        for (const email of value.to) {
+          expect(mailer.sendMail).toHaveBeenCalledWith(
+            expect.objectContaining({
+              to: email,
+              subject: expect.stringContaining(value.subject),
+              body: expect.stringContaining(value.body),
+              replyTo: value.replyTo,
+              priority: value.priority,
+            }),
+          );
+        }
+      }
+    };
+
     it('should respond with `201` status code', async () => {
       const { camp, accessToken } = await crateCampWithManager();
 
-      const registration = await RegistrationFactory.create({
+      const registrationA = await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         data: {
           first_name: 'Max',
         },
         campData: {
           email: ['test@example.com'],
+          country: ['de'],
+        },
+      });
+
+      const registrationB = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Tom',
+        },
+        campData: {
+          email: ['mail1@example.com', 'mail2@example.com'],
         },
       });
 
       const data = {
-        registrationIds: [registration.id],
+        registrationIds: [registrationA.id, registrationB.id],
         subject:
-          'Hi, {{ registration.data.first_name  }}, welcome to {{ camp.name }}',
-        body: 'Hello {{ registration.data.first_name  }}, the min age is {{ camp.minAge }}.',
+          'Hi, {{ registration.data.first_name }}, welcome to {{ camp.name }}',
+        body:
+          'Hello {{ registration.data.first_name }}, the min age is {{ camp.minAge }}. {{ camp.maxAge }} ' +
+          '{{ camp.maxParticipants }} {{ camp.location }} {{ camp.organizer }} {{ camp.price }}',
         priority: 'high',
       };
 
@@ -86,43 +148,111 @@ describe('/api/v1/camps/:campId/messages', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      const renderedSubject = `Hi, ${registration.data.first_name}, welcome to ${camp.name}`;
-      const renderedBody = `Hello ${registration.data.first_name}, the min age is ${camp.minAge}.`;
-
-      expect(body.data).toHaveLength(1);
-      expect(body.data[0]).toHaveProperty('id');
-      expect(body.data[0]).toHaveProperty('subject', renderedSubject);
-      expect(body.data[0]).toHaveProperty('body', renderedBody);
-      expect(body.data[0]).toHaveProperty('priority', 'high');
-
-      const model = await prisma.message.findUnique({
-        where: { id: body.data[0].id },
-      });
-
-      expect(model).toBeDefined();
-      expect(model).toHaveProperty('subject', renderedSubject);
-      expect(model).toHaveProperty('body', renderedBody);
-      expect(model).toHaveProperty('priority', 'high');
-
-      expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: registration.campData.email[0],
-          subject: expect.stringContaining(renderedSubject),
-          body: expect.stringContaining(renderedBody),
-          replyTo: camp.contactEmail,
+      await assertMessages(body, [
+        {
+          subject: `Hi, ${registrationA.data.first_name}, welcome to ${camp.name}`,
+          body:
+            `Hello ${registrationA.data.first_name}, the min age is ${camp.minAge}. ` +
+            `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
           priority: 'high',
-        }),
-      );
+          replyTo: camp.contactEmail as string,
+          to: registrationA.campData.email as string[],
+        },
+        {
+          subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name}`,
+          body:
+            `Hello ${registrationB.data.first_name}, the min age is ${camp.minAge}. ` +
+            `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
+          priority: 'high',
+          replyTo: camp.contactEmail as string,
+          to: registrationB.campData.email as string[],
+        },
+      ]);
     });
 
-    it.todo(
-      'should respond with `201` status code with translated camp fields',
-      async () => {
-        // TODO Translated reply to
-      },
-    );
+    it('should respond with `201` status code with translated camp fields', async () => {
+      const { camp, accessToken } = await crateCampWithManager({
+        countries: ['de', 'fr'],
+        name: { de: 'Test Camp DE', fr: 'Test Camp FR' },
+        organizer: { de: 'Organizer DE', fr: 'Organizer FR' },
+        location: { de: 'Location DE', fr: 'Location FR' },
+        contactEmail: { de: 'de@email.com', fr: 'fr@email.com' },
+        maxParticipants: { de: 8, fr: 9 },
+      });
 
-    it.todo('should respond with `201` status code with multiple emails');
+      const registrationA = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Max',
+        },
+        campData: {
+          email: ['test@example.com'],
+          country: ['de'],
+        },
+      });
+
+      const registrationB = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Tom',
+        },
+        campData: {
+          email: ['mail1@example.com', 'mail2@example.com'],
+          country: ['fr'],
+        },
+      });
+
+      const registrationC = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Paula',
+        },
+        campData: {
+          email: ['some@example.com'],
+        },
+      });
+
+      const data = {
+        registrationIds: [registrationA.id, registrationB.id, registrationC.id],
+        subject:
+          'Hi, {{ registration.data.first_name  }}, welcome to {{ camp.name }}',
+        body:
+          'Hello {{ registration.data.first_name  }}, {{ camp.organizer }} ' +
+          '{{ camp.location }} {{ camp.maxParticipants }}',
+      };
+
+      const { body } = await request()
+        .post(`/api/v1/camps/${camp.id}/messages`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      await assertMessages(body, [
+        {
+          subject: `Hi, ${registrationA.data.first_name}, welcome to ${camp.name['de']}`,
+          body: `Hello ${registrationA.data.first_name}, ${camp.organizer['de']} ${camp.location['de']} ${camp.maxParticipants['de']}`,
+          priority: 'normal',
+          replyTo: camp.contactEmail['de'] as string,
+          to: registrationA.campData.email as string[],
+        },
+        {
+          subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name['fr']}`,
+          body: `Hello ${registrationB.data.first_name}, ${camp.organizer['fr']} ${camp.location['fr']} ${camp.maxParticipants['fr']}`,
+          priority: 'normal',
+          replyTo: camp.contactEmail['fr'] as string,
+          to: registrationB.campData.email as string[],
+        },
+        {
+          subject: `Hi, ${registrationC.data.first_name}, welcome to ${camp.name['de']}`,
+          body: `Hello ${registrationC.data.first_name}, ${camp.organizer['de']} ${camp.location['de']} ${camp.maxParticipants['de']}`,
+          priority: 'normal',
+          replyTo: camp.contactEmail['de'] as string,
+          to: registrationC.campData.email as string[],
+        },
+      ]);
+    });
+
+    it.todo('should respond with `201` status code with attachments');
 
     it.each(messageCreateBody)(
       'should respond with `$expected` status code when $name',
@@ -147,10 +277,6 @@ describe('/api/v1/camps/:campId/messages', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(expected);
       },
-    );
-
-    it.todo(
-      'should respond with `201` status code with multiple registrations',
     );
 
     it('should respond with `400` status code when a registration does not exist', async () => {
