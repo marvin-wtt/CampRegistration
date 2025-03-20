@@ -68,7 +68,6 @@ class MessageService {
     const emails = this.uniqueEmails(
       new RegistrationCampDataHelper(registration.campData).emails(),
     );
-
     await mailService.sendMessages(message, emails);
   }
 

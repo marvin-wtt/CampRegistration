@@ -112,7 +112,8 @@ class MailService {
 
   async sendMessages(message: Message, emails: string[]): Promise<void> {
     if (emails.length === 0) {
-      throw new Error('Failed to send email. No recipient defined.');
+      logger.error('Failed to send email. No recipient defined.');
+      return;
     }
 
     const results = await Promise.allSettled(

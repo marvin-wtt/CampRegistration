@@ -52,15 +52,8 @@ class MessageController extends BaseController {
     );
 
     const messages: MessageWithFiles[] = messageResults
-      .map((value) => {
-        if (value.status === 'fulfilled') {
-          return value.value;
-        }
-        return null;
-      })
-      .filter((value) => value !== null);
-
-    // TODO Add error handling - maybe just meta information
+      .filter((value) => value.status === 'fulfilled')
+      .map(({ value }) => value);
 
     res
       .status(httpStatus.CREATED)
