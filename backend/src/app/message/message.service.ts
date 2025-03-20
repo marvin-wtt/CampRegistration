@@ -35,10 +35,7 @@ class MessageService {
       translateObject(template.body, country),
     );
 
-    const context = {
-      camp,
-      registration,
-    };
+    const context = this.createRegistrationContext(camp, registration, country);
 
     const message = await prisma.message.create({
       data: {
@@ -58,6 +55,37 @@ class MessageService {
     await this.sendMessageToRegistration(message, registration);
 
     return message;
+  }
+
+  createCampContext(camp: Camp, locale: string) {
+    return {
+      ...camp,
+      // Translate values
+      name: translateObject(camp.name, locale),
+      organizer: translateObject(camp.organizer, locale),
+      contactEmail: translateObject(camp.contactEmail, locale),
+      maxParticipants: translateObject(camp.maxParticipants, locale),
+      location: translateObject(camp.location, locale),
+    };
+  }
+
+  createRegistrationContext(
+    camp: Camp,
+    registration: Registration,
+    locale: string,
+  ): object {
+    return {
+      camp: {
+        ...camp,
+        // Translate values
+        name: translateObject(camp.name, locale),
+        organizer: translateObject(camp.organizer, locale),
+        contactEmail: translateObject(camp.contactEmail, locale),
+        maxParticipants: translateObject(camp.maxParticipants, locale),
+        location: translateObject(camp.location, locale),
+      },
+      registration,
+    };
   }
 
   private async sendMessageToRegistration(

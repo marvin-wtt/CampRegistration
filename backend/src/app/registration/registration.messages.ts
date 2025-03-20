@@ -34,15 +34,7 @@ class RegistrationMessages extends BaseMessages {
     const url = this.generateUrl(`management/${camp.id}`);
 
     const context = {
-      camp: {
-        ...camp,
-        // Translate values
-        name: translateObject(camp.name, locale),
-        organizer: translateObject(camp.organizer, locale),
-        contactEmail: translateObject(camp.contactEmail, locale),
-        maxParticipants: translateObject(camp.maxParticipants, locale),
-        location: translateObject(camp.location, locale),
-      },
+      camp: messageService.createCampContext(camp, locale),
       registration: {
         // Add additional fields to registration to simplify camp data access
         firstName: helper.firstName(),
