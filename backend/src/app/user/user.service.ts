@@ -42,8 +42,8 @@ const queryUsers = async () => {
   });
 };
 
-const getUserByIdWithCamps = (id: string) => {
-  return prisma.user.findUniqueOrThrow({
+const getUserByIdWithCamps = async (id: string) => {
+  const user = await prisma.user.findUniqueOrThrow({
     where: { id },
     include: {
       camps: {
@@ -51,6 +51,11 @@ const getUserByIdWithCamps = (id: string) => {
       },
     },
   });
+
+  return {
+    ...user,
+    camps: user.camps.map((manager) => manager.camp),
+  };
 };
 
 const getUserById = async (id: string): Promise<User | null> => {
@@ -75,7 +80,7 @@ const updateUserLastSeenById = async (userId: string) => {
 };
 
 const updateUserLastSeenByIdWithCamps = async (userId: string) => {
-  return prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: {
       lastSeen: new Date(),
@@ -86,6 +91,11 @@ const updateUserLastSeenByIdWithCamps = async (userId: string) => {
       },
     },
   });
+
+  return {
+    ...user,
+    camps: user.camps.map((manager) => manager.camp),
+  };
 };
 
 const getUserByEmail = async (email: string): Promise<User | null> => {

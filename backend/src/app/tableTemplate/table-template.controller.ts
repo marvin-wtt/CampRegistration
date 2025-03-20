@@ -1,14 +1,13 @@
 import httpStatus from 'http-status';
-import { collection, resource } from '#core/resource';
 import tableTemplateService from './table-template.service.js';
-import tableTemplateResource from './table-template.resource.js';
 import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
+import { TableTemplateResource } from '#app/tableTemplate/table-template.resource.js';
 
 const show = (req: Request, res: Response) => {
   const template = req.modelOrFail('tableTemplate');
 
-  res.json(resource(tableTemplateResource(template)));
+  res.resource(new TableTemplateResource(template));
 };
 
 const index = async (req: Request, res: Response) => {
@@ -17,9 +16,8 @@ const index = async (req: Request, res: Response) => {
   } = await req.validate(validator.index);
 
   const templates = await tableTemplateService.queryTemplates(campId);
-  const resources = templates.map((value) => tableTemplateResource(value));
 
-  res.json(collection(resources));
+  res.resource(TableTemplateResource.collection(templates));
 };
 
 const store = async (req: Request, res: Response) => {
@@ -30,9 +28,7 @@ const store = async (req: Request, res: Response) => {
 
   const template = await tableTemplateService.createTemplate(campId, body);
 
-  res
-    .status(httpStatus.CREATED)
-    .json(resource(tableTemplateResource(template)));
+  res.status(httpStatus.CREATED).resource(new TableTemplateResource(template));
 };
 
 const update = async (req: Request, res: Response) => {
@@ -46,7 +42,7 @@ const update = async (req: Request, res: Response) => {
     body,
   );
 
-  res.json(resource(tableTemplateResource(template)));
+  res.resource(new TableTemplateResource(template));
 };
 
 const destroy = async (req: Request, res: Response) => {

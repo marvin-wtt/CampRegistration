@@ -1,14 +1,17 @@
 import type { TableTemplate } from '@prisma/client';
+import type { TableTemplate as TableTemplateData } from '@camp-registration/common/entities';
+import { JsonResource } from '#core/resource/JsonResource';
 
-type TableTemplateInput = Pick<TableTemplate, 'id' | 'data'>;
+export class TableTemplateResource extends JsonResource<
+  TableTemplate,
+  TableTemplateData
+> {
+  transform(): TableTemplateData {
+    const data = typeof this.data.data as unknown as TableTemplateData;
 
-const tableTemplateResource = (template: TableTemplateInput) => {
-  const data = typeof template.data === 'object' ? template.data : {};
-
-  return {
-    ...data,
-    id: template.id,
-  };
-};
-
-export default tableTemplateResource;
+    return {
+      ...data,
+      id: this.data.id,
+    };
+  }
+}

@@ -1,21 +1,20 @@
 import httpStatus from 'http-status';
 import authService from '#app/auth/auth.service';
 import userService from './user.service.js';
-import { collection, resource } from '#core/resource';
-import userResource from './user.resource.js';
+import { UserResource } from './user.resource.js';
 import validator from './user.validation.js';
 import { type Request, type Response } from 'express';
 
 const index = async (_req: Request, res: Response) => {
   const users = await userService.queryUsers();
 
-  res.json(collection(users.map(userResource)));
+  res.resource(UserResource.collection(users));
 };
 
 const show = (req: Request, res: Response) => {
   const user = req.modelOrFail('user');
 
-  res.json(resource(userResource(user)));
+  res.resource(new UserResource(user));
 };
 
 const store = async (req: Request, res: Response) => {
@@ -32,7 +31,7 @@ const store = async (req: Request, res: Response) => {
     locked,
   });
 
-  res.status(httpStatus.CREATED).json(resource(userResource(user)));
+  res.status(httpStatus.CREATED).resource(new UserResource(user));
 };
 
 const update = async (req: Request, res: Response) => {
@@ -55,7 +54,7 @@ const update = async (req: Request, res: Response) => {
     emailVerified,
   });
 
-  res.json(resource(user));
+  res.resource(new UserResource(user));
 };
 
 const destroy = async (req: Request, res: Response) => {

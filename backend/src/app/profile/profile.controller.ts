@@ -3,8 +3,7 @@ import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
 import campService from '#app/camp/camp.service';
 import httpStatus from 'http-status';
-import { resource } from '#core/resource';
-import profileResource from './profile.resource.js';
+import { ProfileResource } from './profile.resource.js';
 import validator from './profile.validation.js';
 import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
@@ -14,11 +13,7 @@ const show = async (req: Request, res: Response) => {
   const userId = req.authUserId();
   const user = await userService.getUserByIdWithCamps(userId);
 
-  const camps = user.camps.map((value) => {
-    return value.camp;
-  });
-
-  res.json(resource(profileResource(user, camps)));
+  res.resource(new ProfileResource(user));
 };
 
 const update = async (req: Request, res: Response) => {
@@ -63,7 +58,7 @@ const update = async (req: Request, res: Response) => {
 
   const camps = await campService.getCampsByUserId(userId);
 
-  res.json(resource(profileResource(user, camps)));
+  res.resource(new ProfileResource({ ...user, camps }));
 };
 
 const destroy = async (req: Request, res: Response) => {

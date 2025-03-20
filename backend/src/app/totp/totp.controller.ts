@@ -2,9 +2,8 @@ import userService from '#app/user/user.service';
 import authService from '#app/auth/auth.service';
 import totpService from './totp.service.js';
 import httpStatus from 'http-status';
-import { resource } from '#core/resource';
 import validator from './totp.validation.js';
-import totpResource from './totp.resource.js';
+import { TotpResource } from './totp.resource.js';
 import ApiError from '#utils/ApiError.js';
 import { type Request, type Response } from 'express';
 
@@ -32,7 +31,7 @@ const setup = async (req: Request, res: Response) => {
 
   const totp = await totpService.generateTOTP(user);
 
-  res.json(resource(totpResource(totp)));
+  res.resource(new TotpResource(totp));
 };
 
 const enable = async (req: Request, res: Response) => {

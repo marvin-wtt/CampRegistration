@@ -5,7 +5,6 @@ import tokenService from '#app/token/token.service';
 import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import config from '#config/index';
-import profileResource from '#app/profile/profile.resource';
 import ApiError from '#utils/ApiError';
 import managerService from '#app/manager/manager.service';
 import { catchAndResolve } from '#utils/promiseUtils';
@@ -94,13 +93,12 @@ const sendAuthResponse = async (
   const tokens = await tokenService.generateAuthTokens(user, remember);
   setAuthCookies(res, tokens);
 
-  // Generate response
-  const profile = profileResource(
-    user,
-    user.camps.map((value) => value.camp),
+  res.json(
+    authResource({
+      user,
+      tokens,
+    }),
   );
-
-  res.json(authResource(profile, tokens));
 };
 
 const sendPartialAuthResponse = (
@@ -145,7 +143,7 @@ const refreshTokens = async (req: Request, res: Response) => {
 };
 
 const extractCookieRefreshToken = (req: Request): string | null => {
-  const cookies: unknown = req.cookies ?? null;
+  const cookies: unknown = req.cookies;
   if (
     cookies &&
     typeof cookies === 'object' &&
