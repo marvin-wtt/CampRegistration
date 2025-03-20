@@ -12,7 +12,10 @@ const queryTemplates = async (campId: string) => {
   });
 };
 
-const createTemplate = async (campId: string, data: object) => {
+const createTemplate = async (
+  campId: string,
+  data: Record<string, unknown>,
+) => {
   return prisma.tableTemplate.create({
     data: {
       data,
@@ -21,7 +24,10 @@ const createTemplate = async (campId: string, data: object) => {
   });
 };
 
-const createManyTemplates = async (campId: string, templates: object[]) => {
+const createManyTemplates = async (
+  campId: string,
+  templates: Record<string, unknown>[],
+) => {
   const data = templates.map((template) => {
     return {
       data: template,
@@ -34,7 +40,10 @@ const createManyTemplates = async (campId: string, templates: object[]) => {
   });
 };
 
-const updateTemplateById = async (templateId: string, data: object) => {
+const updateTemplateById = async (
+  templateId: string,
+  data: Record<string, unknown>,
+) => {
   return prisma.tableTemplate.update({
     where: { id: templateId },
     data: {

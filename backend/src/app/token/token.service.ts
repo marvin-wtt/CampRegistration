@@ -3,7 +3,7 @@ import moment, { type Moment } from 'moment';
 import httpStatus from 'http-status';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
-import type { Token, TokenType, User } from '@prisma/client';
+import { type Token, TokenType, type User } from '@prisma/client';
 import prisma from '#client.js';
 import type { AuthTokensResponse } from '#types/response';
 
