@@ -6,13 +6,14 @@ import { BaseController } from '#core/BaseController.js';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import ApiError from '#utils/ApiError';
 
 class MessageController extends BaseController {
   index(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
-  show(_req: Request, res: Response): Promise<void> {
+  show(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
@@ -25,6 +26,18 @@ class MessageController extends BaseController {
       body.registrationIds,
     );
 
+    // Throw error if not all ids were found
+    if (registrations.length !== body.registrationIds.length) {
+      const missingIds = body.registrationIds.filter(
+        (id) => !registrations.some((registration) => registration.id === id),
+      );
+
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Invalid registration id(s): [${missingIds.join(', ')}]`,
+      );
+    }
+
     const template = await messageTemplateService.createTemplate(camp.id, {
       subject: body.subject,
       body: body.body,
@@ -32,11 +45,22 @@ class MessageController extends BaseController {
       replyTo: body.replyTo,
     });
 
-    const messages: MessageWithFiles[] = await Promise.all(
+    const messageResults = await Promise.allSettled(
       registrations.map((registration) =>
         messageService.sendTemplateMessage(template, camp, registration),
       ),
     );
+
+    const messages: MessageWithFiles[] = messageResults
+      .map((value) => {
+        if (value.status === 'fulfilled') {
+          return value.value;
+        }
+        return null;
+      })
+      .filter((value) => value !== null);
+
+    // TODO Add error handling - maybe just meta information
 
     res
       .status(httpStatus.CREATED)

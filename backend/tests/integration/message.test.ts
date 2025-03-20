@@ -11,6 +11,7 @@ import { MessageFactory } from '../../prisma/factories/message';
 import { ulid } from 'ulidx';
 import prisma from '../utils/prisma';
 import { mailer } from '../utils/mailer';
+import { messageCreateBody } from '../fixtures/message/message.fixture';
 
 describe('/api/v1/camps/:campId/messages', () => {
   const crateCampWithManager = async (
@@ -76,6 +77,7 @@ describe('/api/v1/camps/:campId/messages', () => {
         subject:
           'Hi, {{ registration.data.first_name  }}, welcome to {{ camp.name }}',
         body: 'Hello {{ registration.data.first_name  }}, the min age is {{ camp.minAge }}.',
+        priority: 'high',
       };
 
       const { body } = await request()
@@ -91,7 +93,7 @@ describe('/api/v1/camps/:campId/messages', () => {
       expect(body.data[0]).toHaveProperty('id');
       expect(body.data[0]).toHaveProperty('subject', renderedSubject);
       expect(body.data[0]).toHaveProperty('body', renderedBody);
-      expect(body.data[0]).toHaveProperty('priority', 'normal');
+      expect(body.data[0]).toHaveProperty('priority', 'high');
 
       const model = await prisma.message.findUnique({
         where: { id: body.data[0].id },
@@ -100,7 +102,7 @@ describe('/api/v1/camps/:campId/messages', () => {
       expect(model).toBeDefined();
       expect(model).toHaveProperty('subject', renderedSubject);
       expect(model).toHaveProperty('body', renderedBody);
-      expect(model).toHaveProperty('priority', 'normal');
+      expect(model).toHaveProperty('priority', 'high');
 
       expect(mailer.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -108,6 +110,7 @@ describe('/api/v1/camps/:campId/messages', () => {
           subject: expect.stringContaining(renderedSubject),
           body: expect.stringContaining(renderedBody),
           replyTo: camp.contactEmail,
+          priority: 'high',
         }),
       );
     });
@@ -121,15 +124,60 @@ describe('/api/v1/camps/:campId/messages', () => {
 
     it.todo('should respond with `201` status code with multiple emails');
 
+    it.each(messageCreateBody)(
+      'should respond with `$expected` status code when $name',
+      async ({ data, expected }) => {
+        const { camp, accessToken } = await crateCampWithManager();
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+
+        // Set real registration id
+        if (
+          'registrationIds' in data &&
+          Array.isArray(data.registrationIds) &&
+          data.registrationIds.length > 0
+        ) {
+          data.registrationIds[0] = registration.id;
+        }
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/messages`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expected);
+      },
+    );
+
     it.todo(
       'should respond with `201` status code with multiple registrations',
     );
 
-    it.todo(
-      'should respond with `400` status code when a registration does not exist',
-    );
+    it('should respond with `400` status code when a registration does not exist', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
 
-    it.todo('should respond with `400` status code when the body is invalid');
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Max',
+        },
+        campData: {
+          email: ['test@example.com'],
+        },
+      });
+
+      const data = {
+        registrationIds: [registration.id, ulid()],
+        subject: 'Subject',
+        body: 'Body',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/messages`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const { camp, accessToken } = await createCampWithDifferentManager();
