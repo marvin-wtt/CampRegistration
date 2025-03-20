@@ -22,6 +22,9 @@
     "e2e"
   ],
   "devDependencies": {
-    "npm-run-all": "^4.1.5"
+    "npm-run-all": "^4.1.5",
+    "//": "Needed unitl @quasar/app-vite migrates towards express 5 to pin backend package types",
+    "@types/express": "^5.0.0",
+    "@types/express-serve-static-core": "^5.0.0"
   }
 }
