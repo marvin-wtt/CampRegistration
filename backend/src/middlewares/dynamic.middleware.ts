@@ -11,7 +11,7 @@ const dynamicMiddleware = (middlewares: RequestHandler[]) => {
       }
 
       try {
-        await middlewares[index](req, res, (err: unknown) => {
+        middlewares[index](req, res, (err: unknown) => {
           if (err) {
             next(err);
             return;
