@@ -13,11 +13,6 @@ import { AnyZodObject, z } from 'zod';
 
 declare global {
   namespace Express {
-    interface AuthUser {
-      id: string;
-      role: string;
-    }
-
     interface Models {
       user?: UserModel;
       camp?: Camp;
@@ -27,6 +22,11 @@ declare global {
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
+    }
+
+    interface AuthUser {
+      id: string;
+      role: string;
     }
 
     interface Request {

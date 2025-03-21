@@ -3,8 +3,7 @@ import type {
   ItemValue,
   Question,
 } from 'survey-core';
-import pkg from 'survey-core';
-const { Serializer } = pkg;
+import { Serializer } from 'survey-core';
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];

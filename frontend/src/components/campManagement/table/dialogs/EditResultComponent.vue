@@ -38,8 +38,6 @@
 </template>
 
 <script lang="ts" setup>
-import 'survey-core/defaultV2.min.css';
-
 import { useDialogPluginComponent } from 'quasar';
 import type {
   CampDetails,

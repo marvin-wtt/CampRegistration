@@ -57,6 +57,12 @@ const verifyEmail = z.object({
   }),
 });
 
+const sendEmailVerification = z.object({
+  body: z.object({
+    token: z.string(),
+  }),
+});
+
 export default {
   register,
   login,
@@ -66,4 +72,5 @@ export default {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  sendEmailVerification,
 };

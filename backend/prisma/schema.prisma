@@ -172,7 +172,7 @@ enum TokenType {
   REFRESH
   RESET_PASSWORD
   VERIFY_EMAIL
-  OTP
+  RESTRICTED_ACCESS
 }
 
 model File {
