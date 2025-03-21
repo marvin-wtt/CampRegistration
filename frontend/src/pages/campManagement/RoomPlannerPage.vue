@@ -126,8 +126,9 @@ const {
   asyncUpdate,
   requestPending,
   checkNotNullWithError,
-} = useServiceHandler<RoomWithRoommates[]>();
-// TODO Add translations
+} = useServiceHandler<Room[]>();
+
+// TODO Inform camp bus go update or update registrations
 
 registrationsStore.fetchData();
 fetchRooms();
@@ -149,11 +150,15 @@ const locales = computed<string[] | undefined>(() => {
 });
 
 const rooms = computed<RoomWithRoommates[]>(() => {
-  return data.value ?? [];
+  if (!data.value) {
+    return [];
+  }
+
+  return data.value.map(mapResponseRoom);
 });
 
 const availablePeople = computed<Roommate[]>(() => {
-  const localRooms = data.value;
+  const localRooms = rooms.value;
   const registrations: Registration[] | undefined = registrationsStore.data;
 
   if (localRooms === undefined || registrations === undefined) {
@@ -185,11 +190,7 @@ async function fetchRooms() {
   const campId = queryParam('camp');
 
   const cid = checkNotNullWithError(campId);
-  await lazyFetch(async () => {
-    const data = await apiService.fetchRooms(cid);
-
-    return data.map((room) => mapResponseRoom(room));
-  });
+  await lazyFetch(() => apiService.fetchRooms(cid));
 }
 
 function addRoom() {
@@ -256,7 +257,7 @@ async function createRoom(
   return withProgressNotification('create', async () => {
     const room = await apiService.createRoom(campId, createData);
 
-    data.value?.push(mapResponseRoom(room));
+    data.value?.push(room);
 
     return room;
   });
@@ -268,6 +269,7 @@ async function updateRoom(
 ): Promise<Room | undefined> {
   const campId = queryParam('camp');
 
+  // TODO Replace room in the list - maybe with loader instead of notificatio
   return withProgressNotification('update', async () => {
     const room = await apiService.updateRoom(campId, roomId, updateData);
 
@@ -289,7 +291,6 @@ async function deleteRoom(roomId: string) {
     if (index !== undefined && index != -1) {
       data.value?.splice(index, 1);
     }
-    // TODO Inform bus - registration store needs to listen
   });
 }
 
