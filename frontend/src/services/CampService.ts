@@ -6,6 +6,7 @@ import type {
   CampQuery,
 } from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
+import { extendAxiosConfig } from 'src/services/AuthService';
 
 export function useCampService() {
   async function fetchCamps(query?: CampQuery): Promise<Camp[]> {
@@ -16,8 +17,16 @@ export function useCampService() {
     return response?.data?.data;
   }
 
-  async function fetchCamp(id: string): Promise<CampDetails> {
-    const response = await api.get(`camps/${id}/`);
+  async function fetchCamp(
+    id: string,
+    config?: { skipAuthenticationHandler: boolean },
+  ): Promise<CampDetails> {
+    const response = await api.get(
+      `camps/${id}/`,
+      extendAxiosConfig({
+        _skipAuthenticationHandler: config?.skipAuthenticationHandler,
+      }),
+    );
 
     return response?.data?.data;
   }
