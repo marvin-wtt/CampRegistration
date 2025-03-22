@@ -4,10 +4,10 @@ import {
   CampManagerFactory,
   RegistrationFactory,
   UserFactory,
+  MessageFactory,
 } from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
-import { MessageFactory } from '../../prisma/factories/message';
 import { ulid } from 'ulidx';
 import prisma from '../utils/prisma';
 import { mailer } from '../utils/mailer';
