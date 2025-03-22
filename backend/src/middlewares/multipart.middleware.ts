@@ -1,10 +1,10 @@
-import multer, { Field } from 'multer';
+import multer, { type Field } from 'multer';
 import config from '#config/index';
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import dynamic from './dynamic.middleware.js';
 import fileService from '#app/file/file.service';
 
-type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
+type ParameterType = string | Field | readonly Field[] | null | undefined;
 
 const multiPart = (fields: ParameterType) => {
   return dynamic([upload(fields), formatterMiddleware]);
@@ -66,14 +66,14 @@ const formatterMiddleware = (
 ) => {
   // Convert null prototypes to objects
   // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
-  req.body = removePrototype(req.body);
+  req.body = removePrototype(req.body) as unknown;
 
   next();
 };
 
 const removePrototype = <T>(obj: T): T => {
   // TODO How to improve? Maybe use parser? Or should only a null object be used?
-  return JSON.parse(JSON.stringify(obj));
+  return JSON.parse(JSON.stringify(obj)) as T;
 };
 
 export default multiPart;

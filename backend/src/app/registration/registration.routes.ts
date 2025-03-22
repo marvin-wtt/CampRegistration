@@ -5,6 +5,7 @@ import express from 'express';
 import registrationService from './registration.service.js';
 import { catchParamAsync } from '#utils/catchAsync';
 import registrationFiles from './registration-files.routes.js';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -22,25 +23,34 @@ router.param(
 
 router.use('/:registrationId/files', registrationFiles);
 
-router.get('/', auth(), guard(campManager), registrationController.index);
+router.get(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(registrationController, 'index'),
+);
 router.get(
   '/:registrationId',
   auth(),
   guard(campManager),
-  registrationController.show,
+  controller(registrationController, 'show'),
 );
-router.post('/', guard(campActive), registrationController.store);
+router.post(
+  '/',
+  guard(campActive),
+  controller(registrationController, 'store'),
+);
 router.patch(
   '/:registrationId',
   auth(),
   guard(campManager),
-  registrationController.update,
+  controller(registrationController, 'update'),
 );
 router.delete(
   '/:registrationId',
   auth(),
   guard(campManager),
-  registrationController.destroy,
+  controller(registrationController, 'destroy'),
 );
 
 export default router;

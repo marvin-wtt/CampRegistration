@@ -10,6 +10,7 @@ import { initializePassport } from '#core/passport';
 import cookieParser from 'cookie-parser';
 import { initI18n } from '#core/i18n';
 import { startJobs } from '#jobs/index';
+import mailService from '#core/mail/mail.service.js';
 
 const app = express();
 
@@ -50,7 +51,10 @@ app.enable('trust proxy');
 app.use(initializePassport());
 
 // localization
-initI18n();
+await initI18n();
+
+// mailer
+await mailService.connect();
 
 // routes
 app.use(router);

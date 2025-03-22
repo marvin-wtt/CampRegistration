@@ -1,5 +1,5 @@
-import { AnyZodObject, z, ZodError } from 'zod';
-import { ZodReadonly } from 'zod';
+import { type AnyZodObject, type z, ZodError } from 'zod';
+import { type ZodReadonly } from 'zod';
 import process from 'node:process';
 
 export function validateEnv<R extends AnyZodObject, T extends ZodReadonly<R>>(
@@ -12,7 +12,7 @@ export function validateEnv<R extends AnyZodObject, T extends ZodReadonly<R>>(
       console.error('❌ Invalid environment variables:');
       error.issues.forEach((issue, index) => {
         console.error(
-          ` ${index + 1}. ${issue.path.join(' > ')}:  ${issue.message}`,
+          ` ${(index + 1).toString()}. ${issue.path.join(' > ')}:  ${issue.message}`,
         );
       });
 

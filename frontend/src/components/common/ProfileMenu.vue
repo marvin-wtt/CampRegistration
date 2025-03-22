@@ -27,6 +27,8 @@
           v-close-popup
           clickable
           :to="{ name: 'management' }"
+          active-class=""
+          exact-active-class=""
         >
           <q-item-section avatar>
             <q-icon name="home" />
@@ -41,6 +43,8 @@
           v-close-popup
           clickable
           :to="{ name: 'administration' }"
+          active-class=""
+          exact-active-class=""
         >
           <q-item-section avatar>
             <q-icon name="manage_accounts" />
@@ -54,6 +58,8 @@
           v-close-popup
           clickable
           :to="{ name: 'settings' }"
+          active-class=""
+          exact-active-class=""
         >
           <q-item-section avatar>
             <q-icon name="account_circle" />

@@ -2,17 +2,19 @@ import { default as JsPdf } from 'jspdf';
 import DomToImage, { type Options } from 'dom-to-image';
 
 export interface ExportOptions {
-  scale?: number;
-  captureWidth?: number;
-  captureHeight?: number;
+  scale?: number | undefined;
+  captureWidth?: number | undefined;
+  captureHeight?: number | undefined;
 
-  page?: {
-    name?: string;
-    orientation?: 'portrait' | 'landscape';
-    margin?: number | number[];
-    footer?: string;
-    header?: string;
-  };
+  page?:
+    | {
+        name?: string | undefined;
+        orientation?: 'portrait' | 'landscape' | undefined;
+        margin?: number | number[] | undefined;
+        footer?: string | undefined;
+        header?: string | undefined;
+      }
+    | undefined;
 }
 
 export interface Dimension {

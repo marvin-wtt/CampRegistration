@@ -1,15 +1,10 @@
-import { NextFunction, Request, Response } from 'express';
-import { AnyZodObject, z, ZodError } from 'zod';
+import type { Request } from 'express';
+import { type AnyZodObject, type z, ZodError } from 'zod';
 import { fromError } from 'zod-validation-error';
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import fileService from '#app/file/file.service.js';
-import logger from '#core/logger.js';
-
-const validate = (req: Request, _res: Response, next: NextFunction) => {
-  req.validate = (schema) => validateRequest(req, schema);
-  next();
-};
+import fileService from '#app/file/file.service';
+import logger from '#core/logger';
 
 export async function validateRequest<T extends AnyZodObject>(
   req: Request,
@@ -34,8 +29,10 @@ export async function validateRequest<T extends AnyZodObject>(
 const handleFileError = (req: Request) => {
   const files = extractRequestFiles(req);
   files.forEach((file) => {
-    fileService.deleteTempFile(file.filename).catch((reason) => {
-      logger.error(`Failed to delete tmp file: ${file.filename}: ${reason}`);
+    fileService.deleteTempFile(file.filename).catch((reason: unknown) => {
+      logger.error(
+        `Failed to delete tmp file: ${file.filename}: ${String(reason)}`,
+      );
     });
   });
 };
@@ -48,10 +45,12 @@ const extractRequestFiles = (req: Request): Express.Multer.File[] => {
   }
 
   if (req.files) {
-    files.push(...Object.values(req.files).flat());
+    if (Array.isArray(req.files)) {
+      files.push(...req.files);
+    } else {
+      files.push(...Object.values(req.files).flat());
+    }
   }
 
   return files;
 };
-
-export default validate;

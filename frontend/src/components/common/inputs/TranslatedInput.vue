@@ -99,16 +99,7 @@
       v-if="enabled && !always"
       class="col-shrink column justify-center q-pl-sm"
     >
-      <q-btn
-        :icon="useTranslations ? 'unfold_less' : 'translate'"
-        round
-        outline
-        @click="useTranslations = !useTranslations"
-      >
-        <q-tooltip>
-          {{ useTranslations ? t('actions.disable') : t('actions.enable') }}
-        </q-tooltip>
-      </q-btn>
+      <translation-toggle-btn v-model="useTranslations" />
     </div>
   </div>
 </template>
@@ -116,13 +107,12 @@
 <script lang="ts" setup>
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { computed, ref, useAttrs, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { type QInputSlots } from 'quasar';
+import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | string | number | Translations;
 
-const { t } = useI18n();
 const [model, modifiers] = defineModel<ModelValueType>();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
@@ -138,10 +128,6 @@ const props = withDefaults(defineProps<Props>(), {
   locales: () => [],
   always: false,
 });
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: ModelValueType): void;
-}>();
 
 const useTranslations = ref(defaultUseTranslations());
 const value = ref<string | number>(defaultValue());
@@ -181,7 +167,7 @@ watch(
     if (v !== lastEmittedValue.value) {
       lastEmittedValue.value = v;
 
-      emit('update:modelValue', v);
+      model.value = v;
     }
   },
   { deep: true },
@@ -235,21 +221,3 @@ watch(
   }
 }
 </style>
-
-<i18n lang="yaml" locale="en">
-actions:
-  enable: 'Use translations'
-  disable: "Don't use translations"
-</i18n>
-
-<i18n lang="yaml" locale="de">
-actions:
-  enable: 'Übersetzungen verwenden'
-  disable: 'Keine Übersetzungen verwenden'
-</i18n>
-
-<i18n lang="yaml" locale="fr">
-actions:
-  enable: 'Utiliser les traductions'
-  disable: 'Ne pas utiliser les traductions'
-</i18n>
