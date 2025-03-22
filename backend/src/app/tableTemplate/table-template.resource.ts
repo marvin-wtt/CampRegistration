@@ -7,7 +7,7 @@ export class TableTemplateResource extends JsonResource<
   TableTemplateData
 > {
   transform(): TableTemplateData {
-    const data = typeof this.data.data as unknown as TableTemplateData;
+    const data = this.data.data as unknown as TableTemplateData;
 
     return {
       ...data,
