@@ -12,7 +12,11 @@ const index = z.object({
   params: z.object({
     campId: z.string().ulid(),
   }),
-  query: z.object({}).partial(),
+  query: z
+    .object({
+      includeDefaults: z.coerce.boolean().optional(),
+    })
+    .partial(),
 });
 
 const store = z.object({
@@ -20,7 +24,7 @@ const store = z.object({
     campId: z.string().ulid(),
   }),
   body: z.object({
-    event: z.string().optional(),
+    event: z.string(),
     subject: translatedValue(z.string()),
     body: translatedValue(z.string()),
     priority: z.enum(['low', 'normal', 'high']).optional(),

@@ -2,6 +2,10 @@ import type { Identifiable } from './Identifiable.js';
 import { ServiceFile } from './ServiceFile.js';
 import { Translatable } from './Translatable.js';
 
+export interface MessageTemplateQuery {
+  includeDefaults?: boolean;
+}
+
 export interface MessageTemplate extends Identifiable<string | null> {
   event: string | null;
   subject: Translatable;

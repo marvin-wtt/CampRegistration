@@ -27,7 +27,6 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     it('should respond with 200 status code when user is camp manager', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const numTemplates = 3;
-      // Use a loop to create multiple message templates.
       for (let i = 0; i < numTemplates; i++) {
         await MessageTemplateFactory.create({
           camp: { connect: { id: camp.id } },
@@ -45,7 +44,23 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       expect(body.data.length).toBe(numTemplates);
     });
 
-    it.todo('should respond with 200 status code with defaults');
+    it('should respond with 200 status code with defaults', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/message-templates/?includeDefaults=true`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data');
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBeGreaterThan(1);
+    });
 
     it('should respond with 403 status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -69,7 +84,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
   });
 
   describe('GET /api/v1/camps/:campId/message-templates/:messageTemplateId', () => {
-    it('should respond with 200 status code when user is camp manager and message template exists', async () => {
+    it('should respond with 200 status code when user is camp manager', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const messageTemplate = await MessageTemplateFactory.create({
         camp: { connect: { id: camp.id } },
@@ -83,6 +98,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       expect(body).toHaveProperty('data');
       expect(body.data.id).toBe(messageTemplate.id);
+      expect(body.data).toHaveProperty('event', messageTemplate.event);
+      expect(body.data).toHaveProperty('subject', messageTemplate.subject);
+      expect(body.data).toHaveProperty('body', messageTemplate.body);
     });
 
     it('should respond with 404 status code when message template does not exist', async () => {
@@ -291,7 +309,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId/message-templates/:messageTemplateId', () => {
-    it('should respond with 200 status code when update is successful', async () => {
+    it('should respond with 200 status code', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const messageTemplate = await MessageTemplateFactory.create({
         camp: { connect: { id: camp.id } },
@@ -320,24 +338,86 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       expect(body.data.priority).toEqual(updateData.priority);
     });
 
-    it('should respond with 400 status code when update data is invalid', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
-      });
+    const messageCreateBody = [
+      // Subject
+      {
+        name: 'subject is translated',
+        data: {
+          subject: { de: 'Test subject de', en: 'Test subject en' },
+        },
+        expected: 200,
+      },
+      {
+        name: 'subject is number',
+        data: {
+          subject: 2,
+        },
+        expected: 400,
+      },
+      {
+        name: 'subject is null',
+        data: {
+          subject: null,
+        },
+        expected: 400,
+      },
+      // Body
+      {
+        name: 'body is translated',
+        data: {
+          body: { en: 'Test body en', de: 'Test body de' },
+        },
+        expected: 200,
+      },
+      {
+        name: 'body is number',
+        data: {
+          body: 1,
+        },
+        expected: 400,
+      },
+      {
+        name: 'body is null',
+        data: {
+          body: null,
+        },
+        expected: 400,
+      },
+      // Priority
+      {
+        name: 'priority is invalid',
+        data: {
+          priority: 'urgent',
+        },
+        expected: 400,
+      },
+      {
+        name: 'priority is null',
+        data: {
+          priority: null,
+        },
+        expected: 400,
+      },
+    ];
 
-      const updateData = {
-        subject: { en: 123 }, // invalid type
-      };
+    it.each(messageCreateBody)(
+      'should respond with `$expected` status code when $name',
+      async ({ data, expected }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
 
-      await request()
-        .patch(
-          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
-        )
-        .send(updateData)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
-    });
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+
+        await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expected);
+      },
+    );
 
     it('should respond with 404 status code when message template does not exist', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
