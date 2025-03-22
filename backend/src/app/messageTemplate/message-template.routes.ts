@@ -35,7 +35,7 @@ router.post(
   guard(campManager),
   controller(messageTemplateController, 'store'),
 );
-router.put(
+router.patch(
   '/:messageTemplateId',
   auth(),
   guard(campManager),

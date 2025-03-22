@@ -150,6 +150,10 @@ class MessageService {
       message.templateId,
     );
 
+    if (!template) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid message template');
+    }
+
     return this.sendTemplateMessage(template, camp, registration);
   }
 

@@ -4,7 +4,7 @@ import Handlebars from 'handlebars';
 
 class MessageTemplateService {
   async getMessageTemplateById(campId: string, id: string) {
-    return prisma.messageTemplate.findFirstOrThrow({
+    return prisma.messageTemplate.findFirst({
       where: {
         id,
         campId,
