@@ -1,4 +1,4 @@
-import { auth, guard } from '#middlewares/index';
+import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import express from 'express';
 import messageController from './message.controller.js';
@@ -33,6 +33,7 @@ router.post(
   '/',
   auth(),
   guard(campManager),
+  multipart({ name: 'attachments' }),
   controller(messageController, 'store'),
 );
 router.post(
