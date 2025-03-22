@@ -7,7 +7,6 @@ import { NoOpMailer } from '#core/mail/noop.mailer.js';
 import type {
   AdvancedMailPayload,
   IMailer,
-  MailPayload,
   MailPriority,
   TemplateMailData,
 } from '#core/mail/mail.types';
@@ -39,7 +38,6 @@ class MailService {
   }
 
   async sendTemplateMail(data: TemplateMailData): Promise<void> {
-    // TODO Add email to context
     // Render content into global template
     const html = await renderer.renderFile({
       subject: data.subject,
@@ -48,27 +46,6 @@ class MailService {
         ...data.context,
         email: data.to,
       },
-    });
-
-    // Send email via mailer
-    await this.sendMailBase({
-      to: data.to,
-      replyTo: data.replyTo,
-      priority: data.priority,
-      subject: data.subject,
-      body: html,
-      attachments: data.attachments,
-    });
-  }
-
-  async sendMail(data: MailPayload) {
-    // TODO Add email to context
-    // Render content into global template
-    const html = await renderer.renderContent({
-      subject: data.subject,
-      preview: '', // TODO
-      body: data.body,
-      footer: '', // TODO
     });
 
     // Send email via mailer
@@ -101,12 +78,22 @@ class MailService {
   }
 
   async sendMessage(message: Message, email: string): Promise<void> {
-    await this.sendMail({
+    const html = await renderer.renderContent({
+      subject: message.subject,
+      preview: '', // TODO
+      body: message.body,
+      footer: '', // TODO
+      email,
+    });
+
+    // Send email via mailer
+    await this.sendMailBase({
       to: email,
       replyTo: message.replyTo ?? config.email.replyTo,
       priority: isMailPriority(message.priority) ? message.priority : 'normal',
       subject: message.subject,
-      body: message.body,
+      body: html,
+      attachments: [],
     });
   }
 

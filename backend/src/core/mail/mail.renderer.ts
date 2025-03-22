@@ -8,6 +8,7 @@ interface RenderContentOptions {
   subject: string;
   body: string;
   footer: string;
+  email: string;
 }
 
 interface RenderFileOptions {
@@ -54,8 +55,10 @@ export class MailRenderer {
       fileName: 'default',
       subject: options.subject,
       context: {
+        preview: options.preview,
         body: options.body,
         footer: options.footer,
+        email: options.email,
       },
     });
   }

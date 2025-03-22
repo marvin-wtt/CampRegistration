@@ -29,9 +29,6 @@ class RegistrationMessages extends BaseMessages {
 
     const locale = country ?? registration.locale;
     await i18n.changeLanguage(locale);
-    const subject = t('registration:email.managerNotification.subject');
-
-    const url = this.generateUrl(`management/${camp.id}`);
 
     const context = {
       camp: messageService.createCampContext(camp, locale),
@@ -39,10 +36,13 @@ class RegistrationMessages extends BaseMessages {
         // Add additional fields to registration to simplify camp data access
         firstName: helper.firstName(),
         lastName: helper.lastName(),
-        url,
+        url: this.generateUrl(`management/${camp.id}`),
         ...registration,
       },
     };
+
+    // Use camp in context as the name is translated there
+    const subject = `${t('registration:email.managerNotification.subject')} | ${context.camp.name}`;
 
     const attachment = {
       filename: 'data.json',
