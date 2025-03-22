@@ -123,7 +123,7 @@ export function useServiceHandler<T>(storeName?: string) {
   };
 }
 
-function useErrorExtractor() {
+export function useErrorExtractor() {
   const { t } = useI18n();
 
   function extractErrorText(err: unknown): string {
