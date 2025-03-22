@@ -363,7 +363,6 @@ const editor = useEditor({
   ],
   content: wrapTemplateVariables(model.value),
   onUpdate: ({ editor }) => {
-    // TODO Debounce
     model.value = unwrapTemplateVariables(editor.getHTML());
   },
 });
@@ -373,7 +372,9 @@ onBeforeUnmount(() => {
 });
 
 watch(model, (value) => {
-  const isSame = editor.value?.getHTML() === value;
+  const html = editor.value?.getHTML();
+  const isSame =
+    html === value || (html && unwrapTemplateVariables(html) === value);
   if (isSame) {
     return;
   }
