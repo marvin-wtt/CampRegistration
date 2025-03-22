@@ -4,18 +4,21 @@ import type {
   Authentication,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
-import {
-  type AxiosError,
-  type AxiosRequestConfig,
-  type InternalAxiosRequestConfig,
-  isAxiosError,
-} from 'axios';
+import { type AxiosError, type AxiosRequestConfig, isAxiosError } from 'axios';
+
+export type CustomRequestConfig = AxiosRequestConfig & {
+  _skipRetry?: boolean;
+  _skipAuthenticationHandler?: boolean | undefined;
+};
 
 export type CustomAxiosError = AxiosError & {
-  config: InternalAxiosRequestConfig & {
-    _skipRetry?: boolean;
-    _skipAuthenticationHandler?: boolean;
-  };
+  config: CustomRequestConfig;
+};
+
+export const extendAxiosConfig = (
+  config: CustomRequestConfig,
+): CustomRequestConfig => {
+  return config;
 };
 
 export const isCustomAxiosError = (
