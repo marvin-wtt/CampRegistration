@@ -118,7 +118,6 @@ const {
   data,
   isLoading,
   error: roomError,
-  invalidate,
   withProgressNotification,
   withErrorNotification,
   lazyFetch,
@@ -269,12 +268,13 @@ async function updateRoom(
 ): Promise<Room | undefined> {
   const campId = queryParam('camp');
 
-  // TODO Replace room in the list - maybe with loader instead of notificatio
   return withProgressNotification('update', async () => {
     const room = await apiService.updateRoom(campId, roomId, updateData);
 
-    invalidate();
-    await fetchRooms();
+    const index = data.value?.findIndex((value) => value.id === roomId);
+    if (index !== undefined && index != -1) {
+      data.value?.splice(index, 1, room);
+    }
 
     return room;
   });
