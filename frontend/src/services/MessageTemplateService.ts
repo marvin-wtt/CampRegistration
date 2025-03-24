@@ -40,7 +40,7 @@ export function useMessageTemplateService() {
     templateId: string,
     data: MessageTemplateUpdateData,
   ): Promise<MessageTemplate> {
-    const response = await api.put(
+    const response = await api.patch(
       `camps/${campId}/message-templates/${templateId}/`,
       data,
     );
