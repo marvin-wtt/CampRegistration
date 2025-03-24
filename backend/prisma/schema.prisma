@@ -214,23 +214,9 @@ model Message {
 
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   registration Registration?    @relation(fields: [registrationId], references: [id])
-  status       MessageStatus?
   files        File[]
 
   @@map("messages")
-}
-
-model MessageStatus {
-  id          String    @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  messageId   String    @unique @map("message_id") @db.Char(36)
-  email       String
-  sentAt      DateTime? @map("sent_at")
-  bouncedAt   DateTime? @map("bounced_at")
-  deliveredAt DateTime? @map("delivered_at")
-
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@map("message_recipients")
 }
 
 model MessageTemplate {
