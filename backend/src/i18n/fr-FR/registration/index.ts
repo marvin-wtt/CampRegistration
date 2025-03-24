@@ -1,7 +1,7 @@
 export default {
   email: {
     managerNotification: {
-      subject: "Notification d'inscription",
+      subject: 'Nouvelle inscription',
       preview: 'Nouvelle inscription pour le camp : {{ camp.name }}',
       text: {
         title: 'Salut,',
