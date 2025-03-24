@@ -27,23 +27,8 @@
                 {{ item.label }}
               </q-item-label>
               <q-item-label caption>
-                {{ item.value }}
+                {{ item.caption }}
               </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card-section>
-
-      <q-card-section v-else>
-        <q-list>
-          <q-item
-            v-for="token in tokenOptions"
-            :key="token.key"
-            clickable
-            @click="selectedToken = token"
-          >
-            <q-item-section>
-              {{ token.label }}
             </q-item-section>
           </q-item>
         </q-list>
@@ -53,30 +38,47 @@
 </template>
 
 <script lang="ts" setup>
-import { type QSelectOption, useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { type Token } from 'components/campManagement/contact/Token';
-import { computed, ref } from 'vue';
+import type {
+  Token,
+  TokenRegistry,
+} from 'components/campManagement/contact/TokenRegistry';
+import { ref } from 'vue';
 
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 const { t } = useI18n();
 
 const props = defineProps<{
-  tokens: Token[];
+  tokens: TokenRegistry[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const selectedToken = ref<Token>();
-
-const tokenOptions = computed<Token[]>(() => {
-  return props.tokens.filter((token) => token.items.length > 0);
+const selectedToken = ref<TokenRegistry>({
+  label: '',
+  value: '',
+  items: props.tokens,
 });
 
-function onTokenSelect(item: QSelectOption) {
+function onTokenSelect(token: TokenRegistry | Token) {
+  if ('items' in token) {
+    selectedToken.value = {
+      ...token,
+      items: token.items.map((item) => ({
+        ...item,
+        value:
+          token.value.length > 0 ? `${token.value}.${item.value}` : item.value,
+        caption: item.caption ?? item.value,
+        category: item.category ?? token.label,
+      })) as TokenRegistry['items'],
+    };
+    return;
+  }
+
   onDialogOK({
     token: selectedToken.value,
-    item,
+    item: token,
   });
 }
 </script>

@@ -12,7 +12,7 @@
         @reset="onDialogCancel"
       >
         <q-card-section class="text-h5">
-          {{ t('page.title') }}
+          {{ t('page.title', { name: props.name }) }}
         </q-card-section>
 
         <q-card-section class="row no-wrap">
@@ -166,7 +166,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive } from 'vue';
+import { computed, reactive, toRaw } from 'vue';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
@@ -179,6 +179,7 @@ const { t } = useI18n();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const props = defineProps<{
+  name: string;
   subject: string | Record<string, string>;
   body: string | Record<string, string>;
   form: CampDetails['form'];
@@ -186,8 +187,8 @@ const props = defineProps<{
 }>();
 
 const message = reactive({
-  subject: props.subject,
-  body: props.body,
+  subject: structuredClone(toRaw(props.subject)),
+  body: structuredClone(toRaw(props.body)),
 });
 
 const translated = computed<boolean>(() => {
@@ -225,6 +226,8 @@ function defaultString(value: string | Record<string, string>): string {
 function onSave() {
   onDialogOK(message);
 }
+
+// TODO translate
 </script>
 
 <style scoped></style>
@@ -248,5 +251,49 @@ field:
       required: 'The message is required'
 
 page:
-  title: 'Edit email template'
+  title: 'Edit template "{ name }"'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+action:
+  save: 'Speichern'
+  cancel: 'Abbrechen'
+
+field:
+  country: 'Vorlage bearbeiten für Teilnehmer aus:'
+  subject:
+    label: 'Betreff:'
+    placeholder: 'Geben Sie hier Ihren Betreff ein...'
+    rule:
+      required: 'Der Betreff ist erforderlich'
+  body:
+    label: 'Nachricht:'
+    placeholder: 'Geben Sie hier Ihre Nachricht ein...'
+    rule:
+      required: 'Die Nachricht ist erforderlich'
+
+page:
+  title: 'Vorlage "{ name }" bearbeiten'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+action:
+  save: 'Enregistrer'
+  cancel: 'Annuler'
+
+field:
+  country: 'Modifier le modèle pour les participants venant de :'
+  subject:
+    label: 'Objet :'
+    placeholder: 'Tapez votre objet ici...'
+    rule:
+      required: "L'objet est requis"
+  body:
+    label: 'Message :'
+    placeholder: 'Tapez votre message ici...'
+    rule:
+      required: 'Le message est requis'
+
+page:
+  title: 'Modifier le modèle "{ name }"'
 </i18n>

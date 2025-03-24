@@ -37,8 +37,8 @@ function resolveProperties(
     : { label: value, category: null };
 }
 
-const VARIABLE_INPUT_REGEX = /({{\s*)([a-zA-Z0-9_.]+)?(\s*}})$/;
-const VARIABLE_PASTE_REGEX = /({{\s*([a-zA-Z0-9_.]+)\s*}})/g;
+const VARIABLE_INPUT_REGEX = /({{\s*)([a-zA-Z0-9_.[\]]+)?(\s*}})$/;
+const VARIABLE_PASTE_REGEX = /({{\s*([a-zA-Z0-9_.[\]]+)\s*}})/g;
 
 const Variable = Node.create<VariableOptions>({
   name: 'variable',

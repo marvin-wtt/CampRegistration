@@ -256,6 +256,7 @@ function addTemplate(event: string) {
     .dialog({
       component: MessageEditDialog,
       componentProps: {
+        name: t(`template.${template.event}.label`),
         form: camp.form,
         countries: camp.countries,
         subject: template.subject,
@@ -275,7 +276,7 @@ function addTemplate(event: string) {
     });
 }
 
-function editTemplate(id: string | undefined) {
+function editTemplate(id: string | undefined | null) {
   if (!id) return;
 
   const camp = campDetailsStore.data;
@@ -287,6 +288,7 @@ function editTemplate(id: string | undefined) {
     .dialog({
       component: MessageEditDialog,
       componentProps: {
+        name: t(`template.${template.event}.label`),
         form: camp.form,
         countries: camp.countries,
         subject: template.subject,

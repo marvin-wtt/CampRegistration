@@ -270,7 +270,10 @@
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onBeforeUnmount, reactive, watch } from 'vue';
-import { type Token } from 'components/campManagement/contact/Token';
+import type {
+  Token,
+  TokenRegistry,
+} from 'components/campManagement/contact/TokenRegistry';
 import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, BubbleMenu, useEditor } from '@tiptap/vue-3';
@@ -283,7 +286,10 @@ import Underline from '@tiptap/extension-underline';
 import Typography from '@tiptap/extension-typography';
 import Document from '@tiptap/extension-document';
 import HardBreak from '@tiptap/extension-hard-break';
-import Variable from './VariableNode';
+import Variable, {
+  type VariableDefinition,
+  type VariableList,
+} from './VariableNode';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -297,24 +303,36 @@ const {
   singleLine,
   placeholder,
 } = defineProps<{
-  tokens?: Token[];
+  tokens?: TokenRegistry[];
   singleLine?: boolean;
   placeholder?: string;
 }>();
 
-const variables = computed(() => {
-  return (
-    tokens.flatMap((token) =>
-      token.items.map((item) => tokenEntryToVariable(token, item)),
-    ) ?? []
-  );
+const variables = computed<VariableList>(() => {
+  return tokens.flatMap(tokenRegistryToVariableList);
 });
 
-function tokenEntryToVariable(token: Token, item: Token['items'][0]) {
+function tokenRegistryToVariableList(
+  registry: TokenRegistry | Token,
+): VariableList {
+  if ('items' in registry) {
+    return registry.items.flatMap((item) =>
+      tokenRegistryToVariableList({
+        ...item,
+        value: `${registry.value}.${item.value}`,
+        category: registry.category ?? registry.label,
+      }),
+    );
+  }
+
+  return [tokenToVariable(registry)];
+}
+
+function tokenToVariable(token: Token): VariableDefinition {
   return {
-    value: `${token.key}.${item.value}`,
-    label: item.label,
-    category: token.label,
+    value: token.value,
+    label: token.label,
+    category: token.category,
   };
 }
 
@@ -384,14 +402,14 @@ watch(model, (value) => {
 
 function wrapTemplateVariables(html: string): string {
   // This regex matches patterns like {{ some.variable }}
-  const regex = /(\{\{\s*[a-zA-Z0-9_.]+\s*}})/g;
+  const regex = /(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})/g;
   return html.replace(regex, '<span data-variable>$1</span>');
 }
 
 function unwrapTemplateVariables(html: string): string {
   // This regex matches the <span data-variable> wrapper around the template pattern.
   const regex =
-    /<span\b(?=[^>]*\bdata-variable\b)[^>]*>(\{\{\s*[a-zA-Z0-9_.]+\s*}})<\/span>/g;
+    /<span\b(?=[^>]*\bdata-variable\b)[^>]*>(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})<\/span>/g;
 
   return html.replace(regex, '$1');
 }
@@ -404,11 +422,11 @@ function onAddToken() {
         tokens,
       },
     })
-    .onOk(({ token, item }) => {
+    .onOk(({ token }) => {
       editor.value
         ?.chain()
         .focus()
-        .insertVariable(tokenEntryToVariable(token, item))
+        .insertVariable(tokenToVariable(token))
         .run();
     });
 }

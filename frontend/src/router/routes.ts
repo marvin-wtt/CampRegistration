@@ -166,7 +166,7 @@ const routes: RouteRecordRaw[] = [
                 name: 'edit-email-templates',
                 component: () =>
                   import(
-                    'pages/campManagement/settings/EmailTemplateEditPage.vue'
+                    'pages/campManagement/settings/MessageTemplateEditPage.vue'
                   ),
               },
               {
