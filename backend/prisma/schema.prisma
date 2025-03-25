@@ -137,7 +137,7 @@ model Bed {
   roomId         String        @map("room_id") @db.Char(26)
   registrationId String?       @unique(map: "beds_registration_id_unique") @map("registration_id") @db.Char(26)
   room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_room_id_foreign")
-  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_registration_id_foreign")
+  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "beds_registration_id_foreign")
 
   @@map("beds")
 }
