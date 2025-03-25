@@ -1,13 +1,21 @@
 import multer, { type Field } from 'multer';
 import config from '#config/index';
 import type { NextFunction, Request, Response } from 'express';
-import dynamic from './dynamic.middleware.js';
 import fileService from '#app/file/file.service';
 
 type ParameterType = string | Field | readonly Field[] | null | undefined;
 
 const multiPart = (fields: ParameterType) => {
-  return dynamic([upload(fields), formatterMiddleware]);
+  // Chain upload with formatter
+  return async (req: Request, res: Response, next: NextFunction) => {
+    await upload(fields)(req, res, (err?: unknown) => {
+      if (err) {
+        next(err);
+      } else {
+        formatterMiddleware(req, res, next);
+      }
+    });
+  };
 };
 
 const upload = (fields: ParameterType) => {
