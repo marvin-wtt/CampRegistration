@@ -11,10 +11,10 @@ export interface Message extends Identifiable {
 }
 
 export interface MessageCreateData {
-  registrations: string[];
-  replyTo?: string | string[];
+  registrationIds: string[];
+  replyTo?: string | string[] | undefined;
   subject: string;
   body: string;
-  priority?: string;
-  attachments?: string[];
+  priority?: string | undefined;
+  attachments?: string[] | undefined;
 }

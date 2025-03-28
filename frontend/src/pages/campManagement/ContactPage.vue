@@ -107,6 +107,7 @@
           color="primary"
           class="col-xs-12 col-sm-auto"
           rounded
+          @click="send"
         />
       </div>
     </q-form>
@@ -145,10 +146,7 @@ const replyTo = ref<string>();
 const subject = ref<string>('');
 const attachments = ref<File[]>();
 const priority = ref<'high' | 'normal' | 'low'>('normal');
-
-const text = ref<string>(
-  'This is a test for {{ camp.name }}, and should render',
-);
+const text = ref<string>('');
 
 const priorityOptions = computed<QSelectOption[]>(() => [
   {
@@ -213,17 +211,19 @@ function send() {
   // TODO Add error messages
   withErrorNotification('send', async () => {
     return apiService.createMessage(campId, {
-      registrations: to.value.flatMap((contact) => {
+      registrationIds: to.value.flatMap((contact) => {
         return contact.type === 'group'
           ? contact.registrations.map((r: Registration) => r.id)
           : contact.registration.id;
       }),
-      replyTo: '',
+      replyTo: replyTo.value,
       subject: subject.value,
       body: text.value,
       priority: priority.value,
     });
   });
+
+  // TODO Show dialog and reset page / redirect
 }
 </script>
 
