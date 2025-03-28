@@ -10,6 +10,8 @@ import { useFileService } from 'src/services/FileService';
 import { useFeedbackService } from 'src/services/FeedbackService';
 import { useProfileService } from 'src/services/ProfileService';
 import { useTotpService } from 'src/services/TotpService';
+import { useMessageTemplateService } from 'src/services/MessageTemplateService';
+import { useMessageService } from 'src/services/MessageService';
 
 export function useAPIService() {
   return {
@@ -24,6 +26,8 @@ export function useAPIService() {
     ...useFileService(),
     ...useFeedbackService(),
     ...useTotpService(),
+    ...useMessageService(),
+    ...useMessageTemplateService(),
   };
 }
 

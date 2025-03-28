@@ -1,6 +1,6 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 
-const admin = async (req: Request): Promise<boolean | string> => {
+const admin = (req: Request): boolean | string => {
   // TODO Why do I need to check if role property exists?
   return (
     req.user !== undefined &&

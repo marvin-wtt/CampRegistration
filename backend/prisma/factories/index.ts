@@ -8,3 +8,5 @@ export * from './manager';
 export * from './room';
 export * from './bed';
 export * from './table-template';
+export * from './message';
+export * from './message-template';

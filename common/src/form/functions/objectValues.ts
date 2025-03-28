@@ -8,7 +8,7 @@ const objectValues = (params: unknown[]): unknown[] | null => {
     return null;
   }
 
-  return Object.values(obj);
+  return Object.values<unknown>(obj as Record<string, unknown>);
 };
 
 export default objectValues;

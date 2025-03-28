@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import * as process from 'node:process';
 
 export default (_req: Request, res: Response, next: NextFunction) => {

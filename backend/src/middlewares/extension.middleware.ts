@@ -4,13 +4,13 @@ import { validateRequest } from '#middlewares/validate.middleware';
 import { authUserId } from '#middlewares/auth.middleware';
 import { requestLocale } from '#middlewares/i18n.middleware';
 
-export default (req: Request, _res: Response, next: NextFunction) => {
+export default (req: Request, res: Response, next: NextFunction) => {
   // ---------------------------------------------------------------------------
   // Backwards compatibility with express 4.
   // ---------------------------------------------------------------------------
 
   // Validation fails otherwise due to body being undefined
-  req.body = req.body ?? {};
+  req.body = (req.body as unknown) ?? {};
 
   // ---------------------------------------------------------------------------
   // Auth
@@ -31,12 +31,12 @@ export default (req: Request, _res: Response, next: NextFunction) => {
   // Initialize models
   req.models = {};
 
-  // eslint-disable-next-line security/detect-object-injection
   req.model = (key) => req.models[key];
   req.modelOrFail = (key) => routeModel(req.model(key));
-  // eslint-disable-next-line security/detect-object-injection
   req.setModel = (key, value) => (req.models[key] = value);
-  req.setModelOrFail = (key, value) => req.setModel(key, verifyModel(value));
+  req.setModelOrFail = (key, value) => {
+    req.setModel(key, verifyModel(value));
+  };
 
   // ---------------------------------------------------------------------------
   // i18n
@@ -44,6 +44,11 @@ export default (req: Request, _res: Response, next: NextFunction) => {
   req.preferredLocale = () => requestLocale(req);
 
   // ---------------------------------------------------------------------------
+  // Response
+  // ---------------------------------------------------------------------------
 
+  res.resource = (resource) => res.json(resource.toObject());
+
+  // ---------------------------------------------------------------------------
   next();
 };

@@ -1,34 +1,29 @@
 <template>
-  <q-select
-    v-model="locale"
-    :options
-    hide-bottom-space
-    emit-value
-    map-options
-    rounded
-    dark
+  <q-btn
+    aria-label="Toggle localization"
+    icon="language"
   >
-    <template #selected-item="scope">
-      <country-icon
-        class="q-px-xs"
-        :locale="scope.opt.value"
-        size="xs"
-      />
-    </template>
-
-    <template #option="scope">
-      <q-item v-bind="scope.itemProps">
-        <q-item-section avatar>
-          <country-icon :locale="scope.opt.value" />
-        </q-item-section>
-        <q-item-section>
-          <q-item-label>
-            {{ scope.opt.label }}
-          </q-item-label>
-        </q-item-section>
-      </q-item>
-    </template>
-  </q-select>
+    <q-menu>
+      <q-list style="min-width: 200px">
+        <q-item
+          v-for="option in options"
+          :key="option.value"
+          clickable
+          v-ripple
+          @click="locale = option.value"
+        >
+          <q-item-section avatar>
+            <country-icon :locale="option.value" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>
+              {{ option.label }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-menu>
+  </q-btn>
 </template>
 
 <script lang="ts" setup>

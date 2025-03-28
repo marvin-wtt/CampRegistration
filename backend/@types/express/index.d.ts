@@ -4,12 +4,15 @@ import {
   Camp,
   Registration,
   TableTemplate,
+  Message,
+  MessageTemplate,
   CampManager,
   Bed,
   Room,
   File,
 } from '@prisma/client';
 import { AnyZodObject, z } from 'zod';
+import type { JsonResource } from '#core/resource/JsonResource';
 
 declare global {
   namespace Express {
@@ -18,6 +21,8 @@ declare global {
       camp?: Camp;
       registration?: Registration;
       tableTemplate?: TableTemplate;
+      message?: Message;
+      messageTemplate?: MessageTemplate;
       manager?: CampManager;
       room?: Room & { beds: Bed[] };
       bed?: Bed;
@@ -55,6 +60,10 @@ declare global {
         name: K,
         value: Models[K] | null,
       ) => void;
+    }
+
+    interface Response {
+      resource: <T, O>(resource: JsonResource<T, O>) => Response;
     }
   }
 }

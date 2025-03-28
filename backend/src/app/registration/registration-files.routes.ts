@@ -4,6 +4,7 @@ import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
 import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
@@ -22,6 +23,11 @@ router.param(
 );
 
 // TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
-router.get('/:fileId', auth(), guard(campManager), fileController.stream);
+router.get(
+  '/:fileId',
+  auth(),
+  guard(campManager),
+  controller(fileController, 'stream'),
+);
 
 export default router;

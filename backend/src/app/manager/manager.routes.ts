@@ -4,6 +4,7 @@ import managerController from './manager.controller.js';
 import managerService from './manager.service.js';
 import { catchParamAsync } from '#utils/catchAsync';
 import express from 'express';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -16,19 +17,29 @@ router.param(
   }),
 );
 
-router.get('/', auth(), guard(campManager), managerController.index);
-router.post('/', auth(), guard(campManager), managerController.store);
+router.get(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(managerController, 'index'),
+);
+router.post(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(managerController, 'store'),
+);
 router.patch(
   '/:managerId',
   auth(),
   guard(campManager),
-  managerController.update,
+  controller(managerController, 'update'),
 );
 router.delete(
   '/:managerId',
   auth(),
   guard(campManager),
-  managerController.destroy,
+  controller(managerController, 'destroy'),
 );
 
 export default router;

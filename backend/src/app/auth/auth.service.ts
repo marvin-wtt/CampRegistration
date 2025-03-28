@@ -1,18 +1,16 @@
 import httpStatus from 'http-status';
 import userService from '#app/user/user.service';
 import tokenService from '#app/token/token.service';
-import notificationService from '#app/notification/notification.service';
 import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
 import { encryptPassword, isPasswordMatch } from '#utils/encryption';
-import { AuthTokensResponse } from '#types/response';
+import type { AuthTokensResponse } from '#types/response';
 import prisma from '#/client.js';
-import i18n, { t } from '#core/i18n';
 
 const loginWithEmailPassword = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
 
-  if (!user || !(await isPasswordMatch(password, user.password as string))) {
+  if (!user || !(await isPasswordMatch(password, user.password))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Incorrect email or password.');
   }
 
@@ -52,7 +50,8 @@ const refreshAuth = async (
     // Fetch user because role is required
     const user = await userService.getUserByIdOrFail(userId);
 
-    return tokenService.generateAuthTokens(user, true);
+    return await tokenService.generateAuthTokens(user, true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }
@@ -110,53 +109,6 @@ const verifyEmail = async (token: string): Promise<void> => {
   });
 };
 
-const sendResetPasswordEmail = async (to: string, token: string) => {
-  const user = await userService.getUserByEmail(to);
-  await i18n.changeLanguage(user?.locale);
-
-  const template = 'reset-password';
-  const subject = t('auth:email.resetPassword.subject');
-  const url = notificationService.generateUrl('reset-password', {
-    email: to,
-    token,
-  });
-
-  const context = {
-    url,
-  };
-
-  await notificationService.sendEmail({
-    to,
-    subject,
-    template,
-    context,
-  });
-};
-
-const sendVerificationEmail = async (to: string, token: string) => {
-  const user = await userService.getUserByEmail(to);
-  await i18n.changeLanguage(user?.locale);
-
-  const subject = t('auth:email.verifyEmail.subject');
-  const url = notificationService.generateUrl('login', {
-    email: to,
-    token,
-  });
-
-  const context = {
-    url,
-  };
-
-  const template = 'verify-email';
-
-  await notificationService.sendEmail({
-    to,
-    subject,
-    template,
-    context,
-  });
-};
-
 export default {
   loginWithEmailPassword,
   isPasswordMatch,
@@ -166,6 +118,4 @@ export default {
   refreshAuth,
   resetPassword,
   verifyEmail,
-  sendVerificationEmail,
-  sendResetPasswordEmail,
 };

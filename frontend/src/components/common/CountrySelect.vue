@@ -66,52 +66,22 @@ const options = computed(() => {
 
 const langOptions = computed<QSelectOption[]>(() => [
   {
-    label: t('countries.de'),
+    label: t('country.de'),
     value: 'de',
   },
   {
-    label: t('countries.fr'),
+    label: t('country.fr'),
     value: 'fr',
   },
   {
-    label: t('countries.us'),
+    label: t('country.us'),
     value: 'us',
   },
   {
-    label: t('countries.pl'),
+    label: t('country.pl'),
     value: 'pl',
   },
 ]);
+
+// NOTE: Translations are stored in global translations
 </script>
-
-<i18n lang="yaml" locale="en">
-countries:
-  de: 'Germany'
-  fr: 'France'
-  us: 'USA'
-  pl: 'Poland'
-</i18n>
-
-<i18n lang="yaml" locale="de">
-countries:
-  de: 'Deutschland'
-  fr: 'Frankreich'
-  us: 'USA'
-  pl: 'Polen'
-</i18n>
-
-<i18n lang="yaml" locale="fr">
-countries:
-  de: 'Allemagne'
-  fr: 'France'
-  us: 'USA'
-  pl: 'Pologne'
-</i18n>
-
-<i18n lang="yaml" locale="pl">
-countries:
-  de: 'Niemcy'
-  fr: 'Francja'
-  us: 'USA'
-  pl: 'Polska'
-</i18n>

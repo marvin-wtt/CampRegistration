@@ -4,7 +4,8 @@ import { type Request } from 'express';
 import { catchMiddlewareAsync } from '#utils/catchAsync';
 
 export const authUserId = (req: Request): string | never => {
-  if (!req.isAuthenticated() || req.user === undefined) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!req.isAuthenticated() || req.user == undefined) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }
 

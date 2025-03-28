@@ -7,7 +7,7 @@ import { api } from 'boot/axios';
 
 export function useTableTemplateService() {
   async function fetchTableTemplates(campId: string): Promise<TableTemplate[]> {
-    const response = await api.get(`camps/${campId}/templates/`);
+    const response = await api.get(`camps/${campId}/table-templates/`);
 
     return response?.data?.data;
   }
@@ -15,8 +15,10 @@ export function useTableTemplateService() {
   async function fetchTableTemplate(
     campId: string,
     templateId: string,
-  ): Promise<TableTemplate[]> {
-    const response = await api.get(`camps/${campId}/templates/${templateId}/`);
+  ): Promise<TableTemplate> {
+    const response = await api.get(
+      `camps/${campId}/table-templates/${templateId}/`,
+    );
 
     return response?.data?.data;
   }
@@ -25,7 +27,7 @@ export function useTableTemplateService() {
     campId: string,
     data: TableTemplateCreateData,
   ): Promise<TableTemplate> {
-    const response = await api.post(`camps/${campId}/templates/`, data);
+    const response = await api.post(`camps/${campId}/table-templates/`, data);
 
     return response?.data?.data;
   }
@@ -36,7 +38,7 @@ export function useTableTemplateService() {
     data: TableTemplateUpdateData,
   ): Promise<TableTemplate> {
     const response = await api.put(
-      `camps/${campId}/templates/${templateId}/`,
+      `camps/${campId}/table-templates/${templateId}/`,
       data,
     );
 
@@ -47,7 +49,7 @@ export function useTableTemplateService() {
     campId: string,
     templateId: string,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/templates/${templateId}/`);
+    await api.delete(`camps/${campId}/table-templates/${templateId}/`);
   }
 
   return {

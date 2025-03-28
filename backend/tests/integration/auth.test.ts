@@ -21,8 +21,10 @@ import {
   verifyToken,
 } from '../utils/token';
 import { request } from '../utils/request';
-import mailer from '../../src/core/mail';
+import { NoOpMailer } from '../../src/core/mail/noop.mailer';
 import * as OTPAuth from 'otpauth';
+
+const mailer = NoOpMailer.prototype;
 
 describe('/api/v1/auth', async () => {
   describe('POST /api/v1/auth/register', () => {
