@@ -24,7 +24,7 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
-    "dev": "npm run dev:views & npm run dev:serve",
+    "dev": "npm run dev:views && npm run dev:serve",
     "dev:views": "mjml src/views/emails/**/*.mjml -o ./src/views/emails/",
     "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "production": "NODE_ENV=production node build/entry.cjs"
