@@ -12,7 +12,7 @@ export interface Message extends Identifiable {
 
 export interface MessageCreateData {
   registrations: string[];
-  replyTo: string | string[];
+  replyTo?: string | string[];
   subject: string;
   body: string;
   priority?: string;

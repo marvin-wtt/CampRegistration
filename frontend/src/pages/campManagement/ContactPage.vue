@@ -1,7 +1,7 @@
 <template>
   <page-state-handler
-    :error="error"
-    :loading="loading"
+    :error
+    :loading
     class="relative-position"
   >
     <q-form
@@ -126,12 +126,16 @@ import { type QRejectedEntry } from 'quasar';
 import ExpandSlide from 'components/common/ExpandSlide.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
+import { useServiceNotifications } from 'src/composables/serviceHandler';
+import { useAPIService } from 'src/services/APIService';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 
+const apiService = useAPIService();
 const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
+const { withErrorNotification } = useServiceNotifications();
 
 campDetailsStore.fetchData();
 registrationStore.fetchData();
@@ -201,7 +205,25 @@ function getAttachmentErrorTranslated(entity: QRejectedEntry): string {
 }
 
 function send() {
-  // TODO
+  const campId = campDetailsStore.data?.id;
+  if (!campId) {
+    return;
+  }
+
+  // TODO Add error messages
+  withErrorNotification('send', async () => {
+    return apiService.createMessage(campId, {
+      registrations: to.value.flatMap((contact) => {
+        return contact.type === 'group'
+          ? contact.registrations.map((r: Registration) => r.id)
+          : contact.registration.id;
+      }),
+      replyTo: '',
+      subject: subject.value,
+      body: text.value,
+      priority: priority.value,
+    });
+  });
 }
 </script>
 

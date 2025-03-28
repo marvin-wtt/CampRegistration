@@ -17,7 +17,7 @@ export function useMessageTemplateService() {
   async function fetchMessageTemplate(
     campId: string,
     templateId: string,
-  ): Promise<MessageTemplate[]> {
+  ): Promise<MessageTemplate> {
     const response = await api.get(
       `camps/${campId}/message-templates/${templateId}/`,
       { params: { includeDefaults: true } },

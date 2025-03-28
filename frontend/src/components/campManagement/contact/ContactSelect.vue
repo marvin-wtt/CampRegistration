@@ -12,7 +12,6 @@
     clearable
     input-debounce="0"
     @filter="filterFn"
-    @new-value="onNewValue"
   >
     <template #selected-item="scope">
       <q-chip
@@ -96,9 +95,7 @@ watch(model, (value) => {
 
   const hasDuplicates = value.some(
     (contact) =>
-      contact.type !== 'group' &&
-      contact.type !== 'external' &&
-      inGroupIds.has(contact.registration.id),
+      contact.type !== 'group' && inGroupIds.has(contact.registration.id),
   );
 
   // Exit here to avoid endless update loop
@@ -108,9 +105,7 @@ watch(model, (value) => {
 
   model.value = model.value.filter(
     (contact) =>
-      contact.type === 'group' ||
-      contact.type === 'external' ||
-      !inGroupIds.has(contact.registration.id),
+      contact.type === 'group' || !inGroupIds.has(contact.registration.id),
   );
 });
 
@@ -128,7 +123,7 @@ const filteredOptions = computed<Contact[]>(() => {
       (contact) => contact.name.toLowerCase().indexOf(filterQuery.value) > -1,
     )
     .filter((contact) => {
-      if (!model.value || contact.type === 'external') {
+      if (!model.value) {
         return true;
       }
 
@@ -139,10 +134,6 @@ const filteredOptions = computed<Contact[]>(() => {
       }
 
       return !model.value.some((value) => {
-        if (value.type === 'external') {
-          return true;
-        }
-
         if (value.type === 'group') {
           return value.registrations.some(
             ({ id }) => id === contact.registration.id,
@@ -186,7 +177,6 @@ const typeSortOrder: Contact['type'][] = [
   'participant',
   'counselor',
   'waitingList',
-  'external',
 ];
 const sortItems = (items: Contact[]) => {
   return items.sort((a, b) => {
@@ -265,39 +255,11 @@ function getRoleTranslation(name: string): string {
 }
 
 const typeColors: Record<Contact['type'], NamedColor> = {
-  external: 'negative',
   group: 'accent',
   participant: 'primary',
   counselor: 'secondary',
   waitingList: 'warning',
 };
-
-const onNewValue: QSelectProps['onNewValue'] = (email, done) => {
-  if (!validateEmail(email)) {
-    return;
-  }
-
-  const option: Contact = {
-    name: email,
-    email,
-    type: 'external',
-  };
-
-  done(option);
-};
-
-// https://stackoverflow.com/a/13975255/8372579
-function validateEmail(value: string) {
-  const input = document.createElement('input');
-
-  input.type = 'email';
-  input.required = true;
-  input.value = value;
-
-  return typeof input.checkValidity === 'function'
-    ? input.checkValidity()
-    : /\S+@\S+\.\S+/.test(value);
-}
 </script>
 
 <style scoped></style>
@@ -305,7 +267,6 @@ function validateEmail(value: string) {
 <i18n lang="yaml" locale="en">
 type:
   counselor: 'Counselor'
-  external: 'External'
   group: 'Group'
   participant: 'Participant'
   waitingList: 'Waiting list'
@@ -318,7 +279,6 @@ role:
 <i18n lang="yaml" locale="de">
 type:
   counselor: 'Betreuer'
-  external: 'Extern'
   group: 'Gruppe'
   participant: 'Teilnehmer'
   waitingList: 'Warteliste'
@@ -331,7 +291,6 @@ role:
 <i18n lang="yaml" locale="fr">
 type:
   counselor: 'Conseiller'
-  external: 'Externe'
   group: 'Groupe'
   participant: 'Participant'
   waitingList: 'Liste d’attente'

@@ -15,7 +15,7 @@ export function useTableTemplateService() {
   async function fetchTableTemplate(
     campId: string,
     templateId: string,
-  ): Promise<TableTemplate[]> {
+  ): Promise<TableTemplate> {
     const response = await api.get(
       `camps/${campId}/table-templates/${templateId}/`,
     );

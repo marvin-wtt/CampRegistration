@@ -12,10 +12,4 @@ interface RegistrationContact {
   registration: Registration;
 }
 
-interface PlainContact {
-  type: 'external';
-  name: string;
-  email: string;
-}
-
-export type Contact = PlainContact | GroupContact | RegistrationContact;
+export type Contact = GroupContact | RegistrationContact;
