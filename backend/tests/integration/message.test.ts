@@ -9,6 +9,7 @@ import {
 import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
 import { ulid } from 'ulidx';
+import { encode } from 'html-entities';
 import prisma from '../utils/prisma';
 import { mailer } from '../utils/mailer';
 import { messageCreateBody } from '../fixtures/message/message.fixture';
@@ -72,6 +73,13 @@ describe('/api/v1/camps/:campId/messages', () => {
       }[],
     ) => {
       expect(actual.data).toHaveLength(expected.length);
+
+      // Encode html characters
+      expected = expected.map((value) => ({
+        ...value,
+        subject: encode(value.subject),
+        body: encode(value.body),
+      }));
 
       const emailCount = expected.reduce((acc, curr) => {
         return acc + curr.to.length;
