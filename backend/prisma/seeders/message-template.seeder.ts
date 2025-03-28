@@ -1,50 +1,35 @@
 import { PrismaClient } from '@prisma/client';
-import { ulid } from 'ulidx';
+import { MessageTemplateFactory } from '../factories';
+import { BaseSeeder } from './BaseSeeder';
 
-const name = 'message-template';
+class MessageTemplateSeeder extends BaseSeeder {
+  name(): string {
+    return 'message-template';
+  }
 
-const run = async (prisma: PrismaClient) => {
-  const camps = await prisma.camp.findMany();
+  async run(prisma: PrismaClient): Promise<void> {
+    const camps = await prisma.camp.findMany();
 
-  const templateNames = [
-    'registration_confirmation',
-    'waiting_list_confirmation',
-    'registration_notification',
-  ];
+    const events = [
+      'registration_submitted',
+      'registration_confirmed',
+      'registration_waitlisted',
+      'registration_waitlist_accepted',
+      'registration_updated',
+      'registration_canceled',
+    ];
 
-  return Promise.all(
-    camps.map(async (camp) => {
-      return camp.countries.map(async (country) => {
-        return templateNames.map((templateName) => {
-          // TODO Get defaults and insert if not present
-          const template: Record<string, string> = {};
-
-          return prisma.messageTemplate.upsert({
-            where: {
-              campId_name_locale: {
-                campId: camp.id,
-                name: templateName,
-                locale: country,
-              },
-            },
-            create: {
-              id: ulid(),
-              campId: camp.id,
-              event: templateName,
-              locale: country,
-              subject: template.subject,
-              body: template.body,
-              priority: template.priority,
-            },
-            update: {},
+    await Promise.all(
+      camps.flatMap(async (camp) => {
+        return events.map((event) => {
+          return MessageTemplateFactory.create({
+            camp: { connect: { id: camp.id } },
+            event: event,
           });
         });
-      });
-    }),
-  );
-};
+      }),
+    );
+  }
+}
 
-export default {
-  name,
-  run,
-};
+export default new MessageTemplateSeeder();

@@ -1,8 +1,8 @@
 import { BaseSeeder } from './BaseSeeder';
 
-class RegistrationSeeder extends BaseSeeder {
+class TableTemplateSeeder extends BaseSeeder {
   name(): string {
-    return 'registration';
+    return 'table-template';
   }
 
   run(): Promise<void> {
@@ -10,4 +10,4 @@ class RegistrationSeeder extends BaseSeeder {
   }
 }
 
-export default new RegistrationSeeder();
+export default new TableTemplateSeeder();
