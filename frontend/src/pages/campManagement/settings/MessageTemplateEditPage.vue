@@ -196,7 +196,10 @@ const loading = computed<boolean>(() => {
 
 function loadData() {
   forceFetch(async () => {
-    return api.fetchMessageTemplates(queryParam('camp'));
+    return api.fetchMessageTemplates(queryParam('camp'), {
+      includeDefaults: true,
+      hasEvent: true,
+    });
   });
 }
 

@@ -201,13 +201,6 @@ const items: NavigationItemProps[] = [
     to: { name: 'room-planner' },
   },
   {
-    name: 'tools',
-    preview: true,
-    label: t('tools'),
-    icon: 'menu',
-    to: { name: 'tools' },
-  },
-  {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
