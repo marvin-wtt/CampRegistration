@@ -62,6 +62,33 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       expect(body.data.length).toBeGreaterThan(1);
     });
 
+    it('should respond with 200 status code with hasEvents', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: null,
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/message-templates/?hasEvents=true`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data');
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBe(2);
+    });
+
     it('should respond with 403 status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());

@@ -3,7 +3,8 @@ import { ServiceFile } from './ServiceFile.js';
 import { Translatable } from './Translatable.js';
 
 export interface MessageTemplateQuery {
-  includeDefaults?: boolean;
+  includeDefaults?: boolean | undefined;
+  hasEvent?: boolean | undefined;
 }
 
 export interface MessageTemplate extends Identifiable<string | null> {

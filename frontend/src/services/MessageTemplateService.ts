@@ -1,4 +1,5 @@
 import type {
+  MessageTemplateQuery,
   MessageTemplate,
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
@@ -8,8 +9,11 @@ import { api } from 'boot/axios';
 export function useMessageTemplateService() {
   async function fetchMessageTemplates(
     campId: string,
+    params: MessageTemplateQuery = {},
   ): Promise<MessageTemplate[]> {
-    const response = await api.get(`camps/${campId}/message-templates/`);
+    const response = await api.get(`camps/${campId}/message-templates/`, {
+      params,
+    });
 
     return response?.data?.data;
   }
@@ -20,7 +24,6 @@ export function useMessageTemplateService() {
   ): Promise<MessageTemplate> {
     const response = await api.get(
       `camps/${campId}/message-templates/${templateId}/`,
-      { params: { includeDefaults: true } },
     );
 
     return response?.data?.data;

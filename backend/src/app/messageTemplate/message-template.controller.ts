@@ -23,10 +23,14 @@ class MessageTemplateController extends BaseController {
   async index(req: Request, res: Response) {
     const {
       params: { campId },
-      query: { includeDefaults },
+      query: { includeDefaults, hasEvent },
     } = await req.validate(validator.index);
 
-    const templates = await service.queryMessageTemplates(campId);
+    let templates = await service.queryMessageTemplates(campId);
+
+    if (hasEvent) {
+      templates = templates.filter((template) => !!template.event === hasEvent);
+    }
 
     const defaults: MessageTemplateDefault[] =
       includeDefaults === true
