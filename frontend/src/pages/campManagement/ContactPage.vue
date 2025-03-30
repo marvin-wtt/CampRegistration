@@ -6,7 +6,9 @@
   >
     <q-form
       class="absolute fit column q-gutter-y-sm q-pa-md"
-      @submit="send"
+      greedy
+      @submit="send()"
+      @reset="reset()"
     >
       <contact-select
         v-model="to"
@@ -17,6 +19,7 @@
             (!!val && val.length > 0) || t('input.to.rule.required'),
         ]"
         hide-bottom-space
+        :disable="sendInProgress"
         outlined
         rounded
         dense
@@ -31,11 +34,7 @@
             v-model="replyTo"
             type="email"
             :label="t('input.replyTo.label')"
-            :rules="[
-              (val?: Contact[]) =>
-                (!!val && val.length > 0) || t('input.to.replyTo.required'),
-            ]"
-            hide-bottom-space
+            :disable="sendInProgress"
             class="col-grow"
             outlined
             rounded
@@ -46,6 +45,7 @@
             v-model="priority"
             :label="t('input.priority')"
             :options="priorityOptions"
+            :disable="sendInProgress"
             class="col-xs-12 col-sm-2"
             emit-value
             map-options
@@ -58,13 +58,15 @@
 
       <registration-email-editor
         v-model="subject"
-        :form="campDetailsStore.data?.form"
         :label="t('input.subject.label')"
+        :placeholder="t('input.subject.placeholder')"
+        :form="campDetailsStore.data?.form"
         :rules="[
           (val?: string) =>
             (!!val && val.length > 0) || t('input.subject.rule.required'),
         ]"
         hide-bottom-space
+        :disable="sendInProgress"
         rounded
         outlined
         single-line
@@ -74,7 +76,14 @@
       <registration-email-editor
         v-model="text"
         :label="t('input.message.label')"
+        :placeholder="t('input.message.placeholder')"
         :form="campDetailsStore.data?.form"
+        :rules="[
+          (val?: string) =>
+            (!!val && val.length > 0) || t('input.message.rule.required'),
+        ]"
+        hide-bottom-space
+        :disable="sendInProgress"
         class="col-grow"
         rounded
         outlined
@@ -84,6 +93,7 @@
         <q-file
           v-model="attachments"
           :label="t('input.attachments')"
+          :disable="sendInProgress"
           max-file-size="20000000"
           max-total-size="20000000"
           multiple
@@ -103,12 +113,12 @@
 
         <q-btn
           :label="t('action.send')"
+          :loading="sendInProgress"
           type="submit"
           icon="send"
           color="primary"
           class="col-xs-12 col-sm-auto"
           rounded
-          @click="send"
         />
       </div>
     </q-form>
@@ -137,7 +147,7 @@ const { t } = useI18n();
 const apiService = useAPIService();
 const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
-const { withErrorNotification } = useServiceNotifications();
+const { withResultNotification } = useServiceNotifications();
 
 campDetailsStore.fetchData();
 registrationStore.fetchData();
@@ -148,6 +158,7 @@ const subject = ref<string>('');
 const attachments = ref<File[]>();
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 const text = ref<string>('');
+const sendInProgress = ref<boolean>(false);
 
 const priorityOptions = computed<QSelectOption[]>(() => [
   {
@@ -203,28 +214,41 @@ function getAttachmentErrorTranslated(entity: QRejectedEntry): string {
   }
 }
 
-function send() {
+async function send() {
   const campId = campDetailsStore.data?.id;
   if (!campId) {
     return;
   }
 
-  // TODO Add error messages
-  withErrorNotification('send', async () => {
-    return apiService.createMessage(campId, {
-      registrationIds: to.value.flatMap((contact) => {
-        return contact.type === 'group'
-          ? contact.registrations.map((r: Registration) => r.id)
-          : contact.registration.id;
-      }),
-      replyTo: replyTo.value,
-      subject: subject.value,
-      body: text.value,
-      priority: priority.value,
+  sendInProgress.value = true;
+  try {
+    // TODO Add error messages
+    await withResultNotification('send', async () => {
+      return apiService.createMessage(campId, {
+        registrationIds: to.value.flatMap((contact) => {
+          return contact.type === 'group'
+            ? contact.registrations.map((r: Registration) => r.id)
+            : contact.registration.id;
+        }),
+        replyTo: replyTo.value,
+        subject: subject.value,
+        body: text.value,
+        priority: priority.value,
+      });
     });
-  });
 
-  // TODO Show dialog and reset page / redirect
+    // Reset all fields on success
+    reset();
+  } finally {
+    sendInProgress.value = false;
+  }
+}
+
+function reset() {
+  to.value = [];
+  subject.value = '';
+  text.value = '';
+  priority.value = 'normal';
 }
 </script>
 
