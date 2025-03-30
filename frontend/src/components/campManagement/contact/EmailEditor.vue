@@ -12,6 +12,7 @@
         class="column fit q-gutter-sm no-wrap"
       >
         <bubble-menu
+          v-if="!plainText"
           :editor
           :tippy-options="{ duration: 100 }"
           class="col-shrink bubble-menu q-pa-xs"
@@ -276,7 +277,12 @@ import type {
 } from 'components/campManagement/contact/TokenRegistry';
 import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
-import { EditorContent, BubbleMenu, useEditor } from '@tiptap/vue-3';
+import {
+  EditorContent,
+  BubbleMenu,
+  useEditor,
+  type Editor,
+} from '@tiptap/vue-3';
 import { Color } from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import ListItem from '@tiptap/extension-list-item';
@@ -300,10 +306,12 @@ const model = defineModel<string>({
 
 const {
   tokens = [],
-  singleLine,
+  singleLine = false,
+  plainText = false,
   placeholder,
 } = defineProps<{
   tokens?: TokenRegistry[];
+  plainText?: boolean;
   singleLine?: boolean;
   placeholder?: string;
 }>();
@@ -381,7 +389,7 @@ const editor = useEditor({
   ],
   content: wrapTemplateVariables(model.value),
   onUpdate: ({ editor }) => {
-    model.value = unwrapTemplateVariables(editor.getHTML());
+    model.value = unwrapTemplateVariables(getEditorValue(editor));
   },
 });
 
@@ -390,15 +398,19 @@ onBeforeUnmount(() => {
 });
 
 watch(model, (value) => {
-  const html = editor.value?.getHTML();
+  const text = editor.value ? getEditorValue(editor.value) : undefined;
   const isSame =
-    html === value || (html && unwrapTemplateVariables(html) === value);
+    text === value || (text && unwrapTemplateVariables(text) === value);
   if (isSame) {
     return;
   }
 
   editor.value?.commands.setContent(wrapTemplateVariables(value), false);
 });
+
+function getEditorValue(editor: Editor) {
+  return plainText ? editor.getText() : editor.getHTML();
+}
 
 function wrapTemplateVariables(html: string): string {
   // This regex matches patterns like {{ some.variable }}

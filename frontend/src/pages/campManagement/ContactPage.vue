@@ -67,7 +67,8 @@
         hide-bottom-space
         rounded
         outlined
-        singleLine
+        single-line
+        plain-text
       />
 
       <registration-email-editor
