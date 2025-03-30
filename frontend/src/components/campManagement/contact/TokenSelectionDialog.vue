@@ -77,8 +77,7 @@ function onTokenSelect(token: TokenRegistry | Token) {
   }
 
   onDialogOK({
-    token: selectedToken.value,
-    item: token,
+    token,
   });
 }
 </script>
