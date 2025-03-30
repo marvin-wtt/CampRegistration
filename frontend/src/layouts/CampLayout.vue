@@ -14,8 +14,6 @@
           </router-link>
         </q-toolbar-title>
 
-        <q-space />
-
         <header-navigation
           v-if="user"
           :administration="administrator"
