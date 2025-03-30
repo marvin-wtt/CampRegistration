@@ -28,10 +28,10 @@ class MessageService {
     const country = helper.country(camp.countries) ?? camp.countries[0];
 
     // Create compiler
-    const subjectCompiler = messageTemplateService.createCompiler(
+    const subjectCompiler = messageTemplateService.createSubjectCompiler(
       translateObject(template.subject, country),
     );
-    const bodyCompiler = messageTemplateService.createCompiler(
+    const bodyCompiler = messageTemplateService.createBodyCompiler(
       translateObject(template.body, country),
     );
 

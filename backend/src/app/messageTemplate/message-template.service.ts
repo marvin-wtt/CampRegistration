@@ -62,7 +62,20 @@ class MessageTemplateService {
     });
   }
 
-  createCompiler(template: string): (context: unknown) => string {
+  createSubjectCompiler(template: string): (context: unknown) => string {
+    return Handlebars.compile(template, {
+      knownHelpersOnly: true,
+      knownHelpers: {
+        if: true,
+        unless: true,
+        each: true,
+        with: true,
+      },
+      noEscape: true, // No escape needed for subjects
+    });
+  }
+
+  createBodyCompiler(template: string): (context: unknown) => string {
     return Handlebars.compile(template, {
       knownHelpersOnly: true,
       knownHelpers: {
@@ -75,7 +88,7 @@ class MessageTemplateService {
   }
 
   compileText(template: string, context: object) {
-    const compile = this.createCompiler(template);
+    const compile = this.createBodyCompiler(template);
 
     return compile(context);
   }
