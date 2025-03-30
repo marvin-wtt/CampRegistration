@@ -62,7 +62,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       expect(body.data.length).toBeGreaterThan(1);
     });
 
-    it('should respond with 200 status code with hasEvents', async () => {
+    it('should respond with 200 status code with hasEvent', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
 
       await MessageTemplateFactory.create({
@@ -79,7 +79,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/?hasEvents=true`)
+        .get(`/api/v1/camps/${camp.id}/message-templates/?hasEvent=true`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
