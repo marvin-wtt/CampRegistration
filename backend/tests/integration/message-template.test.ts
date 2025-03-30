@@ -67,10 +67,12 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       await MessageTemplateFactory.create({
         camp: { connect: { id: camp.id } },
+        event: 'test-event',
       });
 
       await MessageTemplateFactory.create({
         camp: { connect: { id: camp.id } },
+        event: 'test-event',
       });
 
       await MessageTemplateFactory.create({
