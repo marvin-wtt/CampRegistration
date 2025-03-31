@@ -59,7 +59,6 @@
       <registration-email-editor
         v-model="subject"
         :label="t('input.subject.label')"
-        :placeholder="t('input.subject.placeholder')"
         :form="campDetailsStore.data?.form"
         :rules="[
           (val?: string) =>
@@ -76,7 +75,6 @@
       <registration-email-editor
         v-model="text"
         :label="t('input.message.label')"
-        :placeholder="t('input.message.placeholder')"
         :form="campDetailsStore.data?.form"
         :rules="[
           (val?: string) =>
@@ -288,6 +286,10 @@ priority:
   high: 'High'
   low: 'Low'
   normal: 'Normal'
+
+request:
+  error: 'Failed to send message'
+  success: 'Message sent successfully'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -321,6 +323,10 @@ priority:
   high: 'Hoch'
   low: 'Niedrig'
   normal: 'Normal'
+
+request:
+  error: 'Nachricht konnte nicht gesendet werden'
+  success: 'Nachricht erfolgreich gesendet'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -354,4 +360,8 @@ priority:
   high: 'Élevée'
   low: 'Basse'
   normal: 'Normale'
+
+request:
+  error: "Échec de l'envoi du message"
+  success: 'Message envoyé avec succès'
 </i18n>
