@@ -4,7 +4,6 @@ import {
   RegistrationResource,
   type RegistrationWithBed,
 } from './registration.resource.js';
-import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
 import registrationMessages from '#app/registration/registration.messages.js';
@@ -42,19 +41,13 @@ class RegistrationController extends BaseController {
 
     // Notify participant
     if (registration.waitingList) {
-      await catchAndResolve(
-        registrationMessages.sendRegistrationWaitlisted(camp, registration),
-      );
+      await registrationMessages.sendRegistrationWaitlisted(camp, registration);
     } else {
-      await catchAndResolve(
-        registrationMessages.sendRegistrationConfirmed(camp, registration),
-      );
+      await registrationMessages.sendRegistrationConfirmed(camp, registration);
     }
 
     // Notify contact email
-    await catchAndResolve(
-      registrationMessages.notifyContactEmail(camp, registration),
-    );
+    await registrationMessages.notifyContactEmail(camp, registration);
 
     res
       .status(httpStatus.CREATED)
@@ -78,9 +71,14 @@ class RegistrationController extends BaseController {
       },
     );
 
+    if (previousRegistration.data !== registration.data) {
+      await registrationMessages.sendRegistrationUpdated(camp, registration);
+    }
+
     if (previousRegistration.waitingList && !registration.waitingList) {
-      await catchAndResolve(
-        registrationMessages.sendRegistrationConfirmed(camp, registration),
+      await registrationMessages.sendRegistrationWaitlistAccepted(
+        camp,
+        registration,
       );
     }
 
@@ -92,6 +90,8 @@ class RegistrationController extends BaseController {
     const registration = req.modelOrFail('registration');
 
     await registrationService.deleteRegistration(camp, registration);
+
+    await registrationMessages.sendRegistrationCanceled(camp, registration);
 
     res.status(httpStatus.NO_CONTENT).send();
   }
