@@ -1,268 +1,272 @@
 <template>
   <q-field
     :model-value="model"
-    stack-label
     dense
     class="email-editor"
     :class="singleLine ? '' : 'email-editor__multiline'"
   >
     <template #control="{ focused }">
-      <div
-        v-if="editor"
-        class="column fit q-gutter-sm no-wrap"
-      >
-        <bubble-menu
-          v-if="!plainText"
-          :editor
-          :tippy-options="{ duration: 100 }"
-          class="col-shrink bubble-menu q-pa-xs"
+      <transition name="fade">
+        <!-- Only show editor when focused or with content to prevent the label to float -->
+        <div
+          v-if="editor && (focused || model.length > 0)"
+          class="column fit q-gutter-sm no-wrap"
         >
-          <div class="row q-gutter-xs no-wrap">
-            <q-btn
-              icon="format_bold"
-              :color="editor.isActive('bold') ? 'primary' : undefined"
-              size="xs"
-              round
-              unelevated
-              @click="editor.chain().focus().toggleBold().run()"
-            >
-              <q-tooltip :delay="200">
-                {{ t('tooltip.formatBold') }}
-              </q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="format_italic"
-              :color="editor.isActive('italic') ? 'primary' : undefined"
-              size="xs"
-              round
-              unelevated
-              @click="editor.chain().focus().toggleItalic().run()"
-            >
-              <q-tooltip :delay="200">
-                {{ t('tooltip.formatItalic') }}
-              </q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="format_underlined"
-              :color="editor.isActive('underline') ? 'primary' : undefined"
-              size="xs"
-              round
-              unelevated
-              @click="editor.chain().focus().toggleUnderline().run()"
-            >
-              <q-tooltip :delay="200">
-                {{ t('tooltip.formatUnderlined') }}
-              </q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="strikethrough_s"
-              :color="editor.isActive('strike') ? 'primary' : undefined"
-              size="xs"
-              round
-              unelevated
-              @click="editor.chain().focus().toggleStrike().run()"
-            >
-              <q-tooltip :delay="200">
-                {{ t('tooltip.formatStrikethrough') }}
-              </q-tooltip>
-            </q-btn>
-
-            <q-separator vertical />
-
-            <!-- TODO Set tooltip -->
-            <!-- https://github.com/quasarframework/quasar/issues/16955 -->
-            <q-btn-dropdown
-              size="xs"
-              split
-              :menu-offset="[0, 10]"
-              dense
-              rounded
-              unelevated
-              @click="toggleTextColor()"
-            >
-              <template #label>
-                <q-icon
-                  name="format_color_text"
-                  :style="{ color: colors.text }"
-                />
+          <bubble-menu
+            v-if="!plainText"
+            :editor
+            :tippy-options="{ duration: 100 }"
+            class="col-shrink bubble-menu q-pa-xs"
+          >
+            <div class="row q-gutter-xs no-wrap">
+              <q-btn
+                icon="format_bold"
+                :color="editor.isActive('bold') ? 'primary' : undefined"
+                size="xs"
+                round
+                unelevated
+                @click="editor.chain().focus().toggleBold().run()"
+              >
                 <q-tooltip :delay="200">
-                  {{ t('tooltip.formatColorText') }}
+                  {{ t('tooltip.formatBold') }}
                 </q-tooltip>
-              </template>
-              <template #default>
-                <q-color
-                  v-model="colors.text"
-                  default-view="palette"
-                  no-header
-                  @click.stop
-                  @change="toggleHighLightColor()"
-                />
-              </template>
-            </q-btn-dropdown>
-
-            <!-- TODO Set tooltip -->
-            <!-- https://github.com/quasarframework/quasar/issues/16955 -->
-            <q-btn-dropdown
-              size="xs"
-              split
-              :menu-offset="[0, 10]"
-              dense
-              rounded
-              unelevated
-              @click="toggleHighLightColor()"
-            >
-              <template #label>
-                <q-icon
-                  name="format_color_fill"
-                  :style="{ color: colors.highlight }"
-                />
+              </q-btn>
+              <q-btn
+                icon="format_italic"
+                :color="editor.isActive('italic') ? 'primary' : undefined"
+                size="xs"
+                round
+                unelevated
+                @click="editor.chain().focus().toggleItalic().run()"
+              >
                 <q-tooltip :delay="200">
-                  {{ t('tooltip.formatColorFill') }}
+                  {{ t('tooltip.formatItalic') }}
                 </q-tooltip>
-              </template>
-              <template #default>
-                <q-color
-                  v-model="colors.highlight"
-                  default-view="palette"
-                  no-header
-                  @click.stop
-                  @change="toggleHighLightColor()"
-                />
-              </template>
-            </q-btn-dropdown>
+              </q-btn>
+              <q-btn
+                icon="format_underlined"
+                :color="editor.isActive('underline') ? 'primary' : undefined"
+                size="xs"
+                round
+                unelevated
+                @click="editor.chain().focus().toggleUnderline().run()"
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.formatUnderlined') }}
+                </q-tooltip>
+              </q-btn>
+              <q-btn
+                icon="strikethrough_s"
+                :color="editor.isActive('strike') ? 'primary' : undefined"
+                size="xs"
+                round
+                unelevated
+                @click="editor.chain().focus().toggleStrike().run()"
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.formatStrikethrough') }}
+                </q-tooltip>
+              </q-btn>
 
-            <!-- List formats -->
-            <template v-if="!singleLine">
+              <q-separator vertical />
+
+              <!-- TODO Set tooltip -->
+              <!-- https://github.com/quasarframework/quasar/issues/16955 -->
+              <q-btn-dropdown
+                size="xs"
+                split
+                :menu-offset="[0, 10]"
+                dense
+                rounded
+                unelevated
+                @click="toggleTextColor()"
+              >
+                <template #label>
+                  <q-icon
+                    name="format_color_text"
+                    :style="{ color: colors.text }"
+                  />
+                  <q-tooltip :delay="200">
+                    {{ t('tooltip.formatColorText') }}
+                  </q-tooltip>
+                </template>
+                <template #default>
+                  <q-color
+                    v-model="colors.text"
+                    default-view="palette"
+                    no-header
+                    @click.stop
+                    @change="toggleHighLightColor()"
+                  />
+                </template>
+              </q-btn-dropdown>
+
+              <!-- TODO Set tooltip -->
+              <!-- https://github.com/quasarframework/quasar/issues/16955 -->
+              <q-btn-dropdown
+                size="xs"
+                split
+                :menu-offset="[0, 10]"
+                dense
+                rounded
+                unelevated
+                @click="toggleHighLightColor()"
+              >
+                <template #label>
+                  <q-icon
+                    name="format_color_fill"
+                    :style="{ color: colors.highlight }"
+                  />
+                  <q-tooltip :delay="200">
+                    {{ t('tooltip.formatColorFill') }}
+                  </q-tooltip>
+                </template>
+                <template #default>
+                  <q-color
+                    v-model="colors.highlight"
+                    default-view="palette"
+                    no-header
+                    @click.stop
+                    @change="toggleHighLightColor()"
+                  />
+                </template>
+              </q-btn-dropdown>
+
+              <!-- List formats -->
+              <template v-if="!singleLine">
+                <q-separator vertical />
+
+                <q-btn
+                  icon="format_list_bulleted"
+                  :color="editor.isActive('bulletList') ? 'primary' : undefined"
+                  size="xs"
+                  round
+                  unelevated
+                  @click="editor.chain().focus().toggleBulletList().run()"
+                >
+                  <q-tooltip :delay="200">
+                    {{ t('tooltip.formatBulleted') }}
+                  </q-tooltip>
+                </q-btn>
+                <q-btn
+                  icon="format_list_numbered"
+                  :color="
+                    editor.isActive('orderedList') ? 'primary' : undefined
+                  "
+                  size="xs"
+                  round
+                  unelevated
+                  @click="editor.chain().focus().toggleOrderedList().run()"
+                >
+                  <q-tooltip :delay="200">
+                    {{ t('tooltip.formatOrdered') }}
+                  </q-tooltip>
+                </q-btn>
+                <q-btn
+                  v-if="editor.can().liftListItem('listItem')"
+                  icon="format_indent_decrease"
+                  size="xs"
+                  round
+                  unelevated
+                  @click="editor.chain().focus().liftListItem('listItem').run()"
+                >
+                  <q-tooltip :delay="200">
+                    {{ t('tooltip.formatIndentDecrease') }}
+                  </q-tooltip>
+                </q-btn>
+                <q-btn
+                  v-if="editor.can().sinkListItem('listItem')"
+                  icon="format_indent_increase"
+                  size="xs"
+                  round
+                  unelevated
+                  @click="editor.chain().focus().sinkListItem('listItem').run()"
+                >
+                  <q-tooltip :delay="200">
+                    {{ t('tooltip.formatIndentIncrease') }}
+                  </q-tooltip>
+                </q-btn>
+              </template>
+
               <q-separator vertical />
 
               <q-btn
-                icon="format_list_bulleted"
-                :color="editor.isActive('bulletList') ? 'primary' : undefined"
+                icon="format_clear"
                 size="xs"
                 round
                 unelevated
-                @click="editor.chain().focus().toggleBulletList().run()"
+                @click="editor.chain().focus().unsetAllMarks().run()"
               >
                 <q-tooltip :delay="200">
-                  {{ t('tooltip.formatBulleted') }}
+                  {{ t('tooltip.formatClear') }}
                 </q-tooltip>
               </q-btn>
-              <q-btn
-                icon="format_list_numbered"
-                :color="editor.isActive('orderedList') ? 'primary' : undefined"
-                size="xs"
-                round
-                unelevated
-                @click="editor.chain().focus().toggleOrderedList().run()"
-              >
-                <q-tooltip :delay="200">
-                  {{ t('tooltip.formatOrdered') }}
-                </q-tooltip>
-              </q-btn>
-              <q-btn
-                v-if="editor.can().liftListItem('listItem')"
-                icon="format_indent_decrease"
-                size="xs"
-                round
-                unelevated
-                @click="editor.chain().focus().liftListItem('listItem').run()"
-              >
-                <q-tooltip :delay="200">
-                  {{ t('tooltip.formatIndentDecrease') }}
-                </q-tooltip>
-              </q-btn>
-              <q-btn
-                v-if="editor.can().sinkListItem('listItem')"
-                icon="format_indent_increase"
-                size="xs"
-                round
-                unelevated
-                @click="editor.chain().focus().sinkListItem('listItem').run()"
-              >
-                <q-tooltip :delay="200">
-                  {{ t('tooltip.formatIndentIncrease') }}
-                </q-tooltip>
-              </q-btn>
-            </template>
+            </div>
+          </bubble-menu>
+
+          <!-- Action buttons -->
+          <div
+            v-if="focused"
+            class="col-shrink row q-gutter-xs"
+          >
+            <q-btn
+              :label="t('token.label')"
+              icon="add"
+              size="xs"
+              unelevated
+              outline
+              rounded
+              @click="onAddToken"
+            >
+              <q-tooltip :delay="200">
+                {{ t('tooltip.addToken') }}
+              </q-tooltip>
+            </q-btn>
 
             <q-separator vertical />
 
             <q-btn
-              icon="format_clear"
-              size="xs"
+              icon="undo"
+              :disable="!editor.can().undo()"
               round
-              unelevated
-              @click="editor.chain().focus().unsetAllMarks().run()"
+              outline
+              size="xs"
+              @click="editor.chain().focus().undo().run()"
             >
               <q-tooltip :delay="200">
-                {{ t('tooltip.formatClear') }}
+                {{ t('tooltip.undo') }}
+              </q-tooltip>
+            </q-btn>
+
+            <q-btn
+              icon="redo"
+              :disable="!editor.can().redo()"
+              round
+              outline
+              size="xs"
+              @click="editor.chain().focus().redo().run()"
+            >
+              <q-tooltip :delay="200">
+                {{ t('tooltip.redo') }}
               </q-tooltip>
             </q-btn>
           </div>
-        </bubble-menu>
 
-        <!-- Action buttons -->
-        <div
-          v-if="focused"
-          class="col-shrink row q-gutter-xs"
-        >
-          <q-btn
-            :label="t('token.label')"
-            icon="add"
-            size="xs"
-            unelevated
-            outline
-            rounded
-            @click="onAddToken"
+          <div
+            v-if="focused"
+            class="col-shrink"
           >
-            <q-tooltip :delay="200">
-              {{ t('tooltip.addToken') }}
-            </q-tooltip>
-          </q-btn>
+            <q-separator inset />
+          </div>
 
-          <q-separator vertical />
-
-          <q-btn
-            icon="undo"
-            :disable="!editor.can().undo()"
-            round
-            outline
-            size="xs"
-            @click="editor.chain().focus().undo().run()"
-          >
-            <q-tooltip :delay="200">
-              {{ t('tooltip.undo') }}
-            </q-tooltip>
-          </q-btn>
-
-          <q-btn
-            icon="redo"
-            :disable="!editor.can().redo()"
-            round
-            outline
-            size="xs"
-            @click="editor.chain().focus().redo().run()"
-          >
-            <q-tooltip :delay="200">
-              {{ t('tooltip.redo') }}
-            </q-tooltip>
-          </q-btn>
+          <div class="col">
+            <editor-content
+              :editor
+              class="editor fit"
+            />
+          </div>
         </div>
-
-        <div
-          v-if="focused"
-          class="col-shrink"
-        >
-          <q-separator inset />
-        </div>
-
-        <div class="col">
-          <editor-content
-            :editor
-            class="editor fit"
-          />
-        </div>
-      </div>
+      </transition>
     </template>
   </q-field>
 </template>
@@ -277,12 +281,8 @@ import type {
 } from 'components/campManagement/contact/TokenRegistry';
 import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
-import {
-  EditorContent,
-  BubbleMenu,
-  useEditor,
-  type Editor,
-} from '@tiptap/vue-3';
+import { EditorContent, BubbleMenu, useEditor } from '@tiptap/vue-3';
+import type { Editor } from '@tiptap/core';
 import { Color } from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import ListItem from '@tiptap/extension-list-item';
@@ -657,6 +657,17 @@ function onAddToken() {
 .bubble-menu {
   border: 1px solid gray;
   border-radius: 20px;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
 
