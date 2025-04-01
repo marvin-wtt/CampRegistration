@@ -5,8 +5,8 @@
     class="relative-position"
   >
     <q-form
+      ref="formRef"
       class="absolute fit column q-gutter-y-sm q-pa-md"
-      greedy
       @submit="send()"
       @reset="reset()"
     >
@@ -131,7 +131,7 @@ import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
 import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from 'components/campManagement/contact/Contact';
-import { type QSelectOption, useQuasar } from 'quasar';
+import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
 import ExpandSlide from 'components/common/ExpandSlide.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
@@ -150,6 +150,7 @@ const { withResultNotification } = useServiceNotifications();
 campDetailsStore.fetchData();
 registrationStore.fetchData();
 
+const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
 const replyTo = ref<string>();
 const subject = ref<string>('');
@@ -247,6 +248,8 @@ function reset() {
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
+
+  formRef.value?.resetValidation();
 }
 </script>
 
@@ -288,8 +291,9 @@ priority:
   normal: 'Normal'
 
 request:
-  error: 'Failed to send message'
-  success: 'Message sent successfully'
+  send:
+    error: 'Failed to send message'
+    success: 'Message sent successfully'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -325,8 +329,9 @@ priority:
   normal: 'Normal'
 
 request:
-  error: 'Nachricht konnte nicht gesendet werden'
-  success: 'Nachricht erfolgreich gesendet'
+  send:
+    error: 'Nachricht konnte nicht gesendet werden'
+    success: 'Nachricht erfolgreich gesendet'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -362,6 +367,7 @@ priority:
   normal: 'Normale'
 
 request:
-  error: "Échec de l'envoi du message"
-  success: 'Message envoyé avec succès'
+  send:
+    error: "Échec de l'envoi du message"
+    success: 'Message envoyé avec succès'
 </i18n>
