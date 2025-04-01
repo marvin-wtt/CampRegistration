@@ -80,7 +80,6 @@ class MailService {
   async sendMessage(message: Message, email: string): Promise<void> {
     const html = await renderer.renderContent({
       subject: message.subject,
-      preview: '', // TODO
       body: message.body,
       footer: '', // TODO
       email,
@@ -110,7 +109,7 @@ class MailService {
     // Log errors
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        logger.error(
+        logger.warn(
           `Failed to send message to ${emails[index]}:`,
           result.reason,
         );

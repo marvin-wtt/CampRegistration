@@ -4,7 +4,6 @@ import path from 'path';
 import config from '#config/index.js';
 
 interface RenderContentOptions {
-  preview: string;
   subject: string;
   body: string;
   footer: string;
@@ -55,7 +54,6 @@ export class MailRenderer {
       fileName: 'default',
       subject: options.subject,
       context: {
-        preview: options.preview,
         body: options.body,
         footer: options.footer,
         email: options.email,
