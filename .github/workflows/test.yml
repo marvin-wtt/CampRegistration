@@ -14,6 +14,39 @@ on:
       - ready_for_review
 
 jobs:
+  verify-migrations:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: admin123
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 3
+        ports:
+          - 3306:3306
+
+    env:
+      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify migrations
+        run: >
+          npx prisma migrate diff \
+            --exit-code \
+            --from-migrations backend/prisma/migrations \
+            --to-schema-datamodel backend/prisma/schema.prisma \
+            --shadow-database-url $DATABASE_URL
+
   test-backend:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
