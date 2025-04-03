@@ -38,7 +38,6 @@ import {
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer';
-import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 const mailer = NoOpMailer.prototype;
 
@@ -1069,23 +1068,26 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
-      const createCampWithEmail = async (
-        campData: Parameters<(typeof CampFactory)['create']>[0],
-        templateData?: Parameters<(typeof MessageTemplateFactory)['create']>[0],
-      ) => {
-        const camp = await CampFactory.create(campData);
-        const template = await MessageTemplateFactory.create({
-          ...templateData,
-          camp: { connect: { id: camp.id } },
+      it('should respond with 201 status code when message template is missing', async () => {
+        const camp = await CampFactory.create({
+          ...campWithEmail,
+          messageTemplates: {},
         });
 
-        return { camp, template };
-      };
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+      });
 
       it('should send a confirmation email to the user', async () => {
-        const { camp } = await createCampWithEmail(campWithEmail, {
-          event: 'registration_confirmed',
-        });
+        const camp = await CampFactory.create(campWithEmail);
 
         const data = {
           email: 'test@example.com',
@@ -1107,9 +1109,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to multiple emails', async () => {
-        const { camp } = await createCampWithEmail(campWithMultipleEmails, {
-          event: 'registration_confirmed',
-        });
+        const camp = await CampFactory.create(campWithMultipleEmails);
 
         const data = {
           email: 'test@example.com',
@@ -1138,7 +1138,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a copy to the contact email for national camp', async () => {
-        const { camp } = await createCampWithEmail(campWithEmail);
+        const camp = await CampFactory.create(campWithEmail);
 
         const data = {
           email: 'test@example.com',
@@ -1160,7 +1160,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a copy to the contact emails for international camp', async () => {
-        const { camp } = await createCampWithEmail(
+        const camp = await CampFactory.create(
           campWithContactEmailInternational,
         );
 
@@ -1183,7 +1183,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a copy to all contact emails if country missing', async () => {
-        const { camp } = await createCampWithEmail(
+        const camp = await CampFactory.create(
           campWithContactEmailInternational,
         );
 
@@ -1205,10 +1205,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a waiting list information to the user', async () => {
-        const { camp } = await createCampWithEmail(
-          campWithEmailAndMaxParticipants,
-          { event: 'registration_waitlisted' },
-        );
+        const camp = await CampFactory.create(campWithEmailAndMaxParticipants);
 
         const data = {
           email: 'test@example.com',

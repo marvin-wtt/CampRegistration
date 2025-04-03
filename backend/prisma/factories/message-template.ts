@@ -2,6 +2,14 @@ import { Prisma } from '@prisma/client';
 import prisma from './prisma';
 import { faker } from '@faker-js/faker/locale/en';
 
+const defaultEvents = [
+  'registration_confirmed',
+  'registration_waitlisted',
+  'registration_waitlist_accepted',
+  'registration_updated',
+  'registration_canceled',
+];
+
 export const MessageTemplateFactory = {
   build: (
     data: Partial<Prisma.MessageTemplateCreateInput> = {},
@@ -20,6 +28,19 @@ export const MessageTemplateFactory = {
       },
       ...data,
     };
+  },
+
+  buildDefaults: (
+    builder?: (
+      event: string,
+    ) => Omit<Partial<Prisma.MessageTemplateCreateInput>, 'event'>,
+  ) => {
+    return defaultEvents.map((event) =>
+      MessageTemplateFactory.build({
+        event,
+        ...builder?.(event),
+      }),
+    );
   },
 
   create: async (data: Partial<Prisma.MessageTemplateCreateInput> = {}) => {
