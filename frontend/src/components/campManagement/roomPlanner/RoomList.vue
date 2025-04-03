@@ -50,10 +50,10 @@
     </q-item>
 
     <room-list-item
-      v-for="(_, index) in room.beds"
+      v-for="(_, index) in model.beds"
       :key="index"
-      v-model="room.beds[index].person"
-      :options="options"
+      v-model="model.beds[index]!.person"
+      :options
       :position="index + 1"
       :dense="props.dense"
       @update="(roommate) => onBedUpdate(index, roommate)"
@@ -71,9 +71,12 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
+const model = defineModel<RoomWithRoommates>({
+  required: true,
+});
+
 interface Props {
   name: string | Record<string, string>;
-  modelValue: RoomWithRoommates;
   people: Roommate[];
   dense?: boolean;
 }
@@ -86,28 +89,22 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'edit'): void;
   (e: 'update', position: number, roommate: Roommate | null): void;
-  (e: 'update:modelValue', value: RoomWithRoommates): void;
 }>();
-
-const room = computed<RoomWithRoommates>({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-});
 
 const roomGender = computed<string | undefined>(() => {
   // Assume gender by first person in room
-  return room.value.beds
+  return model.value.beds
     .map((bed) => bed.person?.gender)
     .find((gender) => !!gender);
 });
 
 const isParticipantRoom = computed<boolean | undefined>(() => {
   // Exclude all beds free
-  if (room.value.beds.filter((value) => !!value.person).length === 0) {
+  if (model.value.beds.filter((value) => !!value.person).length === 0) {
     return undefined;
   }
 
-  return room.value.beds.some((bed) => {
+  return model.value.beds.some((bed) => {
     const person = bed.person;
 
     return person?.participant;

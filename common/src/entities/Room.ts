@@ -4,6 +4,7 @@ import type { Bed } from './Bed.js';
 
 export interface Room extends Identifiable {
   name: Translatable;
+  order: number;
   beds: Bed[];
 }
 
