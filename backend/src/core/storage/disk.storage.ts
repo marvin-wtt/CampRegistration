@@ -44,6 +44,7 @@ export class DiskStorage implements Storage {
   }
 
   getFileNames(): Promise<string[]> {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     return fse.readdir(this.storageDir);
   }
 
