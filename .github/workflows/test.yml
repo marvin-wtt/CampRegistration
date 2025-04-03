@@ -39,6 +39,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install prisma
+        run: npm i prisma
+
       - name: Verify migrations
         run: >
           npx prisma migrate diff \
