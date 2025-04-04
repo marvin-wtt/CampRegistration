@@ -15,13 +15,13 @@ export const MessageTemplateFactory = {
     data: Partial<Prisma.MessageTemplateCreateInput> = {},
   ): Prisma.MessageTemplateCreateInput => {
     return {
-      camp: {},
-      subject: {
+      camp: data.camp ?? undefined,
+      subject: data.subject ?? {
         en: faker.lorem.sentence(),
         de: faker.lorem.sentence(),
         fr: faker.lorem.sentence(),
       },
-      body: {
+      body: data.body ?? {
         en: faker.lorem.paragraphs(3),
         de: faker.lorem.paragraphs(3),
         fr: faker.lorem.paragraphs(3),

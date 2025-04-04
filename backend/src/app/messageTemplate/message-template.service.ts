@@ -1,5 +1,5 @@
 import prisma from '#client.js';
-import type { MessageTemplate, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import Handlebars from 'handlebars';
 
 class MessageTemplateService {
@@ -9,12 +9,18 @@ class MessageTemplateService {
         id,
         campId,
       },
+      include: {
+        attachments: true,
+      },
     });
   }
 
   async queryMessageTemplates(campId: string) {
     return prisma.messageTemplate.findMany({
       where: { campId },
+      include: {
+        attachments: true,
+      },
     });
   }
 
@@ -24,17 +30,23 @@ class MessageTemplateService {
         campId,
         event,
       },
+      include: {
+        attachments: true,
+      },
     });
   }
 
   async createTemplate(
     campId: string,
     data: Omit<Prisma.MessageTemplateCreateInput, 'camp'>,
-  ): Promise<MessageTemplate> {
+  ) {
     return prisma.messageTemplate.create({
       data: {
         campId,
         ...data,
+      },
+      include: {
+        attachments: true,
       },
     });
   }
@@ -50,6 +62,9 @@ class MessageTemplateService {
         campId,
       },
       data,
+      include: {
+        attachments: true,
+      },
     });
   }
 

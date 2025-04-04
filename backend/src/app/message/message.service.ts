@@ -14,6 +14,8 @@ import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service.js';
 
+type MessageWithAttachments = Message & { attachments: File[] };
+
 class MessageService {
   public uniqueEmails(emails: string[]): string[] {
     return [...new Set(emails.map((value) => value.trim().toLowerCase()))];
@@ -23,7 +25,7 @@ class MessageService {
     template: MessageTemplate,
     camp: Camp,
     registration: Registration,
-  ): Promise<Message & { files: File[] }> {
+  ): Promise<Message & { attachments: File[] }> {
     const helper = new RegistrationCampDataHelper(registration.campData);
     const country = helper.country(camp.countries) ?? camp.countries[0];
 
@@ -48,7 +50,7 @@ class MessageService {
         body: bodyCompiler(context),
       },
       include: {
-        files: true,
+        attachments: true,
       },
     });
 
@@ -121,7 +123,10 @@ class MessageService {
     return this.sendTemplateMessage(template, camp, registration);
   }
 
-  async resendMessage(camp: Camp, message: Message) {
+  async resendMessage(
+    camp: Camp,
+    message: MessageWithAttachments,
+  ): Promise<MessageWithAttachments> {
     if (!message.registrationId) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -164,6 +169,9 @@ class MessageService {
         registration: {
           campId,
         },
+      },
+      include: {
+        attachments: true,
       },
     });
   }

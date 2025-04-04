@@ -182,22 +182,24 @@ enum TokenType {
 }
 
 model File {
-  id              String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
-  campId          String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
-  registrationId  String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
-  messageId       String?  @map("message_id") @db.Char(36) // Prisma does not support morth
-  name            String
-  originalName    String   @map("original_name")
-  field           String?
-  type            String
-  size            Int
-  accessLevel     String?  @map("access_level")
-  storageLocation String   @map("storage_location")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id                String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
+  campId            String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
+  registrationId    String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
+  messageId         String?  @map("message_id") @db.Char(36) // Prisma does not support morth
+  messageTemplateId String?  @map("message_template_id") @db.Char(36) // Prisma does not support morth
+  name              String
+  originalName      String   @map("original_name")
+  field             String?
+  type              String
+  size              Int
+  accessLevel       String?  @map("access_level")
+  storageLocation   String   @map("storage_location")
+  createdAt         DateTime @default(now()) @map("created_at")
 
-  camp         Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
-  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  message      Message?      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: Cascade)
+  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
 
   @@map("files")
 }
@@ -214,7 +216,7 @@ model Message {
 
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   registration Registration?    @relation(fields: [registrationId], references: [id])
-  files        File[]
+  attachments  File[]
 
   @@map("messages")
 }
@@ -232,8 +234,9 @@ model MessageTemplate {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
-  messages Message[]
+  camp        Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  attachments File[]
 
   @@map("message_templates")
 }

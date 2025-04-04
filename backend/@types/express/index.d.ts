@@ -1,5 +1,5 @@
 import express from 'express';
-import {
+import type {
   User as UserModel,
   Camp,
   Registration,
@@ -11,7 +11,7 @@ import {
   Room,
   File,
 } from '@prisma/client';
-import { AnyZodObject, z } from 'zod';
+import type { AnyZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 
 declare global {
@@ -21,8 +21,8 @@ declare global {
       camp?: Camp;
       registration?: Registration;
       tableTemplate?: TableTemplate;
-      message?: Message;
-      messageTemplate?: MessageTemplate;
+      message?: Message & { attachments: File[] };
+      messageTemplate?: MessageTemplate & { attachments: File[] };
       manager?: CampManager;
       room?: Room & { beds: Bed[] };
       bed?: Bed;
