@@ -216,6 +216,8 @@ class FileService {
       where: {
         campId: null,
         registrationId: null,
+        messageId: null,
+        messageTemplateId: null,
         createdAt: { lt: minAge },
       },
       select: {
