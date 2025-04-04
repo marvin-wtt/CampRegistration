@@ -12,7 +12,9 @@ import { ulid } from 'ulidx';
 
 describe('/api/v1/camps/:campId/message-templates', () => {
   // Helper to create a camp with a manager and generate an access token.
-  const createCampWithManagerAndToken = async () => {
+  const createCampWithManagerAndToken = async (
+    campData?: Parameters<(typeof CampFactory)['create']>[0],
+  ) => {
     const camp = await CampFactory.create();
     const user = await UserFactory.create();
     await CampManagerFactory.create({
@@ -25,7 +27,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
   describe('GET /api/v1/camps/:campId/message-templates/', () => {
     it('should respond with 200 status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { camp, accessToken } = await createCampWithManagerAndToken({
+        messageTemplates: {},
+      });
       const numTemplates = 3;
       for (let i = 0; i < numTemplates; i++) {
         await MessageTemplateFactory.create({
@@ -63,7 +67,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
 
     it('should respond with 200 status code with hasEvent', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { camp, accessToken } = await createCampWithManagerAndToken({
+        messageTemplates: {},
+      });
 
       await MessageTemplateFactory.create({
         camp: { connect: { id: camp.id } },
