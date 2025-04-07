@@ -15,6 +15,7 @@ import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service.js';
 
 type MessageWithAttachments = Message & { attachments: File[] };
+type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
 class MessageService {
   public uniqueEmails(emails: string[]): string[] {
@@ -22,10 +23,10 @@ class MessageService {
   }
 
   async sendTemplateMessage(
-    template: MessageTemplate,
+    template: MessageTemplateWithAttachments,
     camp: Camp,
     registration: Registration,
-  ): Promise<Message & { attachments: File[] }> {
+  ): Promise<MessageWithAttachments> {
     const helper = new RegistrationCampDataHelper(registration.campData);
     const country = helper.country(camp.countries) ?? camp.countries[0];
 
@@ -48,6 +49,18 @@ class MessageService {
         priority: template.priority,
         subject: subjectCompiler(context),
         body: bodyCompiler(context),
+        attachments: {
+          createMany: {
+            data: template.attachments.map((file) => ({
+              name: file.name,
+              storageLocation: file.storageLocation,
+              originalName: file.originalName,
+              type: file.type,
+              size: file.size,
+              accessLevel: 'private',
+            })),
+          },
+        },
       },
       include: {
         attachments: true,
