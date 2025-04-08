@@ -75,7 +75,7 @@ model Camp {
   tableTemplates   TableTemplate[]
   messageTemplates MessageTemplate[]
   files            File[]
-  ProgramEvent    ProgramEvent[]
+  ProgramEvent     ProgramEvent[]
 
   @@map("camps")
 }
@@ -243,13 +243,13 @@ model MessageTemplate {
 }
 
 model ProgramEvent {
-  id       String  @id @unique(map: "program_event_id_unique") @db.Char(26)
+  id       String  @id @unique(map: "program_event_id_unique") @default(ulid()) @db.Char(26)
   campId   String  @map("camp_id") @db.Char(36) // Prisma does not support morth
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   title    Json
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   details  Json?
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   location Json?
   date     String?
   duration Int?

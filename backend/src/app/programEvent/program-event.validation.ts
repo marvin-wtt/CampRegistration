@@ -1,67 +1,63 @@
-import Joi from 'joi';
-import JoiDate from '@joi/date';
-import { ProgramEvent } from '@camp-registration/common/entities';
+import { z } from 'zod';
+import { translatedValue } from '#core/validation/helper.js';
 
-const extendedJoi = Joi.extend(JoiDate);
+const timeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
+const dateSchema = z.string(); // TODO Should be raw string YYYY-MM-DD
 
-const translatableSchema = Joi.alternatives()
-  .try(Joi.string(), Joi.object().pattern(Joi.string(), Joi.string()))
-  .allow('');
-const timeSchema = Joi.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
-const dateSchema = extendedJoi.date().format('YYYY-MM-DD').raw();
-
-const show = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    programEventId: Joi.string().required(),
+const show = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+    programEventId: z.string().ulid(),
   }),
-};
+});
 
-const index = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const index = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
   }),
-};
+});
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const store = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
   }),
-  body: Joi.object<ProgramEvent>({
-    title: translatableSchema.required(),
-    details: translatableSchema.optional().allow(null),
-    location: translatableSchema.optional().allow(null),
+  body: z.object({
+    title: translatedValue(z.string()),
+    details: translatedValue(z.string()).optional().nullable(),
+    location: translatedValue(z.string()).optional().nullable(),
     date: dateSchema.optional(),
-    time: timeSchema.optional().allow(null),
-    duration: Joi.number().min(0).optional().allow(null),
-    color: Joi.string().optional().allow(null),
-    side: Joi.string().optional().allow(null),
+    time: timeSchema.optional().nullable(),
+    duration: z.number().min(0).optional().nullable(),
+    color: z.string().optional().nullable(),
+    side: z.string().optional().nullable(),
   }),
-};
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    programEventId: Joi.string().required(),
+const update = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+    programEventId: z.string().ulid(),
   }),
-  body: Joi.object({
-    title: translatableSchema.optional(),
-    details: translatableSchema.optional().allow(null),
-    location: translatableSchema.optional().allow(null),
-    date: dateSchema.optional(),
-    time: timeSchema.optional().allow(null),
-    duration: Joi.number().min(0).optional().allow(null),
-    color: Joi.string().optional().allow(null),
-    side: Joi.string().optional().allow(null),
-  }),
-};
+  body: z
+    .object({
+      title: translatedValue(z.string()),
+      details: translatedValue(z.string()),
+      location: translatedValue(z.string()),
+      date: dateSchema,
+      time: timeSchema.nullable(),
+      duration: z.number().min(0).nullable(),
+      color: z.string().nullable(),
+      side: z.string().nullable(),
+    })
+    .partial(),
+});
 
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    programEventId: Joi.string().required(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+    programEventId: z.string().ulid(),
   }),
-};
+});
 
 export default {
   show,

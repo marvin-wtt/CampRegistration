@@ -1,20 +1,22 @@
-import { ProgramEvent } from '@prisma/client';
-import type { ProgramEvent as ProgramEventResource } from '@camp-registration/common/entities';
+import type { ProgramEvent } from '@prisma/client';
+import type { ProgramEvent as ProgramEventResourceData } from '@camp-registration/common/entities';
+import { JsonResource } from '#core/resource/JsonResource';
 
-const programEventResource = (
-  programEvent: ProgramEvent,
-): ProgramEventResource => {
-  return {
-    id: programEvent.id,
-    title: programEvent.title,
-    details: programEvent.details,
-    location: programEvent.location,
-    date: programEvent.date ?? null,
-    time: programEvent.time ?? null,
-    duration: programEvent.duration ?? null,
-    color: programEvent.color ?? 'white',
-    side: (programEvent.side as ProgramEventResource['side']) ?? null,
-  };
-};
-
-export default programEventResource;
+export class ProgramEventResource extends JsonResource<
+  ProgramEvent,
+  ProgramEventResourceData
+> {
+  transform(): ProgramEventResourceData {
+    return {
+      id: this.data.id,
+      title: this.data.title,
+      details: this.data.details,
+      location: this.data.location,
+      date: this.data.date ?? null,
+      time: this.data.time ?? null,
+      duration: this.data.duration ?? null,
+      color: this.data.color ?? 'white',
+      side: (this.data.side as ProgramEventResourceData['side']) ?? null,
+    };
+  }
+}

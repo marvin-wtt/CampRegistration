@@ -1,73 +1,77 @@
-import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
-import programEventService from './program-event.service';
-import programEventResource from './program-event.resource';
-import { routeModel } from 'utils/verifyModel';
+import programEventService from './program-event.service.js';
+import { ProgramEventResource } from './program-event.resource.js';
+import { BaseController } from '#core/base/BaseController';
+import type { Request, Response } from 'express';
+import validator from '#app/programEvent/program-event.validation';
 
-const show = catchRequestAsync(async (req, res) => {
-  const event = routeModel(req.models.programEvent);
+class ProgramEventController extends BaseController {
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const event = req.modelOrFail('programEvent');
 
-  res.json(resource(programEventResource(event)));
-});
+    res.resource(new ProgramEventResource(event));
+  }
 
-const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
 
-  const events = await programEventService.queryProgramEvent(campId);
-  const resources = events.map((value) => programEventResource(value));
+    const events = await programEventService.queryProgramEvent(campId);
 
-  res.json(collection(resources));
-});
+    res.resource(ProgramEventResource.collection(events));
+  }
 
-const store = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const data = req.body;
+  async store(req: Request, res: Response) {
+    const {
+      params: { campId },
+      body,
+    } = await req.validate(validator.store);
 
-  const event = await programEventService.createProgramEvent(campId, {
-    title: data.title,
-    details: data.details,
-    location: data.location,
-    date: data.date,
-    time: data.time,
-    duration: data.duration,
-    color: data.color,
-    side: data.side,
-  });
+    const event = await programEventService.createProgramEvent(campId, {
+      title: body.title,
+      details: body.details ?? undefined,
+      location: body.location ?? undefined,
+      date: body.date,
+      time: body.time,
+      duration: body.duration,
+      color: body.color,
+      side: body.side,
+    });
 
-  res.status(httpStatus.CREATED).json(resource(programEventResource(event)));
-});
+    res.status(httpStatus.CREATED).resource(new ProgramEventResource(event));
+  }
 
-const update = catchRequestAsync(async (req, res) => {
-  const { programEventId: id } = req.params;
-  const data = req.body;
+  async update(req: Request, res: Response) {
+    const {
+      params: { programEventId: id },
+      body,
+    } = await req.validate(validator.update);
 
-  const event = await programEventService.updateProgramEventById(id, {
-    title: data.title,
-    details: data.details,
-    location: data.location,
-    date: data.date,
-    time: data.time,
-    duration: data.duration,
-    color: data.color,
-    side: data.side,
-  });
+    const event = await programEventService.updateProgramEventById(id, {
+      title: body.title,
+      details: body.details,
+      location: body.location,
+      date: body.date,
+      time: body.time,
+      duration: body.duration,
+      color: body.color,
+      side: body.side,
+    });
 
-  res.json(resource(programEventResource(event)));
-});
+    res.resource(new ProgramEventResource(event));
+  }
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const { programEventId: id } = req.params;
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { programEventId: id },
+    } = await req.validate(validator.destroy);
 
-  await programEventService.deleteProgramEventById(id);
+    await programEventService.deleteProgramEventById(id);
 
-  res.status(httpStatus.NO_CONTENT).send();
-});
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+}
 
-export default {
-  index,
-  show,
-  store,
-  update,
-  destroy,
-};
+export default new ProgramEventController();
