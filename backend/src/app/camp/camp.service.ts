@@ -1,4 +1,4 @@
-import type { Camp, Prisma } from '@prisma/client';
+import type { Camp, File, Prisma } from '@prisma/client';
 import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import registrationService from '#app/registration/registration.service';
@@ -89,6 +89,8 @@ class CampService {
     const fileIdMap = new Map<string, string>();
     const form = this.replaceFormFileUrls(data.form, fileIds, fileIdMap);
 
+    // TODO Create message-templates, table-templates and files in separate steps in transaction and move code to their service
+
     // Copy files from reference camp with new id
     const fileData = files.map((file) => ({
       ...file,
@@ -98,15 +100,22 @@ class CampService {
       campId: undefined,
     }));
 
+    const messageTemplateData = messageTemplates.map((value) => ({
+      ...value,
+      attachments: undefined,
+    }));
+
     return prisma.camp.create({
       data: {
         freePlaces,
         ...data,
         form,
         campManager: { create: { userId } },
-        tableTemplates: { createMany: { data: this.stripIds(tableTemplates) } },
+        tableTemplates: {
+          createMany: { data: this.stripIds(tableTemplates) },
+        },
         messageTemplates: {
-          createMany: { data: this.stripIds(messageTemplates) },
+          createMany: { data: this.stripIds(messageTemplateData) },
         },
         files: { createMany: { data: fileData } },
       },
@@ -226,10 +235,10 @@ type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyCampInput,
   'id'
 >[];
-type MessageTemplateCreateData = OptionalByKeys<
+type MessageTemplateCreateData = (OptionalByKeys<
   Prisma.MessageTemplateCreateManyCampInput,
   'id'
->[];
+> & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 export default new CampService();

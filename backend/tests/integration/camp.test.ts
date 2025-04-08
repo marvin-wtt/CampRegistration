@@ -571,7 +571,7 @@ describe('/api/v1/camps', () => {
         ).toBeTruthy();
       });
 
-      it('should copy all table templates from the referenced camp', async () => {
+      it('should copy all message templates from the referenced camp', async () => {
         const { camp: referenceCamp, accessToken } =
           await createCampWithManagerAndToken({
             messageTemplates: {},
