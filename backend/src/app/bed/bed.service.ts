@@ -1,14 +1,14 @@
-import prisma from '#client.js';
+import { BaseService } from '#core/BaseService.js';
 
-class BedService {
+class BedService extends BaseService {
   async getBedById(id: string, roomId: string) {
-    return prisma.bed.findFirst({
+    return this.prisma.bed.findFirst({
       where: { id, roomId },
     });
   }
 
   async createBed(roomId: string, registrationId?: string) {
-    return prisma.bed.create({
+    return this.prisma.bed.create({
       data: {
         roomId,
         registrationId,
@@ -17,7 +17,7 @@ class BedService {
   }
 
   async updateBedById(id: string, registrationId: string | null) {
-    return prisma.bed.update({
+    return this.prisma.bed.update({
       where: { id },
       data: {
         registrationId,
@@ -29,7 +29,7 @@ class BedService {
   }
 
   async deleteBedById(id: string) {
-    return prisma.bed.delete({
+    return this.prisma.bed.delete({
       where: {
         id,
       },

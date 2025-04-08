@@ -1,20 +1,20 @@
 import type { Camp, File, Prisma } from '@prisma/client';
-import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import registrationService from '#app/registration/registration.service';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import config from '#config/index';
+import { BaseService } from '#core/BaseService.js';
 
-class CampService {
+class CampService extends BaseService {
   async getCampById(id: string) {
-    return prisma.camp.findFirst({
+    return this.prisma.camp.findFirst({
       where: { id },
     });
   }
 
   async getCampsByUserId(userId: string) {
-    return prisma.camp.findMany({
+    return this.prisma.camp.findMany({
       where: {
         campManager: {
           some: { userId },
@@ -68,7 +68,7 @@ class CampService {
       countries: { array_contains: filter.country },
     };
 
-    return prisma.camp.findMany({
+    return this.prisma.camp.findMany({
       where,
       skip: (page - 1) * limit,
       take: limit,
@@ -105,7 +105,7 @@ class CampService {
       attachments: undefined,
     }));
 
-    return prisma.camp.create({
+    return this.prisma.camp.create({
       data: {
         freePlaces,
         ...data,
@@ -186,7 +186,7 @@ class CampService {
           )
         : undefined;
 
-    return prisma.camp.update({
+    return this.prisma.camp.update({
       where: { id: camp.id },
       data: {
         ...data,
@@ -198,7 +198,7 @@ class CampService {
   async deleteCampById(id: string) {
     // TODO All files need to be deleted
 
-    await prisma.camp.delete({ where: { id } });
+    await this.prisma.camp.delete({ where: { id } });
   }
 
   private async getCampFreePlaces(

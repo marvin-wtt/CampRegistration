@@ -1,11 +1,11 @@
 import type { User } from '@prisma/client';
 import * as OTPAuth from 'otpauth';
 import config from '#config/index.js';
-import prisma from '#client.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
+import { BaseService } from '#core/BaseService.js';
 
-class TotpService {
+class TotpService extends BaseService {
   async generateTOTP(user: User) {
     const secret = new OTPAuth.Secret();
 
@@ -18,7 +18,7 @@ class TotpService {
       period: 30,
     });
 
-    await prisma.user.update({
+    await this.prisma.user.update({
       where: { id: user.id },
       data: {
         totpSecret: secret.base32,
@@ -36,7 +36,7 @@ class TotpService {
     this.verifyTOTP(user, token);
 
     // Enable 2FA after validation
-    await prisma.user.update({
+    await this.prisma.user.update({
       where: { id: user.id },
       data: {
         twoFactorEnabled: true,
@@ -66,7 +66,7 @@ class TotpService {
   }
 
   async disableTOTP(user: User) {
-    await prisma.user.update({
+    await this.prisma.user.update({
       where: { id: user.id },
       data: {
         totpSecret: null,

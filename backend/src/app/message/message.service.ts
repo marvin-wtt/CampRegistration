@@ -1,4 +1,3 @@
-import prisma from '#client.js';
 import type {
   Camp,
   Registration,
@@ -13,11 +12,12 @@ import { translateObject } from '#utils/translateObject.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service.js';
+import { BaseService } from '#core/BaseService.js';
 
 type MessageWithAttachments = Message & { attachments: File[] };
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
-class MessageService {
+class MessageService extends BaseService {
   public uniqueEmails(emails: string[]): string[] {
     return [...new Set(emails.map((value) => value.trim().toLowerCase()))];
   }
@@ -40,7 +40,7 @@ class MessageService {
 
     const context = this.createRegistrationContext(camp, registration, country);
 
-    const message = await prisma.message.create({
+    const message = await this.prisma.message.create({
       data: {
         registration: { connect: { id: registration.id } },
         template: { connect: { id: template.id } },
@@ -176,7 +176,7 @@ class MessageService {
   }
 
   async getMessageById(campId: string, id: string) {
-    return prisma.message.findUnique({
+    return this.prisma.message.findUnique({
       where: {
         id,
         registration: {

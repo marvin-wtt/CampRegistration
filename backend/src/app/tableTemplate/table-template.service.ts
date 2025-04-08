@@ -1,20 +1,20 @@
-import prisma from '#client.js';
+import { BaseService } from '#core/BaseService.js';
 
-class TableTemplateService {
+class TableTemplateService extends BaseService {
   async getTemplateById(campId: string, id: string) {
-    return prisma.tableTemplate.findFirst({
+    return this.prisma.tableTemplate.findFirst({
       where: { id, campId },
     });
   }
 
   async queryTemplates(campId: string) {
-    return prisma.tableTemplate.findMany({
+    return this.prisma.tableTemplate.findMany({
       where: { campId },
     });
   }
 
   async createTemplate(campId: string, data: Record<string, unknown>) {
-    return prisma.tableTemplate.create({
+    return this.prisma.tableTemplate.create({
       data: {
         data,
         campId,
@@ -33,13 +33,13 @@ class TableTemplateService {
       };
     });
 
-    return prisma.tableTemplate.createMany({
+    return this.prisma.tableTemplate.createMany({
       data,
     });
   }
 
   async updateTemplateById(templateId: string, data: Record<string, unknown>) {
-    return prisma.tableTemplate.update({
+    return this.prisma.tableTemplate.update({
       where: { id: templateId },
       data: {
         data,
@@ -48,7 +48,7 @@ class TableTemplateService {
   }
 
   async deleteTemplateById(templateId: string) {
-    await prisma.tableTemplate.delete({ where: { id: templateId } });
+    await this.prisma.tableTemplate.delete({ where: { id: templateId } });
   }
 }
 

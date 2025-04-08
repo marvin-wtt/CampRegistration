@@ -4,10 +4,10 @@ import httpStatus from 'http-status';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import { type Token, TokenType, type User } from '@prisma/client';
-import prisma from '#client.js';
 import type { AuthTokensResponse } from '#types/response';
+import { BaseService } from '#core/BaseService.js';
 
-class TokenService {
+class TokenService extends BaseService {
   private generateToken(
     userId: string,
     expires: Moment,
@@ -34,7 +34,7 @@ class TokenService {
     type: TokenType,
     blacklisted = false,
   ): Promise<Token> {
-    return prisma.token.create({
+    return this.prisma.token.create({
       data: {
         token,
         userId,
@@ -46,7 +46,7 @@ class TokenService {
   }
 
   private async revokeTokens(userId: string, type?: TokenType) {
-    return prisma.token.deleteMany({
+    return this.prisma.token.deleteMany({
       where: {
         userId,
         type,
@@ -92,7 +92,7 @@ class TokenService {
     const payload = this.verifyToken(token, type);
 
     const userId = payload.sub;
-    const tokenData = await prisma.token.findFirst({
+    const tokenData = await this.prisma.token.findFirst({
       where: { token, type, userId, blacklisted: false },
     });
 
@@ -227,7 +227,7 @@ class TokenService {
   }
 
   async blacklistTokens(userId: string): Promise<void> {
-    await prisma.token.updateMany({
+    await this.prisma.token.updateMany({
       data: {
         blacklisted: true,
       },
@@ -238,7 +238,7 @@ class TokenService {
   async deleteExpiredTokens() {
     const refDate = moment().subtract(1, 'hour').toDate();
 
-    return prisma.token.deleteMany({
+    return this.prisma.token.deleteMany({
       where: {
         expiresAt: {
           lte: refDate,
@@ -248,7 +248,7 @@ class TokenService {
   }
 
   deleteTokenById = async (id: number) => {
-    await prisma.token.delete({ where: { id } });
+    await this.prisma.token.delete({ where: { id } });
   };
 }
 

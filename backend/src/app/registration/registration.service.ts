@@ -1,20 +1,25 @@
-import prisma from '#client.js';
 import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { type Camp, Prisma, type Registration } from '@prisma/client';
+import {
+  type Camp,
+  Prisma,
+  type Registration,
+  type PrismaClient,
+} from '@prisma/client';
 import dbJsonPath from '#utils/dbJsonPath';
 import { formUtils } from '#utils/form';
 import config from '#config/index';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
+import { BaseService } from '#core/BaseService.js';
 
 type PrismaTransaction = Parameters<
-  Parameters<typeof prisma.$transaction>[0]
+  Parameters<PrismaClient['$transaction']>[0]
 >[0];
 
-class RegistrationService {
+class RegistrationService extends BaseService {
   async getRegistrationById(campId: string, id: string) {
-    return prisma.registration.findFirst({
+    return this.prisma.registration.findFirst({
       where: { id, campId },
       include: {
         bed: { include: { room: true } },
@@ -23,7 +28,7 @@ class RegistrationService {
   }
 
   async getRegistrationsByIds(campId: string, ids: string[]) {
-    return prisma.registration.findMany({
+    return this.prisma.registration.findMany({
       where: {
         id: { in: ids },
         campId,
@@ -35,7 +40,7 @@ class RegistrationService {
   }
 
   async queryRegistrations(campId: string) {
-    return prisma.registration.findMany({
+    return this.prisma.registration.findMany({
       where: { campId },
       include: {
         bed: { include: { room: true } },
@@ -44,13 +49,13 @@ class RegistrationService {
   }
 
   async getParticipantsCount(campId: string) {
-    return prisma.registration.count({
+    return this.prisma.registration.count({
       where: registrationRoleFilter(campId, 'participant'),
     });
   }
 
   async getParticipantsCountByCountry(campId: string, countries: string[]) {
-    const participants = await prisma.registration.findMany({
+    const participants = await this.prisma.registration.findMany({
       where: registrationRoleFilter(campId, 'participant'),
     });
 
@@ -130,7 +135,7 @@ class RegistrationService {
       };
     });
 
-    return prisma.$transaction(async (transaction) => {
+    return this.prisma.$transaction(async (transaction) => {
       await this.updateCampFreePlaces(camp, freePlaces)(transaction);
 
       return transaction.registration.create({
@@ -234,7 +239,7 @@ class RegistrationService {
     // TODO Delete files if some where removed
     // TODO Associate files if new file values are present
 
-    return prisma.registration.update({
+    return this.prisma.registration.update({
       where: { id: registrationId },
       data: {
         ...data,
@@ -253,9 +258,9 @@ class RegistrationService {
       'increment',
     );
 
-    await prisma.$transaction(async (transaction) => {
+    await this.prisma.$transaction(async (transaction) => {
       await this.updateCampFreePlaces(camp, freePlaces)(transaction);
-      await prisma.registration.delete({ where: { id: registration.id } });
+      await this.prisma.registration.delete({ where: { id: registration.id } });
     });
   }
 
@@ -267,7 +272,7 @@ class RegistrationService {
       form.updateData(registration.data);
       const campData = form.extractCampData();
 
-      return prisma.registration.update({
+      return this.prisma.registration.update({
         where: { id: registration.id },
         data: {
           campData,

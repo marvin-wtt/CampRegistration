@@ -1,15 +1,15 @@
-import prisma from '#client.js';
+import { BaseService } from '#core/BaseService.js';
 
-class RoomService {
+class RoomService extends BaseService {
   async getRoomById(campId: string, id: string) {
-    return prisma.room.findFirst({
+    return this.prisma.room.findFirst({
       where: { id, campId },
       include: { beds: true },
     });
   }
 
   async queryRooms(campId: string) {
-    return prisma.room.findMany({
+    return this.prisma.room.findMany({
       where: { campId },
       include: { beds: true },
     });
@@ -20,7 +20,7 @@ class RoomService {
     name: string | Record<string, string>,
     capacity: number,
   ) {
-    return prisma.room.create({
+    return this.prisma.room.create({
       data: {
         name,
         campId,
@@ -35,7 +35,7 @@ class RoomService {
   }
 
   async updateRoomById(roomId: string, name?: string | Record<string, string>) {
-    return prisma.room.update({
+    return this.prisma.room.update({
       where: { id: roomId },
       data: {
         name,
@@ -45,7 +45,7 @@ class RoomService {
   }
 
   async deleteRoomById(roomId: string) {
-    await prisma.room.delete({ where: { id: roomId } });
+    await this.prisma.room.delete({ where: { id: roomId } });
   }
 }
 

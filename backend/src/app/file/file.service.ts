@@ -1,4 +1,3 @@
-import prisma from '#client.js';
 import type { File, Prisma } from '@prisma/client';
 import config from '#config/index';
 import { ulid } from '#utils/ulid';
@@ -8,6 +7,7 @@ import moment from 'moment';
 import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
 import storageRegistry from '#core/storage/storage.registry';
+import { BaseService } from '#core/BaseService.js';
 
 type RequestFile = Express.Multer.File;
 
@@ -26,7 +26,7 @@ const fileNameExtension = (fileName: string): string => {
   return `.${extension}`;
 };
 
-class FileService {
+class FileService extends BaseService {
   private tmpStorage = new DiskStorage(config.storage.tmpDir);
   private storageRegistry = storageRegistry;
 
@@ -68,7 +68,7 @@ class FileService {
     // Move file first to ensure that they really exist
     await this.moveFile(file);
 
-    return prisma.file.create({
+    return this.prisma.file.create({
       data: {
         ...fileData,
         ...modelData,
@@ -77,7 +77,7 @@ class FileService {
   }
 
   async getModelFile(modelName: string, modelId: string, id: string) {
-    return prisma.file.findFirst({
+    return this.prisma.file.findFirst({
       where: {
         id,
         [`${modelName}Id`]: modelId,
@@ -103,7 +103,7 @@ class FileService {
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
 
-    return prisma.file.findMany({
+    return this.prisma.file.findMany({
       where: {
         name: filter.name ? { startsWith: `_${filter.name}_` } : undefined,
         type: filter.type,
@@ -120,13 +120,13 @@ class FileService {
   }
 
   async deleteFile(id: string) {
-    const file = await prisma.file.delete({
+    const file = await this.prisma.file.delete({
       where: {
         id,
       },
     });
 
-    const fileCount = await prisma.file.count({
+    const fileCount = await this.prisma.file.count({
       where: {
         name: file.name,
       },
@@ -138,7 +138,7 @@ class FileService {
     }
 
     // Check if other files still reference the file on the disk
-    const remainingReferences = await prisma.file.count({
+    const remainingReferences = await this.prisma.file.count({
       where: {
         name: file.name,
       },
@@ -171,7 +171,7 @@ class FileService {
   }
 
   async deleteUnreferencedFiles(): Promise<void> {
-    const fileModels = await prisma.file.findMany({
+    const fileModels = await this.prisma.file.findMany({
       where: {
         storageLocation: 'local',
       },
@@ -212,7 +212,7 @@ class FileService {
   async deleteUnassignedFiles(): Promise<void> {
     const minAge = moment().subtract('1', 'd').toDate();
 
-    const files = await prisma.file.findMany({
+    const files = await this.prisma.file.findMany({
       where: {
         campId: null,
         registrationId: null,
@@ -229,13 +229,13 @@ class FileService {
 
     // Delete files from database first so that the files can no longer be accessed.
     const fileIds = files.map((file) => file.id);
-    const result = await prisma.file.deleteMany({
+    const result = await this.prisma.file.deleteMany({
       where: { id: { in: fileIds } },
     });
 
     // Check if any file is still referenced by another model
     const fileNames = files.map((file) => file.name);
-    const usedFiles = await prisma.file.findMany({
+    const usedFiles = await this.prisma.file.findMany({
       where: { name: { in: fileNames } },
       select: { name: true },
     });

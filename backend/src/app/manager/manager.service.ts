@@ -1,6 +1,7 @@
 import prisma from '#client.js';
+import { BaseService } from '#core/BaseService.js';
 
-class ManagerService {
+class ManagerService extends BaseService {
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {
     return prisma.campManager
       .findFirst({

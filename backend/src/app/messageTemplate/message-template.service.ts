@@ -1,10 +1,10 @@
-import prisma from '#client.js';
 import type { Prisma } from '@prisma/client';
 import Handlebars from 'handlebars';
+import { BaseService } from '#core/BaseService.js';
 
-class MessageTemplateService {
+class MessageTemplateService extends BaseService {
   async getMessageTemplateById(campId: string, id: string) {
-    return prisma.messageTemplate.findFirst({
+    return this.prisma.messageTemplate.findFirst({
       where: {
         id,
         campId,
@@ -16,7 +16,7 @@ class MessageTemplateService {
   }
 
   async queryMessageTemplates(campId: string) {
-    return prisma.messageTemplate.findMany({
+    return this.prisma.messageTemplate.findMany({
       where: { campId },
       include: {
         attachments: true,
@@ -25,7 +25,7 @@ class MessageTemplateService {
   }
 
   async getMessageTemplateByName(event: string, campId: string) {
-    return prisma.messageTemplate.findFirst({
+    return this.prisma.messageTemplate.findFirst({
       where: {
         campId,
         event,
@@ -40,7 +40,7 @@ class MessageTemplateService {
     campId: string,
     data: Omit<Prisma.MessageTemplateCreateInput, 'camp'>,
   ) {
-    return prisma.messageTemplate.create({
+    return this.prisma.messageTemplate.create({
       data: {
         campId,
         ...data,
@@ -56,7 +56,7 @@ class MessageTemplateService {
     campId: string,
     data: Prisma.MessageTemplateUpdateInput,
   ) {
-    return prisma.messageTemplate.update({
+    return this.prisma.messageTemplate.update({
       where: {
         id,
         campId,
@@ -69,7 +69,7 @@ class MessageTemplateService {
   }
 
   async deleteMessageTemplateById(id: string, campId: string) {
-    return prisma.messageTemplate.delete({
+    return this.prisma.messageTemplate.delete({
       where: {
         id,
         campId,

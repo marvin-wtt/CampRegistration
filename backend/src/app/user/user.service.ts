@@ -1,11 +1,11 @@
 import type { Prisma, User } from '@prisma/client';
 import httpStatus from 'http-status';
-import prisma from '#client.js';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#utils/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
+import { BaseService } from '#core/BaseService.js';
 
-class UserService {
+class UserService extends BaseService {
   async createUser(
     data: Pick<
       Prisma.UserCreateInput,
@@ -16,7 +16,7 @@ class UserService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
 
-    return prisma.user.create({
+    return this.prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
@@ -28,7 +28,7 @@ class UserService {
   }
 
   async queryUsers() {
-    return prisma.user.findMany({
+    return this.prisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -44,7 +44,7 @@ class UserService {
   }
 
   async getUserByIdWithCamps(id: string) {
-    const user = await prisma.user.findUniqueOrThrow({
+    const user = await this.prisma.user.findUniqueOrThrow({
       where: { id },
       include: {
         camps: {
@@ -60,19 +60,19 @@ class UserService {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    return prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { id },
     });
   }
 
   async getUserByIdOrFail(id: string): Promise<User> {
-    return prisma.user.findUniqueOrThrow({
+    return this.prisma.user.findUniqueOrThrow({
       where: { id },
     });
   }
 
   async updateUserLastSeenById(userId: string) {
-    return prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
       data: {
         lastSeen: new Date(),
@@ -81,7 +81,7 @@ class UserService {
   }
 
   async updateUserLastSeenByIdWithCamps(userId: string) {
-    const user = await prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         lastSeen: new Date(),
@@ -100,7 +100,7 @@ class UserService {
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
-    return prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { email },
     });
   }
@@ -115,7 +115,7 @@ class UserService {
       }
     }
 
-    return prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
       data: {
         name: data.name,
@@ -132,7 +132,7 @@ class UserService {
   }
 
   async deleteUserById(userId: string) {
-    await prisma.user.delete({ where: { id: userId } });
+    await this.prisma.user.delete({ where: { id: userId } });
   }
 }
 
