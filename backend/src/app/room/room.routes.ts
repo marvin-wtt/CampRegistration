@@ -1,21 +1,20 @@
 import express from 'express';
-import { auth, guard, validate } from 'middlewares';
-import { campManager } from 'guards';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import { catchParamAsync } from 'utils/catchAsync';
-import roomValidation from './room.validation';
-import roomService from './room.service';
-import roomController from './room.controller';
-import bedRoutes from 'app/bed/bed.routes';
+import { auth, guard } from '#middlewares/index';
+import { campManager } from '#guards/index';
+import { catchParamAsync } from '#utils/catchAsync';
+import roomService from './room.service.js';
+import roomController from './room.controller.js';
+import bedRoutes from '#app/bed/bed.routes';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'roomId',
-  catchParamAsync(async (req, res, id) => {
-    const camp = routeModel(req.models.camp);
+  catchParamAsync(async (req, _res, id) => {
+    const camp = req.modelOrFail('camp');
     const room = await roomService.getRoomById(camp.id, id);
-    req.models.room = verifyModelExists(room);
+    req.setModelOrFail('room', room);
   }),
 );
 
@@ -25,43 +24,37 @@ router.get(
   '/',
   auth(),
   guard(campManager),
-  validate(roomValidation.index),
-  roomController.index,
+  controller(roomController, 'index'),
 );
 router.get(
   '/:roomId',
   auth(),
   guard(campManager),
-  validate(roomValidation.show),
-  roomController.show,
+  controller(roomController, 'show'),
 );
 router.post(
   '/',
   auth(),
   guard(campManager),
-  validate(roomValidation.store),
-  roomController.store,
+  controller(roomController, 'store'),
 );
 router.post(
   '/',
   auth(),
   guard(campManager),
-  validate(roomValidation.store),
-  roomController.store,
+  controller(roomController, 'store'),
 );
 router.patch(
   '/:roomId',
   auth(),
   guard(campManager),
-  validate(roomValidation.update),
-  roomController.update,
+  controller(roomController, 'update'),
 );
 router.delete(
   '/:roomId',
   auth(),
   guard(campManager),
-  validate(roomValidation.destroy),
-  roomController.destroy,
+  controller(roomController, 'destroy'),
 );
 
 export default router;

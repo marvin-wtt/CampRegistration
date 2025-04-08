@@ -1,70 +1,70 @@
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
-import authService from 'app/auth/auth.service';
-import userService from './user.service';
-import { routeModel } from 'utils/verifyModel';
-import { collection, resource } from 'app/resource';
-import userResource from './user.resource';
+import authService from '#app/auth/auth.service';
+import userService from './user.service.js';
+import { UserResource } from './user.resource.js';
+import validator from './user.validation.js';
+import { type Request, type Response } from 'express';
+import { BaseController } from '#core/base/BaseController';
 
-const index = catchRequestAsync(async (req, res) => {
-  const users = await userService.queryUsers();
+class UserController extends BaseController {
+  async index(_req: Request, res: Response) {
+    const users = await userService.queryUsers();
 
-  res.json(collection(users.map(userResource)));
-});
-
-const show = catchRequestAsync(async (req, res) => {
-  const user = routeModel(req.models.user);
-
-  res.json(resource(userResource(user)));
-});
-
-const store = catchRequestAsync(async (req, res) => {
-  const { email, password, name, role, locale, locked } = req.body;
-  const user = await userService.createUser({
-    name,
-    email,
-    password,
-    role,
-    locale,
-    locked,
-  });
-
-  res.status(httpStatus.CREATED).json(resource(user));
-});
-
-const update = catchRequestAsync(async (req, res) => {
-  const { userId } = req.params;
-  const { email, password, name, role, locale, locked, emailVerified } =
-    req.body;
-
-  if (password || locked) {
-    await authService.logoutAllDevices(userId);
+    res.resource(UserResource.collection(users));
   }
 
-  const user = await userService.updateUserById(userId, {
-    name,
-    email,
-    password,
-    role,
-    locale,
-    locked,
-    emailVerified,
-  });
+  show(req: Request, res: Response) {
+    const user = req.modelOrFail('user');
 
-  res.json(resource(user));
-});
+    res.resource(new UserResource(user));
+  }
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const { userId } = req.params;
-  await userService.deleteUserById(userId);
+  async store(req: Request, res: Response) {
+    const {
+      body: { email, password, name, role, locale, locked },
+    } = await req.validate(validator.store);
 
-  res.sendStatus(httpStatus.NO_CONTENT);
-});
+    const user = await userService.createUser({
+      name,
+      email,
+      password,
+      role,
+      locale,
+      locked,
+    });
 
-export default {
-  index,
-  show,
-  store,
-  update,
-  destroy,
-};
+    res.status(httpStatus.CREATED).resource(new UserResource(user));
+  }
+
+  async update(req: Request, res: Response) {
+    const {
+      params: { userId },
+      body: { email, password, name, role, locale, locked, emailVerified },
+    } = await req.validate(validator.update);
+
+    if (password || locked) {
+      await authService.revokeAllUserTokens(userId);
+    }
+
+    const user = await userService.updateUserById(userId, {
+      name,
+      email,
+      password,
+      role,
+      locale,
+      locked,
+      emailVerified,
+    });
+
+    res.resource(new UserResource(user));
+  }
+
+  async destroy(req: Request, res: Response) {
+    const { userId } = req.params;
+    await userService.deleteUserById(userId);
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+}
+
+export default new UserController();

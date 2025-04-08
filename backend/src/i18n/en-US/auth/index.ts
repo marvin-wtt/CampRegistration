@@ -13,7 +13,7 @@ export default {
         teamName: '$t(appName) team',
       },
       footer: {
-        cause: '$t(email:footer.cause) you were invited by another user.',
+        cause: '$t(email:footer.cause) you have requested a new password.',
       },
     },
 

@@ -1,24 +1,23 @@
-import registrationController from './registration.controller';
-import { auth, guard, validate } from 'middlewares';
-import { campActive, campManager } from 'guards';
+import registrationController from './registration.controller.js';
+import { auth, guard } from '#middlewares/index';
+import { campActive, campManager } from '#guards/index';
 import express from 'express';
-import registrationValidation from './registration.validation';
-import registrationService from './registration.service';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import { catchParamAsync } from 'utils/catchAsync';
-import registrationFiles from './registration-files.routes';
+import registrationService from './registration.service.js';
+import { catchParamAsync } from '#utils/catchAsync';
+import registrationFiles from './registration-files.routes.js';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'registrationId',
-  catchParamAsync(async (req, res, id) => {
-    const camp = routeModel(req.models.camp);
+  catchParamAsync(async (req, _res, id) => {
+    const camp = req.modelOrFail('camp');
     const registration = await registrationService.getRegistrationById(
       camp.id,
       id,
     );
-    req.models.registration = verifyModelExists(registration);
+    req.setModelOrFail('registration', registration);
   }),
 );
 
@@ -28,35 +27,30 @@ router.get(
   '/',
   auth(),
   guard(campManager),
-  validate(registrationValidation.index),
-  registrationController.index,
+  controller(registrationController, 'index'),
 );
 router.get(
   '/:registrationId',
   auth(),
   guard(campManager),
-  validate(registrationValidation.show),
-  registrationController.show,
+  controller(registrationController, 'show'),
 );
 router.post(
   '/',
   guard(campActive),
-  validate(registrationValidation.store),
-  registrationController.store,
+  controller(registrationController, 'store'),
 );
 router.patch(
   '/:registrationId',
   auth(),
   guard(campManager),
-  validate(registrationValidation.update),
-  registrationController.update,
+  controller(registrationController, 'update'),
 );
 router.delete(
   '/:registrationId',
   auth(),
   guard(campManager),
-  validate(registrationValidation.destroy),
-  registrationController.destroy,
+  controller(registrationController, 'destroy'),
 );
 
 export default router;

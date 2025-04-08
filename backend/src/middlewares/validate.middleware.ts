@@ -1,61 +1,56 @@
+import type { Request } from 'express';
+import { type AnyZodObject, type z, ZodError } from 'zod';
+import { fromError } from 'zod-validation-error';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
-import { Request } from 'express';
-import pick from 'utils/pick';
-import Joi from 'joi';
-import fileService from 'app/file/file.service';
-import logger from 'config/logger';
-import { catchMiddlewareAsync } from 'utils/catchAsync';
+import fileService from '#app/file/file.service';
+import logger from '#core/logger';
 
-export interface ValidationSchema {
-  params?: Joi.ObjectSchema;
-  query?: Joi.ObjectSchema;
-  body?: Joi.ObjectSchema;
+export async function validateRequest<T extends AnyZodObject>(
+  req: Request,
+  schema: T,
+): Promise<Readonly<z.infer<T>>> {
+  try {
+    // It is important to await here to catch the error
+    return await schema.readonly().parseAsync(req);
+  } catch (err) {
+    handleFileError(req);
+
+    if (err instanceof ZodError) {
+      const validationError = fromError(err);
+
+      throw new ApiError(httpStatus.BAD_REQUEST, validationError.toString());
+    }
+
+    throw err;
+  }
 }
 
-type File = Express.Multer.File;
+const handleFileError = (req: Request) => {
+  const files = extractRequestFiles(req);
+  files.forEach((file) => {
+    fileService.deleteTempFile(file.filename).catch((reason: unknown) => {
+      logger.error(
+        `Failed to delete tmp file: ${file.filename}: ${String(reason)}`,
+      );
+    });
+  });
+};
 
-const extractRequestFiles = (req: Request): File[] => {
-  const files: File[] = [];
+const extractRequestFiles = (req: Request): Express.Multer.File[] => {
+  const files: Express.Multer.File[] = [];
 
   if (req.file) {
     files.push(req.file);
   }
 
   if (req.files) {
-    files.push(...Object.values(req.files).flat());
+    if (Array.isArray(req.files)) {
+      files.push(...req.files);
+    } else {
+      files.push(...Object.values(req.files).flat());
+    }
   }
 
   return files;
 };
-
-const handleFileError = (req: Request) => {
-  const files = extractRequestFiles(req);
-  files.forEach((file) => {
-    fileService.deleteTempFile(file.filename).catch((reason) => {
-      logger.error(`Failed to delete tmp file: ${file.filename}: ${reason}`);
-    });
-  });
-};
-
-const validate = (schema: ValidationSchema) =>
-  catchMiddlewareAsync((req: Request) => {
-    const validSchema = pick(schema, ['params', 'query', 'body']);
-    const obj = pick(req, Object.keys(validSchema) as (keyof Request)[]);
-
-    const { value, error } = Joi.object(validSchema)
-      .prefs({ errors: { label: 'key' }, abortEarly: false })
-      .validate(obj, {
-        context: req,
-      });
-    if (error) {
-      handleFileError(req);
-      const errorMessage = error.details
-        .map((details) => details.message)
-        .join(', ');
-      throw new ApiError(httpStatus.BAD_REQUEST, errorMessage);
-    }
-    Object.assign(req, value);
-  });
-
-export default validate;

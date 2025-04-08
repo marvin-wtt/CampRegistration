@@ -1,25 +1,24 @@
 import express from 'express';
-import { catchParamAsync } from 'utils/catchAsync';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import { auth, guard, validate } from 'middlewares';
-import { campManager } from 'guards';
-import fileController from 'app/file/file.controller';
-import fileValidation from 'app/file/file.validation';
-import fileService from 'app/file/file.service';
+import { catchParamAsync } from '#utils/catchAsync';
+import { auth, guard } from '#middlewares/index';
+import { campManager } from '#guards/manager.guard';
+import fileController from '#app/file/file.controller';
+import fileService from '#app/file/file.service';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
 // Files
 router.param(
   'fileId',
-  catchParamAsync(async (req, res, id) => {
-    const registration = routeModel(req.models.registration);
+  catchParamAsync(async (req, _res, id) => {
+    const registration = req.modelOrFail('registration');
     const file = await fileService.getModelFile(
       'registration',
       registration.id,
       id,
     );
-    req.models.file = verifyModelExists(file);
+    req.setModelOrFail('file', file);
   }),
 );
 
@@ -28,8 +27,7 @@ router.get(
   '/:fileId',
   auth(),
   guard(campManager),
-  validate(fileValidation.show),
-  fileController.stream,
+  controller(fileController, 'stream'),
 );
 
 export default router;

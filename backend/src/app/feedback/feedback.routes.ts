@@ -1,10 +1,9 @@
 import express from 'express';
-import { validate } from 'middlewares';
-import feedbackValidation from './feedback.validation';
-import feedbackController from './feedback.controller';
+import feedbackController from './feedback.controller.js';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router();
 
-router.post('/', validate(feedbackValidation.store), feedbackController.store);
+router.post('/', controller(feedbackController, 'store'));
 
 export default router;

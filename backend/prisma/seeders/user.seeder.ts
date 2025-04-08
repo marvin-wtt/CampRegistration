@@ -1,19 +1,30 @@
-import { PrismaClient, PrismaPromise } from '@prisma/client';
+import { UserFactory } from '../factories';
 
-const name = 'user';
-const run = (prisma: PrismaClient): PrismaPromise<unknown> => {
-  return prisma.user.create({
-    data: {
+import { BaseSeeder } from './BaseSeeder';
+
+class UserSeeder extends BaseSeeder {
+  name(): string {
+    return 'user';
+  }
+
+  async run(): Promise<void> {
+    await UserFactory.create({
       id: '01H4BK7J4WV75DZNAQBHMM99MA',
       name: 'John Doe',
       email: 'john@example.com',
-      password: '$2a$12$f4dwwAVJRqlz4okStqitmuC5UKrDhWMFjZEtviqrEJp4.in2uFPAK', // "password"
+      password: 'password',
       emailVerified: true,
-    },
-  });
-};
+    });
 
-export default {
-  name,
-  run,
-};
+    await UserFactory.create({
+      id: '',
+      name: 'Admin User',
+      email: 'admin@email.com',
+      password: 'admin-password',
+      emailVerified: true,
+      role: 'ADMIN',
+    });
+  }
+}
+
+export default new UserSeeder();

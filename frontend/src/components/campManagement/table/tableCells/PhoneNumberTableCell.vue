@@ -9,7 +9,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { formatPhoneNumber } from 'src/utils/formatters';
-import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import type { Registration } from '@camp-registration/common/entities';
 

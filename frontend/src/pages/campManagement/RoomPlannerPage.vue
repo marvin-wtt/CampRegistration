@@ -30,7 +30,7 @@
           <room-list
             v-for="(room, index) in rooms"
             :key="room.id"
-            v-model="rooms[index]"
+            v-model="rooms[index]!"
             :name="room.name"
             :people="availablePeople"
             class="q-ma-sm"
@@ -82,12 +82,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useRoomPlannerStore } from 'stores/room-planner-store';
-import { Roommate, RoomWithRoommates } from 'src/types/Room';
+import type { Roommate, RoomWithRoommates } from 'src/types/Room';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
 import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
@@ -108,10 +108,8 @@ const roomStore = useRoomPlannerStore();
 
 const addLoading = ref(false);
 
-onMounted(async () => {
-  await registrationsStore.fetchData();
-  await roomStore.fetchRooms();
-});
+registrationsStore.fetchData();
+roomStore.fetchRooms();
 
 const loading = computed<boolean>(() => {
   return roomStore.isLoading;

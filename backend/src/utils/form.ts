@@ -1,32 +1,25 @@
-import { Question, SurveyModel } from 'survey-core';
+import { SurveyModel } from 'survey-core';
+import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import { initSurveyJS } from './surveyJS';
-import { Camp } from '@prisma/client';
+import type { Camp } from '@prisma/client';
 
-initSurveyJS();
-
-type CampWithFreePlaces = Camp & {
-  freePlaces: number | Record<string, number>;
-};
-
-type TemporaryFileIdentifier = {
+interface TemporaryFileIdentifier {
   id: string;
   field?: string;
-};
+}
 
 export const formUtils = (camp: Camp) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';
-  // TODO Camp with free places required here!
-  setVariables(survey, camp as CampWithFreePlaces);
+  setVariables(survey, camp);
 
   const updateData = (data?: unknown) => {
     survey.data = typeof data !== 'object' ? {} : data;
   };
 
   const data = () => {
-    return survey.data;
+    return survey.data as Record<string, unknown>;
   };
 
   const hasDataErrors = (): boolean => {
@@ -72,7 +65,7 @@ export const formUtils = (camp: Camp) => {
       .getAllQuestions(false, undefined, true)
       .filter((question) => question.getType() === 'file')
       .filter((question) => question.value != null)
-      .map((question) => question.value)
+      .map((question) => question.value as unknown)
       .flatMap(extractIds)
       .filter((fileId): fileId is TemporaryFileIdentifier => !!fileId);
   };
@@ -100,7 +93,7 @@ export const formUtils = (camp: Camp) => {
     };
 
     const isFileQuestionInvalid = (question: Question): boolean => {
-      const value = question.value;
+      const value: unknown = question.value;
       if (value == null) {
         return false;
       }
@@ -120,9 +113,10 @@ export const formUtils = (camp: Camp) => {
   };
 
   const unknownDataFields = (): string[] => {
-    const data = survey.data;
+    const data = survey.data as Record<string, unknown>;
 
     return Object.keys(data).filter((valueName) => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       return survey.getQuestionByValueName(valueName) === null;
     });
   };
@@ -142,19 +136,21 @@ export const formUtils = (camp: Camp) => {
         value.value ??= null;
         return value;
       })
-      .reduce(
-        (campData, value) => {
-          const type = value.campDataType;
-          // Create a new entry for the camp data type if it does not exist
-          if (!(type in campData)) {
-            campData[type] = [];
-          }
-          campData[type].push(value.value);
+      .reduce<Record<string, unknown[]>>((campData, value) => {
+        const type: unknown = value.campDataType;
 
+        if (typeof type !== 'string') {
           return campData;
-        },
-        {} as Record<string, unknown[]>,
-      );
+        }
+
+        // Create a new entry for the camp data type if it does not exist
+        if (!(type in campData)) {
+          campData[type] = [];
+        }
+        campData[type].push(value.value);
+
+        return campData;
+      }, {});
   };
 
   return {

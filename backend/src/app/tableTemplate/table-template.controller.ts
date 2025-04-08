@@ -1,53 +1,63 @@
-import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
-import tableTemplateService from './table-template.service';
-import tableTemplateResource from './table-template.resource';
-import { routeModel } from 'utils/verifyModel';
+import tableTemplateService from './table-template.service.js';
+import validator from './table-template.validation.js';
+import { type Request, type Response } from 'express';
+import { TableTemplateResource } from '#app/tableTemplate/table-template.resource';
+import { BaseController } from '#core/base/BaseController';
 
-const show = catchRequestAsync(async (req, res) => {
-  const template = routeModel(req.models.tableTemplate);
+class TableTemplateController extends BaseController {
+  show(req: Request, res: Response) {
+    const template = req.modelOrFail('tableTemplate');
 
-  res.json(resource(tableTemplateResource(template)));
-});
+    res.resource(new TableTemplateResource(template));
+  }
 
-const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const templates = await tableTemplateService.queryTemplates(campId);
-  const resources = templates.map((value) => tableTemplateResource(value));
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
 
-  res.json(collection(resources));
-});
+    const templates = await tableTemplateService.queryTemplates(campId);
 
-const store = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const data = req.body;
-  const template = await tableTemplateService.createTemplate(campId, data);
-  res
-    .status(httpStatus.CREATED)
-    .json(resource(tableTemplateResource(template)));
-});
+    res.resource(TableTemplateResource.collection(templates));
+  }
 
-const update = catchRequestAsync(async (req, res) => {
-  const { templateId } = req.params;
-  const data = req.body;
-  const template = await tableTemplateService.updateTemplateById(
-    templateId,
-    data,
-  );
-  res.json(resource(tableTemplateResource(template)));
-});
+  async store(req: Request, res: Response) {
+    const {
+      params: { campId },
+      body,
+    } = await req.validate(validator.store);
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const { templateId } = req.params;
-  await tableTemplateService.deleteTemplateById(templateId);
-  res.status(httpStatus.NO_CONTENT).send();
-});
+    const template = await tableTemplateService.createTemplate(campId, body);
 
-export default {
-  index,
-  show,
-  store,
-  update,
-  destroy,
-};
+    res
+      .status(httpStatus.CREATED)
+      .resource(new TableTemplateResource(template));
+  }
+
+  async update(req: Request, res: Response) {
+    const {
+      params: { templateId },
+      body,
+    } = await req.validate(validator.update);
+
+    const template = await tableTemplateService.updateTemplateById(
+      templateId,
+      body,
+    );
+
+    res.resource(new TableTemplateResource(template));
+  }
+
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { templateId },
+    } = await req.validate(validator.destroy);
+
+    await tableTemplateService.deleteTemplateById(templateId);
+
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+}
+
+export default new TableTemplateController();

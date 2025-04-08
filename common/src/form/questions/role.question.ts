@@ -1,13 +1,13 @@
-import {
+import type {
   ICustomQuestionTypeConfiguration,
   ItemValue,
   Question,
-  Serializer,
 } from 'survey-core';
+import { Serializer } from 'survey-core';
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];
-  updateChoices: (question: Question, value: ItemValue[]) => void;
+  updateChoices: (question: Question, value: ItemValue[] | undefined) => void;
 };
 
 const roleQuestion: RoleQuestionConfiguration = {
@@ -51,11 +51,13 @@ const roleQuestion: RoleQuestionConfiguration = {
     });
   },
   onLoaded(question) {
-    this.initialChoices = question.customQuestion.json.questionJSON.choices;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    this.initialChoices = question.customQuestion.json.questionJSON
+      .choices as ItemValue[];
 
     this.updateChoices(question, question.roleChoices as ItemValue[]);
   },
-  onPropertyChanged(question, propertyName, newValue) {
+  onPropertyChanged(question, propertyName, newValue: ItemValue[]) {
     if (propertyName === 'roleChoices') {
       this.updateChoices(question, newValue);
     }
@@ -67,8 +69,9 @@ const roleQuestion: RoleQuestionConfiguration = {
 
     // Allow user to override the initial value with custom labels
     const defaultValues = this.initialChoices.filter(
-      (item) => !value?.some((it) => it.value === item.value) ?? true,
+      (item) => !value.some((it) => it.value === item.value),
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     question.questionWrapper.choices = [...defaultValues, ...value];
   },
 };

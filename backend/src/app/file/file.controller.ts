@@ -1,116 +1,118 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import { routeModel, verifyModelExists } from 'utils/verifyModel';
-import fileService from './file.service';
+import fileService from './file.service.js';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
-import { collection, resource } from 'app/resource';
-import { Request } from 'express';
-import fileResource from './file.resource';
-import { File } from '@prisma/client';
-
-const stream = catchRequestAsync(async (req, res) => {
-  const { download } = req.query;
-  const file = routeModel(req.models.file);
-  const fileStream = await fileService.getFileStream(file);
-
-  // Set response headers for image display
-  res.contentType(file.type);
-
-  const disposition = download ? 'attachment' : 'inline';
-  res.setHeader(
-    'Content-disposition',
-    `${disposition}; filename=${file.originalName}`,
-  );
-
-  fileStream.pipe(res); // Pipe the file stream to the response
-});
-
-const show = catchRequestAsync(async (req, res) => {
-  const file = routeModel(req.models.file);
-
-  res.status(httpStatus.OK).json(fileResource(file));
-});
-
-const index = catchRequestAsync(async (req, res) => {
-  const model = verifyModelExists(getRelationModel(req));
-
-  const page = req.query.page ? Number(req.query.page) : undefined;
-  const name = req.query.name as string | undefined;
-  const type = req.query.type as string | undefined;
-
-  const data = (await fileService.queryModelFiles(
-    model,
-    {
-      name,
-      type,
-    },
-    {
-      limit: 20,
-      page,
-      sortBy: 'id',
-      sortType: 'asc',
-    },
-  )) as File[];
-
-  const response = collection(data.map((value) => fileResource(value)));
-  res.status(httpStatus.OK).json(response);
-});
-
-const store = catchRequestAsync(async (req, res) => {
-  const { accessLevel, field, name } = req.body;
-  const file = req.file;
-
-  if (!file) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'No files provided.');
-  }
-
-  const model = getRelationModel(req);
-  const data = await fileService.saveModelFile(
-    model,
-    file,
-    name,
-    field,
-    accessLevel ?? 'private',
-  );
-
-  const response = resource(fileResource(data));
-  res.status(httpStatus.CREATED).json(response);
-});
-
-const destroy = catchRequestAsync(async (req, res) => {
-  const file = routeModel(req.models.file);
-
-  await fileService.deleteFile(file.id);
-
-  res.sendStatus(httpStatus.NO_CONTENT);
-});
+import ApiError from '#utils/ApiError';
+import type { Request, Response } from 'express';
+import { FileResource } from './file.resource.js';
+import validator from './file.validation.js';
+import { BaseController } from '#core/base/BaseController';
 
 interface ModelData {
   id: string;
   name: string;
 }
 
-const getRelationModel = (req: Request): ModelData | undefined => {
-  if (req.models.registration) {
-    return {
-      id: req.models.registration.id,
-      name: 'registration',
-    };
-  }
-  if (req.models.camp) {
-    return {
-      id: req.models.camp.id,
-      name: 'camp',
-    };
+class FileController extends BaseController {
+  async stream(req: Request, res: Response) {
+    const {
+      query: { download },
+    } = await req.validate(validator.stream);
+
+    const file = req.modelOrFail('file');
+    const fileStream = fileService.getFileStream(file);
+
+    // Set response headers for image display
+    res.contentType(file.type);
+
+    const disposition = download ? 'attachment' : 'inline';
+    res.setHeader(
+      'Content-disposition',
+      `${disposition}; filename=${file.originalName}`,
+    );
+
+    fileStream.pipe(res); // Pipe the file stream to the response
   }
 
-  return undefined;
-};
+  show(req: Request, res: Response) {
+    const file = req.modelOrFail('file');
 
-export default {
-  stream,
-  show,
-  index,
-  store,
-  destroy,
-};
+    res.resource(new FileResource(file));
+  }
+
+  async index(req: Request, res: Response) {
+    const {
+      query: { page, name, type },
+    } = await req.validate(validator.index);
+
+    const model = this.getRelationModel(req);
+    if (!model) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'No relation model found');
+    }
+
+    const data = await fileService.queryModelFiles(
+      model,
+      {
+        name,
+        type,
+      },
+      {
+        limit: 20,
+        page,
+        sortBy: 'id',
+        sortType: 'asc',
+      },
+    );
+
+    res.resource(FileResource.collection(data));
+  }
+
+  async store(req: Request, res: Response) {
+    const {
+      body: { accessLevel, field, name },
+    } = await req.validate(validator.store);
+    const file = req.file;
+
+    if (!file) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'No files provided.');
+    }
+
+    const model = this.getRelationModel(req);
+    const data = await fileService.saveModelFile(
+      model,
+      file,
+      name,
+      field,
+      accessLevel ?? 'private',
+    );
+
+    res.status(httpStatus.CREATED).resource(new FileResource(data));
+  }
+
+  async destroy(req: Request, res: Response) {
+    const file = req.modelOrFail('file');
+
+    await fileService.deleteFile(file.id);
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  getRelationModel(req: Request): ModelData | undefined {
+    const registration = req.model('registration');
+    if (registration) {
+      return {
+        id: registration.id,
+        name: 'registration',
+      };
+    }
+    const camp = req.model('camp');
+    if (camp) {
+      return {
+        id: camp.id,
+        name: 'camp',
+      };
+    }
+
+    return undefined;
+  }
+}
+
+export default new FileController();

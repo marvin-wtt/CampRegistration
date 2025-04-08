@@ -16,12 +16,14 @@ import {
   campActivePrivate,
   campActivePublic,
   campCreateInternational,
-  campCreateInvalidBody,
+  campCreatedBody,
   campCreateNational,
   campInactive,
+  campUpdateBody,
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
+import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -144,15 +146,14 @@ describe('/api/v1/camps', () => {
         });
         const accessToken = generateAccessToken(user);
 
-        const { status, body } = await request()
+        const { body } = await request()
           .get(`/api/v1/camps/`)
           .query({
             showAll: true,
           })
           .auth(accessToken, { type: 'bearer' })
-          .send();
-
-        expect(status).toBe(200);
+          .send()
+          .expect(200);
 
         expect(body).toHaveProperty('data');
         expect(body.data.length).toBe(3);
@@ -163,14 +164,13 @@ describe('/api/v1/camps', () => {
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
 
-        const { status } = await request()
+        await request()
           .get(`/api/v1/camps/`)
           .query({
             showAll: true,
           })
-          .send();
-
-        expect(status).toBe(401);
+          .send()
+          .expect(401);
       });
 
       it('should respond with `403` status code when showAll is set and user is not an admin', async () => {
@@ -181,15 +181,14 @@ describe('/api/v1/camps', () => {
         const user = await UserFactory.create();
         const accessToken = generateAccessToken(user);
 
-        const { status } = await request()
+        await request()
           .get(`/api/v1/camps/`)
           .query({
             showAll: true,
           })
           .auth(accessToken, { type: 'bearer' })
-          .send();
-
-        expect(status).toBe(403);
+          .send()
+          .expect(403);
       });
 
       it.skip('should filter by name', async () => {
@@ -390,7 +389,7 @@ describe('/api/v1/camps', () => {
     });
 
     describe('invalid request body', () => {
-      it.each(campCreateInvalidBody)(
+      it.each(campCreatedBody)(
         'should validate the request body | $name',
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         async ({ data, expected }) => {
@@ -405,21 +404,87 @@ describe('/api/v1/camps', () => {
       );
     });
 
-    describe('reference id', () => {
-      it('should set default form when reference Id is undefined', async () => {
+    describe('defaults', () => {
+      it('should set default form', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
-
-        const data = campCreateNational;
 
         const { body } = await request()
           .post(`/api/v1/camps/`)
-          .send(data)
+          .send(campCreateNational)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
         expect(body.data.form).toHaveProperty('title');
       });
 
+      it('should set default themes', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.themes).toHaveProperty('light');
+      });
+
+      it('should create default table templates', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.tableTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).not.toBe(0);
+      });
+
+      it('should create default message templates', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.messageTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).not.toBe(0);
+      });
+
+      it('should create default files', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const files = await prisma.file.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(files.length).not.toBe(0);
+      });
+    });
+
+    describe('reference id', () => {
       it('should copy the form of the referenced camp', async () => {
         const referenceForm = {
           title: 'Reference camp title',
@@ -441,20 +506,6 @@ describe('/api/v1/camps', () => {
         expect(body.data.form).toStrictEqual(referenceForm);
       });
 
-      it('should set default themes when reference Id is undefined', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const data = campCreateNational;
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(data)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        expect(body.data.themes).toHaveProperty('light');
-      });
-
       it('should copy the themes of the referenced camp', async () => {
         const referenceThemes = {
           light: { themeName: 'Test' },
@@ -474,26 +525,6 @@ describe('/api/v1/camps', () => {
           .expect(201);
 
         expect(body.data.themes).toStrictEqual(referenceThemes);
-      });
-
-      it('should create default table templates when reference Id is undefined', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const data = campCreateNational;
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(data)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        const templates = await prisma.tableTemplate.findMany({
-          where: {
-            camp: { id: body.data.id },
-          },
-        });
-
-        expect(templates.length).not.toBe(0);
       });
 
       it('should copy all table templates from the referenced camp', async () => {
@@ -540,22 +571,47 @@ describe('/api/v1/camps', () => {
         ).toBeTruthy();
       });
 
-      it('should create default files when reference Id is undefined', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+      it('should copy all message templates from the referenced camp', async () => {
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken({
+            messageTemplates: {},
+          });
+
+        await MessageTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          event: 'registration_confirmed',
+        });
+        await MessageTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          event: 'registration_waitlist_accepted',
+        });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
 
         const { body } = await request()
           .post(`/api/v1/camps/`)
-          .send(campCreateNational)
+          .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
-        const files = await prisma.file.findMany({
+        const templates = await prisma.messageTemplate.findMany({
           where: {
             camp: { id: body.data.id },
           },
         });
 
-        expect(files.length).not.toBe(0);
+        expect(templates.length).toBe(2);
+        expect(
+          templates.some((value) => value.event === 'registration_confirmed'),
+        ).toBeTruthy();
+        expect(
+          templates.some(
+            (value) => value.event === 'registration_waitlist_accepted',
+          ),
+        ).toBeTruthy();
       });
 
       it('should copy all files from the referenced camp', async () => {
@@ -598,7 +654,7 @@ describe('/api/v1/camps', () => {
 
       it('should replace file URLs in the form', async () => {
         const fileUrl = (id: string): string => {
-          return `http://localhost:9000/files/${id}`;
+          return `http://localhost:3000/files/${id}`;
         };
 
         const createForm = (fileId1: string, fileId2: string) => {
@@ -806,19 +862,27 @@ describe('/api/v1/camps', () => {
       await request().patch(`/api/v1/camps/${camp.id}`).send().expect(401);
     });
 
-    it.todo(
-      'should respond with `400` status code when body is invalid',
-      async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        // TODO Test all fields
+    describe('request body', () => {
+      it.each(campUpdateBody)(
+        'should validate the request body | $name',
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        async ({ data, camp: campData, expected }) => {
+          const campCreateData = {
+            ...campCreateNational,
+            ...campData,
+          };
 
-        await request()
-          .patch(`/api/v1/camps/${camp.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(400);
-      },
-    );
+          const { camp, accessToken } =
+            await createCampWithManagerAndToken(campCreateData);
+
+          await request()
+            .patch(`/api/v1/camps/${camp.id}`)
+            .send(data)
+            .auth(accessToken, { type: 'bearer' })
+            .expect(expected);
+        },
+      );
+    });
 
     it('should respond with `404` status code when camp id does not exists', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());

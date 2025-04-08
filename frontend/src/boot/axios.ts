@@ -1,17 +1,11 @@
-import { boot } from 'quasar/wrappers';
-import axios, { AxiosInstance } from 'axios';
+import { defineBoot } from '#q-app/wrappers';
+import axios, { type AxiosInstance } from 'axios';
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $axios: AxiosInstance;
   }
 }
-
-// Resolve url depending on environment
-const apiUrl =
-  window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : window.origin;
 
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
@@ -20,12 +14,12 @@ const apiUrl =
 // "export default () => {}" function below (which runs individually
 // for each client)
 const api = axios.create({
-  baseURL: `${apiUrl}/api/v1/`,
+  baseURL: `${window.origin}/api/v1/`,
   // Needed for auth
   withCredentials: true,
 });
 
-export default boot(({ app }) => {
+export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
   app.config.globalProperties.$axios = axios;

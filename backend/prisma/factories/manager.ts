@@ -1,13 +1,11 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
-import { ulid } from 'ulidx';
+import prisma from './prisma';
 
 export const CampManagerFactory = {
   build: (
     data: Partial<Prisma.CampManagerCreateInput> = {},
   ): Prisma.CampManagerCreateInput => {
     return {
-      id: ulid(),
       camp: {},
       ...data,
     };

@@ -24,13 +24,11 @@
           <!-- class="col-xs-12 col-sm-6 col-md-4 col-lg-5 col-xl-2         -->
         </template>
         <template v-else>
-          <div
+          <camp-card
             v-for="camp in filteredCamps"
             :key="camp.id"
-            class="col"
-          >
-            <camp-card :camp="camp" />
-          </div>
+            :camp="camp"
+          />
         </template>
       </div>
     </div>

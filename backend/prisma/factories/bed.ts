@@ -1,11 +1,9 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
-import { ulid } from 'ulidx';
+import prisma from './prisma';
 
 export const BedFactory = {
   build: (data: Partial<Prisma.BedCreateInput> = {}): Prisma.BedCreateInput => {
     return {
-      id: ulid(),
       room: {},
       ...data,
     };

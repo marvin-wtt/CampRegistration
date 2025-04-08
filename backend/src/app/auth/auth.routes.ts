@@ -1,7 +1,7 @@
 import express from 'express';
-import { validate, auth, authLimiter, guest } from 'middlewares';
-import authValidation from './auth.validation';
-import authController from './auth.controller';
+import { auth, authLimiter, guest } from '#middlewares/index';
+import authController from './auth.controller.js';
+import { controller } from '#utils/bindController';
 
 const router = express.Router();
 
@@ -9,40 +9,25 @@ const router = express.Router();
 router.use(authLimiter);
 
 // Route definitions
-router.post(
-  '/register',
-  guest(),
-  validate(authValidation.register),
-  authController.register,
-);
-router.post('/login', validate(authValidation.login), authController.login);
-router.post('/logout', auth(), authController.logout);
-router.post(
-  '/refresh-tokens',
-  validate(authValidation.refreshTokens),
-  authController.refreshTokens,
-);
+router.post('/register', guest(), controller(authController, 'register'));
+router.post('/login', controller(authController, 'login'));
+router.post('/verify-otp', controller(authController, 'verifyOTP'));
+router.post('/logout', auth(), controller(authController, 'logout'));
+router.post('/refresh-tokens', controller(authController, 'refreshTokens'));
 router.post(
   '/forgot-password',
   guest(),
-  validate(authValidation.forgotPassword),
-  authController.forgotPassword,
+  controller(authController, 'forgotPassword'),
 );
 router.post(
   '/reset-password',
   guest(),
-  validate(authValidation.resetPassword),
-  authController.resetPassword,
+  controller(authController, 'resetPassword'),
 );
 router.post(
   '/send-verification-email',
-  auth(),
-  authController.sendVerificationEmail,
+  controller(authController, 'sendVerificationEmail'),
 );
-router.post(
-  '/verify-email',
-  validate(authValidation.verifyEmail),
-  authController.verifyEmail,
-);
+router.post('/verify-email', controller(authController, 'verifyEmail'));
 
 export default router;

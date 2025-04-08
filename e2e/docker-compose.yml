@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'database'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_TCP_PORT: 3308
+    ports:
+      - '3308:3308'
+    volumes:
+      - db:/var/lib/mysql
+volumes:
+  db:
+    driver: local

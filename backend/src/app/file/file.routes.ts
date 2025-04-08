@@ -1,15 +1,10 @@
 import express from 'express';
-import { multipart, validate } from 'middlewares';
-import fileValidation from './file.validation';
-import fileController from './file.controller';
+import { multipart } from '#middlewares/index';
+import fileController from './file.controller.js';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
-router.post(
-  '/',
-  multipart('file'),
-  validate(fileValidation.store),
-  fileController.store,
-);
+router.post('/', multipart('file'), controller(fileController, 'store'));
 
 export default router;

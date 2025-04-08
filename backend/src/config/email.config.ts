@@ -1,31 +1,38 @@
-import Joi from 'joi';
+import { z } from 'zod';
+import { validateEnv } from '#core/validation/env';
+import { BooleanStringSchema } from '#core/validation/helper';
 
-const { value: envVars, error } = Joi.object()
-  .keys({
-    SMTP_HOST: Joi.string().description('server that will send the emails'),
-    SMTP_PORT: Joi.number().description('port to connect to the email server'),
-    SMTP_SECURE: Joi.boolean().description(
-      'encrypt the connection to the server',
+export const EmailEnvSchema = z
+  .object({
+    SMTP_HOST: z.string().describe('Server that will send the emails'),
+    SMTP_PORT: z.coerce
+      .number()
+      .min(0)
+      .max(65535)
+      .describe('Port to connect to the email server'),
+    // .default(587),
+    SMTP_SECURE: BooleanStringSchema.describe(
+      'Encrypt the connection to the server',
     ),
-    SMTP_USERNAME: Joi.string().description('username for email server'),
-    SMTP_PASSWORD: Joi.string().description('password for email server'),
-    EMAIL_FROM: Joi.string().description(
-      'the from field in the emails sent by the app',
-    ),
-    EMAIL_REPLY_TO: Joi.string().description(
-      'the replyTo field in the emails sent by the app',
-    ),
-    EMAIL_ADMIN: Joi.string().description(
-      'email to send operational notifications to',
-    ),
+    // .default(false),
+    SMTP_USERNAME: z.string().describe('Username for email server'),
+    SMTP_PASSWORD: z.string().describe('Password for email server'),
+    EMAIL_FROM: z
+      .string()
+      .email()
+      .describe('The from field in the emails sent by the app.'),
+    EMAIL_REPLY_TO: z
+      .string()
+      .email()
+      .describe('The replyTo field in the emails sent by the app.'),
+    EMAIL_ADMIN: z
+      .string()
+      .email()
+      .describe('The email to send operational notifications to.'),
   })
-  .unknown()
-  .prefs({ errors: { label: 'key' } })
-  .validate(process.env);
+  .readonly();
 
-if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
-}
+const envVars = validateEnv(EmailEnvSchema);
 
 export default {
   smtp: {

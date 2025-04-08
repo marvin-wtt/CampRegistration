@@ -1,14 +1,13 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
-import { ulid } from 'ulidx';
+import prisma from './prisma';
 
 export const RegistrationFactory = {
   build: (
     data: Partial<Prisma.RegistrationCreateInput> = {},
   ): Prisma.RegistrationCreateInput => {
     return {
-      id: ulid(),
       data: {},
+      camp: {},
       ...data,
     };
   },

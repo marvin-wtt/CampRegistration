@@ -1,4 +1,4 @@
-import { DataProvider } from 'src/lib/registration/DataProvider';
+import type { DataProvider } from 'src/lib/registration/DataProvider';
 
 export class DataProviderRegistry {
   public static INSTANCE: DataProviderRegistry = new DataProviderRegistry();

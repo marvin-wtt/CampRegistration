@@ -1,11 +1,8 @@
 <template>
-  <q-layout view="hHh Lpr lff">
+  <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
-    <q-header
-      class="bg-primary text-white"
-      elevated
-    >
+    <q-header bordered>
       <q-toolbar>
         <q-btn
           v-if="showDrawer"
@@ -13,7 +10,7 @@
           flat
           icon="menu"
           round
-          @click="drawer = !drawer"
+          @click="toggleDrawer"
         />
         <q-toolbar-title>
           <q-skeleton
@@ -36,6 +33,7 @@
           class="q-px-md gt-xs"
           dense
           rounded
+          unelevated
         />
 
         <profile-menu
@@ -49,27 +47,61 @@
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
-      :mini="miniState"
-      :width="220"
+      :mini="miniState && floatingDrawer"
+      :width="300"
       bordered
-      mini-to-overlay
+      :mini-to-overlay="floatingDrawer"
       show-if-above
-      @mouseout="miniState = true"
-      @mouseover="miniState = false"
+      class="column no-wrap"
+      @mouseleave="miniState = true"
+      @mouseenter="miniState = false"
     >
       <q-list padding>
+        <q-item>
+          <q-item-section
+            v-if="miniState && floatingDrawer"
+            avatar
+          >
+            <q-icon name="home" />
+          </q-item-section>
+          <q-item-section>
+            {{ campName }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator spaced />
+
         <navigation-item
           v-for="item in filteredItems"
           :key="item.name"
-          :name="item.name"
-          :label="item.label"
-          :icon="item.icon"
-          :to="item.to"
-          :separated="item.separated"
-          :preview="item.preview"
-          :children="item.children"
+          v-bind="item"
         />
+      </q-list>
+
+      <q-space />
+
+      <q-list padding>
+        <q-item
+          clickable
+          :to="{ name: 'imprint' }"
+        >
+          <q-item-section>
+            <q-item-label>
+              {{ t('footer.imprint') }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          clickable
+          :to="{ name: 'privacy-policy' }"
+        >
+          <q-item-section>
+            <q-item-label>
+              {{ t('footer.privacy_policy') }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -84,7 +116,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -93,9 +125,11 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -103,30 +137,36 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(authStore);
+const { user } = storeToRefs(profileStore);
 
-onMounted(async () => {
-  if (!authStore.user) {
+async function init() {
+  if (!user.value) {
     // Fetch user instead of init to force redirect on error
-    await authStore.fetchUser();
+    await profileStore.fetchProfile();
   }
   if (route.params.camp) {
     await campDetailStore.fetchData();
   }
-});
+}
+init();
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
 });
 
 const title = computed(() => {
-  return showDrawer.value ? campDetailStore.data?.name : t('app_name');
+  return showDrawer.value ? campName.value : t('app_name');
+});
+
+const campName = computed<string | undefined>(() => {
+  return to(campDetailStore.data?.name);
 });
 
 const administrator = computed<boolean>(() => {
-  return authStore.user?.role === 'ADMIN';
+  return profileStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
@@ -137,19 +177,10 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
+const floatingDrawer = ref<boolean>(true);
 const miniState = ref<boolean>(true);
 
-interface NavigationItem {
-  name: string;
-  to?: string | object;
-  label?: string;
-  icon?: string;
-  preview?: boolean;
-  separated?: boolean;
-  children?: NavigationItem[];
-}
-
-const items: NavigationItem[] = [
+const items: NavigationItemProps[] = [
   {
     name: 'participants',
     label: t('participants'),
@@ -160,8 +191,8 @@ const items: NavigationItem[] = [
     name: 'contact',
     preview: true,
     label: t('contact'),
-    icon: 'email',
-    to: undefined,
+    icon: 'send',
+    to: { name: 'management.camp.contact' },
   },
   {
     name: 'program_planner',
@@ -177,24 +208,29 @@ const items: NavigationItem[] = [
     to: { name: 'room-planner' },
   },
   {
-    name: 'tools',
-    preview: true,
-    label: t('tools'),
-    icon: 'menu',
-    to: { name: 'tools' },
-  },
-  {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
-    to: { name: 'settings' },
+    to: { name: 'management.settings' },
     separated: true,
     children: [
+      {
+        name: 'access',
+        label: t('access'),
+        icon: 'key',
+        to: { name: 'access' },
+      },
       {
         name: 'edit',
         label: t('edit'),
         icon: 'edit',
         to: { name: 'edit-camp' },
+      },
+      {
+        name: 'email-templates',
+        label: t('email_templates'),
+        icon: 'email',
+        to: { name: 'edit-email-templates' },
       },
       {
         name: 'files',
@@ -208,17 +244,11 @@ const items: NavigationItem[] = [
         icon: 'feed',
         to: { name: 'edit-form' },
       },
-      {
-        name: 'access',
-        label: t('access'),
-        icon: 'key',
-        to: { name: 'access' },
-      },
     ],
   },
 ];
 
-const filteredItems = computed<NavigationItem[]>(() => {
+const filteredItems = computed<NavigationItemProps[]>(() => {
   if (dev.value) {
     return items;
   }
@@ -232,16 +262,29 @@ const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
 
+function toggleDrawer() {
+  if (quasar.screen.lt.sm) {
+    drawer.value = !drawer.value;
+  } else {
+    floatingDrawer.value = !floatingDrawer.value;
+  }
+}
+
 function logout() {
   authStore.logout();
 }
 </script>
 
 <i18n lang="yaml" locale="en">
+footer:
+  imprint: 'Imprint'
+  privacy_policy: 'Privacy Policy'
+
 access: 'Access'
 contact: 'Contact'
 dashboard: 'Dashboard'
 edit: 'Edit'
+email_templates: 'Email templates'
 files: 'Files'
 form: 'Registration Form'
 expenses: 'Expenses'
@@ -255,10 +298,15 @@ notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+footer:
+  imprint: 'Impressum'
+  privacy_policy: 'Datenschutzerklärung'
+
 access: 'Zugriff'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 edit: 'Bearbeiten'
+email_templates: 'E-Mail-Vorlagen'
 files: 'Dateien'
 expenses: 'Ausgaben'
 form: 'Anmeldeformular'
@@ -272,10 +320,15 @@ notifications: 'Benachrichtigungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+footer:
+  imprint: 'Mentions légales'
+  privacy_policy: 'Politique de confidentialité'
+
 access: 'Accès'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 edit: 'Modifier'
+email_templates: "Modèles d'e-mails"
 files: 'Fichiers'
 expenses: 'Dépenses'
 form: "formulaire d'inscription"

@@ -1,14 +1,12 @@
-import { faker } from '@faker-js/faker/locale/de';
+import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
-import { ulid } from 'ulidx';
+import prisma from './prisma';
 
 export const FileFactory = {
   build: (
     data: Partial<Prisma.FileCreateInput> = {},
   ): Prisma.FileCreateInput => {
     return {
-      id: ulid(),
       accessLevel: 'public',
       storageLocation: 'local',
       name: faker.string.uuid() + 'pdf',

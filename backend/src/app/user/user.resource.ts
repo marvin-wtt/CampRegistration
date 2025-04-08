@@ -1,21 +1,37 @@
-import { User, Role } from '@prisma/client';
-import type { User as UserResource } from '@camp-registration/common/entities';
+import { type User, Role } from '@prisma/client';
+import type { User as UserResourceData } from '@camp-registration/common/entities';
+import { JsonResource } from '#core/resource/JsonResource';
 
-const userResource = (user: Pick<User, keyof UserResource>): UserResource => {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    locale: user.locale,
-    role: convertRole(user.role),
-    emailVerified: user.emailVerified,
-    locked: user.locked,
-    lastSeen: user.lastSeen?.toISOString() ?? null,
-    createdAt: user.createdAt.toISOString(),
-  };
-};
+type PartialUser = Pick<
+  User,
+  | 'id'
+  | 'name'
+  | 'email'
+  | 'locale'
+  | 'role'
+  | 'emailVerified'
+  | 'locked'
+  | 'lastSeen'
+  | 'createdAt'
+>;
 
-const convertRole = (role: Role): UserResource['role'] => {
+export class UserResource extends JsonResource<PartialUser, UserResourceData> {
+  transform(): UserResourceData {
+    return {
+      id: this.data.id,
+      name: this.data.name,
+      email: this.data.email,
+      locale: this.data.locale,
+      role: convertRole(this.data.role),
+      emailVerified: this.data.emailVerified,
+      locked: this.data.locked,
+      lastSeen: this.data.lastSeen?.toISOString() ?? null,
+      createdAt: this.data.createdAt.toISOString(),
+    };
+  }
+}
+
+const convertRole = (role: Role): UserResourceData['role'] => {
   switch (role) {
     case Role.ADMIN:
       return 'ADMIN';
@@ -23,5 +39,3 @@ const convertRole = (role: Role): UserResource['role'] => {
       return 'USER';
   }
 };
-
-export default userResource;

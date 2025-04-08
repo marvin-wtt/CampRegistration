@@ -1,37 +1,42 @@
-import Joi from 'joi';
+import { z } from 'zod';
+import { validateEnv } from '#core/validation/env';
 
-const { value: envVars, error } = Joi.object()
-  .keys({
-    JWT_SECRET: Joi.string().required().description('JWT secret key'),
-    TOKEN_EXPIRATION_ACCESS: Joi.number()
-      .integer()
+export const AuthEnvSchema = z
+  .object({
+    JWT_SECRET: z.string().describe('JWT secret key').readonly(),
+    TOKEN_EXPIRATION_ACCESS: z.coerce
+      .number()
+      .int()
       .positive()
-      .description('Time in minutes until access token expires'),
-    TOKEN_EXPIRATION_REFRESH: Joi.number()
-      .integer()
+      .describe('Time in minutes until access token expires')
+      .default(30),
+    TOKEN_EXPIRATION_REFRESH: z.coerce
+      .number()
+      .int()
       .positive()
-      .description('Time in days until refresh token expires'),
-    TOKEN_EXPIRATION_RESET_PASSWORD: Joi.number()
-      .integer()
+      .describe('Time in days until refresh token expires')
+      .default(30),
+    TOKEN_EXPIRATION_RESET_PASSWORD: z.coerce
+      .number()
+      .int()
       .positive()
-      .description('Time in minutes until password reset token expires'),
-    TOKEN_EXPIRATION_VERIFY_EMAIL: Joi.number()
-      .integer()
+      .describe('Time in minutes until password reset token expires')
+      .default(10),
+    TOKEN_EXPIRATION_VERIFY_EMAIL: z.coerce
+      .number()
+      .int()
       .positive()
-      .description('Time in minutes until email verification token expires'),
+      .describe('Time in minutes until email verification token expires')
+      .default(10),
   })
-  .unknown()
-  .prefs({ errors: { label: 'key' } })
-  .validate(process.env);
+  .readonly();
 
-if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
-}
+const envVars = validateEnv(AuthEnvSchema);
 
 export default {
   secret: envVars.JWT_SECRET,
-  accessExpirationMinutes: envVars.TOKEN_EXPIRATION_ACCESS ?? 30,
-  refreshExpirationDays: envVars.TOKEN_EXPIRATION_REFRESH ?? 30,
-  resetPasswordExpirationMinutes: envVars.TOKEN_EXPIRATION_RESET_PASSWORD ?? 10,
-  verifyEmailExpirationMinutes: envVars.TOKEN_EXPIRATION_VERIFY_EMAIL ?? 10,
+  accessExpirationMinutes: envVars.TOKEN_EXPIRATION_ACCESS,
+  refreshExpirationDays: envVars.TOKEN_EXPIRATION_REFRESH,
+  resetPasswordExpirationMinutes: envVars.TOKEN_EXPIRATION_RESET_PASSWORD,
+  verifyEmailExpirationMinutes: envVars.TOKEN_EXPIRATION_VERIFY_EMAIL,
 };

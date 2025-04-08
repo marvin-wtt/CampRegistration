@@ -23,7 +23,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 const props = defineProps<TableCellProps>();
 const { d } = useI18n();
@@ -43,7 +43,7 @@ const hasBirthDay = computed<boolean>(() => {
   }
   const birthday = new Date(value);
 
-  return birthday >= startAt.value && birthday <= endAt.value;
+  return isBirthdayInRange(birthday, startAt.value, endAt.value);
 });
 
 const birthday = computed<string>(() => {
@@ -67,6 +67,40 @@ const age = computed<string>(() => {
 
   return Math.abs(years.getUTCFullYear() - 1970).toString();
 });
+
+function isBirthdayInRange(
+  birthDate: Date,
+  startDate: Date,
+  endDate: Date,
+): boolean {
+  // Extract the month and day from the birthdate
+  const birthMonth = birthDate.getMonth();
+  const birthDay = birthDate.getDate();
+
+  // Create date objects for the start and end of the range for comparison
+  const startMonth = startDate.getMonth();
+  const startDay = startDate.getDate();
+  const endMonth = endDate.getMonth();
+  const endDay = endDate.getDate();
+
+  // Check if the birthday falls within the range
+  if (startDate <= endDate) {
+    // Normal case: range does not span a year
+    return (
+      (birthMonth > startMonth ||
+        (birthMonth === startMonth && birthDay >= startDay)) &&
+      (birthMonth < endMonth || (birthMonth === endMonth && birthDay <= endDay))
+    );
+  } else {
+    // Year break case: range spans from the end of one year to the beginning of the next
+    return (
+      birthMonth > startMonth ||
+      (birthMonth === startMonth && birthDay >= startDay) ||
+      birthMonth < endMonth ||
+      (birthMonth === endMonth && birthDay <= endDay)
+    );
+  }
+}
 </script>
 
 <style scoped></style>

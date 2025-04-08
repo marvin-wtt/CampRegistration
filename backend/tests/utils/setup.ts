@@ -4,7 +4,7 @@ import fse from 'fs-extra';
 import config from '../../src/config';
 import path from 'path';
 import { stopJobs } from '../../src/jobs';
-import mailer from '../../src/config/mail';
+import { NoOpMailer } from '../../src/core/mail/noop.mailer.js';
 import { Request, Response, NextFunction } from 'express';
 
 const skipMiddleware = (req: Request, res: Response, next: NextFunction) =>
@@ -17,7 +17,7 @@ vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
 
 beforeEach(async () => {
   // mailer
-  vi.spyOn(mailer, 'sendMail').mockResolvedValue({});
+  vi.spyOn(NoOpMailer.prototype, 'sendMail').mockResolvedValue();
 
   await resetDb();
   await clearDirectory(config.storage.tmpDir);

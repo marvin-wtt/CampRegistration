@@ -1,145 +1,144 @@
-import campService from './camp.service';
-import { campResource, detailedCampResource } from './camp.resource';
-import fileService from 'app/file/file.service';
-import registrationService from 'app/registration/registration.service';
-import tableTemplateService from 'app/tableTemplate/table-template.service';
+import campService from './camp.service.js';
+import { CampResource, CampDetailsResource } from './camp.resource.js';
+import fileService from '#app/file/file.service';
+import registrationService from '#app/registration/registration.service';
+import tableTemplateService from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
-import { catchRequestAsync } from 'utils/catchAsync';
-import { collection, resource } from 'app/resource';
-import { authUserId } from 'utils/authUserId';
-import { routeModel } from 'utils/verifyModel';
-import defaultForm from 'assets/camp/defaultForm';
-import defaultThemes from 'assets/camp/defaultThemes';
-import defaultTemplates from 'assets/camp/defaultTemplates';
-import defaultFiles from 'assets/camp/defaultFiles';
-import type {
-  CampQuery,
-  CampCreateData,
-  CampUpdateData,
-} from '@camp-registration/common/entities';
+import defaultForm from '#assets/camp/form';
+import defaultThemes from '#assets/camp/themes';
+import defaultTableTemplates from '#assets/camp/tableTemplates';
+import defaultMessageTemplates from '#assets/camp/messageTemplates';
+import defaultFiles from '#assets/camp/files';
+import validator from './camp.validation.js';
+import type { Request, Response } from 'express';
+import { BaseController } from '#core/base/BaseController';
+import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 
-const show = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
+class CampController extends BaseController {
+  show(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
 
-  res.json(resource(detailedCampResource(camp)));
-});
-
-const index = catchRequestAsync(async (req, res) => {
-  const query = req.query as CampQuery;
-  const camps = await campService.queryCamps(
-    {
-      public: query.showAll ? undefined : true,
-      active: query.showAll ? undefined : true,
-      name: query.name,
-      country: query.country,
-      age: query.age,
-      startAt: query.startAt,
-      entAt: query.endAt,
-    },
-    {
-      page: query.page,
-      limit: query.limit,
-      sortBy: query.sortBy,
-      sortType: query.sortType,
-    },
-  );
-
-  const resources = camps.map((value) => campResource(value));
-
-  res.json(collection(resources));
-});
-
-const store = catchRequestAsync(async (req, res) => {
-  const data = req.body as CampCreateData;
-  const userId = authUserId(req);
-
-  const referenceCamp = data.referenceCampId
-    ? await campService.getCampById(data.referenceCampId)
-    : undefined;
-
-  const form = data.form ?? referenceCamp?.form ?? defaultForm;
-  const themes = data.themes ?? referenceCamp?.themes ?? defaultThemes;
-
-  // Copy files from reference or use defaults
-  const files = data.referenceCampId
-    ? await fileService.queryModelFiles({
-        name: 'camp',
-        id: data.referenceCampId,
-      })
-    : defaultFiles;
-
-  // Copy table templates from reference or use defaults
-  const templates = data.referenceCampId
-    ? await tableTemplateService.queryTemplates(data.referenceCampId)
-    : defaultTemplates.map((value) => ({ data: value }));
-
-  const camp = await campService.createCamp(
-    userId,
-    {
-      countries: data.countries,
-      name: data.name,
-      organizer: data.organizer,
-      contactEmail: data.contactEmail,
-      active: data.active ?? false,
-      public: data.public,
-      maxParticipants: data.maxParticipants,
-      startAt: data.startAt,
-      endAt: data.endAt,
-      minAge: data.minAge,
-      maxAge: data.maxAge,
-      price: data.price,
-      location: data.location,
-      form: form,
-      themes: themes,
-    },
-    templates,
-    files,
-  );
-
-  res.status(httpStatus.CREATED).json(resource(detailedCampResource(camp)));
-});
-
-const update = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
-  const data = req.body as CampUpdateData;
-
-  const updatedCamp = await campService.updateCamp(camp, {
-    countries: data.countries,
-    name: data.name,
-    organizer: data.organizer,
-    contactEmail: data.contactEmail,
-    active: data.active,
-    public: data.public,
-    maxParticipants: data.maxParticipants,
-    startAt: data.startAt,
-    endAt: data.endAt,
-    minAge: data.minAge,
-    maxAge: data.maxAge,
-    price: data.price,
-    location: data.location,
-    form: data.form,
-    themes: data.themes,
-  });
-
-  // Re-generate camp data fields
-  if (data.form) {
-    await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
+    res.resource(new CampDetailsResource(camp));
   }
 
-  res.json(resource(detailedCampResource(updatedCamp)));
-});
+  async index(req: Request, res: Response) {
+    const { query } = await req.validate(validator.index);
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  await campService.deleteCampById(campId);
+    const camps = await campService.queryCamps(
+      {
+        public: query.showAll ? undefined : true,
+        active: query.showAll ? undefined : true,
+        name: query.name,
+        country: query.country,
+        age: query.age,
+        startAt: query.startAt,
+        entAt: query.endAt,
+      },
+      {
+        page: query.page,
+        limit: query.limit,
+        sortBy: query.sortBy,
+        sortType: query.sortType,
+      },
+    );
 
-  res.status(httpStatus.NO_CONTENT).send();
-});
+    res.resource(CampResource.collection(camps));
+  }
 
-export default {
-  index,
-  show,
-  store,
-  update,
-  destroy,
-};
+  async store(req: Request, res: Response) {
+    const { body } = await req.validate(validator.store);
+    const userId = req.authUserId();
+
+    const referenceCamp = body.referenceCampId
+      ? await campService.getCampById(body.referenceCampId)
+      : undefined;
+
+    const form = body.form ?? referenceCamp?.form ?? defaultForm;
+    const themes = body.themes ?? referenceCamp?.themes ?? defaultThemes;
+
+    // Copy files from reference or use defaults
+    const files = body.referenceCampId
+      ? await fileService.queryModelFiles({
+          name: 'camp',
+          id: body.referenceCampId,
+        })
+      : defaultFiles;
+
+    // Copy table templates from reference or use defaults
+    const tableTemplates = body.referenceCampId
+      ? await tableTemplateService.queryTemplates(body.referenceCampId)
+      : defaultTableTemplates.map((value) => ({ data: value }));
+
+    const messageTemplates = body.referenceCampId
+      ? await messageTemplateService.queryMessageTemplates(body.referenceCampId)
+      : defaultMessageTemplates;
+
+    const camp = await campService.createCamp(
+      userId,
+      {
+        countries: body.countries,
+        name: body.name,
+        organizer: body.organizer,
+        contactEmail: body.contactEmail,
+        active: body.active ?? false,
+        public: body.public ?? false,
+        maxParticipants: body.maxParticipants,
+        startAt: body.startAt,
+        endAt: body.endAt,
+        minAge: body.minAge,
+        maxAge: body.maxAge,
+        price: body.price,
+        location: body.location,
+        form: form,
+        themes: themes,
+      },
+      tableTemplates,
+      messageTemplates,
+      files,
+    );
+
+    res.status(httpStatus.CREATED).resource(new CampDetailsResource(camp));
+  }
+
+  async update(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const { body } = await req.validate(validator.update(camp));
+
+    const updatedCamp = await campService.updateCamp(camp, {
+      countries: body.countries,
+      name: body.name,
+      organizer: body.organizer,
+      contactEmail: body.contactEmail,
+      active: body.active,
+      public: body.public,
+      maxParticipants: body.maxParticipants,
+      startAt: body.startAt,
+      endAt: body.endAt,
+      minAge: body.minAge,
+      maxAge: body.maxAge,
+      price: body.price,
+      location: body.location,
+      form: body.form,
+      themes: body.themes,
+    });
+
+    // Re-generate camp data fields
+    if (body.form) {
+      await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
+    }
+
+    res.resource(new CampDetailsResource(updatedCamp));
+  }
+
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.destroy);
+
+    await campService.deleteCampById(campId);
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+}
+
+export default new CampController();

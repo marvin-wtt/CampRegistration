@@ -1,51 +1,59 @@
-import { PrismaClient } from '@prisma/client';
-import form from './json/campForm.json';
-import { ulid } from '../../src/utils/ulid';
+import { CampFactory } from '../factories';
+import { BaseSeeder } from './BaseSeeder';
 
-const name = 'camp';
+class CampSeeder extends BaseSeeder {
+  name(): string {
+    return 'camp';
+  }
 
-const run = (prisma: PrismaClient) => {
-  return prisma.camp.create({
-    data: {
-      id: '01H4BK6DFQAVVB5TDS5BJ1AB95 ',
+  async run(): Promise<void> {
+    await CampFactory.create({
+      id: '01JHP0CXJFR4MQS8SF1HQJCY38',
+      name: 'Simple Camp',
       public: true,
       active: true,
-      countries: ['de', 'fr'],
-      organizer: {
-        de: 'Luftsportjugend des DAeC',
-        fr: "Fédération Française d'Aérostation",
+      form: {
+        name: 'Simple test camp',
+        description: 'Camp without special fields or translations',
+        elements: [
+          {
+            name: 'first_name',
+            type: 'text',
+            required: true,
+          },
+          {
+            name: 'last_name',
+            type: 'text',
+            required: true,
+          },
+        ],
       },
-      contactEmail: 'jugendleiter@ballaeron.de',
-      name: {
-        de: 'DFJW Ballonsommercamp 2023',
-        fr: "OFAJ Camp d'été en montgolfière 2023",
-      },
-      maxParticipants: {
-        de: '16',
-        fr: '16',
-      },
-      minAge: 13,
-      maxAge: 19,
-      startAt: new Date('2023-07-29T00:00:00'),
-      endAt: new Date('2023-08-05T00:00:00'),
-      location: {
-        de: 'Bartholomä',
-        fr: 'Bartholomä',
-      },
-      price: 250.0,
-      form: form,
-      themes: {},
-      campManager: {
-        create: {
-          id: ulid(),
-          userId: '01H4BK7J4WV75DZNAQBHMM99MA',
-        },
-      },
-    },
-  });
-};
+    });
 
-export default {
-  name,
-  run,
-};
+    await CampFactory.create({
+      id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
+      name: 'Files Camp',
+      public: true,
+      active: true,
+      form: {
+        name: 'Files test camp',
+        description: 'Camp without special fields or translations',
+        elements: [
+          {
+            name: 'first_name',
+            type: 'text',
+            required: true,
+          },
+          {
+            name: 'files',
+            type: 'file',
+            required: true,
+            allowMultiple: true,
+          },
+        ],
+      },
+    });
+  }
+}
+
+export default new CampSeeder();

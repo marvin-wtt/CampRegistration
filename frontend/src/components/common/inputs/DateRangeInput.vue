@@ -53,7 +53,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { QInputSlots, QPopupProxy } from 'quasar';
+import type { QInputSlots, QPopupProxy } from 'quasar';
 
 const { t } = useI18n();
 
@@ -107,13 +107,13 @@ const inputValue = computed<string | undefined>({
   },
   set: (val) => {
     const dates = val?.split('-');
-    if (!dates || dates.length != 2) {
+    if (!dates || dates.length !== 2) {
       return;
     }
 
     if (modelValue.value) {
-      modelValue.value.from = dates[0];
-      modelValue.value.to = dates[1];
+      modelValue.value.from = dates[0]!;
+      modelValue.value.to = dates[1]!;
     }
   },
 });
@@ -151,9 +151,9 @@ function combineDateWithTime(date?: string, time?: string): string | undefined {
   }
 
   const dateParts = date.split('-');
-  combinedDateTime.setFullYear(parseInt(dateParts[0]));
-  combinedDateTime.setMonth(parseInt(dateParts[1]) - 1);
-  combinedDateTime.setDate(parseInt(dateParts[2]));
+  combinedDateTime.setFullYear(parseInt(dateParts[0] ?? ''));
+  combinedDateTime.setMonth(parseInt(dateParts[1] ?? '') - 1);
+  combinedDateTime.setDate(parseInt(dateParts[2] ?? ''));
 
   return combinedDateTime.toISOString();
 }

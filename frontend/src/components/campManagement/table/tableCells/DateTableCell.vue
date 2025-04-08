@@ -5,7 +5,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 const props = defineProps<TableCellProps>();
 const { d } = useI18n();

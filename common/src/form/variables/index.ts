@@ -1,3 +1,3 @@
-import { setVariables } from './variables';
+import { setVariables } from './variables.js';
 
 export { setVariables };

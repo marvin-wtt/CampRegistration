@@ -13,19 +13,22 @@ datasource db {
 }
 
 model User {
-  id            String        @id @unique(map: "users_id_unique") @db.Char(26)
-  name          String        @db.VarChar(255)
-  email         String        @unique(map: "users_email_unique") @db.VarChar(255)
-  emailVerified Boolean       @default(false) @map("email_verified")
-  password      String        @db.VarChar(255)
-  role          Role          @default(USER)
-  locale        String        @default("en-US") @db.VarChar(5)
-  locked        Boolean       @default(false)
-  lastSeen      DateTime?     @map("last_seen")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime?     @updatedAt @map("updated_at")
-  camps         CampManager[]
-  tokens        Token[]
+  id               String    @id @unique(map: "users_id_unique") @default(ulid()) @db.Char(26)
+  name             String    @db.VarChar(255)
+  email            String    @unique(map: "users_email_unique") @db.VarChar(255)
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  password         String    @db.VarChar(255)
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  totpSecret       String?   @map("totp_secret") @db.Char(32)
+  role             Role      @default(USER)
+  locale           String    @default("en-US") @db.VarChar(5)
+  locked           Boolean   @default(false)
+  lastSeen         DateTime? @map("last_seen")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+
+  camps  CampManager[]
+  tokens Token[]
 
   @@map("users")
 }
@@ -36,53 +39,57 @@ enum Role {
 }
 
 model Camp {
-  id              String          @id @unique(map: "camps_id_unique") @db.Char(26)
+  id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
   active          Boolean
   public          Boolean
   /// ![Array<string>]
-  countries       Json            @db.Json
-  /// [StringOrTranslation]
-  name            Json            @db.Json
-  /// [StringOrTranslation]
-  organizer       Json            @db.Json
-  /// [StringOrTranslation]
-  contactEmail    Json            @map("contact_email") @db.Json
-  /// [NumberOrTranslation]
-  maxParticipants Json            @map("max_participants") @db.Json
-  /// [NumberOrTranslation]
-  freePlaces      Json            @map("free_places") @db.Json
-  minAge          Int             @map("min_age") @db.UnsignedInt
-  maxAge          Int             @map("max_age") @db.UnsignedInt
-  startAt         DateTime        @map("start_at") @db.DateTime(0)
-  endAt           DateTime        @map("end_at") @db.DateTime(0)
+  countries       Json      @db.Json
+  /// ![string | Record<string, string>]
+  name            Json      @db.Json
+  /// ![string | Record<string, string>]
+  organizer       Json      @db.Json
+  /// ![string | Record<string, string>]
+  contactEmail    Json      @map("contact_email") @db.Json
+  /// ![number | Record<string, number>]
+  maxParticipants Json      @map("max_participants") @db.Json
+  /// ![number | Record<string, number>]
+  freePlaces      Json      @map("free_places") @db.Json
+  minAge          Int       @map("min_age") @db.UnsignedInt
+  maxAge          Int       @map("max_age") @db.UnsignedInt
+  startAt         DateTime  @map("start_at") @db.DateTime(0)
+  endAt           DateTime  @map("end_at") @db.DateTime(0)
   price           Float
-  /// [StringOrTranslation]
-  location        Json?           @db.Json
-  /// [GenericObject]
-  form            Json            @db.Json
-  /// [GenericObject]
-  themes          Json            @default("{}") @db.Json
-  version         Int             @default(1) @db.UnsignedInt
-  createdAt       DateTime?       @default(now()) @map("created_at")
-  updatedAt       DateTime?       @updatedAt @map("updated_at")
-  campManager     CampManager[]
-  registrations   Registration[]
-  rooms           Room[]
-  templates       TableTemplate[]
-  files           File[]
+  /// ![string | Record<string, string>]
+  location        Json?     @db.Json
+  /// ![Record<string, unknown>]
+  form            Json      @db.Json
+  /// ![Record<string, unknown>]
+  themes          Json      @default("{}") @db.Json
+  version         Int       @default(1) @db.UnsignedInt
+  createdAt       DateTime? @default(now()) @map("created_at")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+
+  campManager      CampManager[]
+  registrations    Registration[]
+  rooms            Room[]
+  tableTemplates   TableTemplate[]
+  messageTemplates MessageTemplate[]
+  files            File[]
   ProgramEvent    ProgramEvent[]
 
   @@map("camps")
 }
 
 model CampManager {
-  id           String      @id @unique(map: "camp_managers_id_unique") @db.Char(26)
-  campId       String      @map("camp_id") @db.Char(26)
-  userId       String?     @map("user_id") @db.Char(26)
-  invitationId String?     @map("invitation_id") @db.Char(26)
-  camp         Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
-  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
-  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
+  id           String    @id @unique(map: "camp_managers_id_unique") @default(ulid()) @db.Char(26)
+  campId       String    @map("camp_id") @db.Char(26)
+  userId       String?   @map("user_id") @db.Char(26)
+  invitationId String?   @map("invitation_id") @db.Char(26)
+  expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
+
+  camp       Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
+  invitation Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
 
   @@index([campId], map: "camp_managers_camp_id_foreign")
   @@index([userId], map: "camp_managers_user_id_foreign")
@@ -91,7 +98,7 @@ model CampManager {
 }
 
 model Invitation {
-  id          String        @id @unique(map: "invitations_id_unique") @db.Char(26)
+  id          String        @id @unique(map: "invitations_id_unique") @default(ulid()) @db.Char(26)
   email       String        @db.VarChar(255)
   campManager CampManager[]
 
@@ -99,50 +106,55 @@ model Invitation {
 }
 
 model Registration {
-  id          String    @id @unique(map: "registrations_id_unique") @db.Char(26)
-  campId      String?   @map("camp_id") @db.Char(26)
-  /// [GenericObject]
+  id          String    @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
+  campId      String    @map("camp_id") @db.Char(26)
+  /// ![Record<string, unknown>]
   data        Json      @db.Json
-  /// [RegistrationCampData]
+  /// ![Record<string, unknown[]>]
   campData    Json      @default("{}") @map("camp_data") @db.Json
   locale      String    @default("en-US") @db.VarChar(5)
   waitingList Boolean   @default(true) @map("waiting_list")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
-  camp        Camp?     @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
-  bed         Bed?
-  files       File[]
+
+  camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  bed      Bed?
+  files    File[]
+  messages Message[]
 
   @@map("registrations")
 }
 
 model Room {
-  id     String @id @unique(map: "rooms_id_unique") @db.Char(26)
+  id     String @id @unique(map: "rooms_id_unique") @default(ulid()) @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
-  /// [StringOrTranslation]
+  /// ![string | Record<string, string>]
   name   Json   @db.Json
-  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
-  beds   Bed[]
+
+  camp Camp  @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "rooms_camp_id_foreign")
+  beds Bed[]
 
   @@map("rooms")
 }
 
 model Bed {
-  id             String        @id @unique @db.Char(26)
-  roomId         String        @map("room_id") @db.Char(26)
-  registrationId String?       @unique(map: "beds_registration_id_unique") @map("registration_id") @db.Char(26)
-  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_room_id_foreign")
-  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_registration_id_foreign")
+  id             String  @id @unique @default(ulid()) @db.Char(26)
+  roomId         String  @map("room_id") @db.Char(26)
+  registrationId String? @unique(map: "beds_registration_id_unique") @map("registration_id") @db.Char(26)
+
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "beds_room_id_foreign")
+  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "beds_registration_id_foreign")
 
   @@map("beds")
 }
 
 model TableTemplate {
-  id     String @id @unique(map: "table_templates_id_unique") @db.Char(26)
+  id     String @id @unique(map: "table_templates_id_unique") @default(ulid()) @db.Char(26)
   campId String @map("camp_id") @db.Char(26)
-  /// [TableTemplates]
+  /// ![Record<string, unknown>]
   data   Json   @db.Json
-  camp   Camp   @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_camp_id_foreign")
+
+  camp Camp @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "table_templates_camp_id_foreign")
 
   @@index([campId], map: "table_templates_camp_id_foreign")
   @@map("table_templates")
@@ -156,7 +168,8 @@ model Token {
   expiresAt   DateTime  @map("expires_at")
   blacklisted Boolean   @default(false)
   createdAt   DateTime  @default(now()) @map("created_at")
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tokens")
 }
@@ -166,24 +179,67 @@ enum TokenType {
   REFRESH
   RESET_PASSWORD
   VERIFY_EMAIL
+  RESTRICTED_ACCESS
 }
 
 model File {
-  id              String        @id @unique(map: "files_id_unique") @db.Char(26)
-  campId          String?       @map("camp_id") @db.Char(36) // Prisma does not support morth
-  registrationId  String?       @map("registration_id") @db.Char(36) // Prisma does not support morth
-  name            String
-  originalName    String        @map("original_name")
-  field           String?
-  type            String
-  size            Int
-  accessLevel     String?       @map("access_level")
-  storageLocation String        @map("storage_location")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  camp            Camp?         @relation(fields: [campId], references: [id], onDelete: Cascade)
-  registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  id                String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
+  campId            String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
+  registrationId    String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
+  messageId         String?  @map("message_id") @db.Char(36) // Prisma does not support morth
+  messageTemplateId String?  @map("message_template_id") @db.Char(36) // Prisma does not support morth
+  name              String
+  originalName      String   @map("original_name")
+  field             String?
+  type              String
+  size              Int
+  accessLevel       String?  @map("access_level")
+  storageLocation   String   @map("storage_location")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: Cascade)
+  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
 
   @@map("files")
+}
+
+model Message {
+  id             String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  templateId     String?  @map("message_template_id") @db.Char(36)
+  registrationId String?  @map("registration_id") @db.Char(36)
+  replyTo        String?  @map("reply_to")
+  subject        String   @db.MediumText
+  body           String   @db.MediumText
+  priority       String   @default("normal")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  registration Registration?    @relation(fields: [registrationId], references: [id])
+  attachments  File[]
+
+  @@map("messages")
+}
+
+model MessageTemplate {
+  id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
+  campId    String    @map("camp_id") @db.Char(36)
+  event     String?
+  priority  String    @default("normal")
+  replyTo   String?   @map("reply_to")
+  /// ![string | Record<string, string>]
+  subject   Json
+  /// ![string | Record<string, string>]
+  body      Json
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  camp        Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  attachments File[]
+
+  @@map("message_templates")
 }
 
 model ProgramEvent {

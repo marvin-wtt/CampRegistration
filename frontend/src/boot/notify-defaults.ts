@@ -1,7 +1,7 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app/wrappers';
 import { Notify } from 'quasar';
 
-export default boot(() => {
+export default defineBoot(() => {
   Notify.setDefaults({
     position: 'top',
     classes: 'rounded-borders',

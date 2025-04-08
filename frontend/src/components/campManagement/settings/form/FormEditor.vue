@@ -4,37 +4,42 @@
 
 <script lang="ts" setup>
 // Style
-import 'survey-core/defaultV2.min.css';
+import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
 import 'survey-core/survey.i18n';
 import 'survey-creator-core/survey-creator-core.i18n';
 
-import { watchEffect } from 'vue';
+import { watch, watchEffect } from 'vue';
 import {
-  ICreatorOptions,
+  type ICreatorOptions,
   localization,
   PropertyGridEditorCollection,
   SurveyCreatorModel,
 } from 'survey-creator-core';
+import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
 import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
 import {
-  Base,
-  ITheme,
-  PageModel,
-  SurveyElement,
-  SurveyModel,
+  type Base,
+  type ITheme,
+  type PageModel,
+  type PanelModel,
+  type SurveyElement,
+  type SurveyModel,
 } from 'survey-core';
+import SurveyCreatorTheme from 'survey-creator-core/themes';
+import { registerCreatorTheme } from 'survey-creator-core';
+import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
+import { registerSurveyTheme } from 'survey-creator-core';
 import showdown from 'showdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
-import { Panel } from 'survey-core/typings/knockout/kopage';
 import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { SurveyJSCampData } from '@camp-registration/common/entities';
+import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
 
 const props = defineProps<{
@@ -90,8 +95,8 @@ const creatorOptions: ICreatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
   showEmbeddedSurveyTab: false,
-  isAutoSave: true,
-  themeForPreview: 'defaultV2',
+  showCreatorThemeSettings: false,
+  autoSaveEnabled: true,
   showThemeTab: true,
   showJSONEditorTab: !props.restrictedAccess,
 };
@@ -100,10 +105,13 @@ const markdownConverter = new showdown.Converter({
   openLinksInNewWindow: true,
 });
 
+registerSurveyTheme(SurveyTheme);
+registerCreatorTheme(SurveyCreatorTheme);
+
 const creator = new SurveyCreatorModel(creatorOptions);
 
 creator.JSON = props.camp.form;
-creator.theme = props.camp.themes['light'];
+creator.theme = props.camp.themes['light'] ?? {};
 
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
@@ -118,10 +126,36 @@ if (props.restrictedAccess) {
 }
 
 watchEffect(() => {
-  creator.locale = locale.value.split(/[-_]/)[0];
+  creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
 });
 
-creator.onPropertyValidationCustomError.add((_, options) => {
+watch(() => quasar.dark.isActive, applyCreatorTheme);
+
+// Creator theme
+applyCreatorTheme(quasar.dark.isActive);
+
+function applyCreatorTheme(isDark: boolean) {
+  const theme = isDark
+    ? SurveyCreatorTheme.DefaultDark
+    : {
+        themeName: 'default-light',
+        cssVariables: {},
+      };
+
+  creator.applyCreatorTheme({
+    themeName: theme.themeName,
+    isLight: !isDark,
+    cssVariables: {
+      ...theme.cssVariables,
+      '--sjs-primary-background-500': undefined,
+      '--sjs-secondary-background-500': undefined,
+      '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
+    },
+  });
+}
+
+// Restrict valueName characters
+creator.onPropertyDisplayCustomError.add((_, options) => {
   if (!['name', 'valueName'].includes(options.propertyName)) {
     return;
   }
@@ -177,7 +211,7 @@ creator.saveThemeFunc = (
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
 
-  if (options.area === 'preview-tab' || options.area === 'designer-tab') {
+  if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     // Convert markdown to html
     survey.onTextMarkdown.add((_, options) => {
       const str = markdownConverter.makeHtml(options.text);
@@ -186,10 +220,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     });
   }
 
-  if (options.area === 'preview-tab') {
-    // Set surveyID for dynamic link generation
-    survey.surveyId = props.camp.id;
-
+  if (['preview-tab', 'theme-tab'].includes(options.area)) {
     setVariables(survey, props.camp);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.camp);
@@ -206,7 +237,7 @@ creator.onUploadFile.add((_, options) => {
     return;
   }
 
-  const file = files[0];
+  const file = files[0]!;
 
   props
     .saveFileFunc(file)
@@ -231,18 +262,26 @@ creator.onOpenFileChooser.add((_, options) => {
     });
 });
 
+const themes: {
+  dark?: ITheme;
+  light?: ITheme;
+} = {};
 let previousColorPalette: string | undefined;
-creator.themeEditor.onThemeSelected.add((_, options) => {
-  const colorPalette = options.theme.colorPalette;
-  if (colorPalette === previousColorPalette) {
+creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
+  const colorPalette = theme.colorPalette;
+  if (!colorPalette || (colorPalette !== 'dark' && colorPalette !== 'light')) {
     return;
   }
-  previousColorPalette = colorPalette;
 
-  const themes = props.camp.themes;
-  if (themes && colorPalette && colorPalette in themes) {
-    const mewTheme = themes[colorPalette];
-    creator.themeEditor.model.setTheme(colorPalette, mewTheme);
+  if (theme.colorPalette === previousColorPalette) {
+    themes[colorPalette] = theme;
+    return;
+  }
+  previousColorPalette = theme.colorPalette;
+
+  const mewTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
+  if (mewTheme) {
+    themeModel.setTheme(mewTheme);
   }
 });
 
@@ -253,12 +292,13 @@ creator.onElementAllowOperations.add((_, options) => {
   // Disallow restricted users to change question types, delete questions, or copy them
   options.allowChangeType = false;
   options.allowCopy = false;
-  const obj = options.obj as SurveyElement;
+  const obj = options.element as SurveyElement;
   if (obj.isQuestion) {
     options.allowDelete = false;
   }
   if (obj.isPage || obj.isPanel) {
-    options.allowDelete = (obj as Panel | PageModel).questions.length === 0;
+    options.allowDelete =
+      (obj as PanelModel | PageModel).questions.length === 0;
   }
 });
 
@@ -278,7 +318,7 @@ creator.onConfigureTablePropertyEditor.add((_, options) => {
   options.allowAddRemoveItems = options.propertyName !== 'columns';
 });
 
-creator.onGetPropertyReadOnly.add((_, options) => {
+creator.onPropertyGetReadOnly.add((_, options) => {
   if (!props.restrictedAccess) {
     return;
   }
@@ -287,10 +327,10 @@ creator.onGetPropertyReadOnly.add((_, options) => {
     options.readOnly = true;
   }
   // Disallow restricted users to modify the `name` property for questions and matrix columns
-  const obj = options.obj as SurveyElement;
+  const obj = options.element as SurveyElement;
   const disallowedProperties = ['name', 'campDataType'];
   if (disallowedProperties.includes(options.property.name)) {
-    options.readOnly = obj.isQuestion || isObjColumn(options.obj);
+    options.readOnly = obj.isQuestion || isObjColumn(options.element);
   }
 });
 
@@ -299,4 +339,9 @@ function isObjColumn(obj: Base) {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+body {
+  --sjs-primary-background-500: $primary;
+  --sjs-secondary-background-500: $secondary;
+}
+</style>

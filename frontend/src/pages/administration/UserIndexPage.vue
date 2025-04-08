@@ -12,15 +12,15 @@
       class="absolute fit"
     >
       <template #top-right>
-        <div class="row no-wrap q-gutter-x-lg">
+        <div class="row no-wrap q-gutter-x-md">
           <!-- Search -->
           <q-input
             v-model="filterQuery"
-            borderless
+            :placeholder="t('filter.search')"
+            debounce="300"
+            outlined
             rounded
             dense
-            debounce="300"
-            placeholder="Search"
           >
             <template #append>
               <q-icon name="search" />
@@ -183,7 +183,7 @@
 </template>
 
 <script lang="ts" setup>
-import { QTableColumn } from 'quasar';
+import { type QTableColumn } from 'quasar';
 import type {
   User,
   UserUpdateData,
@@ -191,7 +191,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from 'components/administration/users/UserCreateDialog.vue';
@@ -215,9 +215,7 @@ const pagination = ref({
   rowsPerPage: 0,
 });
 
-onMounted(async () => {
-  await fetchAll();
-});
+fetchAll();
 
 const rows = computed<User[]>(() => {
   if (!users.value) {
@@ -499,6 +497,9 @@ dialog:
     ok: 'Unlock'
     cancel: 'Cancel'
 
+filter:
+  search: 'Search'
+
 header:
   create: 'Create user'
 
@@ -545,6 +546,9 @@ dialog:
     ok: 'Entsperren'
     cancel: 'Abbrechen'
 
+filter:
+  search: 'Suchen'
+
 header:
   create: 'Benutzer erstellen'
 
@@ -590,6 +594,9 @@ dialog:
     message: 'Es-tu sûr de vouloir déverrouiller { name } ?'
     ok: 'Déverrouiller'
     cancel: 'Annuler'
+
+filter:
+  search: 'Chercher'
 
 header:
   create: 'Créer un utilisateur'

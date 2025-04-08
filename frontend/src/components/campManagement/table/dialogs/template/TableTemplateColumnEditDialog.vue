@@ -5,16 +5,14 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin">
-      <q-card-section>
-        <div class="text-h6">
-          {{ t('title') }}
-        </div>
+      <q-card-section class="text-h6">
+        {{ t('title') }}
       </q-card-section>
 
       <q-card-section class="q-pt-none q-gutter-y-sm column">
         <translated-input
           v-model="column.label"
-          :label="t('fields.label.label')"
+          :label="t('field.label.label')"
           :locales="props.camp.countries"
           outlined
           rounded
@@ -22,8 +20,8 @@
 
         <q-select
           v-model="column.field"
-          :label="t('fields.field.label')"
-          :hint="t('fields.field.hint')"
+          :label="t('field.field.label')"
+          :hint="t('field.field.hint')"
           :options="fieldFilterOptions"
           emit-value
           use-input
@@ -52,17 +50,10 @@
           </template>
         </q-select>
 
-        <toggle-item
-          v-if="showIsArray"
-          v-model="column.isArray"
-          :label="t('fields.isArray.label')"
-          :hint="t('fields.isArray.hint')"
-        />
-
         <q-select
           v-model="column.renderAs"
-          :label="t('fields.renderAs.label')"
-          :hint="t('fields.renderAs.hint')"
+          :label="t('field.renderAs.label')"
+          :hint="t('field.renderAs.hint')"
           :options="renderAsOptions"
           clearable
           emit-value
@@ -73,8 +64,8 @@
 
         <q-select
           v-model="column.align"
-          :label="t('fields.align.label')"
-          :hint="t('fields.hideIf.hint')"
+          :label="t('field.align.label')"
+          :hint="t('field.hideIf.hint')"
           :options="alignOptions"
           emit-value
           map-options
@@ -84,8 +75,8 @@
 
         <toggle-item
           v-model="column.sortable"
-          :label="t('fields.sortable.label')"
-          :hint="t('fields.sortable.hint')"
+          :label="t('field.sortable.label')"
+          :hint="t('field.sortable.hint')"
         />
 
         <q-btn
@@ -99,31 +90,39 @@
           @click="advanced = !advanced"
         />
 
+        <!-- Advanced options -->
         <q-slide-transition>
           <div
             v-show="advanced"
             class="q-gutter-y-sm column no-wrap"
           >
             <toggle-item
+              v-if="showIsArray"
+              v-model="column.isArray"
+              :label="t('field.isArray.label')"
+              :hint="t('field.isArray.hint')"
+            />
+
+            <toggle-item
               v-model="column.headerVertical"
-              :label="t('fields.headerVertical.label')"
-              :hint="t('fields.headerVertical.hint')"
+              :label="t('field.headerVertical.label')"
+              :hint="t('field.headerVertical.hint')"
             />
 
             <toggle-item
               v-model="column.shrink"
-              :label="t('fields.shrink.label')"
-              :hint="t('fields.shrink.hint')"
+              :label="t('field.shrink.label')"
+              :hint="t('field.shrink.hint')"
             />
 
             <q-input
               v-model="column.name"
-              :label="t('fields.name.label')"
-              :hint="t('fields.name.hint')"
+              :label="t('field.name.label')"
+              :hint="t('field.name.hint')"
               :rules="[
-                (val: string) => !!val || t('fields.name.rules.required'),
+                (val: string) => !!val || t('field.name.rules.required'),
                 (val: string) =>
-                  !/\s/.test(val) || t('fields.name.rules.no_spaces'),
+                  !/\s/.test(val) || t('field.name.rules.no_spaces'),
               ]"
               outlined
               rounded
@@ -131,8 +130,8 @@
 
             <q-input
               v-model="column.hideIf"
-              :label="t('fields.hideIf.label')"
-              :hint="t('fields.hideIf.hint')"
+              :label="t('field.hideIf.label')"
+              :hint="t('field.hideIf.hint')"
               clearable
               outlined
               rounded
@@ -140,8 +139,8 @@
 
             <q-input
               v-model="column.showIf"
-              :label="t('fields.showIf.label')"
-              :hint="t('fields.showIf.hint')"
+              :label="t('field.showIf.label')"
+              :hint="t('field.showIf.hint')"
               clearable
               outlined
               rounded
@@ -154,8 +153,8 @@
               class="rounded-borders"
             >
               <q-expansion-item
-                :label="t('fields.renderOptions.label')"
-                :caption="t('fields.renderOptions.hint')"
+                :label="t('field.renderOptions.label')"
+                :caption="t('field.renderOptions.hint')"
               >
                 <dynamic-input-group
                   v-if="renderOptions"
@@ -175,8 +174,8 @@
             <!-- -->
             <!--        <toggle-item-->
             <!--          v-model="column.editable"-->
-            <!--          :label="t('fields.editable.label')"-->
-            <!--          :hint="t('fields.editable.hint')"-->
+            <!--          :label="t('field.editable.label')"-->
+            <!--          :hint="t('field.editable.hint')"-->
             <!--        />-->
           </div>
         </q-slide-transition>
@@ -186,14 +185,14 @@
       <q-card-actions align="right">
         <q-btn
           color="primary"
-          :label="t('actions.cancel')"
+          :label="t('action.cancel')"
           outline
           rounded
           @click="onDialogCancel"
         />
         <q-btn
           color="primary"
-          :label="t('actions.ok')"
+          :label="t('action.ok')"
           rounded
           @click="onOKClick"
         />
@@ -203,9 +202,9 @@
 </template>
 
 <script lang="ts" setup>
-import { QSelectOption, useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref, toRaw } from 'vue';
+import { computed, reactive, ref, toRaw, watchEffect } from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
@@ -217,9 +216,9 @@ import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
-import { BaseComponent } from 'components/common/inputs/BaseComponent';
+import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
-import { PartialBy } from 'src/types';
+import type { PartialBy } from 'src/types';
 
 interface Props {
   column: TableColumnTemplate;
@@ -235,38 +234,32 @@ const { to } = useObjectTranslation();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const column = reactive<PartialBy<TableColumnTemplate, 'name'>>(
   structuredClone(toRaw(props.column)),
 );
 const advanced = ref<boolean>(false);
 
-function onOKClick(): void {
-  onDialogOK(column);
-}
-
 const showIsArray = computed<boolean>(() => {
-  return column.isArray || column.field?.includes('.*.');
+  return column.isArray || column.field?.includes('.*');
 });
 
-const alignOptions = computed(() => {
+watchEffect(() => {
+  column.isArray = column.field?.includes('.*');
+});
+
+const alignOptions = computed<QSelectOption[]>(() => {
   return [
     {
-      label: t('fields.align.options.left'),
+      label: t('field.align.options.left'),
       value: 'left',
     },
     {
-      label: t('fields.align.options.center'),
+      label: t('field.align.options.center'),
       value: 'center',
     },
     {
-      label: t('fields.align.options.right'),
+      label: t('field.align.options.right'),
       value: 'right',
     },
   ];
@@ -298,20 +291,20 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
     .sort((a, b) => a?.label.localeCompare(b?.label));
 });
 
-const fieldOptions = computed(() => {
+const fieldOptions = computed<QSelectOption[]>(() => {
   const formFields = extractFormFields(props.camp.form, 'data');
 
   const defaultFields: { label: string; value: keyof Registration }[] = [
     {
-      label: t('fields.field.options.createdAt'),
+      label: t('field.field.options.createdAt'),
       value: 'createdAt',
     },
     {
-      label: t('fields.field.options.waitingList'),
+      label: t('field.field.options.waitingList'),
       value: 'waitingList',
     },
     {
-      label: t('fields.field.options.room'),
+      label: t('field.field.options.room'),
       value: 'room',
     },
   ];
@@ -342,6 +335,10 @@ function fieldFilterFn(val: string, update: (a: () => void) => void) {
     }
   });
 }
+
+function onOKClick(): void {
+  onDialogOK(column);
+}
 </script>
 
 <style scoped></style>
@@ -349,7 +346,7 @@ function fieldFilterFn(val: string, update: (a: () => void) => void) {
 <i18n lang="yaml" locale="en">
 title: 'Edit Template Column'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Cancel'
 
@@ -357,7 +354,7 @@ advanced:
   hide: 'Hide advanced options'
   show: 'Show advanced options'
 
-fields:
+field:
   name:
     label: 'Name'
     hint: 'A unique name to identify the column (some_name)'
@@ -413,7 +410,7 @@ fields:
 <i18n lang="yaml" locale="de">
 title: 'Template-Spalte bearbeiten'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Abbrechen'
 
@@ -421,7 +418,7 @@ advanced:
   hide: 'Erweiterte Optionen ausblenden'
   show: 'Erweiterte Optionen anzeigen'
 
-fields:
+field:
   name:
     label: 'Name'
     hint: 'Ein eindeutiger Name zur Identifizierung (some_name)'
@@ -477,7 +474,7 @@ fields:
 <i18n lang="yaml" locale="fr">
 title: 'Modifier la colonne de modèle'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Annuler'
 
@@ -485,7 +482,7 @@ advanced:
   hide: 'Masquer les options avancées'
   show: 'Afficher les options avancées'
 
-fields:
+field:
   name:
     label: 'Nom'
     hint: 'Un nom unique pour identifier la colonne (some_name)'

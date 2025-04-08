@@ -17,7 +17,7 @@ function replaceUrls(obj: unknown, replacer: UrlReplacer): unknown {
   }
 
   if (typeof obj === 'object' && obj !== null) {
-    const newObj: { [key: string]: unknown } = {};
+    const newObj: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       newObj[key] = replaceUrls(value, replacer);
     }

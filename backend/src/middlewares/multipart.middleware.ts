@@ -1,23 +1,31 @@
-import multer, { Field } from 'multer';
-import config from 'config';
-import { NextFunction, Request, Response } from 'express';
-import dynamic from './dynamic.middleware';
-import fileService from 'app/file/file.service';
+import multer, { type Field } from 'multer';
+import config from '#config/index';
+import type { NextFunction, Request, Response } from 'express';
+import fileService from '#app/file/file.service';
 
-type ParameterType = string | Field | ReadonlyArray<Field> | null | undefined;
+type ParameterType = string | Field | readonly Field[] | null | undefined;
 
 const multiPart = (fields: ParameterType) => {
-  return dynamic([upload(fields), formatterMiddleware]);
+  // Chain upload with formatter
+  return async (req: Request, res: Response, next: NextFunction) => {
+    await upload(fields)(req, res, (err?: unknown) => {
+      if (err) {
+        next(err);
+      } else {
+        formatterMiddleware(req, res, next);
+      }
+    });
+  };
 };
 
 const upload = (fields: ParameterType) => {
   const tmpDir = config.storage.tmpDir;
 
   const tmpStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (_req, _file, cb) => {
       cb(null, tmpDir);
     },
-    filename: (req, file, cb) => {
+    filename: (_req, file, cb) => {
       const fileName = fileService.generateFileName(file.originalname);
       cb(null, fileName);
     },
@@ -61,19 +69,19 @@ const resolveMulterMiddleware = (
 
 const formatterMiddleware = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
   // Convert null prototypes to objects
   // TODO Why do I need to do this? This seems to be a bug but I cant find out why...
-  req.body = removePrototype(req.body);
+  req.body = removePrototype(req.body) as unknown;
 
   next();
 };
 
 const removePrototype = <T>(obj: T): T => {
   // TODO How to improve? Maybe use parser? Or should only a null object be used?
-  return JSON.parse(JSON.stringify(obj));
+  return JSON.parse(JSON.stringify(obj)) as T;
 };
 
 export default multiPart;

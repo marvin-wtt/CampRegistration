@@ -1,94 +1,100 @@
-import { catchRequestAsync } from 'utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
-import registrationService from './registration.service';
-import registrationResource from './registration.resource';
-import { routeModel } from 'utils/verifyModel';
-import { requestLocale } from 'utils/requestLocale';
-import { catchAndResolve } from 'utils/promiseUtils';
+import registrationService from './registration.service.js';
+import {
+  RegistrationResource,
+  type RegistrationWithBed,
+} from './registration.resource.js';
+import validator from './registration.validation.js';
+import { type Request, type Response } from 'express';
+import registrationMessages from '#app/registration/registration.messages.js';
+import { BaseController } from '#core/base/BaseController';
 
-const show = catchRequestAsync(async (req, res) => {
-  const registration = routeModel(req.models.registration);
+class RegistrationController extends BaseController {
+  show(req: Request, res: Response) {
+    const registration = req.modelOrFail('registration');
 
-  res.json(resource(registrationResource(registration)));
-});
-
-const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
-  const registrations = await registrationService.queryRegistrations(campId);
-  const resources = registrations.map((value) => registrationResource(value));
-
-  res.json(collection(resources));
-});
-
-const store = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
-  const { data, locale: bodyLocale } = req.body;
-  const locale = bodyLocale ?? requestLocale(req);
-
-  const registration = await registrationService.createRegistration(camp, {
-    data,
-    locale,
-  });
-
-  // Notify participant
-  if (registration.waitingList) {
-    await catchAndResolve(
-      registrationService.sendWaitingListConfirmation(camp, registration),
-    );
-  } else {
-    await catchAndResolve(
-      registrationService.sendRegistrationConfirmation(camp, registration),
-    );
+    res.resource(new RegistrationResource(registration));
   }
 
-  // Notify contact email
-  await catchAndResolve(
-    registrationService.sendRegistrationManagerNotification(camp, registration),
-  );
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
 
-  res
-    .status(httpStatus.CREATED)
-    .json(resource(registrationResource(registration)));
-});
+    const registrations: RegistrationWithBed[] =
+      await registrationService.queryRegistrations(campId);
 
-const update = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
-  const previousRegistration = routeModel(req.models.registration);
-  const { registrationId } = req.params;
-  const { data, waitingList } = req.body;
+    res.resource(RegistrationResource.collection(registrations));
+  }
 
-  const registration = await registrationService.updateRegistrationById(
-    camp,
-    registrationId,
-    {
+  async store(req: Request, res: Response) {
+    const {
+      body: { data, locale: bodyLocale },
+    } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
+    const locale = bodyLocale ?? req.preferredLocale();
+
+    const registration = await registrationService.createRegistration(camp, {
       data,
-      waitingList,
-    },
-  );
+      locale,
+    });
 
-  if (previousRegistration.waitingList && !registration.waitingList) {
-    await catchAndResolve(
-      registrationService.sendRegistrationConfirmation(camp, registration),
-    );
+    // Notify participant
+    if (registration.waitingList) {
+      await registrationMessages.sendRegistrationWaitlisted(camp, registration);
+    } else {
+      await registrationMessages.sendRegistrationConfirmed(camp, registration);
+    }
+
+    // Notify contact email
+    await registrationMessages.notifyContactEmail(camp, registration);
+
+    res
+      .status(httpStatus.CREATED)
+      .resource(new RegistrationResource(registration));
   }
 
-  res.json(resource(registrationResource(registration)));
-});
+  async update(req: Request, res: Response) {
+    const {
+      body: { data, waitingList },
+      params: { registrationId },
+    } = await req.validate(validator.update);
+    const camp = req.modelOrFail('camp');
+    const previousRegistration = req.modelOrFail('registration');
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
-  const registration = routeModel(req.models.registration);
+    const registration = await registrationService.updateRegistrationById(
+      camp,
+      registrationId,
+      {
+        data,
+        waitingList,
+      },
+    );
 
-  await registrationService.deleteRegistration(camp, registration);
+    if (previousRegistration.data !== registration.data) {
+      await registrationMessages.sendRegistrationUpdated(camp, registration);
+    }
 
-  res.status(httpStatus.NO_CONTENT).send();
-});
+    if (previousRegistration.waitingList && !registration.waitingList) {
+      await registrationMessages.sendRegistrationWaitlistAccepted(
+        camp,
+        registration,
+      );
+    }
 
-export default {
-  index,
-  show,
-  store,
-  update,
-  destroy,
-};
+    res.resource(new RegistrationResource(registration));
+  }
+
+  async destroy(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const registration = req.modelOrFail('registration');
+
+    await registrationService.deleteRegistration(camp, registration);
+
+    await registrationMessages.sendRegistrationCanceled(camp, registration);
+
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+}
+
+export default new RegistrationController();

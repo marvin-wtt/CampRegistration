@@ -1,5 +1,5 @@
-import campDataType from './campDataType';
-import { PropertyDefinition } from './ProptertyDefinition';
+import campDataType from './campDataType.js';
+import { PropertyDefinition } from './ProptertyDefinition.js';
 
 const properties: PropertyDefinition[] = [campDataType];
 

@@ -1,82 +1,50 @@
-import Joi from 'joi';
-import { Request } from 'express';
-import { routeModel } from 'utils/verifyModel';
-import { formUtils } from 'utils/form';
-import type {
-  RegistrationCreateData,
-  RegistrationUpdateData,
-} from '@camp-registration/common/entities';
+import { z } from 'zod';
+import { LocaleSchema } from '#core/validation/helper';
 
-export const registrationData: Joi.CustomValidator<object> = (
-  value,
-  helpers,
-) => {
-  if (typeof value !== 'object' || value == null) {
-    return helpers.message({ custom: 'Survey must not be null' });
-  }
+const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
-  const req = helpers.prefs.context as Request;
-  const camp = routeModel(req.models.camp);
-
-  const formHelper = formUtils(camp);
-  formHelper.updateData(value);
-
-  if (formHelper.hasDataErrors()) {
-    const errors = formHelper.getDataErrorFields();
-    return helpers.message({ custom: `Invalid survey data: ${errors}` });
-  }
-
-  const unknownDataFields = formHelper.unknownDataFields();
-  if (unknownDataFields.length > 0) {
-    return helpers.message({
-      custom: `Unknown fields '${unknownDataFields.join(', ')}'`,
-    });
-  }
-
-  return value;
-};
-
-const index = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const index = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
   }),
-};
+});
 
-const show = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    registrationId: Joi.string().required(),
+const show = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+    registrationId: z.string().ulid(),
   }),
-};
+});
 
-const store = {
-  params: Joi.object({
-    campId: Joi.string().required(),
+const store = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
   }),
-  body: Joi.object<RegistrationCreateData>({
-    data: Joi.object().custom(registrationData, 'registration data').required(),
-    locale: Joi.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
-    // files
+  body: z.object({
+    data: RegistrationDataSchema,
+    locale: LocaleSchema.optional(),
   }),
-};
+});
 
-const update = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    registrationId: Joi.string().required(),
+const update = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+    registrationId: z.string().ulid(),
   }),
-  body: Joi.object<RegistrationUpdateData>({
-    data: Joi.object(),
-    waitingList: Joi.boolean(),
-  }),
-};
+  body: z
+    .object({
+      data: RegistrationDataSchema,
+      waitingList: z.boolean(),
+    })
+    .partial(),
+});
 
-const destroy = {
-  params: Joi.object({
-    campId: Joi.string().required(),
-    registrationId: Joi.string().required(),
+const destroy = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+    registrationId: z.string().ulid(),
   }),
-};
+});
 
 export default {
   show,

@@ -11,7 +11,7 @@
     </a>
 
     <!-- Countries -->
-    <country-switch
+    <country-select
       v-model="data.countries"
       :disable="loading"
       :label="t('field.countries')"
@@ -24,12 +24,11 @@
       outlined
       rounded
       multiple
-      emit-country
     >
       <template #before>
         <q-icon name="language" />
       </template>
-    </country-switch>
+    </country-select>
 
     <!-- name -->
     <translated-input
@@ -274,7 +273,7 @@ import type { Camp } from '@camp-registration/common/entities';
 
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useI18n } from 'vue-i18n';
-import CountrySwitch from 'components/common/CountrySwitch.vue';
+import CountrySelect from 'components/common/CountrySelect.vue';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
 

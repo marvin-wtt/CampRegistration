@@ -1,67 +1,85 @@
-import { catchRequestAsync } from 'utils/catchAsync';
-import ApiError from 'utils/ApiError';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { collection, resource } from 'app/resource';
-import userService from 'app/user/user.service';
-import managerService from './manager.service';
-import campManagerResource from './manager.resource';
-import { routeModel } from 'utils/verifyModel';
-import { catchAndResolve } from 'utils/promiseUtils';
+import userService from '#app/user/user.service';
+import managerService from '#app/manager/manager.service';
+import { ManagerResource } from '#app/manager/manager.resource';
+import { catchAndResolve } from '#utils/promiseUtils';
+import validator from '#app/manager/manager.validation';
+import { type Request, type Response } from 'express';
+import managerMessages from '#app/manager/manager.messages';
+import { BaseController } from '#core/base/BaseController';
 
-const index = catchRequestAsync(async (req, res) => {
-  const { campId } = req.params;
+class ManagerController extends BaseController {
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
 
-  const managers = await managerService.getManagers(campId);
-  const resources = managers.map((manager) => campManagerResource(manager));
+    const managers = await managerService.getManagers(campId);
 
-  res.status(httpStatus.OK).json(collection(resources));
-});
-
-const store = catchRequestAsync(async (req, res) => {
-  const camp = routeModel(req.models.camp);
-  const { email } = req.body;
-
-  const existingCampManager = await managerService.getManagerByEmail(
-    camp.id,
-    email,
-  );
-  if (existingCampManager) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'User is already a camp manager.',
-    );
+    res.resource(ManagerResource.collection(managers));
   }
 
-  const user = await userService.getUserByEmail(email);
+  async store(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const {
+      body: { email, expiresAt },
+    } = await req.validate(validator.store);
 
-  const manager =
-    user === null
-      ? await managerService.inviteManager(camp.id, email)
-      : await managerService.addManager(camp.id, user.id);
-
-  await catchAndResolve(managerService.sendManagerInvitation(camp, manager));
-
-  res.status(httpStatus.CREATED).json(resource(campManagerResource(manager)));
-});
-
-const destroy = catchRequestAsync(async (req, res) => {
-  const { campId, managerId } = req.params;
-
-  const managers = await managerService.getManagers(campId);
-  if (managers.length <= 1) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'The camp must always have at least one camp manager.',
+    const existingCampManager = await managerService.getManagerByEmail(
+      camp.id,
+      email,
     );
+    if (existingCampManager) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'User is already a camp manager.',
+      );
+    }
+
+    const user = await userService.getUserByEmail(email);
+
+    const manager =
+      user === null
+        ? await managerService.inviteManager(camp.id, email, expiresAt)
+        : await managerService.addManager(camp.id, user.id, expiresAt);
+
+    await catchAndResolve(managerMessages.sendManagerInvitation(camp, manager));
+
+    res.status(httpStatus.CREATED).resource(new ManagerResource(manager));
   }
 
-  await catchAndResolve(managerService.removeManager(managerId));
+  async update(req: Request, res: Response) {
+    const manager = req.modelOrFail('manager');
+    const {
+      body: { expiresAt },
+    } = await req.validate(validator.update);
 
-  res.sendStatus(httpStatus.NO_CONTENT);
-});
+    const updatedManager = await managerService.updateManagerById(
+      manager.id,
+      expiresAt,
+    );
 
-export default {
-  index,
-  store,
-  destroy,
-};
+    res.resource(new ManagerResource(updatedManager));
+  }
+
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { campId, managerId },
+    } = await req.validate(validator.destroy);
+
+    const managers = await managerService.getManagers(campId);
+    if (managers.length <= 1) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'The camp must always have at least one camp manager.',
+      );
+    }
+
+    await catchAndResolve(managerService.removeManager(managerId));
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+}
+
+export default new ManagerController();

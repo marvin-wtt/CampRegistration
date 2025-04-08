@@ -1,0 +1,96 @@
+<template>
+  <q-card>
+    <q-form @submit="onSave">
+      <q-card-section class="text-h4 text-negative">
+        {{ t('title') }}
+      </q-card-section>
+
+      <q-card-section>
+        <p>{{ t('disclaimer.description') }}</p>
+        <ul>
+          <li>{{ t('disclaimer.dataRemoval') }}</li>
+          <li>{{ t('disclaimer.accessLoss') }}</li>
+          <li>{{ t('disclaimer.collaborationImpact') }}</li>
+          <li>{{ t('disclaimer.campDeletion') }}</li>
+          <li>
+            <strong>{{ t('disclaimer.irreversible') }}</strong>
+          </li>
+        </ul>
+      </q-card-section>
+
+      <q-card-actions>
+        <q-btn
+          :label="t('action.delete')"
+          type="submit"
+          color="negative"
+          outlined
+          rounded
+        />
+      </q-card-actions>
+    </q-form>
+  </q-card>
+</template>
+
+<script lang="ts" setup>
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+
+const emit = defineEmits<{
+  (e: 'delete'): void;
+}>();
+
+function onSave() {
+  emit('delete');
+}
+</script>
+
+<style scoped></style>
+
+<i18n lang="yaml" locale="en">
+title: 'Delete account'
+
+disclaimer:
+  title: 'Delete Your Account'
+  description: 'Deleting your account is a permanent action and cannot be undone. Please review the following before proceeding:'
+  dataRemoval: 'All your personal information, settings, and associated data will be permanently deleted.'
+  accessLoss: 'You will lose access to all camps, tools, and services associated with your account.'
+  collaborationImpact: 'Collaborators may no longer see your contributions.'
+  campDeletion: 'Camps that you created may be permanently deleted if no other users are associated with them.'
+  irreversible: 'This action is irreversible.'
+
+action:
+  delete: 'Delete account'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Konto löschen'
+
+disclaimer:
+  title: 'Ihr Konto löschen'
+  description: 'Das Löschen Ihres Kontos ist eine dauerhafte Aktion und kann nicht rückgängig gemacht werden. Bitte prüfen Sie Folgendes, bevor Sie fortfahren:'
+  dataRemoval: 'Alle Ihre persönlichen Informationen, Einstellungen und zugehörigen Daten werden dauerhaft gelöscht.'
+  accessLoss: 'Sie verlieren den Zugriff auf alle Camps, Tools und Dienste, die mit Ihrem Konto verbunden sind.'
+  collaborationImpact: 'Mitarbeiter können Ihre Beiträge möglicherweise nicht mehr sehen.'
+  campDeletion: 'Von Ihnen erstellte Camps könnten dauerhaft gelöscht werden, wenn keine anderen Benutzer damit verbunden sind.'
+  irreversible: 'Diese Aktion ist endgültig.'
+
+action:
+  delete: 'Konto löschen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Supprimer le compte'
+
+disclaimer:
+  title: 'Supprimer votre compte'
+  description: 'La suppression de votre compte est une action permanente et ne peut pas être annulée. Veuillez examiner les points suivants avant de continuer :'
+  dataRemoval: 'Toutes vos informations personnelles, paramètres et données associées seront définitivement supprimés.'
+  accessLoss: 'Vous perdrez l’accès à tous les camps, outils et services associés à votre compte.'
+  collaborationImpact: 'Les collaborateurs pourraient ne plus voir vos contributions.'
+  campDeletion: 'Les camps que vous avez créés pourraient être supprimés définitivement s’ils ne sont associés à aucun autre utilisateur.'
+  irreversible: 'Cette action est irréversible.'
+
+action:
+  delete: 'Supprimer le compte'
+</i18n>

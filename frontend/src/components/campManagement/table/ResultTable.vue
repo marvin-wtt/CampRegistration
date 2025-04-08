@@ -24,6 +24,7 @@
           :label="t('filter')"
           :options="countries"
           borderless
+          rounded
           clearable
           dense
           multiple
@@ -40,6 +41,7 @@
           :label="t('template')"
           :options="templates"
           borderless
+          rounded
           dense
           map-options
           option-label="title"
@@ -68,6 +70,7 @@
           v-if="!printing"
           dense
           flat
+          round
           icon="more_vert"
         >
           <q-menu>
@@ -150,8 +153,11 @@
 
 <script lang="ts" setup>
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import { QTableColumn } from 'quasar';
-import { CTableTemplate, CTableColumnTemplate } from 'src/types/CTableTemplate';
+import { type QTableColumn } from 'quasar';
+import type {
+  CTableTemplate,
+  CTableColumnTemplate,
+} from 'src/types/CTableTemplate';
 import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
 import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -162,12 +168,12 @@ import type {
 import { useQuasar } from 'quasar';
 import {
   createPDF,
-  Dimension,
+  type Dimension,
 } from 'components/campManagement/table/export/tableToPdf';
 
 import { useRoute, useRouter } from 'vue-router';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
-import {
+import type {
   TableColumnTemplate,
   Registration,
 } from '@camp-registration/common/entities';
@@ -177,7 +183,7 @@ import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
-import { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 
 interface Props {
   questions: TableColumnTemplate[];
@@ -199,9 +205,9 @@ const templateStore = useTemplateStore();
 const registrationAccessor = useRegistrationHelper();
 
 interface Pagination {
-  rowsPerPage?: number;
-  sortBy?: string;
-  descending?: boolean;
+  rowsPerPage?: number | undefined;
+  sortBy?: string | undefined;
+  descending?: boolean | undefined;
 }
 
 const pagination = ref<Pagination>({
@@ -238,6 +244,10 @@ const rows = computed<Registration[]>(() => {
   if (template.value.filterRoles) {
     rows = rows.filter((row) => {
       const roles = row.campData['role'];
+
+      if (roles === undefined) {
+        return [];
+      }
 
       // If no role is set for a given registration, it is assumed that it is a participant registration
       if (template.value.filterRoles?.includes('participant')) {
@@ -434,6 +444,7 @@ async function printTables(templates: CTableTemplate[]) {
   const initialTemplate = template.value;
   try {
     await printTablesCore(templates);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e: unknown) {
     quasar.notify({
       type: 'negative',

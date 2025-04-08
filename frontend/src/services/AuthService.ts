@@ -2,21 +2,23 @@ import { api } from 'boot/axios';
 import type {
   AuthTokens,
   Authentication,
-  Profile,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
-import {
-  AxiosError,
-  AxiosRequestConfig,
-  InternalAxiosRequestConfig,
-  isAxiosError,
-} from 'axios';
+import { type AxiosError, type AxiosRequestConfig, isAxiosError } from 'axios';
+
+export type CustomRequestConfig = AxiosRequestConfig & {
+  _skipRetry?: boolean;
+  _skipAuthenticationHandler?: boolean | undefined;
+};
 
 export type CustomAxiosError = AxiosError & {
-  config: InternalAxiosRequestConfig & {
-    _skipRetry?: boolean;
-    _skipAuthenticationHandler?: boolean;
-  };
+  config: CustomRequestConfig;
+};
+
+export const extendAxiosConfig = (
+  config: CustomRequestConfig,
+): CustomRequestConfig => {
+  return config;
 };
 
 export const isCustomAxiosError = (
@@ -100,7 +102,7 @@ export function useAuthService() {
 
   async function forgotPassword(email: string): Promise<void> {
     const response = await api.post('auth/forgot-password', {
-      email: email,
+      email,
     });
 
     return response?.data;
@@ -126,25 +128,79 @@ export function useAuthService() {
     });
   }
 
-  async function fetchProfile(): Promise<Profile> {
-    const response = await api.get('profile');
+  async function sendEmailVerify(token: string): Promise<void> {
+    await api.post('auth/send-verification-email', {
+      token,
+    });
+  }
 
-    return response?.data?.data;
+  async function verifyOtp(
+    token: string,
+    otp: string,
+    remember?: boolean,
+  ): Promise<Authentication> {
+    const response = await api.post('auth/verify-otp', {
+      token,
+      otp,
+      remember,
+    });
+
+    return response?.data;
   }
 
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
     onUnauthenticated = handler;
   }
 
+  interface PartialAuthResponse {
+    token: string;
+    partialAuthType: string;
+  }
+
+  interface PartialAuthError {
+    response: {
+      status: 403;
+      data: PartialAuthResponse;
+    };
+  }
+
+  function extractPartialAuthResponse(
+    error: unknown,
+  ): PartialAuthResponse | undefined {
+    return isPartialAuthResponse(error) ? error.response.data : undefined;
+  }
+
+  function isPartialAuthResponse(error: unknown): error is PartialAuthError {
+    return (
+      isCustomAxiosError(error) &&
+      // Forbidden
+      error.response?.status === 403 &&
+      // Data
+      error.response?.data != null &&
+      typeof error.response?.data === 'object' &&
+      // Status
+      'status' in error.response.data &&
+      error.response.data.status === 'PARTIAL_AUTH' &&
+      // Partial auth type
+      'partialAuthType' in error.response.data &&
+      typeof error.response.data.partialAuthType === 'string' &&
+      // Token
+      'token' in error.response.data &&
+      typeof error.response.data.token === 'string'
+    );
+  }
+
   return {
     login,
     logout,
+    verifyOtp,
     register,
     forgotPassword,
     resetPassword,
     verifyEmail,
-    fetchProfile,
+    sendEmailVerify,
     refreshTokens,
     setOnUnauthenticated,
+    extractPartialAuthResponse,
   };
 }
