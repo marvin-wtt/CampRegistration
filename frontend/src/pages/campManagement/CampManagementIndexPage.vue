@@ -102,7 +102,6 @@ const { t } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
-const router = useRouter();
 const profileStore = useProfileStore();
 
 type MenuState = 'active' | 'inactive';

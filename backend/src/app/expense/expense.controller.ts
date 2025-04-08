@@ -1,111 +1,107 @@
-import { catchRequestAsync } from '#utils/catchAsync';
-import { collection, resource } from '#core/resource';
 import expenseService from '#app/expense/expense.service';
-import expenseResource from '#app/expense/expense.resource';
+import { ExpenseResource } from '#app/expense/expense.resource';
 import httpStatus from 'http-status';
-import { routeModel } from '#utils/verifyModel';
 import fileService from '#app/file/file.service';
-import { validateRequest } from '#core/validation/request';
 import validator from '#app/expense/expense.validation';
 import ApiError from '#utils/ApiError';
-import { exportExpenses } from '#app/expense/expense.exporter.js';
+import {
+  ExpenseWithFile,
+  exportExpenses,
+} from '#app/expense/expense.exporter.js';
+import { BaseController } from '#core/base/BaseController.js';
+import type { Request, Response } from 'express';
 
-const show = catchRequestAsync(async (req, res) => {
-  const expense = routeModel(req.models.expense);
+class ExpenseController extends BaseController {
+  show(req: Request, res: Response) {
+    const expense = req.modelOrFail('expense');
 
-  res.json(resource(expenseResource(expense)));
-});
-
-const index = catchRequestAsync(async (req, res) => {
-  const {
-    params: { campId },
-    query: { exportType },
-  } = await validateRequest(req, validator.index);
-
-  const expenses = await expenseService.queryExpenses(campId);
-  const resources = expenses.map((value) => expenseResource(value));
-
-  if (exportType != null && exportType !== 'json') {
-    exportExpenses(exportType, resources, res);
-    return;
+    res.resource(new ExpenseResource(expense));
   }
 
-  res.json(collection(resources));
-});
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+      query: { exportType },
+    } = await req.validate(validator.index);
 
-const store = catchRequestAsync(async (req, res) => {
-  const {
-    params: { campId },
-    body,
-  } = await validateRequest(req, validator.store);
+    const expenses = await expenseService.queryExpenses(campId);
 
-  const expense = await expenseService.createExpense(
-    campId,
-    {
-      name: body.name,
-      description: body.description,
-      amount: body.amount,
-      date: body.date,
-      category: body.category,
-      paidAt: body.paidAt,
-      paidBy: body.paidBy,
-      payee: body.payee,
-    },
-    req.file,
-  );
+    if (exportType != null && exportType !== 'json') {
+      await exportExpenses(exportType, expenses, res);
+      return;
+    }
 
-  res.status(httpStatus.CREATED).json(resource(expenseResource(expense)));
-});
-
-const update = catchRequestAsync(async (req, res) => {
-  const expense = routeModel(req.models.expense);
-  const { body } = await validateRequest(req, validator.update);
-  const file = req.file;
-
-  // This should never happen
-  if (file != null && body.file === null) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file data');
+    res.resource(ExpenseResource.collection(expenses));
   }
 
-  // Delete existing file if file is present and request file is defined
-  // Must happen before updating the expense as the file is attached to the expense
-  if ((body.file === null || file != null) && expense.file != null) {
-    await fileService.deleteFile(expense.file.id);
+  async store(req: Request, res: Response) {
+    const {
+      params: { campId },
+      body,
+    } = await req.validate(validator.store);
+
+    const expense = await expenseService.createExpense(
+      campId,
+      {
+        name: body.name,
+        description: body.description,
+        amount: body.amount,
+        date: body.date,
+        category: body.category,
+        paidAt: body.paidAt,
+        paidBy: body.paidBy,
+        payee: body.payee,
+      },
+      req.file,
+    );
+
+    res.status(httpStatus.CREATED).resource(new ExpenseResource(expense));
   }
 
-  const updatedExpense = await expenseService.updateExpenseById(
-    expense.id,
-    {
-      receiptNumber: body.receiptNumber,
-      name: body.name,
-      description: body.description,
-      amount: body.amount,
-      date: body.date,
-      category: body.category,
-      paidAt: body.paidAt,
-      paidBy: body.paidBy,
-      payee: body.payee,
-    },
-    file,
-  );
+  async update(req: Request, res: Response) {
+    const expense = req.modelOrFail('expense');
+    const { body } = await req.validate(validator.update);
+    const file = req.file;
 
-  res.json(resource(expenseResource(updatedExpense)));
-});
+    // This should never happen
+    if (file != null && body.file === null) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file data');
+    }
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const {
-    params: { expenseId },
-  } = await validateRequest(req, validator.destroy);
+    // Delete existing file if file is present and request file is defined
+    // Must happen before updating the expense as the file is attached to the expense
+    if ((body.file === null || file != null) && expense.file != null) {
+      await fileService.deleteFile(expense.file.id);
+    }
 
-  await expenseService.deleteExpenseById(expenseId);
+    const updatedExpense = await expenseService.updateExpenseById(
+      expense.id,
+      {
+        receiptNumber: body.receiptNumber,
+        name: body.name,
+        description: body.description,
+        amount: body.amount,
+        date: body.date,
+        category: body.category,
+        paidAt: body.paidAt,
+        paidBy: body.paidBy,
+        payee: body.payee,
+      },
+      file,
+    );
 
-  res.sendStatus(httpStatus.NO_CONTENT);
-});
+    res.resource(new ExpenseResource(updatedExpense));
+  }
 
-export default {
-  show,
-  index,
-  store,
-  update,
-  destroy,
-};
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { expenseId },
+    } = await req.validate(validator.destroy);
+
+    await expenseService.deleteExpenseById(expenseId);
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+}
+
+export default new ExpenseController();

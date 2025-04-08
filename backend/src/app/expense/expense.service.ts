@@ -1,112 +1,109 @@
-import prisma from '../../client.js';
 import { ulid } from '#utils/ulid';
 import type { Prisma } from '@prisma/client';
-import fileService from '#app/file/file.service';
+import { BaseService } from '#core/base/BaseService.js';
 
 type RequestFile = Express.Multer.File;
 
-const getExpenseById = async (campId: string, id: string) => {
-  return prisma.expense.findFirst({
-    where: { id, campId },
-    include: { file: true },
-  });
-};
-
-const getExpenseWithCampById = async (id: string) => {
-  return prisma.expense.findFirst({
-    where: { id },
-    include: {
-      camp: true,
-      file: true,
-    },
-  });
-};
-
-const queryExpenses = async (campId: string) => {
-  return prisma.expense.findMany({
-    where: { campId },
-    include: { file: true },
-  });
-};
-
-const createExpense = async (
-  campId: string,
-  data: Omit<Prisma.ExpenseCreateInput, 'id' | 'receiptNumber' | 'camp'>,
-  file?: RequestFile,
-) => {
-  return prisma.$transaction(async (prisma) => {
-    const lastExpense = await prisma.expense.findFirst({
-      where: { campId, receiptNumber: { not: null } },
-      orderBy: { receiptNumber: 'desc' },
+export class ExpenseService extends BaseService {
+  async getExpenseById(campId: string, id: string) {
+    return this.prisma.expense.findFirst({
+      where: { id, campId },
+      include: { file: true },
     });
+  }
 
-    const receiptNumber = (lastExpense?.receiptNumber ?? 0) + 1;
+  async getExpenseWithCampById(id: string) {
+    return this.prisma.expense.findFirst({
+      where: { id },
+      include: {
+        camp: true,
+        file: true,
+      },
+    });
+  }
 
+  async queryExpenses(campId: string) {
+    return this.prisma.expense.findMany({
+      where: { campId },
+      include: { file: true },
+    });
+  }
+
+  async createExpense(
+    campId: string,
+    data: Omit<Prisma.ExpenseCreateInput, 'id' | 'receiptNumber' | 'camp'>,
+    file?: RequestFile,
+  ) {
+    return this.prisma.$transaction(async (prisma) => {
+      const lastExpense = await prisma.expense.findFirst({
+        where: { campId, receiptNumber: { not: null } },
+        orderBy: { receiptNumber: 'desc' },
+      });
+
+      const receiptNumber = (lastExpense?.receiptNumber ?? 0) + 1;
+
+      // Generate file data
+      const fileData = this.createFileCreateData(file);
+
+      // TODO Use storage
+      // if (file) {
+      //   await fileService.moveFileToStorage(file);
+      // }
+
+      return prisma.expense.create({
+        data: {
+          ...data,
+          id: ulid(),
+          receiptNumber,
+          camp: { connect: { id: campId } },
+          file: fileData,
+        },
+        include: { file: true },
+      });
+    });
+  }
+
+  updateExpenseById = async (
+    id: string,
+    data: Omit<Prisma.ExpenseUpdateInput, 'id'>,
+    file?: RequestFile,
+  ) => {
     // Generate file data
-    const fileData = createFileCreateData(file);
+    const fileData = this.createFileCreateData(file);
 
-    if (file) {
-      await fileService.moveFileToStorage(file);
-    }
+    // TODO Use storage
+    // if (file) {
+    //   await fileService.moveFileToStorage(file);
+    // }
 
-    return prisma.expense.create({
+    return this.prisma.expense.update({
+      where: { id },
       data: {
         ...data,
-        id: ulid(),
-        receiptNumber,
-        camp: { connect: { id: campId } },
         file: fileData,
       },
       include: { file: true },
     });
-  });
-};
-
-const updateExpenseById = async (
-  id: string,
-  data: Omit<Prisma.ExpenseUpdateInput, 'id'>,
-  file?: RequestFile,
-) => {
-  // Generate file data
-  const fileData = createFileCreateData(file);
-
-  if (file) {
-    await fileService.moveFileToStorage(file);
-  }
-
-  return prisma.expense.update({
-    where: { id },
-    data: {
-      ...data,
-      file: fileData,
-    },
-    include: { file: true },
-  });
-};
-
-const deleteExpenseById = async (id: string) => {
-  return prisma.expense.delete({
-    where: { id },
-  });
-};
-
-const createFileCreateData = (
-  file?: RequestFile,
-): Prisma.FileUpdateOneWithoutExpenseNestedInput | undefined => {
-  if (!file) {
-    return undefined;
-  }
-
-  return {
-    create: fileService.modelFileCreateData(undefined, file),
   };
-};
 
-export default {
-  getExpenseById,
-  getExpenseWithCampById,
-  queryExpenses,
-  createExpense,
-  updateExpenseById,
-  deleteExpenseById,
-};
+  async deleteExpenseById(id: string) {
+    return this.prisma.expense.delete({
+      where: { id },
+    });
+  }
+
+  private createFileCreateData = (
+    file?: RequestFile,
+  ): Prisma.FileUpdateOneWithoutExpenseNestedInput | undefined => {
+    if (!file) {
+      return undefined;
+    }
+
+    // TODO Find a better way to implement this
+    // return {
+    //   create: fileService.modelFileCreateData(undefined, file),
+    // };
+  };
+}
+
+export default new ExpenseService();

@@ -75,7 +75,7 @@ model Camp {
   tableTemplates   TableTemplate[]
   messageTemplates MessageTemplate[]
   files            File[]
-  expense         Expense[]
+  expense          Expense[]
 
   @@map("camps")
 }
@@ -188,7 +188,7 @@ model File {
   registrationId    String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
   messageId         String?  @map("message_id") @db.Char(36) // Prisma does not support morth
   messageTemplateId String?  @map("message_template_id") @db.Char(36) // Prisma does not support morth
-  expenseId         String?  @map("expense_id") @db.Char(36) // Prisma does not support morth
+  expenseId         String?  @unique @map("expense_id") @db.Char(36) // Prisma does not support morth
   name              String
   originalName      String   @map("original_name")
   field             String?
@@ -202,7 +202,7 @@ model File {
   registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
   messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
-  expense         Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expense         Expense?         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@map("files")
 }

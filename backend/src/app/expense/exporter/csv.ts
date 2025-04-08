@@ -1,8 +1,8 @@
-import { Expense } from '@camp-registration/common/entities';
 import { writeToStream } from '@fast-csv/format';
-import { Response } from 'express';
+import type { Response } from 'express';
+import type { ExpenseWithFile } from '#app/expense/expense.exporter';
 
-export const exportCSV = (expenses: Expense[], res: Response): void => {
+export const exportCSV = (expenses: ExpenseWithFile[], res: Response): void => {
   res.setHeader('Content-Disposition', 'attachment; filename="expenses.csv"');
   res.setHeader('Content-Type', 'text/csv');
 

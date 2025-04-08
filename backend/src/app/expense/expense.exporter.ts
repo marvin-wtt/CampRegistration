@@ -1,14 +1,21 @@
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
-import { Expense } from '@camp-registration/common/entities';
 import { exportCSV } from '#app/expense/exporter/csv';
 import { exportExcelFGYO } from '#app/expense/exporter/excelFGYO/index.js';
-import { Response } from 'express';
+import type { Response } from 'express';
+import type { Expense, File } from '@prisma/client';
 
-const exportExpenses = (type: string, expenses: Expense[], res: Response) => {
+export type ExpenseWithFile = Expense & { file?: File };
+
+const exportExpenses = (
+  type: string,
+  expenses: ExpenseWithFile[],
+  res: Response,
+) => {
   switch (type) {
     case 'csv':
-      return exportCSV(expenses, res);
+      exportCSV(expenses, res);
+      return;
     case 'excel-fgyp':
       return exportExcelFGYO(expenses, res);
     default:

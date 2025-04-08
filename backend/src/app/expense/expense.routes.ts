@@ -1,32 +1,36 @@
 import express from 'express';
 import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import { routeModel, verifyModelExists } from '#utils/verifyModel';
 import { catchParamAsync } from '#utils/catchAsync';
 import expenseService from '#app/expense/expense.service';
 import expenseController from '#app/expense/expense.controller';
 import convertEmptyStringsToNull from '#middlewares/emptyStringNull.middleware.js';
+import { controller } from '#utils/bindController.js';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'expenseId',
   catchParamAsync(async (req, _res, id) => {
-    const camp = routeModel(req.models.camp);
+    const camp = req.modelOrFail('camp');
     const expense = await expenseService.getExpenseById(camp.id, id);
-    req.models.expense = verifyModelExists(expense);
+    req.setModelOrFail('expense', expense);
   }),
 );
 
-router.get('/', guard(campManager), expenseController.index);
-router.get('/:expenseId', guard(campManager), expenseController.show);
+router.get('/', guard(campManager), controller(expenseController, 'index'));
+router.get(
+  '/:expenseId',
+  guard(campManager),
+  controller(expenseController, 'show'),
+);
 router.post(
   '/',
   auth(),
   guard(campManager),
   multipart('file'),
   convertEmptyStringsToNull,
-  expenseController.store,
+  controller(expenseController, 'store'),
 );
 router.patch(
   '/:expenseId',
@@ -34,13 +38,13 @@ router.patch(
   guard(campManager),
   multipart('file'),
   convertEmptyStringsToNull,
-  expenseController.update,
+  controller(expenseController, 'update'),
 );
 router.delete(
   '/:expenseId',
   auth(),
   guard(campManager),
-  expenseController.destroy,
+  controller(expenseController, 'destroy'),
 );
 
 export default router;

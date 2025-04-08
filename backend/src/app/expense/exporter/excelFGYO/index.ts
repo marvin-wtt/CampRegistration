@@ -1,14 +1,17 @@
-import { Expense } from '@camp-registration/common/entities';
 import { useExcel } from '#app/expense/exporter/excel.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
-import {
+import type {
   ReceiptListFileConfig,
   BudgetCategories,
 } from '#app/expense/exporter/excelFGYO/ReceiptListFileConfig';
-import { Response } from 'express';
+import type { Response } from 'express';
+import type { ExpenseWithFile } from '#app/expense/expense.exporter.js';
 
-export const exportExcelFGYO = async (data: Expense[], res: Response) => {
+export const exportExcelFGYO = async (
+  data: ExpenseWithFile[],
+  res: Response,
+) => {
   res.setHeader(
     'Content-Type',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
