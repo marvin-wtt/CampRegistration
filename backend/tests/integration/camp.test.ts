@@ -23,6 +23,7 @@ import {
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
+import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -223,8 +224,6 @@ describe('/api/v1/camps', () => {
 
         expect(status).toBe(200);
 
-        console.log(body.data);
-
         expect(body).toHaveProperty('data');
         expect(body.data.length).toBe(2);
       });
@@ -405,8 +404,8 @@ describe('/api/v1/camps', () => {
       );
     });
 
-    describe('reference id', () => {
-      it('should set default form when reference Id is undefined', async () => {
+    describe('defaults', () => {
+      it('should set default form', async () => {
         const accessToken = generateAccessToken(await UserFactory.create());
 
         const { body } = await request()
@@ -418,6 +417,74 @@ describe('/api/v1/camps', () => {
         expect(body.data.form).toHaveProperty('title');
       });
 
+      it('should set default themes', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data.themes).toHaveProperty('light');
+      });
+
+      it('should create default table templates', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.tableTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).not.toBe(0);
+      });
+
+      it('should create default message templates', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const templates = await prisma.messageTemplate.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(templates.length).not.toBe(0);
+      });
+
+      it('should create default files', async () => {
+        const accessToken = generateAccessToken(await UserFactory.create());
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send(campCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const files = await prisma.file.findMany({
+          where: {
+            camp: { id: body.data.id },
+          },
+        });
+
+        expect(files.length).not.toBe(0);
+      });
+    });
+
+    describe('reference id', () => {
       it('should copy the form of the referenced camp', async () => {
         const referenceForm = {
           title: 'Reference camp title',
@@ -439,18 +506,6 @@ describe('/api/v1/camps', () => {
         expect(body.data.form).toStrictEqual(referenceForm);
       });
 
-      it('should set default themes when reference Id is undefined', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(campCreateNational)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        expect(body.data.themes).toHaveProperty('light');
-      });
-
       it('should copy the themes of the referenced camp', async () => {
         const referenceThemes = {
           light: { themeName: 'Test' },
@@ -470,24 +525,6 @@ describe('/api/v1/camps', () => {
           .expect(201);
 
         expect(body.data.themes).toStrictEqual(referenceThemes);
-      });
-
-      it('should create default table templates when reference Id is undefined', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(campCreateNational)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        const templates = await prisma.tableTemplate.findMany({
-          where: {
-            camp: { id: body.data.id },
-          },
-        });
-
-        expect(templates.length).not.toBe(0);
       });
 
       it('should copy all table templates from the referenced camp', async () => {
@@ -534,22 +571,47 @@ describe('/api/v1/camps', () => {
         ).toBeTruthy();
       });
 
-      it('should create default files when reference Id is undefined', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+      it('should copy all message templates from the referenced camp', async () => {
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken({
+            messageTemplates: {},
+          });
+
+        await MessageTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          event: 'registration_confirmed',
+        });
+        await MessageTemplateFactory.create({
+          camp: { connect: { id: referenceCamp.id } },
+          event: 'registration_waitlist_accepted',
+        });
+
+        const data = {
+          ...campCreateNational,
+          referenceCampId: referenceCamp.id,
+        };
 
         const { body } = await request()
           .post(`/api/v1/camps/`)
-          .send(campCreateNational)
+          .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
-        const files = await prisma.file.findMany({
+        const templates = await prisma.messageTemplate.findMany({
           where: {
             camp: { id: body.data.id },
           },
         });
 
-        expect(files.length).not.toBe(0);
+        expect(templates.length).toBe(2);
+        expect(
+          templates.some((value) => value.event === 'registration_confirmed'),
+        ).toBeTruthy();
+        expect(
+          templates.some(
+            (value) => value.event === 'registration_waitlist_accepted',
+          ),
+        ).toBeTruthy();
       });
 
       it('should copy all files from the referenced camp', async () => {

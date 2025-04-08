@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 const index = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
   body: z.object({
     email: z.string().email(),
@@ -19,8 +19,8 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.string(),
-    managerId: z.string(),
+    campId: z.string().ulid(),
+    managerId: z.string().ulid(),
   }),
   body: z
     .object({
@@ -32,15 +32,15 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string(),
-    managerId: z.string(),
+    campId: z.string().ulid(),
+    managerId: z.string().ulid(),
   }),
 });
 
 const accept = z.object({
   params: z.object({
-    managerId: z.string(),
-    token: z.string(),
+    managerId: z.string().ulid(),
+    token: z.string().ulid(),
   }),
 });
 

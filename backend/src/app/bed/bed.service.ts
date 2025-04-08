@@ -1,42 +1,40 @@
-import prisma from '#client.js';
+import { BaseService } from '#core/base/BaseService';
 
-const getBedById = async (id: string, roomId: string) => {
-  return prisma.bed.findFirst({
-    where: { id, roomId },
-  });
-};
+export class BedService extends BaseService {
+  async getBedById(id: string, roomId: string) {
+    return this.prisma.bed.findFirst({
+      where: { id, roomId },
+    });
+  }
 
-const createBed = async (roomId: string, registrationId?: string) => {
-  return prisma.bed.create({
-    data: {
-      roomId,
-      registrationId,
-    },
-  });
-};
-const updateBedById = async (id: string, registrationId: string | null) => {
-  return prisma.bed.update({
-    where: { id },
-    data: {
-      registrationId,
-    },
-    include: {
-      registration: true,
-    },
-  });
-};
+  async createBed(roomId: string, registrationId?: string) {
+    return this.prisma.bed.create({
+      data: {
+        roomId,
+        registrationId,
+      },
+    });
+  }
 
-const deleteBedById = async (id: string) => {
-  return prisma.bed.delete({
-    where: {
-      id,
-    },
-  });
-};
+  async updateBedById(id: string, registrationId: string | null) {
+    return this.prisma.bed.update({
+      where: { id },
+      data: {
+        registrationId,
+      },
+      include: {
+        registration: true,
+      },
+    });
+  }
 
-export default {
-  getBedById,
-  createBed,
-  updateBedById,
-  deleteBedById,
-};
+  async deleteBedById(id: string) {
+    return this.prisma.bed.delete({
+      where: {
+        id,
+      },
+    });
+  }
+}
+
+export default new BedService();

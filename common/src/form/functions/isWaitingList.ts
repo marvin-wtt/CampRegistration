@@ -5,7 +5,7 @@ const isWaitingList = (params: unknown[]): boolean | null => {
 
   const freePlaces = params[0];
   if (typeof freePlaces === 'number') {
-    return freePlaces == 0;
+    return freePlaces <= 0;
   }
 
   // Country based free places
@@ -32,7 +32,7 @@ const isWaitingList = (params: unknown[]): boolean | null => {
     return null;
   }
 
-  return availableFreePlaces == 0;
+  return availableFreePlaces <= 0;
 };
 
 export default isWaitingList;

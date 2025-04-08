@@ -2,10 +2,7 @@
   <q-layout view="hHh Lpr lff">
     <q-ajax-bar color="accent" />
 
-    <q-header
-      class="bg-primary text-white"
-      elevated
-    >
+    <q-header bordered>
       <q-toolbar>
         <q-btn
           v-if="showDrawer"
@@ -31,6 +28,7 @@
           class="q-px-md gt-xs"
           dense
           rounded
+          unelevated
         />
 
         <profile-menu

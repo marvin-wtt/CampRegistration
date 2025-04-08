@@ -1,19 +1,24 @@
-import { Camp, User } from '@prisma/client';
-import campResource from '#app/camp/camp.resource';
-import type { Profile as ProfileResource } from '@camp-registration/common/entities';
+import type { Camp, User } from '@prisma/client';
+import { CampResource } from '#app/camp/camp.resource';
+import type { Profile as ProfileResourceData } from '@camp-registration/common/entities';
+import { JsonResource } from '#core/resource/JsonResource';
 
-export const profileResource = (
-  user: Omit<User, 'password'>,
-  camps: Camp[] = [],
-): ProfileResource => {
-  return {
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    twoFactorEnabled: user.twoFactorEnabled,
-    locale: user.locale,
-    camps: camps.map((value) => campResource(value)),
-  };
-};
+export interface UserWithCamps extends Omit<User, 'password'> {
+  camps: Camp[];
+}
 
-export default profileResource;
+export class ProfileResource extends JsonResource<
+  UserWithCamps,
+  ProfileResourceData
+> {
+  transform(): ProfileResourceData {
+    return {
+      name: this.data.name,
+      email: this.data.email,
+      role: this.data.role,
+      twoFactorEnabled: this.data.twoFactorEnabled,
+      locale: this.data.locale,
+      camps: CampResource.collection(this.data.camps).transform(),
+    };
+  }
+}

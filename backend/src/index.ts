@@ -1,15 +1,15 @@
-import { Server } from 'http';
+import type { Server } from 'http';
 import app from './app.js';
 import prisma from './client.js';
 import config from '#config/index';
 import logger from '#core/logger';
 
-let server: Server;
-prisma.$connect().then(() => {
+let server: Server | undefined;
+await prisma.$connect().then(() => {
   logger.info('Connected to SQL Database');
   // TODO Error handling
   server = app.listen(config.port, '', () => {
-    logger.info(`Listening to port ${config.port}`);
+    logger.info(`Listening to port ${config.port.toString()}`);
   });
 });
 

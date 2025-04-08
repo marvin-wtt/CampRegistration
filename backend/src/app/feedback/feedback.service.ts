@@ -1,29 +1,28 @@
-import notificationService from '#app/notification/notification.service';
+import mailService from '#core/mail/mail.service';
 import config from '#config/index';
+import { BaseService } from '#core/base/BaseService';
 
-const saveFeedback = async (
-  message: string,
-  location?: string,
-  userAgent?: string,
-  email?: string | undefined,
-) => {
-  const context = {
-    message,
-    location,
-    userAgent,
-  };
+export class FeedbackService extends BaseService {
+  async saveFeedback(
+    message: string,
+    location?: string,
+    userAgent?: string,
+    email?: string,
+  ) {
+    const context = {
+      message,
+      location,
+      userAgent,
+    };
 
-  // TODO Store to DB instead
+    await mailService.sendTemplateMail({
+      to: config.email.admin,
+      subject: 'New Feedback',
+      template: 'feedback',
+      replyTo: email,
+      context,
+    });
+  }
+}
 
-  await notificationService.sendEmail({
-    to: config.email.admin,
-    subject: 'New Feedback',
-    template: 'feedback',
-    replyTo: email,
-    context,
-  });
-};
-
-export default {
-  saveFeedback,
-};
+export default new FeedbackService();

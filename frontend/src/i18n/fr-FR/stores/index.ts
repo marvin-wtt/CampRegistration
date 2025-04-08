@@ -14,6 +14,6 @@ export default {
   roomPlanner,
   campManager,
   campFiles,
-  user: auth,
+  auth,
   profile,
 };

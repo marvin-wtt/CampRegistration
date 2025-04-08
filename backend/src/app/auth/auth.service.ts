@@ -1,171 +1,115 @@
 import httpStatus from 'http-status';
 import userService from '#app/user/user.service';
 import tokenService from '#app/token/token.service';
-import notificationService from '#app/notification/notification.service';
 import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
-import { encryptPassword, isPasswordMatch } from '#utils/encryption';
-import { AuthTokensResponse } from '#types/response';
-import prisma from '#/client.js';
-import i18n, { t } from '#core/i18n';
+import { isPasswordMatch } from '#core/encryption';
+import type { AuthTokensResponse } from '#types/response';
+import { BaseService } from '#core/base/BaseService';
 
-const loginWithEmailPassword = async (email: string, password: string) => {
-  const user = await userService.getUserByEmail(email);
+export class AuthService extends BaseService {
+  async loginWithEmailPassword(email: string, password: string) {
+    const user = await userService.getUserByEmail(email);
 
-  if (!user || !(await isPasswordMatch(password, user.password as string))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Incorrect email or password.');
-  }
-
-  if (user.locked) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'Account is locked');
-  }
-
-  return user;
-};
-
-const logout = async (refreshToken: string): Promise<void> => {
-  await prisma.token.updateMany({
-    data: {
-      blacklisted: true,
-    },
-    where: {
-      token: refreshToken,
-      type: TokenType.REFRESH,
-    },
-  });
-};
-
-const refreshAuth = async (
-  refreshToken: string,
-): Promise<AuthTokensResponse> => {
-  try {
-    const refreshTokenData = await tokenService.verifyDatabaseToken(
-      refreshToken,
-      TokenType.REFRESH,
-    );
-    const { id, userId } = refreshTokenData;
-
-    await tokenService.deleteTokenById(id);
-
-    await userService.updateUserLastSeenById(userId);
-
-    // Fetch user because role is required
-    const user = await userService.getUserByIdOrFail(userId);
-
-    return tokenService.generateAuthTokens(user, true);
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
-  }
-};
-
-const resetPassword = async (
-  token: string,
-  email: string,
-  password: string,
-): Promise<void> => {
-  const resetPasswordTokenData = await tokenService.verifyDatabaseToken(
-    token,
-    TokenType.RESET_PASSWORD,
-  );
-  const user = await userService.getUserById(resetPasswordTokenData.userId);
-  if (!user || user.email !== email) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
-  }
-  await userService.updateUserById(user.id, {
-    password,
-    emailVerified: true,
-  });
-
-  await revokeAllUserTokens(user.id);
-};
-
-const revokeAllUserTokens = async (userId: string) => {
-  await tokenService.blacklistTokens(userId);
-};
-
-const verifyEmail = async (token: string): Promise<void> => {
-  let verifyEmailTokenData;
-  try {
-    verifyEmailTokenData = await tokenService.verifyDatabaseToken(
-      token,
-      TokenType.VERIFY_EMAIL,
-    );
-  } catch (e: unknown) {
-    // Change status code of api error
-    if (e instanceof ApiError) {
-      e.statusCode = httpStatus.UNAUTHORIZED;
+    if (!user || !(await isPasswordMatch(password, user.password))) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Incorrect email or password.',
+      );
     }
-    throw e;
+
+    if (user.locked) {
+      throw new ApiError(httpStatus.FORBIDDEN, 'Account is locked');
+    }
+
+    return user;
   }
 
-  await prisma.token.deleteMany({
-    where: {
-      userId: verifyEmailTokenData.userId,
-      type: TokenType.VERIFY_EMAIL,
-    },
-  });
+  async logout(refreshToken: string): Promise<void> {
+    await this.prisma.token.updateMany({
+      data: {
+        blacklisted: true,
+      },
+      where: {
+        token: refreshToken,
+        type: TokenType.REFRESH,
+      },
+    });
+  }
 
-  await userService.updateUserById(verifyEmailTokenData.userId, {
-    emailVerified: true,
-  });
-};
+  async refreshAuth(refreshToken: string): Promise<AuthTokensResponse> {
+    try {
+      const refreshTokenData = await tokenService.verifyDatabaseToken(
+        refreshToken,
+        TokenType.REFRESH,
+      );
+      const { id, userId } = refreshTokenData;
 
-const sendResetPasswordEmail = async (to: string, token: string) => {
-  const user = await userService.getUserByEmail(to);
-  await i18n.changeLanguage(user?.locale);
+      await tokenService.deleteTokenById(id);
 
-  const template = 'reset-password';
-  const subject = t('auth:email.resetPassword.subject');
-  const url = notificationService.generateUrl('reset-password', {
-    email: to,
-    token,
-  });
+      await userService.updateUserLastSeenById(userId);
 
-  const context = {
-    url,
-  };
+      // Fetch user because role is required
+      const user = await userService.getUserByIdOrFail(userId);
 
-  await notificationService.sendEmail({
-    to,
-    subject,
-    template,
-    context,
-  });
-};
+      return await tokenService.generateAuthTokens(user, true);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
+    }
+  }
 
-const sendVerificationEmail = async (to: string, token: string) => {
-  const user = await userService.getUserByEmail(to);
-  await i18n.changeLanguage(user?.locale);
+  async resetPassword(
+    token: string,
+    email: string,
+    password: string,
+  ): Promise<void> {
+    const resetPasswordTokenData = await tokenService.verifyDatabaseToken(
+      token,
+      TokenType.RESET_PASSWORD,
+    );
+    const user = await userService.getUserById(resetPasswordTokenData.userId);
+    if (!user || user.email !== email) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
+    }
+    await userService.updateUserById(user.id, {
+      password,
+      emailVerified: true,
+    });
 
-  const subject = t('auth:email.verifyEmail.subject');
-  const url = notificationService.generateUrl('login', {
-    email: to,
-    token,
-  });
+    await this.revokeAllUserTokens(user.id);
+  }
 
-  const context = {
-    url,
-  };
+  async revokeAllUserTokens(userId: string) {
+    await tokenService.blacklistTokens(userId);
+  }
 
-  const template = 'verify-email';
+  async verifyEmail(token: string): Promise<void> {
+    let verifyEmailTokenData;
+    try {
+      verifyEmailTokenData = await tokenService.verifyDatabaseToken(
+        token,
+        TokenType.VERIFY_EMAIL,
+      );
+    } catch (e: unknown) {
+      // Change status code of api error
+      if (e instanceof ApiError) {
+        e.statusCode = httpStatus.UNAUTHORIZED;
+      }
+      throw e;
+    }
 
-  await notificationService.sendEmail({
-    to,
-    subject,
-    template,
-    context,
-  });
-};
+    await this.prisma.token.deleteMany({
+      where: {
+        userId: verifyEmailTokenData.userId,
+        type: TokenType.VERIFY_EMAIL,
+      },
+    });
 
-export default {
-  loginWithEmailPassword,
-  isPasswordMatch,
-  encryptPassword,
-  logout,
-  revokeAllUserTokens,
-  refreshAuth,
-  resetPassword,
-  verifyEmail,
-  sendVerificationEmail,
-  sendResetPasswordEmail,
-};
+    await userService.updateUserById(verifyEmailTokenData.userId, {
+      emailVerified: true,
+    });
+  }
+}
+
+export default new AuthService();

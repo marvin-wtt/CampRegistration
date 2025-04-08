@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { catchMiddlewareAsync } from '#utils/catchAsync';

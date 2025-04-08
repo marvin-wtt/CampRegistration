@@ -3,5 +3,5 @@ import logger from '#core/logger';
 
 export const removeExpiredTokens = async () => {
   const result = await tokenService.deleteExpiredTokens();
-  logger.info(`Removed ${result.count} token(s).`);
+  logger.info(`Removed ${result.count.toString()} token(s).`);
 };

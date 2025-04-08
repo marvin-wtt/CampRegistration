@@ -1,7 +1,8 @@
-import { Registration, Room, Bed } from '@prisma/client';
-import type { Registration as RegistrationResource } from '@camp-registration/common/entities';
+import type { Registration, Room, Bed } from '@prisma/client';
+import type { Registration as RegistrationData } from '@camp-registration/common/entities';
+import { JsonResource } from '#core/resource/JsonResource';
 
-interface RegistrationWithBed extends Registration {
+export interface RegistrationWithBed extends Registration {
   bed?: BedWithRoom | null;
 }
 
@@ -9,22 +10,21 @@ interface BedWithRoom extends Bed {
   room: Room;
 }
 
-const registrationResource = (
-  registration: RegistrationWithBed,
-): RegistrationResource => {
-  const room = registration.bed ? registration.bed.room.name : null;
-
-  return {
-    id: registration.id,
-    waitingList: registration.waitingList,
-    data: registration.data,
-    campData: registration.campData,
-    locale: registration.locale,
-    room,
-    // Use snake case because form keys should be snake case too
-    updatedAt: registration.updatedAt?.toISOString() ?? null,
-    createdAt: registration.createdAt.toISOString(),
-  };
-};
-
-export default registrationResource;
+export class RegistrationResource extends JsonResource<
+  RegistrationWithBed,
+  RegistrationData
+> {
+  transform(): RegistrationData {
+    return {
+      id: this.data.id,
+      waitingList: this.data.waitingList,
+      data: this.data.data,
+      campData: this.data.campData,
+      locale: this.data.locale,
+      room: this.data.bed ? this.data.bed.room.name : null,
+      // Use snake case because form keys should be snake case too
+      updatedAt: this.data.updatedAt?.toISOString() ?? null,
+      createdAt: this.data.createdAt.toISOString(),
+    };
+  }
+}

@@ -1,5 +1,8 @@
 <template>
-  <q-separator v-if="props.separated" />
+  <q-separator
+    v-if="props.separated"
+    spaced
+  />
 
   <q-item-label
     v-if="props.header"
@@ -29,6 +32,7 @@
         align="top"
         floating
         rounded
+        color="secondary"
       >
         Preview
       </q-badge>
@@ -39,7 +43,6 @@
   <q-expansion-item
     v-else
     v-model="expanded"
-    expand-separator
     :icon="props.icon"
     :label="props.label"
     :to="props.to"

@@ -24,6 +24,7 @@
           :label="t('filter')"
           :options="countries"
           borderless
+          rounded
           clearable
           dense
           multiple
@@ -40,6 +41,7 @@
           :label="t('template')"
           :options="templates"
           borderless
+          rounded
           dense
           map-options
           option-label="title"
@@ -68,6 +70,7 @@
           v-if="!printing"
           dense
           flat
+          round
           icon="more_vert"
         >
           <q-menu>
@@ -202,9 +205,9 @@ const templateStore = useTemplateStore();
 const registrationAccessor = useRegistrationHelper();
 
 interface Pagination {
-  rowsPerPage?: number;
-  sortBy?: string;
-  descending?: boolean;
+  rowsPerPage?: number | undefined;
+  sortBy?: string | undefined;
+  descending?: boolean | undefined;
 }
 
 const pagination = ref<Pagination>({
@@ -241,6 +244,10 @@ const rows = computed<Registration[]>(() => {
   if (template.value.filterRoles) {
     rows = rows.filter((row) => {
       const roles = row.campData['role'];
+
+      if (roles === undefined) {
+        return [];
+      }
 
       // If no role is set for a given registration, it is assumed that it is a participant registration
       if (template.value.filterRoles?.includes('participant')) {
