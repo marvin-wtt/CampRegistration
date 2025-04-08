@@ -15,7 +15,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
   const createCampWithManagerAndToken = async (
     campData?: Parameters<(typeof CampFactory)['create']>[0],
   ) => {
-    const camp = await CampFactory.create();
+    const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
