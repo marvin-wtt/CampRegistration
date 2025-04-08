@@ -8,7 +8,7 @@ import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import managerService from '#app/manager/manager.service';
 import { catchAndResolve } from '#utils/promiseUtils';
-import { AuthResource } from './auth.resource.js';
+import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import totpService from '#app/totp/totp.service';
 import authMessages from '#app/auth/auth.messages';
@@ -91,8 +91,8 @@ class AuthController extends BaseController {
     const tokens = await tokenService.generateAuthTokens(user, remember);
     this.setAuthCookies(res, tokens);
 
-    res.resource(
-      new AuthResource({
+    res.json(
+      authResource({
         user,
         tokens,
       }),

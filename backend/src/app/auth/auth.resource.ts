@@ -1,5 +1,5 @@
 import type {
-  Authentication as AuthenticationResourceData,
+  Authentication as AuthenticationResource,
   Token,
 } from '@camp-registration/common/entities';
 import type { AuthTokensResponse, TokenResponse } from '#types/response';
@@ -7,29 +7,23 @@ import {
   ProfileResource,
   type UserWithCamps,
 } from '#app/profile/profile.resource.js';
-import { JsonResource } from '#core/resource/JsonResource.js';
 
 interface AuthWithData {
   user: UserWithCamps;
   tokens: AuthTokensResponse;
 }
 
-export class AuthResource extends JsonResource<
-  AuthWithData,
-  AuthenticationResourceData
-> {
-  transform(): AuthenticationResourceData {
-    return {
-      profile: new ProfileResource(this.data.user).transform(),
-      tokens: {
-        access: convertToken(this.data.tokens.access),
-        refresh: this.data.tokens.refresh
-          ? convertToken(this.data.tokens.refresh)
-          : undefined,
-      },
-    };
-  }
-}
+export const authResource = (data: AuthWithData): AuthenticationResource => {
+  return {
+    profile: new ProfileResource(data.user).transform(),
+    tokens: {
+      access: convertToken(data.tokens.access),
+      refresh: data.tokens.refresh
+        ? convertToken(data.tokens.refresh)
+        : undefined,
+    },
+  };
+};
 
 const convertToken = (token: TokenResponse): Token => {
   return {
@@ -37,3 +31,5 @@ const convertToken = (token: TokenResponse): Token => {
     expires: token.expires.toUTCString(),
   };
 };
+
+export default authResource;
