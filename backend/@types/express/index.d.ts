@@ -10,6 +10,7 @@ import type {
   Bed,
   Room,
   File,
+  Expense,
 } from '@prisma/client';
 import type { AnyZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
@@ -27,6 +28,7 @@ declare global {
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
+      expense?: Expense & { file: File | null };
     }
 
     interface AuthUser {

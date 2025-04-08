@@ -1,6 +1,9 @@
 import express from 'express';
 import v1routes from './v1.js';
-import { generalLimiter, maintenance } from '#middlewares/index';
+import maintenance from '#middlewares/maintenance.middleware';
+import { generalLimiter } from '#middlewares/rateLimiter.middleware';
+import convertEmptyStringsToNull from '#middlewares/emptyStringNull.middleware';
+
 import passport from 'passport';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
@@ -12,6 +15,7 @@ router.use(morgan.successHandler);
 
 router.use(generalLimiter);
 router.use(maintenance);
+router.use(convertEmptyStringsToNull);
 router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
 
 router.use('/v1', v1routes);

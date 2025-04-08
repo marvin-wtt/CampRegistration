@@ -85,6 +85,32 @@ export class FileService extends BaseService {
     });
   }
 
+  async createManyModelFile(
+    model: ModelData | undefined,
+    files: Omit<Prisma.FileCreateManyInput, 'id'>[],
+  ) {
+    const modelData = model ? { [`${model.name}Id`]: model.id } : {};
+
+    const data = files.map((file) => {
+      return {
+        ...file,
+        ...modelData,
+        id: ulid(),
+        createdAt: undefined,
+      };
+    });
+
+    return prisma.file.createMany({
+      data,
+    });
+  };
+
+  async getFileById(id: string) {
+    return prisma.file.findUnique({
+      where: { id },
+    });
+  };
+
   async queryModelFiles(
     model: ModelData,
     filter: {
@@ -218,14 +244,15 @@ export class FileService extends BaseService {
         registrationId: null,
         messageId: null,
         messageTemplateId: null,
-        createdAt: { lt: minAge },
-      },
-      select: {
-        id: true,
-        name: true,
-        storageLocation: true,
-      },
-    });
+        expenseId: null,
+      createdAt: { lt: minAge },
+    },
+    select: {
+      id: true,
+      name: true,
+      storageLocation: true,
+    },
+  });
 
     // Delete files from database first so that the files can no longer be accessed.
     const fileIds = files.map((file) => file.id);

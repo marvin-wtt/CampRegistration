@@ -121,12 +121,14 @@ interface Props {
   label?: string;
   locales?: string[];
   always?: boolean;
+  collapsed?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   label: '',
   locales: () => [],
   always: false,
+  collapsed: false,
 });
 
 const useTranslations = ref(defaultUseTranslations());
@@ -144,7 +146,11 @@ function defaultUseTranslations(): boolean {
 function defaultValue(): string | number {
   // If the model value if an object and there is only one locale, we assume that the object is a translation and
   //  contains a translation for the given locale
-  if (props.locales.length === 1 && typeof model.value === 'object') {
+  if (
+    props.locales.length === 1 &&
+    model.value &&
+    typeof model.value === 'object'
+  ) {
     return model.value[props.locales[0]];
   }
 
@@ -154,7 +160,7 @@ function defaultValue(): string | number {
 }
 
 function defaultTranslations(): Translations {
-  return typeof model.value === 'object' ? model.value : {};
+  return model.value && typeof model.value === 'object' ? model.value : {};
 }
 
 const lastEmittedValue = ref<ModelValueType>();
@@ -185,7 +191,7 @@ watch(
     if (typeof newValue === 'string' || typeof newValue === 'number') {
       value.value = newValue;
       useTranslations.value = false;
-    } else if (typeof newValue === 'object') {
+    } else if (newValue && typeof newValue === 'object') {
       translations.value = newValue;
       useTranslations.value = true;
     }
