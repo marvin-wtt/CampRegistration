@@ -6,7 +6,7 @@ import type { OptionalByKeys } from '#types/utils';
 import config from '#config/index';
 import { BaseService } from '#core/BaseService.js';
 
-class CampService extends BaseService {
+export class CampService extends BaseService {
   async getCampById(id: string) {
     return this.prisma.camp.findFirst({
       where: { id },

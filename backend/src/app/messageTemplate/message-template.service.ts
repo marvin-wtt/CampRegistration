@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import Handlebars from 'handlebars';
 import { BaseService } from '#core/BaseService.js';
 
-class MessageTemplateService extends BaseService {
+export class MessageTemplateService extends BaseService {
   async getMessageTemplateById(campId: string, id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {

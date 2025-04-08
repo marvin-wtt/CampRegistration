@@ -7,7 +7,7 @@ import { isPasswordMatch } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/BaseService.js';
 
-class AuthService extends BaseService {
+export class AuthService extends BaseService {
   async loginWithEmailPassword(email: string, password: string) {
     const user = await userService.getUserByEmail(email);
 

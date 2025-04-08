@@ -7,7 +7,7 @@ import { type Token, TokenType, type User } from '@prisma/client';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/BaseService.js';
 
-class TokenService extends BaseService {
+export class TokenService extends BaseService {
   private generateToken(
     userId: string,
     expires: Moment,

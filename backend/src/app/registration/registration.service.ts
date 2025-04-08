@@ -17,7 +17,7 @@ type PrismaTransaction = Parameters<
   Parameters<PrismaClient['$transaction']>[0]
 >[0];
 
-class RegistrationService extends BaseService {
+export class RegistrationService extends BaseService {
   async getRegistrationById(campId: string, id: string) {
     return this.prisma.registration.findFirst({
       where: { id, campId },

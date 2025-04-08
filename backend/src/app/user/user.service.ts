@@ -5,7 +5,7 @@ import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/BaseService.js';
 
-class UserService extends BaseService {
+export class UserService extends BaseService {
   async createUser(
     data: Pick<
       Prisma.UserCreateInput,

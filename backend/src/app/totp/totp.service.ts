@@ -5,7 +5,7 @@ import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/BaseService.js';
 
-class TotpService extends BaseService {
+export class TotpService extends BaseService {
   async generateTOTP(user: User) {
     const secret = new OTPAuth.Secret();
 

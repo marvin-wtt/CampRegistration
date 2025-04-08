@@ -26,7 +26,7 @@ const fileNameExtension = (fileName: string): string => {
   return `.${extension}`;
 };
 
-class FileService extends BaseService {
+export class FileService extends BaseService {
   private tmpStorage = new DiskStorage(config.storage.tmpDir);
   private storageRegistry = storageRegistry;
 

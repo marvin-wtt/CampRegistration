@@ -1,6 +1,6 @@
 import { BaseService } from '#core/BaseService.js';
 
-class TableTemplateService extends BaseService {
+export class TableTemplateService extends BaseService {
   async getTemplateById(campId: string, id: string) {
     return this.prisma.tableTemplate.findFirst({
       where: { id, campId },

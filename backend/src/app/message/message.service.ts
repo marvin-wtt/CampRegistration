@@ -17,7 +17,7 @@ import { BaseService } from '#core/BaseService.js';
 type MessageWithAttachments = Message & { attachments: File[] };
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
-class MessageService extends BaseService {
+export class MessageService extends BaseService {
   public uniqueEmails(emails: string[]): string[] {
     return [...new Set(emails.map((value) => value.trim().toLowerCase()))];
   }

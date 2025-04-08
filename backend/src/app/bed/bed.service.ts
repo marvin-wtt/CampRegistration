@@ -1,6 +1,6 @@
 import { BaseService } from '#core/BaseService.js';
 
-class BedService extends BaseService {
+export class BedService extends BaseService {
   async getBedById(id: string, roomId: string) {
     return this.prisma.bed.findFirst({
       where: { id, roomId },
