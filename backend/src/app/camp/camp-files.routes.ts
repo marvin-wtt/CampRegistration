@@ -1,26 +1,24 @@
 import { catchParamAsync } from '#utils/catchAsync';
-import { routeModel, verifyModelExists } from '#utils/verifyModel';
 import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
-import express, { Request } from 'express';
+import express, { type Request } from 'express';
 import { auth, guard, multipart } from '#middlewares/index';
 import { and, or, campManager, campActive } from '#guards/index';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
 router.param(
   'fileId',
   catchParamAsync(async (req, _res, id) => {
-    const camp = routeModel(req.models.camp);
+    const camp = req.modelOrFail('camp');
     const file = await fileService.getModelFile('camp', camp.id, id);
-    req.models.file = verifyModelExists(file);
+    req.setModelOrFail('file', file);
   }),
 );
 
-const fileAccessMiddleware = async (
-  req: Request,
-): Promise<boolean | string> => {
-  const file = routeModel(req.models.file);
+const fileAccessMiddleware = (req: Request): boolean | string => {
+  const file = req.modelOrFail('file');
 
   // Camp managers always have access to all files
   return file.accessLevel === 'public';
@@ -30,16 +28,26 @@ const fileAccessMiddleware = async (
 router.get(
   '/:fileId',
   guard(or(campManager, and(fileAccessMiddleware, campActive))),
-  fileController.stream,
+  controller(fileController, 'stream'),
 );
-router.get('/', auth(), guard(campManager), fileController.index);
+router.get(
+  '/',
+  auth(),
+  guard(campManager),
+  controller(fileController, 'index'),
+);
 router.post(
   '/',
   auth(),
   guard(campManager),
   multipart('file'),
-  fileController.store,
+  controller(fileController, 'store'),
 );
-router.delete('/:fileId', auth(), guard(campManager), fileController.destroy);
+router.delete(
+  '/:fileId',
+  auth(),
+  guard(campManager),
+  controller(fileController, 'destroy'),
+);
 
 export default router;

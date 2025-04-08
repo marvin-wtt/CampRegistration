@@ -15,25 +15,25 @@ export function useObjectTranslation() {
 
     return computed<string>(() => {
       if (locale.value in value) {
-        return value[locale.value];
+        return value[locale.value]!;
       }
 
-      const shortLocale = locale.value.split('-')[0];
+      const shortLocale = locale.value.split('-')[0]!;
       if (shortLocale in value) {
-        return value[shortLocale];
+        return value[shortLocale]!;
       }
 
       const fallback = fallbackLocale.value as string;
       if (fallback in value) {
-        return value[fallback];
+        return value[fallback]!;
       }
 
-      const shortFallback = fallback.split('-')[0];
+      const shortFallback = fallback.split('-')[0]!;
       if (shortFallback in value) {
-        return value[shortFallback];
+        return value[shortFallback]!;
       }
 
-      return Object.values(value)[0];
+      return Object.values(value)[0]!;
     }).value;
   }
 

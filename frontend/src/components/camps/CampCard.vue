@@ -2,6 +2,7 @@
   <q-card
     v-ripple
     class="camp-card cursor-pointer q-hoverable"
+    data-test="camp-card"
     @click="navigateToRegistration"
   >
     <!-- Helper to make it hover and selectable -->
@@ -10,10 +11,11 @@
     <q-card-section class="col q-pa-none">
       <!-- TODO Use actual logo -->
       <q-img
-        src="https://via.placeholder.com/1024x768/eee?text=4:3"
+        src="~assets/placeholder.svg"
         alt="Logo"
         :ratio="4 / 3"
         :fit="'cover'"
+        style="border-radius: 20px 20px 0 0"
       />
     </q-card-section>
 
@@ -46,16 +48,20 @@
           />
           {{ props.camp.minAge }} - {{ props.camp.maxAge }} years
         </div>
-        <div class="col q-col-gutter-sm">
+        <div class="col q-col-gutter-sm row no-wrap">
           <q-icon
             name="language"
             size="sm"
           />
-          <country-icon
+          <div
             v-for="locale in props.camp.countries"
             :key="locale"
-            :locale="locale"
-          />
+          >
+            <country-icon
+              :locale
+              size="xs"
+            />
+          </div>
         </div>
         <div>
           <q-icon

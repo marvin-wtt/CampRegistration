@@ -1,7 +1,7 @@
 <template>
   <q-step
-    :name="props.name"
-    :title="props.title"
+    :name="name"
+    :title="title"
     :done="done"
     :header-nav="done"
     :disable="props.disable"
@@ -26,7 +26,7 @@
           type="submit"
         />
         <q-btn
-          v-if="props.name > 1"
+          v-if="name > 1"
           :label="t('action.back')"
           flat
           color="primary"
@@ -42,24 +42,22 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed, ref, watch } from 'vue';
+import { type QStepProps } from 'quasar';
 
 const { t } = useI18n();
 
 const step = defineModel<number>({
   required: true,
 });
-const props = withDefaults(
-  defineProps<{
-    name: number;
-    title?: string;
-    last?: boolean;
+
+type Props = QStepProps & {
+  name: number;
+  title?: string;
+  last?: boolean;
     disable?: boolean;
-  }>(),
-  {
-    title: '',
-    last: false,
-  },
-);
+  };
+
+const { name, title = '', last = false } = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'next-step'): void;
   (e: 'previous-step'): void;
@@ -68,7 +66,7 @@ const emit = defineEmits<{
 const error = ref<boolean>();
 
 const nextLabel = computed<string>(() => {
-  return props.last ? t('action.finish') : t('action.continue');
+  return last ? t('action.finish') : t('action.continue');
 });
 
 const done = computed<boolean>(() => {

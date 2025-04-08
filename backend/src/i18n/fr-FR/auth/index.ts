@@ -14,7 +14,7 @@ export default {
       },
       footer: {
         cause:
-          '$t(email:footer.cause) vous avez été invité par un autre utilisateur.',
+          '$t(email:footer.cause) vous avez demandé un nouveau mot de passe.',
       },
     },
 

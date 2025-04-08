@@ -91,7 +91,7 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref, watch } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
@@ -102,11 +102,12 @@ const { t } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter();
+const profileStore = useProfileStore();
 
 type MenuState = 'active' | 'inactive';
 
-const { user, loading, error } = storeToRefs(authStore);
+const { user, loading, error } = storeToRefs(profileStore);
 
 const menu = ref<MenuState>(getMenuStateFromQueryParameter());
 

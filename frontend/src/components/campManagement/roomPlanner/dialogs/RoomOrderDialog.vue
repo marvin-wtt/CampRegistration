@@ -50,7 +50,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import SortableList from 'components/common/SortableList.vue';
 import { reactive, toRaw } from 'vue';
-import { RoomWithRoommates } from 'src/types/Room';
+import type { RoomWithRoommates } from 'src/types/Room';
 
 const props = defineProps<{
   rooms: RoomWithRoommates[];

@@ -34,9 +34,12 @@ import {
   campWithEmailAndMaxParticipants,
   campWithFormFunctions,
   campWithAddress,
+  campWithMultipleFilesRequired,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import mailer from '../../src/core/mail';
+import { NoOpMailer } from '../../src/core/mail/noop.mailer';
+
+const mailer = NoOpMailer.prototype;
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
@@ -382,6 +385,51 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(updatedFile.registrationId).toBe(body.data.id);
       });
 
+      it('should respond with `201` status code when form has multiple files', async () => {
+        const camp = await CampFactory.create(campWithMultipleFilesRequired);
+        const file1 = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const file2 = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        const data = {
+          some_field: 'Some value',
+          some_files: [
+            `${file1.id}#${file1.field}`,
+            `${file2.id}#${file2.field}`,
+          ],
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(body).toHaveProperty(`data.id`);
+        expect(body).toHaveProperty(`data.data.some_files`);
+        expect(body.data.data.some_files).toHaveLength(2);
+
+        const expectedUrl = (fileId: string) =>
+          `/api/v1/camps/${camp.id}/registrations/${body.data.id}/files/${fileId}/`;
+
+        expect(
+          body.data.data.some_files[0].endsWith(expectedUrl(file1.id)),
+        ).toBeTruthy();
+        expect(
+          body.data.data.some_files[1].endsWith(expectedUrl(file2.id)),
+        ).toBeTruthy();
+
+        const updatedFiles = await prisma.file.findMany({
+          where: { registrationId: body.data.id },
+        });
+
+        expect(updatedFiles).toHaveLength(2);
+      });
+
       it('should respond with `201` status code when file is optional', async () => {
         const camp = await CampFactory.create(campWithFileOptional);
 
@@ -467,14 +515,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when file is already assigned to a registration', async () => {
         const camp = await CampFactory.create(campWithFileRequired);
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
         const file = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
-          registration: {
-            create: RegistrationFactory.build({
-              camp: { create: CampFactory.build() },
-            }),
-          },
+          registration: { connect: { id: registration.id } },
         });
 
         const data = {
@@ -1020,7 +1067,25 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
     });
 
-    describe('sends notification', () => {
+    describe('sends messages', () => {
+      it('should respond with 201 status code when message template is missing', async () => {
+        const camp = await CampFactory.create({
+          ...campWithEmail,
+          messageTemplates: {},
+        });
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+      });
+
       it('should send a confirmation email to the user', async () => {
         const camp = await CampFactory.create(campWithEmail);
 
@@ -1037,7 +1102,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: [data.email],
+            to: data.email,
             replyTo: camp.contactEmail,
           }),
         );
@@ -1059,7 +1124,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: expect.arrayContaining([data.email, data.emailGuardian]),
+            to: data.email,
+            replyTo: camp.contactEmail,
+          }),
+        );
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.emailGuardian,
             replyTo: camp.contactEmail,
           }),
         );
@@ -1078,6 +1150,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
+        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: camp.contactEmail,
@@ -1101,6 +1174,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(201);
 
         const expectedEmail = campWithContactEmailInternational.contactEmail.de;
+        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: expectedEmail,
@@ -1142,9 +1216,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
+        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
-            to: [data.email],
+            to: data.email,
           }),
         );
       });
@@ -1167,7 +1242,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(200);
     });
 
-    it.todo('should not overwrite camp data when updating waiting list ');
+    it.todo('should not overwrite camp data when updating waiting list');
 
     it.todo('should upload files if attached');
 
@@ -1208,9 +1283,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(404);
     });
 
-    it.todo(
-      'should send a confirmation to the user if the waiting list status chnages',
-    );
+    describe('sends messages', () => {
+      it.todo('should send update email when available');
+
+      it.todo('should send waiting list confirmation when available');
+    });
 
     describe.todo('update camp data');
   });
@@ -1429,6 +1506,84 @@ describe('/api/v1/camps/:campId/registrations', () => {
       await request()
         .delete(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
+        .expect(404);
+    });
+
+    describe('sends messages', () => {
+      it.todo('should send cancel email when available');
+    });
+  });
+});
+
+describe('/api/v1/camps/:campId/registrations/:registrationId/files/', () => {
+  const createRegistrationWithFile = async () => {
+    const camp = await CampFactory.create();
+    const registration = await RegistrationFactory.create({
+      camp: { connect: { id: camp.id } },
+    });
+    const file = await FileFactory.create({
+      registration: { connect: { id: registration.id } },
+    });
+    const user = await UserFactory.create({
+      camps: { create: { campId: camp.id } },
+    });
+
+    const accessToken = generateAccessToken(await UserFactory.create());
+
+    return { registration, camp, file, user, accessToken };
+  };
+
+  describe('GET /api/v1/camps/:campId/registrations/:registrationId/files/:fileId', () => {
+    it.todo('should respond with `200` status code');
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { registration, camp, file } = await createRegistrationWithFile();
+      const { accessToken } = await createRegistrationWithFile();
+
+      await request()
+        .get(
+          `/api/v1/camps/${camp.id}/registrations/${registration.id}/files/${file.id}`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const { registration, camp, file } = await createRegistrationWithFile();
+
+      await request()
+        .get(
+          `/api/v1/camps/${camp.id}/registrations/${registration.id}/files/${file.id}`,
+        )
+        .send()
+        .expect(401);
+    });
+
+    it('should respond with `404` status code when registration id does not exists', async () => {
+      const { camp, file, accessToken } = await createRegistrationWithFile();
+      const registrationId = ulid();
+
+      await request()
+        .get(
+          `/api/v1/camps/${camp.id}/registrations/${registrationId}/files/${file.id}`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `404` status code when file id does not exists', async () => {
+      const { camp, registration, accessToken } =
+        await createRegistrationWithFile();
+      const fileId = ulid();
+
+      await request()
+        .get(
+          `/api/v1/camps/${camp.id}/registrations/${registration.id}/files/${fileId}`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
   });

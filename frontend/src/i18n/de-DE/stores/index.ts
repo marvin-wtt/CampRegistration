@@ -4,7 +4,8 @@ import template from './template';
 import roomPlanner from './room-planner';
 import campManager from './camp-manager';
 import campFiles from './camp-files';
-import user from './user';
+import auth from './auth';
+import profile from './profile';
 import expense from './expense.ts';
 
 export default {
@@ -14,6 +15,7 @@ export default {
   roomPlanner,
   campManager,
   campFiles,
-  user,
+  auth,
+  profile,
   expense,
 };

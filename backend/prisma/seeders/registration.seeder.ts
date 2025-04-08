@@ -1,13 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { BaseSeeder } from './BaseSeeder';
 
-const name = 'registration';
+class RegistrationSeeder extends BaseSeeder {
+  name(): string {
+    return 'registration';
+  }
 
-const run = (prisma: PrismaClient) => {
-  // TODO seed data
-  return Promise.resolve();
-};
+  run(): Promise<void> {
+    return Promise.resolve();
+  }
+}
 
-export default {
-  name,
-  run,
-};
+export default new RegistrationSeeder();

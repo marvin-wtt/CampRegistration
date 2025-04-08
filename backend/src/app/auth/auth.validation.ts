@@ -11,8 +11,16 @@ const register = z.object({
 
 const login = z.object({
   body: z.object({
-    email: z.string(),
+    email: z.string().email(),
     password: z.string(),
+    remember: z.boolean().default(false),
+  }),
+});
+
+const verifyOTP = z.object({
+  body: z.object({
+    token: z.string(),
+    otp: z.string(),
     remember: z.boolean().default(false),
   }),
 });
@@ -49,12 +57,20 @@ const verifyEmail = z.object({
   }),
 });
 
+const sendEmailVerification = z.object({
+  body: z.object({
+    token: z.string(),
+  }),
+});
+
 export default {
   register,
   login,
+  verifyOTP,
   logout,
   refreshTokens,
   forgotPassword,
   resetPassword,
   verifyEmail,
+  sendEmailVerification,
 };

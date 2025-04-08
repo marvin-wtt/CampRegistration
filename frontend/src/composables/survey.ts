@@ -1,10 +1,10 @@
-import { ITheme, SurveyModel } from 'survey-core';
+import type { ITheme, SurveyModel } from 'survey-core';
 import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { nextTick, Ref, watch, watchEffect } from 'vue';
+import { nextTick, type Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 import { PlainLight, PlainDark } from 'survey-core/themes';
@@ -48,16 +48,18 @@ export function startAutoDataUpdate(
     setVariables(model, data);
 
     // Set file variables
-    files?.forEach((file) => {
-      if (!file.field) {
-        return;
-      }
+    if (data && files) {
+      files.forEach((file) => {
+        if (!file.field) {
+          return;
+        }
 
-      const name = `_file:${file.field}`;
-      const url = api.getCampFileUrl(model.surveyId, file.id);
+        const name = `_file:${file.field}`;
+        const url = api.getCampFileUrl(data.id, file.id);
 
-      model.setVariable(name, url);
-    });
+        model.setVariable(name, url);
+      });
+    }
   };
 }
 
@@ -82,7 +84,7 @@ export const startAutoThemeUpdate = (
 
     let theme: ITheme;
     if (colorPlatte in themes) {
-      theme = themes[colorPlatte];
+      theme = themes[colorPlatte]!;
     } else if (colorPlatte === 'dark' && 'light' in themes) {
       // Try light mode first
       theme = themes.light;

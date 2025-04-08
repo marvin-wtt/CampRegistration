@@ -1,13 +1,23 @@
 <template>
-  <q-separator v-if="props.separated" />
+  <q-separator
+    v-if="props.separated"
+    spaced
+  />
+
+  <q-item-label
+    v-if="props.header"
+    header
+  >
+    {{ props.label }}
+  </q-item-label>
 
   <q-item
-    v-if="!props.children || props.children.length === 0"
+    v-else-if="!props.children || props.children.length === 0"
     v-ripple
-    :inset-level="props.insertLevel"
     :to="props.to"
     clickable
     :disable="disabled"
+    :inset-level="props.insertLevel"
   >
     <q-item-section
       v-if="props.icon"
@@ -22,6 +32,7 @@
         align="top"
         floating
         rounded
+        color="secondary"
       >
         Preview
       </q-badge>
@@ -32,7 +43,6 @@
   <q-expansion-item
     v-else
     v-model="expanded"
-    expand-separator
     :icon="props.icon"
     :label="props.label"
     :to="props.to"
@@ -56,29 +66,23 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const route = useRoute();
 
-interface Props {
-  name: string;
-  to?: string | object;
-  label?: string;
-  icon?: string;
-  separated?: boolean;
-  insertLevel?: number;
-  preview?: boolean;
-  children?: Props[];
-}
-
-const props = defineProps<Props>();
+const props = defineProps<NavigationItemProps>();
 
 const disabled = computed<boolean>(() => {
-  return props.to === undefined;
+  return !props.header && props.to === undefined;
 });
 
 const expanded = ref<boolean>(isExpanded());
 
 function isExpanded(): boolean {
+  if (props.header) {
+    return false;
+  }
+
   return (
     matchNavigationToRoute(props.to) ||
     props.children?.some((child) => matchNavigationToRoute(child.to)) ||

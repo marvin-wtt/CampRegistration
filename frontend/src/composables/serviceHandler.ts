@@ -1,9 +1,13 @@
-import { QNotifyCreateOptions, useQuasar } from 'quasar';
-import { QNotifyUpdateOptions } from 'quasar';
+import {
+  type QNotifyCreateOptions,
+  type QNotifyUpdateOptions,
+  useQuasar,
+} from 'quasar';
 import { hasMessage } from 'src/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { isAPIServiceError } from 'src/services/APIService';
+import { useRoute } from 'vue-router';
 
 export interface ProgressOptions {
   progress?: QNotifyCreateOptions;
@@ -18,6 +22,7 @@ export interface ResultOptions {
 
 export function useServiceHandler<T>(storeName?: string) {
   const { t } = useI18n();
+  const route = useRoute();
 
   const serviceNotifications = useServiceNotifications(storeName);
   const { extractErrorText } = useErrorExtractor();
@@ -91,6 +96,16 @@ export function useServiceHandler<T>(storeName?: string) {
     error.value = null;
   }
 
+  function queryParam(modelName: string): string | never {
+    let id = route.params[modelName];
+
+    if (Array.isArray(id)) {
+      id = id[0];
+    }
+
+    return checkNotNullWithError(id);
+  }
+
   return {
     data,
     isLoading,
@@ -103,11 +118,12 @@ export function useServiceHandler<T>(storeName?: string) {
     lazyFetch,
     asyncUpdate,
     checkNotNullWithError,
+    queryParam,
     ...serviceNotifications,
   };
 }
 
-function useErrorExtractor() {
+export function useErrorExtractor() {
   const { t } = useI18n();
 
   function extractErrorText(err: unknown): string {
@@ -127,7 +143,7 @@ function useErrorExtractor() {
   };
 }
 
-function useServiceNotifications(storeName?: string) {
+export function useServiceNotifications(storeName?: string) {
   const { t } = useI18n();
   const quasar = useQuasar();
   const { extractErrorText } = useErrorExtractor();
@@ -148,6 +164,7 @@ function useServiceNotifications(storeName?: string) {
         return async (_: string, fn: () => Promise<T>) => {
           try {
             return await fn();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (ignored: unknown) {
             return undefined;
           }

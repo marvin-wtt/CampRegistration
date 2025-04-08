@@ -32,9 +32,11 @@ const TableTemplateBodySchema = z.object({
   filter: z.string().nullable().optional(),
   filterWaitingList: z.enum(['include', 'exclude', 'only']).optional(),
   filterRoles: z.array(z.string()).optional(),
-  printOptions: z.object({
-    orientation: z.enum(['portrait', 'landscape']).optional(),
-  }),
+  printOptions: z
+    .object({
+      orientation: z.enum(['portrait', 'landscape']).optional(),
+    })
+    .optional(),
   indexed: z.boolean().optional(),
   actions: z.boolean().optional(),
   sortBy: z.string().nullable().optional(),
@@ -44,36 +46,36 @@ const TableTemplateBodySchema = z.object({
 
 const show = z.object({
   params: z.object({
-    campId: z.string(),
-    templateId: z.string(),
+    campId: z.string().ulid(),
+    templateId: z.string().ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.string(),
-    templateId: z.string(),
+    campId: z.string().ulid(),
+    templateId: z.string().ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string(),
-    templateId: z.string(),
+    campId: z.string().ulid(),
+    templateId: z.string().ulid(),
   }),
 });
 

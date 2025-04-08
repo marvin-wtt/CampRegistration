@@ -1,4 +1,4 @@
-import { RouteRecordRaw } from 'vue-router';
+import { type RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -72,6 +72,28 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/verify-email',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'verify-email',
+        path: '',
+        component: () => import('pages/auth/VerifyEmailPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/verify-otp',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'verify-otp',
+        path: '',
+        component: () => import('pages/auth/VerifyOtpPage.vue'),
+      },
+    ],
+  },
+  {
     path: '/management',
     component: () => import('layouts/CampManagementLayout.vue'),
     meta: {
@@ -107,14 +129,14 @@ const routes: RouteRecordRaw[] = [
               import('pages/campManagement/ParticipantsIndexPage.vue'),
           },
           {
+            path: 'contact',
+            name: 'management.camp.contact',
+            component: () => import('pages/campManagement/ContactPage.vue'),
+          },
+          {
             path: 'room-planner',
             name: 'room-planner',
             component: () => import('pages/campManagement/RoomPlannerPage.vue'),
-          },
-          {
-            path: 'tools',
-            name: 'tools',
-            component: () => import('pages/campManagement/ToolsPage.vue'),
           },
           {
             path: 'expenses',
@@ -123,7 +145,7 @@ const routes: RouteRecordRaw[] = [
           },
           {
             path: 'settings',
-            name: 'settings',
+            name: 'management.settings',
             component: () =>
               import('pages/campManagement/settings/SettingsPage.vue'),
             children: [
@@ -138,6 +160,14 @@ const routes: RouteRecordRaw[] = [
                 name: 'edit-camp',
                 component: () =>
                   import('pages/campManagement/settings/EditCampPage.vue'),
+              },
+              {
+                path: 'emails',
+                name: 'edit-email-templates',
+                component: () =>
+                  import(
+                    'pages/campManagement/settings/MessageTemplateEditPage.vue'
+                  ),
               },
               {
                 path: 'files',
@@ -185,7 +215,35 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-
+  {
+    path: '/settings',
+    component: () => import('layouts/CampManagementLayout.vue'),
+    meta: {
+      auth: true,
+      hideDrawer: true,
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('pages/settings/SettingsPage.vue'),
+        children: [
+          {
+            path: 'account',
+            component: () => import('pages/settings/AccountSettingsPage.vue'),
+          },
+          {
+            name: 'settings',
+            path: 'profile',
+            component: () => import('pages/settings/ProfileSettingsPage.vue'),
+          },
+          {
+            path: 'security',
+            component: () => import('pages/settings/SecuritySettingsPage.vue'),
+          },
+        ],
+      },
+    ],
+  },
   // Always leave this as last one,
   // but you can also remove it
   {

@@ -1,10 +1,10 @@
 import express from 'express';
 import { catchParamAsync } from '#utils/catchAsync';
-import { routeModel, verifyModelExists } from '#utils/verifyModel';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
 import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
@@ -12,17 +12,22 @@ const router = express.Router({ mergeParams: true });
 router.param(
   'fileId',
   catchParamAsync(async (req, _res, id) => {
-    const registration = routeModel(req.models.registration);
+    const registration = req.modelOrFail('registration');
     const file = await fileService.getModelFile(
       'registration',
       registration.id,
       id,
     );
-    req.models.file = verifyModelExists(file);
+    req.setModelOrFail('file', file);
   }),
 );
 
 // TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
-router.get('/:fileId', auth(), guard(campManager), fileController.stream);
+router.get(
+  '/:fileId',
+  auth(),
+  guard(campManager),
+  controller(fileController, 'stream'),
+);
 
 export default router;

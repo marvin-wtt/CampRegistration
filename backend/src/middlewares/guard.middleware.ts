@@ -1,8 +1,8 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { catchMiddlewareAsync } from '#utils/catchAsync';
-import { GuardFn, or, admin } from '#guards/index';
+import { type GuardFn, or, admin } from '#guards/index';
 
 /**
  * Middleware to guard the access to a route.

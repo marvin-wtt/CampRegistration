@@ -41,7 +41,8 @@ const logger = winston.createLogger({
     winston.format.splat(),
     winston.format.timestamp(),
     winston.format.printf(
-      ({ level, message, timestamp }) => `${timestamp} ${level}: ${message}`,
+      ({ level, message, timestamp }) =>
+        `${String(timestamp)} ${level}: ${String(message)}`,
     ),
   ),
   transports: [consoleTransport, fileTransport, fileErrorTransport],

@@ -5,7 +5,7 @@ import { useTableTemplateService } from './TableTemplateService';
 import { useUserService } from './UserService';
 import { useRoomService } from './RoomService';
 import { useCampManagerService } from './CampManagerService';
-import axios, { AxiosError } from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { useFileService } from './FileService';
 import { useFeedbackService } from './FeedbackService';
 import { useExpenseService } from './ExpenseService.ts';
@@ -15,10 +15,15 @@ import { convertNullToEmptyString } from 'src/services/convertNullToEmptyString.
 
 // Load middleware
 convertNullToEmptyString(api);
+import { useProfileService } from 'src/services/ProfileService';
+import { useTotpService } from 'src/services/TotpService';
+import { useMessageTemplateService } from 'src/services/MessageTemplateService';
+import { useMessageService } from 'src/services/MessageService';
 
 export function useAPIService() {
   return {
     ...useAuthService(),
+    ...useProfileService(),
     ...useUserService(),
     ...useCampService(),
     ...useCampManagerService(),
@@ -27,6 +32,9 @@ export function useAPIService() {
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
+    ...useTotpService(),
+    ...useMessageService(),
+    ...useMessageTemplateService(),
     ...useExpenseService(),
     ...usePublicFileService(),
   };

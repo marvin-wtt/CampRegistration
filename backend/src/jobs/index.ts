@@ -4,7 +4,7 @@ import {
   deleteUnassignedFiles,
   deleteUnusedFiles,
 } from '#jobs/files.job';
-import { CronOptions, Cron, scheduledJobs } from 'croner';
+import { type CronOptions, Cron, scheduledJobs } from 'croner';
 import {
   errorHandler,
   completionHandler,

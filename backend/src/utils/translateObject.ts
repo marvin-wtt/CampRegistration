@@ -1,19 +1,28 @@
-export const translateObject = (
-  value: Record<string, string> | string,
+export const translateObject = <T>(
+  value: Record<string, T> | T,
   locale: string | undefined,
-): string => {
-  if (typeof value === 'string') {
+): T => {
+  const v = objectValueOrAll(value, locale);
+
+  return Array.isArray(v) ? v[0] : v;
+};
+
+export const objectValueOrAll = <T>(
+  value: Record<string, T> | T,
+  locale: string | undefined,
+): T | T[] => {
+  if (typeof value !== 'object' || !value) {
     return value;
   }
 
   if (!locale) {
-    return Object.values(value)[0];
+    return Object.values(value) as T[];
   }
 
   const key = locale.split('-')[0];
   if (key in value) {
-    return value[key];
+    return value[key as keyof typeof value] as T;
   }
 
-  return Object.values(value)[0];
+  return Object.values(value) as T[];
 };

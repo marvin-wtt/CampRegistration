@@ -1,16 +1,24 @@
 import {
   Strategy as JwtStrategy,
   ExtractJwt,
-  VerifyCallback,
+  type VerifyCallback,
 } from 'passport-jwt';
 import { Strategy as AnonymousStrategy } from 'passport-anonymous';
-import { Request } from 'express';
+import type { Request } from 'express';
 import config from '#config/index';
 import { TokenType } from '@prisma/client';
+import passport from 'passport';
+import userService from '#app/user/user.service';
 
 function cookieExtractor(req: Request) {
-  if (req && req.cookies && 'accessToken' in req.cookies) {
-    return req.cookies.accessToken;
+  const cookies: unknown = req.cookies;
+  if (
+    cookies &&
+    typeof cookies === 'object' &&
+    'accessToken' in cookies &&
+    typeof cookies.accessToken === 'string'
+  ) {
+    return cookies.accessToken;
   }
   return null;
 }
@@ -23,20 +31,46 @@ const jwtOptions = {
   ]),
 };
 
-const jwtVerify: VerifyCallback = async (payload, done) => {
+const isPayload = (
+  payload: unknown,
+): payload is { type: string; sub: string } => {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'type' in payload &&
+    typeof payload.type === 'string' &&
+    'sub' in payload &&
+    typeof payload.sub === 'string'
+  );
+};
+
+const jwtVerify: VerifyCallback = (payload: unknown, done) => {
+  if (!isPayload(payload)) {
+    done(`Invalid payload data: ${JSON.stringify(payload)}`);
+    return;
+  }
+
   if (payload.type !== TokenType.ACCESS) {
     done('Invalid token type', false);
     return;
   }
 
-  const user = {
-    id: payload.sub,
-    role: payload.role,
-  };
-
-  done(null, user);
+  userService
+    .getUserById(payload.sub)
+    .then((user) => {
+      done(null, user);
+    })
+    .catch(done);
 };
 
-export const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
+const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
 
-export const anonymousStrategy = new AnonymousStrategy();
+const anonymousStrategy = new AnonymousStrategy();
+
+export function initializePassport() {
+  const handler = passport.initialize();
+  passport.use(jwtStrategy);
+  passport.use(anonymousStrategy);
+
+  return handler;
+}

@@ -77,6 +77,23 @@ export const campWithFileRequired = {
   ]),
 };
 
+export const campWithMultipleFilesRequired = {
+  active: true,
+  form: createForm([
+    {
+      name: 'some_field',
+      type: 'text',
+      isRequired: true,
+    },
+    {
+      name: 'some_files',
+      type: 'file',
+      isRequired: true,
+      allowMultiple: true,
+    },
+  ]),
+};
+
 export const campWithCustomFields = {
   active: true,
   form: createForm([

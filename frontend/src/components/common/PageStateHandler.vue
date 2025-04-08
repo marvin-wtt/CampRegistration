@@ -1,5 +1,5 @@
 <template>
-  <q-page :padding="padding">
+  <q-page :padding>
     <div
       v-if="loading || pageError"
       class="absolute fit row justify-center"
@@ -81,7 +81,7 @@ const pageError = computed<boolean>(() => {
   return errorMessage.value != null;
 });
 
-const errorMessage = computed<string | null>(() => {
+const errorMessage = computed<string | undefined | null>(() => {
   return props.error
     ? Array.isArray(props.error)
       ? props.error[0]

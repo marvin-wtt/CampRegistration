@@ -36,6 +36,18 @@ export const generateAccessToken = (user: User) => {
   });
 };
 
+export const generateOTPToken = (user: User) => {
+  return generateToken(user, TokenType.RESTRICTED_ACCESS, {
+    scope: 'OTP',
+  });
+};
+
+export const generateSendVerifyEmailToken = (user: User) => {
+  return generateToken(user, TokenType.RESTRICTED_ACCESS, {
+    scope: 'SEND_VERIFY_EMAIL',
+  });
+};
+
 export const generateRefreshToken = (user: User) => {
   return generateToken(user, TokenType.REFRESH);
 };

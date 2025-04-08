@@ -1,6 +1,7 @@
 import express from 'express';
 import { multipart, guard } from '#middlewares/index';
 import fileController from './file.controller.js';
+import { controller } from '#utils/bindController';
 import { catchParamAsync } from '#utils/catchAsync';
 import { verifyModelExists } from '#utils/verifyModel';
 import fileService from './file.service.js';
@@ -16,8 +17,8 @@ router.param(
   }),
 );
 
-router.get('/:fileId', guard(fileAccessGuard), fileController.stream);
+router.get('/:fileId', guard(fileAccessGuard), controller(fileController, 'stream'));
 
-router.post('/', multipart('file'), fileController.store);
+router.post('/', multipart('file'), controller(fileController, 'store'));
 
 export default router;

@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
+import { getTestingConfig } from '@quasar/app-vite/lib/testing.js';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -16,6 +16,9 @@ export default defineConfig({
       'test/vitest/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
     ],
   },
+  resolve: {
+    alias: (await getTestingConfig()).resolve.alias,
+  },
   plugins: [
     vue({
       template: { transformAssetUrls },
@@ -24,6 +27,5 @@ export default defineConfig({
     quasar({
       sassVariables: 'src/quasar-variables.scss',
     }),
-    tsconfigPaths(),
   ],
 });

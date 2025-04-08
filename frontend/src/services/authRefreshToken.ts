@@ -1,7 +1,7 @@
 import {
-  AxiosError,
-  AxiosInstance,
-  InternalAxiosRequestConfig,
+  type AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
 

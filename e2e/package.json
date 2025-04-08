@@ -1,0 +1,26 @@
+{
+  "name": "@camp-registration/e2e",
+  "version": "0.0.1",
+  "description": "End to end testing",
+  "productName": "Camp Registration E2E",
+  "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marvin-wtt/CampRegistration",
+    "directory": "e2e"
+  },
+  "scripts": {
+    "start": "npm --prefix ../backend run production",
+    "run": "cypress run",
+    "run:ui": "cypress open",
+    "test": "start-server-and-test start http://localhost:3001 run",
+    "dev": "./scripts/run-end-to-end.sh",
+    "dev:run": "npm run start & npm run run:ui"
+  },
+  "devDependencies": {
+    "cypress": "^14.0.2",
+    "start-server-and-test": "^2.0.3",
+    "typescript": "^5.7.3"
+  }
+}

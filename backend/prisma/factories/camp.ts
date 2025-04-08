@@ -1,7 +1,7 @@
-import { faker } from '@faker-js/faker/locale/de';
+import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '@prisma/client';
-import prisma from '../../tests/utils/prisma';
-import { ulid } from 'ulidx';
+import prisma from './prisma';
+import { MessageTemplateFactory } from './message-template';
 
 export const CampFactory = {
   build: (
@@ -24,7 +24,6 @@ export const CampFactory = {
     const maxParticipants = faker.number.int({ min: 1, max: 100 });
 
     return {
-      id: ulid(),
       public: faker.datatype.boolean(),
       active: faker.datatype.boolean(),
       countries: ['de'],
@@ -43,6 +42,11 @@ export const CampFactory = {
       themes: {},
       createdAt,
       updatedAt,
+      messageTemplates: data.messageTemplates ?? {
+        createMany: {
+          data: MessageTemplateFactory.buildDefaults(),
+        },
+      },
       ...data,
     };
   },

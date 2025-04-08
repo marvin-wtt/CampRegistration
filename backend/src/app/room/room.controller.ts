@@ -1,65 +1,58 @@
-import { catchRequestAsync } from '#utils/catchAsync';
 import httpStatus from 'http-status';
-import { collection, resource } from '#core/resource';
 import roomService from './room.service.js';
-import roomResource from './room.resource.js';
-import { routeModel } from '#utils/verifyModel';
-import { validateRequest } from '#core/validation/request';
+import { RoomResource } from './room.resource.js';
 import validator from './room.validation.js';
+import { type Request, type Response } from 'express';
+import { BaseController } from '#core/base/BaseController';
 
-const show = catchRequestAsync(async (req, res) => {
-  const room = routeModel(req.models.room);
+class RoomController extends BaseController {
+  show(req: Request, res: Response) {
+    const room = req.modelOrFail('room');
 
-  res.json(resource(roomResource(room)));
-});
+    res.resource(new RoomResource(room));
+  }
 
-const index = catchRequestAsync(async (req, res) => {
-  const {
-    params: { campId },
-  } = await validateRequest(req, validator.index);
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
 
-  const rooms = await roomService.queryRooms(campId);
-  const resources = rooms.map((value) => roomResource(value));
+    const rooms = await roomService.queryRooms(campId);
 
-  res.json(collection(resources));
-});
+    res.resource(RoomResource.collection(rooms));
+  }
 
-const store = catchRequestAsync(async (req, res) => {
-  const {
-    params: { campId },
-    body: { name, capacity },
-  } = await validateRequest(req, validator.store);
+  async store(req: Request, res: Response) {
+    const {
+      params: { campId },
+      body: { name, capacity },
+    } = await req.validate(validator.store);
 
-  const room = await roomService.createRoom(campId, name, capacity);
+    const room = await roomService.createRoom(campId, name, capacity);
 
-  res.status(httpStatus.CREATED).json(resource(roomResource(room)));
-});
+    res.status(httpStatus.CREATED).resource(new RoomResource(room));
+  }
 
-const update = catchRequestAsync(async (req, res) => {
-  const {
-    params: { roomId },
-    body: { name },
-  } = await validateRequest(req, validator.update);
+  async update(req: Request, res: Response) {
+    const {
+      params: { roomId },
+      body: { name },
+    } = await req.validate(validator.update);
 
-  const room = await roomService.updateRoomById(roomId, name);
+    const room = await roomService.updateRoomById(roomId, name);
 
-  res.json(resource(roomResource(room)));
-});
+    res.resource(new RoomResource(room));
+  }
 
-const destroy = catchRequestAsync(async (req, res) => {
-  const {
-    params: { roomId },
-  } = await validateRequest(req, validator.destroy);
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { roomId },
+    } = await req.validate(validator.destroy);
 
-  await roomService.deleteRoomById(roomId);
+    await roomService.deleteRoomById(roomId);
 
-  res.status(httpStatus.NO_CONTENT).send();
-});
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+}
 
-export default {
-  index,
-  show,
-  store,
-  update,
-  destroy,
-};
+export default new RoomController();
