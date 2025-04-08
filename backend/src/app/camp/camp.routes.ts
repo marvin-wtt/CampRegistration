@@ -12,6 +12,7 @@ import roomRoutes from '#app/room/room.routes';
 import campFileRoutes from './camp-files.routes.js';
 import messageRoutes from '#app/message/message.routes';
 import messageTemplateRoutes from '#app/messageTemplate/message-template.routes';
+import programEventRoutes from 'app/programEvent/program-event.routes';
 import type {
   CampCreateData,
   CampQuery,
@@ -56,6 +57,7 @@ router.use('/:campId/message-templates', messageTemplateRoutes);
 router.use('/:campId/managers', managerRoutes);
 router.use('/:campId/rooms', roomRoutes);
 router.use('/:campId/files', campFileRoutes);
+router.use('/:campId/program-events', programEventRoutes);
 
 router.get('/', guard(queryShowAllGuard), controller(campController, 'index'));
 router.get(
