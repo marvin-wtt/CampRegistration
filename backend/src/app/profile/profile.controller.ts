@@ -9,6 +9,7 @@ import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
 import authMessages from '#app/auth/auth.messages';
 import { BaseController } from '#core/BaseController';
+import { isPasswordMatch } from '#core/encryption.js';
 
 class ProfileController extends BaseController {
   async show(req: Request, res: Response) {
@@ -27,10 +28,7 @@ class ProfileController extends BaseController {
     // Verify currentPassword matches
     if (currentPassword) {
       const user = await userService.getUserByIdOrFail(userId);
-      const match = await authService.isPasswordMatch(
-        currentPassword,
-        user.password,
-      );
+      const match = await isPasswordMatch(currentPassword, user.password);
 
       if (!match) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');

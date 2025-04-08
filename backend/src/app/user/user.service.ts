@@ -1,7 +1,7 @@
 import type { Prisma, User } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import { encryptPassword } from '#utils/encryption';
+import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/BaseService.js';
 

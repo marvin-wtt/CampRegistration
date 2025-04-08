@@ -1,5 +1,4 @@
 import userService from '#app/user/user.service';
-import authService from '#app/auth/auth.service';
 import totpService from './totp.service.js';
 import httpStatus from 'http-status';
 import validator from './totp.validation.js';
@@ -7,6 +6,7 @@ import { TotpResource } from './totp.resource.js';
 import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/BaseController';
+import { isPasswordMatch } from '#core/encryption';
 
 class TotPController extends BaseController {
   async setup(req: Request, res: Response) {
@@ -18,7 +18,7 @@ class TotPController extends BaseController {
     const user = await userService.getUserByIdOrFail(userId);
 
     // Verify password
-    const match = await authService.isPasswordMatch(password, user.password);
+    const match = await isPasswordMatch(password, user.password);
     if (!match) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
     }
@@ -57,7 +57,7 @@ class TotPController extends BaseController {
     const user = await userService.getUserByIdOrFail(userId);
 
     // Verify password
-    const match = await authService.isPasswordMatch(password, user.password);
+    const match = await isPasswordMatch(password, user.password);
     if (!match) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
     }
