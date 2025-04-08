@@ -10,8 +10,8 @@ import {
 import dbJsonPath from '#utils/dbJsonPath';
 import { formUtils } from '#utils/form';
 import config from '#config/index';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
-import { BaseService } from '#core/BaseService.js';
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
+import { BaseService } from '#core/base/BaseService';
 
 type PrismaTransaction = Parameters<
   Parameters<PrismaClient['$transaction']>[0]

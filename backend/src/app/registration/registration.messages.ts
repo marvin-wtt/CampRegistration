@@ -4,8 +4,8 @@ import { RegistrationCampDataHelper } from '#app/registration/registration.helpe
 import { objectValueOrAll } from '#utils/translateObject';
 import mailService from '#core/mail/mail.service';
 import i18n, { t } from '#core/i18n';
-import { BaseMessages } from '#core/BaseMessages';
-import { catchAndResolve } from '#utils/promiseUtils.js';
+import { BaseMessages } from '#core/base/BaseMessages';
+import { catchAndResolve } from '#utils/promiseUtils';
 
 class RegistrationMessages extends BaseMessages {
   async sendRegistrationConfirmed(camp: Camp, registration: Registration) {

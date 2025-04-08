@@ -11,7 +11,7 @@ import defaultMessageTemplates from '#assets/camp/messageTemplates';
 import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
-import { BaseController } from '#core/BaseController.js';
+import { BaseController } from '#core/base/BaseController';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 
 class CampController extends BaseController {

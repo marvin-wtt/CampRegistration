@@ -12,7 +12,7 @@ import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import totpService from '#app/totp/totp.service';
 import authMessages from '#app/auth/auth.messages';
-import { BaseController } from '#core/BaseController';
+import { BaseController } from '#core/base/BaseController';
 
 class AuthController extends BaseController {
   async register(req: Request, res: Response) {

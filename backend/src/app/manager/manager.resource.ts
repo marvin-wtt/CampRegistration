@@ -1,6 +1,6 @@
 import type { CampManager, Invitation, User } from '@prisma/client';
 import type { CampManager as CampManagerData } from '@camp-registration/common/entities';
-import { JsonResource } from '#core/resource/JsonResource.js';
+import { JsonResource } from '#core/resource/JsonResource';
 
 export interface ManagerWithRelationships extends CampManager {
   user: User | null;

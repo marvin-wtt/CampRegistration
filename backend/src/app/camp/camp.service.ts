@@ -4,7 +4,7 @@ import registrationService from '#app/registration/registration.service';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import config from '#config/index';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class CampService extends BaseService {
   async getCampById(id: string) {

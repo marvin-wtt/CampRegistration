@@ -1,5 +1,5 @@
 import prisma from '#client.js';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class ManagerService extends BaseService {
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {

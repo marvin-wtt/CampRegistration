@@ -7,7 +7,7 @@ import { catchAndResolve } from '#utils/promiseUtils';
 import validator from '#app/manager/manager.validation';
 import { type Request, type Response } from 'express';
 import managerMessages from '#app/manager/manager.messages';
-import { BaseController } from '#core/BaseController.js';
+import { BaseController } from '#core/base/BaseController';
 
 class ManagerController extends BaseController {
   async index(req: Request, res: Response) {

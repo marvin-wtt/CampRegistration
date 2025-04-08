@@ -1,9 +1,9 @@
 import type { Message } from '@prisma/client';
 import config from '#config/index.js';
-import renderer from '#core/mail/mail.renderer.js';
-import { MailFactory } from '#core/mail/mail.factory.js';
-import logger from '#core/logger.js';
-import { NoOpMailer } from '#core/mail/noop.mailer.js';
+import renderer from '#core/mail/mail.renderer';
+import { MailFactory } from '#core/mail/mail.factory';
+import logger from '#core/logger';
+import { NoOpMailer } from '#core/mail/noop.mailer';
 import type {
   AdvancedMailPayload,
   IMailer,

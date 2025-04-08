@@ -7,7 +7,7 @@ import {
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
 import registrationMessages from '#app/registration/registration.messages.js';
-import { BaseController } from '#core/BaseController.js';
+import { BaseController } from '#core/base/BaseController';
 
 class RegistrationController extends BaseController {
   show(req: Request, res: Response) {

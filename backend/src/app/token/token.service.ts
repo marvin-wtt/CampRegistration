@@ -5,7 +5,7 @@ import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import { type Token, TokenType, type User } from '@prisma/client';
 import type { AuthTokensResponse } from '#types/response';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class TokenService extends BaseService {
   private generateToken(

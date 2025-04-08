@@ -3,7 +3,7 @@ import { auth, guard } from '#middlewares/index';
 import userController from './user.controller.js';
 import userService from './user.service.js';
 import { catchParamAsync } from '#utils/catchAsync';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
 
 const router = express.Router();
 

@@ -1,9 +1,9 @@
 import type { User } from '@prisma/client';
 import * as OTPAuth from 'otpauth';
 import config from '#config/index.js';
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class TotpService extends BaseService {
   async generateTOTP(user: User) {

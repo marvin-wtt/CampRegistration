@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LocaleSchema } from '#core/validation/helper.js';
+import { LocaleSchema } from '#core/validation/helper';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 

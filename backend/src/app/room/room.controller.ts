@@ -3,7 +3,7 @@ import roomService from './room.service.js';
 import { RoomResource } from './room.resource.js';
 import validator from './room.validation.js';
 import { type Request, type Response } from 'express';
-import { BaseController } from '#core/BaseController.js';
+import { BaseController } from '#core/base/BaseController';
 
 class RoomController extends BaseController {
   show(req: Request, res: Response) {

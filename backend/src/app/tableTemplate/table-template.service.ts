@@ -1,4 +1,4 @@
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class TableTemplateService extends BaseService {
   async getTemplateById(campId: string, id: string) {

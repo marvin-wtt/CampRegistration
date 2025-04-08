@@ -5,7 +5,7 @@ import { catchParamAsync } from '#utils/catchAsync';
 import roomService from './room.service.js';
 import roomController from './room.controller.js';
 import bedRoutes from '#app/bed/bed.routes';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 

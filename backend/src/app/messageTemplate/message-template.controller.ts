@@ -9,7 +9,7 @@ import {
   MessageTemplateDefaultResource,
   MessageTemplateResource,
 } from '#app/messageTemplate/message-template.resource.js';
-import { BaseController } from '#core/BaseController.js';
+import { BaseController } from '#core/base/BaseController';
 import defaultTemplates from '#assets/camp/messageTemplates';
 
 class MessageTemplateController extends BaseController {

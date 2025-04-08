@@ -1,5 +1,5 @@
 import type { TotpData } from '@camp-registration/common/entities';
-import { JsonResource } from '#core/resource/JsonResource.js';
+import { JsonResource } from '#core/resource/JsonResource';
 
 interface Totp {
   secret: string;

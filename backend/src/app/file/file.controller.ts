@@ -4,7 +4,7 @@ import ApiError from '#utils/ApiError';
 import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
-import { BaseController } from '#core/BaseController';
+import { BaseController } from '#core/base/BaseController';
 
 interface ModelData {
   id: string;

@@ -2,7 +2,7 @@ import feedbackService from './feedback.service.js';
 import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './feedback.validation.js';
 import { type Request, type Response } from 'express';
-import { BaseController } from '#core/BaseController.js';
+import { BaseController } from '#core/base/BaseController';
 import httpStatus from 'http-status';
 
 class FeedbackController extends BaseController {

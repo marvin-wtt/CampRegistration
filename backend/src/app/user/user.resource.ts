@@ -1,6 +1,6 @@
 import { type User, Role } from '@prisma/client';
 import type { User as UserResourceData } from '@camp-registration/common/entities';
-import { JsonResource } from '#core/resource/JsonResource.js';
+import { JsonResource } from '#core/resource/JsonResource';
 
 type PartialUser = Pick<
   User,

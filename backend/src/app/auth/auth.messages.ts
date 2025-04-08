@@ -1,7 +1,7 @@
 import mailService from '#core/mail/mail.service';
-import i18n, { t } from '#core/i18n.js';
+import i18n, { t } from '#core/i18n';
 import type { User } from '@prisma/client';
-import { BaseMessages } from '#core/BaseMessages.js';
+import { BaseMessages } from '#core/base/BaseMessages';
 
 class AuthMessages extends BaseMessages {
   async sendVerificationEmail(user: User, token: string) {

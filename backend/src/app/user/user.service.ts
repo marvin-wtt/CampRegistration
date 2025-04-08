@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class UserService extends BaseService {
   async createUser(

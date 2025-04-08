@@ -1,6 +1,6 @@
 import type { Bed, Room } from '@prisma/client';
 import type { Room as RoomData } from '@camp-registration/common/entities';
-import { JsonResource } from '#core/resource/JsonResource.js';
+import { JsonResource } from '#core/resource/JsonResource';
 import { BedResource } from '#app/bed/bed.resource.js';
 
 export interface RoomWithBeds extends Room {

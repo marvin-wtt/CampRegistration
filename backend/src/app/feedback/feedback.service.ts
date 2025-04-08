@@ -1,6 +1,6 @@
-import mailService from '#core/mail/mail.service.js';
+import mailService from '#core/mail/mail.service';
 import config from '#config/index';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class FeedbackService extends BaseService {
   async saveFeedback(

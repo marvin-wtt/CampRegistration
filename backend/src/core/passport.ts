@@ -9,7 +9,7 @@ import type { Request } from 'express';
 import config from '#config/index';
 import { TokenType } from '@prisma/client';
 import passport from 'passport';
-import userService from '#app/user/user.service.js';
+import userService from '#app/user/user.service';
 
 function cookieExtractor(req: Request) {
   const cookies: unknown = req.cookies;

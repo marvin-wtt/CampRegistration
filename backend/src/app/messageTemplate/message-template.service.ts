@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import Handlebars from 'handlebars';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class MessageTemplateService extends BaseService {
   async getMessageTemplateById(campId: string, id: string) {

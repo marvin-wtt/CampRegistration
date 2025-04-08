@@ -7,12 +7,12 @@ import type {
 } from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
-import mailService from '#core/mail/mail.service.js';
+import mailService from '#core/mail/mail.service';
 import { translateObject } from '#utils/translateObject.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service.js';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 type MessageWithAttachments = Message & { attachments: File[] };
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };

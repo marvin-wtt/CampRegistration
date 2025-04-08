@@ -2,8 +2,8 @@ import httpStatus from 'http-status';
 import tableTemplateService from './table-template.service.js';
 import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
-import { TableTemplateResource } from '#app/tableTemplate/table-template.resource.js';
-import { BaseController } from '#core/BaseController';
+import { TableTemplateResource } from '#app/tableTemplate/table-template.resource';
+import { BaseController } from '#core/base/BaseController';
 
 class TableTemplateController extends BaseController {
   show(req: Request, res: Response) {

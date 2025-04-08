@@ -5,7 +5,7 @@ import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
 import { isPasswordMatch } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class AuthService extends BaseService {
   async loginWithEmailPassword(email: string, password: string) {

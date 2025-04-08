@@ -3,7 +3,7 @@ import type {
   Camp as CampResourceData,
   CampDetails as CampDetailsResourceData,
 } from '@camp-registration/common/entities';
-import { JsonResource } from '#core/resource/JsonResource.js';
+import { JsonResource } from '#core/resource/JsonResource';
 
 export class CampResource extends JsonResource<Camp, CampResourceData> {
   transform(): CampResourceData {

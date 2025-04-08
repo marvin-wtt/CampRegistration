@@ -10,7 +10,7 @@ import { initializePassport } from '#core/passport';
 import cookieParser from 'cookie-parser';
 import { initI18n } from '#core/i18n';
 import { startJobs } from '#jobs/index';
-import mailService from '#core/mail/mail.service.js';
+import mailService from '#core/mail/mail.service';
 
 const app = express();
 

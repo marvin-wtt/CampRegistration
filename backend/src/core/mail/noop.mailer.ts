@@ -3,7 +3,7 @@ import type {
   AdvancedMailPayload,
   MailAddress,
 } from '#core/mail/mail.types';
-import logger from '#core/logger.js';
+import logger from '#core/logger';
 
 export class NoOpMailer implements IMailer {
   public sendMail(payload: AdvancedMailPayload): void {

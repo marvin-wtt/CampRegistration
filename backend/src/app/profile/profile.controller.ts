@@ -8,8 +8,8 @@ import validator from './profile.validation.js';
 import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
 import authMessages from '#app/auth/auth.messages';
-import { BaseController } from '#core/BaseController';
-import { isPasswordMatch } from '#core/encryption.js';
+import { BaseController } from '#core/base/BaseController';
+import { isPasswordMatch } from '#core/encryption';
 
 class ProfileController extends BaseController {
   async show(req: Request, res: Response) {

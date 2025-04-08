@@ -5,7 +5,7 @@ import validator from './totp.validation.js';
 import { TotpResource } from './totp.resource.js';
 import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
-import { BaseController } from '#core/BaseController';
+import { BaseController } from '#core/base/BaseController';
 import { isPasswordMatch } from '#core/encryption';
 
 class TotPController extends BaseController {

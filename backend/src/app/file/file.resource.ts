@@ -1,6 +1,6 @@
 import type { File } from '@prisma/client';
 import type { ServiceFile as FileResourceData } from '@camp-registration/common/entities';
-import { JsonResource } from '#core/resource/JsonResource.js';
+import { JsonResource } from '#core/resource/JsonResource';
 
 export class FileResource extends JsonResource<File, FileResourceData> {
   transform(): FileResourceData {

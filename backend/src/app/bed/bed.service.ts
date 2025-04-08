@@ -1,4 +1,4 @@
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 export class BedService extends BaseService {
   async getBedById(id: string, roomId: string) {

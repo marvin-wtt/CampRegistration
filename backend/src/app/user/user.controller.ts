@@ -4,7 +4,7 @@ import userService from './user.service.js';
 import { UserResource } from './user.resource.js';
 import validator from './user.validation.js';
 import { type Request, type Response } from 'express';
-import { BaseController } from '#core/BaseController';
+import { BaseController } from '#core/base/BaseController';
 
 class UserController extends BaseController {
   async index(_req: Request, res: Response) {

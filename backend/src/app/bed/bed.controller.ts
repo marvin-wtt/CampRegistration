@@ -4,8 +4,8 @@ import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
-import { BedResource } from '#app/bed/bed.resource.js';
-import { BaseController } from '#core/BaseController.js';
+import { BedResource } from '#app/bed/bed.resource';
+import { BaseController } from '#core/base/BaseController';
 
 class BedController extends BaseController {
   async store(req: Request, res: Response) {

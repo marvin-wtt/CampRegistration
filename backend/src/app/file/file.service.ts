@@ -7,7 +7,7 @@ import moment from 'moment';
 import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
 import storageRegistry from '#core/storage/storage.registry';
-import { BaseService } from '#core/BaseService.js';
+import { BaseService } from '#core/base/BaseService';
 
 type RequestFile = Express.Multer.File;
 

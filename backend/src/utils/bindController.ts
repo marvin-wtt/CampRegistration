@@ -1,4 +1,4 @@
-import type { BaseController } from '#core/BaseController';
+import type { BaseController } from '#core/base/BaseController';
 
 export function controller<T extends BaseController, K extends keyof T>(
   instance: T,
