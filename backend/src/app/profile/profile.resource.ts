@@ -1,10 +1,10 @@
-import type { Camp, User } from '@prisma/client';
-import { CampResource } from '#app/camp/camp.resource';
+import type { User } from '@prisma/client';
+import { CampResource, type CampWithFreePlaces } from '#app/camp/camp.resource';
 import type { Profile as ProfileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
 export interface UserWithCamps extends Omit<User, 'password'> {
-  camps: Camp[];
+  camps: CampWithFreePlaces[];
 }
 
 export class ProfileResource extends JsonResource<

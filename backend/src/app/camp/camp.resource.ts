@@ -5,7 +5,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
-interface CampWithFreePlaces extends Camp {
+export interface CampWithFreePlaces extends Camp {
   freePlaces: Record<string, number> | number;
 }
 
