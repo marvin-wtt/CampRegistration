@@ -8,7 +8,9 @@ interface TemporaryFileIdentifier {
   field?: string;
 }
 
-export const formUtils = (camp: Camp) => {
+export const formUtils = (
+  camp: Camp & { freePlaces: number | Record<string, number> },
+) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';
@@ -136,20 +138,20 @@ export const formUtils = (camp: Camp) => {
         value.value ??= null;
         return value;
       })
-      .reduce<Record<string, unknown[]>>((campData, value) => {
-        const type: unknown = value.campDataType;
+      .reduce<Record<string, unknown[]>>((tagData, value) => {
+        const tag: unknown = value.campDataType;
 
-        if (typeof type !== 'string') {
-          return campData;
+        if (typeof tag !== 'string') {
+          return tagData;
         }
 
         // Create a new entry for the camp data type if it does not exist
-        if (!(type in campData)) {
-          campData[type] = [];
+        if (!(tag in tagData)) {
+          tagData[tag] = [];
         }
-        campData[type].push(value.value);
+        tagData[tag].push(value.value);
 
-        return campData;
+        return tagData;
       }, {});
   };
 

@@ -5,7 +5,14 @@ import type {
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
-export class CampResource extends JsonResource<Camp, CampResourceData> {
+interface CampWithFreePlaces extends Camp {
+  freePlaces: Record<string, number> | number;
+}
+
+export class CampResource extends JsonResource<
+  CampWithFreePlaces,
+  CampResourceData
+> {
   transform(): CampResourceData {
     return {
       id: this.data.id,
@@ -28,7 +35,7 @@ export class CampResource extends JsonResource<Camp, CampResourceData> {
 }
 
 export class CampDetailsResource extends JsonResource<
-  Camp,
+  CampWithFreePlaces,
   CampDetailsResourceData
 > {
   transform(): CampDetailsResourceData {

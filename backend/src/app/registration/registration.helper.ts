@@ -1,103 +1,109 @@
 export class RegistrationCampDataHelper {
-  constructor(private readonly campData: Record<string, unknown[]>) {}
+  constructor(private readonly dataByTags: Record<string, unknown[]>) {}
 
-  emails(): string[] {
-    if (!('email' in this.campData)) {
-      return [];
+  private stringValue(name: string): string | undefined {
+    if (!(name in this.dataByTags)) {
+      return undefined;
     }
 
-    return this.campData.email.filter((value): value is string => {
+    return this.dataByTags[name].find((value): value is string => {
+      return typeof value === 'string';
+    });
+  }
+
+  private dateValue(name: string): Date | undefined {
+    const v = this.stringValue(name);
+
+    return v !== undefined ? new Date(v) : undefined;
+  }
+
+  private stringArray(name: string): string[] | undefined {
+    if (!(name in this.dataByTags)) {
+      return undefined;
+    }
+
+    return this.dataByTags[name].filter((value): value is string => {
       return !!value && typeof value === 'string';
     });
   }
 
-  address(acceptedCountries?: string[]): { country: string } | undefined {
-    if (!('address' in this.campData)) {
+  emails(): string[] | undefined {
+    return this.stringArray('email');
+  }
+
+  private address():
+    | {
+        street?: string | undefined;
+        city?: string | undefined;
+        zipCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined {
+    if (
+      !('address' in this.dataByTags) ||
+      this.dataByTags.address.length === 0
+    ) {
       return undefined;
     }
 
-    return this.campData.address.find(
-      (value: unknown): value is { country: string } => {
-        if (!value || typeof value !== 'object' || !('country' in value)) {
-          return false;
-        }
-
-        return (
-          typeof value.country === 'string' &&
-          (!acceptedCountries || acceptedCountries.includes(value.country))
-        );
-      },
-    );
-  }
-
-  country(acceptedCountries?: string[]): string | undefined {
-    if (!('country' in this.campData)) {
-      return this.address(acceptedCountries)?.country;
+    const address = this.dataByTags.address[0];
+    if (!address || typeof address !== 'object') {
+      return undefined;
     }
 
-    const country = this.campData.country.find(
-      (value: unknown): value is string => {
-        return (
-          typeof value === 'string' &&
-          (!acceptedCountries || acceptedCountries.includes(value))
-        );
-      },
-    );
+    return {
+      street:
+        'address' in address && typeof address.address === 'string'
+          ? address.address
+          : undefined,
+      city:
+        'city' in address && typeof address.city === 'string'
+          ? address.city
+          : undefined,
+      zipCode:
+        'zip_code' in address && typeof address.zip_code === 'string'
+          ? address.zip_code
+          : undefined,
+      country:
+        'country' in address && typeof address.country === 'string'
+          ? address.country
+          : undefined,
+    };
+  }
 
-    return country ?? this.address(acceptedCountries)?.country;
+  street(): string | undefined {
+    return this.stringValue('street') ?? this.address()?.street;
+  }
+
+  city(): string | undefined {
+    return this.stringValue('city') ?? this.address()?.city;
+  }
+
+  zipCode(): string | undefined {
+    return this.stringValue('zip_code') ?? this.address()?.zipCode;
+  }
+
+  country(): string | undefined {
+    return this.stringValue('country') ?? this.address()?.country;
+  }
+
+  role(): string | undefined {
+    return this.stringValue('role');
+  }
+
+  gender(): string | undefined {
+    return this.stringValue('gender');
+  }
+
+  dateOfBirth(): string | undefined {
+    return this.dateValue('data_of_birth')?.toISOString();
   }
 
   firstName(): string | undefined {
-    if (
-      !('first_name' in this.campData) ||
-      this.campData.first_name.length === 0
-    ) {
-      return undefined;
-    }
-
-    return this.campData.first_name.find((value): value is string => {
-      return typeof value === 'string';
-    });
+    return this.stringValue('first_name');
   }
 
   lastName(): string | undefined {
-    if (
-      !('last_name' in this.campData) ||
-      this.campData.last_name.length === 0
-    ) {
-      return undefined;
-    }
-
-    return this.campData.last_name.find((value): value is string => {
-      return typeof value === 'string';
-    });
+    return this.stringValue('last_name');
   }
-
-  fullName(): string | undefined {
-    if (
-      !('full_name' in this.campData) ||
-      this.campData.full_name.length === 0
-    ) {
-      return undefined;
-    }
-
-    return this.campData.full_name.find((value): value is string => {
-      return typeof value === 'string';
-    });
-  }
-
-  name = (): string | undefined => {
-    const fullName = this.fullName();
-    if (fullName) {
-      return fullName;
-    }
-
-    const firstName = this.firstName();
-    const lastName = this.lastName();
-    if (firstName !== undefined && lastName !== undefined) {
-      return `${firstName} ${lastName}`;
-    }
-
-    return firstName ?? lastName;
-  };
 }

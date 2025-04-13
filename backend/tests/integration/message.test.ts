@@ -124,10 +124,8 @@ describe('/api/v1/camps/:campId/messages', () => {
         data: {
           first_name: 'Max',
         },
-        campData: {
-          email: ['test@example.com'],
-          country: ['de'],
-        },
+        emails: ['test@example.com'],
+        country: 'de',
       });
 
       const registrationB = await RegistrationFactory.create({
@@ -135,9 +133,7 @@ describe('/api/v1/camps/:campId/messages', () => {
         data: {
           first_name: 'Tom',
         },
-        campData: {
-          email: ['mail1@example.com', 'mail2@example.com'],
-        },
+        emails: ['mail1@example.com', 'mail2@example.com'],
       });
 
       const data = {
@@ -164,7 +160,7 @@ describe('/api/v1/camps/:campId/messages', () => {
             `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
           priority: 'high',
           replyTo: camp.contactEmail as string,
-          to: registrationA.campData.email as string[],
+          to: registrationA.emails as string[],
         },
         {
           subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name}`,
@@ -173,7 +169,7 @@ describe('/api/v1/camps/:campId/messages', () => {
             `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
           priority: 'high',
           replyTo: camp.contactEmail as string,
-          to: registrationB.campData.email as string[],
+          to: registrationB.emails as string[],
         },
       ]);
     });
@@ -193,10 +189,8 @@ describe('/api/v1/camps/:campId/messages', () => {
         data: {
           first_name: 'Max',
         },
-        campData: {
-          email: ['test@example.com'],
-          country: ['de'],
-        },
+        emails: ['test@example.com'],
+        country: 'de',
       });
 
       const registrationB = await RegistrationFactory.create({
@@ -204,10 +198,8 @@ describe('/api/v1/camps/:campId/messages', () => {
         data: {
           first_name: 'Tom',
         },
-        campData: {
-          email: ['mail1@example.com', 'mail2@example.com'],
-          country: ['fr'],
-        },
+        emails: ['mail1@example.com', 'mail2@example.com'],
+        country: 'fr',
       });
 
       const registrationC = await RegistrationFactory.create({
@@ -215,9 +207,7 @@ describe('/api/v1/camps/:campId/messages', () => {
         data: {
           first_name: 'Paula',
         },
-        campData: {
-          email: ['some@example.com'],
-        },
+        emails: ['some@example.com'],
       });
 
       const data = {
@@ -241,21 +231,21 @@ describe('/api/v1/camps/:campId/messages', () => {
           body: `Hello ${registrationA.data.first_name}, ${camp.organizer['de']} ${camp.location['de']} ${camp.maxParticipants['de']}`,
           priority: 'normal',
           replyTo: camp.contactEmail['de'] as string,
-          to: registrationA.campData.email as string[],
+          to: registrationA.emails as string[],
         },
         {
           subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name['fr']}`,
           body: `Hello ${registrationB.data.first_name}, ${camp.organizer['fr']} ${camp.location['fr']} ${camp.maxParticipants['fr']}`,
           priority: 'normal',
           replyTo: camp.contactEmail['fr'] as string,
-          to: registrationB.campData.email as string[],
+          to: registrationB.emails as string[],
         },
         {
           subject: `Hi, ${registrationC.data.first_name}, welcome to ${camp.name['de']}`,
           body: `Hello ${registrationC.data.first_name}, ${camp.organizer['de']} ${camp.location['de']} ${camp.maxParticipants['de']}`,
           priority: 'normal',
           replyTo: camp.contactEmail['de'] as string,
-          to: registrationC.campData.email as string[],
+          to: registrationC.emails as string[],
         },
       ]);
     });
@@ -295,9 +285,7 @@ describe('/api/v1/camps/:campId/messages', () => {
         data: {
           first_name: 'Max',
         },
-        campData: {
-          email: ['test@example.com'],
-        },
+        emails: ['test@example.com'],
       });
 
       const data = {

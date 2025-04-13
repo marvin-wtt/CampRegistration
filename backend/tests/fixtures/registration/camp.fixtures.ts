@@ -150,7 +150,6 @@ export const campWithFileOptional = {
 export const campWithMaxParticipantsNational = {
   active: true,
   maxParticipants: 5,
-  freePlaces: 5,
   form: createForm([
     {
       name: 'first_name',
@@ -164,10 +163,6 @@ export const campWithMaxParticipantsInternational = {
   active: true,
   countries: ['de', 'fr'],
   maxParticipants: {
-    de: 5,
-    fr: 3,
-  },
-  freePlaces: {
     de: 5,
     fr: 3,
   },
@@ -193,10 +188,6 @@ export const campWithAddress = {
     de: 5,
     fr: 3,
   },
-  freePlaces: {
-    de: 5,
-    fr: 3,
-  },
   form: createForm([
     {
       name: 'first_name',
@@ -215,7 +206,6 @@ export const campWithAddress = {
 export const campWithMaxParticipantsRolesNational = {
   active: true,
   maxParticipants: 5,
-  freePlaces: 5,
   form: createForm([
     {
       name: 'first_name',
@@ -238,10 +228,6 @@ export const campWithMaxParticipantsRolesInternational = {
     de: 5,
     fr: 3,
   },
-  freePlaces: {
-    de: 5,
-    fr: 3,
-  },
   form: createForm([
     {
       name: 'first_name',
@@ -263,60 +249,77 @@ export const campWithMaxParticipantsRolesInternational = {
   ]),
 };
 
-export const campWithSingleCampDataType = {
+export const campWithAddressCampDataTypes = {
   active: true,
   form: createForm([
     {
-      name: 'email',
+      name: 'address',
       type: 'text',
-      campDataType: 'email-primary',
-    },
-    {
-      name: 'other',
-      type: 'text',
-      isRequired: true,
+      campDataType: 'address',
     },
   ]),
 };
 
-export const campWithMultipleCampDataValues = {
+export const campWithAllCampDataTypes = {
   active: true,
   form: createForm([
     {
-      name: 'email',
+      name: 'firstName',
       type: 'text',
-      campDataType: 'email-primary',
+      campDataType: 'first_name',
     },
     {
-      name: 'otherEmail',
+      name: 'lastName',
       type: 'text',
-      campDataType: 'email-primary',
+      campDataType: 'last_name',
     },
     {
-      name: 'other',
+      name: 'dataOfBirth',
       type: 'text',
-      isRequired: true,
+      inputType: 'date',
+      campDataType: 'data_of_birth',
     },
-  ]),
-};
-
-export const campWithMultipleCampDataTypes = {
-  active: true,
-  form: createForm([
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email-primary',
+      inputType: 'email',
+      campDataType: 'email',
+    },
+    {
+      name: 'emailSecondary',
+      type: 'text',
+      inputType: 'email',
+      campDataType: 'email',
+    },
+    {
+      name: 'role',
+      type: 'text',
+      campDataType: 'role',
+    },
+    {
+      name: 'gender',
+      type: 'text',
+      campDataType: 'gender',
+    },
+    {
+      name: 'street',
+      type: 'text',
+      campDataType: 'street',
+    },
+    {
+      name: 'city',
+      type: 'text',
+      campDataType: 'city',
+    },
+    {
+      name: 'zipCode',
+      type: 'text',
+      campDataType: 'zip_code',
     },
     {
       name: 'country',
       type: 'text',
       campDataType: 'country',
-    },
-    {
-      name: 'other',
-      type: 'text',
-      isRequired: true,
     },
   ]),
 };
@@ -399,7 +402,6 @@ export const campWithContactEmailInternational = {
 export const campWithEmailAndMaxParticipants = {
   ...campPublic,
   maxParticipants: 0,
-  freePlaces: 0,
   form: createForm([
     {
       name: 'email',

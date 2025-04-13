@@ -40,15 +40,19 @@ In order to allow customizable fields while still providing the required data to
 camp data type for each field.
 The value can be set by the specified field types or by an expression.
 
-| Name          | CampDataType  | Field                        |     Required      | Alternative | Description                                         |
-| ------------- | ------------- | ---------------------------- | :---------------: | ----------- | --------------------------------------------------- |
-| Address       | address       | addressQuestion              |        Yes        | country     | The address of the person                           |
-| Country       | country       | dropdown                     | If international  | address     | The country of the person                           |
-| Date of Birth | date_of_birth | date_of_birth \| text + date | If age restricted |             | The date of birth of the person                     |
-| E-mail        | email         | text + email                 |        Yes        |             | The primary email of the person                     |
-| First Name    | first_name    | text                         |        Yes        |             | The persons first name                              |
-| Last Name     | last_name     | text                         |        Yes        |             | The persons family name                             |
-| Role          | role          | text \| dropdown \| role     |        No         |             | The role of the person. The default is participant. |
+| Name          | CampDataType  | Field                        | Default     | Required          | Alternative | Description                     |
+|---------------|---------------|------------------------------|-------------|-------------------|-------------|---------------------------------|
+| Address       | address       | addressQuestion              |             | If international  | country     | The address of the person       |
+| Country       | country       | dropdown                     |             | If international  | address     | The country of the person       |
+| City          | city          | text                         |             | No                | address     | The city of the address         |
+| Date of Birth | date_of_birth | date_of_birth \| text + date |             | If age restricted |             | The date of birth of the person |
+| E-mail        | email         | text + email                 |             | Yes               |             | The primary email of the person |
+| First Name    | first_name    | text                         |             | Yes               |             | The persons first name          |
+| Gender        | gender        | text                         |             | For room planner  |             | The persons gender              |
+| Last Name     | last_name     | text                         |             | Yes               |             | The persons family name         |
+| Role          | role          | text \| dropdown \| role     | participant | No                |             | The role of the person          |
+| Street        | street        | text                         |             | No                | address     | The street of the address       |
+| Zip Code      | zip_code      | text                         |             | No                | address     | The zip code of the address     |
 
 #### Variables
 
@@ -56,7 +60,7 @@ Camp data can be accessed in the title, description or in expressions of each el
 If the element contains translations, the translation for the current user locale is returned.
 
 | Name              | Translated | Description                                            |
-| ----------------- | :--------: | ------------------------------------------------------ |
+|-------------------|:----------:|--------------------------------------------------------|
 | camp.countries    |            | List of all countries                                  |
 | camp.name         |            | Name of the camp                                       |
 | camp.organizer    |     X      | Name of the organizer                                  |
@@ -88,7 +92,7 @@ Functions can also be used in expression fields.
 All functions return null in case of invalid input parameters. This might be evaluated internally as undefined.
 
 | Name           | Parameter                                                   | Return         | Description                                                       |
-| -------------- | ----------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
+|----------------|-------------------------------------------------------------|----------------|-------------------------------------------------------------------|
 | isMinor        | dateOfBirthQuestion: string, date: string \| Date           | boolean        | Wherever the age is less than 18 at camp start                    |
 | isAdult        | dateOfBirthQuestion: string, date: string \| Date           | boolean        | Wherever the age above 18 at camp start                           |
 | subtractYears  | date: string, years: number                                 | Date           | Subtracts years from a given date                                 |

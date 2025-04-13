@@ -243,20 +243,19 @@ const rows = computed<Registration[]>(() => {
   // Role
   if (template.value.filterRoles) {
     rows = rows.filter((row) => {
-      const roles = row.campData['role'];
-
-      if (roles === undefined) {
-        return [];
-      }
+      const role = row.computedData.role;
 
       // If no role is set for a given registration, it is assumed that it is a participant registration
-      if (template.value.filterRoles?.includes('participant')) {
-        if (roles.length === 0 || roles.every((role) => !role)) {
-          return false;
-        }
+      if (
+        template.value.filterRoles?.includes('participant') &&
+        role === null
+      ) {
+        return false;
       }
 
-      return !template.value.filterRoles?.some((role) => roles.includes(role));
+      return !template.value.filterRoles?.some(
+        (filterRole) => filterRole === role,
+      );
     });
   }
 

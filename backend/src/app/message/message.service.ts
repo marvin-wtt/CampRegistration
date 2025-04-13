@@ -6,7 +6,6 @@ import type {
   File,
 } from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service.js';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
 import mailService from '#core/mail/mail.service';
 import { translateObject } from '#utils/translateObject.js';
 import ApiError from '#utils/ApiError.js';
@@ -27,8 +26,7 @@ export class MessageService extends BaseService {
     camp: Camp,
     registration: Registration,
   ): Promise<MessageWithAttachments> {
-    const helper = new RegistrationCampDataHelper(registration.campData);
-    const country = helper.country(camp.countries) ?? camp.countries[0];
+    const country = registration.country ?? camp.countries[0];
 
     // Create compiler
     const subjectCompiler = messageTemplateService.createSubjectCompiler(
@@ -108,9 +106,7 @@ export class MessageService extends BaseService {
     registration: Registration,
   ) {
     // Filter duplicate emails
-    const emails = this.uniqueEmails(
-      new RegistrationCampDataHelper(registration.campData).emails(),
-    );
+    const emails = this.uniqueEmails(registration.emails ?? []);
     await mailService.sendMessages(message, emails);
   }
 
