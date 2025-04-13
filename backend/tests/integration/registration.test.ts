@@ -7,6 +7,7 @@ import {
   RegistrationFactory,
   UserFactory,
   CampManagerFactory,
+  MessageTemplateFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import { ulid } from 'ulidx';
@@ -37,7 +38,6 @@ import {
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer';
-import { profileUpdateBody } from '../fixtures/profile/profile.fixtures';
 
 const mailer = NoOpMailer.prototype;
 
@@ -90,6 +90,24 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body.data).toHaveLength(1);
       expect(body.data[0]).toHaveProperty('id');
       expect(body.data[0]).toHaveProperty('room');
+    });
+
+    it('should not include deleted registrations', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      await createRegistration(camp);
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        deletedAt: new Date(),
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/registrations`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data');
+      expect(body.data).toHaveLength(1);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
@@ -159,6 +177,19 @@ describe('/api/v1/camps/:campId/registrations', () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `404` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        deletedAt: new Date(),
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
@@ -943,7 +974,18 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user', async () => {
-        const camp = await CampFactory.create(campWithEmail);
+        const camp = await CampFactory.create({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_confirmed',
+              subject: {
+                en: 'Registration confirmed',
+                es: 'Something in spanish',
+              },
+            }),
+          },
+        });
 
         const data = {
           email: 'test@example.com',
@@ -960,6 +1002,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           expect.objectContaining({
             to: data.email,
             replyTo: camp.contactEmail,
+            subject: 'Registration confirmed',
           }),
         );
       });
@@ -1061,7 +1104,18 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a waiting list information to the user', async () => {
-        const camp = await CampFactory.create(campWithEmailAndMaxParticipants);
+        const camp = await CampFactory.create({
+          ...campWithEmailAndMaxParticipants,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_waitlisted',
+              subject: {
+                en: 'Registration on waiting list',
+                es: 'Something in spanish',
+              },
+            }),
+          },
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1072,10 +1126,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: data.email,
+            subject: 'Registration on waiting list',
           }),
         );
       });
@@ -1139,18 +1193,191 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(404);
     });
 
-    describe('sends messages', () => {
-      it.todo('should send update email when available');
+    it('should respond with `404` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        deletedAt: new Date(),
+      });
 
-      it.todo('should send waiting list confirmation when available');
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send({})
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
     });
 
-    describe.todo('update camp data');
+    describe('sends messages', () => {
+      it('should respond with `200` status code when message template is missing', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {},
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+      });
+
+      it('should send update email', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_updated',
+              subject: 'Registration updated',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.email,
+            replyTo: camp.contactEmail,
+            subject: 'Registration updated',
+          }),
+        );
+      });
+
+      it('should send waiting list confirmation', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_waitlist_accepted',
+              subject: 'Registration accepted',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            waitingList: false,
+            data,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.email,
+            replyTo: camp.contactEmail,
+            subject: 'Registration accepted',
+          }),
+        );
+      });
+    });
+
+    describe('computed data', () => {
+      it('should generate computed data for all fields', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithAllCampDataTypes,
+        );
+        const registration = await createRegistration(camp);
+
+        const data = {
+          firstName: 'Jhon',
+          lastName: 'Doe',
+          dateOfBirth: '2000-01-01',
+          email: 'test@example.com',
+          emailSecondary: 'other@example.com',
+          role: 'counselor',
+          gender: 'f',
+          street: 'Somestreet 1',
+          city: 'Somecity',
+          zipCode: '12356',
+          country: 'de',
+        };
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.computedData');
+        expect(body.data.computedData).toEqual({
+          firstName: 'Jhon',
+          lastName: 'Doe',
+          dateOfBirth: '2000-01-01',
+          emails: ['test@example.com', 'other@example.com'],
+          role: 'counselor',
+          gender: 'f',
+          address: {
+            street: 'Somestreet 1',
+            city: 'Somecity',
+            zipCode: '12356',
+            country: 'de',
+          },
+        });
+      });
+
+      it('should generate computed data with address', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithAddressCampDataTypes,
+        );
+        const registration = await createRegistration(camp);
+
+        const data = {
+          address: {
+            address: 'Somestreet 1',
+            city: 'Somecity',
+            zip_code: '12356',
+            country: 'de',
+          },
+        };
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.computedData.address');
+        expect(body.data.computedData.address).toEqual({
+          street: 'Somestreet 1',
+          city: 'Somecity',
+          zipCode: '12356',
+          country: 'de',
+        });
+      });
+    });
   });
 
   describe('DELETE /api/v1/camps/:campId/registrations/:registrationId', () => {
     it('should respond with `204` status code when user is camp manager', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
+      await createRegistration(camp);
       const registration = await createRegistration(camp);
 
       await request()
@@ -1159,8 +1386,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
-      const registrationCount = await countRegistrations(camp);
-      expect(registrationCount).toBe(0);
+      const registrationCount = await prisma.registration.count({
+        where: {
+          campId: camp.id,
+          deletedAt: null,
+        },
+      });
+      expect(registrationCount).toBe(1);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
@@ -1202,7 +1434,50 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
-      it.todo('should send cancel email when available');
+      it('should respond with `204` status code when message template is missing', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          messageTemplates: {},
+        });
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@email.com'],
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+      });
+
+      it('should send update email', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_canceled',
+              subject: 'Registration canceled',
+            }),
+          },
+        });
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@email.com'],
+        });
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'test@email.com',
+            replyTo: camp.contactEmail,
+            subject: 'Registration canceled',
+          }),
+        );
+      });
     });
   });
 });
