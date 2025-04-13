@@ -30,10 +30,10 @@ class MailService {
       this.mailer = await factory.createMailer();
       logger.info(`Connected to mailer: ${this.mailer.name()}`);
     } catch (error) {
-      logger.warn(
+      logger.error(
         'Unable to connect to email server. Make sure you have configured the mailer',
       );
-      logger.warn(error);
+      logger.error(error);
     }
   }
 
@@ -98,7 +98,7 @@ class MailService {
 
   async sendMessages(message: Message, emails: string[]): Promise<void> {
     if (emails.length === 0) {
-      logger.error('Failed to send email. No recipient defined.');
+      logger.warn('Failed to send email. No recipient defined.');
       return;
     }
 

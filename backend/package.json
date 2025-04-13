@@ -85,6 +85,7 @@
     "passport": "^0.7.0",
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.1",
+    "prisma-extension-soft-delete": "^2.0.1",
     "survey-core": "^2.0.0",
     "ulidx": "^2.0.0",
     "winston": "^3.9.0",

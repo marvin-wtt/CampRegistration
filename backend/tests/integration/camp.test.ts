@@ -392,6 +392,39 @@ describe('/api/v1/camps', () => {
         expect(body.data).toHaveProperty('maxParticipants.de', 8);
         expect(body.data).toHaveProperty('maxParticipants.fr', 6);
       });
+
+      it('should ignore deleted registrations', async () => {
+        const camp = await CampFactory.create({
+          ...campActivePublic,
+          countries: ['de', 'fr'],
+          maxParticipants: {
+            de: 8,
+            fr: 6,
+          },
+        });
+
+        // Create registrations
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'fr',
+          deletedAt: new Date(),
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'fr',
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('freePlaces.de', 8);
+        expect(body.data).toHaveProperty('freePlaces.fr', 5);
+      });
     });
 
     it('should respond with `200` status code when camp is not active and user is camp manager', async () => {
