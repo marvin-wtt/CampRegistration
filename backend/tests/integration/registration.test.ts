@@ -562,7 +562,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const data = {
           firstName: 'Jhon',
           lastName: 'Doe',
-          dataOfBirth: '2000-01-01',
+          dateOfBirth: '2000-01-01',
           email: 'test@example.com',
           emailSecondary: 'other@example.com',
           role: 'counselor',
@@ -582,7 +582,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(body.data.computedData).toEqual({
           firstName: 'Jhon',
           lastName: 'Doe',
-          dataOfBirth: '2000-01-01',
+          dateOfBirth: '2000-01-01',
           emails: ['test@example.com', 'other@example.com'],
           role: 'counselor',
           gender: 'f',
