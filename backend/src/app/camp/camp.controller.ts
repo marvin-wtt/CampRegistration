@@ -122,9 +122,11 @@ class CampController extends BaseController {
       themes: body.themes,
     });
 
-    // Re-generate camp data fields
+    // Re-generate computed data fields
     if (body.form) {
-      await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
+      await registrationService.updateRegistrationsComputedDataByCamp(
+        updatedCamp,
+      );
     }
 
     res.resource(new CampDetailsResource(updatedCamp));

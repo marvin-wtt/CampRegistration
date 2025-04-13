@@ -62,7 +62,7 @@ const tokens = computed<TokenRegistry[]>(() => {
             : [],
         },
         {
-          value: 'campData',
+          value: 'computedData',
           label: t('token.registration.computed.label'),
           caption: t('token.registration.computed.caption'),
           items: [

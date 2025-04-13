@@ -89,7 +89,7 @@ class RegistrationController extends BaseController {
     const camp = req.modelOrFail('camp');
     const registration = req.modelOrFail('registration');
 
-    await registrationService.deleteRegistration(camp, registration);
+    await registrationService.deleteRegistration(registration);
 
     await registrationMessages.sendRegistrationCanceled(camp, registration);
 

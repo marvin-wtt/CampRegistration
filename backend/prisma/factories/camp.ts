@@ -31,7 +31,6 @@ export const CampFactory = {
       organizer: faker.company.name(),
       contactEmail: faker.internet.email(),
       maxParticipants,
-      freePlaces: maxParticipants,
       minAge,
       maxAge,
       startAt,

@@ -8,6 +8,7 @@ import {
   RegistrationFactory,
   TableTemplateFactory,
   FileFactory,
+  MessageTemplateFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
@@ -23,13 +24,12 @@ import {
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
-import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 type CampCreateData = PartialBy<
   Prisma.CampCreateInput,
-  'id' | 'form' | 'themes' | 'freePlaces' | 'version'
+  'id' | 'form' | 'themes'
 >;
 
 const assertCampModel = async (id: string, data: CampCreateData) => {
@@ -49,7 +49,6 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     organizer: data.organizer,
     contactEmail: data.contactEmail,
     maxParticipants: data.maxParticipants,
-    freePlaces: data.maxParticipants,
     minAge: data.minAge,
     maxAge: data.maxAge,
     startAt: new Date(data.startAt),
@@ -58,7 +57,6 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
-    version: 1,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -67,6 +65,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const assertCampResponseBody = (data: CampCreateData, body: any) => {
   expect(body).toHaveProperty('data');
+
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
     active: data.active,
@@ -133,6 +132,49 @@ describe('/api/v1/camps', () => {
 
       expect(body).toHaveProperty('data');
       expect(body.data.length).toBe(1);
+    });
+
+    it('should calculate free places', async () => {
+      const campA = await CampFactory.create({
+        ...campActivePublic,
+        maxParticipants: 10,
+      });
+      const campB = await CampFactory.create({
+        ...campActivePublic,
+        countries: ['de', 'fr'],
+        maxParticipants: {
+          de: 10,
+          fr: 5,
+        },
+      });
+
+      // Create registrations
+      await RegistrationFactory.create({
+        camp: { connect: { id: campA.id } },
+        role: 'participant',
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: campA.id } },
+        role: 'participant',
+      });
+
+      await RegistrationFactory.create({
+        camp: { connect: { id: campB.id } },
+        role: 'participant',
+        country: 'fr',
+      });
+
+      const { body } = await request().get(`/api/v1/camps/`).send();
+
+      expect(body).toHaveProperty('data');
+      expect(body.data.length).toBe(2);
+
+      const campResultA = body.data.find((v) => v.id === campA.id);
+      expect(campResultA).toHaveProperty('freePlaces', 8);
+
+      const campResultB = body.data.find((v) => v.id === campB.id);
+      expect(campResultB).toHaveProperty('freePlaces.de', 10);
+      expect(campResultB).toHaveProperty('freePlaces.fr', 4);
     });
 
     describe('query', () => {
@@ -279,6 +321,77 @@ describe('/api/v1/camps', () => {
       });
 
       await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
+    });
+
+    describe('free places', () => {
+      it('should calculate free places for national camps', async () => {
+        const camp = await CampFactory.create({
+          ...campActivePublic,
+          maxParticipants: 10,
+        });
+
+        // Create registrations
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'counselor',
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('freePlaces', 8);
+        expect(body.data).toHaveProperty('maxParticipants', 10);
+      });
+
+      it('should calculate free places for international camps', async () => {
+        const camp = await CampFactory.create({
+          ...campActivePublic,
+          countries: ['de', 'fr'],
+          maxParticipants: {
+            de: 8,
+            fr: 6,
+          },
+        });
+
+        // Create registrations
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'de',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'fr',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'counselor',
+          country: 'fr',
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('freePlaces.de', 7);
+        expect(body.data).toHaveProperty('freePlaces.fr', 5);
+        expect(body.data).toHaveProperty('maxParticipants.de', 8);
+        expect(body.data).toHaveProperty('maxParticipants.fr', 6);
+      });
     });
 
     it('should respond with `200` status code when camp is not active and user is camp manager', async () => {
@@ -793,25 +906,19 @@ describe('/api/v1/camps', () => {
       // Normal registrations
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        campData: {
-          country: ['fr'],
-          role: ['participant'],
-        },
+        country: 'fr',
+        role: 'participant',
       });
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        campData: {
-          country: ['fr'],
-          role: ['participant'],
-        },
+        country: 'fr',
+        role: 'participant',
       });
       // Counselor should not influence free places
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        campData: {
-          country: ['fr'],
-          role: ['counselor'],
-        },
+        country: 'fr',
+        role: 'counselor',
       });
 
       const dataA = {
