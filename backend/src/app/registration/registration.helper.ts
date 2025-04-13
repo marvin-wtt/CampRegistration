@@ -96,7 +96,7 @@ export class RegistrationCampDataHelper {
   }
 
   dateOfBirth(): string | undefined {
-    return this.dateValue('data_of_birth')?.toISOString();
+    return this.dateValue('date_of_birth')?.toISOString();
   }
 
   firstName(): string | undefined {

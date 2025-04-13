@@ -277,7 +277,7 @@ export const campWithAllCampDataTypes = {
       name: 'dataOfBirth',
       type: 'text',
       inputType: 'date',
-      campDataType: 'data_of_birth',
+      campDataType: 'date_of_birth',
     },
     {
       name: 'email',
