@@ -12,7 +12,7 @@ export interface Data {
   endAt: Date | string;
   minAge: number;
   maxAge: number;
-  location: Translatable;
+  location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
 }
@@ -36,7 +36,7 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   model.setVariable('camp.endAtTime', toTime(data.endAt));
   model.setVariable('camp.minAge', data.minAge);
   model.setVariable('camp.maxAge', data.maxAge);
-  model.setVariable('camp.location', t(data.location));
+  model.setVariable('camp.location', data.location ? t(data.location) : null);
   model.setVariable('camp.price', data.price);
   model.setVariable('camp.freePlaces', data.freePlaces);
 

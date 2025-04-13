@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PasswordSchema } from '#core/validation/helper';
+import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
 
 const update = z.object({
   body: z
@@ -8,12 +8,12 @@ const update = z.object({
       password: PasswordSchema,
       currentPassword: z.string(),
       name: z.string(),
-      locale: z.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/),
+      locale: LocaleSchema,
     })
     .strict()
     .partial()
     .superRefine((val, ctx) => {
-      const passwordRequired = val.password || val.email;
+      const passwordRequired = val.password ?? val.email;
       if (passwordRequired && !val.currentPassword) {
         ctx.addIssue({
           code: 'custom',

@@ -1,6 +1,7 @@
-import { faker } from '@faker-js/faker/locale/de';
+import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '@prisma/client';
 import prisma from './prisma';
+import { MessageTemplateFactory } from './message-template';
 
 export const CampFactory = {
   build: (
@@ -30,7 +31,6 @@ export const CampFactory = {
       organizer: faker.company.name(),
       contactEmail: faker.internet.email(),
       maxParticipants,
-      freePlaces: maxParticipants,
       minAge,
       maxAge,
       startAt,
@@ -41,6 +41,11 @@ export const CampFactory = {
       themes: {},
       createdAt,
       updatedAt,
+      messageTemplates: data.messageTemplates ?? {
+        createMany: {
+          data: MessageTemplateFactory.buildDefaults(),
+        },
+      },
       ...data,
     };
   },

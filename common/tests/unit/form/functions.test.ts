@@ -255,6 +255,21 @@ describe('functions', () => {
         expect(model.calculatedValues[0].value).toBe(true);
       });
 
+      it('should return true when free places are negative', () => {
+        const model = new SurveyModel({
+          calculatedValues: [
+            {
+              name: 'calc1',
+              expression: 'isWaitingList({free_places})',
+            },
+          ],
+        });
+
+        model.setVariable('free_places', -1);
+
+        expect(model.calculatedValues[0].value).toBe(true);
+      });
+
       it('should return undefined when parameter is missing', () => {
         const model = new SurveyModel({
           calculatedValues: [
@@ -340,6 +355,26 @@ describe('functions', () => {
         model.setVariable('free_places', {
           de: 10,
           fr: 0,
+        });
+
+        expect(model.calculatedValues[0].value).toBe(true);
+      });
+
+      it('should return true when free places are negative', () => {
+        const model = new SurveyModel({
+          elements: [{ name: 'country', type: 'text' }],
+          calculatedValues: [
+            {
+              name: 'calc1',
+              expression: 'isWaitingList({free_places}, {country})',
+            },
+          ],
+        });
+
+        model.data = { country: 'fr' };
+        model.setVariable('free_places', {
+          de: 10,
+          fr: -1,
         });
 
         expect(model.calculatedValues[0].value).toBe(true);

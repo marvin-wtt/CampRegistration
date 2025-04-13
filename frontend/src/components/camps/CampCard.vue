@@ -11,10 +11,11 @@
     <q-card-section class="col q-pa-none">
       <!-- TODO Use actual logo -->
       <q-img
-        src="https://via.placeholder.com/1024x768/eee?text=4:3"
+        src="~assets/placeholder.svg"
         alt="Logo"
         :ratio="4 / 3"
         :fit="'cover'"
+        style="border-radius: 20px 20px 0 0"
       />
     </q-card-section>
 

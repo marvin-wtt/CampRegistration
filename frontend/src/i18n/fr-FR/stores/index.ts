@@ -12,6 +12,6 @@ export default {
   template,
   campManager,
   campFiles,
-  user: auth,
+  auth,
   profile,
 };

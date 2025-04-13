@@ -1,57 +1,55 @@
-import prisma from '#client.js';
+import { BaseService } from '#core/base/BaseService';
 
-const getTemplateById = async (campId: string, id: string) => {
-  return prisma.tableTemplate.findFirst({
-    where: { id, campId },
-  });
-};
+export class TableTemplateService extends BaseService {
+  async getTemplateById(campId: string, id: string) {
+    return this.prisma.tableTemplate.findFirst({
+      where: { id, campId },
+    });
+  }
 
-const queryTemplates = async (campId: string) => {
-  return prisma.tableTemplate.findMany({
-    where: { campId },
-  });
-};
+  async queryTemplates(campId: string) {
+    return this.prisma.tableTemplate.findMany({
+      where: { campId },
+    });
+  }
 
-const createTemplate = async (campId: string, data: object) => {
-  return prisma.tableTemplate.create({
-    data: {
+  async createTemplate(campId: string, data: Record<string, unknown>) {
+    return this.prisma.tableTemplate.create({
+      data: {
+        data,
+        campId,
+      },
+    });
+  }
+
+  async createManyTemplates(
+    campId: string,
+    templates: Record<string, unknown>[],
+  ) {
+    const data = templates.map((template) => {
+      return {
+        data: template,
+        campId,
+      };
+    });
+
+    return this.prisma.tableTemplate.createMany({
       data,
-      campId,
-    },
-  });
-};
+    });
+  }
 
-const createManyTemplates = async (campId: string, templates: object[]) => {
-  const data = templates.map((template) => {
-    return {
-      data: template,
-      campId,
-    };
-  });
+  async updateTemplateById(templateId: string, data: Record<string, unknown>) {
+    return this.prisma.tableTemplate.update({
+      where: { id: templateId },
+      data: {
+        data,
+      },
+    });
+  }
 
-  return prisma.tableTemplate.createMany({
-    data,
-  });
-};
+  async deleteTemplateById(templateId: string) {
+    await this.prisma.tableTemplate.delete({ where: { id: templateId } });
+  }
+}
 
-const updateTemplateById = async (templateId: string, data: object) => {
-  return prisma.tableTemplate.update({
-    where: { id: templateId },
-    data: {
-      data,
-    },
-  });
-};
-
-const deleteTemplateById = async (templateId: string) => {
-  await prisma.tableTemplate.delete({ where: { id: templateId } });
-};
-
-export default {
-  getTemplateById,
-  queryTemplates,
-  createTemplate,
-  createManyTemplates,
-  updateTemplateById,
-  deleteTemplateById,
-};
+export default new TableTemplateService();

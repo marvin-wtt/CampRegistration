@@ -14,4 +14,11 @@ export default {
       'Service temporairement indisponible. Veuillez réessayer plus tard.',
     unknown: 'Service temporairement indisponible.',
   },
+
+  country: {
+    de: 'Allemagne',
+    fr: 'France',
+    us: 'USA',
+    pl: 'Pologne',
+  },
 };

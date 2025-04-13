@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
@@ -8,8 +8,12 @@ export const catchMiddlewareAsync =
   (fn: (req: Request, res: Response) => Promise<void> | void) =>
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res))
-      .then(() => next())
-      .catch((err) => next(err));
+      .then(() => {
+        next();
+      })
+      .catch((err: unknown) => {
+        next(err);
+      });
   };
 
 type CustomRequestParamHandler = (
@@ -28,15 +32,20 @@ export const catchParamAsync =
     name: string,
   ) => {
     if (typeof value !== 'string') {
-      return next(
+      next(
         new ApiError(
           httpStatus.BAD_REQUEST,
           `Invalid request param value for param ${name}.`,
         ),
       );
+      return;
     }
 
     Promise.resolve(fn(req, res, value))
-      .then(() => next())
-      .catch((err) => next(err));
+      .then(() => {
+        next();
+      })
+      .catch((err: unknown) => {
+        next(err);
+      });
   };

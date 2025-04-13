@@ -27,6 +27,15 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@quasar/extras": "^1.16.12",
+    "@tiptap/extension-color": "^2.11.5",
+    "@tiptap/extension-hard-break": "^2.11.5",
+    "@tiptap/extension-highlight": "^2.11.5",
+    "@tiptap/extension-placeholder": "^2.11.5",
+    "@tiptap/extension-typography": "^2.11.5",
+    "@tiptap/extension-underline": "^2.11.5",
+    "@tiptap/pm": "^2.11.5",
+    "@tiptap/starter-kit": "^2.11.5",
+    "@tiptap/vue-3": "^2.11.5",
     "@vue/eslint-config-prettier": "^10.1.0",
     "apexcharts": "^4.3.0",
     "axios": "^1.8.2",
@@ -53,7 +62,7 @@
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@intlify/unplugin-vue-i18n": "^4.0.0",
-    "@quasar/app-vite": "^2.0.6",
+    "@quasar/app-vite": "^2.1.4",
     "@quasar/cli": "^2.4.1",
     "@quasar/quasar-app-extension-testing-unit-vitest": "^1.0.0",
     "@types/dom-to-image": "^2.6.4",
@@ -71,7 +80,7 @@
     "happy-dom": "^15.10.6",
     "prettier": "^3.3.3",
     "rimraf": "^5.0.9",
-    "typescript": "^5.5.3",
+    "typescript": "^5.7.3",
     "vite-plugin-checker": "^0.8.0",
     "vitest": "^3.0.5",
     "vue-tsc": "^2.2.0"

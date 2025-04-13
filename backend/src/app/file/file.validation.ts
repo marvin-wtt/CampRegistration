@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const stream = z.object({
   params: z.object({
-    fileId: z.string(),
+    fileId: z.string().ulid(),
   }),
   query: z
     .object({
@@ -13,7 +13,7 @@ const stream = z.object({
 
 const show = z.object({
   params: z.object({
-    fileId: z.string(),
+    fileId: z.string().ulid(),
   }),
 });
 
@@ -37,7 +37,7 @@ const store = z.object({
 
 const destroy = z.object({
   params: z.object({
-    fileId: z.string(),
+    fileId: z.string().ulid(),
   }),
 });
 

@@ -1,12 +1,26 @@
 import { Identifiable } from './Identifiable.js';
 import { Timestamps } from './Timestamps.js';
+import { Translatable } from './Translatable.js';
 
 export interface Registration extends Identifiable, Timestamps {
   data: Record<string, unknown>;
-  campData: Record<string, unknown[]>;
+  computedData: {
+    firstName: string | null;
+    lastName: string | null;
+    dateOfBirth: string | null;
+    emails: string[] | null;
+    role: string | null;
+    gender: string | null;
+    address: {
+      street: string | null;
+      city: string | null;
+      zipCode: string | null;
+      country: string | null;
+    };
+  };
   waitingList: boolean;
   locale: string;
-  room?: Record<string, string>;
+  room?: Translatable | null;
   files?: Record<string, string>;
 }
 

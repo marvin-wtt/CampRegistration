@@ -129,14 +129,14 @@ const routes: RouteRecordRaw[] = [
               import('pages/campManagement/ParticipantsIndexPage.vue'),
           },
           {
+            path: 'contact',
+            name: 'management.camp.contact',
+            component: () => import('pages/campManagement/ContactPage.vue'),
+          },
+          {
             path: 'room-planner',
             name: 'room-planner',
             component: () => import('pages/campManagement/RoomPlannerPage.vue'),
-          },
-          {
-            path: 'tools',
-            name: 'tools',
-            component: () => import('pages/campManagement/ToolsPage.vue'),
           },
           {
             path: 'settings',
@@ -155,6 +155,14 @@ const routes: RouteRecordRaw[] = [
                 name: 'edit-camp',
                 component: () =>
                   import('pages/campManagement/settings/EditCampPage.vue'),
+              },
+              {
+                path: 'emails',
+                name: 'edit-email-templates',
+                component: () =>
+                  import(
+                    'pages/campManagement/settings/MessageTemplateEditPage.vue'
+                  ),
               },
               {
                 path: 'files',

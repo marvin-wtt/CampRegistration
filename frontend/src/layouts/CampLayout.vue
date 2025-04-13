@@ -3,7 +3,7 @@
     <!-- Be sure to play with the Layout demo on docs -->
 
     <!-- (Optional) The Header -->
-    <q-header elevated>
+    <q-header bordered>
       <q-toolbar>
         <q-toolbar-title>
           <router-link
@@ -13,8 +13,6 @@
             {{ title }}
           </router-link>
         </q-toolbar-title>
-
-        <q-space />
 
         <header-navigation
           v-if="user"
@@ -30,11 +28,12 @@
           rounded
         />
 
-        <language-switch
+        <locale-switch
           borderless
           class="q-px-md"
           dense
           rounded
+          unelevated
         />
 
         <profile-menu
@@ -57,7 +56,7 @@
 </template>
 
 <script lang="ts" setup>
-import LanguageSwitch from 'components/common/localization/LocaleSwitch.vue';
+import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import ProfileMenu from 'components/common/ProfileMenu.vue';

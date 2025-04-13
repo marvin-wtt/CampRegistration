@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 export * from './manager.guard.js';
 export { default as admin } from './admin.guard.js';
 
@@ -15,7 +15,7 @@ export const and = (...guardFns: GuardFn[]): GuardFn => {
         if (result !== true) {
           return result;
         }
-      } catch (error) {
+      } catch (ignored) {
         return false;
       }
     }
@@ -34,7 +34,7 @@ export const or = (...guardFns: GuardFn[]): GuardFn => {
           return true;
         }
       } catch (ignored) {
-        /* tslint:disable:no-empty */
+        // noop
       }
     }
 

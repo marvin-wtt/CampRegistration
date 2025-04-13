@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { translatedValue, BooleanStringSchema } from '#core/validation/helper';
-import { Camp } from '@prisma/client';
+import type { Camp } from '@prisma/client';
 
 const show = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
 });
 
@@ -43,8 +43,8 @@ function validateRecordKeys(
 const store = z.object({
   body: z
     .object({
-      active: z.boolean().default(false),
-      public: z.boolean().default(false),
+      active: z.boolean().optional(),
+      public: z.boolean().optional(),
       countries: z.array(z.string().length(2)).min(1),
       name: translatedValue(z.string()),
       organizer: translatedValue(z.string()),
@@ -64,7 +64,7 @@ const store = z.object({
       price: z.number().multipleOf(0.01).nonnegative(),
       form: z.record(z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
-      referenceCampId: z.string().optional(),
+      referenceCampId: z.string().ulid().optional(),
     })
     .superRefine((val, ctx) => {
       const recordKeys = [
@@ -113,7 +113,7 @@ const store = z.object({
 const update = (camp: Camp) =>
   z.object({
     params: z.object({
-      campId: z.string(),
+      campId: z.string().ulid(),
     }),
     body: z
       .object({
@@ -136,7 +136,7 @@ const update = (camp: Camp) =>
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),
         price: z.number().nonnegative().multipleOf(0.01),
-        form: z.unknown(),
+        form: z.record(z.unknown()),
         themes: z.record(z.string(), z.unknown()),
       })
       .partial()
@@ -153,6 +153,7 @@ const update = (camp: Camp) =>
         for (const key of recordKeys) {
           const value = val[key] ?? camp[key];
           if (
+            value &&
             typeof value === 'object' &&
             !validateRecordKeys(value, val.countries ?? camp.countries)
           ) {
@@ -186,7 +187,7 @@ const update = (camp: Camp) =>
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string(),
+    campId: z.string().ulid(),
   }),
 });
 

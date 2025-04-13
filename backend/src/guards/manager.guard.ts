@@ -1,5 +1,5 @@
 import managerService from '#app/manager/manager.service';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 export const campManager = async (req: Request): Promise<boolean | string> => {
   const userId = req.authUserId();
@@ -14,6 +14,6 @@ export const campManager = async (req: Request): Promise<boolean | string> => {
   return manager.expiresAt === null || manager.expiresAt > new Date();
 };
 
-export const campActive = async (req: Request): Promise<boolean | string> => {
+export const campActive = (req: Request): boolean | string => {
   return req.modelOrFail('camp').active;
 };
