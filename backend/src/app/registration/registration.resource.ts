@@ -22,7 +22,7 @@ export class RegistrationResource extends JsonResource<
       computedData: {
         firstName: this.data.firstName,
         lastName: this.data.lastName,
-        dataOfBirth: this.data.dateOfBirth?.toISOString().split('T')[0] ?? null,
+        dateOfBirth: this.data.dateOfBirth?.toISOString().split('T')[0] ?? null,
         gender: this.data.gender,
         address: {
           street: this.data.street,

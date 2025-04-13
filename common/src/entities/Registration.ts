@@ -7,7 +7,7 @@ export interface Registration extends Identifiable, Timestamps {
   computedData: {
     firstName: string | null;
     lastName: string | null;
-    dataOfBirth: string | null;
+    dateOfBirth: string | null;
     emails: string[] | null;
     role: string | null;
     gender: string | null;

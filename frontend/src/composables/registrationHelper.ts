@@ -67,8 +67,8 @@ export function useRegistrationHelper() {
   }
 
   function dateOfBirth(registration: Registration): Date | undefined {
-    return registration.computedData.dataOfBirth !== null
-      ? new Date(registration.computedData.dataOfBirth)
+    return registration.computedData.dateOfBirth !== null
+      ? new Date(registration.computedData.dateOfBirth)
       : undefined;
   }
 
