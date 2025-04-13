@@ -121,6 +121,7 @@ model Registration {
   locale      String    @default("en-US") @db.VarChar(5)
   //
   waitingList Boolean   @default(true) @map("waiting_list")
+  deletedAt   DateTime?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
 
