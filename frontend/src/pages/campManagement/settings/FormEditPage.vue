@@ -63,7 +63,10 @@ async function init() {
 
   if (registrationStore.data && registrationStore.data.length > 0) {
     quasar
-      .dialog({ component: EditorRestrictedAccessDialog })
+      .dialog({
+        component: EditorRestrictedAccessDialog,
+        persistent: true,
+      })
       .onOk(() => {
         restrictedAccess.value = true;
       })
