@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser';
 import { initI18n } from '#core/i18n';
 import { startJobs } from '#jobs/index';
 import mailService from '#core/mail/mail.service';
+import { boot } from '#boot.js';
 
 const app = express();
 
@@ -58,6 +59,8 @@ await mailService.connect();
 
 // routes
 app.use(router);
+
+await boot(app);
 
 // convert error to ApiError, if needed
 app.use(errorConverter);

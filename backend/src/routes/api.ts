@@ -1,5 +1,4 @@
 import express from 'express';
-import v1routes from './v1.js';
 import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import ApiError from '#utils/ApiError';
@@ -13,8 +12,6 @@ router.use(morgan.successHandler);
 router.use(generalLimiter);
 router.use(maintenance);
 router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
-
-router.use('/v1', v1routes);
 
 // send back a 404 error for any unknown api request
 router.use((_req, _res, next) => {
