@@ -1,4 +1,4 @@
-import express, { type Express } from 'express';
+import { type Express } from 'express';
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
 import { AuthModule } from '#app/auth/auth.module';
@@ -17,7 +17,9 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
-import extensions from '#middlewares/extension.middleware.js';
+import ApiError from '#utils/ApiError.js';
+import httpStatus from 'http-status';
+import staticRoutes from '#routes/static.js';
 
 export async function boot(app: Express) {
   // Modules in order
@@ -41,14 +43,16 @@ export async function boot(app: Express) {
   ];
 
   // Create router for /api/v1 routes
-  const router = express.Router();
-  router.use(extensions);
-
   for (const module of modules) {
-    await module.configure({ app, router });
+    await module.configure({ app, router: apiRouter });
   }
 
-  app.use('/api', apiRouter);
+  app.use('/api/v1', apiRouter);
 
-  apiRouter.use('/v1', router);
+  // send back a 404 error for any unknown api request
+  app.use('/api', (_req, _res, next) => {
+    next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
+  });
+
+  app.use(staticRoutes);
 }

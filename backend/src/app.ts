@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import router from '#routes/index';
 import config from '#config/index';
 import morgan from '#core/morgan';
 import { errorConverter, errorHandler } from '#middlewares/error.middleware';
@@ -56,9 +55,6 @@ await initI18n();
 
 // mailer
 await mailService.connect();
-
-// routes
-app.use(router);
 
 await boot(app);
 
