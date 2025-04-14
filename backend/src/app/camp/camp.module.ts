@@ -3,6 +3,6 @@ import campRoutes from '#app/camp/camp.routes';
 
 export class CampModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/camp', campRoutes);
+    router.use('/camps', campRoutes);
   }
 }
