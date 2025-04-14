@@ -15,7 +15,7 @@ import { ProfileModule } from '#app/profile/profile.module';
 import { TotpModule } from '#app/totp/totp.module';
 import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
-import { TokenModule } from '#app/token/file.module';
+import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import extensions from '#middlewares/extension.middleware.js';
 
@@ -47,6 +47,8 @@ export async function boot(app: Express) {
   for (const module of modules) {
     await module.configure({ app, router });
   }
+
+  app.use('/api', apiRouter);
 
   apiRouter.use('/v1', router);
 }
