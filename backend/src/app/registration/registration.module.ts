@@ -3,6 +3,6 @@ import registrationRoutes from '#app/registration/registration.routes';
 
 export class RegistrationModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/camps/:campId/registration', registrationRoutes);
+    router.use('/camps/:campId/registrations', registrationRoutes);
   }
 }

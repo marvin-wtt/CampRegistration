@@ -3,6 +3,6 @@ import messageTemplateRoutes from '#app/messageTemplate/message-template.routes'
 
 export class MessageTemplateModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/:campId/message-templates', messageTemplateRoutes);
+    router.use('/camps/:campId/message-templates', messageTemplateRoutes);
   }
 }

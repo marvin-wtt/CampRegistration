@@ -3,6 +3,6 @@ import roomRoutes from '#app/room/room.routes';
 
 export class RoomModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/:campId/rooms', roomRoutes);
+    router.use('/camps/:campId/rooms', roomRoutes);
   }
 }
