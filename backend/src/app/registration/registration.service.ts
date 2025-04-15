@@ -5,7 +5,7 @@ import { type Camp, Prisma, type Registration } from '@prisma/client';
 import { formUtils } from '#utils/form';
 import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper.js';
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 
 export class RegistrationService extends BaseService {
   async getRegistrationById(campId: string, id: string) {

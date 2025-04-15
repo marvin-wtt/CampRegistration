@@ -1,21 +1,10 @@
-import express from 'express';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import { catchParamAsync } from '#utils/catchAsync';
-import roomService from './room.service.js';
 import roomController from './room.controller.js';
 import { controller } from '#utils/bindController';
+import { createRouter } from '#core/router.';
 
-const router = express.Router({ mergeParams: true });
-
-router.param(
-  'roomId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const room = await roomService.getRoomById(camp.id, id);
-    req.setModelOrFail('room', room);
-  }),
-);
+const router = createRouter();
 
 router.get(
   '/',

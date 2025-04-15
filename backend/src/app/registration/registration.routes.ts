@@ -1,25 +1,11 @@
 import registrationController from './registration.controller.js';
 import { auth, guard } from '#middlewares/index';
 import { campActive, campManager } from '#guards/index';
-import express from 'express';
-import registrationService from './registration.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
 import registrationFiles from './registration-files.routes.js';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
+import { createRouter } from '#core/router.';
 
-const router = express.Router({ mergeParams: true });
-
-router.param(
-  'registrationId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const registration = await registrationService.getRegistrationById(
-      camp.id,
-      id,
-    );
-    req.setModelOrFail('registration', registration);
-  }),
-);
+const router = createRouter();
 
 router.use('/:registrationId/files', registrationFiles);
 

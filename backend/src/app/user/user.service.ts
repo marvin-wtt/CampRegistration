@@ -4,7 +4,7 @@ import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
-import campService from '#app/camp/camp.service.js';
+import campService from '#app/camp/camp.service';
 
 export class UserService extends BaseService {
   async createUser(

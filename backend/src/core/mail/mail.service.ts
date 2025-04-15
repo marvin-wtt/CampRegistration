@@ -1,5 +1,5 @@
 import type { Message } from '@prisma/client';
-import config from '#config/index.js';
+import config from '#config/index';
 import renderer from '#core/mail/mail.renderer';
 import { MailFactory } from '#core/mail/mail.factory';
 import logger from '#core/logger';

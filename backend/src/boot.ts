@@ -17,9 +17,9 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import staticRoutes from '#routes/static.js';
+import staticRoutes from '#routes/static';
 
 export async function boot(app: Express) {
   // Modules in order

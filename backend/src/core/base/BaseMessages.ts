@@ -1,5 +1,5 @@
-import config from '#config/index.js';
-import { generateQueryString } from '#utils/uri.js';
+import config from '#config/index';
+import { generateQueryString } from '#utils/uri';
 
 export abstract class BaseMessages {
   generateUrl(path: string, params: Record<string, string> = {}) {

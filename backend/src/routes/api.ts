@@ -1,10 +1,10 @@
-import express from 'express';
 import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import morgan from '#core/morgan';
-import extensions from '#middlewares/extension.middleware.js';
+import extensions from '#middlewares/extension.middleware';
+import { createRouter } from '#core/router.';
 
-const router = express.Router();
+const router = createRouter();
 
 router.use(morgan.successHandler);
 
