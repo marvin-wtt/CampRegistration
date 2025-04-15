@@ -5,12 +5,12 @@ import type {
   Message,
   File,
 } from '@prisma/client';
-import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import messageTemplateService from '#app/messageTemplate/message-template.service';
 import mailService from '#core/mail/mail.service';
-import { translateObject } from '#utils/translateObject.js';
-import ApiError from '#utils/ApiError.js';
+import { translateObject } from '#utils/translateObject';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import registrationService from '#app/registration/registration.service.js';
+import registrationService from '#app/registration/registration.service';
 import { BaseService } from '#core/base/BaseService';
 
 type MessageWithAttachments = Message & { attachments: File[] };

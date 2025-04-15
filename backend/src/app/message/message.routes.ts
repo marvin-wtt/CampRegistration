@@ -1,21 +1,10 @@
 import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import express from 'express';
 import messageController from './message.controller.js';
-import service from './message.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
+import { createRouter } from '#core/router';
 
-const router = express.Router({ mergeParams: true });
-
-router.param(
-  'messageId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const message = await service.getMessageById(camp.id, id);
-    req.setModelOrFail('message', message);
-  }),
-);
+const router = createRouter();
 
 router.get(
   '/',

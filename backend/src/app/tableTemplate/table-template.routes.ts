@@ -1,21 +1,10 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import express from 'express';
 import templateController from './table-template.controller.js';
-import tableTemplateService from './table-template.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
 import { controller } from '#utils/bindController';
+import { createRouter } from '#core/router';
 
-const router = express.Router({ mergeParams: true });
-
-router.param(
-  'templateId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const template = await tableTemplateService.getTemplateById(camp.id, id);
-    req.setModelOrFail('tableTemplate', template);
-  }),
-);
+const router = createRouter();
 
 router.get(
   '/',
@@ -24,7 +13,7 @@ router.get(
   controller(templateController, 'index'),
 );
 router.get(
-  '/:templateId',
+  '/:tableTemplateId',
   auth(),
   guard(campManager),
   controller(templateController, 'show'),
@@ -36,13 +25,13 @@ router.post(
   controller(templateController, 'store'),
 );
 router.put(
-  '/:templateId',
+  '/:tableTemplateId',
   auth(),
   guard(campManager),
   controller(templateController, 'update'),
 );
 router.delete(
-  '/:templateId',
+  '/:tableTemplateId',
   auth(),
   guard(campManager),
   controller(templateController, 'destroy'),

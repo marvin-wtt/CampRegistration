@@ -1,4 +1,4 @@
-import config from '#config/index.js';
+import config from '#config/index';
 import { DiskStorage } from '#core/storage/disk.storage';
 
 export class StaticStorage extends DiskStorage {

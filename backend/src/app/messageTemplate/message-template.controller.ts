@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import validator from './message-template.validation.js';
 import service from './message-template.service.js';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import {
   MessageTemplateCollection,
   type MessageTemplateDefault,
