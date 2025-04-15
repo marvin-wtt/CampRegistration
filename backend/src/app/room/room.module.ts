@@ -1,6 +1,6 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import roomRoutes from '#app/room/room.routes';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 import roomService from '#app/room/room.service';
 
 export class RoomModule implements AppModule {

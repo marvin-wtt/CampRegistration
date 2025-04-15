@@ -1,6 +1,6 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import tableTemplateRoutes from '#app/tableTemplate/table-template.routes';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 import tableTemplateService from '#app/tableTemplate/table-template.service';
 
 export class TableTemplateModule implements AppModule {

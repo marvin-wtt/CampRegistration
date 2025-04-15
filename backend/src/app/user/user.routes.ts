@@ -1,7 +1,7 @@
 import { auth, guard } from '#middlewares/index';
 import userController from './user.controller.js';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router.';
+import { createRouter } from '#core/router';
 
 const router = createRouter();
 

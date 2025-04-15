@@ -1,7 +1,7 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import registrationRoutes from '#app/registration/registration.routes';
 import registrationService from '#app/registration/registration.service';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 
 export class RegistrationModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {

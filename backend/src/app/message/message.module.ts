@@ -1,6 +1,6 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import messageRoutes from '#app/message/message.routes';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 import messageService from '#app/message/message.service';
 
 export class MessageModule implements AppModule {

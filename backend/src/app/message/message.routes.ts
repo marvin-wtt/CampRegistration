@@ -2,7 +2,7 @@ import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import messageController from './message.controller.js';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router.';
+import { createRouter } from '#core/router';
 
 const router = createRouter();
 

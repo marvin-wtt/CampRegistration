@@ -1,7 +1,7 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import userRoutes from '#app/user/user.routes';
 import userService from '#app/user/user.service';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 
 export class UserModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {

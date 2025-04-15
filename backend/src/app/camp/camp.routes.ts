@@ -9,7 +9,7 @@ import type {
   CampQuery,
 } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router.';
+import { createRouter } from '#core/router';
 
 const router = createRouter();
 

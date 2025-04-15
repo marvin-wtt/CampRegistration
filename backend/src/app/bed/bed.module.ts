@@ -1,7 +1,7 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import bedRoutes from '#app/bed/bed.routes';
 import bedService from '#app/bed/bed.service';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 
 export class BedModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {

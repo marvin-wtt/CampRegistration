@@ -2,7 +2,7 @@ import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import morgan from '#core/morgan';
 import extensions from '#middlewares/extension.middleware';
-import { createRouter } from '#core/router.';
+import { createRouter } from '#core/router';
 
 const router = createRouter();
 

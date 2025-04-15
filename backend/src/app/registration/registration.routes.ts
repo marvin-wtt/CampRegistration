@@ -3,7 +3,7 @@ import { auth, guard } from '#middlewares/index';
 import { campActive, campManager } from '#guards/index';
 import registrationFiles from './registration-files.routes.js';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router.';
+import { createRouter } from '#core/router';
 
 const router = createRouter();
 

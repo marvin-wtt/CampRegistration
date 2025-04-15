@@ -1,6 +1,6 @@
 import type { AppModule, ModuleOptions } from '#core/base/AppModule';
 import managerRoutes from '#app/manager/manager.routes';
-import { registerRouteModelBinding } from '#core/router.';
+import { registerRouteModelBinding } from '#core/router';
 import managerService from '#app/manager/manager.service';
 
 export class ManagerModule implements AppModule {
