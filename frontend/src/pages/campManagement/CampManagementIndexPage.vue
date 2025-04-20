@@ -146,8 +146,8 @@ const activeCamps = computed<Camp[]>(() => {
     return [];
   }
 
-  const camps = user.value.camps as Camp[];
-  return camps.filter((value) => value.active).sort(sortCamps);
+  const camps = user.value.camps;
+  return camps.filter((value) => value.active).toSorted(sortCamps);
 });
 
 const inactiveCamps = computed<Camp[]>(() => {
@@ -155,15 +155,12 @@ const inactiveCamps = computed<Camp[]>(() => {
     return [];
   }
 
-  const camps = user.value.camps as Camp[];
-  return camps.filter((value) => !value.active).sort(sortCamps);
+  const camps = user.value.camps;
+  return camps.filter((value) => !value.active).toSorted(sortCamps);
 });
 
 function sortCamps(a: Camp, b: Camp) {
-  return (
-    new Date(b.startAt).getUTCMilliseconds() -
-    new Date(a.startAt).getUTCMilliseconds()
-  );
+  return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
 }
 </script>
 
