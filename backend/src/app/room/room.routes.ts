@@ -24,12 +24,6 @@ router.post(
   guard(campManager),
   controller(roomController, 'store'),
 );
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(roomController, 'store'),
-);
 router.patch(
   '/:roomId',
   auth(),

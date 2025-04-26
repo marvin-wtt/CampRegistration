@@ -36,10 +36,10 @@ class RoomController extends BaseController {
   async update(req: Request, res: Response) {
     const {
       params: { roomId },
-      body: { name },
+      body: { name, sortOrder },
     } = await req.validate(validator.update);
 
-    const room = await roomService.updateRoomById(roomId, name);
+    const room = await roomService.updateRoomById(roomId, name, sortOrder);
 
     res.resource(new RoomResource(room));
   }
