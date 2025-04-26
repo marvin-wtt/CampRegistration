@@ -26,7 +26,7 @@ router.param(
 router.get(
   '/:fileId',
   auth(),
-  guard(campManager('camp.registration.view')),
+  guard(campManager('camp.registrations.view')),
   controller(fileController, 'stream'),
 );
 

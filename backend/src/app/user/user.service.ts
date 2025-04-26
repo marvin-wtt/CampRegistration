@@ -47,9 +47,7 @@ export class UserService extends BaseService {
   async getUserByIdWithCamps(id: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: {
-        campRoles: true,
-      },
+      include: { campRoles: true },
     });
 
     const camps = await campService.getCampsByUserId(id);
@@ -87,6 +85,7 @@ export class UserService extends BaseService {
       data: {
         lastSeen: new Date(),
       },
+      include: { campRoles: true },
     });
 
     const camps = await campService.getCampsByUserId(userId);
