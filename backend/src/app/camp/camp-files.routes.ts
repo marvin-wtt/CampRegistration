@@ -28,7 +28,7 @@ const fileAccessMiddleware = (req: Request): boolean | string => {
 router.get(
   '/:fileId',
   guard(
-    or(campManager('camp.files.create'), and(fileAccessMiddleware, campActive)),
+    or(campManager('camp.files.view'), and(fileAccessMiddleware, campActive)),
   ),
   controller(fileController, 'stream'),
 );
