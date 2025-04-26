@@ -1,6 +1,7 @@
 import managerService from '#app/manager/manager.service';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
+import { permissionRegistry } from '#core/permission-registry';
 
 export const campManager = (
   permission: Permission,
@@ -10,15 +11,13 @@ export const campManager = (
     const campId = req.modelOrFail('camp').id;
 
     const manager = await managerService.getManagerByUserId(campId, userId);
-
-    // TODO Load permissions for role
-    const permissions: Permission[] = [];
-
-    if (!permissions.includes(permission)) {
+    if (manager === null) {
       return false;
     }
 
-    if (manager === null) {
+    const permissions = permissionRegistry.getPermissions(manager.role);
+
+    if (!permissions.includes(permission)) {
       return false;
     }
 
