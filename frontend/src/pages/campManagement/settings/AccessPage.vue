@@ -134,7 +134,6 @@ import type {
   CampManagerCreateData,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
-import type { CampRole } from '@camp-registration/common/permissions';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { type QSelectOption, useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
