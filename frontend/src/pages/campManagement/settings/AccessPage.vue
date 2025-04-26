@@ -134,6 +134,7 @@ import type {
   CampManagerCreateData,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
+import type { CampRole } from '@camp-registration/common/permissions';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { type QSelectOption, useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
@@ -221,7 +222,7 @@ const rows = computed<CampManager[]>(() => {
 });
 
 function getRoleOptions(): QSelectOption[] {
-  const roles = ['VIEWER', 'COUNSELOR', 'DIRECTOR'] as const;
+  const roles = ['VIEWER', 'COORDINATOR', 'COUNSELOR', 'DIRECTOR'] as const;
 
   return roles.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
@@ -277,53 +278,18 @@ function showDeleteDialog(manager: CampManager) {
 }
 </script>
 
-<i18n lang="yaml" locale="en">
-title: 'Manage Access'
-
-action:
-  add: 'Add'
-  delete: 'Delete'
-  edit: 'Edit'
-
-dialog:
-  delete:
-    title: 'Revoke Access'
-    message: 'Are you sure you want to revoke access for this user?'
-    label: 'Email'
-
-column:
-  email: 'Email'
-  expiresAt: 'Expires At'
-  name: 'Name'
-  role: 'Role'
-  status: 'Status'
-
-expiresAt:
-  never: 'Never'
-  expired: 'Expired'
-
-status:
-  accepted: 'Accepted'
-  pending: 'Pending'
-
-role:
-  counselor: 'Counselor'
-  director: 'Director'
-  viewer: 'Viewer'
-</i18n>
-
 <i18n lang="yaml" locale="de">
 title: 'Zugriff verwalten'
 
 action:
   add: 'Hinzufügen'
-  delete: 'Löschen'
+  delete: 'Entfernen'
   edit: 'Bearbeiten'
 
 dialog:
   delete:
     title: 'Zugriff entziehen'
-    message: 'Möchten Sie den Zugriff dieses Benutzers wirklich entziehen?'
+    message: 'Möchten Sie den Zugriff dieses Nutzers wirklich entziehen?'
     label: 'E-Mail'
 
 column:
@@ -342,6 +308,7 @@ status:
   pending: 'Ausstehend'
 
 role:
+  coordinator: 'Koordinator'
   counselor: 'Betreuer'
   director: 'Leiter'
   viewer: 'Betrachter'
@@ -377,6 +344,7 @@ status:
   pending: 'En attente'
 
 role:
+  coordinator: 'Coordinateur'
   counselor: 'Conseiller'
   director: 'Directeur'
   viewer: 'Lecteur'

@@ -26,6 +26,12 @@ export class MessageTemplateModule implements AppModule {
         'camp.message_templates.edit',
         'camp.message_templates.delete',
       ],
+      COORDINATOR: [
+        'camp.message_templates.view',
+        'camp.message_templates.create',
+        'camp.message_templates.edit',
+        'camp.message_templates.delete',
+      ],
       COUNSELOR: ['camp.message_templates.view'],
       VIEWER: [],
     };

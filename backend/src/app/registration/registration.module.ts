@@ -25,6 +25,11 @@ export class RegistrationModule implements AppModule {
         'camp.registrations.edit',
         'camp.registrations.delete',
       ],
+      COORDINATOR: [
+        'camp.registrations.view',
+        'camp.registrations.edit',
+        'camp.registrations.delete',
+      ],
       COUNSELOR: ['camp.registrations.view'],
       VIEWER: ['camp.registrations.view'],
     };

@@ -1,1 +1,1 @@
-export type ManagerRole = 'DIRECTOR' | 'COUNSELOR' | 'VIEWER';
+export type ManagerRole = 'DIRECTOR' | 'COORDINATOR' | 'COUNSELOR' | 'VIEWER';

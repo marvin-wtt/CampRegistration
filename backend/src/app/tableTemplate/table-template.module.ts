@@ -26,6 +26,12 @@ export class TableTemplateModule implements AppModule {
         'camp.table_templates.edit',
         'camp.table_templates.delete',
       ],
+      COORDINATOR: [
+        'camp.table_templates.view',
+        'camp.table_templates.create',
+        'camp.table_templates.edit',
+        'camp.table_templates.delete',
+      ],
       COUNSELOR: ['camp.table_templates.view'],
       VIEWER: ['camp.table_templates.view'],
     };

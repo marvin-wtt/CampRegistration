@@ -26,6 +26,12 @@ export class RoomModule implements AppModule {
         'camp.rooms.edit',
         'camp.rooms.delete',
       ],
+      COORDINATOR: [
+        'camp.rooms.view',
+        'camp.rooms.create',
+        'camp.rooms.edit',
+        'camp.rooms.delete',
+      ],
       COUNSELOR: ['camp.rooms.view'],
       VIEWER: ['camp.rooms.view'],
     };

@@ -26,6 +26,7 @@ export class ManagerModule implements AppModule {
         'camp.managers.edit',
         'camp.managers.delete',
       ],
+      COORDINATOR: ['camp.managers.view'],
       COUNSELOR: ['camp.managers.view'],
       VIEWER: [],
     };

@@ -25,6 +25,11 @@ export class MessageModule implements AppModule {
         'camp.messages.create',
         'camp.messages.delete',
       ],
+      COORDINATOR: [
+        'camp.messages.view',
+        'camp.messages.create',
+        'camp.messages.delete',
+      ],
       COUNSELOR: [],
       VIEWER: [],
     };

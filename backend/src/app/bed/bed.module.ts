@@ -25,6 +25,11 @@ export class BedModule implements AppModule {
         'camp.rooms.beds.edit',
         'camp.rooms.beds.delete',
       ],
+      COORDINATOR: [
+        'camp.rooms.beds.create',
+        'camp.rooms.beds.edit',
+        'camp.rooms.beds.delete',
+      ],
       COUNSELOR: ['camp.rooms.beds.edit'],
       VIEWER: [],
     };

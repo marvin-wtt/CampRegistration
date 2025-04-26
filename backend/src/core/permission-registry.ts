@@ -31,6 +31,12 @@ export class PermissionRegistry {
       ? this.get(role as ManagerRole)
       : [];
   }
+
+  getAll(): Record<ManagerRole, Permission[]> {
+    return Object.fromEntries(
+      [...this.map.entries()].map(([role, perms]) => [role, Array.from(perms)]),
+    ) as Record<ManagerRole, Permission[]>;
+  }
 }
 
 export const permissionRegistry = new PermissionRegistry();
