@@ -40,7 +40,7 @@
             key="role"
             :props
           >
-            {{ t('role.' + props.row.role) }}
+            {{ t('role.' + props.row.role.toLowerCase()) }}
           </q-td>
           <q-td
             key="status"
@@ -135,7 +135,7 @@ import type {
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useQuasar } from 'quasar';
+import { type QSelectOption, useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import CampManagerCreateDialog from 'components/campManagement/settings/access/CampManagerCreateDialog.vue';
 import { useProfileStore } from 'stores/profile-store';
@@ -220,6 +220,15 @@ const rows = computed<CampManager[]>(() => {
   return campManagerStore.data ?? [];
 });
 
+function getRoleOptions(): QSelectOption[] {
+  const roles = ['VIEWER', 'COUNSELOR', 'DIRECTOR'] as const;
+
+  return roles.map((role) => ({
+    label: t('role.' + role.toLocaleLowerCase()),
+    value: role,
+  }));
+}
+
 function showAddDialog() {
   const date = new Date(campDetailsStore.data?.endAt ?? '');
   date.setHours(23, 59, 59, 999);
@@ -229,6 +238,7 @@ function showAddDialog() {
       component: CampManagerCreateDialog,
       componentProps: {
         date: date.toISOString(),
+        roles: getRoleOptions(),
       },
     })
     .onOk((data: CampManagerCreateData) => {
@@ -241,7 +251,8 @@ function showEditDialog(manager: CampManager) {
     .dialog({
       component: CampManagerUpdateDialog,
       componentProps: {
-        expiresAt: manager.expiresAt,
+        manager,
+        roles: getRoleOptions(),
       },
     })
     .onOk((payload: CampManagerUpdateData) => {
@@ -267,7 +278,7 @@ function showDeleteDialog(manager: CampManager) {
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Access'
+title: 'Manage Access'
 
 action:
   add: 'Add'
@@ -276,13 +287,13 @@ action:
 
 dialog:
   delete:
-    title: 'Remove Access'
-    message: 'Are you sure you want to remove this person?'
+    title: 'Revoke Access'
+    message: 'Are you sure you want to revoke access for this user?'
     label: 'Email'
 
 column:
   email: 'Email'
-  expiresAt: 'Expires at'
+  expiresAt: 'Expires At'
   name: 'Name'
   role: 'Role'
   status: 'Status'
@@ -296,11 +307,13 @@ status:
   pending: 'Pending'
 
 role:
-  manager: 'Manager'
+  counselor: 'Counselor'
+  director: 'Director'
+  viewer: 'Viewer'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Zugriff'
+title: 'Zugriff verwalten'
 
 action:
   add: 'Hinzufügen'
@@ -309,12 +322,13 @@ action:
 
 dialog:
   delete:
-    title: 'Zugriff entfernen'
-    message: 'Möchten Sie diese Person wirklich entfernen?'
+    title: 'Zugriff entziehen'
+    message: 'Möchten Sie den Zugriff dieses Benutzers wirklich entziehen?'
     label: 'E-Mail'
 
 column:
   email: 'E-Mail'
+  expiresAt: 'Läuft ab'
   name: 'Name'
   role: 'Rolle'
   status: 'Status'
@@ -328,25 +342,28 @@ status:
   pending: 'Ausstehend'
 
 role:
-  manager: 'Manager'
+  counselor: 'Betreuer'
+  director: 'Leiter'
+  viewer: 'Betrachter'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Accès'
+title: 'Gérer l’accès'
 
 action:
   add: 'Ajouter'
-  delete: 'Suprimer'
+  delete: 'Supprimer'
   edit: 'Modifier'
 
 dialog:
   delete:
-    title: "Supprimer l'accès"
-    message: 'Êtes-vous sûr de vouloir supprimer cette personne ?'
+    title: 'Révoquer l’accès'
+    message: 'Voulez-vous vraiment révoquer l’accès de cet utilisateur ?'
     label: 'E-mail'
 
 column:
   email: 'E-mail'
+  expiresAt: 'Date d’expiration'
   name: 'Nom'
   role: 'Rôle'
   status: 'Statut'
@@ -360,7 +377,9 @@ status:
   pending: 'En attente'
 
 role:
-  manager: 'Manager'
+  counselor: 'Conseiller'
+  director: 'Directeur'
+  viewer: 'Lecteur'
 </i18n>
 
 <style scoped></style>

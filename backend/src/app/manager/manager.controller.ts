@@ -23,7 +23,7 @@ class ManagerController extends BaseController {
   async store(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
     const {
-      body: { email, expiresAt },
+      body: { email, role, expiresAt },
     } = await req.validate(validator.store);
 
     const existingCampManager = await managerService.getManagerByEmail(
@@ -39,10 +39,15 @@ class ManagerController extends BaseController {
 
     const user = await userService.getUserByEmail(email);
 
+    const data = {
+      role,
+      expiresAt,
+    };
+
     const manager =
       user === null
-        ? await managerService.inviteManager(camp.id, email, expiresAt)
-        : await managerService.addManager(camp.id, user.id, expiresAt);
+        ? await managerService.inviteManager(camp.id, email, data)
+        : await managerService.addManager(camp.id, user.id, data);
 
     await catchAndResolve(managerMessages.sendManagerInvitation(camp, manager));
 
@@ -52,13 +57,13 @@ class ManagerController extends BaseController {
   async update(req: Request, res: Response) {
     const manager = req.modelOrFail('manager');
     const {
-      body: { expiresAt },
+      body: { role, expiresAt },
     } = await req.validate(validator.update);
 
-    const updatedManager = await managerService.updateManagerById(
-      manager.id,
+    const updatedManager = await managerService.updateManagerById(manager.id, {
+      role,
       expiresAt,
-    );
+    });
 
     res.resource(new ManagerResource(updatedManager));
   }
@@ -76,7 +81,7 @@ class ManagerController extends BaseController {
       );
     }
 
-    await catchAndResolve(managerService.removeManager(managerId));
+    await managerService.removeManager(managerId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
