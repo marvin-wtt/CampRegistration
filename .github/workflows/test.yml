@@ -19,8 +19,8 @@ jobs:
     if: github.event.pull_request.draft == false
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:10.5.27
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -59,8 +59,8 @@ jobs:
         node: [ 22, 23 ]
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:10.5.27
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -148,8 +148,8 @@ jobs:
         node: [22]
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:10.5.27
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
