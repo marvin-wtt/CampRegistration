@@ -9,7 +9,10 @@
       class="absolute fit"
       flat
     >
-      <template #top-right>
+      <template
+        v-if="can('camp.managers.create')"
+        #top-right
+      >
         <q-btn
           color="primary"
           icon="add"
@@ -67,7 +70,10 @@
             :props
           >
             <q-btn
-              v-if="userEmail !== props.row.email"
+              v-if="
+                userEmail !== props.row.email &&
+                (can('camp.managers.edit') || can('camp.managers.delete'))
+              "
               aria-label="actions"
               icon="more_vert"
               color="primary"
@@ -77,6 +83,7 @@
               <q-menu>
                 <q-list style="min-width: 150px">
                   <q-item
+                    v-if="can('camp.managers.edit')"
                     clickable
                     v-close-popup
                     @click="showEditDialog(props.row)"
@@ -92,6 +99,7 @@
                     </q-item-section>
                   </q-item>
                   <q-item
+                    v-if="can('camp.managers.delete')"
                     clickable
                     v-close-popup
                     class="text-negative"
@@ -134,12 +142,14 @@ import { useProfileStore } from 'stores/profile-store';
 import { type QTableColumn } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
+import { usePermissions } from 'src/composables/permissions';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
 const campManagerStore = useCampManagerStore();
 const profileStore = useProfileStore();
 const campDetailsStore = useCampDetailsStore();
+const { can } = usePermissions();
 
 campManagerStore.fetchData();
 campDetailsStore.fetchData();

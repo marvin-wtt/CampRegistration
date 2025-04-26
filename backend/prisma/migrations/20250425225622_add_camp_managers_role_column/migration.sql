@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `camp_managers` ADD COLUMN `role` TINYTEXT NOT NULL DEFAULT 'DIRECTOR';

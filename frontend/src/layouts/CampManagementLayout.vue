@@ -72,9 +72,10 @@
         <q-separator spaced />
 
         <navigation-item
-          v-for="item in filteredItems"
+          v-for="(item, i) in filteredItems"
           :key="item.name"
           v-bind="item"
+          :first="i === 0"
         />
       </q-list>
 
@@ -130,11 +131,13 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import { usePermissions } from 'src/composables/permissions';
 
 const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { can } = usePermissions();
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -185,6 +188,7 @@ const items: NavigationItemProps[] = [
     name: 'participants',
     label: t('participants'),
     icon: 'groups',
+    permission: 'camp.registrations.view',
     to: { name: 'participants' },
   },
   {
@@ -192,12 +196,14 @@ const items: NavigationItemProps[] = [
     preview: true,
     label: t('contact'),
     icon: 'send',
+    permission: 'camp.messages.create',
     to: { name: 'management.camp.contact' },
   },
   {
     name: 'room_planner',
     label: t('room_planner'),
     icon: 'single_bed',
+    permission: 'camp.rooms.view',
     to: { name: 'room-planner' },
   },
   {
@@ -211,30 +217,35 @@ const items: NavigationItemProps[] = [
         name: 'access',
         label: t('access'),
         icon: 'key',
+        permission: 'camp.managers.view',
         to: { name: 'access' },
       },
       {
         name: 'edit',
         label: t('edit'),
         icon: 'edit',
+        permission: 'camp.edit',
         to: { name: 'edit-camp' },
       },
       {
         name: 'email-templates',
         label: t('email_templates'),
         icon: 'email',
+        permission: 'camp.message_templates.view',
         to: { name: 'edit-email-templates' },
       },
       {
         name: 'files',
         label: t('files'),
         icon: 'folder',
+        permission: 'camp.files.view',
         to: { name: 'edit-files' },
       },
       {
         name: 'form',
         label: t('form'),
         icon: 'feed',
+        permission: 'camp.edit',
         to: { name: 'edit-form' },
       },
     ],
@@ -242,14 +253,23 @@ const items: NavigationItemProps[] = [
 ];
 
 const filteredItems = computed<NavigationItemProps[]>(() => {
-  if (dev.value) {
-    return items;
-  }
-
-  return items.filter((item) => {
-    return !item.preview;
-  });
+  return filterItems(items);
 });
+
+function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
+  return navItems
+    .filter((item) => dev.value || !item.preview)
+    .filter((item) => !item.permission || can(item.permission))
+    .map((item) => {
+      if ('children' in item && item.children !== undefined) {
+        return {
+          ...item,
+          children: filterItems(item.children),
+        };
+      }
+      return item;
+    });
+}
 
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';

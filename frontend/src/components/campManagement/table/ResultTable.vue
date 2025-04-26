@@ -14,6 +14,7 @@
     hide-bottom
     row-key="name"
     virtual-scroll
+    binary-state-sort
   >
     <template #top-right>
       <div class="fit row no-wrap justify-end">
@@ -80,6 +81,11 @@
             >
               <!-- Edit templates -->
               <q-item
+                v-if="
+                  can('camp.table_templates.create') ||
+                  can('camp.table_templates.edit') ||
+                  can('camp.table_templates.delete')
+                "
                 v-close-popup
                 clickable
                 @click="editTemplates"
@@ -141,10 +147,10 @@
     >
       <q-td :props="rendererProps">
         <table-cell-wrapper
-          :renderer="renderer"
-          :camp="camp"
+          :renderer
+          :camp
           :props="rendererProps as QTableBodyCellProps"
-          :printing="printing"
+          :printing
         />
       </q-td>
     </template>
@@ -153,7 +159,7 @@
 
 <script lang="ts" setup>
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import { type QTableColumn } from 'quasar';
+import { type QTableColumn, QTable } from 'quasar';
 import type {
   CTableTemplate,
   CTableColumnTemplate,
@@ -184,6 +190,7 @@ import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import { usePermissions } from 'src/composables/permissions';
 
 interface Props {
   questions: TableColumnTemplate[];
@@ -199,21 +206,15 @@ const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const { to } = useObjectTranslation();
+const { can } = usePermissions();
 
 // TODO emit instead
 const templateStore = useTemplateStore();
 const registrationAccessor = useRegistrationHelper();
 
-interface Pagination {
-  rowsPerPage?: number | undefined;
-  sortBy?: string | undefined;
-  descending?: boolean | undefined;
-}
-
-const pagination = ref<Pagination>({
+const pagination = ref<QTable['pagination']>({
   rowsPerPage: 0,
-  sortBy: undefined,
-  descending: undefined,
+  sortBy: null,
 });
 
 // TODO Set according to preset update

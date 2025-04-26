@@ -17,6 +17,7 @@
         <div class="q-gutter-sm">
           <template v-if="selected.length === 0">
             <q-btn
+              v-if="can('camp.files.create')"
               :label="t('action.upload')"
               icon="cloud_upload"
               color="primary"
@@ -35,6 +36,7 @@
               @click="downloadFiles"
             />
             <q-btn
+              v-if="can('camp.files.delete')"
               :label="t('action.delete')"
               icon="delete"
               color="negative"
@@ -85,11 +87,13 @@ import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from 'src/utils/formatters/formatBytes';
 import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
 import { useCampFilesStore } from 'stores/camp-files-store';
+import { usePermissions } from 'src/composables/permissions';
 
 const { t } = useI18n();
 const quasar = useQuasar();
 const campStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
+const { can } = usePermissions();
 
 campStore.fetchData();
 campFileStore.fetchData();

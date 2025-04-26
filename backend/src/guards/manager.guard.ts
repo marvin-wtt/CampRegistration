@@ -1,17 +1,29 @@
 import managerService from '#app/manager/manager.service';
 import type { Request } from 'express';
+import type { Permission } from '@camp-registration/common/permissions';
 
-export const campManager = async (req: Request): Promise<boolean | string> => {
-  const userId = req.authUserId();
-  const campId = req.modelOrFail('camp').id;
+export const campManager = (
+  permission: Permission,
+): ((req: Request) => Promise<boolean | string>) => {
+  return async (req: Request) => {
+    const userId = req.authUserId();
+    const campId = req.modelOrFail('camp').id;
 
-  const manager = await managerService.getManagerByUserId(campId, userId);
+    const manager = await managerService.getManagerByUserId(campId, userId);
 
-  if (manager === null) {
-    return false;
-  }
+    // TODO Load permissions for role
+    const permissions: Permission[] = [];
 
-  return manager.expiresAt === null || manager.expiresAt > new Date();
+    if (!permissions.includes(permission)) {
+      return false;
+    }
+
+    if (manager === null) {
+      return false;
+    }
+
+    return manager.expiresAt === null || manager.expiresAt > new Date();
+  };
 };
 
 export const campActive = (req: Request): boolean | string => {

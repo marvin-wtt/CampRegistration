@@ -11,7 +11,10 @@
         </q-item-label>
       </q-item-section>
 
-      <q-item-section side>
+      <q-item-section
+        v-if="props.editable || props.deletable"
+        side
+      >
         <q-btn
           flat
           rounded
@@ -25,6 +28,7 @@
             <q-list style="min-width: 100px">
               <!-- Edit -->
               <q-item
+                v-if="props.editable"
                 v-close-popup
                 clickable
                 @click="editRoom"
@@ -35,6 +39,7 @@
               </q-item>
               <!-- Delete -->
               <q-item
+                v-if="props.deletable"
                 v-close-popup
                 clickable
                 @click="deleteRoom"
@@ -52,8 +57,9 @@
     <room-list-item
       v-for="(_, index) in room.beds"
       :key="index"
-      v-model="room.beds[index].person"
-      :options="options"
+      v-model="room.beds[index]!.person"
+      :options
+      :assignable="props.assignable"
       :position="index + 1"
       :dense="props.dense"
       @update="(roommate) => onBedUpdate(index, roommate)"
@@ -76,6 +82,9 @@ interface Props {
   modelValue: RoomWithRoommates;
   people: Roommate[];
   dense?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
+  assignable?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {

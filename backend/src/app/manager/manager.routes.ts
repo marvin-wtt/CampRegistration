@@ -9,25 +9,25 @@ const router = createRouter();
 router.get(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.managers.view')),
   controller(managerController, 'index'),
 );
 router.post(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.managers.create')),
   controller(managerController, 'store'),
 );
 router.patch(
   '/:managerId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.managers.edit')),
   controller(managerController, 'update'),
 );
 router.delete(
   '/:managerId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.managers.delete')),
   controller(managerController, 'destroy'),
 );
 

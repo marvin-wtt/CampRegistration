@@ -79,7 +79,7 @@ class AuthController extends BaseController {
     } = await req.validate(validator.verifyOTP);
 
     const { userId } = tokenService.verifyTotpToken(token);
-    const user = await userService.getUserByIdWithCamps(userId);
+    const user = await userService.getUserByIdOrFail(userId);
     totpService.verifyTOTP(user, otp);
 
     await this.sendAuthResponse(res, userId, remember);

@@ -15,9 +15,10 @@
         <sortable-list
           v-slot="slotProps"
           v-model="modifiedTemplates"
-          addable
-          editable
-          deletable
+          :addable="can('camp.table_templates.create')"
+          :editable="can('camp.table_templates.edit')"
+          :sortable="can('camp.table_templates.edit')"
+          :deletable="can('camp.table_templates.delete')"
           bordered
           separator
           @add="addTemplate"
@@ -57,6 +58,7 @@ import type { Camp, TableTemplate } from '@camp-registration/common/entities';
 import TableTemplateEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateEditDialog.vue';
 import SortableList from 'components/common/SortableList.vue';
 import { reactive, toRaw } from 'vue';
+import { usePermissions } from 'src/composables/permissions';
 
 interface Props {
   templates: TableTemplate[];
@@ -70,6 +72,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { can } = usePermissions();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

@@ -47,6 +47,9 @@ export class UserService extends BaseService {
   async getUserByIdWithCamps(id: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id },
+      include: {
+        campRoles: true,
+      },
     });
 
     const camps = await campService.getCampsByUserId(id);

@@ -1,7 +1,12 @@
-import type { AppModule, ModuleOptions } from '#core/base/AppModule';
+import type {
+  AppModule,
+  ModuleOptions,
+  RoleToPermissions,
+} from '#core/base/AppModule';
 import managerRoutes from '#app/manager/manager.routes';
 import { registerRouteModelBinding } from '#core/router';
 import managerService from '#app/manager/manager.service';
+import type { ManagerPermission } from '@camp-registration/common/permissions';
 
 export class ManagerModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {
@@ -11,5 +16,18 @@ export class ManagerModule implements AppModule {
     });
 
     router.use('/camps/:campId/managers', managerRoutes);
+  }
+
+  registerPermissions(): RoleToPermissions<ManagerPermission> {
+    return {
+      DIRECTOR: [
+        'camp.managers.view',
+        'camp.managers.create',
+        'camp.managers.edit',
+        'camp.managers.delete',
+      ],
+      COUNSELOR: ['camp.managers.view'],
+      VIEWER: [],
+    };
   }
 }

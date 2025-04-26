@@ -9,37 +9,31 @@ const router = createRouter();
 router.get(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.view')),
   controller(roomController, 'index'),
 );
 router.get(
   '/:roomId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.view')),
   controller(roomController, 'show'),
 );
 router.post(
   '/',
   auth(),
-  guard(campManager),
-  controller(roomController, 'store'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.create')),
   controller(roomController, 'store'),
 );
 router.patch(
   '/:roomId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.edit')),
   controller(roomController, 'update'),
 );
 router.delete(
   '/:roomId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.delete')),
   controller(roomController, 'destroy'),
 );
 

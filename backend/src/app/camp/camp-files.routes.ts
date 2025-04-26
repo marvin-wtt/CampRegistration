@@ -27,26 +27,28 @@ const fileAccessMiddleware = (req: Request): boolean | string => {
 // TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
 router.get(
   '/:fileId',
-  guard(or(campManager, and(fileAccessMiddleware, campActive))),
+  guard(
+    or(campManager('camp.files.create'), and(fileAccessMiddleware, campActive)),
+  ),
   controller(fileController, 'stream'),
 );
 router.get(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.files.view')),
   controller(fileController, 'index'),
 );
 router.post(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.files.create')),
   multipart('file'),
   controller(fileController, 'store'),
 );
 router.delete(
   '/:fileId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.files.delete')),
   controller(fileController, 'destroy'),
 );
 

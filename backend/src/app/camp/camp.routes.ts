@@ -39,7 +39,7 @@ router.use('/:campId/files', campFileRoutes);
 router.get('/', guard(queryShowAllGuard), controller(campController, 'index'));
 router.get(
   '/:campId',
-  guard(or(campManager, campActive)),
+  guard(or(campManager('camp.view'), campActive)),
   controller(campController, 'show'),
 );
 router.post(
@@ -51,13 +51,13 @@ router.post(
 router.patch(
   '/:campId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.edit')),
   controller(campController, 'update'),
 );
 router.delete(
   '/:campId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.delete')),
   controller(campController, 'destroy'),
 );
 
