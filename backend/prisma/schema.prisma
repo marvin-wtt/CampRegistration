@@ -80,7 +80,7 @@ model CampManager {
   id           String    @id @unique(map: "camp_managers_id_unique") @default(ulid()) @db.Char(26)
   campId       String    @map("camp_id") @db.Char(26)
   userId       String?   @map("user_id") @db.Char(26)
-  role         String    @db.TinyText
+  role         String    @db.VarChar(50)
   invitationId String?   @map("invitation_id") @db.Char(26)
   expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
 

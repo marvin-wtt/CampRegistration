@@ -3,7 +3,7 @@
 */
 
 -- AlterTable
-ALTER TABLE `camp_managers` ADD COLUMN `role` TINYTEXT NOT NULL DEFAULT 'DIRECTOR';
+ALTER TABLE `camp_managers` ADD COLUMN `role` VARCHAR(50) NOT NULL DEFAULT 'DIRECTOR';
 
 -- AlterTable
 ALTER TABLE `camp_managers` ALTER COLUMN `role` DROP DEFAULT;
