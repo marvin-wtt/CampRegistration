@@ -140,7 +140,12 @@ export class CampService extends BaseService {
       data: {
         ...data,
         form,
-        campManager: { create: { userId } },
+        campManager: {
+          create: {
+            userId,
+            role: 'DIRECTOR',
+          },
+        },
         tableTemplates: {
           createMany: { data: this.stripIds(tableTemplates) },
         },

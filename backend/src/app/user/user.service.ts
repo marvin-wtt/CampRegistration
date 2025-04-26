@@ -125,6 +125,7 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
+      include: { campRoles: true },
     });
   }
 

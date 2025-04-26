@@ -12,7 +12,7 @@ export class PermissionRegistry {
     this.map.set(role, set);
   }
 
-  registerAll(permissions: Record<ManagerRole, Permission[]>) {
+  registerAll(permissions: Partial<Record<ManagerRole, Permission[]>>) {
     for (const [role, perms] of Object.entries(permissions)) {
       this.register(role as ManagerRole, perms);
     }

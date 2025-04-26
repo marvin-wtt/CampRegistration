@@ -12,7 +12,7 @@ const store = z.object({
   }),
   body: z.object({
     email: z.string().email(),
-    role: z.string().optional(),
+    role: z.string(),
     expiresAt: z.string().datetime().optional(),
   }),
 });

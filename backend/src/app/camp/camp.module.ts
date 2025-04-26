@@ -23,6 +23,7 @@ export class CampModule implements AppModule {
   registerPermissions(): RoleToPermissions<CampPermission | FilePermission> {
     return {
       DIRECTOR: [
+        'camp.view',
         'camp.edit',
         'camp.delete',
 
@@ -31,8 +32,8 @@ export class CampModule implements AppModule {
         'camp.files.edit',
         'camp.files.delete',
       ],
-      COUNSELOR: ['camp.files.view'],
-      VIEWER: ['camp.files.view'],
+      COUNSELOR: ['camp.view', 'camp.files.view'],
+      VIEWER: ['camp.view', 'camp.files.view'],
     };
   }
 }
