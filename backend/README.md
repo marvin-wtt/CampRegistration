@@ -25,17 +25,20 @@ The Camp Registration Backend is a RESTful API service that powers the Camp Regi
 ## Setup and Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/marvin-wtt/CampRegistration.git
    cd CampRegistration/backend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Set up environment variables:
+
    - Copy `.env.dev` to `.env`
    - Update the database connection string and other configuration values
 
@@ -67,6 +70,7 @@ npm run dev
 ```
 
 This will:
+
 1. Generate Prisma client
 2. Compile email templates
 3. Start the server with hot-reloading
