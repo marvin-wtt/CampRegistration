@@ -19,8 +19,8 @@ jobs:
     if: github.event.pull_request.draft == false
 
     services:
-      mariadb:
-        image: mariadb:10.5.27
+      mysql:
+        image: mysql:9
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -38,6 +38,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Install prisma
         run: npm i prisma
