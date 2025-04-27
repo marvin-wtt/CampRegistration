@@ -31,6 +31,7 @@ describe('/api/v1/profile', () => {
         role: 'USER',
         twoFactorEnabled: false,
         camps: [],
+        campAccess: [],
       });
     });
 
@@ -53,6 +54,108 @@ describe('/api/v1/profile', () => {
       expect(body.data.camps).toHaveLength(1);
       expect(body.data).toHaveProperty('camps.0.id', camp.id);
     });
+
+    it.each([
+      {
+        role: 'DIRECTOR',
+        expectedPermissions: [
+          'camp.view',
+          'camp.edit',
+          'camp.delete',
+          'camp.registrations.view',
+          'camp.registrations.edit',
+          'camp.registrations.delete',
+          'camp.managers.view',
+          'camp.managers.create',
+          'camp.managers.edit',
+          'camp.managers.delete',
+        ],
+        unexpectedPermissions: [],
+      },
+      {
+        role: 'COORDINATOR',
+        expectedPermissions: [
+          'camp.view',
+          'camp.edit',
+          'camp.registrations.view',
+          'camp.registrations.edit',
+          'camp.registrations.delete',
+          'camp.managers.view',
+        ],
+        unexpectedPermissions: [
+          'camp.managers.create',
+          'camp.managers.edit',
+          'camp.managers.delete',
+        ],
+      },
+      {
+        role: 'COUNSELOR',
+        expectedPermissions: [
+          'camp.view',
+          'camp.registrations.view',
+          'camp.managers.view',
+        ],
+        unexpectedPermissions: [
+          'camp.edit',
+          'camp.delete',
+          'camp.registrations.edit',
+          'camp.registrations.delete',
+          'camp.managers.create',
+          'camp.managers.edit',
+          'camp.managers.delete',
+        ],
+      },
+      {
+        role: 'VIEWER',
+        expectedPermissions: ['camp.view', 'camp.registrations.view'],
+        unexpectedPermissions: [
+          'camp.edit',
+          'camp.delete',
+          'camp.registrations.edit',
+          'camp.registrations.delete',
+          'camp.managers.view',
+          'camp.managers.create',
+          'camp.managers.edit',
+          'camp.managers.delete',
+        ],
+      },
+    ])(
+      'should respond with camp access and permissions for $role role',
+      async ({ role, expectedPermissions, unexpectedPermissions }) => {
+        const user = await UserFactory.create();
+        const accessToken = generateAccessToken(user);
+
+        const camp = await CampFactory.create();
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp.id } },
+          user: { connect: { id: user.id } },
+          role,
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/profile/`)
+          .auth(accessToken, { type: 'bearer' })
+          .send()
+          .expect(200);
+
+        expect(body.data).toHaveProperty('campAccess');
+        expect(body.data.campAccess).toHaveLength(1);
+        expect(body.data.campAccess[0]).toHaveProperty('campId', camp.id);
+        expect(body.data.campAccess[0]).toHaveProperty('role', role);
+        expect(body.data.campAccess[0]).toHaveProperty('permissions');
+
+        // Verify expected permissions
+        const permissions = body.data.campAccess[0].permissions;
+        for (const permission of expectedPermissions) {
+          expect(permissions).toContain(permission);
+        }
+
+        // Verify unexpected permissions
+        for (const permission of unexpectedPermissions) {
+          expect(permissions).not.toContain(permission);
+        }
+      },
+    );
 
     it('should respond with `401` status code when and user is unauthenticated', async () => {
       await request().get(`/api/v1/profile/`).send().expect(401);
@@ -82,6 +185,7 @@ describe('/api/v1/profile', () => {
         role: 'USER',
         twoFactorEnabled: false,
         camps: [],
+        campAccess: [],
       });
     });
 

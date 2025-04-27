@@ -90,12 +90,14 @@ const assertCampResponseBody = (data: CampCreateData, body: any) => {
 describe('/api/v1/camps', () => {
   const createCampWithManagerAndToken = async (
     campData: Partial<Prisma.CampCreateInput> = {},
+    role = 'DIRECTOR',
   ) => {
     const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
       user: { connect: { id: user.id } },
+      role,
     });
     const accessToken = generateAccessToken(user);
 
@@ -427,23 +429,32 @@ describe('/api/v1/camps', () => {
       });
     });
 
-    it('should respond with `200` status code when camp is not active and user is camp manager', async () => {
-      const camp = await CampFactory.create({
-        active: false,
-      });
-      const user = await UserFactory.create();
-      await CampManagerFactory.create({
-        camp: { connect: { id: camp.id } },
-        user: { connect: { id: user.id } },
-      });
-      const accessToken = generateAccessToken(user);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 200 },
+    ])(
+      'should respond with `$expectedStatus` status code when camp is not active and user is $role',
+      async ({ role, expectedStatus }) => {
+        const camp = await CampFactory.create({
+          active: false,
+        });
+        const user = await UserFactory.create();
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp.id } },
+          user: { connect: { id: user.id } },
+          role,
+        });
+        const accessToken = generateAccessToken(user);
 
-      await request()
-        .get(`/api/v1/camps/${camp.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-    });
+        await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it('should respond with `401` status code when camp is not active and user is unauthenticated', async () => {
       const camp = await CampFactory.create({
@@ -896,39 +907,57 @@ describe('/api/v1/camps', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          {},
+          role,
+        );
 
-      const data = {
-        active: true,
-        public: false,
-        countries: ['de'],
-        name: 'Test Camp',
-        organizer: 'Test Org',
-        contactEmail: 'test@example.com',
-        maxParticipants: 10,
-        minAge: 10,
-        maxAge: 15,
-        startAt: moment().add('20 days').startOf('hour').toDate().toISOString(),
-        endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
-        price: 100.0,
-        location: 'Somewhere',
-        form: {},
-        themes: {},
-      };
+        const data = {
+          active: true,
+          public: false,
+          countries: ['de'],
+          name: 'Test Camp',
+          organizer: 'Test Org',
+          contactEmail: 'test@example.com',
+          maxParticipants: 10,
+          minAge: 10,
+          maxAge: 15,
+          startAt: moment()
+            .add('20 days')
+            .startOf('hour')
+            .toDate()
+            .toISOString(),
+          endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
+          price: 100.0,
+          location: 'Somewhere',
+          form: {},
+          themes: {},
+        };
 
-      const { body } = await request()
-        .patch(`/api/v1/camps/${camp.id}`)
-        .send(data)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        const response = await request()
+          .patch(`/api/v1/camps/${camp.id}`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      // Test response
-      assertCampResponseBody(data, body);
+        if (expectedStatus === 200) {
 
-      // Test model
-      await assertCampModel(camp.id, data);
-    });
+          // Test response
+          assertCampResponseBody(data, response.body);
+
+          // Test model
+          await assertCampModel(camp.id, data);
+        }
+      },
+    );
 
     it.todo('should update camp data for all registrations');
 
@@ -1040,22 +1069,38 @@ describe('/api/v1/camps', () => {
   });
 
   describe('DELETE /api/v1/camps/:campId', () => {
-    it('should respond with `204` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const otherCamp = await CampFactory.create();
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 204 },
+      { role: 'COORDINATOR', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          {},
+          role,
+        );
+        const otherCamp = await CampFactory.create();
 
-      await request()
-        .delete(`/api/v1/camps/${camp.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(204);
+        await request()
+          .delete(`/api/v1/camps/${camp.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      const campCount = await prisma.camp.count();
-      expect(campCount).toBe(1);
+        if (expectedStatus === 204) {
+          const campCount = await prisma.camp.count();
+          expect(campCount).toBe(1);
 
-      const remainingCamp = await prisma.camp.findFirst();
-      expect(remainingCamp?.id).toBe(otherCamp.id);
-    });
+          const remainingCamp = await prisma.camp.findFirst();
+          expect(remainingCamp?.id).toBe(otherCamp.id);
+        } else {
+          const campCount = await prisma.camp.count();
+          expect(campCount).toBe(2);
+        }
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
