@@ -949,7 +949,6 @@ describe('/api/v1/camps', () => {
           .expect(expectedStatus);
 
         if (expectedStatus === 200) {
-
           // Test response
           assertCampResponseBody(data, response.body);
 
