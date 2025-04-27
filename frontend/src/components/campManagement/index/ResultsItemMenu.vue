@@ -37,6 +37,7 @@
       <q-separator />
 
       <q-item
+        v-if="can('camp.edit')"
         v-close-popup
         clickable
         @click="emit('edit')"
@@ -52,7 +53,7 @@
       </q-item>
 
       <q-item
-        v-if="props.active"
+        v-if="props.active && can('camp.edit')"
         v-close-popup
         v-ripple
         class="text-warning"
@@ -70,7 +71,7 @@
       </q-item>
 
       <q-item
-        v-if="!props.active"
+        v-if="!props.active && can('camp.edit')"
         v-close-popup
         v-ripple
         class="text-warning"
@@ -90,7 +91,7 @@
       <q-separator />
 
       <q-item
-        v-if="!props.camp.active"
+        v-if="!props.camp.active && can('camp.delete')"
         v-close-popup
         class="text-negative"
         clickable
@@ -111,8 +112,10 @@
 <script lang="ts" setup>
 import type { Camp } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
+import { usePermissions } from 'src/composables/permissions';
 
 const { t } = useI18n();
+const { can } = usePermissions();
 
 interface Props {
   camp: Camp;

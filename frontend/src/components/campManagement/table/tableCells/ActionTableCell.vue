@@ -12,6 +12,17 @@
       <q-item
         v-close-popup
         clickable
+        disable
+      >
+        <q-item-section>
+          {{ t('option.details') }}
+        </q-item-section>
+      </q-item>
+
+      <q-item
+        v-if="!props.readonly && can('camp.registrations.edit')"
+        v-close-popup
+        clickable
         @click="editItem"
       >
         <q-item-section>
@@ -19,7 +30,7 @@
         </q-item-section>
       </q-item>
       <q-item
-        v-if="waitingList"
+        v-if="waitingList && !props.readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="accept"
@@ -30,6 +41,7 @@
       </q-item>
       <q-separator />
       <q-item
+        v-if="!props.readonly && can('camp.registrations.delete')"
         v-close-popup
         class="text-negative"
         clickable
@@ -56,6 +68,7 @@ import type { Registration } from '@camp-registration/common/entities';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
+import { usePermissions } from 'src/composables/permissions';
 
 const props = defineProps<TableCellProps>();
 const quasar = useQuasar();
@@ -64,6 +77,7 @@ const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
 const camp = storeToRefs(campDetailStore);
 const registrationHelper = useRegistrationHelper();
+const { can } = usePermissions();
 
 const size = computed<string>(() => {
   return props.props.dense ? 'xs' : 'md';
@@ -150,6 +164,7 @@ async function uploadFile(file: File): Promise<string> {
 
 <i18n lang="yaml" locale="em">
 option:
+  details: 'Show details'
   edit: 'Edit'
   delete: 'Delete'
   accept: 'Accept registration'
@@ -169,6 +184,7 @@ dialog:
 
 <i18n lang="yaml" locale="de">
 option:
+  details: 'Details anzeigen'
   edit: 'Bearbeiten'
   delete: 'Löschen'
   accept: 'Anmeldung akzeptieren'
@@ -188,6 +204,7 @@ dialog:
 
 <i18n lang="yaml" locale="fr">
 option:
+  details: 'Voir détails'
   edit: 'Modifier'
   delete: 'Supprimer'
   accept: "Accepter l'inscription"

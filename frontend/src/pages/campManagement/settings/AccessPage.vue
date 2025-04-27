@@ -9,7 +9,10 @@
       class="absolute fit"
       flat
     >
-      <template #top-right>
+      <template
+        v-if="can('camp.managers.create')"
+        #top-right
+      >
         <q-btn
           color="primary"
           icon="add"
@@ -37,7 +40,7 @@
             key="role"
             :props
           >
-            {{ t('role.' + props.row.role) }}
+            {{ t('role.' + props.row.role.toLowerCase()) }}
           </q-td>
           <q-td
             key="status"
@@ -67,7 +70,10 @@
             :props
           >
             <q-btn
-              v-if="userEmail !== props.row.email"
+              v-if="
+                userEmail !== props.row.email &&
+                (can('camp.managers.edit') || can('camp.managers.delete'))
+              "
               aria-label="actions"
               icon="more_vert"
               color="primary"
@@ -77,6 +83,7 @@
               <q-menu>
                 <q-list style="min-width: 150px">
                   <q-item
+                    v-if="can('camp.managers.edit')"
                     clickable
                     v-close-popup
                     @click="showEditDialog(props.row)"
@@ -92,6 +99,7 @@
                     </q-item-section>
                   </q-item>
                   <q-item
+                    v-if="can('camp.managers.delete')"
                     clickable
                     v-close-popup
                     class="text-negative"
@@ -127,19 +135,21 @@ import type {
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useQuasar } from 'quasar';
+import { type QSelectOption, useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import CampManagerCreateDialog from 'components/campManagement/settings/access/CampManagerCreateDialog.vue';
 import { useProfileStore } from 'stores/profile-store';
 import { type QTableColumn } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
+import { usePermissions } from 'src/composables/permissions';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
 const campManagerStore = useCampManagerStore();
 const profileStore = useProfileStore();
 const campDetailsStore = useCampDetailsStore();
+const { can } = usePermissions();
 
 campManagerStore.fetchData();
 campDetailsStore.fetchData();
@@ -210,6 +220,15 @@ const rows = computed<CampManager[]>(() => {
   return campManagerStore.data ?? [];
 });
 
+function getRoleOptions(): QSelectOption[] {
+  const roles = ['VIEWER', 'COORDINATOR', 'COUNSELOR', 'DIRECTOR'] as const;
+
+  return roles.map((role) => ({
+    label: t('role.' + role.toLocaleLowerCase()),
+    value: role,
+  }));
+}
+
 function showAddDialog() {
   const date = new Date(campDetailsStore.data?.endAt ?? '');
   date.setHours(23, 59, 59, 999);
@@ -219,6 +238,7 @@ function showAddDialog() {
       component: CampManagerCreateDialog,
       componentProps: {
         date: date.toISOString(),
+        roles: getRoleOptions(),
       },
     })
     .onOk((data: CampManagerCreateData) => {
@@ -231,7 +251,8 @@ function showEditDialog(manager: CampManager) {
     .dialog({
       component: CampManagerUpdateDialog,
       componentProps: {
-        expiresAt: manager.expiresAt,
+        manager,
+        roles: getRoleOptions(),
       },
     })
     .onOk((payload: CampManagerUpdateData) => {
@@ -256,55 +277,23 @@ function showDeleteDialog(manager: CampManager) {
 }
 </script>
 
-<i18n lang="yaml" locale="en">
-title: 'Access'
-
-action:
-  add: 'Add'
-  delete: 'Delete'
-  edit: 'Edit'
-
-dialog:
-  delete:
-    title: 'Remove Access'
-    message: 'Are you sure you want to remove this person?'
-    label: 'Email'
-
-column:
-  email: 'Email'
-  expiresAt: 'Expires at'
-  name: 'Name'
-  role: 'Role'
-  status: 'Status'
-
-expiresAt:
-  never: 'Never'
-  expired: 'Expired'
-
-status:
-  accepted: 'Accepted'
-  pending: 'Pending'
-
-role:
-  manager: 'Manager'
-</i18n>
-
 <i18n lang="yaml" locale="de">
-title: 'Zugriff'
+title: 'Zugriff verwalten'
 
 action:
   add: 'Hinzufügen'
-  delete: 'Löschen'
+  delete: 'Entfernen'
   edit: 'Bearbeiten'
 
 dialog:
   delete:
-    title: 'Zugriff entfernen'
-    message: 'Möchten Sie diese Person wirklich entfernen?'
+    title: 'Zugriff entziehen'
+    message: 'Möchten Sie den Zugriff dieses Nutzers wirklich entziehen?'
     label: 'E-Mail'
 
 column:
   email: 'E-Mail'
+  expiresAt: 'Läuft ab'
   name: 'Name'
   role: 'Rolle'
   status: 'Status'
@@ -318,25 +307,29 @@ status:
   pending: 'Ausstehend'
 
 role:
-  manager: 'Manager'
+  coordinator: 'Koordinator'
+  counselor: 'Betreuer'
+  director: 'Leiter'
+  viewer: 'Betrachter'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Accès'
+title: 'Gérer l’accès'
 
 action:
   add: 'Ajouter'
-  delete: 'Suprimer'
+  delete: 'Supprimer'
   edit: 'Modifier'
 
 dialog:
   delete:
-    title: "Supprimer l'accès"
-    message: 'Êtes-vous sûr de vouloir supprimer cette personne ?'
+    title: 'Révoquer l’accès'
+    message: 'Voulez-vous vraiment révoquer l’accès de cet utilisateur ?'
     label: 'E-mail'
 
 column:
   email: 'E-mail'
+  expiresAt: 'Date d’expiration'
   name: 'Nom'
   role: 'Rôle'
   status: 'Statut'
@@ -350,7 +343,10 @@ status:
   pending: 'En attente'
 
 role:
-  manager: 'Manager'
+  coordinator: 'Coordinateur'
+  counselor: 'Conseiller'
+  director: 'Directeur'
+  viewer: 'Lecteur'
 </i18n>
 
 <style scoped></style>

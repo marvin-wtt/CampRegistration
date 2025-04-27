@@ -17,6 +17,7 @@ import { messageCreateBody } from '../fixtures/message/message.fixture';
 describe('/api/v1/camps/:campId/messages', () => {
   const crateCampWithManager = async (
     campCreateData?: Parameters<(typeof CampFactory)['create']>[0],
+    role = 'DIRECTOR',
   ) => {
     const user = await UserFactory.create();
     const accessToken = generateAccessToken(user);
@@ -25,6 +26,7 @@ describe('/api/v1/camps/:campId/messages', () => {
     await CampManagerFactory.create({
       user: { connect: { id: user.id } },
       camp: { connect: { id: camp.id } },
+      role,
     });
 
     return { user, accessToken, camp };
@@ -301,6 +303,37 @@ describe('/api/v1/camps/:campId/messages', () => {
         .expect(400);
     });
 
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 201 },
+      { role: 'COORDINATOR', expectedStatus: 201 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await crateCampWithManager(
+          undefined,
+          role,
+        );
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@example.com'],
+        });
+
+        const data = {
+          registrationIds: [registration.id],
+          subject: 'Test Subject',
+          body: 'Test Body',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/messages`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
     it('should respond with `403` status code when user is not camp manager', async () => {
       const { camp, accessToken } = await createCampWithDifferentManager();
 
@@ -322,15 +355,26 @@ describe('/api/v1/camps/:campId/messages', () => {
   });
 
   describe('GET /api/v1/camps/:campId/messages/', () => {
-    it('should respond with `501` status code', async () => {
-      const { camp, accessToken } = await crateCampWithManager();
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 501 },
+      { role: 'COORDINATOR', expectedStatus: 501 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await crateCampWithManager(
+          undefined,
+          role,
+        );
 
-      await request()
-        .get(`/api/v1/camps/${camp.id}/messages`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(501);
-    });
+        await request()
+          .get(`/api/v1/camps/${camp.id}/messages`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const { camp, accessToken } = await createCampWithDifferentManager();
@@ -398,16 +442,27 @@ describe('/api/v1/camps/:campId/messages', () => {
   });
 
   describe('DELETE /api/v1/camps/:campId/messages/:messageId/', () => {
-    it('should respond with `501` status code', async () => {
-      const { camp, accessToken } = await crateCampWithManager();
-      const { message } = await createMessageForCamp(camp.id);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 501 },
+      { role: 'COORDINATOR', expectedStatus: 501 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await crateCampWithManager(
+          undefined,
+          role,
+        );
+        const { message } = await createMessageForCamp(camp.id);
 
-      await request()
-        .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
-        .auth(accessToken, { type: 'bearer' })
-        .send()
-        .expect(501);
-    });
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send()
+          .expect(expectedStatus);
+      },
+    );
 
     it('should respond with `404` status code when message does not exist', async () => {
       const { camp, accessToken } = await crateCampWithManager();

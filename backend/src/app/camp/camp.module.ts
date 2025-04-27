@@ -1,7 +1,15 @@
-import type { AppModule, ModuleOptions } from '#core/base/AppModule';
+import type {
+  AppModule,
+  ModuleOptions,
+  RoleToPermissions,
+} from '#core/base/AppModule';
 import campRoutes from '#app/camp/camp.routes';
 import { registerRouteModelBinding } from '#core/router';
 import campService from '#app/camp/camp.service';
+import type {
+  CampPermission,
+  FilePermission,
+} from '@camp-registration/common/permissions';
 
 export class CampModule implements AppModule {
   configure({ router }: ModuleOptions): Promise<void> | void {
@@ -10,5 +18,31 @@ export class CampModule implements AppModule {
     );
 
     router.use('/camps', campRoutes);
+  }
+
+  registerPermissions(): RoleToPermissions<CampPermission | FilePermission> {
+    return {
+      DIRECTOR: [
+        'camp.view',
+        'camp.edit',
+        'camp.delete',
+
+        'camp.files.view',
+        'camp.files.create',
+        'camp.files.edit',
+        'camp.files.delete',
+      ],
+      COORDINATOR: [
+        'camp.view',
+        'camp.edit',
+
+        'camp.files.view',
+        'camp.files.create',
+        'camp.files.edit',
+        'camp.files.delete',
+      ],
+      COUNSELOR: ['camp.view', 'camp.files.view'],
+      VIEWER: ['camp.view', 'camp.files.view'],
+    };
   }
 }

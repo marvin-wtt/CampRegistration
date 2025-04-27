@@ -9,31 +9,31 @@ const router = createRouter();
 router.get(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.table_templates.view')),
   controller(templateController, 'index'),
 );
 router.get(
   '/:tableTemplateId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.table_templates.view')),
   controller(templateController, 'show'),
 );
 router.post(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.table_templates.create')),
   controller(templateController, 'store'),
 );
 router.put(
   '/:tableTemplateId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.table_templates.edit')),
   controller(templateController, 'update'),
 );
 router.delete(
   '/:tableTemplateId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.table_templates.delete')),
   controller(templateController, 'destroy'),
 );
 

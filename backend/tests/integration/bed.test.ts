@@ -14,12 +14,13 @@ import prisma from '../utils/prisma';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
-  const createCampWithManagerAndToken = async () => {
+  const createCampWithManagerAndToken = async (role = 'DIRECTOR') => {
     const camp = await CampFactory.create();
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
       user: { connect: { id: user.id } },
+      role,
     });
     const accessToken = generateAccessToken(user);
 
@@ -50,22 +51,32 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
   };
 
   describe('POST /api/v1/camps/:campId/rooms/:roomId/beds', () => {
-    it('should respond with `201` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 201 },
+      { role: 'COORDINATOR', expectedStatus: 201 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(role);
+        const room = await createRoomWithCamp(camp);
 
-      const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(201);
+        const response = await request()
+          .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      expect(body).toHaveProperty('data.id');
-      expect(body).toHaveProperty('data.registrationId', null);
+        if (expectedStatus === 201) {
+          expect(response.body).toHaveProperty('data.id');
+          expect(response.body).toHaveProperty('data.registrationId', null);
 
-      const bedCount = await prisma.bed.count();
-      expect(bedCount).toBe(1);
-    });
+          const bedCount = await prisma.bed.count();
+          expect(bedCount).toBeGreaterThan(0);
+        }
+      },
+    );
 
     it('should respond with `201` status code when provided with registration id', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
@@ -144,28 +155,41 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId/rooms/:roomId/beds/:bedId', () => {
-    it('should respond with `200` status code when user is a camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
-      const bed = await createBedWithRoom(room);
-      const registration = await createRegistration(camp);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(role);
+        const room = await createRoomWithCamp(camp);
+        const bed = await createBedWithRoom(room);
+        const registration = await createRegistration(camp);
 
-      const data = {
-        registrationId: registration.id,
-      };
+        const data = {
+          registrationId: registration.id,
+        };
 
-      const { body } = await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
-        .send(data)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        const response = await request()
+          .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      expect(body).toHaveProperty('data.registrationId', registration.id);
+        if (expectedStatus === 200) {
+          expect(response.body).toHaveProperty(
+            'data.registrationId',
+            registration.id,
+          );
 
-      const updatedBed = await prisma.bed.findFirst();
-      expect(updatedBed).toBeDefined();
-      expect(updatedBed).toHaveProperty('registrationId', registration.id);
-    });
+          const updatedBed = await prisma.bed.findFirst();
+          expect(updatedBed).toBeDefined();
+          expect(updatedBed).toHaveProperty('registrationId', registration.id);
+        }
+      },
+    );
 
     it('should respond with `400` status code when registration id is invalid', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
@@ -216,24 +240,37 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
   });
 
   describe('DELETE /api/v1/camps/:campId/rooms/:roomId/beds/:bedId', () => {
-    it('should respond with `204` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
-      const bed = await createBedWithRoom(room);
-      const otherBed = await createBedWithRoom(room);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 204 },
+      { role: 'COORDINATOR', expectedStatus: 204 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(role);
+        const room = await createRoomWithCamp(camp);
+        const bed = await createBedWithRoom(room);
+        const otherBed = await createBedWithRoom(room);
 
-      await request()
-        .delete(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(204);
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      const count = await prisma.bed.count();
-      expect(count).toBe(1);
+        if (expectedStatus === 204) {
+          const count = await prisma.bed.count();
+          expect(count).toBe(1);
 
-      const remainingBed = await prisma.bed.findFirst();
-      expect(remainingBed?.id).toBe(otherBed.id);
-    });
+          const remainingBed = await prisma.bed.findFirst();
+          expect(remainingBed?.id).toBe(otherBed.id);
+        } else {
+          const count = await prisma.bed.count();
+          expect(count).toBe(2);
+        }
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();

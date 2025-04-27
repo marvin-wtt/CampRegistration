@@ -20,10 +20,11 @@ import { HealthModule } from '#app/health/health.module';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import staticRoutes from '#routes/static';
+import { permissionRegistry } from '#core/permission-registry';
 
-export async function boot(app: Express) {
+const loadModules = (): AppModule[] =>
   // Modules in order
-  const modules: AppModule[] = [
+  [
     new HealthModule(),
     new TokenModule(),
     new AuthModule(),
@@ -42,6 +43,15 @@ export async function boot(app: Express) {
     new FeedbackModule(),
   ];
 
+export async function boot(app: Express) {
+  const modules = loadModules();
+
+  await configureModules(modules, app);
+
+  registerModulePermissions(modules);
+}
+
+async function configureModules(modules: AppModule[], app: Express) {
   // Create router for /api/v1 routes
   for (const module of modules) {
     await module.configure({ app, router: apiRouter });
@@ -55,4 +65,13 @@ export async function boot(app: Express) {
   });
 
   app.use(staticRoutes);
+}
+
+function registerModulePermissions(modules: AppModule[]) {
+  for (const module of modules) {
+    if (module.registerPermissions) {
+      const permissions = module.registerPermissions();
+      permissionRegistry.registerAll(permissions);
+    }
+  }
 }

@@ -12,13 +12,13 @@ router.use('/:registrationId/files', registrationFiles);
 router.get(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.registrations.view')),
   controller(registrationController, 'index'),
 );
 router.get(
   '/:registrationId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.registrations.view')),
   controller(registrationController, 'show'),
 );
 router.post(
@@ -29,13 +29,13 @@ router.post(
 router.patch(
   '/:registrationId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.registrations.edit')),
   controller(registrationController, 'update'),
 );
 router.delete(
   '/:registrationId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.registrations.delete')),
   controller(registrationController, 'destroy'),
 );
 

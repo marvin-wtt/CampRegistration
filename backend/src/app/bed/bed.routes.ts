@@ -9,19 +9,19 @@ const router = createRouter();
 router.post(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.beds.create')),
   controller(bedController, 'store'),
 );
 router.patch(
   '/:bedId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.beds.edit')),
   controller(bedController, 'update'),
 );
 router.delete(
   '/:bedId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.rooms.beds.delete')),
   controller(bedController, 'destroy'),
 );
 

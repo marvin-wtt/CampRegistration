@@ -19,7 +19,7 @@ export class ManagerResource extends JsonResource<
         ? this.data.invitation.email
         : (this.data.user?.email ?? ''),
       status: this.data.user ? 'accepted' : 'pending',
-      role: 'manager',
+      role: this.data.role,
       expiresAt: this.data.expiresAt?.toISOString() ?? null,
     };
   }

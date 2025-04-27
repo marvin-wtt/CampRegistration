@@ -27,7 +27,12 @@
   "main": "dist/index.js",
   "exports": {
     "./form": "./dist/form/index.js",
-    "./entities": "./dist/entities/index.js"
+    "./entities": "./dist/entities/index.js",
+    "./permissions": "./dist/permissions/index.js"
+  },
+  "imports": {
+    "#enteties": "./src/enteties/index.js",
+    "#permissions": "./src/permissions/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
