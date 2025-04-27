@@ -27,9 +27,11 @@ export class PermissionRegistry {
   }
 
   getPermissions(role: string): Permission[] {
-    return this.map.has(role as ManagerRole)
-      ? this.get(role as ManagerRole)
-      : [];
+    return this.hasRole(role) ? this.get(role as ManagerRole) : [];
+  }
+
+  hasRole(role: string): boolean {
+    return this.map.has(role as ManagerRole);
   }
 
   getAll(): Record<ManagerRole, Permission[]> {
