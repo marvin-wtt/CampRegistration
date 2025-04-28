@@ -10,7 +10,10 @@ export function usePermissions() {
   const { user } = storeToRefs(profileStore);
   const { data: camp } = storeToRefs(campDetailsStore);
 
-  function can(...permissions: Permission[]): boolean {
+  function canFor(
+    campId: string | undefined,
+    ...permissions: Permission[]
+  ): boolean {
     // TODO Enable admin permissions
     // if (data.value?.role === 'ADMIN') {
     //   return true;
@@ -18,10 +21,14 @@ export function usePermissions() {
 
     const userPermissions = user.value?.campAccess ?? [];
     const campPermissions =
-      userPermissions.find((value) => value.campId === camp.value?.id)
-        ?.permissions ?? [];
+      userPermissions.find((value) => value.campId === campId)?.permissions ??
+      [];
 
     return permissions.every((value) => campPermissions.includes(value));
+  }
+
+  function can(...permissions: Permission[]): boolean {
+    return canFor(camp.value?.id, ...permissions);
   }
 
   function cannot(...permissions: Permission[]): boolean {
@@ -30,6 +37,7 @@ export function usePermissions() {
 
   return {
     can,
+    canFor,
     cannot,
   };
 }
