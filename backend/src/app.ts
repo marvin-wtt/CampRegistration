@@ -48,7 +48,7 @@ app.options('*splat', cors());
 app.enable('trust proxy');
 
 // authentication
-app.use(initializePassport());
+initializePassport();
 
 // localization
 await initI18n();

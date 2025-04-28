@@ -38,3 +38,10 @@ export const withAuthToken = <Req extends SuperAgentRequest>(
 ): Req => {
   return request.set('Authorization', `Bearer ${token}`);
 };
+
+export const withCsrfToken = <Req extends SuperAgentRequest>(
+  request: Req,
+  token: string,
+): Req => {
+  return request.set('x-csrf-token', token);
+};

@@ -113,8 +113,7 @@ const profileStore = useProfileStore();
 const { user } = storeToRefs(profileStore);
 
 if (!profileStore.user) {
-  // Fetch user instead of init to force redirect on error
-  profileStore.fetchProfile();
+  authStore.init();
 }
 
 const showDrawer = computed<boolean>(() => {
