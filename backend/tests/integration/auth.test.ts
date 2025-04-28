@@ -20,53 +20,33 @@ import {
   generateVerifyEmailToken,
   verifyToken,
 } from '../utils/token';
-import { request, withCsrfToken } from '../utils/request';
+import { request } from '../utils/request';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer';
 import * as OTPAuth from 'otpauth';
 
 const mailer = NoOpMailer.prototype;
 
-// Helper function to get CSRF token and cookies
-async function getCsrfTokenAndCookies() {
-  const response = await request().get('/api/v1/auth/csrf-token');
-  const csrfToken = response.body.csrfToken;
-  const cookies = response.headers['set-cookie'];
-  return { csrfToken, cookies };
-}
-
 describe('/api/v1/auth', async () => {
   describe('POST /api/v1/auth/register', () => {
     it('should respond with a `201` status code when provided with details', async () => {
-      const { csrfToken, cookies } = await getCsrfTokenAndCookies();
-
-      await withCsrfToken(
-        request()
-          .post('/api/v1/auth/register')
-          .set('Cookie', cookies)
-          .send({
-            name: 'testuser',
-            email: 'test@email.net',
-            password: 'Password1',
-          }),
-        csrfToken
-      )
+      await request()
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
+        })
         .expect(201);
     });
 
     it('should respond with the user profile when successful', async () => {
-      const { csrfToken, cookies } = await getCsrfTokenAndCookies();
-
-      const { body } = await withCsrfToken(
-        request()
-          .post('/api/v1/auth/register')
-          .set('Cookie', cookies)
-          .send({
-            name: 'testuser',
-            email: 'test@email.net',
-            password: 'Password1',
-          }),
-        csrfToken
-      )
+      const { body } = await request()
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
+        })
         .expect(201);
 
       const newUser = await prisma.user.findFirst();
@@ -294,36 +274,26 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `200` status code when provided valid credentials', async () => {
       await createUser();
-      const { csrfToken, cookies } = await getCsrfTokenAndCookies();
 
-      await withCsrfToken(
-        request()
-          .post('/api/v1/auth/login')
-          .set('Cookie', cookies)
-          .send({
-            email: 'test@email.net',
-            password: 'password',
-          }),
-        csrfToken
-      )
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
         .expect(200);
     });
 
     it('should respond with a `200` status code when provided valid credentials and remember', async () => {
       await createUser();
-      const { csrfToken, cookies } = await getCsrfTokenAndCookies();
 
-      await withCsrfToken(
-        request()
-          .post('/api/v1/auth/login')
-          .set('Cookie', cookies)
-          .send({
-            email: 'test@email.net',
-            password: 'password',
-            remember: true,
-          }),
-        csrfToken
-      )
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+          remember: true,
+        })
         .expect(200);
     });
 
@@ -848,36 +818,24 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `200` status code when token is provided in body', async () => {
       const { refreshToken } = await createUserWithToken();
-      const { csrfToken, cookies } = await getCsrfTokenAndCookies();
 
       const data = {
         refreshToken,
       };
 
-      await withCsrfToken(
-        request()
-          .post(`/api/v1/auth/refresh-tokens/`)
-          .set('Cookie', cookies)
-          .send(data),
-        csrfToken
-      )
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send(data)
         .expect(200);
     });
 
     it('should respond with a `200` status code when token is provided as cookie', async () => {
       const { refreshToken } = await createUserWithToken();
-      const { csrfToken, cookies: csrfCookies } = await getCsrfTokenAndCookies();
 
-      // Combine CSRF cookie with refresh token cookie
-      const cookies = [...csrfCookies, `refreshToken=${refreshToken}; HttpOnly`];
-
-      await withCsrfToken(
-        request()
-          .post(`/api/v1/auth/refresh-tokens/`)
-          .send()
-          .set('Cookie', cookies),
-        csrfToken
-      )
+      await request()
+        .post(`/api/v1/auth/refresh-tokens/`)
+        .send()
+        .set('Cookie', `refreshToken=${refreshToken}; HttpOnly`)
         .expect(200);
     });
 
@@ -1327,6 +1285,16 @@ describe('/api/v1/auth', async () => {
       };
 
       await request().post(`/api/v1/auth/verify-email/`).send(data).expect(401);
+    });
+  });
+
+  describe('GET /api/v1/auth/csrf-token', () => {
+    it('should respond with `200` status code', async () => {
+      const { body } = await request()
+        .post(`/api/v1/auth/csrf-token/`)
+        .expect(200);
+
+      expect(body).toHaveProperty('csrfToken');
     });
   });
 });
