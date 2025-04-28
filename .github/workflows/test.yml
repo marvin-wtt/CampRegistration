@@ -13,6 +13,9 @@ on:
       - synchronize
       - ready_for_review
 
+permissions:
+  contents: read
+
 jobs:
   verify-migrations:
     runs-on: ubuntu-24.04
