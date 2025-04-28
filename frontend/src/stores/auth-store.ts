@@ -54,6 +54,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function init() {
+    await apiService.requestCsrfToken();
+
     const authenticated = await refreshTokens();
     if (!authenticated) {
       return;

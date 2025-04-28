@@ -29,5 +29,6 @@ router.post(
   controller(authController, 'sendVerificationEmail'),
 );
 router.post('/verify-email', controller(authController, 'verifyEmail'));
+router.get('/csrf-token', controller(authController, 'getCsrfToken'));
 
 export default router;

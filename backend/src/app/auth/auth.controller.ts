@@ -243,6 +243,19 @@ class AuthController extends BaseController {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
   };
+
+  getCsrfToken(req: Request, res: Response) {
+    if (!req.csrfToken) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to generate CSRF Token',
+      );
+    }
+
+    const csrfToken = req.csrfToken();
+
+    res.json({ csrfToken });
+  }
 }
 
 export default new AuthController();

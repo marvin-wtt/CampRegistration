@@ -13,6 +13,9 @@ on:
       - synchronize
       - ready_for_review
 
+permissions:
+  contents: read
+
 jobs:
   verify-migrations:
     runs-on: ubuntu-24.04
@@ -85,7 +88,8 @@ jobs:
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
-      JWT_SECRET: aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpP
+      JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
+      CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
       SMTP_PORT: 587
       SMTP_USERNAME: user
@@ -173,7 +177,8 @@ jobs:
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
-      JWT_SECRET: aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpP
+      JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
+      CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
       SMTP_PORT: 587
       SMTP_USERNAME: user

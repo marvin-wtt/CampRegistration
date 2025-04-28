@@ -148,7 +148,7 @@ const { user } = storeToRefs(profileStore);
 async function init() {
   if (!user.value) {
     // Fetch user instead of init to force redirect on error
-    await profileStore.fetchProfile();
+    await authStore.init();
   }
   if (route.params.camp) {
     await campDetailStore.fetchData();

@@ -148,6 +148,17 @@ export function useAuthService() {
     return response?.data;
   }
 
+  async function requestCsrfToken(): Promise<void> {
+    const response = await api.get('auth/csrf-token');
+
+    const csrfToken = response?.data.csrfToken;
+    if (csrfToken !== undefined && typeof csrfToken === 'string') {
+      api.defaults.headers.common['x-csrf-token'] = csrfToken;
+    }
+
+    return;
+  }
+
   function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
     onUnauthenticated = handler;
   }
@@ -199,6 +210,7 @@ export function useAuthService() {
     resetPassword,
     verifyEmail,
     sendEmailVerify,
+    requestCsrfToken,
     refreshTokens,
     setOnUnauthenticated,
     extractPartialAuthResponse,
