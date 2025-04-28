@@ -134,7 +134,7 @@ const router = useRouter();
 const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const { can } = usePermissions();
+const { canFor } = usePermissions();
 
 interface Props {
   camp: Camp;
@@ -154,6 +154,12 @@ const deleteLoading = ref<boolean>(false);
 const actionLoading = computed<boolean>(() => {
   return enableLoading.value || disableLoading.value || deleteLoading.value;
 });
+
+type Tail<T extends unknown[]> = T extends [unknown, ...infer Rest] ? Rest : [];
+
+function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
+  return canFor(props.camp.id, ...permissions);
+}
 
 function resultsAction() {
   withLoading(resultLoading, async () => {
