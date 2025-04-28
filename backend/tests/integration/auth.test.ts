@@ -1291,7 +1291,7 @@ describe('/api/v1/auth', async () => {
   describe('GET /api/v1/auth/csrf-token', () => {
     it('should respond with `200` status code', async () => {
       const { body } = await request()
-        .post(`/api/v1/auth/csrf-token/`)
+        .get(`/api/v1/auth/csrf-token/`)
         .expect(200);
 
       expect(body).toHaveProperty('csrfToken');
