@@ -14,10 +14,9 @@ export function usePermissions() {
     campId: string | undefined,
     ...permissions: Permission[]
   ): boolean {
-    // TODO Enable admin permissions
-    // if (data.value?.role === 'ADMIN') {
-    //   return true;
-    // }
+    if (user.value?.role === 'ADMIN') {
+      return true;
+    }
 
     const userPermissions = user.value?.campAccess ?? [];
     const campPermissions =
