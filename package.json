@@ -26,11 +26,5 @@
     "@types/express": "^5.0.0",
     "@types/express-serve-static-core": "^5.0.0",
     "@quasar/quasar-app-extension-testing-unit-vitest": "^1.1.0"
-  },
-  "overrides": {
-    "@quasar/quasar-app-extension-testing-unit-vitest": {
-      "vitest": "^3.0.0",
-      "@vitest/ui": "^3.0.0"
-    }
   }
 }
