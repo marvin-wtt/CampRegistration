@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
 import { BaseService } from '#core/base/BaseService';
 

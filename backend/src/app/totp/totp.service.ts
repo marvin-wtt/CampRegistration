@@ -1,4 +1,4 @@
-import type { User } from '@prisma/client';
+import type { User } from '#generated/prisma/client';
 import * as OTPAuth from 'otpauth';
 import config from '#config/index.js';
 import ApiError from '#utils/ApiError';

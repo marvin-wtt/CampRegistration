@@ -1,5 +1,5 @@
 import moment from 'moment/moment';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#generated/prisma/client';
 
 export const campActivePublic = {
   active: true,
