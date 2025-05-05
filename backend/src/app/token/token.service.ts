@@ -59,7 +59,6 @@ export class TokenService extends BaseService {
     try {
       // token expiry is checked here
       payload = jwt.verify(token, config.jwt.secret);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (ignored) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
