@@ -255,7 +255,6 @@ export class FileService extends BaseService {
   }
 
   async deleteTempFiles() {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const fileNames = await this.tmpStorage.getFileNames();
     const currentTime = Date.now();
 

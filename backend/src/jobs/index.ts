@@ -38,7 +38,7 @@ const scheduleJob = (
   };
 
   // Create the job
-  const job = Cron(pattern, jobOptions, runJob(fn));
+  const job = new Cron(pattern, jobOptions, runJob(fn));
 
   // Check if job is scheduled for execution
   if (!job.nextRun() && !job.previousRun()) {
