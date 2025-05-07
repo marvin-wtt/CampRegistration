@@ -72,6 +72,9 @@ onMounted(async () => {
   const modelForm = props.moderation ? createModerationForm(form) : form;
   model.value = createModel(id, modelForm);
 
+  // Disable validation to allow manual adjustments that otherwise violate the validation rules
+  model.value.validationEnabled = !props.moderation;
+
   if (props.data) {
     model.value.data = props.data;
   }
@@ -82,8 +85,6 @@ function createModerationForm(form: object) {
     ...form,
     showTOC: true,
     fitToContainer: true,
-    // Disable validation to allow manual adjustments that otherwise violate the validation rules
-    validationEnabled: false,
     completeText: {
       default: 'Save',
       de: 'Speichern',
