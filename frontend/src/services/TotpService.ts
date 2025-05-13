@@ -4,9 +4,11 @@ import type {
   TotpDisableData,
   TotpEnableData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { useApi } from 'src/composables/api';
 
 export function useTotpService() {
+  const api = useApi();
+
   async function setupTotp(data: TotpSetupData): Promise<TotpData> {
     const response = await api.post('totp/setup', data);
 

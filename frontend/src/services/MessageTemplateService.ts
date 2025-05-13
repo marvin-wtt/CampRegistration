@@ -4,9 +4,11 @@ import type {
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { useApi } from 'src/composables/api';
 
 export function useMessageTemplateService() {
+  const api = useApi();
+
   async function fetchMessageTemplates(
     campId: string,
     params: MessageTemplateQuery = {},

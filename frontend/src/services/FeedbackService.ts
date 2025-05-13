@@ -1,6 +1,8 @@
-import { api } from 'boot/axios';
+import { useApi } from 'src/composables/api';
 
 export function useFeedbackService() {
+  const api = useApi();
+
   async function sendFeedback(
     location: string,
     userAgent: string,

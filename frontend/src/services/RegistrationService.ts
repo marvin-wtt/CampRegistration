@@ -3,9 +3,11 @@ import type {
   RegistrationCreateData,
   RegistrationUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { useApi } from 'src/composables/api';
 
 export function useRegistrationService() {
+  const api = useApi();
+
   async function fetchRegistrations(campId: string): Promise<Registration[]> {
     const response = await api.get(`camps/${campId}/registrations/`);
 

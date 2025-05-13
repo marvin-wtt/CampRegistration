@@ -3,9 +3,11 @@ import type {
   TableTemplateCreateData,
   TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { useApi } from 'src/composables/api';
 
 export function useTableTemplateService() {
+  const api = useApi();
+
   async function fetchTableTemplates(campId: string): Promise<TableTemplate[]> {
     const response = await api.get(`camps/${campId}/table-templates/`);
 

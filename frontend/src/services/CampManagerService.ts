@@ -1,11 +1,13 @@
-import { api } from 'boot/axios';
 import type {
   CampManager,
   CampManagerCreateData,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
+import { useApi } from 'src/composables/api';
 
 export function useCampManagerService() {
+  const api = useApi();
+
   async function fetchCampManagers(campId: string): Promise<CampManager[]> {
     const response = await api.get(`camps/${campId}/managers/`);
 

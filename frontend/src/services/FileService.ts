@@ -1,10 +1,12 @@
-import { api } from 'boot/axios';
 import type {
   ServiceFileCreateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
+import { useApi } from 'src/composables/api';
 
 export function useFileService() {
+  const api = useApi();
+
   async function fetchCampFiles(campId: string): Promise<ServiceFile[]> {
     const response = await api.get(`camps/${campId}/files/`);
 

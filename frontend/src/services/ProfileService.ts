@@ -2,9 +2,11 @@ import type {
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { useApi } from 'src/composables/api';
 
 export function useProfileService() {
+  const api = useApi();
+
   async function fetchProfile(): Promise<Profile> {
     const response = await api.get('profile');
 

@@ -23,8 +23,10 @@ import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
+import { useQuasar } from 'quasar';
 
 const { locale } = useI18n();
+const quasar = useQuasar();
 
 interface Props {
   data?: object;
@@ -80,7 +82,7 @@ onMounted(async () => {
 function createModerationForm(form: object) {
   return {
     ...form,
-    showTOC: true,
+    showTOC: quasar.screen.gt.md,
     fitToContainer: true,
     // Disable validation to allow manual adjustments that otherwise violate the validation rules
     validationEnabled: false,

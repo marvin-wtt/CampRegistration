@@ -5,10 +5,12 @@ import type {
   CampUpdateData,
   CampQuery,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
 import { extendAxiosConfig } from 'src/services/AuthService';
+import { useApi } from 'src/composables/api';
 
 export function useCampService() {
+  const api = useApi();
+
   async function fetchCamps(query?: CampQuery): Promise<Camp[]> {
     const response = await api.get('camps/', {
       params: query,

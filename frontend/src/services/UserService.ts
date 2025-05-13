@@ -1,11 +1,13 @@
-import { api } from 'boot/axios';
 import type {
   User,
   UserCreateData,
   UserUpdateData,
 } from '@camp-registration/common/entities';
+import { useApi } from 'src/composables/api';
 
 export function useUserService() {
+  const api = useApi();
+
   async function fetchUsers(): Promise<User[]> {
     const response = await api.get('users/');
 

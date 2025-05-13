@@ -3,6 +3,7 @@
     ref="dialogRef"
     full-height
     full-width
+    :maximized="quasar.screen.lt.lg"
     @hide="onDialogHide"
   >
     <q-card class="column">
@@ -38,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import type {
   CampDetails,
   Registration,
@@ -55,6 +56,7 @@ interface Props {
 const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
+const quasar = useQuasar();
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

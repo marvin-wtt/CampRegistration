@@ -1,10 +1,10 @@
-import { api } from 'boot/axios';
 import type {
   AuthTokens,
   Authentication,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
 import { type AxiosError, type AxiosRequestConfig, isAxiosError } from 'axios';
+import { useApi } from 'src/composables/api';
 
 export type CustomRequestConfig = AxiosRequestConfig & {
   _skipRetry?: boolean;
@@ -28,6 +28,8 @@ export const isCustomAxiosError = (
 };
 
 export function useAuthService() {
+  const api = useApi();
+
   // Retry failed requests after fetching a new refresh token
   authRefreshToken(api, {
     handleTokenRefresh: refreshTokens,

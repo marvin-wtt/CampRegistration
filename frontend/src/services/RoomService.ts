@@ -1,11 +1,13 @@
-import { api } from 'boot/axios';
 import type {
   Room,
   RoomCreateData,
   RoomUpdateData,
 } from '@camp-registration/common/entities';
+import { useApi } from 'src/composables/api';
 
 export function useRoomService() {
+  const api = useApi();
+
   async function fetchRooms(campId: string): Promise<Room[]> {
     const response = await api.get(`camps/${campId}/rooms/`);
 
