@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
   let partialAuthToken: string | undefined = undefined;
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
-  let isRefreshingToken = false;
+  let ongoingRefresh: Promise<boolean> | null = null;
 
   // Redirect to login page on unauthorized error
   apiService.setOnUnauthenticated(() => {
@@ -54,8 +54,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function init() {
-    await apiService.requestCsrfToken();
-
     const authenticated = await refreshTokens();
     if (!authenticated) {
       return;
@@ -143,23 +141,23 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshTokens(): Promise<boolean> {
-    if (isRefreshingToken) {
-      return false;
+    // if there’s already a refresh in progress, return its promise
+    if (ongoingRefresh) {
+      return ongoingRefresh;
     }
 
-    try {
-      isRefreshingToken = true;
-      const tokens: AuthTokens = await apiService.refreshTokens();
-      handleTokenRefresh(tokens);
-      return true;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (ignored) {
-      /* empty */
-    } finally {
-      isRefreshingToken = false;
-    }
+    ongoingRefresh = apiService
+      .requestCsrfToken()
+      .then(() => apiService.refreshTokens())
+      .then(handleTokenRefresh)
+      .then(() => true)
+      .catch(() => false)
+      .finally(() => {
+        // allow a new refresh after this one settles
+        ongoingRefresh = null;
+      });
 
-    return false;
+    return ongoingRefresh;
   }
 
   function handleTokenRefresh(tokens: AuthTokens) {
@@ -170,10 +168,7 @@ export const useAuthStore = defineStore('auth', () => {
     const expires = new Date(tokens.access.expires);
     const now = Date.now();
     const refreshTime = expires.getTime() - now - 1000 * 60;
-    accessTokenTimer = setTimeout(async () => {
-      const tokens: AuthTokens = await apiService.refreshTokens();
-      handleTokenRefresh(tokens);
-    }, refreshTime);
+    accessTokenTimer = setTimeout(refreshTokens, refreshTime);
   }
 
   async function logout(): Promise<void> {
