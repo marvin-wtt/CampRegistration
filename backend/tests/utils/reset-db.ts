@@ -1,5 +1,5 @@
 import prisma from './prisma';
-import { PrismaPromise } from '@prisma/client';
+import type { PrismaPromise } from '../../src/generated/prisma/client';
 
 export default async () => {
   // https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries

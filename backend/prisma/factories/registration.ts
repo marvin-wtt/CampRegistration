@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '../../src/generated/prisma';
 import prisma from './prisma';
 
 export const RegistrationFactory = {
