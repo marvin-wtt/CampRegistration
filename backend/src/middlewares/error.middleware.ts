@@ -16,6 +16,22 @@ const statusToString = (statusCode: number): string => {
   return httpStatus[statusCode as keyof typeof httpStatus] as string;
 };
 
+const getStatusCode = (err: Record<string, unknown>): number => {
+  if (typeof err.statusCode === 'number') {
+    return err.statusCode;
+  }
+
+  if (typeof err.status === 'number') {
+    return err.status;
+  }
+
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    return httpStatus.BAD_REQUEST;
+  }
+
+  return httpStatus.INTERNAL_SERVER_ERROR;
+};
+
 export const errorConverter: ErrorRequestHandler = (
   err: unknown,
   _req,
@@ -34,12 +50,7 @@ export const errorConverter: ErrorRequestHandler = (
     return;
   }
 
-  const statusCode =
-    typeof err.statusCode === 'number'
-      ? err.statusCode
-      : err instanceof Prisma.PrismaClientKnownRequestError
-        ? httpStatus.BAD_REQUEST
-        : httpStatus.INTERNAL_SERVER_ERROR;
+  const statusCode = getStatusCode(err);
 
   const message =
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
