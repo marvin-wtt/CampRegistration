@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma';
-import { TokenType, User } from '@prisma/client';
+import { TokenType, User } from '../../src/generated/prisma/client';
 import {
   CampFactory,
   UserFactory,

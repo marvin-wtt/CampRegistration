@@ -10,7 +10,7 @@ import type {
   Bed,
   Room,
   File,
-} from '@prisma/client';
+} from '#generated/prisma/client';
 import type { AnyZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 
