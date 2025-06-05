@@ -35,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    return redirectToLogin();
+    return buildLoginRoute();
   });
 
   // Redirect to the login page on unauthorized error
@@ -48,12 +48,16 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   async function redirectToLogin() {
-    return router.push({
+    return router.push(buildLoginRoute());
+  }
+
+  function buildLoginRoute() {
+    return {
       name: 'login',
       query: {
         origin: encodeURIComponent(route.path),
       },
-    });
+    };
   }
 
   function reset() {
