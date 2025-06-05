@@ -21,10 +21,6 @@ const getStatusCode = (err: Record<string, unknown>): number => {
     return err.statusCode;
   }
 
-  if (typeof err.status === 'number') {
-    return err.status;
-  }
-
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     return httpStatus.BAD_REQUEST;
   }
@@ -51,13 +47,12 @@ export const errorConverter: ErrorRequestHandler = (
   }
 
   const statusCode = getStatusCode(err);
-
   const message =
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
-
   const stack = typeof err.stack === 'string' ? err.stack : undefined;
+  const isOperationalError = statusCode >= 400 && statusCode < 500;
 
-  next(new ApiError(statusCode, message, false, stack));
+  next(new ApiError(statusCode, message, isOperationalError, stack));
 };
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

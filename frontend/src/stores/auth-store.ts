@@ -30,19 +30,35 @@ export const useAuthStore = defineStore('auth', () => {
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
 
-  // Redirect to login page on unauthorized error
+  router.beforeEach((to) => {
+    if (!to.meta.auth || profileStore.loading || profileStore.user) {
+      return;
+    }
+
+    return buildLoginRoute();
+  });
+
+  // Redirect to the login page on unauthorized error
   apiService.setOnUnauthenticated(() => {
     if (route.name === 'login' || route.fullPath.startsWith('/login')) {
       return;
     }
 
-    return router.push({
+    return redirectToLogin();
+  });
+
+  async function redirectToLogin() {
+    return router.push(buildLoginRoute());
+  }
+
+  function buildLoginRoute() {
+    return {
       name: 'login',
       query: {
         origin: encodeURIComponent(route.path),
       },
-    });
-  });
+    };
+  }
 
   function reset() {
     if (accessTokenTimer != null) {
@@ -56,6 +72,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function init() {
     const authenticated = await refreshTokens();
     if (!authenticated) {
+      // Redirect, in case the user is not authenticated
+      if (route.meta.auth) {
+        await redirectToLogin();
+      }
       return;
     }
 
