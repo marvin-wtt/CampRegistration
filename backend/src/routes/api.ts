@@ -5,6 +5,7 @@ import extensions from '#middlewares/extension.middleware';
 import { createRouter } from '#core/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
 import { sessionId } from '#middlewares/session.middleware';
+import convertEmptyStringsToNull from '#middlewares/string.middleware';
 
 const router = createRouter();
 
@@ -12,6 +13,7 @@ router.use(morgan.successHandler);
 
 router.use(generalLimiter);
 router.use(maintenance);
+router.use(convertEmptyStringsToNull);
 
 // Custom methods
 router.use(extensions);

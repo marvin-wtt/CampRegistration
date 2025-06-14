@@ -13,7 +13,7 @@ export class FileResource extends JsonResource<File, FileResourceData> {
       size: this.data.size,
       accessLevel: this.data.accessLevel,
       createdAt: this.data.createdAt.toISOString(),
-      url: `${config.origin}/api/v1/files/${file.id}`,
+      url: `${config.origin}/api/v1/files/${this.data.id}`,
     };
   }
 }
