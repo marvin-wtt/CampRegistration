@@ -17,6 +17,7 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
+import { ExpenseModule } from '#app/expense/expense.module';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import staticRoutes from '#routes/static';
@@ -38,6 +39,7 @@ const loadModules = (): AppModule[] =>
     new ManagerModule(),
     new MessageModule(),
     new MessageTemplateModule(),
+    new ExpenseModule(),
     new RoomModule(),
     new BedModule(),
     new FeedbackModule(),

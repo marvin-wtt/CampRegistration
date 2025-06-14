@@ -45,6 +45,12 @@ export type BedPermission =
   | 'camp.rooms.beds.edit'
   | 'camp.rooms.beds.delete';
 
+export type ExpensePermission =
+  | 'camp.expenses.view'
+  | 'camp.expenses.create'
+  | 'camp.expenses.edit'
+  | 'camp.expenses.delete';
+
 export type Permission =
   | CampPermission
   | FilePermission
@@ -54,6 +60,7 @@ export type Permission =
   | MessageTemplatePermission
   | TableTemplatePermission
   | RoomPermission
-  | BedPermission;
+  | BedPermission
+  | ExpensePermission;
 
 export type Permissions = Permission[];
