@@ -4,11 +4,8 @@ import httpStatus from 'http-status';
 import fileService from '#app/file/file.service';
 import validator from '#app/expense/expense.validation';
 import ApiError from '#utils/ApiError';
-import {
-  ExpenseWithFile,
-  exportExpenses,
-} from '#app/expense/expense.exporter.js';
-import { BaseController } from '#core/base/BaseController.js';
+import { exportExpenses } from '#app/expense/expense.exporter';
+import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 
 class ExpenseController extends BaseController {

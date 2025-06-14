@@ -1,7 +1,7 @@
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { exportCSV } from '#app/expense/exporter/csv';
-import { exportExcelFGYO } from '#app/expense/exporter/excelFGYO/index.js';
+import { exportExcelFGYO } from '#app/expense/exporter/excelFGYO/index';
 import type { Response } from 'express';
 import type { Expense, File } from '@prisma/client';
 

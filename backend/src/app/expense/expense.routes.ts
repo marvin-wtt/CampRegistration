@@ -2,8 +2,8 @@ import express from 'express';
 import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import expenseController from '#app/expense/expense.controller';
-import convertEmptyStringsToNull from '#middlewares/emptyStringNull.middleware.js';
-import { controller } from '#utils/bindController.js';
+import convertEmptyStringsToNull from '#middlewares/emptyStringNull.middleware';
+import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 

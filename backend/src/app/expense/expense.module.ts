@@ -8,7 +8,7 @@ import { registerRouteModelBinding } from '#core/router';
 import expenseService from '#app/expense/expense.service';
 import expenseRoutes from '#app/expense/expense.routes';
 import { registerFileGuard } from '#app/file/file.guard';
-import campService from '#app/camp/camp.service.js';
+import campService from '#app/camp/camp.service';
 import { campManager, type GuardFn } from '#guards/index';
 import type { Request } from 'express';
 
