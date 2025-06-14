@@ -12,7 +12,7 @@ import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
-import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import messageTemplateService from '#app/messageTemplate/message-template.service';
 
 class CampController extends BaseController {
   show(req: Request, res: Response) {
@@ -122,9 +122,11 @@ class CampController extends BaseController {
       themes: body.themes,
     });
 
-    // Re-generate camp data fields
+    // Re-generate computed data fields
     if (body.form) {
-      await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
+      await registrationService.updateRegistrationsComputedDataByCamp(
+        updatedCamp,
+      );
     }
 
     res.resource(new CampDetailsResource(updatedCamp));

@@ -7,6 +7,7 @@ import {
   RegistrationFactory,
   UserFactory,
   CampManagerFactory,
+  MessageTemplateFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import { ulid } from 'ulidx';
@@ -23,10 +24,8 @@ import {
   campWithMaxParticipantsNational,
   campWithMaxParticipantsRolesInternational,
   campWithMaxParticipantsRolesNational,
-  campWithMultipleCampDataTypes,
-  campWithMultipleCampDataValues,
+  campWithAllCampDataTypes,
   campWithRequiredField,
-  campWithSingleCampDataType,
   campWithoutCountryData,
   campWithEmail,
   campWithMultipleEmails,
@@ -35,6 +34,7 @@ import {
   campWithFormFunctions,
   campWithAddress,
   campWithMultipleFilesRequired,
+  campWithAddressCampDataTypes,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer';
@@ -44,12 +44,14 @@ const mailer = NoOpMailer.prototype;
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
     campData: Partial<Prisma.CampCreateInput> = {},
+    role = 'DIRECTOR',
   ) => {
     const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
       user: { connect: { id: user.id } },
+      role,
     });
     const accessToken = generateAccessToken(user);
 
@@ -76,9 +78,44 @@ describe('/api/v1/camps/:campId/registrations', () => {
   };
 
   describe('GET /api/v1/camps/:campId/registrations/', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 200 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        await createRegistration(camp);
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}/registrations`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveLength(1);
+
+        // Additional assertions for DIRECTOR role
+        if (role === 'DIRECTOR') {
+          expect(body.data[0]).toHaveProperty('id');
+          expect(body.data[0]).toHaveProperty('room');
+        }
+      },
+    );
+
+    it('should not include deleted registrations', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       await createRegistration(camp);
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        deletedAt: new Date(),
+      });
 
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/registrations`)
@@ -88,8 +125,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       expect(body).toHaveProperty('data');
       expect(body.data).toHaveLength(1);
-      expect(body.data[0]).toHaveProperty('id');
-      expect(body.data[0]).toHaveProperty('room');
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
@@ -118,17 +153,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('GET /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await createRegistration(camp);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 200 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        const registration = await createRegistration(camp);
 
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      expect(body).toHaveProperty('data');
-    });
+        expect(body).toHaveProperty('data');
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -159,6 +205,19 @@ describe('/api/v1/camps/:campId/registrations', () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `404` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        deletedAt: new Date(),
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
@@ -555,71 +614,22 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
     });
 
-    describe('generate camp data', () => {
-      it('should add entry with single value', async () => {
-        const camp = await CampFactory.create(campWithSingleCampDataType);
+    describe('computed data', () => {
+      it('should generate computed data for all fields', async () => {
+        const camp = await CampFactory.create(campWithAllCampDataTypes);
 
         const data = {
+          firstName: 'Jhon',
+          lastName: 'Doe',
+          dateOfBirth: '2000-01-01',
           email: 'test@example.com',
-          other: 'dummy',
-        };
-
-        const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(201);
-
-        expect(body).toHaveProperty('data.campData');
-        expect(body.data.campData).toEqual({
-          'email-primary': ['test@example.com'],
-        });
-      });
-
-      it('should add entry without values', async () => {
-        const camp = await CampFactory.create(campWithSingleCampDataType);
-
-        const data = {
-          other: 'dummy',
-        };
-
-        const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(201);
-
-        expect(body).toHaveProperty('data.campData');
-        expect(body.data.campData).toEqual({
-          'email-primary': [null],
-        });
-      });
-
-      it('should add entry with multiple values', async () => {
-        const camp = await CampFactory.create(campWithMultipleCampDataValues);
-
-        const data = {
-          email: 'test@example.com',
-          otherEmail: 'other@example.com',
-          other: 'dummy',
-        };
-
-        const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(201);
-
-        expect(body).toHaveProperty('data.campData');
-        expect(body.data.campData).toEqual({
-          'email-primary': ['test@example.com', 'other@example.com'],
-        });
-      });
-
-      it('should add multiple entries', async () => {
-        const camp = await CampFactory.create(campWithMultipleCampDataTypes);
-
-        const data = {
-          email: 'test@example.com',
+          emailSecondary: 'other@example.com',
+          role: 'counselor',
+          gender: 'f',
+          street: 'Somestreet 1',
+          city: 'Somecity',
+          zipCode: '12356',
           country: 'de',
-          other: 'dummy',
         };
 
         const { body } = await request()
@@ -627,10 +637,46 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        expect(body).toHaveProperty('data.campData');
-        expect(body.data.campData).toEqual({
-          'email-primary': ['test@example.com'],
-          country: ['de'],
+        expect(body).toHaveProperty('data.computedData');
+        expect(body.data.computedData).toEqual({
+          firstName: 'Jhon',
+          lastName: 'Doe',
+          dateOfBirth: '2000-01-01',
+          emails: ['test@example.com', 'other@example.com'],
+          role: 'counselor',
+          gender: 'f',
+          address: {
+            street: 'Somestreet 1',
+            city: 'Somecity',
+            zipCode: '12356',
+            country: 'de',
+          },
+        });
+      });
+
+      it('should generate computed data with address', async () => {
+        const camp = await CampFactory.create(campWithAddressCampDataTypes);
+
+        const data = {
+          address: {
+            address: 'Somestreet 1',
+            city: 'Somecity',
+            zip_code: '12356',
+            country: 'de',
+          },
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(body).toHaveProperty('data.computedData.address');
+        expect(body.data.computedData.address).toEqual({
+          street: 'Somestreet 1',
+          city: 'Somecity',
+          zipCode: '12356',
+          country: 'de',
         });
       });
     });
@@ -888,7 +934,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should respond with `409` status code when camp country data is missing for international camp', async () => {
+      it('should respond with `400` status code when camp country data is missing for international camp', async () => {
         const camp = await CampFactory.create(campWithoutCountryData);
 
         const data = {
@@ -900,10 +946,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data)
-          .expect(409);
+          .expect(400);
       });
 
-      it('should respond with `409` status code when camp country data is invalid for international camp', async () => {
+      it('should respond with `400` status code when camp country data is invalid for international camp', async () => {
         const camp = await CampFactory.create(campWithoutCountryData);
 
         const data = {
@@ -916,10 +962,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data)
-          .expect(409);
+          .expect(400);
       });
 
-      it('should respond with `409` status code when camp country data is not matching for international camp', async () => {
+      it('should respond with `400` status code when camp country data is not matching for international camp', async () => {
         const camp = await CampFactory.create(campWithoutCountryData);
 
         const data = {
@@ -932,138 +978,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send(data)
-          .expect(409);
-      });
-    });
-
-    describe('free places', () => {
-      it('should decrement free places for national registrations', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsRolesNational,
-        );
-
-        const data = {
-          first_name: `Tom`,
-          role: 'participant',
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations/`)
-          .send({ data })
-          .expect(201);
-
-        const refCamp = await prisma.camp.findFirst({
-          where: { id: camp.id },
-        });
-        expect(refCamp?.freePlaces).toBe(4);
-      });
-
-      it('should decrement free places for national registrations without role', async () => {
-        const camp = await CampFactory.create(campWithMaxParticipantsNational);
-
-        const data = {
-          first_name: `Tom`,
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations/`)
-          .send({ data })
-          .expect(201);
-
-        const refCamp = await prisma.camp.findFirst({
-          where: { id: camp.id },
-        });
-        expect(refCamp?.freePlaces).toBe(4);
-      });
-
-      it('should decrement free places for international registrations', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsRolesInternational,
-        );
-        // { fr: 3, de: 5 }
-
-        const data = {
-          first_name: `Tom`,
-          role: 'participant',
-          country: 'de',
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations/`)
-          .send({ data })
-          .expect(201);
-
-        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(refCamp?.freePlaces).toStrictEqual({
-          de: 4,
-          fr: 3,
-        });
-      });
-
-      it('should decrement free places for international registrations without role', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsInternational,
-        );
-        // { fr: 3, de: 5 }
-
-        const data = {
-          first_name: `Tom`,
-          country: 'fr',
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations/`)
-          .send({ data })
-          .expect(201);
-
-        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(refCamp?.freePlaces).toStrictEqual({
-          de: 5,
-          fr: 2,
-        });
-      });
-
-      it('should not decrement free places for non participants and national camps', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsRolesNational,
-        );
-
-        const data = {
-          first_name: `Tom`,
-          role: 'counselor',
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations/`)
-          .send({ data })
-          .expect(201);
-
-        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(refCamp?.freePlaces).toBe(5);
-      });
-
-      it('should not decrement free places for non participants and international camps', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsRolesInternational,
-        );
-        // { fr: 3, de: 5 }
-
-        const data = {
-          first_name: `Tom`,
-          role: 'counselor',
-          country: 'de',
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations/`)
-          .send({ data })
-          .expect(201);
-
-        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(refCamp?.freePlaces).toStrictEqual({
-          de: 5,
-          fr: 3,
-        });
+          .expect(400);
       });
     });
 
@@ -1087,7 +1002,18 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user', async () => {
-        const camp = await CampFactory.create(campWithEmail);
+        const camp = await CampFactory.create({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_confirmed',
+              subject: {
+                en: 'Registration confirmed',
+                es: 'Something in spanish',
+              },
+            }),
+          },
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1104,6 +1030,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           expect.objectContaining({
             to: data.email,
             replyTo: camp.contactEmail,
+            subject: 'Registration confirmed',
           }),
         );
       });
@@ -1205,7 +1132,18 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a waiting list information to the user', async () => {
-        const camp = await CampFactory.create(campWithEmailAndMaxParticipants);
+        const camp = await CampFactory.create({
+          ...campWithEmailAndMaxParticipants,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_waitlisted',
+              subject: {
+                en: 'Registration on waiting list',
+                es: 'Something in spanish',
+              },
+            }),
+          },
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1216,10 +1154,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        // TODO Assert correct language
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: data.email,
+            subject: 'Registration on waiting list',
           }),
         );
       });
@@ -1227,20 +1165,29 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it.todo('should respond with `200` status code when user is camp manager');
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        const registration = await createRegistration(camp);
 
-    it('should respond with `200` status when waiting list is updated', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await createRegistration(camp);
-
-      await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
-        .send({
-          waitingList: false,
-        })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-    });
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            waitingList: false,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it.todo('should not overwrite camp data when updating waiting list');
 
@@ -1283,193 +1230,218 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(404);
     });
 
-    describe('sends messages', () => {
-      it.todo('should send update email when available');
+    it('should respond with `404` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        deletedAt: new Date(),
+      });
 
-      it.todo('should send waiting list confirmation when available');
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send({})
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
     });
 
-    describe.todo('update camp data');
+    describe('sends messages', () => {
+      it('should respond with `200` status code when message template is missing', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {},
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+      });
+
+      it('should send update email', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_updated',
+              subject: 'Registration updated',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.email,
+            replyTo: camp.contactEmail,
+            subject: 'Registration updated',
+          }),
+        );
+      });
+
+      it('should send waiting list confirmation', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_waitlist_accepted',
+              subject: 'Registration accepted',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            waitingList: false,
+            data,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.email,
+            replyTo: camp.contactEmail,
+            subject: 'Registration accepted',
+          }),
+        );
+      });
+    });
+
+    describe('computed data', () => {
+      it('should generate computed data for all fields', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithAllCampDataTypes,
+        );
+        const registration = await createRegistration(camp);
+
+        const data = {
+          firstName: 'Jhon',
+          lastName: 'Doe',
+          dateOfBirth: '2000-01-01',
+          email: 'test@example.com',
+          emailSecondary: 'other@example.com',
+          role: 'counselor',
+          gender: 'f',
+          street: 'Somestreet 1',
+          city: 'Somecity',
+          zipCode: '12356',
+          country: 'de',
+        };
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.computedData');
+        expect(body.data.computedData).toEqual({
+          firstName: 'Jhon',
+          lastName: 'Doe',
+          dateOfBirth: '2000-01-01',
+          emails: ['test@example.com', 'other@example.com'],
+          role: 'counselor',
+          gender: 'f',
+          address: {
+            street: 'Somestreet 1',
+            city: 'Somecity',
+            zipCode: '12356',
+            country: 'de',
+          },
+        });
+      });
+
+      it('should generate computed data with address', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          campWithAddressCampDataTypes,
+        );
+        const registration = await createRegistration(camp);
+
+        const data = {
+          address: {
+            address: 'Somestreet 1',
+            city: 'Somecity',
+            zip_code: '12356',
+            country: 'de',
+          },
+        };
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.computedData.address');
+        expect(body.data.computedData.address).toEqual({
+          street: 'Somestreet 1',
+          city: 'Somecity',
+          zipCode: '12356',
+          country: 'de',
+        });
+      });
+    });
   });
 
   describe('DELETE /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it('should respond with `204` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await createRegistration(camp);
-
-      await request()
-        .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(204);
-
-      const registrationCount = await countRegistrations(camp);
-      expect(registrationCount).toBe(0);
-    });
-
-    describe('free places', () => {
-      it('should increment free places for national registrations', async () => {
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 204, expectedCount: 1 },
+      { role: 'COORDINATOR', expectedStatus: 204, expectedCount: 1 },
+      { role: 'COUNSELOR', expectedStatus: 403, expectedCount: 2 },
+      { role: 'VIEWER', expectedStatus: 403, expectedCount: 2 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus, expectedCount }) => {
         const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithMaxParticipantsRolesNational,
+          undefined,
+          role,
         );
-
-        // With role
-        const registrationA = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {
-            role: ['participant'],
-          },
-        });
-
-        // Without role
-        const registrationB = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {},
-        });
-
-        await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationA.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(204);
-
-        const campA = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(campA?.freePlaces).toBe(6);
-
-        await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationB.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(204);
-
-        const campB = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(campB?.freePlaces).toBe(7);
-      });
-
-      it('should increment free places for international registrations', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithMaxParticipantsRolesInternational,
-        );
-        // { fr: 3, de: 5 }
-
-        // With role
-        const registrationA = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {
-            role: ['participant'],
-            country: ['de'],
-          },
-        });
-
-        // Without role
-        const registrationB = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {
-            country: ['fr'],
-          },
-        });
-
-        await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationA.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(204);
-
-        const campA = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(campA?.freePlaces).toStrictEqual({
-          de: 6,
-          fr: 3,
-        });
-
-        await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registrationB.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(204);
-
-        const campB = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(campB?.freePlaces).toStrictEqual({
-          de: 6,
-          fr: 4,
-        });
-      });
-
-      it('should respond with `409` status code when country is missing for international registrations', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithMaxParticipantsInternational,
-        );
-
-        // With role
-        const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {
-            role: ['participant'],
-          },
-        });
+        await createRegistration(camp);
+        const registration = await createRegistration(camp);
 
         await request()
           .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
-          .expect(409);
-      });
+          .expect(expectedStatus);
 
-      it('should not increment free places for non participants and national camps', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithMaxParticipantsRolesNational,
-        );
-
-        // With role
-        const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {
-            role: ['counselor'],
+        const registrationCount = await prisma.registration.count({
+          where: {
+            campId: camp.id,
+            deletedAt: null,
           },
         });
-
-        await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(204);
-
-        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(refCamp?.freePlaces).toBe(5);
-      });
-
-      it('should not increment free places for non participants and national camps', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithMaxParticipantsRolesInternational,
-        );
-
-        // With role
-        const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
-          data: {},
-          campData: {
-            role: ['counselor'],
-          },
-        });
-
-        await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(204);
-
-        const refCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-        expect(refCamp?.freePlaces).toStrictEqual({
-          de: 5,
-          fr: 3,
-        });
-      });
-    });
+        expect(registrationCount).toBe(expectedCount);
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -1510,7 +1482,50 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
-      it.todo('should send cancel email when available');
+      it('should respond with `204` status code when message template is missing', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          messageTemplates: {},
+        });
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@email.com'],
+        });
+
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+      });
+
+      it('should send update email', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_canceled',
+              subject: 'Registration canceled',
+            }),
+          },
+        });
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@email.com'],
+        });
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'test@email.com',
+            replyTo: camp.contactEmail,
+            subject: 'Registration canceled',
+          }),
+        );
+      });
     });
   });
 });
@@ -1525,7 +1540,11 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/files/', () => {
       registration: { connect: { id: registration.id } },
     });
     const user = await UserFactory.create({
-      camps: { create: { campId: camp.id } },
+      campRoles: {
+        create: CampManagerFactory.build({
+          camp: { connect: { id: camp.id } },
+        }),
+      },
     });
 
     const accessToken = generateAccessToken(await UserFactory.create());

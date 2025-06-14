@@ -3,7 +3,7 @@
     <q-item-section>
       <q-select
         v-model="person"
-        :label="label"
+        :label
         option-label="name"
         :options="props.options"
         clearable
@@ -11,6 +11,7 @@
         outlined
         rounded
         :dense="props.dense"
+        :disable="!props.assignable"
       >
         <template #prepend>
           <country-icon
@@ -56,6 +57,7 @@ interface Props {
   position: number;
   options: unknown[];
   dense?: boolean;
+  assignable?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {

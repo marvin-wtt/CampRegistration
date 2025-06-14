@@ -27,8 +27,8 @@ model User {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime? @updatedAt @map("updated_at")
 
-  camps  CampManager[]
-  tokens Token[]
+  campRoles CampManager[]
+  tokens    Token[]
 
   @@map("users")
 }
@@ -52,8 +52,6 @@ model Camp {
   contactEmail    Json      @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
   maxParticipants Json      @map("max_participants") @db.Json
-  /// ![number | Record<string, number>]
-  freePlaces      Json      @map("free_places") @db.Json
   minAge          Int       @map("min_age") @db.UnsignedInt
   maxAge          Int       @map("max_age") @db.UnsignedInt
   startAt         DateTime  @map("start_at") @db.DateTime(0)
@@ -65,7 +63,6 @@ model Camp {
   form            Json      @db.Json
   /// ![Record<string, unknown>]
   themes          Json      @default("{}") @db.Json
-  version         Int       @default(1) @db.UnsignedInt
   createdAt       DateTime? @default(now()) @map("created_at")
   updatedAt       DateTime? @updatedAt @map("updated_at")
 
@@ -84,6 +81,7 @@ model CampManager {
   id           String    @id @unique(map: "camp_managers_id_unique") @default(ulid()) @db.Char(26)
   campId       String    @map("camp_id") @db.Char(26)
   userId       String?   @map("user_id") @db.Char(26)
+  role         String    @db.VarChar(50)
   invitationId String?   @map("invitation_id") @db.Char(26)
   expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
 
@@ -110,10 +108,22 @@ model Registration {
   campId      String    @map("camp_id") @db.Char(26)
   /// ![Record<string, unknown>]
   data        Json      @db.Json
-  /// ![Record<string, unknown[]>]
-  campData    Json      @default("{}") @map("camp_data") @db.Json
+  // Computed fields
+  firstName   String?   @map("first_name")
+  lastName    String?   @map("last_name")
+  role        String?
+  gender      String?
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  /// ![Array<string>]
+  emails      Json?
+  street      String?
+  city        String?
+  zipCode     String?   @map("zip_code")
+  country     String?
   locale      String    @default("en-US") @db.VarChar(5)
+  //
   waitingList Boolean   @default(true) @map("waiting_list")
+  deletedAt   DateTime?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
 

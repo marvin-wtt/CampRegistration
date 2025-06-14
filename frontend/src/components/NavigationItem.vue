@@ -1,6 +1,6 @@
 <template>
   <q-separator
-    v-if="props.separated"
+    v-if="props.separated && !props.first"
     spaced
   />
 
@@ -70,7 +70,11 @@ import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 
 const route = useRoute();
 
-const props = defineProps<NavigationItemProps>();
+type Props = NavigationItemProps & {
+  first?: boolean | undefined;
+};
+
+const props = defineProps<Props>();
 
 const disabled = computed<boolean>(() => {
   return !props.header && props.to === undefined;

@@ -1,7 +1,7 @@
 import type { Storage } from '#core/storage/storage';
 import fse from 'fs-extra';
-import config from '#config/index.js';
-import ApiError from '#utils/ApiError.js';
+import config from '#config/index';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import type { File } from '@prisma/client';
 import path from 'path';

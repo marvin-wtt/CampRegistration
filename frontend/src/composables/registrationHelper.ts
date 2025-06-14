@@ -6,116 +6,12 @@ export function useRegistrationHelper() {
   const campDetailsStore = useCampDetailsStore();
   const registrationStore = useRegistrationsStore();
 
-  function unknownValue(
-    registration: Registration,
-    keyName: string,
-    index?: number,
-  ): unknown {
-    const campData = registration.campData;
-
-    if (!(keyName in campData)) {
-      return undefined;
-    }
-
-    if (index !== undefined) {
-      return campData[keyName]!.length > index
-        ? campData[keyName]![index]
-        : undefined;
-    }
-
-    return campData[keyName]!.find((value) => value != null);
-  }
-
-  function unknownValues(
-    registration: Registration,
-    keyName: string,
-  ): unknown[] {
-    const campData = registration.campData;
-
-    if (!(keyName in campData)) {
-      return [];
-    }
-
-    return campData[keyName]!;
-  }
-
-  function stringValue(
-    registration: Registration,
-    keyName: string,
-  ): string | undefined {
-    const value = unknownValue(registration, keyName);
-    if (typeof value !== 'string') {
-      return undefined;
-    }
-
-    return value;
-  }
-
-  function objectValue<T = object>(
-    registration: Registration,
-    keyName: string,
-  ): T | undefined {
-    const value = unknownValue(registration, keyName);
-    if (typeof value !== 'object' || value === null) {
-      return undefined;
-    }
-
-    return value as T;
-  }
-
-  function stringValues(registration: Registration, keyName: string): string[] {
-    const values = unknownValues(registration, keyName);
-
-    return values.filter((value): value is string => typeof value === 'string');
-  }
-
-  function numericValue(
-    registration: Registration,
-    keyName: string,
-  ): number | undefined {
-    const value = unknownValue(registration, keyName);
-    if (typeof value !== 'number') {
-      return undefined;
-    }
-
-    return value;
-  }
-
-  function booleanValue(
-    registration: Registration,
-    keyName: string,
-  ): boolean | undefined {
-    const value = unknownValue(registration, keyName);
-    if (typeof value !== 'boolean') {
-      return undefined;
-    }
-
-    return value;
-  }
-
-  function dateValue(
-    registration: Registration,
-    keyName: string,
-  ): Date | undefined {
-    const value = stringValue(registration, keyName);
-    if (!value) {
-      return undefined;
-    }
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) {
-      return undefined;
-    }
-
-    return date;
-  }
-
   function firstName(registration: Registration): string | undefined {
-    return stringValue(registration, 'first_name');
+    return registration.computedData.firstName ?? undefined;
   }
 
   function lastName(registration: Registration): string | undefined {
-    return stringValue(registration, 'last_name');
+    return registration.computedData.lastName ?? undefined;
   }
 
   function fullName(registration: Registration): string | undefined {
@@ -171,16 +67,12 @@ export function useRegistrationHelper() {
   }
 
   function dateOfBirth(registration: Registration): Date | undefined {
-    return dateValue(registration, 'date_of_birth');
+    return registration.computedData.dateOfBirth !== null
+      ? new Date(registration.computedData.dateOfBirth)
+      : undefined;
   }
 
   function age(registration: Registration): number | undefined {
-    // Try to use age key first
-    const age = numericValue(registration, 'age');
-    if (age) {
-      return age;
-    }
-
     // Use date of birth instead
     const birthDate = dateOfBirth(registration);
     if (!birthDate) {
@@ -196,42 +88,36 @@ export function useRegistrationHelper() {
   }
 
   function gender(registration: Registration): string | undefined {
-    return stringValue(registration, 'gender');
+    return registration.computedData.gender ?? undefined;
   }
 
   function country(registration: Registration): string | undefined {
-    return (
-      stringValue(registration, 'country') ?? address(registration)?.country
-    );
+    return address(registration)?.country ?? undefined;
   }
 
-  interface Address {
-    street: string;
-    zip_code: string;
-    city: string;
-    country: string;
-  }
-
+  type Address = Registration['computedData']['address'];
   function address(registration: Registration): Address | undefined {
-    return objectValue<Address>(registration, 'address');
+    return registration.computedData.address;
   }
 
   function role(registration: Registration): string | undefined {
-    return stringValue(registration, 'role');
+    // Default to participant
+    return registration.computedData.role ?? 'participant';
   }
 
   function participant(registration: Registration): boolean {
-    const registrationRole = role(registration);
-    // Undefined counts as participant
-    return !registrationRole || registrationRole === 'participant';
+    return role(registration) === 'participant';
   }
 
   function email(registration: Registration): string | undefined {
-    return stringValue(registration, 'email');
+    return registration.computedData.emails !== null &&
+      registration.computedData.emails.length > 0
+      ? registration.computedData.emails[0]
+      : undefined;
   }
 
   function emails(registration: Registration): string[] {
-    return stringValues(registration, 'email');
+    return registration.computedData.emails ?? [];
   }
 
   return {
@@ -248,10 +134,5 @@ export function useRegistrationHelper() {
     participant,
     email,
     emails,
-    unknownValue,
-    stringValue,
-    numericValue,
-    booleanValue,
-    dateValue,
   };
 }

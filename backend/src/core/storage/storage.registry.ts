@@ -11,9 +11,7 @@ class StorageRegistry {
   }
 
   getStorage(identifier?: string): Storage {
-    if (identifier === undefined) {
-      identifier = config.storage.location;
-    }
+    identifier ??= config.storage.location;
 
     if (!this.storageCache.has(identifier)) {
       this.storageCache.set(identifier, this.loadStorage(identifier));

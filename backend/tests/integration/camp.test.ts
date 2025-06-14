@@ -8,6 +8,7 @@ import {
   RegistrationFactory,
   TableTemplateFactory,
   FileFactory,
+  MessageTemplateFactory,
 } from '../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
@@ -23,13 +24,12 @@ import {
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
-import { MessageTemplateFactory } from '../../prisma/factories/message-template';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 type CampCreateData = PartialBy<
   Prisma.CampCreateInput,
-  'id' | 'form' | 'themes' | 'freePlaces' | 'version'
+  'id' | 'form' | 'themes'
 >;
 
 const assertCampModel = async (id: string, data: CampCreateData) => {
@@ -49,7 +49,6 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     organizer: data.organizer,
     contactEmail: data.contactEmail,
     maxParticipants: data.maxParticipants,
-    freePlaces: data.maxParticipants,
     minAge: data.minAge,
     maxAge: data.maxAge,
     startAt: new Date(data.startAt),
@@ -58,7 +57,6 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
-    version: 1,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -67,6 +65,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const assertCampResponseBody = (data: CampCreateData, body: any) => {
   expect(body).toHaveProperty('data');
+
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
     active: data.active,
@@ -91,12 +90,14 @@ const assertCampResponseBody = (data: CampCreateData, body: any) => {
 describe('/api/v1/camps', () => {
   const createCampWithManagerAndToken = async (
     campData: Partial<Prisma.CampCreateInput> = {},
+    role = 'DIRECTOR',
   ) => {
     const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
       user: { connect: { id: user.id } },
+      role,
     });
     const accessToken = generateAccessToken(user);
 
@@ -133,6 +134,49 @@ describe('/api/v1/camps', () => {
 
       expect(body).toHaveProperty('data');
       expect(body.data.length).toBe(1);
+    });
+
+    it('should calculate free places', async () => {
+      const campA = await CampFactory.create({
+        ...campActivePublic,
+        maxParticipants: 10,
+      });
+      const campB = await CampFactory.create({
+        ...campActivePublic,
+        countries: ['de', 'fr'],
+        maxParticipants: {
+          de: 10,
+          fr: 5,
+        },
+      });
+
+      // Create registrations
+      await RegistrationFactory.create({
+        camp: { connect: { id: campA.id } },
+        role: 'participant',
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: campA.id } },
+        role: 'participant',
+      });
+
+      await RegistrationFactory.create({
+        camp: { connect: { id: campB.id } },
+        role: 'participant',
+        country: 'fr',
+      });
+
+      const { body } = await request().get(`/api/v1/camps/`).send();
+
+      expect(body).toHaveProperty('data');
+      expect(body.data.length).toBe(2);
+
+      const campResultA = body.data.find((v) => v.id === campA.id);
+      expect(campResultA).toHaveProperty('freePlaces', 8);
+
+      const campResultB = body.data.find((v) => v.id === campB.id);
+      expect(campResultB).toHaveProperty('freePlaces.de', 10);
+      expect(campResultB).toHaveProperty('freePlaces.fr', 4);
     });
 
     describe('query', () => {
@@ -281,23 +325,136 @@ describe('/api/v1/camps', () => {
       await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
     });
 
-    it('should respond with `200` status code when camp is not active and user is camp manager', async () => {
-      const camp = await CampFactory.create({
-        active: false,
-      });
-      const user = await UserFactory.create();
-      await CampManagerFactory.create({
-        camp: { connect: { id: camp.id } },
-        user: { connect: { id: user.id } },
-      });
-      const accessToken = generateAccessToken(user);
+    describe('free places', () => {
+      it('should calculate free places for national camps', async () => {
+        const camp = await CampFactory.create({
+          ...campActivePublic,
+          maxParticipants: 10,
+        });
 
-      await request()
-        .get(`/api/v1/camps/${camp.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        // Create registrations
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'counselor',
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('freePlaces', 8);
+        expect(body.data).toHaveProperty('maxParticipants', 10);
+      });
+
+      it('should calculate free places for international camps', async () => {
+        const camp = await CampFactory.create({
+          ...campActivePublic,
+          countries: ['de', 'fr'],
+          maxParticipants: {
+            de: 8,
+            fr: 6,
+          },
+        });
+
+        // Create registrations
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'de',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'fr',
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'counselor',
+          country: 'fr',
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('freePlaces.de', 7);
+        expect(body.data).toHaveProperty('freePlaces.fr', 5);
+        expect(body.data).toHaveProperty('maxParticipants.de', 8);
+        expect(body.data).toHaveProperty('maxParticipants.fr', 6);
+      });
+
+      it('should ignore deleted registrations', async () => {
+        const camp = await CampFactory.create({
+          ...campActivePublic,
+          countries: ['de', 'fr'],
+          maxParticipants: {
+            de: 8,
+            fr: 6,
+          },
+        });
+
+        // Create registrations
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'fr',
+          deletedAt: new Date(),
+        });
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          role: 'participant',
+          country: 'fr',
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('freePlaces.de', 8);
+        expect(body.data).toHaveProperty('freePlaces.fr', 5);
+      });
     });
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 200 },
+    ])(
+      'should respond with `$expectedStatus` status code when camp is not active and user is $role',
+      async ({ role, expectedStatus }) => {
+        const camp = await CampFactory.create({
+          active: false,
+        });
+        const user = await UserFactory.create();
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp.id } },
+          user: { connect: { id: user.id } },
+          role,
+        });
+        const accessToken = generateAccessToken(user);
+
+        await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it('should respond with `401` status code when camp is not active and user is unauthenticated', async () => {
       const camp = await CampFactory.create({
@@ -750,39 +907,56 @@ describe('/api/v1/camps', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          {},
+          role,
+        );
 
-      const data = {
-        active: true,
-        public: false,
-        countries: ['de'],
-        name: 'Test Camp',
-        organizer: 'Test Org',
-        contactEmail: 'test@example.com',
-        maxParticipants: 10,
-        minAge: 10,
-        maxAge: 15,
-        startAt: moment().add('20 days').startOf('hour').toDate().toISOString(),
-        endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
-        price: 100.0,
-        location: 'Somewhere',
-        form: {},
-        themes: {},
-      };
+        const data = {
+          active: true,
+          public: false,
+          countries: ['de'],
+          name: 'Test Camp',
+          organizer: 'Test Org',
+          contactEmail: 'test@example.com',
+          maxParticipants: 10,
+          minAge: 10,
+          maxAge: 15,
+          startAt: moment()
+            .add('20 days')
+            .startOf('hour')
+            .toDate()
+            .toISOString(),
+          endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
+          price: 100.0,
+          location: 'Somewhere',
+          form: {},
+          themes: {},
+        };
 
-      const { body } = await request()
-        .patch(`/api/v1/camps/${camp.id}`)
-        .send(data)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        const response = await request()
+          .patch(`/api/v1/camps/${camp.id}`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      // Test response
-      assertCampResponseBody(data, body);
+        if (expectedStatus === 200) {
+          // Test response
+          assertCampResponseBody(data, response.body);
 
-      // Test model
-      await assertCampModel(camp.id, data);
-    });
+          // Test model
+          await assertCampModel(camp.id, data);
+        }
+      },
+    );
 
     it.todo('should update camp data for all registrations');
 
@@ -793,25 +967,19 @@ describe('/api/v1/camps', () => {
       // Normal registrations
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        campData: {
-          country: ['fr'],
-          role: ['participant'],
-        },
+        country: 'fr',
+        role: 'participant',
       });
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        campData: {
-          country: ['fr'],
-          role: ['participant'],
-        },
+        country: 'fr',
+        role: 'participant',
       });
       // Counselor should not influence free places
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        campData: {
-          country: ['fr'],
-          role: ['counselor'],
-        },
+        country: 'fr',
+        role: 'counselor',
       });
 
       const dataA = {
@@ -900,22 +1068,38 @@ describe('/api/v1/camps', () => {
   });
 
   describe('DELETE /api/v1/camps/:campId', () => {
-    it('should respond with `204` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const otherCamp = await CampFactory.create();
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 204 },
+      { role: 'COORDINATOR', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          {},
+          role,
+        );
+        const otherCamp = await CampFactory.create();
 
-      await request()
-        .delete(`/api/v1/camps/${camp.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(204);
+        await request()
+          .delete(`/api/v1/camps/${camp.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      const campCount = await prisma.camp.count();
-      expect(campCount).toBe(1);
+        if (expectedStatus === 204) {
+          const campCount = await prisma.camp.count();
+          expect(campCount).toBe(1);
 
-      const remainingCamp = await prisma.camp.findFirst();
-      expect(remainingCamp?.id).toBe(otherCamp.id);
-    });
+          const remainingCamp = await prisma.camp.findFirst();
+          expect(remainingCamp?.id).toBe(otherCamp.id);
+        } else {
+          const campCount = await prisma.camp.count();
+          expect(campCount).toBe(2);
+        }
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();

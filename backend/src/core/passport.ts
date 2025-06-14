@@ -68,9 +68,6 @@ const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
 const anonymousStrategy = new AnonymousStrategy();
 
 export function initializePassport() {
-  const handler = passport.initialize();
   passport.use(jwtStrategy);
   passport.use(anonymousStrategy);
-
-  return handler;
 }

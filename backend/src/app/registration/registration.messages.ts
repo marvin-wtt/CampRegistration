@@ -1,6 +1,5 @@
 import type { Camp, Registration } from '@prisma/client';
 import messageService from '#app/message/message.service';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { objectValueOrAll } from '#utils/translateObject';
 import mailService from '#core/mail/mail.service';
 import i18n, { t } from '#core/i18n';
@@ -63,8 +62,7 @@ class RegistrationMessages extends BaseMessages {
 
   async notifyContactEmail(camp: Camp, registration: Registration) {
     const fn = async () => {
-      const helper = new RegistrationCampDataHelper(registration.campData);
-      const country = helper.country(camp.countries);
+      const country = registration.country;
 
       const locale = country ?? registration.locale;
       await i18n.changeLanguage(locale);
@@ -72,9 +70,6 @@ class RegistrationMessages extends BaseMessages {
       const context = {
         camp: messageService.createCampContext(camp, locale),
         registration: {
-          // Add additional fields to registration to simplify camp data access
-          firstName: helper.firstName(),
-          lastName: helper.lastName(),
           url: this.generateUrl(`management/${camp.id}`),
           ...registration,
         },
@@ -91,8 +86,8 @@ class RegistrationMessages extends BaseMessages {
 
       await mailService.sendTemplateMail({
         template: 'registration-manager-notification',
-        to: objectValueOrAll(camp.contactEmail, country),
-        replyTo: messageService.uniqueEmails(helper.emails()),
+        to: objectValueOrAll(camp.contactEmail, country ?? 'unknown'),
+        replyTo: messageService.uniqueEmails(registration.emails ?? []),
         subject,
         context,
         attachments: [attachment],

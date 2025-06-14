@@ -13,6 +13,9 @@ on:
       - synchronize
       - ready_for_review
 
+permissions:
+  contents: read
+
 jobs:
   verify-migrations:
     runs-on: ubuntu-24.04
@@ -20,7 +23,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:9
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -38,6 +41,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Install prisma
         run: npm i prisma
@@ -59,8 +67,8 @@ jobs:
         node: [ 22, 23 ]
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:10.5.27
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -80,7 +88,8 @@ jobs:
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
-      JWT_SECRET: aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpP
+      JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
+      CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
       SMTP_PORT: 587
       SMTP_USERNAME: user
@@ -148,8 +157,8 @@ jobs:
         node: [22]
 
     services:
-      mysql:
-        image: mysql:8.0
+      mariadb:
+        image: mariadb:10.5.27
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -168,7 +177,8 @@ jobs:
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
-      JWT_SECRET: aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpP
+      JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
+      CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
       SMTP_PORT: 587
       SMTP_USERNAME: user

@@ -1,5 +1,16 @@
 import prisma from '#client.js';
 import { BaseService } from '#core/base/BaseService';
+import type { Prisma } from '@prisma/client';
+
+type ManagerCreateData = Pick<
+  Prisma.CampManagerCreateInput,
+  'role' | 'expiresAt'
+>;
+
+type ManagerUpdateData = Pick<
+  Prisma.CampManagerUpdateInput,
+  'role' | 'expiresAt'
+>;
 
 export class ManagerService extends BaseService {
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {
@@ -63,12 +74,13 @@ export class ManagerService extends BaseService {
     });
   }
 
-  async addManager(campId: string, userId: string, expiresAt?: string) {
+  async addManager(campId: string, userId: string, data: ManagerCreateData) {
     return prisma.campManager.create({
       data: {
         campId,
         userId,
-        expiresAt,
+        role: data.role,
+        expiresAt: data.expiresAt,
       },
       include: {
         user: true,
@@ -77,11 +89,12 @@ export class ManagerService extends BaseService {
     });
   }
 
-  async inviteManager(campId: string, email: string, expiresAt?: string) {
+  async inviteManager(campId: string, email: string, data: ManagerCreateData) {
     return prisma.campManager.create({
       data: {
         camp: { connect: { id: campId } },
-        expiresAt,
+        role: data.role,
+        expiresAt: data.expiresAt,
         invitation: {
           create: {
             email,
@@ -95,13 +108,14 @@ export class ManagerService extends BaseService {
     });
   }
 
-  async updateManagerById(id: string, expiresAt?: string | null) {
+  async updateManagerById(id: string, data: ManagerUpdateData) {
     return prisma.campManager.update({
       where: {
         id,
       },
       data: {
-        expiresAt,
+        role: data.role,
+        expiresAt: data.expiresAt,
       },
       include: {
         invitation: true,

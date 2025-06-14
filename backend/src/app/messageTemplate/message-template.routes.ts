@@ -1,50 +1,39 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import express from 'express';
 import messageTemplateController from './message-template.controller.js';
-import service from './message-template.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
+import { createRouter } from '#core/router';
 
-const router = express.Router({ mergeParams: true });
-
-router.param(
-  'messageTemplateId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const template = await service.getMessageTemplateById(camp.id, id);
-    req.setModelOrFail('messageTemplate', template);
-  }),
-);
+const router = createRouter();
 
 router.get(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.message_templates.view')),
   controller(messageTemplateController, 'index'),
 );
 router.get(
   '/:messageTemplateId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.message_templates.view')),
   controller(messageTemplateController, 'show'),
 );
 router.post(
   '/',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.message_templates.create')),
   controller(messageTemplateController, 'store'),
 );
 router.patch(
   '/:messageTemplateId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.message_templates.edit')),
   controller(messageTemplateController, 'update'),
 );
 router.delete(
   '/:messageTemplateId',
   auth(),
-  guard(campManager),
+  guard(campManager('camp.message_templates.delete')),
   controller(messageTemplateController, 'destroy'),
 );
 

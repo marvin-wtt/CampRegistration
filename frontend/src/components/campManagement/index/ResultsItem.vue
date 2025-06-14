@@ -25,7 +25,7 @@
         />
 
         <q-btn
-          v-if="!props.active"
+          v-if="!props.active && can('camp.edit')"
           :label="t('action.enable')"
           class="gt-sm"
           color="warning"
@@ -51,6 +51,7 @@
         />
 
         <q-btn
+          v-if="can('camp.edit')"
           :label="t('action.edit')"
           class="gt-sm"
           dense
@@ -62,7 +63,7 @@
         />
 
         <q-btn
-          v-if="props.active"
+          v-if="props.active && can('camp.edit')"
           :label="t('action.disable')"
           class="gt-sm"
           color="warning"
@@ -76,7 +77,7 @@
         />
 
         <q-btn
-          v-if="!props.active"
+          v-if="!props.active && can('camp.delete')"
           :label="t('action.delete')"
           class="gt-sm"
           color="negative"
@@ -125,6 +126,7 @@ import type { Camp } from '@camp-registration/common/entities';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from 'stores/profile-store';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import { usePermissions } from 'src/composables/permissions';
 
 const capsStore = useCampsStore();
 const profileStore = useProfileStore();
@@ -132,6 +134,7 @@ const router = useRouter();
 const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { canFor } = usePermissions();
 
 interface Props {
   camp: Camp;
@@ -151,6 +154,12 @@ const deleteLoading = ref<boolean>(false);
 const actionLoading = computed<boolean>(() => {
   return enableLoading.value || disableLoading.value || deleteLoading.value;
 });
+
+type Tail<T extends unknown[]> = T extends [unknown, ...infer Rest] ? Rest : [];
+
+function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
+  return canFor(props.camp.id, ...permissions);
+}
 
 function resultsAction() {
   withLoading(resultLoading, async () => {
