@@ -17,6 +17,13 @@ export class RegistrationService extends BaseService {
     });
   }
 
+  async getRegistrationWithCampById(id: string) {
+    return prisma.registration.findUnique({
+      where: { id },
+      include: { camp: true },
+    });
+  }
+
   async getRegistrationsByIds(campId: string, ids: string[]) {
     return this.prisma.registration.findMany({
       where: {
@@ -24,6 +31,16 @@ export class RegistrationService extends BaseService {
         campId,
       },
       include: {
+        bed: { include: { room: true } },
+      },
+    });
+  }
+
+  async getRegistrationWithCampById(id: string) {
+    return this.prisma.registration.findUnique({
+      where: { id },
+      include: {
+        camp: { select: { id: true } },
         bed: { include: { room: true } },
       },
     });

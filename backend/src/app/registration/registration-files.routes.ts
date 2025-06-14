@@ -1,10 +1,6 @@
 import express from 'express';
 import { catchParamAsync } from '#utils/catchAsync';
-import { auth, guard } from '#middlewares/index';
-import { campManager } from '#guards/manager.guard';
-import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
-import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
 
@@ -23,11 +19,8 @@ router.param(
 );
 
 // TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
-router.get(
-  '/:fileId',
-  auth(),
-  guard(campManager('camp.registrations.view')),
-  controller(fileController, 'stream'),
-);
+router.get('/:fileId', (req, res) => {
+  res.redirect('/api/v1/files/' + req.params.fileId);
+});
 
 export default router;

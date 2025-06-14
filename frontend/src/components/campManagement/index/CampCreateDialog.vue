@@ -64,6 +64,7 @@
           v-model="step"
           :name="1"
           :title="t('step.template')"
+          :disable="referenceCampOptions.length === 0"
           icon="settings"
         >
           <!-- Template -->

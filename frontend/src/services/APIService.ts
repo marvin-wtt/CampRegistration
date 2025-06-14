@@ -1,13 +1,20 @@
-import { useAuthService } from 'src/services/AuthService';
-import { useCampService } from 'src/services/CampService';
-import { useRegistrationService } from 'src/services/RegistrationService';
-import { useTableTemplateService } from 'src/services/TableTemplateService';
-import { useUserService } from 'src/services/UserService';
-import { useRoomService } from 'src/services/RoomService';
-import { useCampManagerService } from 'src/services/CampManagerService';
+import { useAuthService } from './AuthService';
+import { useCampService } from './CampService';
+import { useRegistrationService } from './RegistrationService';
+import { useTableTemplateService } from './TableTemplateService';
+import { useUserService } from './UserService';
+import { useRoomService } from './RoomService';
+import { useCampManagerService } from './CampManagerService';
 import axios, { type AxiosError } from 'axios';
-import { useFileService } from 'src/services/FileService';
-import { useFeedbackService } from 'src/services/FeedbackService';
+import { useFileService } from './FileService';
+import { useFeedbackService } from './FeedbackService';
+import { useExpenseService } from './ExpenseService.ts';
+import { usePublicFileService } from 'src/services/PublicFileService.ts';
+import { api } from 'boot/axios';
+import { convertNullToEmptyString } from 'src/services/convertNullToEmptyString.ts';
+
+// Load middleware
+convertNullToEmptyString(api);
 import { useProfileService } from 'src/services/ProfileService';
 import { useTotpService } from 'src/services/TotpService';
 import { useMessageTemplateService } from 'src/services/MessageTemplateService';
@@ -28,6 +35,8 @@ export function useAPIService() {
     ...useTotpService(),
     ...useMessageService(),
     ...useMessageTemplateService(),
+    ...useExpenseService(),
+    ...usePublicFileService(),
   };
 }
 
