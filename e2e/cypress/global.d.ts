@@ -6,5 +6,13 @@ declare namespace Cypress {
       dataTestAttribute: string,
       args?: any,
     ): Chainable<JQuery<HTMLElement>>;
+
+    getEmails(email: string): Chainable<{
+      subject: string,
+      text: string,
+      body: string
+    }>;
+
+    clearEmails(): Chainable<void>;
   }
 }

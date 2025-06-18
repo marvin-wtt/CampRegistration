@@ -27,7 +27,7 @@
     "dev": "npm run dev:views && npm run dev:serve",
     "dev:views": "mjml src/views/emails/**/*.mjml -o ./src/views/emails/",
     "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
-    "production": "NODE_ENV=production node build/entry.cjs"
+    "production": "node build/entry.cjs"
   },
   "prisma": {
     "seed": "tsx prisma/seeders/index.ts"
