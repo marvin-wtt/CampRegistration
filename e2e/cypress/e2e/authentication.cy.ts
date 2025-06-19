@@ -149,7 +149,7 @@ describe("Authentication", () => {
 
       const forgotPasswordForm = cy.getBySel("forgot-password-form");
       forgotPasswordForm.getBySel("email").type("john@example.com");
-      forgotPasswordForm.getBySel("submit").type("john@example.com");
+      forgotPasswordForm.getBySel("submit").click();
 
       cy.wait("@forgotPassword").its("response.statusCode").should("eq", 204);
 
