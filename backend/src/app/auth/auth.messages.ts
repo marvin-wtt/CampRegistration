@@ -1,6 +1,6 @@
 import mailService from '#core/mail/mail.service';
 import i18n, { t } from '#core/i18n';
-import type { User } from '@prisma/client';
+import type { User } from '#generated/prisma/client';
 import { BaseMessages } from '#core/base/BaseMessages';
 
 class AuthMessages extends BaseMessages {

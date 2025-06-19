@@ -1,7 +1,7 @@
 import { SurveyModel } from 'survey-core';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp } from '@prisma/client';
+import type { Camp } from '#generated/prisma/client';
 
 interface TemporaryFileIdentifier {
   id: string;
