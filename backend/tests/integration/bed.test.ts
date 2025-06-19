@@ -8,7 +8,7 @@ import {
   UserFactory,
 } from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
-import { Camp, Room } from '../../src/generated/prisma/client';
+import { Camp, Room } from '@prisma/client';
 import { request } from '../utils/request';
 import prisma from '../utils/prisma';
 import { ulid } from 'ulidx';
