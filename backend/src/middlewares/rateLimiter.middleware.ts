@@ -9,7 +9,7 @@ export const authLimiter = rateLimit({
 
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 250, // limit each IP to 100 requests per windowMs
+  limit: 250, // limit each IP to 250 requests per windowMs
   keyGenerator: (request) => `General:${request.ip ?? ''}`,
 });
 
