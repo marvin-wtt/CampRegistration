@@ -175,7 +175,7 @@ jobs:
           - 1025:1025
           - 1080:1080
         options: >-
-          --health-cmd "curl --fail http://localhost:1080"
+          --health-cmd "curl -sSf http://localhost:1080/healthz"
           --health-interval 10s 
           --health-timeout 5s 
           --health-retries 3
