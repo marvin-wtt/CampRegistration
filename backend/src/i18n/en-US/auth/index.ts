@@ -2,6 +2,7 @@ export default {
   email: {
     resetPassword: {
       subject: 'Reset password',
+      preview: 'Reset your password now to regain access to your account.',
       text: {
         title: 'Hey there,',
         information:
@@ -19,6 +20,7 @@ export default {
 
     verifyEmail: {
       subject: 'Verify your email',
+      preview: 'Verify your email to activate your account.',
       text: {
         title: 'Hey there,',
         information:
