@@ -10,6 +10,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       const port = 456;
       const mailServer = smtpTester.init(port);
+      let receivedEmails = [];
       mailServer.bind((addr, id, email) => {
         console.log("--- email to %s ---", email.headers.to);
         console.log(email.body);
