@@ -11,7 +11,7 @@ class UserSeeder extends BaseSeeder {
       id: '01H4BK7J4WV75DZNAQBHMM99MA',
       name: 'John Doe',
       email: 'john@example.com',
-      password: '$2a$12$6xNRDn8nlpzoXcjCXoa6uuiOcnINPbKRKVFaxO3lzLC4uXJhB5DAC', // hashed password for 'password'
+      password: 'password',
       emailVerified: true,
     });
 
@@ -21,6 +21,8 @@ class UserSeeder extends BaseSeeder {
       email: 'admin@email.com',
       password: 'admin-password',
       emailVerified: true,
+      twoFactorEnabled: true,
+      totpSecret: 'JBSWY3DPEHPK3PXP',
       role: 'ADMIN',
     });
   }

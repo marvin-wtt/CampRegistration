@@ -9,6 +9,7 @@
     >
       <q-form
         class="fit column justify-center no-wrap"
+        data-test="registration-form"
         @submit="register"
       >
         <q-card-section class="text-h4 text-bold text-center">
@@ -30,6 +31,7 @@
             :label="t('field.name.label')"
             :rules="[(val?: string) => !!val || t('field.name.rule.required')]"
             hide-bottom-space
+            data-test="name"
             outlined
             rounded
           >
@@ -45,6 +47,7 @@
             autocomplete="email"
             :rules="[(val?: string) => !!val || t('field.email.rule.required')]"
             hide-bottom-space
+            data-test="email"
             outlined
             rounded
           >
@@ -60,6 +63,7 @@
             autocomplete="new-password"
             :rules="passwordRules"
             hide-bottom-space
+            data-test="password"
             outlined
             rounded
           >
@@ -77,6 +81,7 @@
                 val === password || t('field.confirm-password.rule.identical'),
             ]"
             :label="t('field.confirm-password.label')"
+            data-test="confirm-password"
             outlined
             rounded
           >
@@ -88,12 +93,13 @@
 
         <q-card-actions>
           <q-btn
-            :loading="loading"
+            :label="t('action.register')"
             type="submit"
             color="primary"
             size="lg"
             class="full-width"
-            :label="t('action.register')"
+            :loading
+            data-test="submit"
             rounded
           />
         </q-card-actions>
@@ -101,6 +107,7 @@
         <q-card-section
           v-if="error"
           class="text-negative text-center text-bold"
+          data-test="error"
         >
           {{ error }}
         </q-card-section>
