@@ -171,11 +171,16 @@ jobs:
           - 3306:3306
       maildev:
         image: maildev/maildev
+        env:
+          MAILDEV_SMTP_PORT: 1026
+          MAILDEV_WEB_PORT: 1081
+          MAILDEV_INCOMING_USER: user
+          MAILDEV_INCOMING_PASS: password
         ports:
-          - 1025:1025
-          - 1080:1080
+          - 1026:1026
+          - 1081:1081
         options: >-
-          --health-cmd "curl -sSf http://127.0.0.1:1080/healthz"
+          --health-cmd "curl -sSf http://127.0.0.1:1081/healthz"
           --health-interval 10s 
           --health-timeout 5s 
           --health-retries 3
