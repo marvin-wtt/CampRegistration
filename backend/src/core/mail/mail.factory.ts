@@ -1,5 +1,6 @@
 import { NodeMailer } from '#core/mail/node.mailer';
 import type { IMailer } from '#core/mail/mail.types';
+import logger from '#core/logger';
 
 export class MailFactory {
   // Mailers that are used in descending order
@@ -11,11 +12,14 @@ export class MailFactory {
         if (await mailer.isAvailable()) {
           return mailer;
         }
-      } catch (ignored) {
-        // Ignored
+      } catch (error) {
+        logger.warn(
+          `Mailer ${mailer.name()} is not available: ${(error as Error).message}`,
+        );
       }
     }
 
-    throw new Error('No mailer available');
+    logger.warn('No mailer is available, using NodeMailer as fallback');
+    return new NodeMailer();
   }
 }
