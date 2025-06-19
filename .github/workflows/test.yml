@@ -179,11 +179,6 @@ jobs:
         ports:
           - 1026:1026
           - 1081:1081
-        options: >-
-          --health-cmd "curl -sSf http://127.0.0.1:1081/healthz"
-          --health-interval 10s 
-          --health-timeout 5s 
-          --health-retries 3
 
     env:
       APP_PORT: 3001
