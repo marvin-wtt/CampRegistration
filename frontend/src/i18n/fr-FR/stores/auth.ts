@@ -4,7 +4,7 @@ export default {
   },
   'forgot-password': {
     error:
-      "Nous n'avons pas trouvé de compte associé à cet e-mail. Veuillez réessayer.",
+      "Une erreur s'est produite lors de la tentative de réinitialisation de votre mot de passe. Veuillez réessayer.",
     success:
       'Vérifiez votre boîte mail pour le lien de réinitialisation du mot de passe.',
   },
