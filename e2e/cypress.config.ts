@@ -11,16 +11,10 @@ export default defineConfig({
       const port = 456;
       const mailServer = smtpTester.init(port);
       let receivedEmails = [];
-      mailServer.bind((addr, id, email) => {
-        console.log("--- email to %s ---", email.headers.to);
-        console.log(email.body);
-        console.log("--- end ---");
 
-        // [receiver email]: email text
+      mailServer.bind((addr, id, email) => {
         receivedEmails.push(email);
       });
-
-      let receivedEmails = [];
 
       on("task", {
         // cypress cannot return undefined, thus we return null as a fallback
