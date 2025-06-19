@@ -28,7 +28,7 @@ export const authResource = (data: AuthWithData): AuthenticationResource => {
 const convertToken = (token: TokenResponse): Token => {
   return {
     token: token.token,
-    expires: token.expires.toUTCString(),
+    expires: token.expires.toISOString(),
   };
 };
 

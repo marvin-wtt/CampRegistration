@@ -19,6 +19,7 @@
       error-message=""
       no-error-icon
       style="width: 6ch"
+      @paste="(e: ClipboardEvent) => onPaste(e, i - 1)"
       @keyup="(e: KeyboardEvent) => onKeyUp(e, i - 1)"
       @update:model-value="(v) => onUpdate(v, i - 1)"
     />
@@ -26,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUpdate, ref, useAttrs } from 'vue';
+import { nextTick, onBeforeUpdate, ref, useAttrs } from 'vue';
 import { QInput } from 'quasar';
 
 const model = defineModel<string>();
@@ -57,9 +58,12 @@ const focus = (index: number) => {
 
   if (index < length) {
     fields.value[index]?.select();
-  } else if (model.value) {
-    fields.value[index - 1]?.blur();
+    return;
   }
+
+  // If the index is out of bounds, unselect the last field
+  fields.value[length - 1]?.select();
+  fields.value[length - 1]?.blur();
 };
 
 const onUpdate = (value: string | number | null, index: number) => {
@@ -88,6 +92,29 @@ const onKeyUp = (event: KeyboardEvent, index: number) => {
       break;
   }
 };
+
+function onPaste(event: ClipboardEvent, index: number) {
+  const clipboardData = event.clipboardData;
+  if (!clipboardData) {
+    return;
+  }
+
+  const pastedData = clipboardData.getData('text/plain');
+  if (pastedData.length > length - index) {
+    return;
+  }
+
+  for (let i = index; i < pastedData.length; i++) {
+    fieldValues.value[index + i] = pastedData[i]!;
+  }
+
+  model.value = fieldValues.value.join('');
+
+  nextTick(() => {
+    // Postpone focus to wait for initial update by the input
+    focus(index + pastedData.length);
+  });
+}
 </script>
 
 <style scoped></style>
