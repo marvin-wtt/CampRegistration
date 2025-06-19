@@ -126,7 +126,7 @@
     "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
     "prisma": "^6.10.1",
-    "prisma-json-types-generator": "^3.3.1",
+    "prisma-json-types-generator": "^3.4.2",
     "smtp-tester": "^2.1.0",
     "supertest": "^7.1.0",
     "tsc-alias": "^1.8.16",
