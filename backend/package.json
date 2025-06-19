@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./build/ && rimraf ./node_modules/",
-    "build": "prisma generate && cp node_modules/@prisma/client/runtime/library.js.map src/generated/prisma/runtime/ && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
+    "build": "prisma generate && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
     "build:views": "mkdirp ./build/views/emails/ && mjml src/views/emails/**/*.mjml -o ./build/views/emails/",
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
