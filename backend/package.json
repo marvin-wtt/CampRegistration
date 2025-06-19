@@ -62,7 +62,7 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@camp-registration/web": "*",
-    "@prisma/client": "^6.7.0",
+    "@prisma/client": "^6.10.1",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.0",
     "cookie-parser": "^1.4.7",
@@ -125,7 +125,7 @@
     "nodemailer-mock": "^2.0.8",
     "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
-    "prisma": "^6.7.0",
+    "prisma": "^6.10.1",
     "prisma-json-types-generator": "^3.3.1",
     "smtp-tester": "^2.1.0",
     "supertest": "^7.1.0",
