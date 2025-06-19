@@ -13,14 +13,6 @@ declare namespace Cypress {
       body: string;
     }>;
 
-    waitForEmails(email: string): Chainable<{
-      subject: string;
-      text: string;
-      body: string;
-    }>;
-
-    clearEmails(): Chainable<void>;
-
     generateTotp(secret: string): Chainable<string>;
 
     seedDatabase(): void;

@@ -7,7 +7,7 @@ describe("Authentication", () => {
     cy.truncateDatabase();
     cy.seedDatabase();
 
-    cy.clearEmails();
+    cy.maildevDeleteAllMessages();
   });
 
   describe("Login", () => {
@@ -117,11 +117,9 @@ describe("Authentication", () => {
       cy.location("pathname").should("eq", "/verify-email");
 
       cy.log("Verifying email sent to user");
-      cy.getEmails("test@example.com").then((emails) => {
-        expect(emails).to.have.length(1);
-        const email = emails[0];
 
-        cy.document().document().invoke("write", email.html);
+      cy.maildevGetMessageBySentTo("test@example.com").then((email) => {
+        cy.document().invoke("write", email.html);
       });
 
       cy.get(".confirm-email-link a")
@@ -153,11 +151,8 @@ describe("Authentication", () => {
 
       cy.wait("@forgotPassword").its("response.statusCode").should("eq", 204);
 
-      cy.getEmails("john@example.com").then((emails) => {
-        expect(emails).to.have.length(1);
-        const email = emails[0];
-
-        cy.document().document().invoke("write", email.html);
+      cy.maildevGetMessageBySentTo("john@example.com").then((email) => {
+        cy.document().invoke("write", email.html);
       });
 
       cy.get(".reset-email-link a")

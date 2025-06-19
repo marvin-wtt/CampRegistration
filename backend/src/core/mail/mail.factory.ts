@@ -19,7 +19,6 @@ export class MailFactory {
       }
     }
 
-    logger.warn('No mailer is available, using NodeMailer as fallback');
-    return new NodeMailer();
+    throw new Error('No available mailer found');
   }
 }

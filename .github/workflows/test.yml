@@ -169,6 +169,17 @@ jobs:
           --health-retries 3
         ports:
           - 3306:3306
+      maildev:
+        image: maildev/maildev
+        ports:
+          - 1025:1025
+          - 1080:1080
+        options: >-
+          --health-cmd "curl --fail http://localhost:1080"
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 3
+
     env:
       APP_PORT: 3001
       APP_URL: http://localhost:3001
@@ -180,9 +191,10 @@ jobs:
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
-      SMTP_PORT: 587
+      SMTP_PORT: 1025
       SMTP_USERNAME: user
       SMTP_PASSWORD: password
+      SMTP_SECURE: false
       EMAIL_FROM: noreply@yourapp.com
       EMAIL_REPLY_TO: noreply@yourapp.com
       EMAIL_ADMIN: admin@yourapp.com
