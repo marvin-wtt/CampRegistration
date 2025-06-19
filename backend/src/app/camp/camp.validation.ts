@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { translatedValue, BooleanStringSchema } from '#core/validation/helper';
-import type { Camp } from '#generated/prisma/client';
+import type { Camp } from '@prisma/client';
 
 const show = z.object({
   params: z.object({

@@ -1,4 +1,4 @@
-import type { CampManager, User } from '#generated/prisma/client';
+import type { CampManager, User } from '@prisma/client';
 import { CampResource, type CampWithFreePlaces } from '#app/camp/camp.resource';
 import type { Profile as ProfileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';

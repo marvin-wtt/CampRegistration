@@ -56,8 +56,7 @@
     "#routes/*": "./src/routes/*.js",
     "#utils/*": "./src/utils/*.js",
     "#views/*": "./src/views/*.js",
-    "#types/*": "./src/types/*.js",
-    "#generated/*": "./src/generated/*.js"
+    "#types/*": "./src/types/*.js"
   },
   "dependencies": {
     "@camp-registration/common": "*",

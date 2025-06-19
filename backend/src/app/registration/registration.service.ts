@@ -1,7 +1,7 @@
 import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { type Camp, Prisma, type Registration } from '#generated/prisma/client';
+import { type Camp, Prisma, type Registration } from '@prisma/client';
 import { formUtils } from '#utils/form';
 import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';

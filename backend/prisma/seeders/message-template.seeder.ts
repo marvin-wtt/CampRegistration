@@ -1,4 +1,4 @@
-import { PrismaClient } from '#generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { MessageTemplateFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
 

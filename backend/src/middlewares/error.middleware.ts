@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler } from 'express';
-import { Prisma } from '#generated/prisma/client';
+import { Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import config from '#config/index';
 import logger from '#core/logger';

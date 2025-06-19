@@ -1,4 +1,4 @@
-import { PrismaClient } from '#generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 import config from '#config/index';
 import { createSoftDeleteExtension } from 'prisma-extension-soft-delete';
 

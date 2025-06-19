@@ -1,9 +1,4 @@
-import type {
-  Camp,
-  CampManager,
-  Invitation,
-  User,
-} from '#generated/prisma/client';
+import type { Camp, CampManager, Invitation, User } from '@prisma/client';
 import { translateObject } from '#utils/translateObject';
 import i18n, { t } from '#core/i18n';
 import mailService from '#core/mail/mail.service';

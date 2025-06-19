@@ -1,4 +1,4 @@
-import type { TableTemplate } from '#generated/prisma/client';
+import type { TableTemplate } from '@prisma/client';
 import type { TableTemplate as TableTemplateData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
