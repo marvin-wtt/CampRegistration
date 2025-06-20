@@ -172,12 +172,12 @@ jobs:
       maildev:
         image: maildev/maildev
         env:
-          MAILDEV_SMTP_PORT: 1026
+          MAILDEV_SMTP_PORT: 1025
           MAILDEV_WEB_PORT: 1081
           MAILDEV_INCOMING_USER: user
           MAILDEV_INCOMING_PASS: password
         ports:
-          - 1026:1026
+          - 1025:1025
           - 1081:1081
 
     env:
