@@ -1,12 +1,10 @@
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import campFileRouter from './camp-files.routes.js';
 import campController from '#app/camp/camp.controller';
-import managerService from '#app/manager/manager.service';
 import campService from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
 import { or, campActive, campManager } from '#guards/index';
 import type { CampQuery } from '@camp-registration/common/entities';
-import validator from '#app/camp/camp.validation';
 import { controller } from '#utils/bindController';
 
 export class CampRouter extends ModuleRouter {
@@ -29,24 +27,7 @@ export class CampRouter extends ModuleRouter {
       controller(campController, 'show'),
     );
 
-    this.router.post(
-      '/',
-      auth(),
-      guard(async (req) => {
-        const {
-          body: { referenceCampId },
-        } = await req.validate(validator.store);
-
-        return (
-          !referenceCampId ||
-          managerService.campManagerExistsWithUserIdAndCampId(
-            referenceCampId,
-            req.authUserId(),
-          )
-        );
-      }),
-      controller(campController, 'store'),
-    );
+    this.router.post('/', auth(), controller(campController, 'store'));
 
     this.router.patch(
       '/:campId',
