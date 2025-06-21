@@ -1,9 +1,13 @@
-import express from 'express';
 import feedbackController from './feedback.controller.js';
+import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#utils/bindController';
 
-const router = express.Router();
+export class FeedbackRouter extends ModuleRouter {
+  protected registerBindings() {
+    // No model bindings needed for feedback routes
+  }
 
-router.post('/', controller(feedbackController, 'store'));
-
-export default router;
+  protected defineRoutes() {
+    this.router.post('/', controller(feedbackController, 'store'));
+  }
+}

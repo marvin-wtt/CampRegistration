@@ -3,40 +3,48 @@ import { auth, guard } from '#middlewares/index';
 import { campActive, campManager } from '#guards/index';
 import registrationFiles from './registration-files.routes.js';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import registrationService from '#app/registration/registration.service';
 
-const router = createRouter();
+export class RegistrationRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('registration', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return registrationService.getRegistrationById(camp.id, id);
+    });
+  }
 
-router.use('/:registrationId/files', registrationFiles);
+  protected defineRoutes() {
+    this.router.use('/:registrationId/files', registrationFiles);
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager('camp.registrations.view')),
-  controller(registrationController, 'index'),
-);
-router.get(
-  '/:registrationId',
-  auth(),
-  guard(campManager('camp.registrations.view')),
-  controller(registrationController, 'show'),
-);
-router.post(
-  '/',
-  guard(campActive),
-  controller(registrationController, 'store'),
-);
-router.patch(
-  '/:registrationId',
-  auth(),
-  guard(campManager('camp.registrations.edit')),
-  controller(registrationController, 'update'),
-);
-router.delete(
-  '/:registrationId',
-  auth(),
-  guard(campManager('camp.registrations.delete')),
-  controller(registrationController, 'destroy'),
-);
-
-export default router;
+    this.router.get(
+      '/',
+      auth(),
+      guard(campManager('camp.registrations.view')),
+      controller(registrationController, 'index'),
+    );
+    this.router.get(
+      '/:registrationId',
+      auth(),
+      guard(campManager('camp.registrations.view')),
+      controller(registrationController, 'show'),
+    );
+    this.router.post(
+      '/',
+      guard(campActive),
+      controller(registrationController, 'store'),
+    );
+    this.router.patch(
+      '/:registrationId',
+      auth(),
+      guard(campManager('camp.registrations.edit')),
+      controller(registrationController, 'update'),
+    );
+    this.router.delete(
+      '/:registrationId',
+      auth(),
+      guard(campManager('camp.registrations.delete')),
+      controller(registrationController, 'destroy'),
+    );
+  }
+}

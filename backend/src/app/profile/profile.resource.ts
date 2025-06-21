@@ -2,7 +2,7 @@ import type { CampManager, User } from '@prisma/client';
 import { CampResource, type CampWithFreePlaces } from '#app/camp/camp.resource';
 import type { Profile as ProfileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import { permissionRegistry } from '#core/permission-registry.js';
+import { permissionRegistry } from '#core/permission-registry';
 
 export interface UserWithCamps extends Omit<User, 'password'> {
   camps: CampWithFreePlaces[];

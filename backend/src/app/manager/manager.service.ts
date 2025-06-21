@@ -1,4 +1,4 @@
-import prisma from '#client.js';
+import prisma from '#client';
 import { BaseService } from '#core/base/BaseService';
 import type { Prisma } from '@prisma/client';
 

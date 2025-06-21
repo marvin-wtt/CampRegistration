@@ -1,64 +1,66 @@
-import { type Request } from 'express';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import campFileRouter from './camp-files.routes.js';
+import campController from '#app/camp/camp.controller';
+import managerService from '#app/manager/manager.service';
+import campService from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
 import { or, campActive, campManager } from '#guards/index';
-import campController from './camp.controller.js';
-import managerService from '#app/manager/manager.service';
-import campFileRoutes from './camp-files.routes.js';
-import type {
-  CampCreateData,
-  CampQuery,
-} from '@camp-registration/common/entities';
+import type { CampQuery } from '@camp-registration/common/entities';
+import validator from '#app/camp/camp.validation';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router';
 
-const router = createRouter();
-
-const queryShowAllGuard = (req: Request) => {
-  const query = req.query as CampQuery;
-
-  // Admins will bypass this guard
-  return query.showAll === undefined;
-};
-
-const referenceCampGuard = (req: Request) => {
-  const userId = req.authUserId();
-  const { referenceCampId } = req.body as CampCreateData;
-
-  if (!referenceCampId) {
-    return true;
+export class CampRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('camp', (_req, id) => campService.getCampById(id));
   }
 
-  return managerService.campManagerExistsWithUserIdAndCampId(
-    referenceCampId,
-    userId,
-  );
-};
+  protected defineRoutes() {
+    this.router.use('/:campId/files', campFileRouter);
 
-router.use('/:campId/files', campFileRoutes);
+    this.router.get(
+      '/',
+      guard((req) => (req.query as CampQuery).showAll === undefined),
+      controller(campController, 'index'),
+    );
 
-router.get('/', guard(queryShowAllGuard), controller(campController, 'index'));
-router.get(
-  '/:campId',
-  guard(or(campManager('camp.view'), campActive)),
-  controller(campController, 'show'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(referenceCampGuard),
-  controller(campController, 'store'),
-);
-router.patch(
-  '/:campId',
-  auth(),
-  guard(campManager('camp.edit')),
-  controller(campController, 'update'),
-);
-router.delete(
-  '/:campId',
-  auth(),
-  guard(campManager('camp.delete')),
-  controller(campController, 'destroy'),
-);
+    this.router.get(
+      '/:campId',
+      guard(or(campManager('camp.view'), campActive)),
+      controller(campController, 'show'),
+    );
 
-export default router;
+    this.router.post(
+      '/',
+      auth(),
+      guard(async (req) => {
+        const {
+          body: { referenceCampId },
+        } = await req.validate(validator.store);
+
+        return (
+          !referenceCampId ||
+          managerService.campManagerExistsWithUserIdAndCampId(
+            referenceCampId,
+            req.authUserId(),
+          )
+        );
+      }),
+      controller(campController, 'store'),
+    );
+
+    this.router.patch(
+      '/:campId',
+      auth(),
+      guard(campManager('camp.edit')),
+      controller(campController, 'update'),
+    );
+
+    this.router.delete(
+      '/:campId',
+      auth(),
+      guard(campManager('camp.delete')),
+      controller(campController, 'destroy'),
+    );
+  }
+}
+export default CampRouter;

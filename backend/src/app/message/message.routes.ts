@@ -2,40 +2,46 @@ import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import messageController from './message.controller.js';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import messageService from '#app/message/message.service';
 
-const router = createRouter();
+export class MessageRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('message', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return messageService.getMessageById(camp.id, id);
+    });
+  }
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager('camp.messages.view')),
-  controller(messageController, 'index'),
-);
-router.get(
-  '/:messageId',
-  auth(),
-  guard(campManager('camp.messages.view')),
-  controller(messageController, 'show'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager('camp.messages.create')),
-  multipart({ name: 'attachments' }),
-  controller(messageController, 'store'),
-);
-router.post(
-  '/:messageId/resend',
-  auth(),
-  guard(campManager('camp.messages.create')),
-  controller(messageController, 'resend'),
-);
-router.delete(
-  '/:messageId',
-  auth(),
-  guard(campManager('camp.messages.delete')),
-  controller(messageController, 'destroy'),
-);
+  protected defineRoutes() {
+    this.router.use(auth());
+    this.router.use();
 
-export default router;
+    this.router.get(
+      '/',
+      guard(campManager('camp.messages.view')),
+      controller(messageController, 'index'),
+    );
+    this.router.get(
+      '/:messageId',
+      guard(campManager('camp.messages.view')),
+      controller(messageController, 'show'),
+    );
+    this.router.post(
+      '/',
+      guard(campManager('camp.messages.create')),
+      multipart({ name: 'attachments' }),
+      controller(messageController, 'store'),
+    );
+    this.router.post(
+      '/:messageId/resend',
+      guard(campManager('camp.messages.create')),
+      controller(messageController, 'resend'),
+    );
+    this.router.delete(
+      '/:messageId',
+      guard(campManager('camp.messages.delete')),
+      controller(messageController, 'destroy'),
+    );
+  }
+}

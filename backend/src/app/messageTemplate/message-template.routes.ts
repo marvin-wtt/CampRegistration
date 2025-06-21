@@ -2,39 +2,44 @@ import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import messageTemplateController from './message-template.controller.js';
 import { controller } from '#utils/bindController';
-import { createRouter } from '#core/router';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import service from '#app/messageTemplate/message-template.service';
 
-const router = createRouter();
+export class MessageTemplateRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('messageTemplate', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return service.getMessageTemplateById(camp.id, id);
+    });
+  }
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager('camp.message_templates.view')),
-  controller(messageTemplateController, 'index'),
-);
-router.get(
-  '/:messageTemplateId',
-  auth(),
-  guard(campManager('camp.message_templates.view')),
-  controller(messageTemplateController, 'show'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager('camp.message_templates.create')),
-  controller(messageTemplateController, 'store'),
-);
-router.patch(
-  '/:messageTemplateId',
-  auth(),
-  guard(campManager('camp.message_templates.edit')),
-  controller(messageTemplateController, 'update'),
-);
-router.delete(
-  '/:messageTemplateId',
-  auth(),
-  guard(campManager('camp.message_templates.delete')),
-  controller(messageTemplateController, 'destroy'),
-);
+  protected defineRoutes() {
+    this.router.use(auth());
 
-export default router;
+    this.router.get(
+      '/',
+      guard(campManager('camp.message_templates.view')),
+      controller(messageTemplateController, 'index'),
+    );
+    this.router.get(
+      '/:messageTemplateId',
+      guard(campManager('camp.message_templates.view')),
+      controller(messageTemplateController, 'show'),
+    );
+    this.router.post(
+      '/',
+      guard(campManager('camp.message_templates.create')),
+      controller(messageTemplateController, 'store'),
+    );
+    this.router.patch(
+      '/:messageTemplateId',
+      guard(campManager('camp.message_templates.edit')),
+      controller(messageTemplateController, 'update'),
+    );
+    this.router.delete(
+      '/:messageTemplateId',
+      guard(campManager('camp.message_templates.delete')),
+      controller(messageTemplateController, 'destroy'),
+    );
+  }
+}
