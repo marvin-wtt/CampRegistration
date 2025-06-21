@@ -5,14 +5,9 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import type { File } from '@prisma/client';
 import path from 'path';
-import packageDir from '#utils/paths';
 
 export class DiskStorage implements Storage {
-  private readonly storageDir: string;
-
-  constructor(storageDir: string) {
-    this.storageDir = path.resolve(packageDir, storageDir);
-
+  constructor(private readonly storageDir: string) {
     fse.ensureDirSync(this.storageDir);
   }
 

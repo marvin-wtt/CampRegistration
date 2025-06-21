@@ -1,7 +1,7 @@
 import express from 'express';
 import { staticLimiter } from '#middlewares/rateLimiter.middleware';
 import path from 'path';
-import projectRoot from '#utils/paths';
+import { appPath } from '#utils/paths';
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.use(express.static('public'));
 
 // Serve frontend content
 // TODO Is there a better way to load the files?
-const spaPath = path.resolve(projectRoot, '..', 'frontend', 'dist', 'spa');
+const spaPath = appPath('..', 'frontend', 'dist', 'spa');
 router.use(
   express.static(spaPath, {
     maxAge: 300000,
