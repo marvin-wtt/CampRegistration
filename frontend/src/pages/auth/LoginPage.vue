@@ -9,6 +9,7 @@
     >
       <q-form
         class="fit column justify-center no-wrap"
+        data-test="login-form"
         @submit="login"
       >
         <q-card-section class="text-h4 text-bold text-center">
@@ -27,6 +28,7 @@
         <q-card-section class="q-gutter-md">
           <q-input
             v-model="email"
+            :label="t('fields.email.label')"
             type="email"
             autocomplete="username"
             :disable="loading"
@@ -34,7 +36,7 @@
               (val: string) => !!val || t('fields.email.rules.required'),
             ]"
             hide-bottom-space
-            :label="t('fields.email.label')"
+            data-test="email"
             outlined
             rounded
           >
@@ -53,6 +55,7 @@
               (val: string) => !!val || t('fields.password.rules.required'),
             ]"
             hide-bottom-space
+            data-test="password"
             outlined
             rounded
           >
@@ -67,6 +70,7 @@
               :label="t('fields.remember')"
               :disable="loading"
               class="col-shrink q-pa-sm"
+              data-test="remember"
             />
 
             <router-link
@@ -87,6 +91,7 @@
             color="primary"
             size="lg"
             class="full-width"
+            data-test="submit"
             rounded
           />
         </q-card-actions>
@@ -94,6 +99,7 @@
         <q-card-section
           v-if="error"
           class="text-negative text-center text-bold"
+          data-test="error"
         >
           {{ error }}
         </q-card-section>

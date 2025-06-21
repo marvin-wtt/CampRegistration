@@ -5,7 +5,7 @@ import registrationService from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import messageTemplateService from '#app/messageTemplate/message-template.service';
 import ApiError from '#utils/ApiError';
 
 class MessageController extends BaseController {

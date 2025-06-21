@@ -1,45 +1,40 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
 import managerController from './manager.controller.js';
-import managerService from './manager.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
-import express from 'express';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import managerService from '#app/manager/manager.service';
 
-const router = express.Router({ mergeParams: true });
+export class ManagerRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('manager', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return managerService.getManagerById(camp.id, id);
+    });
+  }
 
-router.param(
-  'managerId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const manager = await managerService.getManagerById(camp.id, id);
-    req.setModelOrFail('manager', manager);
-  }),
-);
+  protected defineRoutes() {
+    this.router.use(auth());
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(managerController, 'index'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(managerController, 'store'),
-);
-router.patch(
-  '/:managerId',
-  auth(),
-  guard(campManager),
-  controller(managerController, 'update'),
-);
-router.delete(
-  '/:managerId',
-  auth(),
-  guard(campManager),
-  controller(managerController, 'destroy'),
-);
-
-export default router;
+    this.router.get(
+      '/',
+      guard(campManager('camp.managers.view')),
+      controller(managerController, 'index'),
+    );
+    this.router.post(
+      '/',
+      guard(campManager('camp.managers.create')),
+      controller(managerController, 'store'),
+    );
+    this.router.patch(
+      '/:managerId',
+      guard(campManager('camp.managers.edit')),
+      controller(managerController, 'update'),
+    );
+    this.router.delete(
+      '/:managerId',
+      guard(campManager('camp.managers.delete')),
+      controller(managerController, 'destroy'),
+    );
+  }
+}

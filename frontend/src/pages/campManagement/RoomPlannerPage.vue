@@ -1,6 +1,6 @@
 <template>
   <page-state-handler
-    :error="error"
+    :error
     :prevent-leave="updateInProgress"
     padding
     class="column"
@@ -35,6 +35,9 @@
             :people="availablePeople"
             class="q-ma-sm"
             style="max-width: 500px; min-width: 275px"
+            :editable="can('camp.rooms.edit')"
+            :deletable="can('camp.rooms.delete')"
+            :assignable="can('camp.rooms.beds.edit')"
             @edit="editRoom(room)"
             @delete="deleteRoom(room.id)"
             @update="(position, val) => onBedUpdate(room, position, val)"
@@ -55,6 +58,7 @@
 
     <!-- Action buttons -->
     <q-page-sticky
+      v-if="can('camp.rooms.edit')"
       position="bottom-right"
       :offset="[18, 18]"
     >
@@ -100,6 +104,7 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
+import { usePermissions } from 'src/composables/permissions';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { formatPersonName } from 'src/utils/formatters';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
@@ -111,6 +116,7 @@ const apiService = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
 const registrationHelper = useRegistrationHelper();
+const { can } = usePermissions();
 
 const addLoading = ref(false);
 

@@ -1,51 +1,50 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import express from 'express';
 import templateController from './table-template.controller.js';
-import tableTemplateService from './table-template.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import tableTemplateService from '#app/tableTemplate/table-template.service';
 
-const router = express.Router({ mergeParams: true });
+export class TableTemplateRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('tableTemplate', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return tableTemplateService.getTemplateById(camp.id, id);
+    });
+  }
 
-router.param(
-  'templateId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const template = await tableTemplateService.getTemplateById(camp.id, id);
-    req.setModelOrFail('tableTemplate', template);
-  }),
-);
+  protected defineRoutes() {
+    this.router.use(auth());
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(templateController, 'index'),
-);
-router.get(
-  '/:templateId',
-  auth(),
-  guard(campManager),
-  controller(templateController, 'show'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(templateController, 'store'),
-);
-router.put(
-  '/:templateId',
-  auth(),
-  guard(campManager),
-  controller(templateController, 'update'),
-);
-router.delete(
-  '/:templateId',
-  auth(),
-  guard(campManager),
-  controller(templateController, 'destroy'),
-);
-
-export default router;
+    this.router.get(
+      '/',
+      auth(),
+      guard(campManager('camp.table_templates.view')),
+      controller(templateController, 'index'),
+    );
+    this.router.get(
+      '/:tableTemplateId',
+      auth(),
+      guard(campManager('camp.table_templates.view')),
+      controller(templateController, 'show'),
+    );
+    this.router.post(
+      '/',
+      auth(),
+      guard(campManager('camp.table_templates.create')),
+      controller(templateController, 'store'),
+    );
+    this.router.put(
+      '/:tableTemplateId',
+      auth(),
+      guard(campManager('camp.table_templates.edit')),
+      controller(templateController, 'update'),
+    );
+    this.router.delete(
+      '/:tableTemplateId',
+      auth(),
+      guard(campManager('camp.table_templates.delete')),
+      controller(templateController, 'destroy'),
+    );
+  }
+}

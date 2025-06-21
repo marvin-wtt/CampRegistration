@@ -47,7 +47,7 @@ const TableTemplateBodySchema = z.object({
 const show = z.object({
   params: z.object({
     campId: z.string().ulid(),
-    templateId: z.string().ulid(),
+    tableTemplateId: z.string().ulid(),
   }),
 });
 
@@ -67,7 +67,7 @@ const store = z.object({
 const update = z.object({
   params: z.object({
     campId: z.string().ulid(),
-    templateId: z.string().ulid(),
+    tableTemplateId: z.string().ulid(),
   }),
   body: TableTemplateBodySchema,
 });
@@ -75,7 +75,7 @@ const update = z.object({
 const destroy = z.object({
   params: z.object({
     campId: z.string().ulid(),
-    templateId: z.string().ulid(),
+    tableTemplateId: z.string().ulid(),
   }),
 });
 

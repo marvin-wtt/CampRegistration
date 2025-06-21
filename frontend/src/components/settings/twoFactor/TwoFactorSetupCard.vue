@@ -1,5 +1,5 @@
 <template>
-  <q-card>
+  <q-card flat>
     <q-form @submit="onSetup">
       <q-card-section class="text-h4">
         {{ t('title') }}

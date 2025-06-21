@@ -6,7 +6,7 @@ import {
 } from './registration.resource.js';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
-import registrationMessages from '#app/registration/registration.messages.js';
+import registrationMessages from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
 
 class RegistrationController extends BaseController {

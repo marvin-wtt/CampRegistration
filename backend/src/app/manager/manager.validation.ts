@@ -12,7 +12,7 @@ const store = z.object({
   }),
   body: z.object({
     email: z.string().email(),
-    role: z.string().optional(),
+    role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
     expiresAt: z.string().datetime().optional(),
   }),
 });
@@ -24,7 +24,7 @@ const update = z.object({
   }),
   body: z
     .object({
-      role: z.string(),
+      role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
       expiresAt: z.string().datetime().nullable(),
     })
     .partial(),

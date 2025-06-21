@@ -1,52 +1,46 @@
 import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import express from 'express';
 import messageController from './message.controller.js';
-import service from './message.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import messageService from '#app/message/message.service';
 
-const router = express.Router({ mergeParams: true });
+export class MessageRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('message', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return messageService.getMessageById(camp.id, id);
+    });
+  }
 
-router.param(
-  'messageId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const message = await service.getMessageById(camp.id, id);
-    req.setModelOrFail('message', message);
-  }),
-);
+  protected defineRoutes() {
+    this.router.use(auth());
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(messageController, 'index'),
-);
-router.get(
-  '/:messageId',
-  auth(),
-  guard(campManager),
-  controller(messageController, 'show'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  multipart({ name: 'attachments' }),
-  controller(messageController, 'store'),
-);
-router.post(
-  '/:messageId/resend',
-  auth(),
-  guard(campManager),
-  controller(messageController, 'resend'),
-);
-router.delete(
-  '/:messageId',
-  auth(),
-  guard(campManager),
-  controller(messageController, 'destroy'),
-);
-
-export default router;
+    this.router.get(
+      '/',
+      guard(campManager('camp.messages.view')),
+      controller(messageController, 'index'),
+    );
+    this.router.get(
+      '/:messageId',
+      guard(campManager('camp.messages.view')),
+      controller(messageController, 'show'),
+    );
+    this.router.post(
+      '/',
+      guard(campManager('camp.messages.create')),
+      multipart({ name: 'attachments' }),
+      controller(messageController, 'store'),
+    );
+    this.router.post(
+      '/:messageId/resend',
+      guard(campManager('camp.messages.create')),
+      controller(messageController, 'resend'),
+    );
+    this.router.delete(
+      '/:messageId',
+      guard(campManager('camp.messages.delete')),
+      controller(messageController, 'destroy'),
+    );
+  }
+}

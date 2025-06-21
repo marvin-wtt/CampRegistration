@@ -129,6 +129,7 @@ export class CampService extends BaseService {
       id: file.id ? fileIdMap.get(file.id) : undefined,
       // Override camp id
       campId: undefined,
+      createdAt: undefined,
     }));
 
     const messageTemplateData = messageTemplates.map((value) => ({
@@ -140,7 +141,12 @@ export class CampService extends BaseService {
       data: {
         ...data,
         form,
-        campManager: { create: { userId } },
+        campManager: {
+          create: {
+            userId,
+            role: 'DIRECTOR',
+          },
+        },
         tableTemplates: {
           createMany: { data: this.stripIds(tableTemplates) },
         },
@@ -163,14 +169,15 @@ export class CampService extends BaseService {
    * These fields are replaced by prisma during insertion.
    * @param data The create data
    */
-  private stripIds<T extends { id?: string; campId?: string }>(
+  private stripIds<T extends object>(
     data: T[],
-  ): (T & { id: undefined; campId: undefined })[] {
+  ): (T & { id: undefined; campId: undefined; createdAt: undefined })[] {
     return data.map((value) => ({
       ...value,
       // Override id and camp id
       id: undefined,
       campId: undefined,
+      createdAt: undefined,
     }));
   }
 

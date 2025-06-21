@@ -37,12 +37,12 @@ class TableTemplateController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      params: { templateId },
+      params: { tableTemplateId },
       body,
     } = await req.validate(validator.update);
 
     const template = await tableTemplateService.updateTemplateById(
-      templateId,
+      tableTemplateId,
       body,
     );
 
@@ -51,10 +51,10 @@ class TableTemplateController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const {
-      params: { templateId },
+      params: { tableTemplateId },
     } = await req.validate(validator.destroy);
 
-    await tableTemplateService.deleteTemplateById(templateId);
+    await tableTemplateService.deleteTemplateById(tableTemplateId);
 
     res.status(httpStatus.NO_CONTENT).send();
   }

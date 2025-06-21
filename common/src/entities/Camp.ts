@@ -29,7 +29,7 @@ export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
   'id' | 'freePlaces'
 > & {
-  referenceCampId?: string;
+  referenceCampId?: string | undefined;
 };
 
 export type CampUpdateData = Partial<CampCreateData>;

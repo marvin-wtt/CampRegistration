@@ -6,6 +6,8 @@
         @save="updateProfile"
       />
 
+      <q-separator inset />
+
       <email-settings-card
         :profile="user"
         @save="updateProfile"

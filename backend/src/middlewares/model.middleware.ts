@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError.js';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
 export const routeModel = <T>(model: T): NonNullable<T> => {

@@ -15,7 +15,10 @@
       >
         <slot :item="item" />
         <!-- Sorting arrows -->
-        <q-item-section side>
+        <q-item-section
+          v-if="props.sortable"
+          side
+        >
           <q-btn
             dense
             round
@@ -80,6 +83,7 @@ interface Props {
   addable?: boolean;
   editable?: boolean;
   deletable?: boolean;
+  sortable?: boolean;
 
   bordered?: boolean;
   dense?: boolean;
@@ -91,8 +95,8 @@ const props = withDefaults(defineProps<Props>(), {
   addable: false,
   editable: false,
   deletable: false,
-  idKey: 'id',
-  sortOrderKey: 'order',
+  sortable: true,
+  keyName: 'id',
 });
 
 const model = defineModel<T[]>({

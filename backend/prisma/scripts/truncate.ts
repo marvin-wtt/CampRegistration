@@ -1,26 +1,27 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PrismaPromise } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export async function main() {
-  await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 0;');
+  // https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries
+  const transactions: PrismaPromise<any>[] = [];
+  transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`);
 
-  console.log(`Start truncating all tables...`);
-
-  // 2. Truncate every table
   const tableNames = await prisma.$queryRaw<
     Array<{ TABLE_NAME: string }>
   >`SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = DATABASE();`;
 
   for (const { TABLE_NAME } of tableNames) {
-    console.log(`Truncating table: ${TABLE_NAME}`);
-    await prisma.$executeRawUnsafe(`TRUNCATE TABLE \`${TABLE_NAME}\`;`);
+    if (TABLE_NAME === '_prisma_migrations') {
+      continue;
+    }
+
+    transactions.push(prisma.$executeRawUnsafe(`TRUNCATE ${TABLE_NAME};`));
   }
 
-  // 3. Re-enable FK checks
-  await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 1;');
+  transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`);
 
-  console.log('All tables truncated.');
+  await prisma.$transaction(transactions);
 }
 
 main()

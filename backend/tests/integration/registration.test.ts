@@ -44,12 +44,14 @@ const mailer = NoOpMailer.prototype;
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
     campData: Partial<Prisma.CampCreateInput> = {},
+    role = 'DIRECTOR',
   ) => {
     const camp = await CampFactory.create(campData);
     const user = await UserFactory.create();
     const manager = await CampManagerFactory.create({
       camp: { connect: { id: camp.id } },
       user: { connect: { id: user.id } },
+      role,
     });
     const accessToken = generateAccessToken(user);
 
@@ -76,21 +78,36 @@ describe('/api/v1/camps/:campId/registrations', () => {
   };
 
   describe('GET /api/v1/camps/:campId/registrations/', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      await createRegistration(camp);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 200 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        await createRegistration(camp);
 
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}/registrations`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      expect(body).toHaveProperty('data');
-      expect(body.data).toHaveLength(1);
-      expect(body.data[0]).toHaveProperty('id');
-      expect(body.data[0]).toHaveProperty('room');
-    });
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveLength(1);
+
+        // Additional assertions for DIRECTOR role
+        if (role === 'DIRECTOR') {
+          expect(body.data[0]).toHaveProperty('id');
+          expect(body.data[0]).toHaveProperty('room');
+        }
+      },
+    );
 
     it('should not include deleted registrations', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
@@ -136,17 +153,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('GET /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await createRegistration(camp);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 200 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        const registration = await createRegistration(camp);
 
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      expect(body).toHaveProperty('data');
-    });
+        expect(body).toHaveProperty('data');
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -1137,20 +1165,29 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it.todo('should respond with `200` status code when user is camp manager');
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        const registration = await createRegistration(camp);
 
-    it('should respond with `200` status when waiting list is updated', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await createRegistration(camp);
-
-      await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
-        .send({
-          waitingList: false,
-        })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-    });
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            waitingList: false,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it.todo('should not overwrite camp data when updating waiting list');
 
@@ -1375,25 +1412,36 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('DELETE /api/v1/camps/:campId/registrations/:registrationId', () => {
-    it('should respond with `204` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      await createRegistration(camp);
-      const registration = await createRegistration(camp);
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 204, expectedCount: 1 },
+      { role: 'COORDINATOR', expectedStatus: 204, expectedCount: 1 },
+      { role: 'COUNSELOR', expectedStatus: 403, expectedCount: 2 },
+      { role: 'VIEWER', expectedStatus: 403, expectedCount: 2 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus, expectedCount }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          role,
+        );
+        await createRegistration(camp);
+        const registration = await createRegistration(camp);
 
-      await request()
-        .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(204);
+        await request()
+          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
 
-      const registrationCount = await prisma.registration.count({
-        where: {
-          campId: camp.id,
-          deletedAt: null,
-        },
-      });
-      expect(registrationCount).toBe(1);
-    });
+        const registrationCount = await prisma.registration.count({
+          where: {
+            campId: camp.id,
+            deletedAt: null,
+          },
+        });
+        expect(registrationCount).toBe(expectedCount);
+      },
+    );
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
@@ -1492,7 +1540,11 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/files/', () => {
       registration: { connect: { id: registration.id } },
     });
     const user = await UserFactory.create({
-      camps: { create: { campId: camp.id } },
+      campRoles: {
+        create: CampManagerFactory.build({
+          camp: { connect: { id: camp.id } },
+        }),
+      },
     });
 
     const accessToken = generateAccessToken(await UserFactory.create());

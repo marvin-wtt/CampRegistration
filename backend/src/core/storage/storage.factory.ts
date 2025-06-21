@@ -5,9 +5,7 @@ import type { Storage } from '#core/storage/storage';
 
 export class StorageFactory {
   create(name?: string): Storage {
-    if (name === undefined) {
-      name = config.storage.location;
-    }
+    name ??= config.storage.location;
 
     if (name === 'local') {
       return new DiskStorage(config.storage.uploadDir);

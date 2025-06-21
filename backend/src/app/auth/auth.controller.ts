@@ -79,7 +79,7 @@ class AuthController extends BaseController {
     } = await req.validate(validator.verifyOTP);
 
     const { userId } = tokenService.verifyTotpToken(token);
-    const user = await userService.getUserByIdWithCamps(userId);
+    const user = await userService.getUserByIdOrFail(userId);
     totpService.verifyTOTP(user, otp);
 
     await this.sendAuthResponse(res, userId, remember);
@@ -243,6 +243,19 @@ class AuthController extends BaseController {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
   };
+
+  getCsrfToken(req: Request, res: Response) {
+    if (!req.csrfToken) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to generate CSRF Token',
+      );
+    }
+
+    const csrfToken = req.csrfToken();
+
+    res.json({ csrfToken });
+  }
 }
 
 export default new AuthController();

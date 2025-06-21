@@ -25,6 +25,18 @@
             outlined
           />
 
+          <q-select
+            v-model="role"
+            :label="t('input.role.label')"
+            :options="roles"
+            map-options
+            emit-value
+            :rules="[(val?: string) => !!val || t('input.role.rule.required')]"
+            hide-bottom-space
+            rounded
+            outlined
+          />
+
           <q-checkbox
             v-if="expiresAt === null"
             v-model="expiresAt"
@@ -65,7 +77,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
@@ -75,18 +87,21 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-const { date } = defineProps<{
+const { date, roles } = defineProps<{
   date: string;
+  roles: QSelectOption[];
 }>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref<string>('');
 const expiresAt = ref<string | null>(null);
+const role = ref<string>('');
 
 function onInvite() {
   const data: CampManagerCreateData = {
     email: email.value,
     expiresAt: expiresAt.value ?? undefined,
+    role: role.value,
   };
 
   onDialogOK(data);
@@ -103,6 +118,10 @@ input:
     label: 'Email'
     rule:
       required: 'The email is required'
+  role:
+    label: 'Role'
+    rule:
+      required: 'The role is required'
   expiresAt: 'Expiration Date'
   showExpiresAt: 'Set access expiration'
 
@@ -119,8 +138,12 @@ input:
     label: 'E-Mail'
     rule:
       required: 'Die E-Mail ist erforderlich'
+  role:
+    label: 'Rolle'
+    rule:
+      required: 'Die Rolle ist erforderlich'
   expiresAt: 'Ablaufdatum'
-  showExpiresAt: 'Zugriffsbeschränkung festlegen'
+  showExpiresAt: 'Zugriffsablauf festlegen'
 
 action:
   invite: 'Einladen'
@@ -128,15 +151,19 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: "Accorder l'accès"
+title: 'Accorder l’accès'
 
 input:
   email:
     label: 'E-Mail'
     rule:
-      required: "L'e-mail est obligatoire"
-  expiresAt: "Date d'expiration"
-  showExpiresAt: "Définir une expiration de l'accès"
+      required: 'L’e-mail est requis'
+  role:
+    label: 'Rôle'
+    rule:
+      required: 'Le rôle est requis'
+  expiresAt: 'Date d’expiration'
+  showExpiresAt: 'Définir la date d’expiration de l’accès'
 
 action:
   invite: 'Inviter'
