@@ -1,4 +1,4 @@
-import { validateEnv } from '#core/validation/env.js';
+import { validateEnv } from '#core/validation/env';
 import dotenv from 'dotenv';
 dotenv.config();
 

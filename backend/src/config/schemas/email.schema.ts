@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BooleanStringSchema } from '#core/validation/helper.js';
+import { BooleanStringSchema } from '#core/validation/helper';
 
 export const EmailEnvSchema = z.object({
   SMTP_HOST: z.string().describe('Server that will send the emails'),

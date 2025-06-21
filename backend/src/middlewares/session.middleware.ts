@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, CookieOptions } from 'express';
 import { randomBytes } from 'node:crypto';
-import config from '#config/index.js';
+import config from '#config/index';
 
 declare module 'express-serve-static-core' {
   interface Request {

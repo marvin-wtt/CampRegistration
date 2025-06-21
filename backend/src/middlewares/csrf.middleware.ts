@@ -1,5 +1,5 @@
 import { doubleCsrf } from 'csrf-csrf';
-import config from '#config/index.js';
+import config from '#config/index';
 
 const secure = config.env !== 'development';
 

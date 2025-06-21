@@ -1,34 +1,46 @@
-import express from 'express';
 import { auth, authLimiter, guest } from '#middlewares/index';
 import authController from './auth.controller.js';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
 
-const router = express.Router();
+export class AuthRouter extends ModuleRouter {
+  protected registerBindings() {
+    // No model bindings needed for auth routes
+  }
 
-// Limit number of requests
-router.use(authLimiter);
+  protected defineRoutes() {
+    this.router.use(authLimiter);
 
-// Route definitions
-router.post('/register', guest(), controller(authController, 'register'));
-router.post('/login', controller(authController, 'login'));
-router.post('/verify-otp', controller(authController, 'verifyOTP'));
-router.post('/logout', auth(), controller(authController, 'logout'));
-router.post('/refresh-tokens', controller(authController, 'refreshTokens'));
-router.post(
-  '/forgot-password',
-  guest(),
-  controller(authController, 'forgotPassword'),
-);
-router.post(
-  '/reset-password',
-  guest(),
-  controller(authController, 'resetPassword'),
-);
-router.post(
-  '/send-verification-email',
-  controller(authController, 'sendVerificationEmail'),
-);
-router.post('/verify-email', controller(authController, 'verifyEmail'));
-router.get('/csrf-token', controller(authController, 'getCsrfToken'));
-
-export default router;
+    this.router.post(
+      '/register',
+      guest(),
+      controller(authController, 'register'),
+    );
+    this.router.post('/login', controller(authController, 'login'));
+    this.router.post('/verify-otp', controller(authController, 'verifyOTP'));
+    this.router.post('/logout', auth(), controller(authController, 'logout'));
+    this.router.post(
+      '/refresh-tokens',
+      controller(authController, 'refreshTokens'),
+    );
+    this.router.post(
+      '/forgot-password',
+      guest(),
+      controller(authController, 'forgotPassword'),
+    );
+    this.router.post(
+      '/reset-password',
+      guest(),
+      controller(authController, 'resetPassword'),
+    );
+    this.router.post(
+      '/send-verification-email',
+      controller(authController, 'sendVerificationEmail'),
+    );
+    this.router.post(
+      '/verify-email',
+      controller(authController, 'verifyEmail'),
+    );
+    this.router.get('/csrf-token', controller(authController, 'getCsrfToken'));
+  }
+}

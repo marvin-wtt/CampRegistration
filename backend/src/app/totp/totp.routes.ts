@@ -1,15 +1,20 @@
-import express from 'express';
 import { auth } from '#middlewares/auth.middleware';
 import totpController from './totp.controller.js';
 import { authLimiter } from '#middlewares/index';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
 
-const router = express.Router({ mergeParams: true });
+export class TotpRouter extends ModuleRouter {
+  protected registerBindings() {
+    // No model bindings needed for TOTP routes
+  }
 
-router.use(authLimiter);
+  protected defineRoutes() {
+    this.router.use(authLimiter);
+    this.router.use(auth());
 
-router.post('/setup', auth(), controller(totpController, 'setup'));
-router.post('/enable', auth(), controller(totpController, 'enable'));
-router.post('/disable', auth(), controller(totpController, 'disable'));
-
-export default router;
+    this.router.post('/setup', controller(totpController, 'setup'));
+    this.router.post('/enable', controller(totpController, 'enable'));
+    this.router.post('/disable', controller(totpController, 'disable'));
+  }
+}

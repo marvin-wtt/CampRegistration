@@ -1,5 +1,5 @@
 <template>
-  <q-card>
+  <q-card flat>
     <q-form
       @submit="onSave"
       @reset="onReset"
@@ -54,14 +54,13 @@
           :label="t('action.save')"
           type="submit"
           color="primary"
-          outlined
           rounded
         />
         <q-btn
           :label="t('action.reset')"
           type="reset"
           :disable="isModified"
-          outlined
+          outline
           rounded
         />
       </q-card-actions>

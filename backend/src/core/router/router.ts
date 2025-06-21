@@ -5,6 +5,7 @@ import express, {
 } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
+import type { AppRouter } from '#core/base/AppModule';
 
 type Models = Request['models'];
 type ModelKeys = keyof Models;
@@ -29,8 +30,11 @@ export function createRouter(
   options: RouterOptions = {
     mergeParams: true,
   },
-): Router {
-  const router = express.Router(options);
+): AppRouter {
+  const router = express.Router(options) as AppRouter;
+  router.useRouter = (path, moduleRouter) => {
+    router.use(path, moduleRouter.router);
+  };
 
   Object.keys(handlers).forEach((model) => {
     applyBinding(router, model as ModelKeys);

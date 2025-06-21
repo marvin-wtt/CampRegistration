@@ -8,7 +8,7 @@ import {
   type MessageTemplateDefault,
   MessageTemplateDefaultResource,
   MessageTemplateResource,
-} from '#app/messageTemplate/message-template.resource.js';
+} from '#app/messageTemplate/message-template.resource';
 import { BaseController } from '#core/base/BaseController';
 import defaultTemplates from '#assets/camp/messageTemplates';
 

@@ -51,15 +51,34 @@ export async function boot(app: Express) {
   await configureModules(modules, app);
 
   registerModulePermissions(modules);
+
+  registerModuleRoutes(modules, app);
 }
 
 async function configureModules(modules: AppModule[], app: Express) {
-  // Create router for /api/v1 routes
   for (const module of modules) {
-    await module.configure({ app, router: apiRouter });
+    if (!module.configure) {
+      continue;
+    }
+
+    await module.configure({ app });
+  }
+}
+
+function registerModuleRoutes(modules: AppModule[], app: Express) {
+  // Create a new router that has the useRouter method
+  const router = apiRouter;
+
+  // Create a router for /api/v1 routes
+  for (const module of modules) {
+    if (!module.registerRoutes) {
+      continue;
+    }
+
+    module.registerRoutes(router);
   }
 
-  app.use('/api/v1', apiRouter);
+  app.use('/api/v1', router);
 
   // send back a 404 error for any unknown api request
   app.use('/api', (_req, _res, next) => {

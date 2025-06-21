@@ -1,14 +1,8 @@
-import type { AppModule, ModuleOptions } from '#core/base/AppModule';
-import userRoutes from '#app/user/user.routes';
-import userService from '#app/user/user.service';
-import { registerRouteModelBinding } from '#core/router';
+import type { AppModule, AppRouter } from '#core/base/AppModule';
+import { UserRouter } from '#app/user/user.routes';
 
 export class UserModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('user', (_req, id) =>
-      userService.getUserById(id),
-    );
-
-    router.use('/users', userRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/users', new UserRouter());
   }
 }

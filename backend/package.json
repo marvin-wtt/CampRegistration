@@ -25,10 +25,11 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,md,json}\" --ignore-path .gitignore",
-    "dev": "npm run dev:views && npm run dev:serve",
+    "dev": "npm run dev:views && npm run dev:serve & npm run dev:mail",
     "dev:views": "mjml src/views/emails/**/*.mjml -o ./src/views/emails/",
     "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
-    "production": "NODE_ENV=production node build/entry.cjs"
+    "dev:mail": "maildev --web 8081 --smtp 1025",
+    "production": "cross-env NODE_ENV=production node build/entry.cjs"
   },
   "prisma": {
     "seed": "tsx prisma/seeders/index.ts"
@@ -121,6 +122,7 @@
     "eslint": "^9.26.0",
     "eslint-plugin-security": "^3.0.1",
     "html-entities": "^2.6.0",
+    "maildev": "^2.2.1",
     "mjml": "^5.0.0-alpha.4",
     "mkdirp": "^3.0.1",
     "nodemailer-mock": "^2.0.8",

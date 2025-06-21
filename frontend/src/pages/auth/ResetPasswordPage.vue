@@ -9,6 +9,7 @@
     >
       <q-form
         class="fit column justify-center no-wrap"
+        data-test="reset-password-form"
         @submit="resetPassword"
       >
         <!-- Title -->
@@ -17,10 +18,8 @@
         </q-card-section>
 
         <!-- Description -->
-        <q-card-section>
-          <p class="text-subtitle1 text-center">
-            {{ t('description') }}
-          </p>
+        <q-card-section class="text-subtitle1 text-center">
+          {{ t('description') }}
         </q-card-section>
 
         <!-- Avatar -->
@@ -43,6 +42,7 @@
               (val?: string) => !!val || t('field.password.rules.required'),
             ]"
             hide-bottom-space
+            data-test="password"
             outlined
             rounded
           >
@@ -62,6 +62,7 @@
                 val === password || t('field.confirm-password.rule.identical'),
             ]"
             hide-bottom-space
+            data-test="confirm-password"
             outlined
             rounded
           >
@@ -79,6 +80,7 @@
             color="primary"
             size="lg"
             class="full-width"
+            data-test="submit"
             rounded
           />
         </q-card-actions>
@@ -86,6 +88,7 @@
         <q-card-section
           v-if="error"
           class="text-negative text-center text-bold"
+          data-test="error"
         >
           {{ error }}
         </q-card-section>
