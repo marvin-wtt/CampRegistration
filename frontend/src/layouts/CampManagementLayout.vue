@@ -19,9 +19,7 @@
           />
           <router-link
             v-else
-            :to="{
-              name: 'management',
-            }"
+            :to="{ name: 'management' }"
             style="text-decoration: none; color: inherit"
           >
             {{ to(title) }}
@@ -59,12 +57,20 @@
       @mouseenter="miniState = false"
     >
       <q-list padding>
-        <q-item>
-          <q-item-section
-            v-if="miniState && floatingDrawer"
-            avatar
-          >
-            <q-icon name="home" />
+        <q-item
+          clickable
+          v-ripple
+          @click="navigateHome"
+        >
+          <q-item-section avatar>
+            <q-icon
+              v-if="miniState && floatingDrawer"
+              name="home"
+            />
+            <q-icon
+              v-else
+              name="arrow_back"
+            />
           </q-item-section>
           <q-item-section>
             {{ campName }}
@@ -126,7 +132,7 @@ import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -137,6 +143,7 @@ import { usePermissions } from 'src/composables/permissions';
 
 const quasar = useQuasar();
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { can } = usePermissions();
@@ -283,6 +290,10 @@ function toggleDrawer() {
   } else {
     floatingDrawer.value = !floatingDrawer.value;
   }
+}
+
+function navigateHome() {
+  router.push({ name: 'management' });
 }
 
 function logout() {
