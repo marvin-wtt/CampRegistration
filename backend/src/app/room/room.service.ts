@@ -34,11 +34,16 @@ export class RoomService extends BaseService {
     });
   }
 
-  async updateRoomById(roomId: string, name?: string | Record<string, string>) {
+  async updateRoomById(
+    roomId: string,
+    name?: string | Record<string, string>,
+    sortOrder?: number,
+  ) {
     return this.prisma.room.update({
       where: { id: roomId },
       data: {
         name,
+        sortOrder,
       },
       include: { beds: true },
     });

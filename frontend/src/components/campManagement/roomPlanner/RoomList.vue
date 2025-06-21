@@ -2,17 +2,17 @@
   <q-list
     bordered
     padding
-    :dense="props.dense"
+    :dense
   >
     <q-item dense>
       <q-item-section>
         <q-item-label>
-          {{ to(props.name) }}
+          {{ to(name) }}
         </q-item-label>
       </q-item-section>
 
       <q-item-section
-        v-if="props.editable || props.deletable"
+        v-if="editable || deletable"
         side
       >
         <q-btn
@@ -28,7 +28,7 @@
             <q-list style="min-width: 100px">
               <!-- Edit -->
               <q-item
-                v-if="props.editable"
+                v-if="editable"
                 v-close-popup
                 clickable
                 @click="editRoom"
@@ -39,7 +39,7 @@
               </q-item>
               <!-- Delete -->
               <q-item
-                v-if="props.deletable"
+                v-if="deletable"
                 v-close-popup
                 clickable
                 @click="deleteRoom"
@@ -55,14 +55,14 @@
     </q-item>
 
     <room-list-item
-      v-for="(_, index) in room.beds"
+      v-for="(_, index) in model.beds"
       :key="index"
-      v-model="room.beds[index]!.person"
+      v-model="model.beds[index]!.person"
       :options
-      :assignable="props.assignable"
+      :assignable
       :position="index + 1"
-      :dense="props.dense"
-      @update="(roommate) => onBedUpdate(index, roommate)"
+      :dense
+      @update:model-value="(roommate) => onBedUpdate(index, roommate)"
     />
   </q-list>
 </template>
@@ -77,46 +77,46 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
-interface Props {
+const model = defineModel<RoomWithRoommates>({
+  required: true,
+});
+
+const {
+  name,
+  people,
+  dense = false,
+  editable = false,
+  deletable = false,
+  assignable = false,
+} = defineProps<{
   name: string | Record<string, string>;
-  modelValue: RoomWithRoommates;
   people: Roommate[];
   dense?: boolean;
   editable?: boolean;
   deletable?: boolean;
   assignable?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  dense: false,
-});
+}>();
 
 const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'edit'): void;
   (e: 'update', position: number, roommate: Roommate | null): void;
-  (e: 'update:modelValue', value: RoomWithRoommates): void;
 }>();
-
-const room = computed<RoomWithRoommates>({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-});
 
 const roomGender = computed<string | undefined>(() => {
   // Assume gender by first person in room
-  return room.value.beds
+  return model.value.beds
     .map((bed) => bed.person?.gender)
     .find((gender) => !!gender);
 });
 
 const isParticipantRoom = computed<boolean | undefined>(() => {
   // Exclude all beds free
-  if (room.value.beds.filter((value) => !!value.person).length === 0) {
+  if (model.value.beds.filter((value) => !!value.person).length === 0) {
     return undefined;
   }
 
-  return room.value.beds.some((bed) => {
+  return model.value.beds.some((bed) => {
     const person = bed.person;
 
     return person?.participant;
@@ -145,7 +145,7 @@ const options = computed<Roommate[]>(() => {
     );
   };
 
-  return props.people.filter(genderFilter).filter(roleFilter);
+  return people.filter(genderFilter).filter(roleFilter);
 });
 
 function onBedUpdate(position: number, roomMate: Roommate | null) {
