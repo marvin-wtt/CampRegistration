@@ -15,7 +15,6 @@ export class MessageRouter extends ModuleRouter {
 
   protected defineRoutes() {
     this.router.use(auth());
-    this.router.use();
 
     this.router.get(
       '/',
