@@ -6,7 +6,7 @@ import type { AuthTokensResponse, TokenResponse } from '#types/response';
 import {
   ProfileResource,
   type UserWithCamps,
-} from '#app/profile/profile.resource.js';
+} from '#app/profile/profile.resource';
 
 interface AuthWithData {
   user: UserWithCamps;

@@ -1,21 +1,17 @@
 import type {
   AppModule,
-  ModuleOptions,
+  AppRouter,
   RoleToPermissions,
 } from '#core/base/AppModule';
-import messageTemplateRoutes from '#app/messageTemplate/message-template.routes';
-import { registerRouteModelBinding } from '#core/router';
-import service from '#app/messageTemplate/message-template.service';
+import { MessageTemplateRouter } from '#app/messageTemplate/message-template.routes';
 import type { MessageTemplatePermission } from '@camp-registration/common/permissions';
 
 export class MessageTemplateModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('messageTemplate', (req, id) => {
-      const camp = req.modelOrFail('camp');
-      return service.getMessageTemplateById(camp.id, id);
-    });
-
-    router.use('/camps/:campId/message-templates', messageTemplateRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter(
+      '/camps/:campId/message-templates',
+      new MessageTemplateRouter(),
+    );
   }
 
   registerPermissions(): RoleToPermissions<MessageTemplatePermission> {

@@ -1,21 +1,14 @@
 import type {
   AppModule,
-  ModuleOptions,
+  AppRouter,
   RoleToPermissions,
 } from '#core/base/AppModule';
-import bedRoutes from '#app/bed/bed.routes';
-import bedService from '#app/bed/bed.service';
-import { registerRouteModelBinding } from '#core/router';
+import { BedRouter } from '#app/bed/bed.routes';
 import type { BedPermission } from '@camp-registration/common/permissions';
 
 export class BedModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('bed', (req, id) => {
-      const room = req.modelOrFail('room');
-      return bedService.getBedById(id, room.id);
-    });
-
-    router.use('/camps/:campId/rooms/:roomId/beds', bedRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/camps/:campId/rooms/:roomId/beds', new BedRouter());
   }
 
   registerPermissions(): RoleToPermissions<BedPermission> {

@@ -1,23 +1,17 @@
 import type {
   AppModule,
-  ModuleOptions,
+  AppRouter,
   RoleToPermissions,
 } from '#core/base/AppModule';
-import campRoutes from '#app/camp/camp.routes';
-import { registerRouteModelBinding } from '#core/router';
-import campService from '#app/camp/camp.service';
 import type {
   CampPermission,
   FilePermission,
 } from '@camp-registration/common/permissions';
+import CampRouter from '#app/camp/camp.routes';
 
 export class CampModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('camp', (_req, id) =>
-      campService.getCampById(id),
-    );
-
-    router.use('/camps', campRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/camps', new CampRouter());
   }
 
   registerPermissions(): RoleToPermissions<CampPermission | FilePermission> {

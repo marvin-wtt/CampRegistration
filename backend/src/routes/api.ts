@@ -2,27 +2,28 @@ import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import morgan from '#core/morgan';
 import extensions from '#middlewares/extension.middleware';
-import { createRouter } from '#core/router';
+import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
 import { sessionId } from '#middlewares/session.middleware';
 
-const router = createRouter();
+const router = createRouter()
+  // logging
+  .use(morgan.successHandler)
 
-router.use(morgan.successHandler);
+  // global rate‐limit & maintenance‐mode
+  .use(maintenance)
+  .use(generalLimiter)
 
-router.use(generalLimiter);
-router.use(maintenance);
+  // session management
+  .use(sessionId)
 
-// Custom methods
-router.use(extensions);
+  // custom request‐extensions
+  .use(extensions)
 
-// Session id
-router.use(sessionId);
+  // authentication
+  .use(passport.authenticate(['jwt', 'anonymous'], { session: false }))
 
-// Authentication
-router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
-
-// CSRF protection
-router.use(csrfProtection);
+  // csrf protection
+  .use(csrfProtection);
 
 export default router;

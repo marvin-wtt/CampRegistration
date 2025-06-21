@@ -3,10 +3,14 @@ import type {
   ManagerRole,
   Permission,
 } from '@camp-registration/common/permissions';
+import type { ModuleRouter } from '#core/router/ModuleRouter';
+
+export type AppRouter = Router & {
+  useRouter: (path: string, router: ModuleRouter) => void;
+};
 
 export interface ModuleOptions {
   app: Express;
-  router: Router;
 }
 
 export type RoleToPermissions<T extends Permission> = Partial<
@@ -14,7 +18,9 @@ export type RoleToPermissions<T extends Permission> = Partial<
 >;
 
 export interface AppModule {
-  configure(options: ModuleOptions): Promise<void> | void;
+  configure?(options: ModuleOptions): Promise<void> | void;
+
+  registerRoutes?(router?: Router): void;
 
   registerPermissions?(): RoleToPermissions<Permission>;
 }

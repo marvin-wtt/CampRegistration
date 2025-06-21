@@ -1,8 +1,8 @@
-import type { AppModule, ModuleOptions } from '#core/base/AppModule';
-import profileRoutes from '#app/profile/profile.routes';
+import type { AppModule, AppRouter } from '#core/base/AppModule';
+import { ProfileRouter } from '#app/profile/profile.routes';
 
 export class ProfileModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/profile', profileRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/profile', new ProfileRouter());
   }
 }
