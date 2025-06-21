@@ -1,8 +1,8 @@
-import type { AppModule, ModuleOptions } from '#core/base/AppModule';
-import totpRoutes from '#app/totp/totp.routes';
+import type { AppModule, AppRouter } from '#core/base/AppModule';
+import { TotpRouter } from '#app/totp/totp.routes';
 
 export class TotpModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/totp', totpRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/totp', new TotpRouter());
   }
 }

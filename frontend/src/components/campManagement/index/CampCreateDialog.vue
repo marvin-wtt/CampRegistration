@@ -1,9 +1,20 @@
 <template>
   <q-dialog
     ref="dialogRef"
+    persistent
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin q-pb-none">
+      <q-btn
+        icon="close"
+        class="absolute-top-right z-top"
+        style="margin: 8px"
+        flat
+        dense
+        round
+        @click="onDialogHide"
+      />
+
       <q-stepper
         v-model="step"
         vertical
@@ -66,8 +77,18 @@
           :title="t('step.template')"
           icon="settings"
         >
+          <q-toggle
+            v-model="isUsingTemplate"
+            :label="t('field.use_template')"
+            :disable="
+              data.referenceCampId != null || referenceCampOptions.length === 0
+            "
+            color="primary"
+          />
+
           <!-- Template -->
           <q-select
+            v-if="isUsingTemplate || data.referenceCampId"
             v-model="data.referenceCampId"
             :label="t('field.template.label')"
             :options="referenceCampOptions"
@@ -76,6 +97,7 @@
             rounded
             emit-value
             map-options
+            @clear="data.referenceCampId = undefined"
           >
             <template #before>
               <q-icon name="content_copy" />
@@ -359,6 +381,8 @@ const data = ref<CampCreateData>({} as CampCreateData);
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
+const isUsingTemplate = ref<boolean>(false);
+
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
   const camps = profileStore.user?.camps
@@ -403,6 +427,7 @@ step:
 field:
   countries: 'Countries'
   name: 'Camp name'
+  use_template: 'Use another camp as a template'
   template:
     label: 'Template'
     options:
@@ -469,6 +494,7 @@ step:
 field:
   countries: 'Länder'
   name: 'Camp Name'
+  use_template: 'Ein anderes Camp als Vorlage verwenden'
   template:
     label: 'Vorlage'
     options:
@@ -535,6 +561,7 @@ step:
 field:
   countries: 'Pays'
   name: 'Nom du camp'
+  use_template: 'Utiliser un autre camp comme modèle'
   template:
     label: 'Modèle'
     options:

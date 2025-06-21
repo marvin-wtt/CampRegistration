@@ -3,6 +3,8 @@
     <template v-if="user">
       <export-data-settings-card @export="exportData" />
 
+      <q-separator inset />
+
       <delete-account-settings-card @delete="deleteProfile" />
     </template>
 

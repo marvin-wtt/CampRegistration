@@ -1,4 +1,3 @@
-import prisma from '#client.js';
 import { BaseService } from '#core/base/BaseService';
 import type { Prisma } from '@prisma/client';
 
@@ -14,7 +13,7 @@ type ManagerUpdateData = Pick<
 
 export class ManagerService extends BaseService {
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {
-    return prisma.campManager
+    return this.prisma.campManager
       .findFirst({
         where: {
           campId,
@@ -25,7 +24,7 @@ export class ManagerService extends BaseService {
   }
 
   async getManagers(campId: string) {
-    return prisma.campManager.findMany({
+    return this.prisma.campManager.findMany({
       where: { campId },
       include: {
         invitation: true,
@@ -35,19 +34,19 @@ export class ManagerService extends BaseService {
   }
 
   async getManagerById(campId: string, id: string) {
-    return prisma.campManager.findFirst({
+    return this.prisma.campManager.findFirst({
       where: { id, campId },
     });
   }
 
   async getManagerByUserId(campId: string, userId: string) {
-    return prisma.campManager.findFirst({
+    return this.prisma.campManager.findFirst({
       where: { userId, campId },
     });
   }
 
   async getManagerByEmail(campId: string, email: string) {
-    return prisma.campManager.findFirst({
+    return this.prisma.campManager.findFirst({
       where: {
         campId,
         OR: [{ user: { email } }, { invitation: { email } }],
@@ -56,7 +55,7 @@ export class ManagerService extends BaseService {
   }
 
   async resolveManagerInvitations(email: string, userId: string) {
-    await prisma.campManager.updateMany({
+    await this.prisma.campManager.updateMany({
       where: {
         invitation: {
           email,
@@ -67,7 +66,7 @@ export class ManagerService extends BaseService {
       },
     });
 
-    await prisma.invitation.deleteMany({
+    await this.prisma.invitation.deleteMany({
       where: {
         email,
       },
@@ -75,7 +74,7 @@ export class ManagerService extends BaseService {
   }
 
   async addManager(campId: string, userId: string, data: ManagerCreateData) {
-    return prisma.campManager.create({
+    return this.prisma.campManager.create({
       data: {
         campId,
         userId,
@@ -90,7 +89,7 @@ export class ManagerService extends BaseService {
   }
 
   async inviteManager(campId: string, email: string, data: ManagerCreateData) {
-    return prisma.campManager.create({
+    return this.prisma.campManager.create({
       data: {
         camp: { connect: { id: campId } },
         role: data.role,
@@ -109,7 +108,7 @@ export class ManagerService extends BaseService {
   }
 
   async updateManagerById(id: string, data: ManagerUpdateData) {
-    return prisma.campManager.update({
+    return this.prisma.campManager.update({
       where: {
         id,
       },
@@ -125,7 +124,7 @@ export class ManagerService extends BaseService {
   }
 
   async removeManager(id: string) {
-    return prisma.campManager.delete({
+    return this.prisma.campManager.delete({
       where: { id },
     });
   }

@@ -2,6 +2,8 @@ export default {
   email: {
     resetPassword: {
       subject: 'Passwort zurücksetzen',
+      preview:
+        'Setzen Sie jetzt Ihr Passwort zurück, um wieder Zugriff zu erhalten.',
       text: {
         title: 'Hallo,',
         information:
@@ -20,6 +22,7 @@ export default {
 
     verifyEmail: {
       subject: 'Bestätigen Sie Ihre E-Mail',
+      preview: 'Bestätigen Sie Ihre E-Mail, um Ihr Konto freizuschalten.',
       text: {
         title: 'Hallo,',
         information:

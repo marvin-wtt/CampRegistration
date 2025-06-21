@@ -24,7 +24,7 @@
       <mj-column vertical-align="middle" width="100%">
         <mj-text mj-class="big-text">{{{t 'auth:email.verifyEmail.text.title' }}}</mj-text>
         <mj-text mj-class="text">{{{t 'auth:email.verifyEmail.text.information' }}}</mj-text>
-        <mj-button mj-class="btn" color="#ffffff" background-color="#338d8e" href="{{ url }}">{{{t 'auth:email.verifyEmail.text.button' }}}</mj-button>
+        <mj-button mj-class="btn" color="#ffffff" background-color="#338d8e" href="{{ url }}" css-class="confirm-email-link">{{{t 'auth:email.verifyEmail.text.button' }}}</mj-button>
         <mj-text mj-class="text">{{{t 'auth:email.verifyEmail.text.accidental' }}}</mj-text>
         <mj-text mj-class="text">
           {{{t 'auth:email.verifyEmail.text.greeting' }}} <br>

@@ -1,15 +1,13 @@
 import type {
   AppModule,
-  ModuleOptions,
+  AppRouter,
   RoleToPermissions,
 } from '#core/base/AppModule';
-import campRoutes from '#app/camp/camp.routes';
-import { registerRouteModelBinding } from '#core/router';
-import campService from '#app/camp/camp.service';
 import type {
   CampPermission,
   FilePermission,
 } from '@camp-registration/common/permissions';
+import CampRouter from '#app/camp/camp.routes';
 import { registerFileGuard } from '#app/file/file.guard';
 import { and, campActive, campManager, or, type GuardFn } from '#guards/index';
 import type { Request } from 'express';
@@ -17,14 +15,12 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
 export class CampModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('camp', (_req, id) =>
-      campService.getCampById(id),
-    );
-
+  configure(): Promise<void> | void {
     registerFileGuard('camp', this.campFileGuard);
+  }
 
-    router.use('/camps', campRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/camps', new CampRouter());
   }
 
   private campFileGuard = async (req: Request): Promise<GuardFn> => {

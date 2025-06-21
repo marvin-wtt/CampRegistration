@@ -8,7 +8,16 @@
   </q-layout>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { useAuthStore } from 'stores/auth-store';
+import { onBeforeMount } from 'vue';
+
+const authStore = useAuthStore();
+
+onBeforeMount(async () => {
+  await authStore.init();
+});
+</script>
 
 <style scoped>
 @keyframes gradient {

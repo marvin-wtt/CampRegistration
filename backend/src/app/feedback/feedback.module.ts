@@ -1,8 +1,8 @@
-import type { AppModule, ModuleOptions } from '#core/base/AppModule';
-import feedbackRoutes from '#app/feedback/feedback.routes';
+import type { AppModule, AppRouter } from '#core/base/AppModule';
+import { FeedbackRouter } from '#app/feedback/feedback.routes';
 
 export class FeedbackModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    router.use('/feedback', feedbackRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/feedback', new FeedbackRouter());
   }
 }

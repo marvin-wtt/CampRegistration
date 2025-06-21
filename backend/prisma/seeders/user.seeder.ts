@@ -1,5 +1,4 @@
 import { UserFactory } from '../factories';
-
 import { BaseSeeder } from './BaseSeeder';
 
 class UserSeeder extends BaseSeeder {
@@ -22,6 +21,8 @@ class UserSeeder extends BaseSeeder {
       email: 'admin@email.com',
       password: 'admin-password',
       emailVerified: true,
+      twoFactorEnabled: true,
+      totpSecret: 'JBSWY3DPEHPK3PXP',
       role: 'ADMIN',
     });
   }

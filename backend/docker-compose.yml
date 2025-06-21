@@ -2,7 +2,7 @@ version: '3.8'
 services:
   db:
     image: mariadb:10.5.27
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: 'database'
       MYSQL_USER: 'user'

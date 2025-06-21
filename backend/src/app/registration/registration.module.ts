@@ -1,30 +1,21 @@
 import type {
   AppModule,
-  ModuleOptions,
+  AppRouter,
   RoleToPermissions,
 } from '#core/base/AppModule';
-import registrationRoutes from '#app/registration/registration.routes';
-import registrationService from '#app/registration/registration.service';
-import { registerRouteModelBinding } from '#core/router';
-import type { RegistrationPermission } from '@camp-registration/common/permissions';
-import { registerFileGuard } from '#app/file/file.guard';
-import { campManager, type GuardFn } from '#guards/index';
-import type { Request } from 'express';
+import { RegistrationRouter } from '#app/registration/registration.routes';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import campService from '#app/camp/camp.service.js';
+import type { RegistrationPermission } from '@camp-registration/common/permissions';
+import { registerFileGuard } from '#app/file/file.guard';
 
 export class RegistrationModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('registration', (req, id) => {
-      const camp = req.modelOrFail('camp');
-      return registrationService.getRegistrationById(camp.id, id);
-    });
-
-    // Register the registration file guard
+  configure(): Promise<void> | void {
     registerFileGuard('registration', this.registrationFileGuard);
+  }
 
-    router.use('/camps/:campId/registrations', registrationRoutes);
+  registerRoutes(router: AppRouter): void {
+    router.useRouter('/camps/:campId/registrations', new RegistrationRouter());
   }
 
   private registrationFileGuard = async (req: Request): Promise<GuardFn> => {

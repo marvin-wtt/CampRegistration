@@ -2,6 +2,8 @@
   <div class="q-gutter-md q-pa-md">
     <password-settings-card @save="updateProfile" />
 
+    <q-separator inset />
+
     <two-factor-disable-card
       v-if="enabled"
       :loading

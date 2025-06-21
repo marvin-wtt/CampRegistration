@@ -3,7 +3,8 @@ export default {
     error: 'Failed to logout',
   },
   'forgot-password': {
-    error: "We couldn't find an account with that email. Please try again.",
+    error:
+      'Something went wrong while trying to reset your password. Please try again.',
     success: 'Check your email for the password reset link.',
   },
   'reset-password': {

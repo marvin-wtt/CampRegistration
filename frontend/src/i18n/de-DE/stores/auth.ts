@@ -4,7 +4,7 @@ export default {
   },
   'forgot-password': {
     error:
-      'Wir konnten kein Konto mit dieser E-Mail-Adresse finden. Bitte versuchen Sie es erneut.',
+      'Beim Zurücksetzen Ihres Passworts ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.',
     success:
       'Überprüfen Sie Ihre E-Mails auf den Link zum Zurücksetzen des Passworts.',
   },

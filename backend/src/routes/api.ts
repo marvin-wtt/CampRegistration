@@ -2,29 +2,32 @@ import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import morgan from '#core/morgan';
 import extensions from '#middlewares/extension.middleware';
-import { createRouter } from '#core/router';
+import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
 import { sessionId } from '#middlewares/session.middleware';
 import convertEmptyStringsToNull from '#middlewares/string.middleware';
 
-const router = createRouter();
+const router = createRouter()
+  // logging
+  .use(morgan.successHandler)
 
-router.use(morgan.successHandler);
+  // global rate‐limit & maintenance‐mode
+  .use(maintenance)
+  .use(generalLimiter)
 
-router.use(generalLimiter);
-router.use(maintenance);
-router.use(convertEmptyStringsToNull);
+  // session management
+  .use(sessionId)
 
-// Custom methods
-router.use(extensions);
+  // custom request‐extensions
+  .use(extensions)
 
-// Session id
-router.use(sessionId);
+  // authentication
+  .use(passport.authenticate(['jwt', 'anonymous'], { session: false }))
 
-// Authentication
-router.use(passport.authenticate(['jwt', 'anonymous'], { session: false }));
+  // csrf protection
+  .use(csrfProtection)
 
-// CSRF protection
-router.use(csrfProtection);
+  // converters
+  .use(convertEmptyStringsToNull);
 
 export default router;

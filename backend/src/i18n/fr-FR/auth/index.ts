@@ -2,6 +2,8 @@ export default {
   email: {
     resetPassword: {
       subject: 'Réinitialiser votre mot de passe',
+      preview:
+        'Réinitialisez votre mot de passe maintenant pour retrouver l’accès à votre compte.',
       text: {
         title: 'Bonjour,',
         information:
@@ -20,6 +22,7 @@ export default {
 
     verifyEmail: {
       subject: 'Vérifiez votre e-mail',
+      preview: 'Vérifiez votre e-mail pour activer votre compte.',
       text: {
         title: 'Bonjour,',
         information:
