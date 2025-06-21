@@ -56,7 +56,7 @@ const inactiveCamps = computed<Camp[]>(() => {
 });
 
 function sortCamps(a: Camp, b: Camp) {
-  return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+  return new Date(b.startAt).getTime() - new Date(a.startAt).getTime();
 }
 </script>
 
