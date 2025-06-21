@@ -7,23 +7,18 @@
   >
     <!-- content -->
     <div class="column col-sm-10 col-md-9 col-lg-7 col-xl-6 col-12">
-      <q-list
-        padding
-        separator
-      >
-        <results-list
-          :header="t('header.open')"
-          :camps="activeCamps"
-          :loading
-          active
-        />
+      <results-list
+        :header="t('header.open')"
+        :camps="activeCamps"
+        :loading
+        active
+      />
 
-        <results-list
-          :header="t('header.closed')"
-          :camps="inactiveCamps"
-          :loading
-        />
-      </q-list>
+      <results-list
+        :header="t('header.closed')"
+        :camps="inactiveCamps"
+        :loading
+      />
     </div>
   </page-state-handler>
 </template>

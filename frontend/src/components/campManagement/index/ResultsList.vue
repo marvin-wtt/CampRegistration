@@ -1,56 +1,61 @@
 <template>
-  <q-item class="no-border">
-    <q-item-section>
-      <q-item-label class="text-h6">
-        {{ header }}
-      </q-item-label>
-    </q-item-section>
-
-    <q-item-section
-      v-if="active"
-      side
-      top
-    >
-      <q-item-label caption>
-        <q-btn
-          :label="t('action.create')"
-          icon="add"
-          outline
-          rounded
-          @click="onCreateCamp()"
-        />
-      </q-item-label>
-    </q-item-section>
-  </q-item>
-
-  <q-separator />
-
-  <template v-if="loading">
-    <results-item-skeleton
-      v-for="index in 3"
-      :key="index"
-    />
-  </template>
-
-  <q-item
-    v-if="camps.length === 0"
-    class="text-center vertical-middle"
+  <q-list
+    padding
+    separator
   >
-    <q-item-section v-if="active">
-      {{ t('no_data.open') }}
-    </q-item-section>
-    <q-item-section v-else>
-      {{ t('no_data.closed') }}
-    </q-item-section>
-  </q-item>
+    <q-item class="no-border">
+      <q-item-section>
+        <q-item-label class="text-h6">
+          {{ header }}
+        </q-item-label>
+      </q-item-section>
 
-  <results-item
-    v-else
-    v-for="camp in camps"
-    :key="camp.id"
-    :camp
-    :active
-  />
+      <q-item-section
+        v-if="active"
+        side
+        top
+      >
+        <q-item-label caption>
+          <q-btn
+            :label="t('action.create')"
+            icon="add"
+            outline
+            rounded
+            @click="onCreateCamp()"
+          />
+        </q-item-label>
+      </q-item-section>
+    </q-item>
+
+    <q-separator />
+
+    <template v-if="loading">
+      <results-item-skeleton
+        v-for="index in 3"
+        :key="index"
+      />
+    </template>
+
+    <q-item
+      v-if="camps.length === 0"
+      class="text-center vertical-middle"
+    >
+      <q-item-section v-if="active">
+        {{ t('no_data.open') }}
+      </q-item-section>
+      <q-item-section v-else>
+        {{ t('no_data.closed') }}
+      </q-item-section>
+    </q-item>
+
+    <results-item
+      v-else
+      v-for="camp in camps"
+      :key="camp.id"
+      :camp
+      :active
+    />
+  </q-list>
 </template>
 
 <script lang="ts" setup>
