@@ -1,5 +1,5 @@
 <template>
-  <q-card>
+  <q-card flat>
     <q-form
       @submit="onSave"
       @reset="onReset"
