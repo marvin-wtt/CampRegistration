@@ -7,21 +7,6 @@
     <!-- content -->
     <div class="column fit">
       <div class="row justify-center">
-        <q-btn-toggle
-          v-model="menu"
-          :options="[
-            { label: t('menu.active'), value: 'active' },
-            { label: t('menu.inactive'), value: 'inactive' },
-          ]"
-          class="my-custom-toggle"
-          no-caps
-          rounded
-          spread
-          toggle-color="primary"
-        />
-      </div>
-
-      <div class="row justify-center">
         <q-list
           class="rounded-borders vertical-middle column col-sm-10 col-md-9 col-lg-7 col-xl-6 col-12"
           padding
@@ -29,10 +14,8 @@
         >
           <q-item>
             <q-item-section>
-              <q-item-label>
-                <a class="text-h6">
-                  {{ t('title') }}
-                </a>
+              <q-item-label class="text-h6">
+                {{ t('title') }}
               </q-item-label>
             </q-item-section>
 
