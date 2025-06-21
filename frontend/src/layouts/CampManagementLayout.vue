@@ -19,7 +19,9 @@
           />
           <router-link
             v-else
-            to="/"
+            :to="{
+              name: 'management',
+            }"
             style="text-decoration: none; color: inherit"
           >
             {{ to(title) }}
