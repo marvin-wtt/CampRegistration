@@ -181,7 +181,6 @@ jobs:
           - 1081:1081
 
     env:
-      NODE_ENV: production
       APP_PORT: 3001
       APP_URL: http://localhost:3001
       APP_NAME: Test App
