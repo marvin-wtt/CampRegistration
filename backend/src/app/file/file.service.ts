@@ -47,6 +47,12 @@ export class FileService extends BaseService {
     };
   };
 
+  async getFileById(id: string) {
+    return this.prisma.file.findUnique({
+      where: { id },
+    });
+  }
+
   private async moveFile(file: RequestFile) {
     // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?
     await this.storageRegistry.getStorage().moveToStorage(file.filename);
@@ -84,6 +90,32 @@ export class FileService extends BaseService {
       },
     });
   }
+
+  async createManyModelFile(
+    model: ModelData | undefined,
+    files: Omit<Prisma.FileCreateManyInput, 'id'>[],
+  ) {
+    const modelData = model ? { [`${model.name}Id`]: model.id } : {};
+
+    const data = files.map((file) => {
+      return {
+        ...file,
+        ...modelData,
+        id: ulid(),
+        createdAt: undefined,
+      };
+    });
+
+    return prisma.file.createMany({
+      data,
+    });
+  };
+
+  async getFileById(id: string) {
+    return prisma.file.findUnique({
+      where: { id },
+    });
+  };
 
   async queryModelFiles(
     model: ModelData,
@@ -218,14 +250,15 @@ export class FileService extends BaseService {
         registrationId: null,
         messageId: null,
         messageTemplateId: null,
-        createdAt: { lt: minAge },
-      },
-      select: {
-        id: true,
-        name: true,
-        storageLocation: true,
-      },
-    });
+        expenseId: null,
+      createdAt: { lt: minAge },
+    },
+    select: {
+      id: true,
+      name: true,
+      storageLocation: true,
+    },
+  });
 
     // Delete files from database first so that the files can no longer be accessed.
     const fileIds = files.map((file) => file.id);

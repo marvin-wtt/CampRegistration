@@ -1,9 +1,9 @@
 import { catchParamAsync } from '#utils/catchAsync';
 import fileController from '#app/file/file.controller';
 import fileService from '#app/file/file.service';
-import express, { type Request } from 'express';
+import express from 'express';
 import { auth, guard, multipart } from '#middlewares/index';
-import { and, or, campManager, campActive } from '#guards/index';
+import { campManager } from '#guards/index';
 import { controller } from '#utils/bindController';
 
 const router = express.Router({ mergeParams: true });
@@ -17,21 +17,10 @@ router.param(
   }),
 );
 
-const fileAccessMiddleware = (req: Request): boolean | string => {
-  const file = req.modelOrFail('file');
-
-  // Camp managers always have access to all files
-  return file.accessLevel === 'public';
-};
-
 // TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
-router.get(
-  '/:fileId',
-  guard(
-    or(campManager('camp.files.view'), and(fileAccessMiddleware, campActive)),
-  ),
-  controller(fileController, 'stream'),
-);
+router.get('/:fileId', (req, res) => {
+  res.redirect('/api/v1/files/' + req.params.fileId);
+});
 router.get(
   '/',
   auth(),

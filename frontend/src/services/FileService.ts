@@ -65,6 +65,7 @@ export function useFileService() {
   }
 
   return {
+    downloadFile,
     fetchCampFiles,
     createCampFile,
     createTemporaryFile,
