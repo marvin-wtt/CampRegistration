@@ -1,6 +1,6 @@
 import { auth, authLimiter, guest } from '#middlewares/index';
 import authController from './auth.controller.js';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 
 export class AuthRouter extends ModuleRouter {
