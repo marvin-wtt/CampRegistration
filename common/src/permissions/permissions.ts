@@ -45,6 +45,12 @@ export type BedPermission =
   | 'camp.rooms.beds.edit'
   | 'camp.rooms.beds.delete';
 
+export type ProgramEventPermission =
+  | 'camp.program_events.view'
+  | 'camp.program_events.create'
+  | 'camp.program_events.update'
+  | 'camp.program_events.delete';
+
 export type Permission =
   | CampPermission
   | FilePermission
@@ -54,6 +60,7 @@ export type Permission =
   | MessageTemplatePermission
   | TableTemplatePermission
   | RoomPermission
-  | BedPermission;
+  | BedPermission
+  | ProgramEventPermission;
 
 export type Permissions = Permission[];
