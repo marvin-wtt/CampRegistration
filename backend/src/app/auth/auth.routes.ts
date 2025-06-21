@@ -1,5 +1,6 @@
 import { auth, authLimiter, guest } from '#middlewares/index';
 import authController from './auth.controller.js';
+import { controller } from '#utils/bindController.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 
 export class AuthRouter extends ModuleRouter {
@@ -13,43 +14,33 @@ export class AuthRouter extends ModuleRouter {
     this.router.post(
       '/register',
       guest(),
-      this.controller(authController, 'register'),
+      controller(authController, 'register'),
     );
-    this.router.post('/login', this.controller(authController, 'login'));
-    this.router.post(
-      '/verify-otp',
-      this.controller(authController, 'verifyOTP'),
-    );
-    this.router.post(
-      '/logout',
-      auth(),
-      this.controller(authController, 'logout'),
-    );
+    this.router.post('/login', controller(authController, 'login'));
+    this.router.post('/verify-otp', controller(authController, 'verifyOTP'));
+    this.router.post('/logout', auth(), controller(authController, 'logout'));
     this.router.post(
       '/refresh-tokens',
-      this.controller(authController, 'refreshTokens'),
+      controller(authController, 'refreshTokens'),
     );
     this.router.post(
       '/forgot-password',
       guest(),
-      this.controller(authController, 'forgotPassword'),
+      controller(authController, 'forgotPassword'),
     );
     this.router.post(
       '/reset-password',
       guest(),
-      this.controller(authController, 'resetPassword'),
+      controller(authController, 'resetPassword'),
     );
     this.router.post(
       '/send-verification-email',
-      this.controller(authController, 'sendVerificationEmail'),
+      controller(authController, 'sendVerificationEmail'),
     );
     this.router.post(
       '/verify-email',
-      this.controller(authController, 'verifyEmail'),
+      controller(authController, 'verifyEmail'),
     );
-    this.router.get(
-      '/csrf-token',
-      this.controller(authController, 'getCsrfToken'),
-    );
+    this.router.get('/csrf-token', controller(authController, 'getCsrfToken'));
   }
 }
