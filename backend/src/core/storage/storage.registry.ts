@@ -3,7 +3,7 @@ import config from '#config/index';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StaticStorage } from '#core/storage/static.storage';
 
-class StorageRegistry {
+export class StorageRegistry {
   private storageCache: Map<string, Storage>;
 
   constructor() {
@@ -42,5 +42,3 @@ class StorageRegistry {
     this.storageCache.clear();
   }
 }
-
-export default new StorageRegistry();

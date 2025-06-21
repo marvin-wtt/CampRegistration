@@ -2,6 +2,7 @@ import { create, type ExpressHandlebars } from 'express-handlebars';
 import i18n from '#core/i18n';
 import path from 'path';
 import config from '#config/index';
+import projectRoot from '#utils/paths';
 
 interface RenderContentOptions {
   subject: string;
@@ -23,13 +24,7 @@ export class MailRenderer {
   private readonly viewsPath: string;
 
   constructor() {
-    this.viewsPath = path.join(
-      import.meta.dirname,
-      '..',
-      '..',
-      'views',
-      'emails',
-    ); // TODO
+    this.viewsPath = path.join(projectRoot, 'build', 'views', 'emails');
 
     this.viewEngine = create({
       partialsDir: this.getViewDirectory('partials'),

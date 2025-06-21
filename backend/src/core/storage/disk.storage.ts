@@ -5,9 +5,16 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import type { File } from '@prisma/client';
 import path from 'path';
+import packageDir from '#utils/paths';
 
 export class DiskStorage implements Storage {
-  constructor(private storageDir: string) {}
+  private readonly storageDir: string;
+
+  constructor(storageDir: string) {
+    this.storageDir = path.resolve(packageDir, storageDir);
+
+    fse.ensureDirSync(this.storageDir);
+  }
 
   private isDirectoryPathValid(filePath: string, rootPath: string): boolean {
     // Make sure, that the file path does not escape the root path
