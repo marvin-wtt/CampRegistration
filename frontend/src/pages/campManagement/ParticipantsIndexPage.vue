@@ -1,7 +1,7 @@
 <template>
   <page-state-handler
-    :error="error"
-    :loading="loading"
+    :error
+    :loading
   >
     <result-table
       v-if="camp.data.value"

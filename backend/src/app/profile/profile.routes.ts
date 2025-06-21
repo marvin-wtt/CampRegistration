@@ -1,12 +1,18 @@
-import express from 'express';
 import { auth } from '#middlewares/auth.middleware';
 import profileController from './profile.controller.js';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
 
-const router = express.Router({ mergeParams: true });
+export class ProfileRouter extends ModuleRouter {
+  protected registerBindings() {
+    // No model bindings needed for profile routes
+  }
 
-router.get('/', auth(), controller(profileController, 'show'));
-router.patch('/', auth(), controller(profileController, 'update'));
-router.delete('/', auth(), controller(profileController, 'destroy'));
+  protected defineRoutes() {
+    this.router.use(auth());
 
-export default router;
+    this.router.get('/', controller(profileController, 'show'));
+    this.router.patch('/', controller(profileController, 'update'));
+    this.router.delete('/', controller(profileController, 'destroy'));
+  }
+}

@@ -6,7 +6,7 @@ import {
 } from './registration.resource.js';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
-import registrationMessages from '#app/registration/registration.messages.js';
+import registrationMessages from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
 
 class RegistrationController extends BaseController {
@@ -89,7 +89,7 @@ class RegistrationController extends BaseController {
     const camp = req.modelOrFail('camp');
     const registration = req.modelOrFail('registration');
 
-    await registrationService.deleteRegistration(camp, registration);
+    await registrationService.deleteRegistration(registration);
 
     await registrationMessages.sendRegistrationCanceled(camp, registration);
 

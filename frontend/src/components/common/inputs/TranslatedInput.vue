@@ -37,7 +37,7 @@
           <template v-if="modifiers.number">
             <!-- Numeric inputs -->
             <q-input
-              v-for="(locale, index) in props.locales"
+              v-for="(locale, index) in locales"
               :key="index"
               v-model.number="translations[locale]"
               :label="`${label} (${locale})`"
@@ -65,7 +65,7 @@
           <!-- Other inputs -->
           <template v-else>
             <q-input
-              v-for="(locale, index) in props.locales"
+              v-for="(locale, index) in locales"
               :key="index"
               v-model="translations[locale]"
               :label="`${label} (${locale})`"
@@ -111,41 +111,49 @@ import { type QInputSlots } from 'quasar';
 import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
 
 type Translations = Record<string, string | number>;
-type ModelValueType = undefined | string | number | Translations;
+type ModelValueType = undefined | null | string | number | Translations;
 
 const [model, modifiers] = defineModel<ModelValueType>();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
 
-interface Props {
+const {
+  label = '',
+  locales = [],
+  always = false,
+} = defineProps<{
   label?: string;
   locales?: string[];
   always?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  label: '',
-  locales: () => [],
-  always: false,
-});
+}>();
 
 const useTranslations = ref(defaultUseTranslations());
 const value = ref<string | number>(defaultValue());
 const translations = ref<Translations>(defaultTranslations());
 
 const enabled = computed<boolean>(() => {
-  return props.locales.length > 1;
+  return locales.length > 1;
 });
 
 function defaultUseTranslations(): boolean {
-  return model.value === undefined || typeof model.value === 'object';
+  return model.value == null || typeof model.value === 'object';
 }
 
 function defaultValue(): string | number {
   // If the model value if an object and there is only one locale, we assume that the object is a translation and
   //  contains a translation for the given locale
-  if (props.locales.length === 1 && typeof model.value === 'object') {
-    return model.value[props.locales[0]];
+  if (
+    locales.length === 1 &&
+    model.value !== null &&
+    typeof model.value === 'object'
+  ) {
+    const locale = locales[0]!;
+
+    if (!(locale in model.value)) {
+      return Object.values(model.value)[0] ?? '';
+    }
+
+    return model.value[locale] ?? '';
   }
 
   return typeof model.value === 'string' || typeof model.value === 'number'
@@ -154,7 +162,7 @@ function defaultValue(): string | number {
 }
 
 function defaultTranslations(): Translations {
-  return typeof model.value === 'object' ? model.value : {};
+  return typeof model.value === 'object' && model.value ? model.value : {};
 }
 
 const lastEmittedValue = ref<ModelValueType>();
@@ -185,9 +193,12 @@ watch(
     if (typeof newValue === 'string' || typeof newValue === 'number') {
       value.value = newValue;
       useTranslations.value = false;
-    } else if (typeof newValue === 'object') {
+    } else if (typeof newValue === 'object' && newValue !== null) {
       translations.value = newValue;
       useTranslations.value = true;
+    } else {
+      value.value = '';
+      translations.value = {};
     }
   },
 );

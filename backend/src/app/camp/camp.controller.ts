@@ -12,7 +12,9 @@ import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
-import messageTemplateService from '#app/messageTemplate/message-template.service.js';
+import messageTemplateService from '#app/messageTemplate/message-template.service';
+import managerService from '#app/manager/manager.service.js';
+import ApiError from '#utils/ApiError.js';
 
 class CampController extends BaseController {
   show(req: Request, res: Response) {
@@ -48,6 +50,23 @@ class CampController extends BaseController {
   async store(req: Request, res: Response) {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
+
+    // Check if the user is allowed to create a camp based on the reference camp
+    // This must happen here because the body needs to be validated first
+    if (body.referenceCampId) {
+      const isManager =
+        await managerService.campManagerExistsWithUserIdAndCampId(
+          body.referenceCampId,
+          userId,
+        );
+
+      if (!isManager) {
+        throw new ApiError(
+          httpStatus.FORBIDDEN,
+          'You are not allowed to create a camp based on this reference camp.',
+        );
+      }
+    }
 
     const referenceCamp = body.referenceCampId
       ? await campService.getCampById(body.referenceCampId)
@@ -122,9 +141,11 @@ class CampController extends BaseController {
       themes: body.themes,
     });
 
-    // Re-generate camp data fields
+    // Re-generate computed data fields
     if (body.form) {
-      await registrationService.updateRegistrationCampDataByCamp(updatedCamp);
+      await registrationService.updateRegistrationsComputedDataByCamp(
+        updatedCamp,
+      );
     }
 
     res.resource(new CampDetailsResource(updatedCamp));

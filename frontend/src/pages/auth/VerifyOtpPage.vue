@@ -9,6 +9,7 @@
     >
       <q-form
         class="fit column justify-center no-wrap"
+        data-test="totp-form"
         @submit="verify"
       >
         <q-card-section class="text-h4 text-bold text-center">
@@ -16,10 +17,8 @@
         </q-card-section>
 
         <!-- Description -->
-        <q-card-section>
-          <p class="text-subtitle1 text-center">
-            {{ t('description') }}
-          </p>
+        <q-card-section class="text-subtitle1 text-center">
+          {{ t('description') }}
         </q-card-section>
 
         <q-card-section class="row justify-center">
@@ -37,6 +36,7 @@
             :length="6"
             :disable="loading"
             required
+            data-test="totp"
           />
         </q-card-section>
 
@@ -48,6 +48,7 @@
             color="primary"
             size="lg"
             class="full-width"
+            data-test="submit"
             rounded
           />
         </q-card-actions>
@@ -55,6 +56,7 @@
         <q-card-section
           v-if="error"
           class="text-negative text-center text-bold"
+          data-test="error"
         >
           {{ error }}
         </q-card-section>

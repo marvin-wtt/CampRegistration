@@ -6,16 +6,16 @@
   >
     <q-item-section>
       <q-item-label>
-        {{ to(props.camp.name) }}
+        {{ to(camp.name) }}
       </q-item-label>
     </q-item-section>
 
     <q-item-section side>
       <div class="q-gutter-xs">
         <q-btn
-          v-if="props.active"
+          v-if="active"
           :label="t('action.share')"
-          class="gt-xs"
+          class="gt-sm"
           dense
           flat
           icon="share"
@@ -25,7 +25,7 @@
         />
 
         <q-btn
-          v-if="!props.active"
+          v-if="!active && can('camp.edit')"
           :label="t('action.enable')"
           class="gt-sm"
           color="warning"
@@ -39,18 +39,7 @@
         />
 
         <q-btn
-          :label="t('action.results')"
-          class="gt-xs"
-          dense
-          flat
-          icon="view_list"
-          rounded
-          :loading="resultLoading"
-          :disable="actionLoading && !resultLoading"
-          @click.stop="resultsAction"
-        />
-
-        <q-btn
+          v-if="can('camp.edit')"
           :label="t('action.edit')"
           class="gt-sm"
           dense
@@ -62,7 +51,7 @@
         />
 
         <q-btn
-          v-if="props.active"
+          v-if="active && can('camp.edit')"
           :label="t('action.disable')"
           class="gt-sm"
           color="warning"
@@ -76,7 +65,7 @@
         />
 
         <q-btn
-          v-if="!props.active"
+          v-if="!active && can('camp.delete')"
           :label="t('action.delete')"
           class="gt-sm"
           color="negative"
@@ -99,8 +88,8 @@
           @click.stop
         >
           <results-item-menu
-            :camp="props.camp"
-            :active="props.active"
+            :camp
+            :active
             @edit="editAction"
             @delete="deleteAction"
             @share="shareAction"
@@ -125,6 +114,7 @@ import type { Camp } from '@camp-registration/common/entities';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from 'stores/profile-store';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import { usePermissions } from 'src/composables/permissions';
 
 const capsStore = useCampsStore();
 const profileStore = useProfileStore();
@@ -132,15 +122,12 @@ const router = useRouter();
 const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { canFor } = usePermissions();
 
-interface Props {
+const { camp, active = false } = defineProps<{
   camp: Camp;
   active?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  active: false,
-});
+}>();
 
 const resultLoading = ref<boolean>(false);
 const enableLoading = ref<boolean>(false);
@@ -152,12 +139,18 @@ const actionLoading = computed<boolean>(() => {
   return enableLoading.value || disableLoading.value || deleteLoading.value;
 });
 
+type Tail<T extends unknown[]> = T extends [unknown, ...infer Rest] ? Rest : [];
+
+function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
+  return canFor(camp.id, ...permissions);
+}
+
 function resultsAction() {
   withLoading(resultLoading, async () => {
     await router.push({
       name: 'participants',
       params: {
-        camp: props.camp.id,
+        camp: camp.id,
       },
     });
   });
@@ -169,7 +162,7 @@ function shareAction() {
     router.resolve({
       name: 'camp',
       params: {
-        camp: props.camp.id,
+        camp: camp.id,
       },
     }).href;
 
@@ -194,7 +187,7 @@ function editAction() {
     await router.push({
       name: 'edit-camp',
       params: {
-        camp: props.camp.id,
+        camp: camp.id,
       },
     });
   });
@@ -208,20 +201,20 @@ function deleteAction() {
         title: t('dialog.delete.title'),
         message: t('dialog.delete.message'),
         label: t('dialog.delete.label'),
-        value: to(props.camp.name),
+        value: to(camp.name),
       },
       persistent: true,
     })
     .onOk(() => {
       withLoading(deleteLoading, async () => {
-        await capsStore.deleteEntry(props.camp.id);
+        await capsStore.deleteEntry(camp.id);
       });
     });
 }
 
 function enableAction() {
   withLoading(enableLoading, async () => {
-    await capsStore.updateEntry(props.camp.id, {
+    await capsStore.updateEntry(camp.id, {
       active: true,
     });
     await profileStore.fetchProfile();
@@ -230,7 +223,7 @@ function enableAction() {
 
 function disableAction() {
   withLoading(disableLoading, async () => {
-    await capsStore.updateEntry(props.camp.id, {
+    await capsStore.updateEntry(camp.id, {
       active: false,
     });
     await profileStore.fetchProfile();

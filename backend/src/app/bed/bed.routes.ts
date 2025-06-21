@@ -1,39 +1,36 @@
-import express from 'express';
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
-import { catchParamAsync } from '#utils/catchAsync';
-import bedService from './bed.service.js';
 import bedController from './bed.controller.js';
-import { controller } from '#utils/bindController.js';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import bedService from '#app/bed/bed.service';
+import { controller } from '#utils/bindController';
 
-const router = express.Router({ mergeParams: true });
+export class BedRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('bed', (req, id) => {
+      const room = req.modelOrFail('room');
+      return bedService.getBedById(id, room.id);
+    });
+  }
 
-router.param(
-  'bedId',
-  catchParamAsync(async (req, _res, id) => {
-    const room = req.modelOrFail('room');
-    const bed = await bedService.getBedById(id, room.id);
-    req.setModelOrFail('bed', bed);
-  }),
-);
-
-router.post(
-  '/',
-  auth(),
-  guard(campManager),
-  controller(bedController, 'store'),
-);
-router.patch(
-  '/:bedId',
-  auth(),
-  guard(campManager),
-  controller(bedController, 'update'),
-);
-router.delete(
-  '/:bedId',
-  auth(),
-  guard(campManager),
-  controller(bedController, 'destroy'),
-);
-
-export default router;
+  protected defineRoutes() {
+    this.router.post(
+      '/',
+      auth(),
+      guard(campManager('camp.rooms.beds.create')),
+      controller(bedController, 'store'),
+    );
+    this.router.patch(
+      '/:bedId',
+      auth(),
+      guard(campManager('camp.rooms.beds.edit')),
+      controller(bedController, 'update'),
+    );
+    this.router.delete(
+      '/:bedId',
+      auth(),
+      guard(campManager('camp.rooms.beds.delete')),
+      controller(bedController, 'destroy'),
+    );
+  }
+}

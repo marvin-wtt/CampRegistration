@@ -4,6 +4,7 @@ import type { Camp } from '@camp-registration/common/entities';
 export interface TableCellProps {
   props: QTableBodyCellProps;
   camp: Camp;
-  options?: object;
+  options?: object | undefined;
   printing: boolean;
+  readonly?: boolean | undefined;
 }

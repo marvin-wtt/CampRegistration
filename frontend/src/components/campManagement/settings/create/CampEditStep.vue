@@ -1,11 +1,11 @@
 <template>
   <q-step
-    :name="name"
-    :title="title"
-    :done="done"
+    :name
+    :title
+    :done
     :header-nav="done"
     :error
-    v-bind="$attrs"
+    :icon
   >
     <q-form
       @submit="nextStep"
@@ -83,12 +83,25 @@ function previousStep() {
 }
 </script>
 
-<!-- TODO Add i18n -->
 <i18n lang="yaml" locale="en">
 action:
   back: 'Back'
   continue: 'Continue'
   finish: 'Finish'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+action:
+  back: 'Zurück'
+  continue: 'Weiter'
+  finish: 'Fertigstellen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+action:
+  back: 'Retour'
+  continue: 'Continuer'
+  finish: 'Terminer'
 </i18n>
 
 <style scoped></style>

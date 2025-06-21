@@ -1,21 +1,11 @@
 import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import {
-  type Camp,
-  Prisma,
-  type Registration,
-  type PrismaClient,
-} from '@prisma/client';
-import dbJsonPath from '#utils/dbJsonPath';
+import { type Camp, Prisma, type Registration } from '@prisma/client';
 import { formUtils } from '#utils/form';
 import config from '#config/index';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { BaseService } from '#core/base/BaseService';
-
-type PrismaTransaction = Parameters<
-  Parameters<PrismaClient['$transaction']>[0]
->[0];
+import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 
 export class RegistrationService extends BaseService {
   async getRegistrationById(campId: string, id: string) {
@@ -48,33 +38,6 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  async getParticipantsCount(campId: string) {
-    return this.prisma.registration.count({
-      where: registrationRoleFilter(campId, 'participant'),
-    });
-  }
-
-  async getParticipantsCountByCountry(campId: string, countries: string[]) {
-    const participants = await this.prisma.registration.findMany({
-      where: registrationRoleFilter(campId, 'participant'),
-    });
-
-    const getCountry = (registration: Registration): string => {
-      return (
-        new RegistrationCampDataHelper(registration.campData).country(
-          countries,
-        ) ?? 'unknown'
-      );
-    };
-
-    // Count the participants for each country
-    return participants.reduce<Record<string, number>>((result, curr) => {
-      const country = getCountry(curr);
-      result[country] = (result[country] || 0) + 1;
-      return result;
-    }, {});
-  }
-
   private validateRegistrationData(
     formHelper: ReturnType<typeof formUtils>,
   ): void | never {
@@ -97,7 +60,7 @@ export class RegistrationService extends BaseService {
   }
 
   async createRegistration(
-    camp: Camp,
+    camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
   ) {
     const id = ulid();
@@ -120,10 +83,7 @@ export class RegistrationService extends BaseService {
     });
     // Get updated data from form back
     const formData = form.data();
-    const campData = form.extractCampData();
-
-    const freePlaces = this.calculateFreePlaces(camp, campData, 'decrement');
-    const waitingList = freePlaces === undefined;
+    const computedData = this.createComputedData(form.extractCampData());
 
     const fileConnects = fileIdentifiers.map((identifier) => {
       return {
@@ -135,105 +95,78 @@ export class RegistrationService extends BaseService {
       };
     });
 
-    return this.prisma.$transaction(async (transaction) => {
-      await this.updateCampFreePlaces(camp, freePlaces)(transaction);
+    const isWaitingList = async (
+      transaction: Prisma.TransactionClient,
+    ): Promise<boolean> => {
+      // Only participants can be placed on the waiting list
+      if (computedData.role && computedData.role !== 'participant') {
+        return false;
+      }
 
-      return transaction.registration.create({
-        data: {
-          ...data,
-          id,
-          campId: camp.id,
-          data: formData,
-          waitingList,
-          campData,
-          files: {
-            connect: fileConnects,
+      // Single max participants for all participants
+      if (typeof camp.maxParticipants === 'number') {
+        const registrationCount = await transaction.registration.count({
+          where: {
+            campId: camp.id,
+            OR: [{ role: 'participant' }, { role: null }],
           },
-        },
-      });
-    });
-  }
+        });
+        return registrationCount >= camp.maxParticipants;
+      }
 
-  /**
-   * Calculates the new free places of the camp.
-   * Depending on if the data has multiple values or not, the country from the
-   * registration camp data is used as key.
-   *
-   * @param camp The camp related to the registration
-   * @param campData The extracted data
-   * @param direction Wherever to increment or decrement the free places
-   * @return the updated free places or undefined, if there are no free places
-   * @throws ApiError if the free places has multiple entries but the country is
-   *    missing in the camp data
-   */
-  private calculateFreePlaces(
-    camp: Camp,
-    campData: Registration['campData'],
-    direction: 'increment' | 'decrement',
-  ): Camp['freePlaces'] | undefined {
-    const updateValue = (val: number) =>
-      direction === 'increment' ? ++val : --val;
-    let { freePlaces } = { ...camp };
+      // Max participants per country
+      // Throw error when country is missing
+      if (
+        !computedData.country ||
+        !(computedData.country in camp.maxParticipants)
+      ) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Invalid or missing country data',
+        );
+      }
 
-    // Free places only apply to participants
-    if (!isParticipant(campData)) {
-      return freePlaces;
-    }
-
-    // FIXME Check actual count when free places are zero (waiting list)
-    if (typeof freePlaces === 'number') {
-      // Update free places
-      freePlaces = updateValue(freePlaces);
-
-      // Return the updated freePlaces if valid, otherwise undefined
-      return freePlaces >= 0 ? freePlaces : undefined;
-    }
-
-    const country = new RegistrationCampDataHelper(campData).country(
-      camp.countries,
-    );
-
-    if (!country || !(country in freePlaces)) {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'Missing or invalid country data',
-      );
-    }
-
-    // Update free places for the specific country
-    freePlaces[country] = updateValue(freePlaces[country]);
-
-    // Return the updated freePlaces if valid, otherwise undefined
-    return freePlaces[country] >= 0 ? freePlaces : undefined;
-  }
-
-  private updateCampFreePlaces(
-    camp: Camp,
-    freePlaces: Prisma.CampUpdateArgs['data']['freePlaces'],
-  ) {
-    return async (transaction: PrismaTransaction) => {
-      return transaction.camp.update({
-        data: {
-          freePlaces,
-        },
+      const registrationCount = await transaction.registration.count({
         where: {
-          id: camp.id,
-          version: camp.version,
+          campId: camp.id,
+          OR: [{ role: 'participant' }, { role: null }],
+          country: computedData.country,
         },
       });
+
+      return registrationCount >= camp.maxParticipants[computedData.country];
     };
+
+    return this.prisma.$transaction(
+      async (transaction) => {
+        const waitingList = await isWaitingList(transaction);
+
+        return transaction.registration.create({
+          data: {
+            ...data,
+            ...computedData,
+            id,
+            data: formData,
+            waitingList,
+            camp: { connect: { id: camp.id } },
+            files: { connect: fileConnects },
+          },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
   }
 
   async updateRegistrationById(
-    camp: Camp,
+    camp: Camp & { freePlaces: number | Record<string, number> },
     registrationId: string,
     data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
   ) {
-    let campData;
+    let computedData = {};
     if (data.data) {
       const form = formUtils(camp);
       form.updateData(data.data);
-      campData = form.extractCampData();
+      computedData = this.createComputedData(form.extractCampData());
     }
 
     // TODO Delete files if some where removed
@@ -242,8 +175,9 @@ export class RegistrationService extends BaseService {
     return this.prisma.registration.update({
       where: { id: registrationId },
       data: {
-        ...data,
-        campData,
+        ...computedData,
+        data: data.data,
+        waitingList: data.waitingList,
       },
       include: {
         bed: { include: { room: true } },
@@ -251,31 +185,24 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  async deleteRegistration(camp: Camp, registration: Registration) {
-    const freePlaces = this.calculateFreePlaces(
-      camp,
-      registration.campData,
-      'increment',
-    );
-
-    await this.prisma.$transaction(async (transaction) => {
-      await this.updateCampFreePlaces(camp, freePlaces)(transaction);
-      await this.prisma.registration.delete({ where: { id: registration.id } });
-    });
+  async deleteRegistration(registration: Registration) {
+    await this.prisma.registration.delete({ where: { id: registration.id } });
   }
 
-  async updateRegistrationCampDataByCamp(camp: Camp) {
+  async updateRegistrationsComputedDataByCamp(
+    camp: Camp & { freePlaces: number | Record<string, number> },
+  ) {
     const form = formUtils(camp);
     const registrations = await this.queryRegistrations(camp.id);
 
     const results = registrations.map((registration) => {
       form.updateData(registration.data);
-      const campData = form.extractCampData();
+      const computedData = this.createComputedData(form.extractCampData());
 
       return this.prisma.registration.update({
         where: { id: registration.id },
         data: {
-          campData,
+          ...computedData,
         },
         include: {
           bed: { include: { room: true } },
@@ -285,38 +212,25 @@ export class RegistrationService extends BaseService {
 
     await Promise.allSettled(results);
   }
+
+  private createComputedData(
+    data: Record<string, unknown[]>,
+  ): Partial<Prisma.RegistrationCreateInput> {
+    const helper = new RegistrationCampDataHelper(data);
+
+    return {
+      firstName: helper.firstName(),
+      lastName: helper.lastName(),
+      street: helper.street(),
+      city: helper.city(),
+      zipCode: helper.zipCode(),
+      country: helper.country(),
+      dateOfBirth: helper.dateOfBirth(),
+      emails: helper.emails(),
+      role: helper.role(),
+      gender: helper.gender(),
+    };
+  }
 }
 
 export default new RegistrationService();
-
-const isParticipant = (campData: Record<string, unknown[]>): boolean => {
-  // If no role is set, it is considered to be participant
-  if (!('role' in campData) || campData.role.length === 0) {
-    return true;
-  }
-
-  return campData.role.some((role) => role === 'participant');
-};
-
-const registrationRoleFilter = (
-  campId: string,
-  role: string,
-): Prisma.RegistrationWhereInput => {
-  return {
-    campId,
-    OR: [
-      {
-        campData: {
-          path: dbJsonPath('role'),
-          equals: Prisma.DbNull,
-        },
-      },
-      {
-        campData: {
-          path: dbJsonPath('role'),
-          array_contains: [role],
-        },
-      },
-    ],
-  };
-};

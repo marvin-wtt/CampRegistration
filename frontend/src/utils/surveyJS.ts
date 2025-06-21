@@ -96,7 +96,5 @@ export function extractFormFields(form: object, prefix?: string): SelectData[] {
   const survey = new SurveyModel(form);
 
   // For each question, recursively collect all SelectData items.
-  return survey
-    .getAllQuestions(true, true, true)
-    .flatMap((q) => collectSelectData(q, prefix));
+  return survey.getAllQuestions().flatMap((q) => collectSelectData(q, prefix));
 }

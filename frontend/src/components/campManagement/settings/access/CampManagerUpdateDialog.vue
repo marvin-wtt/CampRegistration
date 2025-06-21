@@ -13,6 +13,18 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-md">
+          <q-select
+            v-model="data.role"
+            :label="t('input.role.label')"
+            :options="roles"
+            map-options
+            emit-value
+            :rules="[(val?: string) => !!val || t('input.role.rule.required')]"
+            hide-bottom-space
+            rounded
+            outlined
+          />
+
           <date-time-input
             v-model="data.expiresAt"
             :label="t('input.expiresAt')"
@@ -44,24 +56,29 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
 import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
-import type { CampManagerUpdateData } from '@camp-registration/common/entities';
+import type {
+  CampManager,
+  CampManagerUpdateData,
+} from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-const { expiresAt } = defineProps<{
-  expiresAt: string | null;
+const { manager, roles } = defineProps<{
+  manager: CampManager;
+  roles: QSelectOption[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const data = reactive<CampManagerUpdateData>({
-  expiresAt,
+  expiresAt: manager.expiresAt,
+  role: manager.role,
 });
 
 function onInvite() {
@@ -72,9 +89,13 @@ function onInvite() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Grant Access'
+title: 'Update Access'
 
 input:
+  role:
+    label: 'Role'
+    rule:
+      required: 'The role is required'
   expiresAt: 'Expiration Date'
 
 action:
@@ -86,6 +107,10 @@ action:
 title: 'Zugriff gewähren'
 
 input:
+  role:
+    label: 'Rolle'
+    rule:
+      required: 'Die Rolle ist erforderlich'
   expiresAt: 'Ablaufdatum'
 
 action:
@@ -94,10 +119,14 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: "Accorder l'accès"
+title: 'Accorder l’accès'
 
 input:
-  expiresAt: "Date d'expiration"
+  role:
+    label: 'Rôle'
+    rule:
+      required: 'Le rôle est requis'
+  expiresAt: 'Date d’expiration'
 
 action:
   cancel: 'Annuler'

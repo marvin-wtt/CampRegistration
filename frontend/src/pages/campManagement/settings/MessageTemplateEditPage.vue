@@ -73,63 +73,72 @@
           </q-item-section>
 
           <q-item-section side>
-            <q-btn
-              v-if="id"
-              icon="more_vert"
-              round
-              dense
-              unelevated
-              :loading
-              :disable="loading"
-              @click.stop
-            >
-              <q-menu>
-                <q-list style="min-width: 200px">
-                  <q-item
-                    clickable
-                    v-close-popup
-                    @click="editTemplate(id)"
-                  >
-                    <q-item-section avatar>
-                      <q-icon name="edit" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>
-                        {{ t('action.edit') }}
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    v-close-popup
-                    @click="deleteTemplate(id)"
-                  >
-                    <q-item-section avatar>
-                      <q-icon
-                        name="delete"
-                        color="negative"
-                      />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label class="text-negative">
-                        {{ t('action.delete') }}
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
+            <template v-if="id">
+              <q-btn
+                v-if="
+                  can('camp.message_templates.edit') ||
+                  can('camp.message_templates.delete')
+                "
+                icon="more_vert"
+                round
+                dense
+                unelevated
+                :loading
+                :disable="loading"
+                @click.stop
+              >
+                <q-menu>
+                  <q-list style="min-width: 200px">
+                    <q-item
+                      v-if="can('camp.message_templates.edit')"
+                      clickable
+                      v-close-popup
+                      @click="editTemplate(id)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="edit" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>
+                          {{ t('action.edit') }}
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="can('camp.message_templates.delete')"
+                      clickable
+                      v-close-popup
+                      @click="deleteTemplate(id)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon
+                          name="delete"
+                          color="negative"
+                        />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="text-negative">
+                          {{ t('action.delete') }}
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </template>
 
-            <q-btn
-              v-else
-              :aria-label="t('action.add')"
-              icon="add"
-              color="primary"
-              round
-              dense
-              unelevated
-              @click="addTemplate(name)"
-            />
+            <template v-else>
+              <q-btn
+                v-if="can('camp.message_templates.create')"
+                :aria-label="t('action.add')"
+                icon="add"
+                color="primary"
+                round
+                dense
+                unelevated
+                @click="addTemplate(name)"
+              />
+            </template>
           </q-item-section>
         </q-item>
       </q-list>
@@ -147,6 +156,7 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import type { MessageTemplate } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import { usePermissions } from 'src/composables/permissions';
 
 const {
   queryParam,
@@ -161,6 +171,7 @@ const api = useAPIService();
 const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
+const { can } = usePermissions();
 
 onBeforeMount(() => {
   campDetailsStore.fetchData();

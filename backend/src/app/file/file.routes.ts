@@ -1,10 +1,18 @@
-import express from 'express';
 import { multipart } from '#middlewares/index';
 import fileController from './file.controller.js';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
 
-const router = express.Router({ mergeParams: true });
+export class FileRouter extends ModuleRouter {
+  protected registerBindings() {
+    // No model bindings needed for file routes
+  }
 
-router.post('/', multipart('file'), controller(fileController, 'store'));
-
-export default router;
+  protected defineRoutes() {
+    this.router.post(
+      '/',
+      multipart('file'),
+      controller(fileController, 'store'),
+    );
+  }
+}

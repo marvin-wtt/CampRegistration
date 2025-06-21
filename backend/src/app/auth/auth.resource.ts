@@ -6,7 +6,7 @@ import type { AuthTokensResponse, TokenResponse } from '#types/response';
 import {
   ProfileResource,
   type UserWithCamps,
-} from '#app/profile/profile.resource.js';
+} from '#app/profile/profile.resource';
 
 interface AuthWithData {
   user: UserWithCamps;
@@ -28,7 +28,7 @@ export const authResource = (data: AuthWithData): AuthenticationResource => {
 const convertToken = (token: TokenResponse): Token => {
   return {
     token: token.token,
-    expires: token.expires.toUTCString(),
+    expires: token.expires.toISOString(),
   };
 };
 

@@ -22,22 +22,6 @@ export class TableTemplateService extends BaseService {
     });
   }
 
-  async createManyTemplates(
-    campId: string,
-    templates: Record<string, unknown>[],
-  ) {
-    const data = templates.map((template) => {
-      return {
-        data: template,
-        campId,
-      };
-    });
-
-    return this.prisma.tableTemplate.createMany({
-      data,
-    });
-  }
-
   async updateTemplateById(templateId: string, data: Record<string, unknown>) {
     return this.prisma.tableTemplate.update({
       where: { id: templateId },

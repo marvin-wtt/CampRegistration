@@ -9,6 +9,7 @@
     >
       <q-form
         class="fit column justify-center no-wrap"
+        data-test="forgot-password-form"
         @submit="resetPassword"
       >
         <!-- Title -->
@@ -17,10 +18,8 @@
         </q-card-section>
 
         <!-- Description -->
-        <q-card-section>
-          <p class="text-subtitle1 text-center">
-            {{ t('description') }}
-          </p>
+        <q-card-section class="text-subtitle1 text-center">
+          {{ t('description') }}
         </q-card-section>
 
         <!-- Avatar -->
@@ -42,6 +41,8 @@
             autocomplete="email"
             :disable="loading"
             :rules="[(val?: string) => !!val || t('field.email.rule.required')]"
+            hide-bottom-space
+            data-test="email"
             outlined
             rounded
           >
@@ -60,6 +61,7 @@
             color="primary"
             size="lg"
             class="full-width"
+            data-test="submit"
             rounded
           />
         </q-card-actions>
@@ -68,6 +70,7 @@
         <q-card-section
           v-if="error"
           class="text-negative text-center text-bold"
+          data-test="error"
         >
           {{ error }}
         </q-card-section>

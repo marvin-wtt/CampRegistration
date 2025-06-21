@@ -1,6 +1,6 @@
 <template>
   <page-state-handler
-    :error="error"
+    :error
     :prevent-leave="updateInProgress"
     padding
     class="column"
@@ -35,6 +35,9 @@
             :people="availablePeople"
             class="q-ma-sm"
             style="max-width: 500px; min-width: 275px"
+            :editable="can('camp.rooms.edit')"
+            :deletable="can('camp.rooms.delete')"
+            :assignable="can('camp.rooms.beds.edit')"
             @edit="editRoom(room)"
             @delete="deleteRoom(room.id)"
             @update="(position, val) => onBedUpdate(room, position, val)"
@@ -55,6 +58,7 @@
 
     <!-- Action buttons -->
     <q-page-sticky
+      v-if="can('camp.rooms.edit')"
       position="bottom-right"
       :offset="[18, 18]"
     >
@@ -99,12 +103,14 @@ import type {
   RoomUpdateData,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
+import { usePermissions } from 'src/composables/permissions';
 
 const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
 const roomStore = useRoomPlannerStore();
+const { can } = usePermissions();
 
 const addLoading = ref(false);
 

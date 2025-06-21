@@ -7,6 +7,7 @@ export const CampManagerFactory = {
   ): Prisma.CampManagerCreateInput => {
     return {
       camp: {},
+      role: 'DIRECTOR',
       ...data,
     };
   },

@@ -1,29 +1,36 @@
-import express from 'express';
 import { auth, guard } from '#middlewares/index';
 import userController from './user.controller.js';
-import userService from './user.service.js';
-import { catchParamAsync } from '#utils/catchAsync';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import userService from '#app/user/user.service';
 
-const router = express.Router();
+export class UserRouter extends ModuleRouter {
+  protected registerBindings() {
+    this.bindModel('user', (_req, id) => userService.getUserById(id));
+  }
 
-router.param(
-  'userId',
-  catchParamAsync(async (req, _res, id) => {
-    const user = await userService.getUserById(id);
-    req.setModelOrFail('user', user);
-  }),
-);
+  protected defineRoutes() {
+    this.router.use(auth());
 
-router.get('/', auth(), guard(), controller(userController, 'index'));
-router.get('/:userId', auth(), guard(), controller(userController, 'show'));
-router.post('/', auth(), guard(), controller(userController, 'store'));
-router.patch('/:userId', auth(), guard(), controller(userController, 'update'));
-router.delete(
-  '/:userId',
-  auth(),
-  guard(),
-  controller(userController, 'destroy'),
-);
-
-export default router;
+    this.router.get('/', auth(), guard(), controller(userController, 'index'));
+    this.router.get(
+      '/:userId',
+      auth(),
+      guard(),
+      controller(userController, 'show'),
+    );
+    this.router.post('/', auth(), guard(), controller(userController, 'store'));
+    this.router.patch(
+      '/:userId',
+      auth(),
+      guard(),
+      controller(userController, 'update'),
+    );
+    this.router.delete(
+      '/:userId',
+      auth(),
+      guard(),
+      controller(userController, 'destroy'),
+    );
+  }
+}

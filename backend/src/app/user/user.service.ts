@@ -4,6 +4,7 @@ import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
+import campService from '#app/camp/camp.service';
 
 export class UserService extends BaseService {
   async createUser(
@@ -46,16 +47,14 @@ export class UserService extends BaseService {
   async getUserByIdWithCamps(id: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: {
-        camps: {
-          include: { camp: true },
-        },
-      },
+      include: { campRoles: true },
     });
+
+    const camps = await campService.getCampsByUserId(id);
 
     return {
       ...user,
-      camps: user.camps.map((manager) => manager.camp),
+      camps,
     };
   }
 
@@ -86,16 +85,14 @@ export class UserService extends BaseService {
       data: {
         lastSeen: new Date(),
       },
-      include: {
-        camps: {
-          include: { camp: true },
-        },
-      },
+      include: { campRoles: true },
     });
+
+    const camps = await campService.getCampsByUserId(userId);
 
     return {
       ...user,
-      camps: user.camps.map((manager) => manager.camp),
+      camps,
     };
   }
 
@@ -128,6 +125,7 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
+      include: { campRoles: true },
     });
   }
 

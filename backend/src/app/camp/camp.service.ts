@@ -1,26 +1,56 @@
 import type { Camp, File, Prisma } from '@prisma/client';
 import { ulid } from '#utils/ulid';
-import registrationService from '#app/registration/registration.service';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
 
+export interface CampWithFreePlaces extends Camp {
+  freePlaces: number | Record<string, number>;
+}
+
+type TableTemplateCreateData = OptionalByKeys<
+  Prisma.TableTemplateCreateManyCampInput,
+  'id'
+>[];
+type MessageTemplateCreateData = (OptionalByKeys<
+  Prisma.MessageTemplateCreateManyCampInput,
+  'id'
+> & { attachments?: File[] })[];
+type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
+
 export class CampService extends BaseService {
   async getCampById(id: string) {
-    return this.prisma.camp.findFirst({
+    const camp = await this.prisma.camp.findFirst({
       where: { id },
+      include: { ...this.campRegistrationInclude() },
     });
+
+    return camp === null ? null : enrichFreePlaces(camp);
   }
 
   async getCampsByUserId(userId: string) {
-    return this.prisma.camp.findMany({
+    const camps = await this.prisma.camp.findMany({
       where: {
         campManager: {
           some: { userId },
         },
       },
+      include: { ...this.campRegistrationInclude() },
     });
+
+    return camps.map(enrichFreePlaces);
+  }
+
+  private campRegistrationInclude(): Prisma.CampInclude {
+    return {
+      registrations: {
+        where: {
+          OR: [{ role: 'participant' }, { role: null }],
+        },
+        select: { country: true },
+      },
+    };
   }
 
   async queryCamps(
@@ -68,23 +98,24 @@ export class CampService extends BaseService {
       countries: { array_contains: filter.country },
     };
 
-    return this.prisma.camp.findMany({
+    const camps = await this.prisma.camp.findMany({
       where,
       skip: (page - 1) * limit,
       take: limit,
       orderBy: sortBy ? { [sortBy]: sortType } : undefined,
+      include: { ...this.campRegistrationInclude() },
     });
+
+    return camps.map(enrichFreePlaces);
   }
 
   async createCamp(
     userId: string,
-    data: Omit<Prisma.CampCreateInput, 'id' | 'freePlaces'>,
+    data: Omit<Prisma.CampCreateInput, 'id'>,
     tableTemplates: TableTemplateCreateData = [],
     messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
   ) {
-    const freePlaces = data.maxParticipants;
-
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
     const form = this.replaceFormFileUrls(data.form, fileIds, fileIdMap);
@@ -98,6 +129,7 @@ export class CampService extends BaseService {
       id: file.id ? fileIdMap.get(file.id) : undefined,
       // Override camp id
       campId: undefined,
+      createdAt: undefined,
     }));
 
     const messageTemplateData = messageTemplates.map((value) => ({
@@ -105,12 +137,16 @@ export class CampService extends BaseService {
       attachments: undefined,
     }));
 
-    return this.prisma.camp.create({
+    const camp = await this.prisma.camp.create({
       data: {
-        freePlaces,
         ...data,
         form,
-        campManager: { create: { userId } },
+        campManager: {
+          create: {
+            userId,
+            role: 'DIRECTOR',
+          },
+        },
         tableTemplates: {
           createMany: { data: this.stripIds(tableTemplates) },
         },
@@ -119,7 +155,13 @@ export class CampService extends BaseService {
         },
         files: { createMany: { data: fileData } },
       },
+      include: { ...this.campRegistrationInclude() },
     });
+
+    return {
+      ...camp,
+      freePlaces: data.maxParticipants,
+    };
   }
 
   /**
@@ -127,14 +169,15 @@ export class CampService extends BaseService {
    * These fields are replaced by prisma during insertion.
    * @param data The create data
    */
-  private stripIds<T extends { id?: string; campId?: string }>(
+  private stripIds<T extends object>(
     data: T[],
-  ): (T & { id: undefined; campId: undefined })[] {
+  ): (T & { id: undefined; campId: undefined; createdAt: undefined })[] {
     return data.map((value) => ({
       ...value,
       // Override id and camp id
       id: undefined,
       campId: undefined,
+      createdAt: undefined,
     }));
   }
 
@@ -173,26 +216,16 @@ export class CampService extends BaseService {
     });
   }
 
-  async updateCamp(
-    camp: Camp,
-    data: Omit<Prisma.CampUpdateInput, 'id' | 'freePlaces'>,
-  ) {
-    const freePlaces =
-      data.maxParticipants !== undefined
-        ? await this.getCampFreePlaces(
-            camp.id,
-            data.maxParticipants ?? camp.maxParticipants,
-            data.countries ?? camp.countries,
-          )
-        : undefined;
-
-    return this.prisma.camp.update({
+  async updateCamp(camp: Camp, data: Omit<Prisma.CampUpdateInput, 'id'>) {
+    const updatedCamp = await this.prisma.camp.update({
       where: { id: camp.id },
       data: {
         ...data,
-        freePlaces,
       },
+      include: { ...this.campRegistrationInclude() },
     });
+
+    return enrichFreePlaces(updatedCamp);
   }
 
   async deleteCampById(id: string) {
@@ -200,45 +233,33 @@ export class CampService extends BaseService {
 
     await this.prisma.camp.delete({ where: { id } });
   }
-
-  private async getCampFreePlaces(
-    id: string,
-    maxParticipants: Camp['maxParticipants'],
-    countries: Camp['countries'],
-  ) {
-    // Simple query for national camps
-    if (typeof maxParticipants === 'number') {
-      const participants = await registrationService.getParticipantsCount(id);
-
-      return Math.max(0, maxParticipants - participants);
-    }
-
-    const countByCountry =
-      await registrationService.getParticipantsCountByCountry(id, countries);
-
-    return Object.entries(maxParticipants).reduce<Record<string, number>>(
-      (result, [country, maxParticipants]) => {
-        const free =
-          country in countByCountry
-            ? maxParticipants - countByCountry[country]
-            : maxParticipants;
-
-        result[country] = Math.max(0, free);
-        return result;
-      },
-      {},
-    );
-  }
 }
 
-type TableTemplateCreateData = OptionalByKeys<
-  Prisma.TableTemplateCreateManyCampInput,
-  'id'
->[];
-type MessageTemplateCreateData = (OptionalByKeys<
-  Prisma.MessageTemplateCreateManyCampInput,
-  'id'
-> & { attachments?: File[] })[];
-type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
+const enrichFreePlaces = (
+  camp: Camp & { registrations: { country: string | null }[] },
+): CampWithFreePlaces => {
+  if (typeof camp.maxParticipants === 'number') {
+    return {
+      ...camp,
+      freePlaces: Math.max(0, camp.maxParticipants - camp.registrations.length),
+    };
+  }
+
+  return {
+    ...camp,
+    freePlaces: camp.registrations.reduce<Record<string, number>>(
+      (acc, { country }) => {
+        // Skip invalid registrations
+        if (country === null || !(country in acc)) {
+          return acc;
+        }
+        acc[country] = Math.max(0, acc[country] - 1);
+
+        return acc;
+      },
+      { ...camp.maxParticipants },
+    ),
+  };
+};
 
 export default new CampService();

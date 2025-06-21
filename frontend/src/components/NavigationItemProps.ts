@@ -1,3 +1,5 @@
+import type { Permission } from '@camp-registration/common/permissions';
+
 interface BaseProps {
   header?: boolean;
   name: string;
@@ -5,6 +7,7 @@ interface BaseProps {
   preview?: boolean | undefined;
   separated?: boolean | undefined;
   insertLevel?: number | undefined;
+  permission?: Permission | undefined;
 }
 
 interface HeaderItemProps extends BaseProps {
