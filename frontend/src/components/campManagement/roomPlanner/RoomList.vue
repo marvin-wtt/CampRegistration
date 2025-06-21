@@ -2,17 +2,17 @@
   <q-list
     bordered
     padding
-    :dense="props.dense"
+    :dense
   >
     <q-item dense>
       <q-item-section>
         <q-item-label>
-          {{ to(props.name) }}
+          {{ to(name) }}
         </q-item-label>
       </q-item-section>
 
       <q-item-section
-        v-if="props.editable || props.deletable"
+        v-if="editable || deletable"
         side
       >
         <q-btn
@@ -28,7 +28,7 @@
             <q-list style="min-width: 100px">
               <!-- Edit -->
               <q-item
-                v-if="props.editable"
+                v-if="editable"
                 v-close-popup
                 clickable
                 @click="editRoom"
@@ -39,7 +39,7 @@
               </q-item>
               <!-- Delete -->
               <q-item
-                v-if="props.deletable"
+                v-if="deletable"
                 v-close-popup
                 clickable
                 @click="deleteRoom"
@@ -57,12 +57,12 @@
     <room-list-item
       v-for="(_, index) in model.beds"
       :key="index"
-      v-model="room.beds[index]!.person"
+      v-model="model.beds[index]!.person"
       :options
-      :assignable="props.assignable"
+      :assignable
       :position="index + 1"
-      :dense="props.dense"
-      @update="(roommate) => onBedUpdate(index, roommate)"
+      :dense
+      @update:model-value="(roommate) => onBedUpdate(index, roommate)"
     />
   </q-list>
 </template>
@@ -81,18 +81,21 @@ const model = defineModel<RoomWithRoommates>({
   required: true,
 });
 
-interface Props {
+const {
+  name,
+  people,
+  dense = false,
+  editable = false,
+  deletable = false,
+  assignable = false,
+} = defineProps<{
   name: string | Record<string, string>;
   people: Roommate[];
   dense?: boolean;
   editable?: boolean;
   deletable?: boolean;
   assignable?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  dense: false,
-});
+}>();
 
 const emit = defineEmits<{
   (e: 'delete'): void;
@@ -142,7 +145,7 @@ const options = computed<Roommate[]>(() => {
     );
   };
 
-  return props.people.filter(genderFilter).filter(roleFilter);
+  return people.filter(genderFilter).filter(roleFilter);
 });
 
 function onBedUpdate(position: number, roomMate: Roommate | null) {
