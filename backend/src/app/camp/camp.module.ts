@@ -11,7 +11,7 @@ import CampRouter from '#app/camp/camp.routes';
 
 export class CampModule implements AppModule {
   registerRoutes(router: AppRouter): void {
-    router.use('/camps', new CampRouter().router);
+    router.useRouter('/camps', new CampRouter());
   }
 
   registerPermissions(): RoleToPermissions<CampPermission | FilePermission> {
