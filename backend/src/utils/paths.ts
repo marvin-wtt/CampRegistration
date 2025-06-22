@@ -3,20 +3,16 @@ import path from 'path';
 
 const dirname = import.meta.dirname;
 
-console.log(`Current directory: ${dirname}`);
-
 const packageDir = packageDirectorySync({
   cwd: dirname,
 });
-
-console.log(`App directory: ${packageDir ?? ''}`);
 
 if (!packageDir) {
   throw new Error('Could not determine the root path of the package.');
 }
 
 export function appPath(...paths: string[]) {
-  return path.resolve(projectRoot, ...paths);
+  return path.join(projectRoot, ...paths);
 }
 
 export function appBuildPath(...paths: string[]) {
