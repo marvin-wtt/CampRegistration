@@ -116,9 +116,6 @@ jobs:
       - name: Build backend
         run: npm run build -workspace backend
 
-      - name: Build mails
-        run:  npm run dev:views -workspace backend
-
       - name: Migrate test database
         run: npm run migrate --workspace backend
 
@@ -213,7 +210,7 @@ jobs:
         with:
           project: ./e2e
           build: npm run build-and-migrate
-          start: npm run production -w backend
+          start: npm run production
           wait-on: 'http://localhost:3001'
           browser: ${{ matrix.browser }}
           # Records to Cypress Cloud
