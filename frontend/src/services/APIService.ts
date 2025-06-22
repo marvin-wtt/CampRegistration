@@ -12,6 +12,7 @@ import { useProfileService } from 'src/services/ProfileService';
 import { useTotpService } from 'src/services/TotpService';
 import { useMessageTemplateService } from 'src/services/MessageTemplateService';
 import { useMessageService } from 'src/services/MessageService';
+import { useProgramEventService } from 'src/services/ProgramEventService';
 
 export function useAPIService() {
   return {
@@ -28,6 +29,7 @@ export function useAPIService() {
     ...useTotpService(),
     ...useMessageService(),
     ...useMessageTemplateService(),
+    ...useProgramEventService(),
   };
 }
 
