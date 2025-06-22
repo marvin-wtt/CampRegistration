@@ -1,41 +1,49 @@
-import type { Server } from 'http';
-import app from './app.js';
-import prisma from './client.js';
+import { createApp } from './app.js';
 import config from '#config/index';
 import logger from '#core/logger';
+import { boot, shutdown } from '#boot.js';
 
-let server: Server | undefined;
-await prisma.$connect().then(() => {
-  logger.info('Connected to SQL Database');
-  // TODO Error handling
-  server = app.listen(config.port, '', () => {
+async function main() {
+  // Boot must happen before the app is created is it registers routes and middlewares
+  await boot();
+
+  const app = createApp();
+
+  const server = app.listen(config.port, '', () => {
     logger.info(`Listening to port ${config.port.toString()}`);
   });
-});
 
-const exitHandler = () => {
-  if (server) {
+  const exitHandler = (err?: unknown) => {
+    if (err) {
+      logger.error(err);
+    }
     server.close(() => {
-      logger.info('Server closed');
+      logger.info('HTTP server closed');
+      shutdown()
+        .catch((err: unknown) => {
+          logger.error('Failed to shutdown', err);
+        })
+        .finally(() => {
+          logger.close();
+          process.exit(err ? 1 : 0);
+        });
+    });
+
+    setTimeout(() => {
+      logger.error('Forcing process exit');
       logger.close();
       process.exit(1);
-    });
-  } else {
-    process.exit(1);
-  }
-};
+    }, 10_000).unref();
+  };
 
-const unexpectedErrorHandler = (error: unknown) => {
-  logger.error(error);
-  exitHandler();
-};
+  process.on('uncaughtException', exitHandler);
+  process.on('unhandledRejection', exitHandler);
 
-process.on('uncaughtException', unexpectedErrorHandler);
-process.on('unhandledRejection', unexpectedErrorHandler);
+  process.on('SIGINT', exitHandler);
+  process.on('SIGTERM', exitHandler);
+}
 
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received');
-  if (server) {
-    server.close();
-  }
+main().catch((err: unknown) => {
+  logger.error('Failed to start', err);
+  process.exit(1);
 });

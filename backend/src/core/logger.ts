@@ -1,7 +1,7 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 import config from '#config/index';
-import { appPath } from '#utils/paths.js';
+import { appPath } from '#utils/paths';
 
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
