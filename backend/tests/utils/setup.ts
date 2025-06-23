@@ -1,11 +1,15 @@
 import resetDb from './reset-db';
-import { afterEach, beforeEach, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
 import config from '../../src/config';
 import path from 'path';
 import { stopJobs } from '../../src/jobs';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer.js';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, Express } from 'express';
+import { boot, shutdown } from '../../src/boot';
+import { createApp } from '../../src/app';
+
+export let app: Express | undefined;
 
 const skipMiddleware = (req: Request, res: Response, next: NextFunction) =>
   next();
@@ -14,6 +18,12 @@ vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
   authLimiter: skipMiddleware,
   staticLimiter: skipMiddleware,
 }));
+
+beforeAll(async () => {
+  await boot();
+
+  app = createApp();
+});
 
 beforeEach(async () => {
   // mailer
@@ -25,16 +35,20 @@ beforeEach(async () => {
   stopJobs();
 });
 
-const clearDirectory = async (dir: string) => {
-  const directory = path.join(__dirname, '..', '..', dir);
+async function clearDirectory(relativeDir: string) {
+  const directory = path.join(__dirname, '..', '..', relativeDir);
 
   await fse.ensureDir(directory);
-  await fse.emptydir(directory);
-};
+  await fse.emptyDir(directory);
+}
 
 afterEach(async () => {
   vi.clearAllMocks();
   vi.resetAllMocks();
-  // TODO Is this correct?
-  // await prisma.$disconnect();
+});
+
+afterAll(async () => {
+  stopJobs();
+
+  await shutdown();
 });
