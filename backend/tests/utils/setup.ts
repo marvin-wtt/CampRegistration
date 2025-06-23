@@ -11,18 +11,19 @@ import { createApp } from '../../src/app';
 
 export let app: Express | undefined;
 
-const skipMiddleware = (req: Request, res: Response, next: NextFunction) =>
-  next();
-vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
-  generalLimiter: skipMiddleware,
-  authLimiter: skipMiddleware,
-  staticLimiter: skipMiddleware,
-}));
-
 beforeAll(async () => {
   await boot();
 
   app = createApp();
+
+  const skipMiddleware = (_req: Request, _res: Response, next: NextFunction) =>
+    next();
+
+  vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
+    generalLimiter: skipMiddleware,
+    authLimiter: skipMiddleware,
+    staticLimiter: skipMiddleware,
+  }));
 });
 
 beforeEach(async () => {
