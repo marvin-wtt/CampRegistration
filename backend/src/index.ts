@@ -1,7 +1,7 @@
-import { createApp } from './app.js';
 import config from '#config/index';
 import logger from '#core/logger';
-import { boot, shutdown } from '#boot.js';
+import { createApp } from './app.js';
+import { boot, shutdown } from './boot.js';
 
 async function main() {
   // Boot must happen before the app is created is it registers routes and middlewares
