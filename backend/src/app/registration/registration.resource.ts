@@ -33,6 +33,7 @@ export class RegistrationResource extends JsonResource<
         role: this.data.role,
         emails: this.data.emails,
       },
+      customData: this.data.customData ?? null,
       locale: this.data.locale,
       room: this.data.bed ? this.data.bed.room.name : null,
       // Use snake case because form keys should be snake case too

@@ -160,7 +160,10 @@ export class RegistrationService extends BaseService {
   async updateRegistrationById(
     camp: Camp & { freePlaces: number | Record<string, number> },
     registrationId: string,
-    data: Pick<Prisma.RegistrationUpdateInput, 'waitingList' | 'data'>,
+    data: Pick<
+      Prisma.RegistrationUpdateInput,
+      'waitingList' | 'data' | 'customData'
+    >,
   ) {
     let computedData = {};
     if (data.data) {
@@ -177,6 +180,7 @@ export class RegistrationService extends BaseService {
       data: {
         ...computedData,
         data: data.data,
+        customData: data.customData,
         waitingList: data.waitingList,
       },
       include: {

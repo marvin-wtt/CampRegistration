@@ -153,6 +153,40 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 
   describe('GET /api/v1/camps/:campId/registrations/:registrationId', () => {
+    it('should respond with `200` status code', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken(
+        undefined,
+        'DIRECTOR',
+      );
+      const registration = await createRegistration(camp);
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data');
+      const data = body.data;
+
+      expect(data).toHaveProperty('id');
+      expect(data).toHaveProperty('waitingList');
+      expect(data).toHaveProperty('data');
+      expect(data).toHaveProperty('computedData');
+      expect(data).toHaveProperty('computedData.firstName');
+      expect(data).toHaveProperty('computedData.lastName');
+      expect(data).toHaveProperty('computedData.dateOfBirth');
+      expect(data).toHaveProperty('computedData.dateOfBirth');
+      expect(data).toHaveProperty('computedData.gender');
+      expect(data).toHaveProperty('computedData.address');
+      expect(data).toHaveProperty('computedData.role');
+      expect(data).toHaveProperty('computedData.emails');
+      expect(data).toHaveProperty('customData');
+      expect(data).toHaveProperty('locale');
+      expect(data).toHaveProperty('room');
+      expect(data).toHaveProperty('createdAt');
+      expect(body).toHaveProperty('updatedAt');
+    });
+
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -241,9 +275,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       expect(body).toHaveProperty('data');
       expect(body).toHaveProperty('data.id');
+      expect(body).toHaveProperty('data.waitingList');
       expect(body).toHaveProperty('data.data');
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
+      expect(body).toHaveProperty('data.computedData');
+      expect(body).toHaveProperty('data.customData');
+      expect(body).toHaveProperty('data.locale');
+      expect(body).toHaveProperty('data.room');
       expect(body).toHaveProperty('data.createdAt');
       expect(body).toHaveProperty('data.updatedAt');
     });
@@ -1407,6 +1446,89 @@ describe('/api/v1/camps/:campId/registrations', () => {
           zipCode: '12356',
           country: 'de',
         });
+      });
+    });
+
+    describe('custom data', () => {
+      it('should respond with `200` status code when custom data is present', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          'DIRECTOR',
+        );
+        const registration = await createRegistration(camp);
+
+        const customData = {
+          someKey: 'someValue',
+          anotherKey: 123,
+        };
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customData,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customData', {
+          someKey: 'someValue',
+          anotherKey: 123,
+        });
+      });
+
+      it('should respond with `200` status code when custom data is overwritten', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          'DIRECTOR',
+        );
+        const registration = await createRegistration(camp);
+
+        const customData = {
+          someKey: 'someValue',
+          anotherKey: 123,
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customData,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const updatedCustomData = {
+          someKey: 'newValue',
+        };
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customData: updatedCustomData,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customData', {
+          someKey: 'newValue',
+        });
+      });
+
+      it('should respond with `400` status code when custom data is invalid', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          undefined,
+          'DIRECTOR',
+        );
+        const registration = await createRegistration(camp);
+
+        const customData = 'Invalid custom data';
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customData,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
       });
     });
   });

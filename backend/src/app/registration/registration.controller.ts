@@ -56,19 +56,22 @@ class RegistrationController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      body: { data, waitingList },
+      body: { data, customData, waitingList },
       params: { registrationId },
     } = await req.validate(validator.update);
     const camp = req.modelOrFail('camp');
     const previousRegistration = req.modelOrFail('registration');
 
+    const updateData = {
+      data,
+      customData,
+      waitingList,
+    };
+
     const registration = await registrationService.updateRegistrationById(
       camp,
       registrationId,
-      {
-        data,
-        waitingList,
-      },
+      updateData,
     );
 
     if (previousRegistration.data !== registration.data) {
