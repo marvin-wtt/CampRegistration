@@ -1,4 +1,4 @@
-import type { Express, Router } from 'express';
+import type { Router } from 'express';
 import type {
   ManagerRole,
   Permission,
@@ -9,9 +9,8 @@ export type AppRouter = Router & {
   useRouter: (path: string, router: ModuleRouter) => void;
 };
 
-export interface ModuleOptions {
-  app: Express;
-}
+// Convert to interface to allow for more flexibility in the future
+export type ModuleOptions = object;
 
 export type RoleToPermissions<T extends Permission> = Partial<
   Record<ManagerRole, T[]>

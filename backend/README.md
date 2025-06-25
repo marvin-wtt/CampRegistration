@@ -38,7 +38,6 @@ The Camp Registration Backend is a RESTful API service that powers the Camp Regi
    ```
 
 3. Set up environment variables:
-
    - Copy `.env.dev` to `.env`
    - Update the database connection string and other configuration values
 
