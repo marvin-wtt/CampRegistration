@@ -10,13 +10,11 @@ import { boot, shutdown } from '../../src/boot';
 import { createApp } from '../../src/app';
 
 vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
-  generalLimiter: skipMiddleware,
-  authLimiter: skipMiddleware,
-  staticLimiter: skipMiddleware,
+  // Mock rate limiters to do nothing
+  generalLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
+  authLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
+  staticLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
 }));
-
-const skipMiddleware = (_req: Request, _res: Response, next: NextFunction) =>
-  next();
 
 export let app: Express | undefined;
 
