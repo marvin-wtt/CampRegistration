@@ -17,6 +17,9 @@ export function updateObjectAtPath(
   // Traverse/create intermediate objects
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i]!;
+    if (key === "__proto__" || key === "constructor") {
+      throw new Error(`Invalid key: ${key}`);
+    }
     const next = current[key];
     if (typeof next !== 'object' || next === null || Array.isArray(next)) {
       // overwrite non-objects (or arrays) with a fresh object
@@ -27,6 +30,9 @@ export function updateObjectAtPath(
 
   // Set the final key to the new value
   const lastKey = keys[keys.length - 1]!;
+  if (lastKey === "__proto__" || lastKey === "constructor") {
+    throw new Error(`Invalid key: ${lastKey}`);
+  }
   current[lastKey] = value;
 
   return obj;
