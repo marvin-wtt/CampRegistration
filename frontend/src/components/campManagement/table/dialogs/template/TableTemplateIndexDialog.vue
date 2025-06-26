@@ -57,6 +57,7 @@ import TableTemplateEditDialog from 'components/campManagement/table/dialogs/tem
 import SortableList from 'components/common/SortableList.vue';
 import { ref, toRaw } from 'vue';
 import { usePermissions } from 'src/composables/permissions';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 const { camp, templates } = defineProps<{
   templates: TableTemplate[];
@@ -81,7 +82,7 @@ function propTemplates(): TableTemplate[] {
     .filter((template) => template.generated !== true)
     .map(toRaw);
 
-  return structuredClone<TableTemplate[]>(toRaw(val));
+  return structuredClone(deepToRaw(val));
 }
 
 function addTemplate() {

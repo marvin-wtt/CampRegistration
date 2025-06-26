@@ -216,7 +216,7 @@
 <script lang="ts" setup>
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref, toRaw, watch, watchEffect } from 'vue';
+import { computed, reactive, ref, watch, watchEffect } from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
@@ -231,6 +231,7 @@ import { extractFormFields } from 'src/utils/surveyJS';
 import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 import type { PartialBy } from 'src/types';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 interface Props {
   column: TableColumnTemplate;
@@ -248,7 +249,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 const column = reactive<PartialBy<TableColumnTemplate, 'name'>>(
-  structuredClone(toRaw(props.column)),
+  structuredClone(deepToRaw(props.column)),
 );
 const advanced = ref<boolean>(false);
 
