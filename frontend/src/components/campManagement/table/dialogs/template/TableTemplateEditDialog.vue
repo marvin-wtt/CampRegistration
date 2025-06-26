@@ -8,10 +8,8 @@
       class="q-dialog-plugin q-pb-none row justify-between content-start"
       :style="cardStyle"
     >
-      <q-card-section class="col-12">
-        <div class="text-h5">
-          {{ t('title') }}
-        </div>
+      <q-card-section class="col-12 text-h5">
+        {{ t('title') }}
       </q-card-section>
 
       <q-card-section class="col-12 col-md-7 q-pt-none q-gutter-y-sm column">
@@ -244,12 +242,6 @@ const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const template = reactive<TableTemplate>(
   structuredClone(toRaw(props.template)),
@@ -300,6 +292,7 @@ function swapSortDirection(): void {
 function addColumn(): void {
   const column: PartialBy<TableColumnTemplate, 'name'> = {
     label: 'label ' + template.columns.length,
+    source: 'form',
     field: '',
     align: 'left',
     renderAs: 'default',
@@ -322,7 +315,7 @@ function addColumn(): void {
 
 function createColumnName(label: TableColumnTemplate['label']): string {
   const labelString =
-    typeof label === 'string' ? label : Object.values(label)[0];
+    typeof label === 'string' ? label : (Object.values(label)[0] ?? '');
   const name = labelString.toLowerCase().replaceAll(' ', '_');
   const names = template.columns.map((column) => column.name);
 
@@ -334,7 +327,10 @@ function editColumn(column: TableColumnTemplate): void {
     .dialog({
       component: TableTemplateColumnEditDialog,
       componentProps: {
-        column: column,
+        column: {
+          source: 'form', // Fallback value
+          ...column,
+        },
         camp: props.camp,
       },
     })

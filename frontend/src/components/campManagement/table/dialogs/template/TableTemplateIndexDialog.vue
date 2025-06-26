@@ -5,10 +5,8 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin q-pb-none">
-      <q-card-section>
-        <div class="text-h6">
-          {{ t('title') }}
-        </div>
+      <q-card-section class="text-h6">
+        {{ t('title') }}
       </q-card-section>
 
       <q-card-section class="q-pt-none">
@@ -57,15 +55,13 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import type { Camp, TableTemplate } from '@camp-registration/common/entities';
 import TableTemplateEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateEditDialog.vue';
 import SortableList from 'components/common/SortableList.vue';
-import { reactive, toRaw } from 'vue';
+import { ref, toRaw } from 'vue';
 import { usePermissions } from 'src/composables/permissions';
 
-interface Props {
+const { camp, templates } = defineProps<{
   templates: TableTemplate[];
   camp: Camp;
-}
-
-const props = defineProps<Props>();
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -76,32 +72,23 @@ const { can } = usePermissions();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedTemplates = reactive<TableTemplate[]>(propTemplates());
+const modifiedTemplates = ref<TableTemplate[]>(propTemplates());
 
 function propTemplates(): TableTemplate[] {
   // Filter generated templates as they cannot be edited and remove vue proxies
-  const templates = props.templates
-    .filter((template) => {
-      return template.generated !== true;
-    })
-    .map((template) => {
-      return toRaw(template);
-    });
-  return structuredClone(templates) as TableTemplate[];
+  const val = templates
+    .filter((template) => template.generated !== true)
+    .map(toRaw);
+
+  return structuredClone<TableTemplate[]>(toRaw(val));
 }
 
 function addTemplate() {
   const template: TableTemplate = {
     id: 'filled-by-server',
     title: t('defaults.title'),
-    order: modifiedTemplates.length,
+    order: modifiedTemplates.value.length,
     indexed: true,
     actions: true,
     columns: [],
@@ -110,12 +97,12 @@ function addTemplate() {
     .dialog({
       component: TableTemplateEditDialog,
       componentProps: {
-        template: template,
-        camp: props.camp,
+        template,
+        camp,
       },
     })
     .onOk((payload) => {
-      modifiedTemplates.push(payload);
+      modifiedTemplates.value.push(payload);
     });
 }
 
@@ -124,24 +111,24 @@ function editTemplate(template: TableTemplate) {
     .dialog({
       component: TableTemplateEditDialog,
       componentProps: {
-        template: template,
-        camp: props.camp,
+        template,
+        camp,
       },
       persistent: true,
     })
     .onOk((payload) => {
-      const index = modifiedTemplates.indexOf(template);
+      const index = modifiedTemplates.value.indexOf(template);
 
       if (index < 0) {
         return;
       }
 
-      modifiedTemplates[index] = payload;
+      modifiedTemplates.value[index] = payload;
     });
 }
 
 function onOKClick() {
-  onDialogOK(modifiedTemplates);
+  onDialogOK(modifiedTemplates.value);
 }
 </script>
 

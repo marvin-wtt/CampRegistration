@@ -1,6 +1,4 @@
 <template>
-  <!-- TODO Add inline editor -->
-
   <!-- Array of elements -->
   <div
     v-if="asArray"
@@ -13,9 +11,9 @@
       <component
         :is="renderer.component"
         v-if="renderer.isVisible(cellProps.row)"
-        :camp="camp"
+        :camp
         :options="renderer.options"
-        :printing="printing"
+        :printing
         :props="{
           ...cellProps,
           value,
@@ -32,9 +30,9 @@
     <component
       :is="renderer.component"
       v-if="renderer.isVisible(cellProps.row)"
-      :camp="camp"
+      :camp
       :options="renderer.options"
-      :printing="printing"
+      :printing
       :props="cellProps"
     />
   </template>
