@@ -10,7 +10,6 @@ export default {
   appName: env.APP_NAME,
   port: env.APP_PORT,
   origin: env.APP_URL,
-  maintenanceMode: env.MAINTENANCE_MODE,
   jwt: {
     ...authConfig,
   },

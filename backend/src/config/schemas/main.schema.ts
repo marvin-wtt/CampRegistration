@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { BooleanStringSchema } from '#core/validation/helper.js';
 
 export const MainEnvSchema = z.object({
   NODE_ENV: z.enum(['production', 'development', 'test']),
@@ -11,5 +10,4 @@ export const MainEnvSchema = z.object({
     .default(8000),
   APP_URL: z.string().url().describe('URL, where the app is hosted.'),
   APP_NAME: z.string().readonly().describe('The name of the app.'),
-  MAINTENANCE_MODE: BooleanStringSchema.default(false),
 });

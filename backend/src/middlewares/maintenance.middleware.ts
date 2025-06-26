@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
-import config from '#config/index';
+import * as process from 'node:process';
 
 export default (_req: Request, res: Response, next: NextFunction) => {
-  if (config.maintenanceMode) {
+  if (process.env.MAINTENANCE_MODE === 'true') {
     const retryAfterTime = 3 * 60;
     res.setHeader('Retry-After', retryAfterTime).sendStatus(503);
   } else {
