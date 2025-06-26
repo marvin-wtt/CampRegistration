@@ -32,14 +32,14 @@
       <q-card-actions align="right">
         <q-btn
           color="primary"
-          :label="t('actions.cancel')"
+          :label="t('action.cancel')"
           outline
           rounded
           @click="onDialogCancel"
         />
         <q-btn
           color="primary"
-          :label="t('actions.ok')"
+          :label="t('action.ok')"
           rounded
           @click="onOKClick"
         />
@@ -88,11 +88,37 @@ function propTemplates(): TableTemplate[] {
 function addTemplate() {
   const template: TableTemplate = {
     id: 'filled-by-server',
-    title: t('defaults.title'),
+    title: t('default.title'),
     order: modifiedTemplates.value.length,
     indexed: true,
     actions: true,
-    columns: [],
+    sortBy: 'first_name',
+    columns: [
+      {
+        label: {
+          en: 'First Name',
+          de: 'Vorname',
+          fr: 'Prénom',
+        },
+        name: 'first_name',
+        field: 'computedData.firstName',
+        align: 'left',
+        renderAs: 'name',
+        sortable: true,
+      },
+      {
+        label: {
+          en: 'Last Name',
+          de: 'Nachname',
+          fr: 'Nom de famille',
+        },
+        name: 'last_name',
+        field: 'computedData.lastName',
+        align: 'left',
+        renderAs: 'name',
+        sortable: true,
+      },
+    ],
   };
   quasar
     .dialog({
@@ -138,32 +164,32 @@ function onOKClick() {
 <i18n lang="yaml" locale="en">
 title: 'Edit Templated'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Cancel'
 
-defaults:
+default:
   title: 'New template'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Vorlagen bearbeiten'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Abbrechen'
 
-defaults:
+default:
   title: 'Neue Vorlage'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Modifier le modèle'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Annuler'
 
-defaults:
+default:
   title: 'Nouveau modèle'
 </i18n>
