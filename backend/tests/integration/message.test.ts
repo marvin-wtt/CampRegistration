@@ -79,12 +79,8 @@ describe('/api/v1/camps/:campId/messages', () => {
       // Encode html characters
       expected = expected.map((value) => ({
         ...value,
-        subject: encode(value.subject, {
-          level: 'html4',
-        }),
-        body: encode(value.body, {
-          level: 'html4',
-        }),
+        subject: encode(value.subject).replace('&apos;', '&#x27;'),
+        body: encode(value.body).replace('&apos;', '&#x27;'),
       }));
 
       const emailCount = expected.reduce((acc, curr) => {
