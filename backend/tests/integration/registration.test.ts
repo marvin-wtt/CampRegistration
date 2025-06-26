@@ -184,7 +184,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(data).toHaveProperty('locale');
       expect(data).toHaveProperty('room');
       expect(data).toHaveProperty('createdAt');
-      expect(body).toHaveProperty('updatedAt');
+      expect(data).toHaveProperty('updatedAt');
     });
 
     it.each([
