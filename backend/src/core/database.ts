@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { createSoftDeleteExtension } from 'prisma-extension-soft-delete';
 import logger from '#core/logger';
-import config from '#config/index';
 
 function createClient(): PrismaClient {
   return new PrismaClient().$extends(
@@ -24,7 +23,7 @@ export const prisma: PrismaClient = createClient();
 export async function connectDatabase() {
   await prisma.$connect();
 
-  logger.info(`Listening to port ${config.port.toString()}`);
+  logger.info('Connected to SQL Database');
 }
 
 export async function disconnectDatabase() {
