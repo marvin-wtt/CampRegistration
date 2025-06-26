@@ -8,15 +8,14 @@
         style="min-width: 250px"
       >
         <a>
-          {{ cellProps.col.label }}
+          {{ label }}
         </a>
 
         <q-input
           v-model="modelValue"
-          :label="cellProps.col.label"
-          :autofocus="true"
-          :dense="true"
-          :debounce="500"
+          :label
+          autofocus
+          dense
           rounded
           outlined
         />
@@ -49,15 +48,19 @@ import { computed, ref, watch, watchEffect } from 'vue';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { props: cellProps } = defineProps<TableCellProps>();
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 const registrationsStore = useRegistrationsStore();
 
 const popupState = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const modelValue = ref<string>(getDefaultValue());
+
+const label = computed<string>(() => to(cellProps.col.label));
 
 const fieldName = computed<string | undefined>(() => {
   const fieldName = getStringValue(cellProps.col, 'fieldName');
