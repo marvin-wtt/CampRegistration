@@ -18,9 +18,7 @@ vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
 
 export let app: Express | undefined;
 
-beforeAll(async () => {
-  await startApp();
-});
+beforeAll(startApp);
 
 beforeEach(async () => {
   // mailer
