@@ -187,7 +187,7 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import TableTemplateIndexDialog from 'components/campManagement/table/dialogs/template/TableTemplateIndexDialog.vue';
+import TableTemplateIndexDialog from 'components/campManagement/table/dialogs/TableTemplateIndexDialog.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';

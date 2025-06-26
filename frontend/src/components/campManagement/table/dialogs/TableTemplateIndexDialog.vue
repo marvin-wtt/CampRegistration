@@ -53,7 +53,7 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import type { Camp, TableTemplate } from '@camp-registration/common/entities';
-import TableTemplateEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateEditDialog.vue';
+import TableTemplateEditDialog from 'components/campManagement/table/dialogs/TableTemplateEditDialog.vue';
 import SortableList from 'components/common/SortableList.vue';
 import { ref, toRaw } from 'vue';
 import { usePermissions } from 'src/composables/permissions';

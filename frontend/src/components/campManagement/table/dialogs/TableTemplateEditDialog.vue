@@ -223,7 +223,7 @@ import type {
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, ref } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
-import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateColumnEditDialog.vue';
+import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/TableTemplateColumnEditDialog.vue';
 import type { PartialBy } from 'src/types';
 import { uniqueName } from 'src/utils/uniqueName';
 import { deepToRaw } from 'src/utils/deepToRaw';
