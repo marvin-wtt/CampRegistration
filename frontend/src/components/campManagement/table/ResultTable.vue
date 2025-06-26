@@ -4,9 +4,9 @@
     id="print-table"
     v-model:pagination="pagination"
     :columns="columns as QTableColumn[]"
-    :rows="rows"
+    :rows
     :rows-per-page-options="[0]"
-    :style="style"
+    :style
     :title="t('title')"
     class="my-sticky-header-table"
     dense
@@ -142,10 +142,13 @@
 
     <template
       v-for="[key, renderer] in renderers"
-      :key="key"
+      :key
       #[`body-cell-${key}`]="rendererProps"
     >
-      <q-td :props="rendererProps">
+      <q-td
+        :props="rendererProps"
+        :key
+      >
         <table-cell-wrapper
           :renderer
           :camp
@@ -212,7 +215,7 @@ const { can } = usePermissions();
 const templateStore = useTemplateStore();
 const registrationAccessor = useRegistrationHelper();
 
-const pagination = ref<QTable['pagination']>({
+const pagination = ref<Exclude<QTable['pagination'], undefined>>({
   rowsPerPage: 0,
   sortBy: null,
 });
@@ -284,22 +287,20 @@ const templates = computed<CTableTemplate[]>(() => {
     columns: template.columns.map((column) => ({
       ...column,
       field: (row: unknown) => objectValueByPath(column.field as string, row),
+      fieldName: column.field,
     })),
   }));
 
   // Default template to show all information
-  const columns: CTableColumnTemplate[] = props.questions.map((column) => {
-    return {
-      ...column,
-      field: (row: unknown) =>
-        objectValueByPath(('data.' + column.field) as string, row),
-    };
-  });
-
   templates.push({
     id: '-1',
     title: 'Original (Plain)',
-    columns,
+    columns: props.questions.map((column) => ({
+      ...column,
+      field: (row: unknown) =>
+        objectValueByPath(('data.' + column.field) as string, row),
+      fieldName: 'data.' + column.field,
+    })),
     order: 99,
     generated: true,
   });
@@ -309,7 +310,7 @@ const templates = computed<CTableTemplate[]>(() => {
 const template = ref<CTableTemplate>(defaultTemplate());
 
 watch(template, (newValue) => {
-  pagination.value.sortBy = newValue.sortBy;
+  pagination.value.sortBy = newValue.sortBy ?? null;
   pagination.value.descending = newValue.sortDirection === 'desc';
 });
 
@@ -318,14 +319,18 @@ function defaultTemplate(): CTableTemplate {
     const id = route.hash.substring(1);
     const result = templates.value.find((value) => value.id == id);
     if (result) {
-      pagination.value.sortBy = result.sortBy;
+      pagination.value.sortBy = result.sortBy ?? null;
       pagination.value.descending = result.sortDirection === 'desc';
 
       return result;
     }
   }
 
-  return templates.value[0];
+  if (templates.value.length === 0) {
+    throw new Error('No templates available');
+  }
+
+  return templates.value[0]!;
 }
 
 function onTemplateChange() {
@@ -342,6 +347,7 @@ const columns = computed<CTableColumnTemplate[]>(() => {
     columns.unshift({
       name: '_index',
       field: '',
+      fieldName: '',
       label: '',
       align: 'center',
       renderAs: 'index',
@@ -356,6 +362,7 @@ const columns = computed<CTableColumnTemplate[]>(() => {
       align: 'center',
       label: '',
       field: '',
+      fieldName: '',
       renderAs: 'action',
       shrink: true,
     });

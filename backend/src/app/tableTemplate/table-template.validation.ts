@@ -8,6 +8,7 @@ const TableTemplateBodySchema = z.object({
   columns: z.array(
     z.object({
       name: z.string(),
+      source: z.enum(['form', 'custom']).optional(),
       field: StringOrFunctionSchema,
       label: translatedValue(z.string()),
       required: z.boolean().optional(),

@@ -18,9 +18,13 @@ import PhoneNumberTableCell from 'components/campManagement/table/tableCells/Pho
 import TextTableCell from 'components/campManagement/table/tableCells/TextTableCell.vue';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import TranslatedValueTableCell from 'components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
+import EditorTableCell from 'components/campManagement/table/tableCells/EditorTableCell.vue';
 
 // TODO Add custom config options
 const components = () => {
+  TableComponentRegistry.register('editor', EditorTableCell, {
+    internal: true,
+  });
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,
   });

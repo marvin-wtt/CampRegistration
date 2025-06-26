@@ -73,7 +73,7 @@ const { can } = usePermissions();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const modifiedTemplates = ref<TableTemplate[]>({ ...propTemplates() });
+const modifiedTemplates = ref<TableTemplate[]>(propTemplates());
 
 function propTemplates(): TableTemplate[] {
   // Filter generated templates as they cannot be edited and remove vue proxies
@@ -128,7 +128,7 @@ function editTemplate(template: TableTemplate) {
 }
 
 function onOKClick() {
-  onDialogOK(modifiedTemplates);
+  onDialogOK(modifiedTemplates.value);
 }
 </script>
 

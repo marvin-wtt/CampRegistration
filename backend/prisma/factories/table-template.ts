@@ -19,6 +19,7 @@ export const TableTemplateFactory = {
             en: faker.lorem.words(2),
             de: faker.lorem.words(2),
           },
+          source: 'form',
           field: faker.database.column(),
           required: faker.datatype.boolean(),
           align: faker.helpers.arrayElement(['left', 'center', 'right']),
