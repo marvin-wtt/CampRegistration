@@ -2,42 +2,44 @@
   {{ cellProps.value }}
 
   <q-popup-proxy v-model="popupState">
-    <div
-      class="column q-gutter-sm q-pa-md"
-      style="min-width: 250px"
-    >
-      <a>
-        {{ cellProps.col.label }}
-      </a>
+    <q-banner>
+      <div
+        class="column q-gutter-sm q-ma-xs"
+        style="min-width: 250px"
+      >
+        <a>
+          {{ cellProps.col.label }}
+        </a>
 
-      <q-input
-        v-model="modelValue"
-        :label="cellProps.col.label"
-        :autofocus="true"
-        :dense="true"
-        :debounce="500"
-        rounded
-        outlined
-      />
+        <q-input
+          v-model="modelValue"
+          :label="cellProps.col.label"
+          :autofocus="true"
+          :dense="true"
+          :debounce="500"
+          rounded
+          outlined
+        />
 
-      <div class="row justify-end">
-        <q-btn
-          :label="t('action.cancel')"
-          :disable="loading"
-          rounded
-          flat
-          @click="onCancel"
-        />
-        <q-btn
-          :label="t('action.save')"
-          color="primary"
-          :loading
-          :disable="!registrationId || !fieldName"
-          rounded
-          @click="onSave"
-        />
+        <div class="row justify-end">
+          <q-btn
+            :label="t('action.cancel')"
+            :disable="loading"
+            rounded
+            flat
+            @click="onCancel"
+          />
+          <q-btn
+            :label="t('action.save')"
+            color="primary"
+            :loading
+            :disable="!registrationId || !fieldName"
+            rounded
+            @click="onSave"
+          />
+        </div>
       </div>
-    </div>
+    </q-banner>
   </q-popup-proxy>
 </template>
 
