@@ -18,7 +18,7 @@ export interface Registration extends Identifiable, Timestamps {
       country: string | null;
     };
   };
-  customData: Record<string, unknown> | null;
+  customData: Record<string, unknown>;
   waitingList: boolean;
   locale: string;
   room?: Translatable | null;
