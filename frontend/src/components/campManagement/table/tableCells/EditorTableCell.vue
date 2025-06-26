@@ -29,10 +29,12 @@
         <q-input
           v-model="modelValue"
           :label
+          :disable="loading || !!error"
           autofocus
           dense
           rounded
           outlined
+          @keydown.enter="onSave"
         />
 
         <div class="row justify-end">
