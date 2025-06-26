@@ -166,11 +166,12 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, toRaw } from 'vue';
+import { computed, reactive } from 'vue';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -187,8 +188,8 @@ const props = defineProps<{
 }>();
 
 const message = reactive({
-  subject: structuredClone(toRaw(props.subject)),
-  body: structuredClone(toRaw(props.body)),
+  subject: structuredClone(deepToRaw(props.subject)),
+  body: structuredClone(deepToRaw(props.body)),
 });
 
 const translated = computed<boolean>(() => {

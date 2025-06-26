@@ -34,9 +34,7 @@ beforeEach(async () => {
   stopJobs();
 });
 
-async function clearDirectory(relativeDir: string) {
-  const directory = path.join(__dirname, '..', '..', relativeDir);
-
+async function clearDirectory(directory: string) {
   await fse.ensureDir(directory);
   await fse.emptyDir(directory);
 }

@@ -221,11 +221,12 @@ import type {
   Camp,
 } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { computed, reactive, ref, toRaw } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import SortableList from 'components/common/SortableList.vue';
 import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/template/TableTemplateColumnEditDialog.vue';
 import type { PartialBy } from 'src/types';
 import { uniqueName } from 'src/utils/uniqueName';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 interface Props {
   template: TableTemplate;
@@ -244,7 +245,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 const template = reactive<TableTemplate>(
-  structuredClone(toRaw(props.template)),
+  structuredClone(deepToRaw(props.template)),
 );
 const advanced = ref<boolean>(false);
 

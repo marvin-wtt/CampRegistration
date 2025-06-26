@@ -5,10 +5,8 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin q-pb-none">
-      <q-card-section>
-        <div class="text-h6">
-          {{ t('title') }}
-        </div>
+      <q-card-section class="text-h6">
+        {{ t('title') }}
       </q-card-section>
 
       <q-card-section class="q-pt-none">
@@ -49,10 +47,11 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import SortableList from 'components/common/SortableList.vue';
-import { reactive, toRaw } from 'vue';
+import { ref } from 'vue';
 import type { RoomWithRoommates } from 'src/types/Room';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
-const props = defineProps<{
+const { rooms } = defineProps<{
   rooms: RoomWithRoommates[];
 }>();
 
@@ -63,21 +62,10 @@ const { to } = useObjectTranslation();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const modifiedRooms = reactive<RoomWithRoommates[]>(propRooms());
-
-function propRooms(): RoomWithRoommates[] {
-  const rooms = props.rooms.map((room) => {
-    return toRaw(room);
-  });
-  return structuredClone(rooms) as RoomWithRoommates[];
-}
+const modifiedRooms = ref<RoomWithRoommates[]>(
+  structuredClone(deepToRaw(rooms)),
+);
 
 function onOKClick() {
   onDialogOK(modifiedRooms);

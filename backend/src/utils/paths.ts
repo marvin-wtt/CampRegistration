@@ -12,7 +12,7 @@ if (!packageDir) {
 }
 
 export function appPath(...paths: string[]) {
-  return path.join(projectRoot, ...paths);
+  return path.resolve(projectRoot, ...paths);
 }
 
 export function appBuildPath(...paths: string[]) {

@@ -268,14 +268,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, toRaw } from 'vue';
+import { computed, ref } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useI18n } from 'vue-i18n';
 import CountrySelect from 'components/common/CountrySelect.vue';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 const { t } = useI18n();
 
@@ -309,7 +309,7 @@ const submitLabel = computed<string>(() => {
 });
 
 function initialValue(): Partial<Camp> {
-  const camp = structuredClone(toRaw(props.modelValue));
+  const camp = structuredClone(deepToRaw(props.modelValue));
   camp.public = camp.public ?? false;
   return camp;
 }
