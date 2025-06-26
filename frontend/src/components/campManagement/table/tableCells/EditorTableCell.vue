@@ -7,9 +7,9 @@
         class="column q-gutter-sm q-ma-xs"
         style="min-width: 250px"
       >
-        <a>
+        <span>
           {{ label }}
-        </a>
+        </span>
 
         <div
           v-if="error"
@@ -22,7 +22,7 @@
             />
           </div>
           <div>
-            <a>{{ error }} {{ t('error.hint') }}</a>
+            <span>{{ error }} {{ t('error.hint') }}</span>
           </div>
         </div>
 
