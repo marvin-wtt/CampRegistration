@@ -1,7 +1,6 @@
 import { type Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import components from 'components/campManagement/table/tableCells';
-import type { AnyElement } from '@camp-registration/common/entities';
 import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 
 type MaybeLazyComponent = Component | (() => Component);
@@ -10,7 +9,6 @@ interface ComponentOptions {
   editable?: false | object;
   label?: string | Record<string, string>;
   internal?: boolean;
-  edit?: Omit<AnyElement, 'name' | 'title'>;
   customOptions?: BaseComponent[];
 }
 

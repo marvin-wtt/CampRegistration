@@ -28,7 +28,6 @@ export const TableTemplateFactory = {
           renderOptions: undefined,
           isArray: undefined,
           headerVertical: undefined,
-          editable: undefined,
           shrink: undefined,
           hideIf: undefined,
           showIf: undefined,

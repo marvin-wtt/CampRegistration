@@ -33,7 +33,6 @@ export interface TableColumnTemplate {
   renderOptions?: Record<string, unknown> | undefined;
   isArray?: boolean | undefined;
   headerVertical?: boolean | undefined;
-  editable?: boolean | undefined;
   shrink?: boolean | undefined;
   hideIf?: string | undefined;
   showIf?: string | undefined;

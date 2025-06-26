@@ -21,7 +21,6 @@ const TableTemplateBodySchema = z.object({
       renderAs: z.string().optional(),
       renderOptions: z.unknown().nullable().optional(),
       isArray: z.boolean().optional(),
-      editable: z.boolean().optional(),
       headerVertical: z.boolean().optional(),
       shrink: z.boolean().optional(),
       hideIf: z.string().nullable().optional(),
