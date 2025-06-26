@@ -7,18 +7,34 @@
         class="column q-gutter-sm q-ma-xs"
         style="min-width: 250px"
       >
-        <a>
-          {{ cellProps.col.label }}
-        </a>
+        <span>
+          {{ label }}
+        </span>
+
+        <div
+          v-if="error"
+          class="row q-gutter-sm no-wrap text-negative"
+        >
+          <div class="self-center">
+            <q-icon
+              name="error"
+              size="sm"
+            />
+          </div>
+          <div>
+            <span>{{ error }} {{ t('error.hint') }}</span>
+          </div>
+        </div>
 
         <q-input
           v-model="modelValue"
-          :label="cellProps.col.label"
-          :autofocus="true"
-          :dense="true"
-          :debounce="500"
+          :label
+          :disable="loading || !!error"
+          autofocus
+          dense
           rounded
           outlined
+          @keydown.enter="onSave"
         />
 
         <div class="row justify-end">
@@ -49,15 +65,19 @@ import { computed, ref, watch, watchEffect } from 'vue';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { props: cellProps } = defineProps<TableCellProps>();
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 const registrationsStore = useRegistrationsStore();
 
 const popupState = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const modelValue = ref<string>(getDefaultValue());
+
+const label = computed<string>(() => to(cellProps.col.label));
 
 const fieldName = computed<string | undefined>(() => {
   const fieldName = getStringValue(cellProps.col, 'fieldName');
@@ -70,6 +90,18 @@ const fieldName = computed<string | undefined>(() => {
 const registrationId = computed<string | undefined>(() =>
   getStringValue(cellProps.row, 'id'),
 );
+
+const error = computed<string | null>(() => {
+  if (!registrationId.value) {
+    return t('error.registration_id');
+  }
+
+  if (!fieldName.value) {
+    return t('error.field_name');
+  }
+
+  return null;
+});
 
 watchEffect(() => {
   modelValue.value = getDefaultValue();
@@ -147,16 +179,31 @@ function getStringValue(obj: object, key: string): string | undefined {
 action:
   cancel: 'Cancel'
   save: 'Save'
+
+error:
+  hint: 'Please update the column definition.'
+  registration_id: 'Registration ID was not found!'
+  field_name: 'Field name is required!'
 </i18n>
 <i18n lang="yaml" locale="de">
 action:
   cancel: 'Abbrechen'
   save: 'Speichern'
+
+error:
+  hint: 'Bitte aktualisieren Sie die Spaltendefinition.'
+  registration_id: 'Registrierungs-ID wurde nicht gefunden!'
+  field_name: 'Feldname ist erforderlich!'
 </i18n>
 <i18n lang="yaml" locale="fr">
 action:
   cancel: 'Annuler'
   save: 'Enregistrer'
+
+error:
+  hint: 'Veuillez mettre à jour la définition de la colonne.'
+  registration_id: "L'ID d'enregistrement n'a pas été trouvé!"
+  field_name: 'Le nom du champ est requis!'
 </i18n>
 
 <style lang="scss" scoped></style>
