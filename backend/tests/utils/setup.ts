@@ -19,9 +19,7 @@ vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
 export let app: Express | undefined;
 
 beforeAll(async () => {
-  await boot();
-
-  app = createApp();
+  await startApp();
 });
 
 beforeEach(async () => {
@@ -46,8 +44,21 @@ afterEach(async () => {
   vi.resetAllMocks();
 });
 
-afterAll(async () => {
+afterAll(stopApp);
+
+async function startApp() {
+  await boot();
+
+  app = createApp();
+}
+
+async function stopApp() {
   stopJobs();
 
   await shutdown();
-});
+}
+
+export async function restartApp() {
+  await stopApp();
+  await startApp();
+}
