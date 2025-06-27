@@ -22,7 +22,7 @@ export function objectValueByPath(
       return result.flatMap((item) => objectValueByPath(remainingPath, item));
     }
 
-    if (typeof result !== 'object' || !(key in result)) {
+    if (typeof result !== 'object' || key === undefined || !(key in result)) {
       return undefined;
     }
 

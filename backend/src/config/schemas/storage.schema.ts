@@ -1,15 +1,18 @@
 import { z } from 'zod';
-import path from 'path';
 
 export const StorageEnvSchema = z.object({
   TMP_DIR: z
     .string()
     .describe('Directory where unprocessed files are stored')
-    .default(path.join('storage', 'tmp') + path.sep),
+    .default('storage/tmp'),
   UPLOAD_DIR: z
     .string()
     .describe('Directory where uploaded files are stored')
-    .default(path.join('storage', 'uploads') + path.sep),
+    .default('storage/uploads'),
+  STATIC_DIR: z
+    .string()
+    .describe('Directory from which static files are served')
+    .default('storage/static'),
   STORAGE_LOCATION: z
     .string()
     .describe('Location where new files should be stored to')

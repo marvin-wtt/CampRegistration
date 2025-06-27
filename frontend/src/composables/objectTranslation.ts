@@ -2,7 +2,9 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 
 export function useObjectTranslation() {
-  const { locale, fallbackLocale } = useI18n();
+  const { locale, fallbackLocale } = useI18n({
+    useScope: 'global',
+  });
 
   function to(value: string | Record<string, string> | undefined): string {
     if (value === undefined) {

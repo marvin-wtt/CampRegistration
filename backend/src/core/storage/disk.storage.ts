@@ -7,7 +7,9 @@ import type { File } from '@prisma/client';
 import path from 'path';
 
 export class DiskStorage implements Storage {
-  constructor(private storageDir: string) {}
+  constructor(private readonly storageDir: string) {
+    fse.ensureDirSync(this.storageDir);
+  }
 
   private isDirectoryPathValid(filePath: string, rootPath: string): boolean {
     // Make sure, that the file path does not escape the root path

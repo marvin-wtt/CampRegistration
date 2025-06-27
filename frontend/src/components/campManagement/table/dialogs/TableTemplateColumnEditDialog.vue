@@ -19,6 +19,17 @@
         />
 
         <q-select
+          v-model="column.source"
+          :label="t('field.source.label')"
+          :options="sourceOptions"
+          map-options
+          emit-value
+          outlined
+          rounded
+        />
+
+        <q-select
+          v-if="!column.source || column.source === 'form'"
           v-model="column.field"
           :label="t('field.field.label')"
           :hint="t('field.field.hint')"
@@ -50,7 +61,16 @@
           </template>
         </q-select>
 
+        <q-input
+          v-else
+          v-model="column.field"
+          :label="t('field.field.label')"
+          outlined
+          rounded
+        />
+
         <q-select
+          v-if="column.source !== 'custom'"
           v-model="column.renderAs"
           :label="t('field.renderAs.label')"
           :hint="t('field.renderAs.hint')"
@@ -169,14 +189,6 @@
                 />
               </q-expansion-item>
             </q-list>
-
-            <!-- TODO Enable if feature is implemented or remove it -->
-            <!-- -->
-            <!--        <toggle-item-->
-            <!--          v-model="column.editable"-->
-            <!--          :label="t('field.editable.label')"-->
-            <!--          :hint="t('field.editable.hint')"-->
-            <!--        />-->
           </div>
         </q-slide-transition>
       </q-card-section>
@@ -204,7 +216,7 @@
 <script lang="ts" setup>
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref, toRaw, watchEffect } from 'vue';
+import { computed, reactive, ref, watch, watchEffect } from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
@@ -219,6 +231,7 @@ import { extractFormFields } from 'src/utils/surveyJS';
 import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 import type { PartialBy } from 'src/types';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 interface Props {
   column: TableColumnTemplate;
@@ -236,7 +249,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 const column = reactive<PartialBy<TableColumnTemplate, 'name'>>(
-  structuredClone(toRaw(props.column)),
+  structuredClone(deepToRaw(props.column)),
 );
 const advanced = ref<boolean>(false);
 
@@ -247,6 +260,14 @@ const showIsArray = computed<boolean>(() => {
 watchEffect(() => {
   column.isArray = column.field?.includes('.*');
 });
+
+watch(
+  () => column.source,
+  (source) => {
+    column.field = '';
+    column.renderAs = source === 'custom' ? 'editor' : 'default';
+  },
+);
 
 const alignOptions = computed<QSelectOption[]>(() => {
   return [
@@ -289,6 +310,19 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
   })
     .filter((value): value is QSelectOption => !!value)
     .sort((a, b) => a?.label.localeCompare(b?.label));
+});
+
+const sourceOptions = computed<QSelectOption[]>(() => {
+  return [
+    {
+      label: t('field.source.options.form'),
+      value: 'form',
+    },
+    {
+      label: t('field.source.options.custom'),
+      value: 'custom',
+    },
+  ];
 });
 
 const fieldOptions = computed<QSelectOption[]>(() => {
@@ -337,6 +371,14 @@ function fieldFilterFn(val: string, update: (a: () => void) => void) {
 }
 
 function onOKClick(): void {
+  if (
+    column.source === 'custom' &&
+    column.field.length > 0 &&
+    !column.field.startsWith('customData.')
+  ) {
+    column.field = `customData.${column.field}`;
+  }
+
   onDialogOK(column);
 }
 </script>
@@ -364,6 +406,11 @@ field:
   label:
     label: 'Label'
     hint: ''
+  source:
+    label: 'Field Source'
+    options:
+      form: 'Registration Form'
+      custom: 'Custom'
   field:
     label: 'Field'
     hint: 'Name of corresponding form field'
@@ -387,9 +434,6 @@ field:
   renderOptions:
     label: 'Custom options for the renderer'
     hint: 'The content should be valid JSON'
-  editable:
-    label: 'Editable'
-    hint: 'Allow edit in table cell'
   sortable:
     label: 'Sortable'
     hint: ''
@@ -428,6 +472,11 @@ field:
   label:
     label: 'Label'
     hint: ''
+  source:
+    label: 'Quelle des Felds'
+    options:
+      form: 'Anmeldeformular'
+      custom: 'Benutzerdefiniert'
   field:
     label: 'Feld'
     hint: 'Name des entsprechenden Formularfelds'
@@ -448,9 +497,6 @@ field:
   renderAs:
     label: 'Darstellen als'
     hint: 'Name eines benutzerdefinierten Anzeigetyps'
-  editable:
-    label: 'Bearbeitbar'
-    hint: 'Bearbeitung in Tabellenzelle zulassen'
   renderOptions:
     label: 'Benutzerdefinierte Optionen für den Renderer'
     hint: 'Der Inhalt sollte gültiges JSON sein'
@@ -492,6 +538,11 @@ field:
   label:
     label: 'Libellé'
     hint: ''
+  source:
+    label: 'Source du champ'
+    options:
+      form: "Formulaire d'inscription"
+      custom: 'Personnalisé'
   field:
     label: 'Champ'
     hint: 'Nom du champ de formulaire correspondant'
@@ -515,9 +566,6 @@ field:
   renderOptions:
     label: 'Options personnalisées pour le moteur de rendu'
     hint: 'Le contenu doit être du JSON valide'
-  editable:
-    label: 'Editable'
-    hint: "Permettre l'édition dans une cellule de tableau"
   sortable:
     label: 'Triable'
     hint: ''

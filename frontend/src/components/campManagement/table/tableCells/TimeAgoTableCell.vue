@@ -18,7 +18,7 @@ const timeIntervals = {
   hour: 60,
   day: 24,
   week: 7,
-  month: 365 / 12,
+  month: 365 / 12 / 7,
   year: 12,
 };
 
@@ -40,7 +40,7 @@ const timeAgo = computed<string>(() => {
 
   const date = new Date(props.props.value);
   if (isNaN(date.getTime())) {
-    return 'X';
+    return '!';
   }
 
   const now = new Date();

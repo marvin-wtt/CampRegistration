@@ -33,10 +33,6 @@ export class TableCellRenderer {
     return this._column.renderOptions;
   }
 
-  isEditable(): boolean {
-    return this._column.editable ?? false;
-  }
-
   isArray(): boolean {
     return this._column.isArray ?? false;
   }

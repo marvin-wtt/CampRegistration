@@ -17,10 +17,11 @@
       >
         <q-item-label caption>
           <q-btn
-            :label="t('action.create')"
+            :label="quasar.screen.gt.xs ? t('action.create') : ''"
             icon="add"
             outline
-            rounded
+            :rounded="quasar.screen.gt.xs"
+            :round="quasar.screen.lt.sm"
             @click="onCreateCamp()"
           />
         </q-item-label>
