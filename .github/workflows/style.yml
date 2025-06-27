@@ -36,9 +36,6 @@ jobs:
     - name: Build backend
       run: npm run build -workspace backend
 
-    - name: Build backend views
-      run: npm run dev:views -workspace backend
-
     - name: Run lint
       run: npm run lint --workspaces --if-present
 

@@ -21,7 +21,9 @@ export interface ResultOptions {
 }
 
 export function useServiceHandler<T>(storeName?: string) {
-  const { t } = useI18n();
+  const { t } = useI18n({
+    useScope: 'global',
+  });
   const route = useRoute();
 
   const serviceNotifications = useServiceNotifications(storeName);
@@ -124,7 +126,9 @@ export function useServiceHandler<T>(storeName?: string) {
 }
 
 export function useErrorExtractor() {
-  const { t } = useI18n();
+  const { t } = useI18n({
+    useScope: 'global',
+  });
 
   function extractErrorText(err: unknown): string {
     if (!isAPIServiceError(err)) {
@@ -144,7 +148,9 @@ export function useErrorExtractor() {
 }
 
 export function useServiceNotifications(storeName?: string) {
-  const { t } = useI18n();
+  const { t } = useI18n({
+    useScope: 'global',
+  });
   const quasar = useQuasar();
   const { extractErrorText } = useErrorExtractor();
 

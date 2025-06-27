@@ -1,6 +1,4 @@
 <template>
-  <!-- TODO Add inline editor -->
-
   <!-- Array of elements -->
   <div
     v-if="asArray"
@@ -12,12 +10,12 @@
     >
       <component
         :is="renderer.component"
-        v-if="renderer.isVisible(props.props.row)"
-        :camp="camp"
+        v-if="renderer.isVisible(cellProps.row)"
+        :camp
         :options="renderer.options"
-        :printing="printing"
+        :printing
         :props="{
-          ...props.props,
+          ...cellProps,
           value,
         }"
       />
@@ -31,11 +29,11 @@
   <template v-else>
     <component
       :is="renderer.component"
-      v-if="renderer.isVisible(props.props.row)"
-      :camp="camp"
+      v-if="renderer.isVisible(cellProps.row)"
+      :camp
       :options="renderer.options"
-      :printing="printing"
-      :props="props.props"
+      :printing
+      :props="cellProps"
     />
   </template>
 </template>
@@ -46,24 +44,24 @@ import type { TableCellRenderer } from 'components/campManagement/table/TableCel
 import type { CampDetails } from '@camp-registration/common/entities';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 
-interface Props {
+const {
+  renderer,
+  camp,
+  props: cellProps,
+  printing = false,
+} = defineProps<{
   renderer: TableCellRenderer;
   camp: CampDetails;
   printing?: boolean;
   props: QTableBodyCellProps;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isArray: false,
-  printing: false,
-});
+}>();
 
 const asArray = computed<boolean>(() => {
-  return props.renderer.isArray() && Array.isArray(props.props.value);
+  return renderer.isArray() && Array.isArray(cellProps.value);
 });
 
 const arrayValue = computed<unknown[]>(() => {
-  return props.props.value as unknown[];
+  return cellProps.value as unknown[];
 });
 </script>
 

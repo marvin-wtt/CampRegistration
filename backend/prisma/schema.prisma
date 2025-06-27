@@ -107,6 +107,8 @@ model Registration {
   campId      String    @map("camp_id") @db.Char(26)
   /// ![Record<string, unknown>]
   data        Json      @db.Json
+  /// ![Record<string, unknown>]
+  customData  Json?     @map("custom_data") @db.Json
   // Computed fields
   firstName   String?   @map("first_name")
   lastName    String?   @map("last_name")

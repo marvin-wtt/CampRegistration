@@ -6,6 +6,10 @@ import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
 import { sessionId } from '#middlewares/session.middleware';
 import convertEmptyStringsToNull from '#middlewares/string.middleware';
+import { initializePassport } from '#core/passport.js';
+
+// authentication
+initializePassport();
 
 const router = createRouter()
   // logging
