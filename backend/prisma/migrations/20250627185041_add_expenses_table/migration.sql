@@ -13,7 +13,7 @@ CREATE TABLE `expenses` (
     `receipt_number` SMALLINT UNSIGNED NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NULL,
-    `category` VARCHAR(191) NULL,
+    `category` VARCHAR(191) NOT NULL,
     `amount` DECIMAL(65, 30) NOT NULL,
     `date` DATETIME(3) NOT NULL,
     `paid_at` DATETIME(3) NULL,
