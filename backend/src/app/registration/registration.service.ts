@@ -17,13 +17,6 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  async getRegistrationWithCampById(id: string) {
-    return prisma.registration.findUnique({
-      where: { id },
-      include: { camp: true },
-    });
-  }
-
   async getRegistrationsByIds(campId: string, ids: string[]) {
     return this.prisma.registration.findMany({
       where: {

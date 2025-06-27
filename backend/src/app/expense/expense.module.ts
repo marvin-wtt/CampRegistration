@@ -1,27 +1,21 @@
 import type {
   AppModule,
-  ModuleOptions,
+  AppRouter,
   RoleToPermissions,
 } from '#core/base/AppModule';
 import type { ExpensePermission } from '@camp-registration/common/permissions';
-import { registerRouteModelBinding } from '#core/router';
 import expenseService from '#app/expense/expense.service';
-import expenseRoutes from '#app/expense/expense.routes';
-import { registerFileGuard } from '#app/file/file.guard';
+import { ExpenseRouter } from '#app/expense/expense.routes';
 import campService from '#app/camp/camp.service';
 import { campManager, type GuardFn } from '#guards/index';
 import type { Request } from 'express';
+import { registerFileGuard } from '#app/file/file.guard.js';
 
 export class ExpenseModule implements AppModule {
-  configure({ router }: ModuleOptions): Promise<void> | void {
-    registerRouteModelBinding('expense', async (req, id) => {
-      const camp = req.modelOrFail('camp');
-      return expenseService.getExpenseById(camp.id, id);
-    });
-
+  registerRoutes(router: AppRouter) {
     registerFileGuard('expense', this.fileGuard);
 
-    router.use('/camps/:campId/expenses', expenseRoutes);
+    router.useRouter('/camps/:campId/expenses', new ExpenseRouter());
   }
 
   registerPermissions(): RoleToPermissions<ExpensePermission> {
