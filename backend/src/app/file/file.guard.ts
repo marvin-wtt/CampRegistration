@@ -14,6 +14,12 @@ export function registerFileGuard(
   modelId: string,
   resolver: FileGuardResolver,
 ): void {
+  if (modelId in guardRegistry) {
+    throw new Error(
+      `Guard resolver for model "${modelId}" is already registered.`,
+    );
+  }
+
   guardRegistry[modelId] = resolver;
 }
 
@@ -27,10 +33,8 @@ const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   });
 
   if (guardModels.length === 0) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      `No guard registered for file: ${file.id}`,
-    );
+    // We can assume that is file is a tmp file. It should never be accessed
+    throw new ApiError(httpStatus.LOCKED, 'File is not linked to any model.');
   }
 
   if (guardModels.length > 1) {
