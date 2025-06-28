@@ -7,7 +7,6 @@ import type {
   ServiceFileCreateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { useRoute } from 'vue-router';
 import { exportFile } from 'quasar';
 
 export const useCampFilesStore = defineStore('campFiles', () => {
@@ -15,7 +14,6 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   const campStore = useCampDetailsStore();
   const campBus = useCampBus();
   const authBus = useAuthBus();
-  const route = useRoute();
   const {
     data,
     isLoading,
