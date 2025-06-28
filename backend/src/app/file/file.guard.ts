@@ -20,9 +20,11 @@ export function registerFileGuard(
 const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
 
-  const guardModels = Object.keys(guardRegistry)
-    .map((modelName) => `${modelName}Id`)
-    .filter((key) => key in file && file[key as keyof typeof file]);
+  const guardModels = Object.keys(guardRegistry).filter((modelName) => {
+    const key = `${modelName}Id`;
+
+    return key in file && file[key as keyof typeof file];
+  });
 
   if (guardModels.length === 0) {
     throw new ApiError(
@@ -38,13 +40,14 @@ const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
     );
   }
 
-  const guard = guardRegistry[guardModels[0]];
+  const guardFm = guardRegistry[guardModels[0]];
 
-  return guard(req);
+  return guardFm(req);
 };
 
 const fileAccessGuard: GuardFn = async (req) => {
   const guardFn = await fileAccessGuardResolver(req);
+
   return guardFn(req);
 };
 
