@@ -34,5 +34,3 @@ export class ExpenseModule implements AppModule {
     };
   }
 }
-
-export default new ExpenseModule();
