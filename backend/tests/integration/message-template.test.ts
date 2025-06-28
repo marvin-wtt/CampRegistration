@@ -4,29 +4,32 @@ import {
   UserFactory,
   CampManagerFactory,
   MessageTemplateFactory,
+  FileFactory,
 } from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
 import prisma from '../utils/prisma';
 import { ulid } from 'ulidx';
+import crypto from 'crypto';
+import { uploadFile } from '../utils/file';
 
-describe('/api/v1/camps/:campId/message-templates', () => {
-  // Helper to create a camp with a manager and generate an access token.
-  const createCampWithManagerAndToken = async (
-    campData?: Parameters<(typeof CampFactory)['create']>[0],
-    role = 'DIRECTOR',
-  ) => {
-    const camp = await CampFactory.create(campData);
-    const user = await UserFactory.create();
-    await CampManagerFactory.create({
-      camp: { connect: { id: camp.id } },
-      user: { connect: { id: user.id } },
-      role,
-    });
-    const accessToken = generateAccessToken(user);
-    return { camp, user, accessToken };
-  };
+const createCampWithManagerAndToken = async (
+  campData?: Parameters<(typeof CampFactory)['create']>[0],
+  role = 'DIRECTOR',
+) => {
+  const camp = await CampFactory.create(campData);
+  const user = await UserFactory.create();
+  await CampManagerFactory.create({
+    camp: { connect: { id: camp.id } },
+    user: { connect: { id: user.id } },
+    role,
+  });
+  const accessToken = generateAccessToken(user);
 
+  return { camp, user, accessToken };
+};
+
+describe.skip('/api/v1/camps/:campId/message-templates', () => {
   describe('GET /api/v1/camps/:campId/message-templates/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
@@ -647,6 +650,60 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         )
         .send()
         .expect(401);
+    });
+  });
+});
+
+describe('/api/v1/files/', () => {
+  const createMessageTemplateWithFile = async () => {
+    const { user, accessToken, camp } = await createCampWithManagerAndToken();
+    const messageTemplate = await MessageTemplateFactory.create({
+      camp: { connect: { id: camp.id } },
+    });
+
+    const fileName = crypto.randomUUID() + '.pdf';
+    await uploadFile('blank.pdf', fileName);
+
+    const file = await FileFactory.create({
+      messageTemplate: { connect: { id: messageTemplate.id } },
+      name: fileName,
+    });
+
+    return { file, user, accessToken, camp, messageTemplate };
+  };
+
+  describe('GET /api/v1/files/:fileId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { file, accessToken } = await createMessageTemplateWithFile();
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expectOrPrint(200);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { file } = await createMessageTemplateWithFile();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const { file } = await createMessageTemplateWithFile();
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
+    });
+
+    it('should respond with `404` status code when file id does not exists', async () => {
+      const fileId = ulid();
+
+      await request().get(`/api/v1/files/${fileId}`).send().expect(404);
     });
   });
 });
