@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { request } from '../utils/request';
 import prisma from '../utils/prisma';
+import { FileFactory } from '../../prisma/factories';
 
 describe('/api/v1/files/', () => {
   describe('POST /api/v1/files', () => {
@@ -34,6 +35,14 @@ describe('/api/v1/files/', () => {
 
     it('should respond with `400` status code when the file is missing', async () => {
       await request().post('/api/v1/files/').expect(400);
+    });
+  });
+
+  describe('GET /api/v1/files/:fileId', () => {
+    it('should respond with `423` status code when file is temporary', async () => {
+      const file = await FileFactory.create();
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(423);
     });
   });
 });
