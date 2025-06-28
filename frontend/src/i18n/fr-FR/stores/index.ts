@@ -6,6 +6,7 @@ import campManager from './camp-manager';
 import campFiles from './camp-files';
 import auth from './auth';
 import profile from './profile';
+import expense from './expense.ts';
 
 export default {
   camp,
@@ -16,4 +17,5 @@ export default {
   campFiles,
   auth,
   profile,
+  expense,
 };

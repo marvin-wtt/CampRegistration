@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import type {
   AuthTokens,
@@ -26,6 +26,16 @@ export const useAuthStore = defineStore('auth', () => {
   } = useServiceHandler<void>('auth');
 
   let partialAuthToken: string | undefined = undefined;
+  campBus.on('create', async () => {
+    await fetchUser();
+  });
+
+  campBus.on('delete', async (campId) => {
+    const index = data.value?.camps.findIndex((camp) => camp.id === campId);
+    if (index !== undefined && index >= 0) {
+      data.value?.camps.splice(index, 1);
+    }
+  });
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
@@ -271,3 +281,7 @@ export const useAuthStore = defineStore('auth', () => {
     verifyOtp,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));
+}

@@ -41,6 +41,8 @@
           @logout="logout()"
         />
       </q-toolbar>
+
+      <div id="toolbar-content" />
     </q-header>
 
     <q-drawer
@@ -132,7 +134,7 @@ import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
-import { useRoute, useRouter } from 'vue-router';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -214,6 +216,13 @@ const items: NavigationItemProps[] = [
     icon: 'single_bed',
     permission: 'camp.rooms.view',
     to: { name: 'room-planner' },
+  },
+  {
+    name: 'expenses',
+    preview: true,
+    label: t('expenses'),
+    icon: 'payments',
+    to: { name: 'expenses' },
   },
   {
     name: 'settings',

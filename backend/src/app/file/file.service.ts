@@ -47,12 +47,6 @@ export class FileService extends BaseService {
     };
   };
 
-  async getFileById(id: string) {
-    return this.prisma.file.findUnique({
-      where: { id },
-    });
-  }
-
   private async moveFile(file: RequestFile) {
     // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?
     await this.storageRegistry.getStorage().moveToStorage(file.filename);
@@ -224,6 +218,7 @@ export class FileService extends BaseService {
         registrationId: null,
         messageId: null,
         messageTemplateId: null,
+        expenseId: null,
         createdAt: { lt: minAge },
       },
       select: {
