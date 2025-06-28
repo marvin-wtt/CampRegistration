@@ -1178,7 +1178,7 @@ describe('/api/v1/files/', () => {
         .get(`/api/v1/files/${file.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expectOrPrint(200);
+        .expect(200);
     });
 
     it('should respond with `200` status code when file is public and camp is active', async () => {

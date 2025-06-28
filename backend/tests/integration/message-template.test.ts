@@ -29,7 +29,7 @@ const createCampWithManagerAndToken = async (
   return { camp, user, accessToken };
 };
 
-describe.skip('/api/v1/camps/:campId/message-templates', () => {
+describe('/api/v1/camps/:campId/message-templates', () => {
   describe('GET /api/v1/camps/:campId/message-templates/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },

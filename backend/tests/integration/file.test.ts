@@ -46,5 +46,3 @@ describe('/api/v1/files/', () => {
     });
   });
 });
-
-describe.skip('/api/v1/camps/:campId/files/', () => {});
