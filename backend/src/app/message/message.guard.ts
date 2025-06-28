@@ -1,15 +1,9 @@
 import type { Request } from 'express';
-import {
-  and,
-  campActive,
-  campManager,
-  type GuardFn,
-  or,
-} from '#guards/index.js';
-import ApiError from '#utils/ApiError.js';
+import { campManager, type GuardFn } from '#guards/index';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import messageService from '#app/message/message.service.js';
-import campService from '#app/camp/camp.service.js';
+import messageService from '#app/message/message.service';
+import campService from '#app/camp/camp.service';
 
 export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
@@ -29,13 +23,9 @@ export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
       'Message related to file not found',
     );
   }
-  const camp = await campService.getCampById(message.registration.camp.id);
 
+  const camp = await campService.getCampById(message.registration.camp.id);
   req.setModelOrFail('camp', camp);
 
-  const fileAccess: GuardFn = () => {
-    return file.accessLevel === 'public';
-  };
-
-  return or(campManager('camp.files.view'), and(fileAccess, campActive));
+  return campManager('camp.messages.view');
 };
