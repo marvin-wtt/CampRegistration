@@ -1,6 +1,7 @@
 import type { File } from '@prisma/client';
 import type { ServiceFile as FileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
+import config from '#config/index';
 
 export class FileResource extends JsonResource<File, FileResourceData> {
   transform(): FileResourceData {
@@ -12,6 +13,7 @@ export class FileResource extends JsonResource<File, FileResourceData> {
       size: this.data.size,
       accessLevel: this.data.accessLevel,
       createdAt: this.data.createdAt.toISOString(),
+      url: `${config.origin}/api/v1/files/${this.data.id}`,
     };
   }
 }

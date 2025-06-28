@@ -15,6 +15,18 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
+  async getMessageTemplateWithCamp(id: string) {
+    return this.prisma.messageTemplate.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        camp: { select: { id: true } },
+        attachments: true,
+      },
+    });
+  }
+
   async queryMessageTemplates(campId: string) {
     return this.prisma.messageTemplate.findMany({
       where: { campId },

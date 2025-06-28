@@ -36,11 +36,9 @@ export function useFileService() {
     await api.delete(`camps/${campId}/files/${fileId}`);
   }
 
-  async function downloadCampFile(campId: string, fileId: string) {
-    return downloadFile(getCampFileUrl(campId, fileId));
-  }
+  async function downloadFile(id: string): Promise<Blob> {
+    const url = getFileUrl(id);
 
-  async function downloadFile(url: string): Promise<Blob> {
     const response = await api.get(url, {
       responseType: 'blob',
     });
@@ -48,19 +46,9 @@ export function useFileService() {
     return response.data;
   }
 
-  function getCampFileUrl(campId: string, fileId: string): string {
+  function getFileUrl(fileId: string): string {
     return api.getUri({
-      url: `camps/${campId}/files/${fileId}/`,
-    });
-  }
-
-  function getRegistrationFileUrl(
-    campId: string,
-    registrationId: string,
-    fileId: string,
-  ) {
-    return api.getUri({
-      url: `camps/${campId}/registrations/${registrationId}files/${fileId}/`,
+      url: `files/${fileId}/`,
     });
   }
 
@@ -69,8 +57,7 @@ export function useFileService() {
     createCampFile,
     createTemporaryFile,
     deleteCampFile,
-    downloadCampFile,
-    getCampFileUrl,
-    getRegistrationFileUrl,
+    downloadFile,
+    getFileUrl,
   };
 }

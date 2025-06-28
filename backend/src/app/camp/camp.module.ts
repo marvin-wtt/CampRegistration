@@ -8,9 +8,13 @@ import type {
   FilePermission,
 } from '@camp-registration/common/permissions';
 import CampRouter from '#app/camp/camp.routes';
+import { registerFileGuard } from '#app/file/file.guard';
+import { campFileGuard } from '#app/camp/camp.guard';
 
 export class CampModule implements AppModule {
   registerRoutes(router: AppRouter): void {
+    registerFileGuard('camp', campFileGuard);
+
     router.useRouter('/camps', new CampRouter());
   }
 
