@@ -1,13 +1,12 @@
 import resetDb from './reset-db';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
-import config from '../../src/config';
-import path from 'path';
 import { stopJobs } from '../../src/jobs';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer.js';
 import { Request, Response, NextFunction, Express } from 'express';
 import { boot, shutdown } from '../../src/boot';
 import { createApp } from '../../src/app';
+import path from 'path';
 
 vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
   // Mock rate limiters to do nothing
@@ -29,8 +28,8 @@ beforeEach(async () => {
   vi.spyOn(NoOpMailer.prototype, 'sendMail').mockResolvedValue();
 
   await resetDb();
-  await clearDirectory(config.storage.tmpDir);
-  await clearDirectory(config.storage.uploadDir);
+  await clearDirectory(path.join(__dirname, '..', 'tmp', 'storage', 'tmp'));
+  await clearDirectory(path.join(__dirname, '..', 'tmp', 'storage', 'uploads'));
   stopJobs();
 });
 
