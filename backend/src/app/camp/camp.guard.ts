@@ -14,7 +14,10 @@ export const campFileGuard = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
 
   if (!file.campId) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Invalid file guard handler');
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Invalid file guard handler',
+    );
   }
 
   // Load models for guard
