@@ -38,8 +38,36 @@ import {
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
 import { NoOpMailer } from '../../src/core/mail/noop.mailer';
+import { uploadFile } from '../utils/file';
 
 const mailer = NoOpMailer.prototype;
+
+const createRegistrationWithFile = async () => {
+  const camp = await CampFactory.create();
+  const registration = await RegistrationFactory.create({
+    camp: { connect: { id: camp.id } },
+  });
+
+  const fileName = crypto.randomUUID() + '.pdf';
+  await uploadFile('blank.pdf', fileName);
+
+  const file = await FileFactory.create({
+    registration: { connect: { id: registration.id } },
+    name: fileName,
+  });
+
+  const user = await UserFactory.create({
+    campRoles: {
+      create: CampManagerFactory.build({
+        camp: { connect: { id: camp.id } },
+      }),
+    },
+  });
+
+  const accessToken = generateAccessToken(user);
+
+  return { registration, camp, file, user, accessToken };
+};
 
 describe('/api/v1/camps/:campId/registrations', () => {
   const createCampWithManagerAndToken = async (
@@ -1652,80 +1680,41 @@ describe('/api/v1/camps/:campId/registrations', () => {
   });
 });
 
-describe('/api/v1/camps/:campId/registrations/:registrationId/files/', () => {
-  const createRegistrationWithFile = async () => {
-    const camp = await CampFactory.create();
-    const registration = await RegistrationFactory.create({
-      camp: { connect: { id: camp.id } },
-    });
-    const file = await FileFactory.create({
-      registration: { connect: { id: registration.id } },
-    });
-    const user = await UserFactory.create({
-      campRoles: {
-        create: CampManagerFactory.build({
-          camp: { connect: { id: camp.id } },
-        }),
-      },
-    });
+describe.todo('/api/v1/camps/:campId/registrations/:registrationId/files/');
 
-    const accessToken = generateAccessToken(await UserFactory.create());
-
-    return { registration, camp, file, user, accessToken };
-  };
-
-  describe('GET /api/v1/camps/:campId/registrations/:registrationId/files/:fileId', () => {
-    it.todo('should respond with `200` status code');
-
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const { registration, camp, file } = await createRegistrationWithFile();
-      const { accessToken } = await createRegistrationWithFile();
+describe('/api/v1/files/', () => {
+  describe('GET /api/v1/files/:fileId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { file, accessToken } = await createRegistrationWithFile();
 
       await request()
-        .get(
-          `/api/v1/camps/${camp.id}/registrations/${registration.id}/files/${file.id}`,
-        )
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { file } = await createRegistrationWithFile();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const { registration, camp, file } = await createRegistrationWithFile();
+      const { file } = await createRegistrationWithFile();
 
-      await request()
-        .get(
-          `/api/v1/camps/${camp.id}/registrations/${registration.id}/files/${file.id}`,
-        )
-        .send()
-        .expect(401);
-    });
-
-    it('should respond with `404` status code when registration id does not exists', async () => {
-      const { camp, file, accessToken } = await createRegistrationWithFile();
-      const registrationId = ulid();
-
-      await request()
-        .get(
-          `/api/v1/camps/${camp.id}/registrations/${registrationId}/files/${file.id}`,
-        )
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
+      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
     });
 
     it('should respond with `404` status code when file id does not exists', async () => {
-      const { camp, registration, accessToken } =
-        await createRegistrationWithFile();
       const fileId = ulid();
 
-      await request()
-        .get(
-          `/api/v1/camps/${camp.id}/registrations/${registration.id}/files/${fileId}`,
-        )
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
+      await request().get(`/api/v1/files/${fileId}`).send().expect(404);
     });
   });
 });
