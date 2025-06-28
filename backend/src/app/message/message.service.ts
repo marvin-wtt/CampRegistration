@@ -184,6 +184,19 @@ export class MessageService extends BaseService {
       },
     });
   }
+
+  async getMessageWithCampById(id: string) {
+    return this.prisma.message.findUnique({
+      where: {
+        id,
+        registrationId: { not: null },
+      },
+      include: {
+        registration: { include: { camp: { select: { id: true } } } },
+        attachments: true,
+      },
+    });
+  }
 }
 
 export default new MessageService();

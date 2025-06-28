@@ -7,7 +7,6 @@ import type {
   ServiceFileCreateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { useRoute } from 'vue-router';
 import { exportFile } from 'quasar';
 
 export const useCampFilesStore = defineStore('campFiles', () => {
@@ -15,7 +14,6 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   const campStore = useCampDetailsStore();
   const campBus = useCampBus();
   const authBus = useAuthBus();
-  const route = useRoute();
   const {
     data,
     isLoading,
@@ -83,10 +81,8 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   }
 
   async function downloadFile(file: ServiceFile) {
-    const campId = queryParam('camp');
-
     await withErrorNotification('download', async () => {
-      const blob = await apiService.downloadCampFile(campId, file.id);
+      const blob = await apiService.downloadFile(file.id);
 
       exportFile(file.name, blob, {
         mimeType: file.type,
@@ -94,12 +90,10 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     });
   }
 
-  function getUrl(id: string, campId?: string) {
-    campId = campId ?? (route.params.camp as string);
-    const cid = checkNotNullWithNotification(campId);
+  function getUrl(id: string) {
     checkNotNullWithNotification(id);
 
-    return apiService.getCampFileUrl(cid, id);
+    return apiService.getFileUrl(id);
   }
 
   return {

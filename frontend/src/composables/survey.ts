@@ -55,7 +55,7 @@ export function startAutoDataUpdate(
         }
 
         const name = `_file:${file.field}`;
-        const url = api.getCampFileUrl(data.id, file.id);
+        const url = api.getFileUrl(file.id);
 
         model.setVariable(name, url);
       });

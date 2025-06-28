@@ -17,10 +17,12 @@ router.param(
   }),
 );
 
-// TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
+// This route is used to redirect to the file API endpoint
+// In the future, it should serve the file model instead
 router.get('/:fileId', (req, res) => {
   res.redirect('/api/v1/files/' + req.params.fileId);
 });
+
 router.get(
   '/',
   auth(),

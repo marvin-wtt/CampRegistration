@@ -24,6 +24,7 @@ import {
 } from '../fixtures/camp/camp.fixtures';
 import { request } from '../utils/request';
 import { campWithMaxParticipantsRolesInternational } from '../fixtures/registration/camp.fixtures';
+import { uploadFile } from '../utils/file';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -87,28 +88,55 @@ const assertCampResponseBody = (data: CampCreateData, body: any) => {
   });
 };
 
-describe('/api/v1/camps', () => {
-  const createCampWithManagerAndToken = async (
-    campData: Partial<Prisma.CampCreateInput> = {},
-    role = 'DIRECTOR',
-  ) => {
-    const camp = await CampFactory.create(campData);
-    const user = await UserFactory.create();
-    const manager = await CampManagerFactory.create({
-      camp: { connect: { id: camp.id } },
-      user: { connect: { id: user.id } },
-      role,
-    });
-    const accessToken = generateAccessToken(user);
+const createCampWithManagerAndToken = async (
+  campData: Partial<Prisma.CampCreateInput> = {},
+  role = 'DIRECTOR',
+) => {
+  const camp = await CampFactory.create(campData);
+  const user = await UserFactory.create();
+  const manager = await CampManagerFactory.create({
+    camp: { connect: { id: camp.id } },
+    user: { connect: { id: user.id } },
+    role,
+  });
+  const accessToken = generateAccessToken(user);
 
-    return {
-      camp,
-      user,
-      manager,
-      accessToken,
-    };
+  return {
+    camp,
+    user,
+    manager,
+    accessToken,
   };
+};
 
+const createCampWithFileAndToken = async (
+  accessLevel: string = 'private',
+  campActive: boolean = false,
+) => {
+  const { camp, user, manager, accessToken } =
+    await createCampWithManagerAndToken({
+      active: campActive,
+    });
+  const fileName = crypto.randomUUID() + '.pdf';
+
+  const file = await FileFactory.create({
+    camp: { connect: { id: camp.id } },
+    name: fileName,
+    accessLevel,
+  });
+
+  await uploadFile('blank.pdf', fileName);
+
+  return {
+    camp,
+    user,
+    manager,
+    file,
+    accessToken,
+  };
+};
+
+describe('/api/v1/camps', () => {
   describe('GET /api/v1/camps', () => {
     it('should respond with `200` status code', async () => {
       await CampFactory.create(campActivePublic);
@@ -1136,5 +1164,62 @@ describe('/api/v1/camps', () => {
     });
 
     it.todo('should delete all files');
+  });
+});
+
+describe.todo('/api/v1/camps/:campId/files');
+
+describe('/api/v1/files/', () => {
+  describe('GET /api/v1/files/:fileId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { file, accessToken } = await createCampWithFileAndToken();
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it('should respond with `200` status code when file is public and camp is active', async () => {
+      const { file } = await createCampWithFileAndToken('public', true);
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(200);
+    });
+
+    it('should respond with `401` status code when camp is not active', async () => {
+      const { file } = await createCampWithFileAndToken('public', false);
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
+    });
+
+    it('should respond with `401` status code when file is not public', async () => {
+      const { file } = await createCampWithFileAndToken('private', true);
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { file } = await createCampWithFileAndToken();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const { file } = await createCampWithFileAndToken();
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
+    });
+
+    it('should respond with `404` status code when file id does not exists', async () => {
+      const fileId = ulid();
+
+      await request().get(`/api/v1/files/${fileId}`).send().expect(404);
+    });
   });
 });
