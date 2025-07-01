@@ -1,5 +1,5 @@
-import { type AnyZodObject, type z, ZodError } from 'zod';
-import { type ZodReadonly } from 'zod';
+import { type AnyZodObject, type z, ZodError } from 'zod/v4';
+import { type ZodReadonly } from 'zod/v4';
 import process from 'node:process';
 
 export function validateEnv<R extends AnyZodObject, T extends ZodReadonly<R>>(

@@ -1,17 +1,17 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { PasswordSchema } from '#core/validation/helper';
 
 const register = z.object({
   body: z.object({
     name: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     password: PasswordSchema,
   }),
 });
 
 const login = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string(),
     remember: z.boolean().default(false),
   }),
@@ -39,14 +39,14 @@ const refreshTokens = z.object({
 
 const forgotPassword = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: z.email(),
   }),
 });
 
 const resetPassword = z.object({
   body: z.object({
     token: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     password: PasswordSchema,
   }),
 });

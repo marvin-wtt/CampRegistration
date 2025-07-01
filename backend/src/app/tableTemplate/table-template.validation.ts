@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { translatedValue } from '#core/validation/helper';
 
-const StringOrFunctionSchema = z.union([z.string(), z.function()]);
+const StringOrFunctionSchema = z.union([z.string()]);
 
 const TableTemplateBodySchema = z.object({
   title: translatedValue(z.string()),
@@ -46,36 +46,36 @@ const TableTemplateBodySchema = z.object({
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    tableTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    tableTemplateId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    tableTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    tableTemplateId: z.ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    tableTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    tableTemplateId: z.ulid(),
   }),
 });
 

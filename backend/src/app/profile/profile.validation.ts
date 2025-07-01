@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
 
 const update = z.object({
   body: z
     .object({
-      email: z.string().email(),
+      email: z.email(),
       password: PasswordSchema,
       currentPassword: z.string(),
       name: z.string(),
@@ -12,12 +12,14 @@ const update = z.object({
     })
     .strict()
     .partial()
-    .superRefine((val, ctx) => {
+    .check((ctx) => {
+      const val = ctx.value;
       const passwordRequired = val.password ?? val.email;
       if (passwordRequired && !val.currentPassword) {
-        ctx.addIssue({
+        ctx.issues.push({
           code: 'custom',
           message: 'Missing current password',
+          input: val.currentPassword,
         });
       }
     }),

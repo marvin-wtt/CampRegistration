@@ -1,4 +1,4 @@
-import { z, type ZodType } from 'zod';
+import { z, type ZodType } from 'zod/v4';
 import { translatedValue } from '#core/validation/helper';
 import type {
   MessageTemplateCreateData,
@@ -8,14 +8,14 @@ import type {
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    messageTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    messageTemplateId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   query: z
     .object({
@@ -27,7 +27,7 @@ const index = z.object({
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
     event: z.string(),
@@ -39,8 +39,8 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    messageTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    messageTemplateId: z.ulid(),
   }),
   body: z
     .object({
@@ -53,8 +53,8 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    messageTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    messageTemplateId: z.ulid(),
   }),
 });
 
