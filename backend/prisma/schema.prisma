@@ -262,9 +262,10 @@ enum JobStatus {
 
 model Jobs {
   id         String    @id @unique(map: "jobs_id_unique") @default(ulid()) @db.Char(26)
-  name       String    @db.VarChar(255)
+  queue      String    @db.VarChar(255)
   payload    Json      @db.Json
   status     JobStatus @default(PENDING)
+  priority   Int       @default(1) @db.UnsignedTinyInt
   attempts   Int       @default(0)
   error      String?   @db.Text
   runAt      DateTime? @map("run_at") @db.DateTime()
@@ -276,4 +277,12 @@ model Jobs {
 
   @@index([status, runAt], map: "jobs_status_run_at_index")
   @@map("jobs")
+}
+
+model JobRateLimit {
+  queue      String   @id @db.VarChar(255)
+  tokens     Float
+  refilledAt DateTime @map("refilled_at") @db.DateTime()
+
+  @@map("job_rate_limits")
 }

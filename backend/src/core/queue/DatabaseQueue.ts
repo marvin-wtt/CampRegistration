@@ -3,7 +3,7 @@ import {
   AbstractQueue,
   type EnnQueueOptions,
   type QueueOptions,
-} from '#core/Queue/AbstractQueue';
+} from '#core/queue/AbstractQueue';
 import { Cron } from 'croner';
 
 export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
@@ -26,18 +26,18 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     return new Date(Date.now() + delay);
   }
 
-  public size(queue?: string): Promise<number> {
+  public size(): Promise<number> {
     return prisma.jobs.count({
       where: {
-        name: queue,
+        queue: this.queue,
       },
     });
   }
 
-  public async all(queue?: string) {
+  public async all() {
     const jobs = await prisma.jobs.findMany({
       where: {
-        name: queue,
+        queue: this.queue,
       },
       orderBy: {
         createdAt: 'asc',
@@ -55,8 +55,9 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
 
     await prisma.jobs.create({
       data: {
-        name: this.queue,
+        queue: this.queue,
         status: 'PENDING',
+        priority: options.priority,
         runAt,
         payload,
       },
@@ -79,10 +80,13 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
         FROM jobs
         WHERE status = 'PENDING'
           AND run_at <= NOW()
-          AND name = ${this.queue}
-        ORDER BY run_at ASC, created_at ASC LIMIT 1
-      FOR
-        UPDATE SKIP LOCKED
+          AND queue = ${this.queue}
+        ORDER BY
+          priority,
+          run_at ASC,
+          created_at ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
       `;
 
       if (rows.length === 0) {
@@ -122,7 +126,7 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
       where: {
         id,
         status: 'RUNNING',
-        name: this.queue,
+        queue: this.queue,
       },
       data: {
         status: 'COMPLETED',
@@ -137,7 +141,7 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     const job = await prisma.jobs.findUnique({
       where: {
         id,
-        name: this.queue,
+        queue: this.queue,
       },
       select: {
         attempts: true,
@@ -172,6 +176,56 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
         runAt: this.retryTime(job.attempts),
         finishedAt: new Date(),
       },
+    });
+  }
+
+  protected async isPollAllowed(): Promise<boolean> {
+    const limit = this.options.limit;
+    if (!limit) {
+      return true;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const now = new Date();
+
+      const rows = await tx.$queryRaw<{ tokens: number; refilled_at: Date }[]>`
+        SELECT tokens, refilled_at
+        FROM rate_limits
+        WHERE queue = ${this.queue}
+        FOR UPDATE
+      `;
+
+      if (rows.length === 0) {
+        await tx.jobRateLimit.create({
+          data: {
+            queue: this.queue,
+            tokens: limit.max - 1,
+            refilledAt: new Date(),
+          },
+        });
+        return true;
+      }
+
+      const { tokens, refilled_at: lastRefill } = rows[0];
+
+      const elapsedMs = now.getTime() - lastRefill.getTime();
+      const refillRate = limit.max / limit.duration; // tokens per ms
+      const refillable = elapsedMs * refillRate;
+      const newTokens = Math.min(limit.max, tokens + refillable) - 1;
+
+      if (newTokens < 0) {
+        return false;
+      }
+
+      await tx.jobRateLimit.update({
+        where: { queue: this.queue },
+        data: {
+          tokens: newTokens,
+          refilledAt: now,
+        },
+      });
+
+      return true;
     });
   }
 }

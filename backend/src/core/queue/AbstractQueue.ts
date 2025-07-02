@@ -2,15 +2,20 @@ export interface QueueOptions {
   maxAttempts: number;
   retryDelay: number; // milliseconds
   retryDelayType: 'fixed' | 'exponential';
+  limit?: {
+    max: number;
+    duration: number; // in milliseconds
+  };
 }
 
 export interface EnnQueueOptions {
   delay?: number;
+  priority?: number; // 1 is the highest
 }
 
 export interface Job<T extends object> {
   id: string;
-  name: string;
+  queue: string;
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
   payload: T;
   reservedAt: Date | null;
