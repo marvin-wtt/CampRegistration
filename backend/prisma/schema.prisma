@@ -252,3 +252,28 @@ model MessageTemplate {
 
   @@map("message_templates")
 }
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Jobs {
+  id         String    @id @unique(map: "jobs_id_unique") @default(ulid()) @db.Char(26)
+  name       String    @db.VarChar(255)
+  payload    Json      @db.Json
+  status     JobStatus @default(PENDING)
+  attempts   Int       @default(0)
+  error      String?   @db.Text
+  runAt      DateTime? @map("run_at") @db.DateTime()
+  reservedAt DateTime? @map("reserve_at") @db.DateTime()
+  finishedAt DateTime? @map("finished_at") @db.DateTime()
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@index([status, runAt], map: "jobs_status_run_at_index")
+  @@map("jobs")
+}
