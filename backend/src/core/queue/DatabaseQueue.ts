@@ -1,13 +1,17 @@
 import prisma from '#core/database';
 import {
+  type JobOptions,
   Queue,
-  type EnnQueueOptions,
   type QueueOptions,
-} from '#core/queue/Queue.js';
+  type Job,
+  type JobStatus,
+} from '#core/queue/Queue';
 import { Cron } from 'croner';
+import logger from '#core/logger';
 
 export class DatabaseQueue<T extends object> extends Queue<T> {
   private poller: Cron;
+  private handler: ((payload: T) => Promise<void>) | null = null;
 
   constructor(queue: string, options?: Partial<QueueOptions>) {
     super(queue, options);
@@ -15,10 +19,40 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
     const cronPattern = `*/5 * * * * *`; // Every 5 seconds
 
     this.poller = new Cron(cronPattern, this.run.bind(this), {
-      name: this.queue,
+      name: this.queue + '-poller',
       paused: true,
-      // TODO add handler
+      protect: (job) => {
+        const startTime = job.currentRun()?.toISOString();
+        logger.warning(
+          `Job poller ${job.name ?? '??'} was blocked by call started at ${startTime ?? '??'}`,
+        );
+      },
+      catch: (error, job) => {
+        logger.error(
+          `Job poller ${job.name ?? '??'} failed. ${JSON.stringify(error)}`,
+        );
+      },
     });
+  }
+
+  private async run() {
+    if (!this.handler) {
+      return;
+    }
+
+    const job = await this.poll();
+
+    if (job === null) {
+      return;
+    }
+
+    try {
+      await this.handler(job.payload);
+
+      await this.complete(job.id);
+    } catch (error) {
+      await this.release(job.id, error);
+    }
   }
 
   protected retryTime(attempts: number): Date {
@@ -38,21 +72,40 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
     });
   }
 
-  public async all() {
+  public async all(status?: JobStatus): Promise<Job<T>[]> {
     const jobs = await prisma.jobs.findMany({
       where: {
         queue: this.queue,
+        status: status === 'DELAYED' ? 'PENDING' : status,
+        runAt: status === 'DELAYED' ? { gt: new Date() } : undefined,
       },
       orderBy: {
         createdAt: 'asc',
       },
     });
 
-    // Ensure the jobs are typed correctly with the payload
-    return jobs as ((typeof jobs)[number] & { payload: T })[];
+    const isDelayed = (job: (typeof jobs)[number]) => {
+      return (
+        job.status === 'PENDING' && (job.runAt?.getTime() ?? 0) > Date.now()
+      );
+    };
+
+    return jobs.map((job) => {
+      const status = isDelayed(job) ? 'DELAYED' : job.status;
+
+      return {
+        ...job,
+        status,
+        payload: job.payload as T,
+      };
+    });
   }
 
-  async add(payload: T, options: EnnQueueOptions): Promise<void> {
+  public process(handler: (payload: T) => Promise<void>): void | Promise<void> {
+    this.handler = handler;
+  }
+
+  async add(payload: T, options: JobOptions): Promise<void> {
     const runAt = options.delay
       ? new Date(Date.now() + options.delay)
       : new Date();
@@ -66,22 +119,14 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
         payload,
       },
     });
-
-    if (!this.poller.isRunning() && !this.poller.isStopped()) {
-      this.poller.resume();
-    }
-
-    if (!this.poller.isBusy()) {
-      await this.poller.trigger();
-    }
   }
 
   async poll() {
-    if (!(await this.isPollAllowed())) {
+    if (await this.isRateLimitExceeded()) {
       return null;
     }
 
-    const job = await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       // See https://github.com/prisma/prisma/issues/5983
       const rows = await tx.$queryRaw<{ id: string; payload: string }[]>`
         SELECT id, payload
@@ -90,12 +135,11 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
           AND run_at <= NOW()
           AND queue = ${this.queue}
           AND reserved_at IS NULL
-        ORDER BY
-          priority,
-          run_at ASC,
-          created_at ASC
-        LIMIT 1
-        FOR UPDATE SKIP LOCKED
+        ORDER BY priority,
+                 run_at ASC,
+                 created_at ASC LIMIT 1
+        FOR
+        UPDATE SKIP LOCKED
       `;
 
       if (rows.length === 0) {
@@ -121,13 +165,6 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
         payload: JSON.parse(job.payload) as T,
       };
     });
-
-    // If no job was found, pause the poller
-    if (job === null) {
-      this.poller.pause();
-    }
-
-    return job;
   }
 
   async complete(id: string): Promise<void> {
@@ -188,10 +225,10 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
     });
   }
 
-  private async isPollAllowed(): Promise<boolean> {
+  private async isRateLimitExceeded(): Promise<boolean> {
     const limit = this.options.limit;
     if (!limit) {
-      return true;
+      return false;
     }
 
     return prisma.$transaction(async (tx) => {
@@ -212,7 +249,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
             refilledAt: new Date(),
           },
         });
-        return true;
+        return false;
       }
 
       const { tokens, refilled_at: lastRefill } = rows[0];
@@ -223,7 +260,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
       const newTokens = Math.min(limit.max, tokens + refillable) - 1;
 
       if (newTokens < 0) {
-        return false;
+        return true;
       }
 
       await tx.jobRateLimit.update({
@@ -234,7 +271,19 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
         },
       });
 
-      return true;
+      return false;
     });
+  }
+
+  public close() {
+    this.poller.stop();
+  }
+
+  public pause() {
+    this.poller.pause();
+  }
+
+  public resume() {
+    this.poller.resume();
   }
 }

@@ -16,15 +16,22 @@ export interface QueueOptions {
   ) & { limit?: number };
 }
 
-export interface EnnQueueOptions {
+export interface JobOptions {
   delay?: number;
   priority?: number; // 1 is the highest
 }
 
+export type JobStatus =
+  | 'DELAYED'
+  | 'PENDING'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED';
+
 export interface Job<T extends object> {
   id: string;
   queue: string;
-  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  status: JobStatus;
   payload: T;
   reservedAt: Date | null;
   runAt: Date | null;
@@ -42,8 +49,6 @@ export abstract class Queue<T extends object> {
     retryDelayType: 'exponential',
   };
 
-  private handler: ((payload: T) => Promise<void>) | null = null;
-
   protected constructor(
     protected queue: string,
     options?: Partial<QueueOptions>,
@@ -54,37 +59,17 @@ export abstract class Queue<T extends object> {
     };
   }
 
-  protected async run() {
-    if (!this.handler) {
-      return;
-    }
+  public abstract process(
+    handler: (payload: T) => Promise<void>,
+  ): void | Promise<void>;
 
-    const job = await this.poll();
+  public abstract all(status?: JobStatus): Promise<Job<T>[]>;
 
-    if (job === null) {
-      return;
-    }
+  public abstract add(payload: T, options?: JobOptions): Promise<void>;
 
-    try {
-      await this.handler(job.payload);
+  public abstract close(): Promise<void> | void;
 
-      await this.complete(job.id);
-    } catch (error) {
-      await this.release(job.id, error);
-    }
-  }
+  public abstract pause(): Promise<void> | void;
 
-  public process(handler: (payload: T) => Promise<void>): void | Promise<void> {
-    this.handler = handler;
-  }
-
-  public abstract all(): Promise<Job<T>[]>;
-
-  public abstract add(payload: T, options?: EnnQueueOptions): Promise<void>;
-
-  protected abstract poll(): Promise<{ id: string; payload: T } | null>;
-
-  protected abstract complete(id: string): Promise<void>;
-
-  protected abstract release(id: string, error: unknown): Promise<void>;
+  public abstract resume(): Promise<void> | void;
 }
