@@ -6,6 +6,14 @@ export interface QueueOptions {
     max: number;
     duration: number; // in milliseconds
   };
+  repeat?: (
+    | {
+        cron: string; // Cron expression
+      }
+    | {
+        interval: number; // Interval in milliseconds
+      }
+  ) & { limit?: number };
 }
 
 export interface EnnQueueOptions {
@@ -66,7 +74,7 @@ export abstract class Queue<T extends object> {
     }
   }
 
-  public process(handler: (payload: T) => Promise<void>) {
+  public process(handler: (payload: T) => Promise<void>): void | Promise<void> {
     this.handler = handler;
   }
 

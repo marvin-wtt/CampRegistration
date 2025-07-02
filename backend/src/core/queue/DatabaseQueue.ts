@@ -15,6 +15,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
     const cronPattern = `*/5 * * * * *`; // Every 5 seconds
 
     this.poller = new Cron(cronPattern, this.run.bind(this), {
+      name: this.queue,
       paused: true,
       // TODO add handler
     });
@@ -88,6 +89,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
         WHERE status = 'PENDING'
           AND run_at <= NOW()
           AND queue = ${this.queue}
+          AND reserved_at IS NULL
         ORDER BY
           priority,
           run_at ASC,
