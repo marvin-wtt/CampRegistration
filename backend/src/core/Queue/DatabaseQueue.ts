@@ -49,14 +49,6 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
   }
 
   public async push(payload: T, options: EnnQueueOptions): Promise<void> {
-    if (!this.poller.isRunning() && !this.poller.isStopped()) {
-      this.poller.resume();
-    }
-
-    if (!this.poller.isBusy()) {
-      await this.poller.trigger();
-    }
-
     const runAt = options.delay
       ? new Date(Date.now() + options.delay)
       : new Date();
@@ -69,6 +61,14 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
         payload,
       },
     });
+
+    if (!this.poller.isRunning() && !this.poller.isStopped()) {
+      this.poller.resume();
+    }
+
+    if (!this.poller.isBusy()) {
+      await this.poller.trigger();
+    }
   }
 
   public async poll() {
