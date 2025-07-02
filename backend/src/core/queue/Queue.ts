@@ -27,12 +27,14 @@ export interface Job<T extends object> {
 
 // TODO Add process abstract method
 
-export abstract class AbstractQueue<T extends object> {
+export abstract class Queue<T extends object> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,
     retryDelay: 5000,
     retryDelayType: 'exponential',
   };
+
+  private handler: ((payload: T) => Promise<void>) | null = null;
 
   protected constructor(
     protected queue: string,
@@ -44,13 +46,37 @@ export abstract class AbstractQueue<T extends object> {
     };
   }
 
+  protected async run() {
+    if (!this.handler) {
+      return;
+    }
+
+    const job = await this.poll();
+
+    if (job === null) {
+      return;
+    }
+
+    try {
+      await this.handler(job.payload);
+
+      await this.complete(job.id);
+    } catch (error) {
+      await this.release(job.id, error);
+    }
+  }
+
+  public process(handler: (payload: T) => Promise<void>) {
+    this.handler = handler;
+  }
+
   public abstract all(): Promise<Job<T>[]>;
 
-  public abstract push(payload: T, options?: EnnQueueOptions): Promise<void>;
+  public abstract add(payload: T, options?: EnnQueueOptions): Promise<void>;
 
-  public abstract poll(): Promise<{ id: string; payload: T } | null>;
+  protected abstract poll(): Promise<{ id: string; payload: T } | null>;
 
-  public abstract complete(id: string): Promise<void>;
+  protected abstract complete(id: string): Promise<void>;
 
-  public abstract release(id: string, error: unknown): Promise<void>;
+  protected abstract release(id: string, error: unknown): Promise<void>;
 }

@@ -1,12 +1,12 @@
 import prisma from '#core/database';
 import {
-  AbstractQueue,
+  Queue,
   type EnnQueueOptions,
   type QueueOptions,
-} from '#core/queue/AbstractQueue';
+} from '#core/queue/Queue.js';
 import { Cron } from 'croner';
 
-export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
+export class DatabaseQueue<T extends object> extends Queue<T> {
   private poller: Cron;
 
   constructor(queue: string, options?: Partial<QueueOptions>) {
@@ -14,7 +14,10 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
 
     const cronPattern = `*/5 * * * * *`; // Every 5 seconds
 
-    this.poller = new Cron(cronPattern);
+    this.poller = new Cron(cronPattern, this.run.bind(this), {
+      paused: true,
+      // TODO add handler
+    });
   }
 
   protected retryTime(attempts: number): Date {
@@ -48,7 +51,7 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     return jobs as ((typeof jobs)[number] & { payload: T })[];
   }
 
-  public async push(payload: T, options: EnnQueueOptions): Promise<void> {
+  async add(payload: T, options: EnnQueueOptions): Promise<void> {
     const runAt = options.delay
       ? new Date(Date.now() + options.delay)
       : new Date();
@@ -72,7 +75,11 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     }
   }
 
-  public async poll() {
+  async poll() {
+    if (!(await this.isPollAllowed())) {
+      return null;
+    }
+
     const job = await prisma.$transaction(async (tx) => {
       // See https://github.com/prisma/prisma/issues/5983
       const rows = await tx.$queryRaw<{ id: string; payload: string }[]>`
@@ -121,7 +128,7 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     return job;
   }
 
-  public async complete(id: string): Promise<void> {
+  async complete(id: string): Promise<void> {
     await prisma.jobs.update({
       where: {
         id,
@@ -137,7 +144,7 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     });
   }
 
-  public async release(id: string, error: unknown): Promise<void> {
+  async release(id: string, error: unknown): Promise<void> {
     const job = await prisma.jobs.findUnique({
       where: {
         id,
@@ -179,7 +186,7 @@ export class DatabaseQueue<T extends object> extends AbstractQueue<T> {
     });
   }
 
-  protected async isPollAllowed(): Promise<boolean> {
+  private async isPollAllowed(): Promise<boolean> {
     const limit = this.options.limit;
     if (!limit) {
       return true;
