@@ -9,9 +9,9 @@ import {
 import { Cron } from 'croner';
 import logger from '#core/logger';
 
-export class DatabaseQueue<T extends object> extends Queue<T> {
+export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   private poller: Cron;
-  private handler: ((payload: T) => Promise<void>) | null = null;
+  private handler: ((payload: P) => Promise<R>) | null = null;
 
   constructor(queue: string, options?: Partial<QueueOptions>) {
     super(queue, options);
@@ -71,7 +71,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
     });
   }
 
-  public async all(status?: JobStatus): Promise<Job<T>[]> {
+  public async all(status?: JobStatus): Promise<Job<P>[]> {
     const jobs = await prisma.jobs.findMany({
       where: {
         queue: this.queue,
@@ -95,22 +95,23 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
       return {
         ...job,
         status,
-        payload: job.payload as T,
+        payload: job.payload as P,
       };
     });
   }
 
-  public process(handler: (payload: T) => Promise<void>): void | Promise<void> {
+  public process(handler: (payload: P) => Promise<R>): void | Promise<void> {
     this.handler = handler;
   }
 
-  async add(payload: T, options: JobOptions): Promise<void> {
+  async add(name: N, payload: P, options: JobOptions): Promise<void> {
     const runAt = options.delay
       ? new Date(Date.now() + options.delay)
       : new Date();
 
     await prisma.jobs.create({
       data: {
+        name,
         queue: this.queue,
         status: 'PENDING',
         priority: options.priority,
@@ -161,7 +162,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
 
       return {
         id: job.id,
-        payload: JSON.parse(job.payload) as T,
+        payload: JSON.parse(job.payload) as P,
       };
     });
   }
@@ -237,7 +238,7 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
         SELECT tokens, refilled_at
         FROM rate_limits
         WHERE queue = ${this.queue}
-        FOR UPDATE
+          FOR UPDATE
       `;
 
       if (rows.length === 0) {

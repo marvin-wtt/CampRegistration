@@ -4,12 +4,21 @@ import {
   type JobOptions,
   type JobStatus,
 } from '#core/queue/Queue';
-import { default as BullQueue, type Queue as IBullQueue } from 'bull';
+import {
+  Queue as BullQueue,
+  type Job as BullJob,
+  QueueEvents,
+  Worker,
+  type ConnectionOptions,
+} from 'bullmq';
 import logger from '#core/logger';
 import config from '#config/index';
 
-export class RedisQueue<T extends object> extends Queue<T> {
-  private bull: IBullQueue<T>;
+export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
+  private bull: BullQueue<BullJob<P, R, N>>;
+  private worker: Worker<P, unknown> | undefined;
+  private events: QueueEvents;
+  private connection: ConnectionOptions;
 
   static isAvailable(): boolean {
     return config.redis.host !== undefined;
@@ -18,14 +27,16 @@ export class RedisQueue<T extends object> extends Queue<T> {
   constructor(queue: string, options?: Partial<QueueOptions>) {
     super(queue, options);
 
+    this.connection = {
+      host: config.redis.host,
+      password: config.redis.password,
+      username: config.redis.username,
+      db: config.redis.db,
+      port: config.redis.port,
+    };
+
     this.bull = new BullQueue(queue, {
-      redis: {
-        host: config.redis.host,
-        password: config.redis.password,
-        username: config.redis.username,
-        db: config.redis.db,
-        port: config.redis.port,
-      },
+      connection: this.connection,
       defaultJobOptions: {
         attempts: this.options.maxAttempts,
         backoff: {
@@ -39,27 +50,39 @@ export class RedisQueue<T extends object> extends Queue<T> {
       logger.error(`Error in queue ${queue}:`, error);
     });
 
-    this.bull.on('failed', (job, error) => {
+    this.events = new QueueEvents(this.queue);
+
+    this.events.on('failed', (job, error) => {
       logger.error(
-        `Error while processing job ${job.id.toString()} in queue ${queue} (attempt ${job.attemptsMade.toString()}):`,
+        `Error while processing job ${job.jobId.toString()} in queue ${queue}:`,
         error,
       );
     });
 
-    this.bull.on('stalled', (job) => {
-      logger.warn(`Job ${job.id.toString()} in queue ${queue} has stalled.`);
+    this.events.on('stalled', (job) => {
+      logger.warn(`Job ${job.jobId.toString()} in queue ${queue} has stalled.`);
     });
   }
 
   public async all(status?: JobStatus) {
-    const activeJobs = await this.bull.getJobs(['active']);
+    const activeJobs = await this.bull.getJobs([
+      'active',
+      'prioritized',
+      'repeat',
+    ]);
     const completedJobs = await this.bull.getJobs(['completed']);
     const failedJobs = await this.bull.getJobs(['failed']);
     const delayedJobs = await this.bull.getJobs(['delayed']);
-    const pendingJobs = await this.bull.getJobs(['paused', 'waiting']);
+    const pendingJobs = await this.bull.getJobs([
+      'paused',
+      'wait',
+      'waiting',
+      'waiting-children',
+    ]);
 
-    const mapJob = (status: JobStatus) => (job: BullQueue.Job<T>) => ({
-      id: job.id.toString(),
+    const mapJob = (status: JobStatus) => (job: BullJob<P>) => ({
+      id: job.id?.toString() ?? '?',
+      name: job.name,
       queue: this.queue,
       status,
       error: job.failedReason,
@@ -81,22 +104,32 @@ export class RedisQueue<T extends object> extends Queue<T> {
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  public async add(payload: T, options: JobOptions): Promise<void> {
-    await this.bull.add(payload, {
+  public async add(name: N, payload: P, options: JobOptions): Promise<void> {
+    await this.bull.add(name, payload, {
       priority: options.priority,
       delay: options.delay,
     });
   }
 
-  public async process(handler: (payload: T) => Promise<void>): Promise<void> {
-    await this.bull.process(async (job) => {
-      await handler(job.data);
+  public process(handler: (payload: P) => Promise<R>): void {
+    if (this.worker) {
+      throw new Error(`Worker for queue ${this.queue} already exists.`);
+    }
 
-      return null;
-    });
+    this.worker = new Worker<P, unknown>(
+      this.queue,
+      (job) => {
+        return handler(job.data);
+      },
+      {
+        connection: this.connection,
+      },
+    );
   }
 
   public async close(): Promise<void> {
+    await this.worker?.close();
+    await this.events.close();
     await this.bull.close();
   }
 

@@ -28,8 +28,9 @@ export type JobStatus =
   | 'COMPLETED'
   | 'FAILED';
 
-export interface Job<T extends object> {
+export interface Job<T> {
   id: string;
+  name: string;
   queue: string;
   status: JobStatus;
   payload: T;
@@ -40,7 +41,7 @@ export interface Job<T extends object> {
   attempts: number;
 }
 
-export abstract class Queue<T extends object> {
+export abstract class Queue<P, R = void, N extends string = string> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,
     retryDelay: 5000,
@@ -58,12 +59,12 @@ export abstract class Queue<T extends object> {
   }
 
   public abstract process(
-    handler: (payload: T) => Promise<void>,
+    handler: (payload: P) => Promise<R>,
   ): void | Promise<void>;
 
-  public abstract all(status?: JobStatus): Promise<Job<T>[]>;
+  public abstract all(status?: JobStatus): Promise<Job<P>[]>;
 
-  public abstract add(payload: T, options?: JobOptions): Promise<void>;
+  public abstract add(name: N, payload: P, options?: JobOptions): Promise<void>;
 
   public abstract close(): Promise<void> | void;
 
