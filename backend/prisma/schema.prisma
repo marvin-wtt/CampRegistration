@@ -270,7 +270,7 @@ model Jobs {
   attempts   Int       @default(0)
   error      String?   @db.Text
   runAt      DateTime? @map("run_at") @db.DateTime()
-  reservedAt DateTime? @map("reserve_at") @db.DateTime()
+  reservedAt DateTime? @map("reserved_at") @db.DateTime()
   finishedAt DateTime? @map("finished_at") @db.DateTime()
 
   createdAt DateTime  @default(now()) @map("created_at")
