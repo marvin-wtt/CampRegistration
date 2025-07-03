@@ -5,7 +5,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 source $DIR/setenv.sh
 
 # Start docker container
-docker-compose up -d
+docker-compose up -d -f "$DIR/../docker-compose.int.yml"
 echo '🟡 - Waiting for database to be ready...'
 sleep 1
 host_port=$(echo "$DATABASE_URL" | sed -E 's/^[^@]+@([^/]+)\/.*/\1/')
