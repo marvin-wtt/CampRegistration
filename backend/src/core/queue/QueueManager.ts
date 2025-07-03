@@ -13,7 +13,7 @@ export class QueueManager {
     await Promise.all(this.all().map((queue) => queue.close()));
   }
 
-  createQueue<P, R, N extends string>(
+  createQueue<P, R = void, N extends string = string>(
     name: string,
     options?: Partial<QueueOptions>,
   ): Queue<P, R, N> {

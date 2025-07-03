@@ -1,15 +1,16 @@
 import type { Message } from '@prisma/client';
-import config from '#config/index.js';
-import renderer from '#app/mail/mail.renderer.js';
-import { MailFactory } from '#app/mail/mail.factory.js';
-import logger from '#core/logger.js';
-import { NoOpMailer } from '#app/mail/noop.mailer.js';
+import config from '#config/index';
+import renderer from '#app/mail/mail.renderer';
+import { MailFactory } from '#app/mail/mail.factory';
+import logger from '#core/logger';
+import { NoOpMailer } from '#app/mail/noop.mailer';
 import type {
   AdvancedMailPayload,
   IMailer,
   MailPriority,
   TemplateMailData,
-} from '#app/mail/mail.types.js';
+} from '#app/mail/mail.types';
+import { mailQueue } from '#app/mail/mail.queue';
 
 const isMailPriority = (value: string): value is MailPriority => {
   return ['low', 'normal', 'high'].includes(value);
@@ -63,14 +64,14 @@ class MailService {
     });
   }
 
-  private async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
+  public async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
     const from = {
       name: config.appName,
       address: config.email.from,
     };
 
     // Send email via mailer
-    await this.mailer.sendMail({
+    await mailQueue.add('send', {
       from,
       to: data.to,
       replyTo: data.replyTo ?? config.email.replyTo,
@@ -79,6 +80,10 @@ class MailService {
       body: data.body,
       attachments: data.attachments,
     });
+  }
+
+  public async sendMail(data: AdvancedMailPayload): Promise<void> {
+    await this.mailer.sendMail(data);
   }
 
   async sendMessage(message: Message, email: string): Promise<void> {
