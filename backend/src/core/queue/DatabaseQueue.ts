@@ -104,8 +104,8 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     this.handler = handler;
   }
 
-  async add(name: N, payload: P, options: JobOptions): Promise<void> {
-    const runAt = options.delay
+  async add(name: N, payload: P, options?: JobOptions): Promise<void> {
+    const runAt = options?.delay
       ? new Date(Date.now() + options.delay)
       : new Date();
 
@@ -114,7 +114,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         name,
         queue: this.queue,
         status: 'PENDING',
-        priority: options.priority,
+        priority: options?.priority,
         runAt,
         payload,
       },
@@ -138,9 +138,10 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         ORDER BY priority,
                  run_at ASC,
                  created_at ASC LIMIT 1
-        FOR
-        UPDATE SKIP LOCKED
+        FOR UPDATE
       `;
+
+      // TODO FOR UPDATE SKIP LOCKED requires MariaDB 10.6+
 
       if (rows.length === 0) {
         return null;
@@ -236,7 +237,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
       const rows = await tx.$queryRaw<{ tokens: number; refilled_at: Date }[]>`
         SELECT tokens, refilled_at
-        FROM rate_limits
+        FROM job_rate_limits
         WHERE queue = ${this.queue}
           FOR UPDATE
       `;
