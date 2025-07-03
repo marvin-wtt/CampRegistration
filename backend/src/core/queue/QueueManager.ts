@@ -1,6 +1,7 @@
 import type { Queue, QueueOptions } from '#core/queue/Queue';
 import { RedisQueue } from '#core/queue/RedisQueue';
 import { DatabaseQueue } from '#core/queue/DatabaseQueue';
+import logger from '#core/logger';
 
 export class QueueManager {
   private queues: Record<string, Queue<unknown, unknown>> = {};
@@ -32,8 +33,12 @@ export class QueueManager {
     options?: Partial<QueueOptions>,
   ): Queue<P, R, N> {
     if (RedisQueue.isAvailable()) {
+      logger.info(`Creating queue ${queue} using Redis`);
+
       return new RedisQueue<P, R, N>(queue, options);
     }
+
+    logger.info(`Creating queue ${queue} using Database`);
 
     return new DatabaseQueue<P, R, N>(queue, options);
   }
