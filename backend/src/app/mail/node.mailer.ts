@@ -1,4 +1,4 @@
-import type { IMailer, AdvancedMailPayload } from '#core/mail/mail.types';
+import type { IMailer, AdvancedMailPayload } from '#app/mail/mail.types';
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index';
 
@@ -52,5 +52,9 @@ export class NodeMailer implements IMailer {
 
   async isAvailable(): Promise<boolean> {
     return this.transport.verify();
+  }
+
+  close() {
+    this.transport.close();
   }
 }

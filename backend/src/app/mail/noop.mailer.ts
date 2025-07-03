@@ -2,7 +2,7 @@ import type {
   IMailer,
   AdvancedMailPayload,
   MailAddress,
-} from '#core/mail/mail.types';
+} from '#app/mail/mail.types';
 import logger from '#core/logger';
 
 export class NoOpMailer implements IMailer {
@@ -29,5 +29,9 @@ export class NoOpMailer implements IMailer {
 
   public name(): string {
     return 'NoOpMailer';
+  }
+
+  public close(): void {
+    // No operation for noop mailer
   }
 }

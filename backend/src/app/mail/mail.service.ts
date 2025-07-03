@@ -1,15 +1,15 @@
 import type { Message } from '@prisma/client';
-import config from '#config/index';
-import renderer from '#core/mail/mail.renderer';
-import { MailFactory } from '#core/mail/mail.factory';
-import logger from '#core/logger';
-import { NoOpMailer } from '#core/mail/noop.mailer';
+import config from '#config/index.js';
+import renderer from '#app/mail/mail.renderer.js';
+import { MailFactory } from '#app/mail/mail.factory.js';
+import logger from '#core/logger.js';
+import { NoOpMailer } from '#app/mail/noop.mailer.js';
 import type {
   AdvancedMailPayload,
   IMailer,
   MailPriority,
   TemplateMailData,
-} from '#core/mail/mail.types';
+} from '#app/mail/mail.types.js';
 
 const isMailPriority = (value: string): value is MailPriority => {
   return ['low', 'normal', 'high'].includes(value);
@@ -35,6 +35,10 @@ class MailService {
       );
       logger.error(error);
     }
+  }
+
+  async close() {
+    await this.mailer.close();
   }
 
   async sendTemplateMail(data: TemplateMailData): Promise<void> {

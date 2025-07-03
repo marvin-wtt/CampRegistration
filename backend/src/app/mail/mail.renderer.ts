@@ -1,8 +1,8 @@
 import { create, type ExpressHandlebars } from 'express-handlebars';
-import i18n from '#core/i18n';
+import i18n from '#core/i18n.js';
 import path from 'path';
-import config from '#config/index';
-import { appBuildPath } from '#utils/paths';
+import config from '#config/index.js';
+import { appBuildPath } from '#utils/paths.js';
 
 interface RenderContentOptions {
   subject: string;

@@ -29,4 +29,6 @@ export interface IMailer {
   isAvailable(): Promise<boolean> | boolean;
 
   name(): string;
+
+  close(): Promise<void> | void;
 }

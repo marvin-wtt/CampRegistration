@@ -1,4 +1,4 @@
-import mailService from '#core/mail/mail.service';
+import mailService from '#app/mail/mail.service';
 import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
 

@@ -1,7 +1,7 @@
 import type { Camp, CampManager, Invitation, User } from '@prisma/client';
 import { translateObject } from '#utils/translateObject';
 import i18n, { t } from '#core/i18n';
-import mailService from '#core/mail/mail.service';
+import mailService from '#app/mail/mail.service';
 import { BaseMessages } from '#core/base/BaseMessages';
 
 type CampManagerWithUserOrInvitation = CampManager & { user: User | null } & {

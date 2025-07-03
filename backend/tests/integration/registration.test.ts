@@ -37,7 +37,7 @@ import {
   campWithAddressCampDataTypes,
 } from '../fixtures/registration/camp.fixtures';
 import { request } from '../utils/request';
-import { NoOpMailer } from '../../src/core/mail/noop.mailer';
+import { NoOpMailer } from '../../src/app/mail/noop.mailer';
 import { uploadFile } from '../utils/file';
 
 const mailer = NoOpMailer.prototype;

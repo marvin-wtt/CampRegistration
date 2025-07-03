@@ -21,7 +21,7 @@ import {
   verifyToken,
 } from '../utils/token';
 import { request } from '../utils/request';
-import { NoOpMailer } from '../../src/core/mail/noop.mailer';
+import { NoOpMailer } from '../../src/app/mail/noop.mailer';
 import * as OTPAuth from 'otpauth';
 
 const mailer = NoOpMailer.prototype;

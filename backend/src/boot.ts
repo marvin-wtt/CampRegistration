@@ -16,15 +16,18 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
+import { MailModule } from '#app/mail/mail.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
-import mailService from '#core/mail/mail.service';
 import { startJobs, stopJobs } from '#jobs/index';
 import { connectDatabase, disconnectDatabase } from '#core/database';
 
-const loadModules = (): AppModule[] =>
+let modules: AppModule[] = [];
+
+const loadModules = () =>
   // Modules in order
-  [
+  (modules = [
+    new MailModule(),
     new HealthModule(),
     new TokenModule(),
     new AuthModule(),
@@ -41,19 +44,16 @@ const loadModules = (): AppModule[] =>
     new RoomModule(),
     new BedModule(),
     new FeedbackModule(),
-  ];
+  ]);
 
 export async function boot() {
   await connectDatabase();
 
-  await mailService.connect();
-
-  // localization
   await initI18n();
 
-  const modules = loadModules();
+  loadModules();
 
-  await bootModules(modules);
+  await bootModules();
 
   // Start jobs
   startJobs();
@@ -62,10 +62,12 @@ export async function boot() {
 export async function shutdown() {
   stopJobs();
 
+  await shutdownModules();
+
   await disconnectDatabase();
 }
 
-async function bootModules(modules: AppModule[]) {
+async function bootModules() {
   // Configure modules
   for (const module of modules) {
     if (module.configure) {
@@ -85,6 +87,14 @@ async function bootModules(modules: AppModule[]) {
   for (const module of modules) {
     if (module.registerRoutes) {
       module.registerRoutes(apiRouter);
+    }
+  }
+}
+
+async function shutdownModules() {
+  for (const module of modules) {
+    if (module.shutdown) {
+      await module.shutdown();
     }
   }
 }

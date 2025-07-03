@@ -1,7 +1,7 @@
 import type { Camp, Registration } from '@prisma/client';
 import messageService from '#app/message/message.service';
 import { objectValueOrAll } from '#utils/translateObject';
-import mailService from '#core/mail/mail.service';
+import mailService from '#app/mail/mail.service';
 import i18n, { t } from '#core/i18n';
 import { BaseMessages } from '#core/base/BaseMessages';
 import { catchAndResolve } from '#utils/promiseUtils';

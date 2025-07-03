@@ -2,7 +2,7 @@ import resetDb from './reset-db';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
 import { stopJobs } from '../../src/jobs';
-import { NoOpMailer } from '../../src/core/mail/noop.mailer.js';
+import { NoOpMailer } from '../../src/app/mail/noop.mailer.js';
 import { Request, Response, NextFunction, Express } from 'express';
 import { boot, shutdown } from '../../src/boot';
 import { createApp } from '../../src/app';
