@@ -20,7 +20,6 @@ export class DatabaseQueue<T extends object> extends Queue<T> {
 
     this.poller = new Cron(cronPattern, this.run.bind(this), {
       name: this.queue + '-poller',
-      paused: true,
       protect: (job) => {
         const startTime = job.currentRun()?.toISOString();
         logger.warning(

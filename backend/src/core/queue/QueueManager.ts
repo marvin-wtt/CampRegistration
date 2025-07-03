@@ -3,13 +3,17 @@ import { RedisQueue } from '#core/queue/RedisQueue';
 import { DatabaseQueue } from '#core/queue/DatabaseQueue';
 
 export class QueueManager {
-  static queues: Record<string, Queue<object>> = {};
+  private queues: Record<string, Queue<object>> = {};
 
-  static all(): Queue<object>[] {
+  all(): Queue<object>[] {
     return Object.values(this.queues);
   }
 
-  static createQueue<T extends object>(
+  async closeAll(): Promise<void> {
+    await Promise.all(this.all().map((queue) => queue.close()));
+  }
+
+  createQueue<T extends object>(
     name: string,
     options?: Partial<QueueOptions>,
   ): Queue<T> {
@@ -23,7 +27,7 @@ export class QueueManager {
     return queue;
   }
 
-  private static create<T extends object>(
+  private create<T extends object>(
     queue: string,
     options?: Partial<QueueOptions>,
   ): Queue<T> {
@@ -34,3 +38,5 @@ export class QueueManager {
     return new DatabaseQueue<T>(queue, options);
   }
 }
+
+export default new QueueManager();

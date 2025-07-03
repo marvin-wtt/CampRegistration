@@ -40,8 +40,6 @@ export interface Job<T extends object> {
   attempts: number;
 }
 
-// TODO Add process abstract method
-
 export abstract class Queue<T extends object> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,
