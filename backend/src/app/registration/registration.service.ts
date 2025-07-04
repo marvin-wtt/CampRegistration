@@ -87,7 +87,7 @@ export class RegistrationService extends BaseService {
       }
       // The ID may contain the field name. Remove it.
       const fileId = value.split('#')[0];
-      return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
+      return `${config.origin}/api/v1/files/${fileId}/`;
     });
 
     // Get updated data from form back
