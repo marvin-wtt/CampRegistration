@@ -104,10 +104,10 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  public async add(name: N, payload: P, options: JobOptions): Promise<void> {
+  public async add(name: N, payload: P, options?: JobOptions): Promise<void> {
     await this.bull.add(name, payload, {
-      priority: options.priority,
-      delay: options.delay,
+      priority: options?.priority,
+      delay: options?.delay,
     });
   }
 
