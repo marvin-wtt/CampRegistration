@@ -163,7 +163,7 @@ export class FileService extends BaseService {
     const fileName = ulid();
     const fileExtension = fileNameExtension(originalName);
 
-    return `${fileName}.${fileExtension}`;
+    return fileName + fileExtension;
   }
 
   async deleteUnreferencedFiles(): Promise<void> {
