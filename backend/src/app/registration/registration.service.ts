@@ -1,4 +1,3 @@
-import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { type Camp, Prisma, type Registration } from '@prisma/client';
@@ -73,7 +72,6 @@ export class RegistrationService extends BaseService {
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
   ) {
-    const id = ulid();
     const form = formUtils(camp);
     form.updateData(data.data);
 
@@ -91,19 +89,14 @@ export class RegistrationService extends BaseService {
       const fileId = value.split('#')[0];
       return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
     });
+
     // Get updated data from form back
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 
-    const fileConnects = fileIdentifiers.map((identifier) => {
-      return {
-        id: identifier.id,
-        campId: null,
-        registrationId: null,
-        accessLevel: 'private',
-        field: identifier.field ?? null,
-      };
-    });
+    const fileConnects = fileIdentifiers.map((entry) => ({
+      id: entry.id,
+    }));
 
     const isWaitingList = async (
       transaction: Prisma.TransactionClient,
@@ -155,7 +148,7 @@ export class RegistrationService extends BaseService {
           data: {
             ...data,
             ...computedData,
-            id,
+            id: undefined, // Force new ID generation
             data: formData,
             waitingList,
             camp: { connect: { id: camp.id } },
