@@ -1,7 +1,10 @@
 <template>
   {{ cellProps.value }}
 
-  <q-popup-proxy v-model="popupState">
+  <q-popup-proxy
+    v-if="!printing"
+    v-model="popupState"
+  >
     <q-banner>
       <div
         class="column q-gutter-sm q-ma-xs"
@@ -67,7 +70,7 @@ import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 
-const { props: cellProps } = defineProps<TableCellProps>();
+const { props: cellProps, printing } = defineProps<TableCellProps>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
