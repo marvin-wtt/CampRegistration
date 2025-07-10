@@ -1,13 +1,14 @@
 <template>
-  <country-icon
-    v-if="country"
-    :locale="country"
-    :size="size"
-  >
-    <q-tooltip>
-      {{ props.props.value }}
-    </q-tooltip>
-  </country-icon>
+  <div v-if="country">
+    <country-icon
+      :locale="country"
+      :size
+    >
+      <q-tooltip>
+        {{ props.props.value }}
+      </q-tooltip>
+    </country-icon>
+  </div>
 
   <a v-else>
     {{ props.props.value }}

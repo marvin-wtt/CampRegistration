@@ -1,84 +1,47 @@
 <template>
-  <i
-    :aria-label="props.country ?? props.locale"
-    aria-hidden="true"
-    role="presentation"
-    class="fi country-icon q-icon"
-    :class="className"
-    :style
+  <img
+    v-if="isoCode && hasFlag(isoCode)"
+    :src="`/flags/${isoCode}.svg`"
+    :alt="`Flag of ${isoCode}`"
+    class="flag-icon"
   />
+
+  <span v-else>
+    {{ isoCode }}
+  </span>
 </template>
 
 <script lang="ts" setup>
-import 'flag-icons/css/flag-icons.min.css';
-import { computed, type StyleValue } from 'vue';
+import { hasFlag } from 'country-flag-icons';
+import { defineProps, computed } from 'vue';
 
 type Props =
   | {
       locale: string;
       country?: never;
-      size?: string;
     }
   | {
       locale?: never;
       country: string;
-      size?: string;
     };
 
-const props = defineProps<Props>();
+const { country, locale } = defineProps<Props>();
 
-const overrides: Record<string, string> = {
-  en: 'us', // Use US as default for english
-};
+const isoCode = computed<string>(() => {
+  const code = locale ? localeToIso(locale) : country;
 
-const className = computed<string>(() => {
-  const isoCode = props.country ?? localeToCountry(props.locale);
-
-  return `fi-${isoCode}`;
+  return code?.toUpperCase() ?? '';
 });
 
-const style = computed<StyleValue | null>(() => {
-  if (!props.size) {
-    return null;
-  }
-
-  const defaultSizes = {
-    xs: 18,
-    sm: 24,
-    md: 32,
-    lg: 38,
-    xl: 46,
-  } as const;
-
-  return {
-    fontSize:
-      props.size in defaultSizes
-        ? `${defaultSizes[props.size as keyof typeof defaultSizes]!}px`
-        : props.size,
-  };
-});
-
-function localeToCountry(value: string): string {
-  // Use country as value for locales of type aa-AA
-  if (value.length > 2) {
-    if (!value.includes('-')) {
-      throw new Error(`Invalid value for prop locale: ${value}`);
-    }
-
-    value = value.split('-')[1]!.toLowerCase();
-  }
-
-  if (value in overrides) {
-    return overrides[value]!;
-  }
-
-  return value;
+function localeToIso(locale: string): string {
+  return locale.length === 2 ? locale : locale.substring(2, locale.length);
 }
 </script>
 
 <style scoped>
-.country-icon {
-  width: 1em !important;
-  height: auto !important;
+.flag-icon {
+  width: 1.5em;
+  height: auto;
+  vertical-align: middle;
 }
 </style>
