@@ -1,22 +1,22 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { translatedValue } from '#core/validation/helper';
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    roomId: z.string().ulid(),
+    campId: z.ulid(),
+    roomId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
     name: translatedValue(z.string()),
@@ -26,8 +26,8 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    roomId: z.string().ulid(),
+    campId: z.ulid(),
+    roomId: z.ulid(),
   }),
   body: z
     .object({
@@ -38,8 +38,8 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    roomId: z.string().ulid(),
+    campId: z.ulid(),
+    roomId: z.ulid(),
   }),
 });
 

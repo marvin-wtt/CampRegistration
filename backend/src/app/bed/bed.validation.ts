@@ -1,31 +1,31 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    roomId: z.string().ulid(),
+    campId: z.ulid(),
+    roomId: z.ulid(),
   }),
   body: z.object({
-    registrationId: z.string().ulid().optional(),
+    registrationId: z.ulid().optional(),
   }),
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    roomId: z.string().ulid(),
-    bedId: z.string().ulid(),
+    campId: z.ulid(),
+    roomId: z.ulid(),
+    bedId: z.ulid(),
   }),
   body: z.object({
-    registrationId: z.string().ulid().nullable(),
+    registrationId: z.ulid().nullable(),
   }),
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    roomId: z.string().ulid(),
-    bedId: z.string().ulid(),
+    campId: z.ulid(),
+    roomId: z.ulid(),
+    bedId: z.ulid(),
   }),
 });
 
