@@ -1,9 +1,6 @@
 <template>
   <div v-if="country">
-    <country-icon
-      :locale="country"
-      :size
-    >
+    <country-icon :locale="country">
       <q-tooltip>
         {{ props.props.value }}
       </q-tooltip>
@@ -24,10 +21,6 @@ const props = defineProps<TableCellProps>();
 
 const country = computed<string | undefined>(() => {
   return typeof props.props.value === 'string' ? props.props.value : undefined;
-});
-
-const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
 });
 </script>
 
