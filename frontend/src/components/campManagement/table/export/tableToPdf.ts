@@ -1,5 +1,5 @@
 import { default as JsPdf } from 'jspdf';
-import DomToImage, { type Options } from 'dom-to-image';
+import DomToImage from 'dom-to-image';
 
 export interface ExportOptions {
   scale?: number | undefined;
@@ -22,7 +22,7 @@ export interface Dimension {
   height: number;
 }
 
-export function scaleImage(
+function scaleImage(
   input: Dimension,
   output: Dimension,
   orientation: 'portrait' | 'landscape',
@@ -174,10 +174,8 @@ export async function createImage(
 ): Promise<HTMLImageElement> {
   const width = options.captureWidth ?? 0;
   const height = options.captureHeight ?? 0;
-
-  // Scale dom to increase resolution
   const scale = options.scale ?? 1;
-  const o: Options = {
+  const o = {
     quality: 1,
     width: width * scale,
     height: height * scale,
@@ -190,6 +188,7 @@ export async function createImage(
   const dataUrl = await DomToImage.toPng(node, o);
 
   const img = new Image();
+  img.crossOrigin = 'anonymous';
   img.src = dataUrl;
 
   return img;

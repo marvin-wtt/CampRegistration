@@ -57,10 +57,7 @@
             v-for="locale in props.camp.countries"
             :key="locale"
           >
-            <country-icon
-              :locale
-              size="xs"
-            />
+            <country-icon :locale />
           </div>
         </div>
         <div>

@@ -92,11 +92,15 @@
       <template #body-cell-countries="props">
         <q-td :props="props">
           <div class="row q-gutter-x-sm justify-center content-center">
-            <country-icon
+            <div
               v-for="country in props.value"
               :key="country"
-              :locale="country"
-            />
+            >
+              <country-icon
+                :locale="country"
+                size="sm"
+              />
+            </div>
           </div>
         </q-td>
       </template>
