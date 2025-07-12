@@ -34,6 +34,10 @@ const isoCode = computed<string>(() => {
 });
 
 function localeToIso(locale: string): string {
+  if (locale === 'en') {
+    return 'GB'; // Default to UK for English
+  }
+
   return locale.length === 2 ? locale : locale.substring(2, locale.length);
 }
 </script>
