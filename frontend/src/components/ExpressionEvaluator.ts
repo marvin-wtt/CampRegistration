@@ -267,7 +267,7 @@ export class ExpressionEvaluator {
       const literal = expression.property as jsep.Literal;
       if (typeof literal.value !== 'number') {
         throw new Error(
-          `Unsupported literal in member expression (${literal.value}). Pleas use dot syntax.`,
+          `Unsupported literal in member expression (${literal.value}). Please use dot syntax.`,
         );
       }
 
