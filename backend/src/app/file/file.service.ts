@@ -6,7 +6,7 @@ import { decodeTime, isValid } from 'ulidx';
 import moment from 'moment';
 import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
-import storageRegistry from '#core/storage/storage.registry';
+import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
 
 type RequestFile = Express.Multer.File;
@@ -28,7 +28,7 @@ const fileNameExtension = (fileName: string): string => {
 
 export class FileService extends BaseService {
   private tmpStorage = new DiskStorage(config.storage.tmpDir);
-  private storageRegistry = storageRegistry;
+  private storageRegistry = new StorageRegistry();
 
   private mapFields = (
     file: RequestFile,
@@ -46,6 +46,12 @@ export class FileService extends BaseService {
       accessLevel,
     };
   };
+
+  async getFileById(id: string) {
+    return this.prisma.file.findUnique({
+      where: { id },
+    });
+  }
 
   private async moveFile(file: RequestFile) {
     // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?

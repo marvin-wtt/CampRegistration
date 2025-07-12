@@ -5,7 +5,8 @@
     "depoly": "./post-deploy.sh",
     "build": "npm run build -ws --if-present",
     "migrate": "npm run migrate -ws --if-present",
-    "build-and-migrate": "run-s build migrate"
+    "build-and-migrate": "run-s build migrate",
+    "production": "cross-env NODE_ENV=production node backend/build/entry.cjs"
   },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",

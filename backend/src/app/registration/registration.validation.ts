@@ -34,6 +34,7 @@ const update = z.object({
   body: z
     .object({
       data: RegistrationDataSchema,
+      customData: z.record(z.string(), z.unknown()),
       waitingList: z.boolean(),
     })
     .partial(),

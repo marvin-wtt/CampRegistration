@@ -5,9 +5,13 @@ import type {
 } from '#core/base/AppModule';
 import { RegistrationRouter } from '#app/registration/registration.routes';
 import type { RegistrationPermission } from '@camp-registration/common/permissions';
+import { registerFileGuard } from '#app/file/file.guard';
+import { registrationFileGuard } from '#app/registration/registration.guard';
 
 export class RegistrationModule implements AppModule {
   registerRoutes(router: AppRouter): void {
+    registerFileGuard('registration', registrationFileGuard);
+
     router.useRouter('/camps/:campId/registrations', new RegistrationRouter());
   }
 

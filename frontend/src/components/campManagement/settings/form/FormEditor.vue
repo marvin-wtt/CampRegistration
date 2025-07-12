@@ -226,6 +226,38 @@ creator.onSurveyInstanceCreated.add((_, options) => {
       setVariables(sender, props.camp);
     });
   }
+
+  if (['preview-tab'].includes(options.area)) {
+    function readAsDataURL(
+      file: File,
+    ): Promise<{ name: string; content: string; type: string; file: File }> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            name: file.name,
+            type: file.type,
+            content: reader.result as string,
+            file,
+          });
+        };
+        reader.onerror = () => {
+          reject(new Error(`Failed to read file "${file.name}"`));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    survey.onUploadFiles.add((_, options) => {
+      Promise.all(options.files.map(readAsDataURL))
+        .then((value) => {
+          options.callback('success', value);
+        })
+        .catch((reason) => {
+          options.callback('error', reason.message);
+        });
+    });
+  }
 });
 
 creator.onUploadFile.add((_, options) => {

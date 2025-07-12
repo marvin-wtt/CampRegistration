@@ -5,6 +5,7 @@ import {
   RegistrationFactory,
   UserFactory,
   MessageFactory,
+  FileFactory,
 } from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
@@ -13,36 +14,38 @@ import { encode } from 'html-entities';
 import prisma from '../utils/prisma';
 import { mailer } from '../utils/mailer';
 import { messageCreateBody } from '../fixtures/message/message.fixture';
+import crypto from 'crypto';
+import { uploadFile } from '../utils/file';
+
+const crateCampWithManager = async (
+  campCreateData?: Parameters<(typeof CampFactory)['create']>[0],
+  role = 'DIRECTOR',
+) => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+
+  const camp = await CampFactory.create(campCreateData);
+  await CampManagerFactory.create({
+    user: { connect: { id: user.id } },
+    camp: { connect: { id: camp.id } },
+    role,
+  });
+
+  return { user, accessToken, camp };
+};
+
+const createMessageForCamp = async (campId: string) => {
+  const registration = await RegistrationFactory.create({
+    camp: { connect: { id: campId } },
+  });
+  const message = await MessageFactory.create({
+    registration: { connect: { id: registration.id } },
+  });
+
+  return { message, registration };
+};
 
 describe('/api/v1/camps/:campId/messages', () => {
-  const crateCampWithManager = async (
-    campCreateData?: Parameters<(typeof CampFactory)['create']>[0],
-    role = 'DIRECTOR',
-  ) => {
-    const user = await UserFactory.create();
-    const accessToken = generateAccessToken(user);
-
-    const camp = await CampFactory.create(campCreateData);
-    await CampManagerFactory.create({
-      user: { connect: { id: user.id } },
-      camp: { connect: { id: camp.id } },
-      role,
-    });
-
-    return { user, accessToken, camp };
-  };
-
-  const createMessageForCamp = async (campId: string) => {
-    const registration = await RegistrationFactory.create({
-      camp: { connect: { id: campId } },
-    });
-    const message = await MessageFactory.create({
-      registration: { connect: { id: registration.id } },
-    });
-
-    return { message, registration };
-  };
-
   const createCampWithDifferentManager = async () => {
     const user = await UserFactory.create();
     // Manager with wrong camp but correct user
@@ -79,8 +82,8 @@ describe('/api/v1/camps/:campId/messages', () => {
       // Encode html characters
       expected = expected.map((value) => ({
         ...value,
-        subject: encode(value.subject),
-        body: encode(value.body),
+        subject: encode(value.subject).replace(/&apos;|&#39;/g, '&#x27;'),
+        body: encode(value.body).replace(/&apos;|&#39;/g, '&#x27;'),
       }));
 
       const emailCount = expected.reduce((acc, curr) => {
@@ -494,6 +497,58 @@ describe('/api/v1/camps/:campId/messages', () => {
         .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
         .send()
         .expect(401);
+    });
+  });
+});
+
+describe('/api/v1/files/', () => {
+  const createMessageWithFile = async () => {
+    const { user, accessToken, camp } = await crateCampWithManager();
+    const { message, registration } = await createMessageForCamp(camp.id);
+
+    const fileName = crypto.randomUUID() + '.pdf';
+    await uploadFile('blank.pdf', fileName);
+
+    const file = await FileFactory.create({
+      message: { connect: { id: message.id } },
+      name: fileName,
+    });
+
+    return { file, user, accessToken, camp, registration };
+  };
+
+  describe('GET /api/v1/files/:fileId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { file, accessToken } = await createMessageWithFile();
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { file } = await createMessageWithFile();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/files/${file.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const { file } = await createMessageWithFile();
+
+      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
+    });
+
+    it('should respond with `404` status code when file id does not exists', async () => {
+      const fileId = ulid();
+
+      await request().get(`/api/v1/files/${fileId}`).send().expect(404);
     });
   });
 });

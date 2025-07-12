@@ -1,27 +1,10 @@
-import path from 'path';
-import fse from 'fs-extra';
 import { env } from '#config/enviroment';
+import { appPath } from '#utils/paths';
 
-const createPath = (dir: string): string => {
-  return dir.replaceAll('/', path.sep);
-};
-
-const storageOptions = {
+export default {
   location: env.STORAGE_LOCATION,
-  tmpDir: createPath(env.TMP_DIR),
-  uploadDir: createPath(env.UPLOAD_DIR),
-  staticDir: path.join('storage', 'static') + path.sep,
+  tmpDir: appPath(env.TMP_DIR),
+  uploadDir: appPath(env.UPLOAD_DIR),
+  staticDir: appPath(env.STATIC_DIR),
   maxFileSize: env.MAX_FILE_SIZE,
 };
-
-// TODO This should not happen here
-{
-  if (storageOptions.tmpDir) {
-    fse.ensureDirSync(storageOptions.tmpDir);
-  }
-  if (storageOptions.uploadDir) {
-    fse.ensureDirSync(storageOptions.uploadDir);
-  }
-}
-
-export default storageOptions;

@@ -49,8 +49,9 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import SortableList from 'components/common/SortableList.vue';
 import { onBeforeUpdate, ref, toRaw } from 'vue';
 import type { RoomWithRoommates } from 'src/types/Room';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
-const props = defineProps<{
+const { rooms } = defineProps<{
   rooms: RoomWithRoommates[];
 }>();
 

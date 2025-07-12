@@ -1,6 +1,10 @@
 import { validateEnv } from '#core/validation/env';
 import dotenv from 'dotenv';
-dotenv.config();
+import { appPath } from '#utils/paths.js';
+
+dotenv.config({
+  path: appPath('.env'),
+});
 
 import { EnvSchema } from './schemas/index.js';
 
