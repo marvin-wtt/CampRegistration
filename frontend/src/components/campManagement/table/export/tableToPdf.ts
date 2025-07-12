@@ -80,7 +80,7 @@ function normalizeMargin(margin: number | number[]): number[] {
     return [margin[0]!, margin[1]!, margin[0]!, margin[1]!];
   }
 
-  throw 'Invalid page margin';
+  throw new Error('Invalid page margin');
 }
 
 export function createPDF() {

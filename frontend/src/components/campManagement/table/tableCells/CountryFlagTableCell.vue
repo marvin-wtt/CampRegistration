@@ -1,14 +1,14 @@
 <template>
   <div v-if="country">
-    <country-icon :locale="country">
+    <country-icon :country>
       <q-tooltip>
-        {{ props.props.value }}
+        {{ cellProps.value }}
       </q-tooltip>
     </country-icon>
   </div>
 
   <a v-else>
-    {{ props.props.value }}
+    {{ cellProps.value }}
   </a>
 </template>
 
@@ -17,10 +17,10 @@ import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 const country = computed<string | undefined>(() => {
-  return typeof props.props.value === 'string' ? props.props.value : undefined;
+  return typeof cellProps.value === 'string' ? cellProps.value : undefined;
 });
 </script>
 
