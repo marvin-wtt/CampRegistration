@@ -133,7 +133,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
           { id: rooms[0].id, name: 'Updated Room 1' },
           { id: rooms[1].id, sortOrder: 3 },
           { id: rooms[2].id, name: 'Updated Room 3', sortOrder: 2 },
-          { id: rooms[2].id, name: { de: 'Room 4 DE', fr: 'Room 5 FR' } },
+          { id: rooms[3].id, name: { de: 'Room 4 DE', fr: 'Room 5 FR' } },
         ],
       };
 
