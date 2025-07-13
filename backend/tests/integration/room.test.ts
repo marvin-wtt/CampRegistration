@@ -88,13 +88,19 @@ describe('/api/v1/camps/:campId/rooms/', () => {
 
   describe('PATCH /api/v1/camps/:campId/rooms/', async () => {
     const createRooms = async (camp: Camp): Promise<Room[]> => {
-      return await Promise.all([
-        createRoomWithCamp(camp, { name: 'Room 1', sortOrder: 1 }),
-        createRoomWithCamp(camp, { name: 'Room 2', sortOrder: 2 }),
-        createRoomWithCamp(camp, { name: 'Room 3', sortOrder: 3 }),
-        createRoomWithCamp(camp, { name: 'Room 4', sortOrder: 4 }),
-        createRoomWithCamp(camp, { name: 'Room 5', sortOrder: 5 }),
-      ]);
+      const rooms = [
+        { name: 'Room 1', sortOrder: 1 },
+        { name: 'Room 2', sortOrder: 2 },
+        { name: 'Room 3', sortOrder: 3 },
+        { name: 'Room 4', sortOrder: 4 },
+        { name: 'Room 5', sortOrder: 5 },
+      ];
+
+      const createdRooms: Room[] = [];
+      for (const room of rooms) {
+        createdRooms.push(await createRoomWithCamp(camp, room));
+      }
+      return createdRooms;
     };
 
     it.each([
