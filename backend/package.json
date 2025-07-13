@@ -43,7 +43,7 @@
     "directory": "backend"
   },
   "engines": {
-    "node": "^22"
+    "node": ">=22 <25"
   },
   "imports": {
     "#app/*": "./src/app/*.js",
