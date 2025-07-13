@@ -137,7 +137,7 @@ registrationsStore.fetchData();
 fetchRooms();
 
 const loading = computed<boolean>(() => {
-  return registrationsStore.isLoading && isLoading.value;
+  return registrationsStore.isLoading || isLoading.value;
 });
 
 const error = computed<string | null>(() => {
