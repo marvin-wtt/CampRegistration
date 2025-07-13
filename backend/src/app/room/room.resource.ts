@@ -12,6 +12,7 @@ export class RoomResource extends JsonResource<RoomWithBeds, RoomData> {
     return {
       id: this.data.id,
       name: this.data.name,
+      sortOrder: this.data.sortOrder,
       beds: BedResource.collection(this.data.beds).transform(),
     };
   }

@@ -1,22 +1,21 @@
 <template>
   <q-list
-    :bordered="props.bordered"
-    :separator="props.separator"
-    :dense="props.dense"
-    :padding="props.padding"
+    :bordered
+    :separator
+    :dense
+    :padding
   >
     <TransitionGroup name="list">
       <q-item
         v-for="(item, index) in modelValue"
         :key="
-          (item[props.keyName as keyof typeof item] as string | undefined) ??
-          index
+          (item[keyName as keyof typeof item] as string | undefined) ?? index
         "
       >
         <slot :item="item" />
         <!-- Sorting arrows -->
         <q-item-section
-          v-if="props.sortable"
+          v-if="sortable"
           side
         >
           <q-btn
@@ -38,7 +37,7 @@
         </q-item-section>
         <!-- Edit -->
         <q-item-section
-          v-if="props.editable"
+          v-if="editable"
           side
         >
           <q-btn
@@ -51,7 +50,7 @@
         </q-item-section>
         <!-- Delete -->
         <q-item-section
-          v-if="props.deletable"
+          v-if="deletable"
           side
         >
           <q-btn
@@ -78,10 +77,18 @@
 </template>
 
 <script lang="ts" generic="T extends object" setup>
-import { computed } from 'vue';
+const {
+  keyName = 'id',
+  addable = true,
+  editable = true,
+  deletable = true,
+  sortable = true,
 
-interface Props {
-  modelValue: T[];
+  bordered = false,
+  dense = false,
+  padding = true,
+  separator = false,
+} = defineProps<{
   keyName?: string;
   addable?: boolean;
   editable?: boolean;
@@ -92,27 +99,17 @@ interface Props {
   dense?: boolean;
   padding?: boolean;
   separator?: boolean;
-}
+}>();
 
-const props = withDefaults(defineProps<Props>(), {
-  addable: false,
-  editable: false,
-  deletable: false,
-  sortable: true,
-  keyName: 'id',
+const model = defineModel<T[]>({
+  required: true,
 });
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', modelValue: T[]): void;
   (e: 'add'): void;
   (e: 'edit', object: T): void;
   (e: 'delete', object: T): void;
 }>();
-
-const modelValue = computed<T[]>({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-});
 
 function addItem() {
   emit('add');
@@ -124,60 +121,61 @@ function editItem(item: T) {
 
 function deleteItem(item: T) {
   emit('delete', item);
-  if (!modelValue.value) {
+  if (!model.value) {
     return;
   }
-  const index = modelValue.value.indexOf(item);
-  modelValue.value.splice(index, 1);
+  const index = model.value.indexOf(item);
+  model.value.splice(index, 1);
 
   // This is more robust against errors than only updating the following items
   updateOrder();
 }
 
 function orderUpwards(item: T) {
-  if (!modelValue.value) {
+  if (!model.value) {
     return;
   }
 
-  const index = modelValue.value.indexOf(item);
+  const index = model.value.indexOf(item);
   if (index == 0) {
     return;
   }
-  const previous = modelValue.value[index - 1];
+  const previous = model.value[index - 1]!;
 
   // Swap position for animation
-  modelValue.value.splice(index, 1, previous);
-  modelValue.value.splice(index - 1, 1, item);
+  model.value.splice(index, 1, previous);
+  model.value.splice(index - 1, 1, item);
 
   // Update order of all items. This is more robust against errors than swapping
   updateOrder();
 }
 
 function orderDownwards(item: T) {
-  if (!modelValue.value) {
+  if (!model.value) {
     return;
   }
 
-  const index = modelValue.value.indexOf(item);
-  if (index == modelValue.value.length - 1) {
+  const index = model.value.indexOf(item);
+  if (index == model.value.length - 1) {
     return;
   }
-  const next = modelValue.value[index + 1];
+  const next = model.value[index + 1]!;
 
   // Swap position for animation
-  modelValue.value.splice(index, 1, next);
-  modelValue.value.splice(index + 1, 1, item);
+  model.value.splice(index, 1, next);
+  model.value.splice(index + 1, 1, item);
 
   // Update order of all items. This is more robust against errors than swapping
   updateOrder();
 }
 
 function updateOrder() {
-  modelValue.value.forEach((item, index) => {
-    if (!('order' in item)) {
-      return;
+  model.value.forEach((item, index) => {
+    if ('order' in item) {
+      item.order = index;
+    } else if ('sortOrder' in item) {
+      item.sortOrder = index;
     }
-    item.order = index;
   });
 }
 </script>

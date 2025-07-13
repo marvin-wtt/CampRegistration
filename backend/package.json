@@ -44,7 +44,7 @@
     "directory": "backend"
   },
   "engines": {
-    "node": "^22"
+    "node": ">=22 <25"
   },
   "imports": {
     "#app/*": "./src/app/*.js",
@@ -69,6 +69,7 @@
     "compression": "^1.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "country-flag-icons": "^1.5.19",
     "croner": "^9.1.0",
     "csrf-csrf": "^4.0.3",
     "dotenv": "^16.5.0",
@@ -90,7 +91,7 @@
     "passport-jwt": "^4.0.1",
     "pkg-dir": "^8.0.0",
     "prisma-extension-soft-delete": "^2.0.1",
-    "survey-core": "^2.2.1",
+    "survey-core": "^2.2.4",
     "ulidx": "^2.4.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",

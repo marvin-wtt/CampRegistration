@@ -16,6 +16,9 @@
     "type": "git",
     "url": "https://github.com/marvin-wtt/CampRegistration"
   },
+  "engines": {
+    "node": ">=22 <25"
+  },
   "workspaces": [
     "common",
     "backend",
