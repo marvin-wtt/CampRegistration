@@ -28,6 +28,12 @@ export class RoomRouter extends ModuleRouter {
       guard(campManager('camp.rooms.create')),
       controller(roomController, 'store'),
     );
+    this.router.patch(
+      '/',
+      auth(),
+      guard(campManager('camp.rooms.edit')),
+      controller(roomController, 'bulkUpdate'),
+    );
     this.router.get(
       '/:roomId',
       auth(),

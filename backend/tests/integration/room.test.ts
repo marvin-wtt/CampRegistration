@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   CampFactory,
   CampManagerFactory,
@@ -8,7 +8,7 @@ import {
 import { request } from '../utils/request';
 import prisma from '../utils/prisma';
 import { generateAccessToken } from '../utils/token';
-import { Camp } from '@prisma/client';
+import { Camp, Room } from '@prisma/client';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/camps/:campId/rooms/', () => {
@@ -30,9 +30,13 @@ describe('/api/v1/camps/:campId/rooms/', () => {
     };
   };
 
-  const createRoomWithCamp = async (camp: Camp) => {
+  const createRoomWithCamp = async (
+    camp: Camp,
+    room?: Parameters<typeof RoomFactory.create>[0],
+  ) => {
     return await RoomFactory.create({
       camp: { connect: { id: camp.id } },
+      ...room,
     });
   };
 
@@ -79,6 +83,154 @@ describe('/api/v1/camps/:campId/rooms/', () => {
       const camp = await CampFactory.create();
 
       await request().get(`/api/v1/camps/${camp.id}/rooms`).send().expect(401);
+    });
+  });
+
+  describe('PATCH /api/v1/camps/:campId/rooms/', async () => {
+    const createRooms = async (camp: Camp): Promise<Room[]> => {
+      return await Promise.all([
+        createRoomWithCamp(camp, { name: 'Room 1', sortOrder: 1 }),
+        createRoomWithCamp(camp, { name: 'Room 2', sortOrder: 2 }),
+        createRoomWithCamp(camp, { name: 'Room 3', sortOrder: 3 }),
+        createRoomWithCamp(camp, { name: 'Room 4', sortOrder: 4 }),
+        createRoomWithCamp(camp, { name: 'Room 5', sortOrder: 5 }),
+      ]);
+    };
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(role);
+
+        const data = { rooms: [] };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/rooms/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const rooms = await createRooms(camp);
+
+      const data = {
+        rooms: [
+          { id: rooms[0].id, name: 'Updated Room 1' },
+          { id: rooms[1].id, sortOrder: 3 },
+          { id: rooms[2].id, name: 'Updated Room 3', sortOrder: 2 },
+          { id: rooms[2].id, name: { de: 'Room 4 DE', fr: 'Room 5 FR' } },
+        ],
+      };
+
+      const { body } = await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data');
+      expect(body.data).toHaveLength(5);
+
+      expect(body.data[0]).toHaveProperty('id', rooms[0].id);
+      expect(body.data[0]).toHaveProperty('name', 'Updated Room 1');
+      expect(body.data[0]).toHaveProperty('sortOrder', 1);
+
+      expect(body.data[1]).toHaveProperty('id', rooms[1].id);
+      expect(body.data[1]).toHaveProperty('name', 'Room 2');
+      expect(body.data[1]).toHaveProperty('sortOrder', 3);
+
+      expect(body.data[2]).toHaveProperty('id', rooms[2].id);
+      expect(body.data[2]).toHaveProperty('name', 'Updated Room 1');
+      expect(body.data[2]).toHaveProperty('sortOrder', 2);
+
+      expect(body.data[3]).toHaveProperty('id', rooms[3].id);
+      expect(body.data[3]).toHaveProperty('name', 'Room 4');
+      expect(body.data[3]).toHaveProperty('sortOrder', 4);
+
+      expect(body.data[4]).toHaveProperty('id', rooms[4].id);
+      expect(body.data[4]).toHaveProperty('name', {
+        de: 'Room 5 DE',
+        fr: 'Room 5 FR',
+      });
+      expect(body.data[4]).toHaveProperty('sortOrder', 5);
+    });
+
+    const ROOM_ID = Symbol('roomId');
+
+    it.each([
+      { name: 'id is missing', rooms: [{ sortOrder: 1 }] },
+      { name: 'id is invalid', rooms: [{ id: 'invalid', sortOrder: 1 }] },
+      { name: 'id does not exists', rooms: [{ id: ulid(), sortOrder: 1 }] },
+      {
+        name: 'order is not a number',
+        rooms: [{ id: ROOM_ID, sortOrder: 'one' }],
+      },
+    ])('should respond with `400` status code when ', async ({ rooms }) => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const dbRooms = await createRooms(camp);
+
+      const data = {
+        rooms: rooms.map((room, index) => ({
+          ...room,
+          id: room.id === ROOM_ID ? dbRooms[index].id : room.id,
+        })),
+      };
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should respond with `400` status code when id is invalid', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      const data = { rooms: [] };
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const camp = await CampFactory.create();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      const data = { rooms: [] };
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+
+      const count = await prisma.room.count();
+      expect(count).toBe(0);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const camp = await CampFactory.create();
+
+      const data = [];
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/`)
+        .send(data)
+        .expect(401);
+
+      const count = await prisma.room.count();
+      expect(count).toBe(0);
     });
   });
 

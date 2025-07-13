@@ -18,6 +18,21 @@ export function useRoomService() {
     return response?.data?.data;
   }
 
+  async function bulkUpdateRooms(
+    campId: string,
+    rooms: {
+      id: string;
+      name?: string | Record<string, string>;
+      sortOrder?: number;
+    }[],
+  ): Promise<Room[]> {
+    const response = await api.patch(`camps/${campId}/rooms/`, {
+      rooms,
+    });
+
+    return response?.data?.data;
+  }
+
   async function createRoom(
     campId: string,
     data: RoomCreateData,
@@ -57,6 +72,7 @@ export function useRoomService() {
 
   return {
     fetchRooms,
+    bulkUpdateRooms,
     fetchRoom,
     createRoom,
     updateRoom,

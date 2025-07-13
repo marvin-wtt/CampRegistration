@@ -44,6 +44,17 @@ class RoomController extends BaseController {
     res.resource(new RoomResource(room));
   }
 
+  async bulkUpdate(req: Request, res: Response) {
+    const {
+      params: { campId },
+      body: { rooms },
+    } = await req.validate(validator.bulkUpdate);
+
+    const updatedRooms = await roomService.bulkUpdateRooms(campId, rooms);
+
+    res.resource(RoomResource.collection(updatedRooms));
+  }
+
   async destroy(req: Request, res: Response) {
     const {
       params: { roomId },
