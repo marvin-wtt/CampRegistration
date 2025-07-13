@@ -149,7 +149,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
       expect(body.data[1]).toHaveProperty('sortOrder', 3);
 
       expect(body.data[2]).toHaveProperty('id', rooms[2].id);
-      expect(body.data[2]).toHaveProperty('name', 'Updated Room 1');
+      expect(body.data[2]).toHaveProperty('name', 'Updated Room 3');
       expect(body.data[2]).toHaveProperty('sortOrder', 2);
 
       expect(body.data[3]).toHaveProperty('id', rooms[3].id);
