@@ -22,17 +22,17 @@ export class RoomRouter extends ModuleRouter {
       guard(campManager('camp.rooms.view')),
       controller(roomController, 'index'),
     );
-    this.router.get(
-      '/:roomId',
-      auth(),
-      guard(campManager('camp.rooms.view')),
-      controller(roomController, 'show'),
-    );
     this.router.post(
       '/',
       auth(),
       guard(campManager('camp.rooms.create')),
       controller(roomController, 'store'),
+    );
+    this.router.get(
+      '/:roomId',
+      auth(),
+      guard(campManager('camp.rooms.view')),
+      controller(roomController, 'show'),
     );
     this.router.patch(
       '/:roomId',
