@@ -123,7 +123,6 @@ const {
   isLoading,
   error: roomError,
   withProgressNotification,
-  errorOnFailure,
   withErrorNotification,
   lazyFetch,
   queryParam,
