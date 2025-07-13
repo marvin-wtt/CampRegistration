@@ -123,6 +123,7 @@ const {
   isLoading,
   error: roomError,
   withProgressNotification,
+  errorOnFailure,
   withErrorNotification,
   lazyFetch,
   queryParam,
@@ -289,7 +290,9 @@ async function bulkUpdateRooms(
   return withProgressNotification('update', async () => {
     const updatedRooms = await apiService.bulkUpdateRooms(campId, rooms);
 
-    data.value = updatedRooms;
+    data.value = data.value?.map((room) => {
+      return updatedRooms.find((r) => r.id === room.id) ?? room;
+    });
 
     return updatedRooms;
   });
