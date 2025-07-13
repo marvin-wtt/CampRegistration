@@ -1,22 +1,21 @@
 <template>
   <q-list
-    :bordered="props.bordered"
-    :separator="props.separator"
-    :dense="props.dense"
-    :padding="props.padding"
+    :bordered
+    :separator
+    :dense
+    :padding
   >
     <TransitionGroup name="list">
       <q-item
         v-for="(item, index) in modelValue"
         :key="
-          (item[props.keyName as keyof typeof item] as string | undefined) ??
-          index
+          (item[keyName as keyof typeof item] as string | undefined) ?? index
         "
       >
         <slot :item="item" />
         <!-- Sorting arrows -->
         <q-item-section
-          v-if="props.sortable"
+          v-if="sortable"
           side
         >
           <q-btn
@@ -38,7 +37,7 @@
         </q-item-section>
         <!-- Edit -->
         <q-item-section
-          v-if="props.editable"
+          v-if="editable"
           side
         >
           <q-btn
@@ -51,7 +50,7 @@
         </q-item-section>
         <!-- Delete -->
         <q-item-section
-          v-if="props.deletable"
+          v-if="deletable"
           side
         >
           <q-btn
@@ -78,7 +77,18 @@
 </template>
 
 <script lang="ts" generic="T extends object" setup>
-interface Props {
+const {
+  keyName = 'id',
+  addable = true,
+  editable = true,
+  deletable = true,
+  sortable = true,
+
+  bordered = false,
+  dense = false,
+  padding = true,
+  separator = false,
+} = defineProps<{
   keyName?: string;
   addable?: boolean;
   editable?: boolean;
@@ -89,15 +99,7 @@ interface Props {
   dense?: boolean;
   padding?: boolean;
   separator?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  addable: false,
-  editable: false,
-  deletable: false,
-  sortable: true,
-  keyName: 'id',
-});
+}>();
 
 const model = defineModel<T[]>({
   required: true,
