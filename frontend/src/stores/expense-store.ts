@@ -10,7 +10,7 @@ import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { computed } from 'vue';
 import { exportFile } from 'quasar';
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 export const useExpensesStore = defineStore('expenses', () => {
   const route = useRoute();

@@ -1,4 +1,4 @@
-import { QSelectOption } from 'quasar';
+import type { QSelectOption } from 'quasar';
 
 export interface ExpenseCategory extends QSelectOption<string> {
   children?: ExpenseCategory[];

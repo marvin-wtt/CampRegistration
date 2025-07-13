@@ -143,9 +143,9 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { QSelectOption, useQuasar } from 'quasar';
+import { type QSelectOption, useQuasar } from 'quasar';
 import { computed, onMounted, reactive, ref } from 'vue';
-import {
+import type {
   Expense,
   ExpenseCreateData,
   ExpenseUpdateData,
@@ -158,7 +158,7 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
 import ExpenseUpdateDialog from 'components/campManagement/expenses/ExpenseUpdateDialog.vue';
 import { storeToRefs } from 'pinia';
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { t, n } = useI18n();
 const quasar = useQuasar();

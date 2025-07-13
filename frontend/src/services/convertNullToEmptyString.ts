@@ -1,4 +1,4 @@
-import { AxiosInstance } from 'axios';
+import type { AxiosInstance } from 'axios';
 
 export function convertNullToEmptyString(axios: AxiosInstance) {
   axios.interceptors.request.use(

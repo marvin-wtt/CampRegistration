@@ -1,4 +1,4 @@
-import { useExcel } from '#app/expense/exporter/excel.js';
+import { useExcel } from '#app/expense/exporter/excel.expense.exporter.js';
 import ApiError from '#utils/ApiError.js';
 import httpStatus from 'http-status';
 import type {

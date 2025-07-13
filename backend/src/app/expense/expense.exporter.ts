@@ -1,11 +1,11 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { exportCSV } from '#app/expense/exporter/csv';
+import { exportCSV } from '#app/expense/exporter/csv.expense.exporter.js';
 import { exportExcelFGYO } from '#app/expense/exporter/excelFGYO/index';
 import type { Response } from 'express';
 import type { Expense, File } from '@prisma/client';
 
-export type ExpenseWithFile = Expense & { file?: File };
+export type ExpenseWithFile = Expense & { file?: File | null };
 
 const exportExpenses = (
   type: string,

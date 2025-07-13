@@ -1,4 +1,4 @@
-import { ReceiptListFileConfig } from './ExpenseExportOption';
+import type { ReceiptListFileConfig } from './ExpenseExportOption';
 
 export const receiptListConfigs: Record<string, ReceiptListFileConfig> = {
   de: {

@@ -27,7 +27,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, useAttrs } from 'vue';
-import { QSelectSlots } from 'quasar';
+import { type QSelectSlots } from 'quasar';
 
 const modelValue = defineModel<string | null>();
 const attrs = useAttrs();

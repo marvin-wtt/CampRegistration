@@ -62,9 +62,9 @@
 </template>
 
 <script setup lang="ts">
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 import { useAttrs } from 'vue';
-import { QSelectSlots } from 'quasar';
+import type { QSelectSlots } from 'quasar';
 
 const model = defineModel<string>();
 const attrs = useAttrs();

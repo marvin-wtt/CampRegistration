@@ -106,7 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Expense } from '@camp-registration/common/entities';
+import type { Expense } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import ExpenseItem from 'components/campManagement/expenses/ExpenseItem.vue';
 

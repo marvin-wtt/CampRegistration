@@ -223,7 +223,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { toRaw, watch, defineModel, onBeforeMount } from 'vue';
 import ExpenseCategorySelect from 'components/campManagement/expenses/ExpenseCategorySelect.vue';
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { t } = useI18n();
 

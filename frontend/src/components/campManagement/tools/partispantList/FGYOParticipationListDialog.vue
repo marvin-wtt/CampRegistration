@@ -74,13 +74,20 @@
 </template>
 
 <script lang="ts" setup>
-import { exportFile, QSelectOption, useDialogPluginComponent } from 'quasar';
+import {
+  exportFile,
+  type QSelectOption,
+  useDialogPluginComponent,
+} from 'quasar';
 import { useAPIService } from 'src/services/APIService.ts';
 import { useRegistrationsStore } from 'stores/registration-store.ts';
-import { FileConfig, ParticipationListData } from './FGYOParticipationList';
+import type {
+  FileConfig,
+  ParticipationListData,
+} from './FGYOParticipationList';
 import { useCampDetailsStore } from 'stores/camp-details-store.ts';
 import { useRegistrationHelper } from 'src/composables/registrationHelper.ts';
-import { Registration } from '@camp-registration/common/entities';
+import type { Registration } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 import { participantListConfig } from 'components/campManagement/tools/partispantList/config.ts';

@@ -1,5 +1,5 @@
 import Excel from 'exceljs';
-import Stream from 'node:stream';
+import type Stream from 'node:stream';
 
 export async function useExcel(buffer: ArrayBuffer) {
   const workbook = new Excel.Workbook();
@@ -10,7 +10,7 @@ export async function useExcel(buffer: ArrayBuffer) {
     ws = workbook.getWorksheet(name);
 
     if (!ws) {
-      throw 'Invalid workbook loaded!';
+      throw new Error('Invalid workbook loaded!');
     }
   }
 
@@ -20,9 +20,11 @@ export async function useExcel(buffer: ArrayBuffer) {
     value: string | number | null,
     fallback: string | number = '',
   ) => {
-    if (!ws) throw 'No worksheet loaded';
+    if (!ws) {
+      throw new Error('No worksheet loaded');
+    }
 
-    ws.getCell(`${col}${row}`).value = value ?? fallback;
+    ws.getCell(`${col}${row.toString()}`).value = value ?? fallback;
   };
 
   const duplicateRows = (
@@ -30,7 +32,9 @@ export async function useExcel(buffer: ArrayBuffer) {
     rowCount: number,
     itemCount: number,
   ) => {
-    if (!ws) throw 'No worksheet loaded';
+    if (!ws) {
+      throw new Error('No worksheet loaded');
+    }
 
     if (rowCount >= itemCount) {
       return;

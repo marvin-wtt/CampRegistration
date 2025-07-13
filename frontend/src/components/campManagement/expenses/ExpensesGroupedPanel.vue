@@ -87,7 +87,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Expense } from '@camp-registration/common/entities';
+import type { Expense } from '@camp-registration/common/entities';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';

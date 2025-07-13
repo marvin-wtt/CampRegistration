@@ -65,7 +65,7 @@ class ExpenseController extends BaseController {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file data');
     }
 
-    // Delete existing file if file is present and request file is defined
+    // Delete the existing file if the file is present and the request file is defined
     // Must happen before updating the expense as the file is attached to the expense
     if ((body.file === null || file != null) && expense.file != null) {
       await fileService.deleteFile(expense.file.id);

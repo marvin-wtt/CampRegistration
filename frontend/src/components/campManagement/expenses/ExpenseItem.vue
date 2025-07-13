@@ -91,8 +91,8 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { Expense } from '@camp-registration/common/entities';
-import { computed, StyleValue } from 'vue';
+import type { Expense } from '@camp-registration/common/entities';
+import { computed, type StyleValue } from 'vue';
 
 const { t, d, n } = useI18n();
 

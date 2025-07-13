@@ -40,8 +40,6 @@
     "apexcharts": "^4.7.0",
     "axios": "^1.9.0",
     "@tato30/vue-pdf": "^1.11.2",
-    "apexcharts": "^3.50.0",
-    "axios": "^1.7.4",
     "dom-to-image": "^2.6.0",
     "flag-icons": "^7.3.2",
     "exceljs": "^4.4.0",

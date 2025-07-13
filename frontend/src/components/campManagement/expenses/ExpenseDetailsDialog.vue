@@ -41,7 +41,7 @@
 import type { Expense } from '@camp-registration/common/entities';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, StyleValue } from 'vue';
+import { computed, type StyleValue } from 'vue';
 import ExpenseDetailsList from 'components/campManagement/expenses/ExpenseDetailsList.vue';
 import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
 

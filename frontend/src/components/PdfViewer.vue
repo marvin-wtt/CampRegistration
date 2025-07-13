@@ -80,7 +80,7 @@
 import '@tato30/vue-pdf/style.css';
 import { VuePDF, usePDF } from '@tato30/vue-pdf';
 import { ref } from 'vue';
-import { QScrollAreaProps } from 'quasar';
+import type { QScrollAreaProps } from 'quasar';
 
 const props = defineProps<{
   url: string;

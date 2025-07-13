@@ -61,12 +61,12 @@ import type {
   Expense,
   ExpenseUpdateData,
 } from '@camp-registration/common/entities';
-import { QSelectOption, useDialogPluginComponent, useQuasar } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, ref, StyleValue } from 'vue';
+import { computed, ref, type StyleValue } from 'vue';
 import ExpenseUpdateForm from 'components/campManagement/expenses/ExpenseUpdateForm.vue';
 import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { expense, people, categories } = defineProps<{
   expense: Expense;

@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 import { computed, useAttrs } from 'vue';
-import { QInputSlots } from 'quasar';
+import { type QInputSlots } from 'quasar';
 import { Money } from 'v-money3';
 
 const modelValue = defineModel<number>();

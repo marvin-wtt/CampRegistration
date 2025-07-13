@@ -1,4 +1,4 @@
-import {
+import type {
   BtnAnnotation,
   FieldAnnotation,
 } from 'components/campManagement/tools/partispantList/FGYOParticipationList';

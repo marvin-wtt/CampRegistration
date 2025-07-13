@@ -187,7 +187,7 @@ import type { ExpenseCreateData } from '@camp-registration/common/entities';
 import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
 import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
 import ExpenseCategorySelect from 'components/campManagement/expenses/ExpenseCategorySelect.vue';
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { t } = useI18n();
 

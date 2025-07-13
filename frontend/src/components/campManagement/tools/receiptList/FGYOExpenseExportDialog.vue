@@ -46,11 +46,11 @@ import { useExpensesStore } from 'stores/expense-store.ts';
 import { useI18n } from 'vue-i18n';
 import { useDialogPluginComponent, exportFile } from 'quasar';
 import { computed, onMounted, ref, toRaw } from 'vue';
-import { Expense } from '@camp-registration/common/entities';
+import type { Expense } from '@camp-registration/common/entities';
 import { storeToRefs } from 'pinia';
 import { useAPIService } from 'src/services/APIService.ts';
 import { receiptListConfigs } from './receiptListConfigs.ts';
-import { ReceiptListFileConfig } from 'components/campManagement/tools/receiptList/ExpenseExportOption';
+import type { ReceiptListFileConfig } from 'components/campManagement/tools/receiptList/ExpenseExportOption';
 
 const { t, locale } = useI18n();
 const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =

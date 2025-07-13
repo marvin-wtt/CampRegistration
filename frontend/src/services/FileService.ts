@@ -58,7 +58,6 @@ export function useFileService() {
     createCampFile,
     createTemporaryFile,
     deleteCampFile,
-    downloadFile,
     getFileUrl,
   };
 }

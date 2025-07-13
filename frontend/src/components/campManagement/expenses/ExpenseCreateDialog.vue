@@ -59,10 +59,10 @@
 import type { ExpenseCreateData } from '@camp-registration/common/entities';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, ref, StyleValue } from 'vue';
+import { computed, ref, type StyleValue } from 'vue';
 import ExpenseCreateForm from 'components/campManagement/expenses/ExpenseCreateForm.vue';
 import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
-import { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 const { people, categories } = defineProps<{
   people: string[];

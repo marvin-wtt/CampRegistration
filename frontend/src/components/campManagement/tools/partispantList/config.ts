@@ -1,4 +1,4 @@
-import { FileConfig } from 'components/campManagement/tools/partispantList/FGYOParticipationList';
+import type { FileConfig } from 'components/campManagement/tools/partispantList/FGYOParticipationList';
 
 export const participantListConfig: Record<string, FileConfig> = {
   de: {

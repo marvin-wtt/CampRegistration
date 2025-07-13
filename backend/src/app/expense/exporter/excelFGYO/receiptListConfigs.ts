@@ -1,4 +1,4 @@
-import {
+import type {
   BudgetCategories,
   ReceiptListFileConfig,
 } from './ReceiptListFileConfig.js';
@@ -71,17 +71,17 @@ export const receiptListConfigs: Record<Locales, ReceiptListFileConfig> = {
     worksheet: 'Liste des justificatifs',
     sections: {
       eligibleExpenses: {
-        categories: budgetCategories['de'].eligibleExpenses,
+        categories: budgetCategories.de.eligibleExpenses,
         startRow: 16,
         rowCount: 10,
       },
       nonEligibleExpenses: {
-        categories: budgetCategories['de'].nonEligibleExpenses,
+        categories: budgetCategories.de.nonEligibleExpenses,
         startRow: 27,
         rowCount: 6,
       },
       income: {
-        categories: budgetCategories['de'].income,
+        categories: budgetCategories.de.income,
         startRow: 33,
         rowCount: 5,
       },
@@ -92,17 +92,17 @@ export const receiptListConfigs: Record<Locales, ReceiptListFileConfig> = {
     worksheet: 'Liste des justificatifs',
     sections: {
       eligibleExpenses: {
-        categories: budgetCategories['fr'].eligibleExpenses,
+        categories: budgetCategories.fr.eligibleExpenses,
         startRow: 16,
         rowCount: 9,
       },
       nonEligibleExpenses: {
-        categories: budgetCategories['fr'].nonEligibleExpenses,
+        categories: budgetCategories.fr.nonEligibleExpenses,
         startRow: 27,
         rowCount: 6,
       },
       income: {
-        categories: budgetCategories['fr'].income,
+        categories: budgetCategories.fr.income,
         startRow: 34,
         rowCount: 5,
       },

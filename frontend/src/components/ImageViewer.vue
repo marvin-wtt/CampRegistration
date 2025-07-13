@@ -61,7 +61,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, StyleValue } from 'vue';
+import { computed, ref, type StyleValue } from 'vue';
 import { QScrollArea } from 'quasar';
 
 const props = defineProps<{

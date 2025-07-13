@@ -121,12 +121,10 @@ const {
   label = '',
   locales = [],
   always = false,
-  collapsed = false,
 } = defineProps<{
   label?: string;
   locales?: string[];
   always?: boolean;
-  collapsed?: boolean;
 }>();
 
 const useTranslations = ref(defaultUseTranslations());
@@ -164,7 +162,9 @@ function defaultValue(): string | number {
 }
 
 function defaultTranslations(): Translations {
-  return model.value && typeof model.value === 'object' && model.value ? model.value : {};
+  return model.value && typeof model.value === 'object' && model.value
+    ? model.value
+    : {};
 }
 
 const lastEmittedValue = ref<ModelValueType>();
