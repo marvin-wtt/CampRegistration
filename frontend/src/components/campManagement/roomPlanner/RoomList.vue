@@ -6,7 +6,7 @@
   >
     <q-item dense>
       <q-item-section>
-        <q-item-label> {{ to(name) }} {{ roomGender }} </q-item-label>
+        <q-item-label>{{ to(name) }}</q-item-label>
       </q-item-section>
 
       <q-item-section
