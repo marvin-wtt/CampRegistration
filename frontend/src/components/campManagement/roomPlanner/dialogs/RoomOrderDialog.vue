@@ -47,7 +47,7 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import SortableList from 'components/common/SortableList.vue';
-import { onBeforeUpdate, ref, toRaw } from 'vue';
+import { onBeforeUpdate, ref } from 'vue';
 import type { RoomWithRoommates } from 'src/types/Room';
 import { deepToRaw } from 'src/utils/deepToRaw';
 
@@ -70,9 +70,7 @@ onBeforeUpdate(() => {
 });
 
 function defaultRooms(): RoomWithRoommates[] {
-  const rooms = props.rooms.map((room) => toRaw(room));
-
-  return structuredClone(rooms) as RoomWithRoommates[];
+  return structuredClone(deepToRaw(rooms));
 }
 
 function onOKClick() {

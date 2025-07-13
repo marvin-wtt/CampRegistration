@@ -62,9 +62,7 @@ import { deepToRaw } from 'src/utils/deepToRaw';
 const { camp, templates } = defineProps<{
   templates: TableTemplate[];
   camp: Camp;
-}
-
-const props = defineProps<Props>();
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
