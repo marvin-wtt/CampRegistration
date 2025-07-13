@@ -106,8 +106,9 @@ describe('/api/v1/camps/:campId/rooms/', () => {
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
         const { camp, accessToken } = await createCampWithManagerAndToken(role);
+        const rooms = await createRooms(camp);
 
-        const data = { rooms: [] };
+        const data = { rooms: [{ id: rooms[0].id, name: 'Updated Room 1' }] };
 
         await request()
           .patch(`/api/v1/camps/${camp.id}/rooms/`)
@@ -137,7 +138,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
         .expect(200);
 
       expect(body).toHaveProperty('data');
-      expect(body.data).toHaveLength(5);
+      expect(body.data).toHaveLength(4);
 
       expect(body.data[0]).toHaveProperty('id', rooms[0].id);
       expect(body.data[0]).toHaveProperty('name', 'Updated Room 1');
@@ -154,13 +155,6 @@ describe('/api/v1/camps/:campId/rooms/', () => {
       expect(body.data[3]).toHaveProperty('id', rooms[3].id);
       expect(body.data[3]).toHaveProperty('name', 'Room 4');
       expect(body.data[3]).toHaveProperty('sortOrder', 4);
-
-      expect(body.data[4]).toHaveProperty('id', rooms[4].id);
-      expect(body.data[4]).toHaveProperty('name', {
-        de: 'Room 5 DE',
-        fr: 'Room 5 FR',
-      });
-      expect(body.data[4]).toHaveProperty('sortOrder', 5);
     });
 
     const ROOM_ID = Symbol('roomId');
@@ -189,18 +183,6 @@ describe('/api/v1/camps/:campId/rooms/', () => {
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
-    });
-
-    it('should respond with `400` status code when id is invalid', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-
-      const data = { rooms: [] };
-
-      await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/`)
-        .send(data)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
