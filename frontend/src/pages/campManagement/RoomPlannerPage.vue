@@ -67,8 +67,6 @@
         icon="keyboard_arrow_up"
         direction="up"
       >
-        <!-- Room ordering is currently not supported -->
-        <!-- TODO Enable when ordering is supported -->
         <q-fab-action
           color="primary"
           icon="swap_vert"
@@ -159,7 +157,9 @@ const rooms = computed<RoomWithRoommates[]>(() => {
     return [];
   }
 
-  return data.value.map(mapResponseRoom);
+  return data.value
+    .map(mapResponseRoom)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 });
 
 const availablePeople = computed<Roommate[]>(() => {
@@ -186,9 +186,7 @@ const availablePeople = computed<Roommate[]>(() => {
     .filter(waitingListFilter)
     .filter(alreadyAssignedFilter)
     .map(mapRegistrationRoommate)
-    .sort((a, b) => {
-      return (a.age ?? 999) - (b.age ?? 999);
-    });
+    .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });
 
 async function fetchRooms() {
@@ -239,10 +237,7 @@ function orderRooms() {
       persistent: true,
     })
     .onOk((payload: RoomWithRoommates[]) => {
-      // TODO Rooms needs order property so safe the order
-      payload.forEach((room: RoomWithRoommates) => {
-        updateRoom(room.id, room);
-      });
+      bulkUpdateRooms(payload);
     });
 }
 
@@ -286,6 +281,20 @@ async function updateRoom(
   });
 }
 
+async function bulkUpdateRooms(
+  rooms: RoomWithRoommates[],
+): Promise<Room[] | undefined> {
+  const campId = queryParam('camp');
+
+  return withProgressNotification('update', async () => {
+    const updatedRooms = await apiService.bulkUpdateRooms(campId, rooms);
+
+    data.value = updatedRooms;
+
+    return updatedRooms;
+  });
+}
+
 async function deleteRoom(roomId: string) {
   const campId = queryParam('camp');
 
@@ -316,12 +325,32 @@ async function updateBed(
 
   asyncUpdate(() => {
     return withErrorNotification('update-bed', () => {
-      return apiService.updateBed(campId, roomId, bedId, registrationId);
+      const updatedBed = apiService.updateBed(
+        campId,
+        roomId,
+        bedId,
+        registrationId,
+      );
+
+      // Invalidate the registration store to ensure the data is fresh
+      // The registration store will contains the room as well
+      registrationsStore.invalidate();
+
+      return updatedBed;
     });
   });
 
   // Optimistic update
-  room.beds[position]!.person = person;
+  data.value = data.value!.map((r) => {
+    if (r.id !== roomId) {
+      return r;
+    }
+
+    const updatedRoom = { ...r };
+    updatedRoom.beds[position] = { id: bedId, registrationId };
+
+    return updatedRoom;
+  });
 }
 
 function mapRegistrationRoommate(registration: Registration): Roommate {
@@ -345,6 +374,7 @@ function mapResponseRoom(room: Room): RoomWithRoommates {
   return {
     id: room.id,
     name: room.name,
+    sortOrder: room.sortOrder,
     beds: room.beds.map((bed) => {
       return {
         id: bed.id,
