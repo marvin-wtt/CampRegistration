@@ -6,9 +6,7 @@
   >
     <q-item dense>
       <q-item-section>
-        <q-item-label>
-          {{ to(name) }}
-        </q-item-label>
+        <q-item-label> {{ to(name) }} {{ roomGender }} </q-item-label>
       </q-item-section>
 
       <q-item-section
@@ -55,9 +53,9 @@
     </q-item>
 
     <room-list-item
-      v-for="(_, index) in model.beds"
+      v-for="(_, index) in room.beds"
       :key="index"
-      v-model="model.beds[index]!.person"
+      v-model="room.beds[index]!.person"
       :options
       :assignable
       :position="index + 1"
@@ -77,11 +75,8 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
-const model = defineModel<RoomWithRoommates>({
-  required: true,
-});
-
 const {
+  room,
   name,
   people,
   dense = false,
@@ -89,6 +84,7 @@ const {
   deletable = false,
   assignable = false,
 } = defineProps<{
+  room: RoomWithRoommates;
   name: string | Record<string, string>;
   people: Roommate[];
   dense?: boolean;
@@ -105,18 +101,16 @@ const emit = defineEmits<{
 
 const roomGender = computed<string | undefined>(() => {
   // Assume gender by first person in room
-  return model.value.beds
-    .map((bed) => bed.person?.gender)
-    .find((gender) => !!gender);
+  return room.beds.map((bed) => bed.person?.gender).find((gender) => !!gender);
 });
 
 const isParticipantRoom = computed<boolean | undefined>(() => {
   // Exclude all beds free
-  if (model.value.beds.filter((value) => !!value.person).length === 0) {
+  if (room.beds.filter((value) => !!value.person).length === 0) {
     return undefined;
   }
 
-  return model.value.beds.some((bed) => {
+  return room.beds.some((bed) => {
     const person = bed.person;
 
     return person?.participant;

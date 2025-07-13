@@ -30,7 +30,7 @@
           <room-list
             v-for="(room, index) in rooms"
             :key="room.id"
-            v-model="rooms[index]!"
+            :room="rooms[index]!"
             :name="room.name"
             :people="availablePeople"
             class="q-ma-sm"
