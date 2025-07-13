@@ -133,7 +133,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
           { id: rooms[0].id, name: 'Updated Room 1' },
           { id: rooms[1].id, sortOrder: 3 },
           { id: rooms[2].id, name: 'Updated Room 3', sortOrder: 2 },
-          { id: rooms[3].id, name: { de: 'Room 4 DE', fr: 'Room 5 FR' } },
+          { id: rooms[3].id, name: { de: 'Room 4 DE', fr: 'Room 4 FR' } },
         ],
       };
 
@@ -159,7 +159,8 @@ describe('/api/v1/camps/:campId/rooms/', () => {
       expect(body.data[2]).toHaveProperty('sortOrder', 2);
 
       expect(body.data[3]).toHaveProperty('id', rooms[3].id);
-      expect(body.data[3]).toHaveProperty('name', 'Room 4');
+      expect(body.data[3]).toHaveProperty('name.de', 'Room 4 DE');
+      expect(body.data[3]).toHaveProperty('name.fr', 'Room 4 FR');
       expect(body.data[3]).toHaveProperty('sortOrder', 4);
     });
 
