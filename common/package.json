@@ -49,6 +49,6 @@
     "survey-core": "^2.2.4"
   },
   "engines": {
-    "node": "^22"
+    "node": ">=22 <25"
   }
 }

@@ -120,5 +120,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     storeFile,
     updateData,
     deleteData,
+    invalidate,
   };
 });

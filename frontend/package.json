@@ -83,5 +83,8 @@
     "vite-plugin-checker": "^0.9.3",
     "vitest": "^3.2.4",
     "vue-tsc": "^2.2.10"
+  },
+  "engines": {
+    "node": ">=22 <25"
   }
 }
