@@ -13,3 +13,7 @@ export type RoomCreateData = Pick<Room, 'name'> & {
 };
 
 export type RoomUpdateData = Partial<Pick<Room, 'name'>>;
+
+export interface RoomBulkUpdateData {
+  rooms: Pick<Room, 'id'> & Partial<Pick<Room, 'name' | 'sortOrder'>>[];
+}
