@@ -5,7 +5,7 @@ import type {
   Authentication,
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useProfileStore } from 'stores/profile-store';
 
