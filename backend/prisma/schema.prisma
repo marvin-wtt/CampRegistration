@@ -40,6 +40,7 @@ enum Role {
 
 model Camp {
   id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  type            String?   @db.VarChar(50)
   active          Boolean
   public          Boolean
   /// ![Array<string>]
