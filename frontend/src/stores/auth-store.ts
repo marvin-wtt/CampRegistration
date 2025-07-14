@@ -5,7 +5,7 @@ import type {
   Authentication,
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthBus } from 'src/composables/bus';
+import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useProfileStore } from 'stores/profile-store';
 
@@ -26,17 +26,6 @@ export const useAuthStore = defineStore('auth', () => {
   } = useServiceHandler<void>('auth');
 
   let partialAuthToken: string | undefined = undefined;
-  campBus.on('create', async () => {
-    await fetchUser();
-  });
-
-  campBus.on('delete', async (campId) => {
-    const index = data.value?.camps.findIndex((camp) => camp.id === campId);
-    if (index !== undefined && index >= 0) {
-      data.value?.camps.splice(index, 1);
-    }
-  });
-
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
 
