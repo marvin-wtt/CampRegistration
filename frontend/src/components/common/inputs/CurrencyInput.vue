@@ -35,7 +35,7 @@ import { computed, useAttrs } from 'vue';
 import { type QInputSlots } from 'quasar';
 import { Money } from 'v-money3';
 
-const modelValue = defineModel<number>();
+const modelValue = defineModel<number | undefined>();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
 

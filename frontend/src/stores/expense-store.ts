@@ -115,24 +115,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   });
 
   const categories = computed<ExpenseCategory[]>(() => {
-    // TODO Load presets if exists
-
-    if (!data.value) {
-      return [];
-    }
-
-    const categories = data.value
-      .map((value) => value.category)
-      .filter((value) => value != null);
-
-    const uniqueCategories = [...new Set(categories)];
-
-    return uniqueCategories
-      .sort((a, b) => a.localeCompare(b))
-      .map((value) => ({
-        label: value,
-        value,
-      }));
+    return [];
   });
 
   return {

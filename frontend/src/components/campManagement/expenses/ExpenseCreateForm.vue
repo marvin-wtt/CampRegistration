@@ -49,7 +49,7 @@
       :label="t('field.category.label')"
       :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
       hide-bottom-space
-      :options="props.categories"
+      :options="categories"
       clearable
       outlined
       rounded
@@ -114,7 +114,7 @@
     <autocomplete-input
       v-model="model.paidBy"
       :label="t('field.paidBy.label')"
-      :options="props.people"
+      :options="people"
       clearable
       outlined
       rounded
@@ -197,7 +197,7 @@ const model = defineModel<Partial<ExpenseCreateData>>({
   },
 });
 
-const props = defineProps<{
+const { people, categories } = defineProps<{
   people: string[];
   categories: ExpenseCategory[];
 }>();
@@ -216,7 +216,7 @@ watch(
 );
 
 function currentDate(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split('T')[0]!;
 }
 </script>
 

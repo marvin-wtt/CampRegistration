@@ -29,7 +29,7 @@
 import { computed, ref, useAttrs } from 'vue';
 import { type QSelectSlots } from 'quasar';
 
-const modelValue = defineModel<string | null>();
+const modelValue = defineModel<string | null | undefined>();
 const attrs = useAttrs();
 const slots = defineSlots<QSelectSlots>();
 

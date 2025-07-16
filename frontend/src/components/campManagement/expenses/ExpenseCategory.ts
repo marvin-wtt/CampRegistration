@@ -1,5 +1,8 @@
 import type { QSelectOption } from 'quasar';
 
+export type CategoryKind = 'income' | 'expense';
+
 export interface ExpenseCategory extends QSelectOption<string> {
-  children?: ExpenseCategory[];
+  kind: CategoryKind;
+  subcategories?: ExpenseCategory[];
 }

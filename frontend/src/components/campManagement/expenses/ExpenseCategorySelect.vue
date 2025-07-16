@@ -66,7 +66,7 @@ import type { ExpenseCategory } from 'components/campManagement/expenses/Expense
 import { useAttrs } from 'vue';
 import type { QSelectSlots } from 'quasar';
 
-const model = defineModel<string>();
+const model = defineModel<string | undefined>();
 const attrs = useAttrs();
 const slots = defineSlots<QSelectSlots>();
 const { options } = defineProps<{

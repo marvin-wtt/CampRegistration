@@ -152,13 +152,13 @@ import type {
 } from '@camp-registration/common/entities';
 import ExpensesListPanel from 'components/campManagement/expenses/ExpensesListPanel.vue';
 import ExpenseCreateDialog from 'components/campManagement/expenses/ExpenseCreateDialog.vue';
-import { useExpensesStore } from 'stores/expense-store.ts';
-import { useCampDetailsStore } from 'stores/camp-details-store.ts';
+import { useExpensesStore } from 'stores/expense-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDetailsDialog.vue';
 import ExpenseUpdateDialog from 'components/campManagement/expenses/ExpenseUpdateDialog.vue';
 import { storeToRefs } from 'pinia';
-import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory';
 
 const { t, n } = useI18n();
 const quasar = useQuasar();
