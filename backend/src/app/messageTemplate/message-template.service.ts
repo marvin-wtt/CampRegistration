@@ -90,6 +90,13 @@ export class MessageTemplateService extends BaseService {
   }
 
   createSubjectCompiler(template: string): (context: unknown) => string {
+    template = template.trim();
+
+    // Remove paragraph tags if they are present
+    if (template.startsWith('<p>') && template.endsWith('</p>')) {
+      template = template.slice(3, -4).trim();
+    }
+
     return Handlebars.compile(template, {
       knownHelpersOnly: true,
       knownHelpers: {
