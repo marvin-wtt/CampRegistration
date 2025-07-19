@@ -44,24 +44,10 @@
       </template>
     </q-input>
 
-    <expense-category-select
-      v-model="model.category"
-      :label="t('field.category.label')"
-      :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
-      hide-bottom-space
-      :options="categories"
-      clearable
-      outlined
-      rounded
-    >
-      <template #prepend>
-        <q-icon name="person" />
-      </template>
-    </expense-category-select>
-
     <currency-input
       v-model="model.amount"
       :label="t('field.amount.label')"
+      :hint="t('field.amount.hint')"
       :rules="[(val?: number) => !!val || t('field.amount.rule.required')]"
       hide-bottom-space
       outlined
@@ -71,6 +57,23 @@
         <q-icon name="euro" />
       </template>
     </currency-input>
+
+    <q-select
+      v-model="model.category"
+      :label="t('field.category.label')"
+      :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
+      hide-bottom-space
+      :options="categoryOptions"
+      map-options
+      emit-value
+      clearable
+      outlined
+      rounded
+    >
+      <template #prepend>
+        <q-icon name="person" />
+      </template>
+    </q-select>
 
     <!-- Date -->
     <q-input
@@ -182,25 +185,29 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { defineModel, watch } from 'vue';
+import { computed, defineModel, watch } from 'vue';
+import { type QSelectOption } from 'quasar';
 import type { ExpenseCreateData } from '@camp-registration/common/entities';
 import CurrencyInput from 'components/common/inputs/CurrencyInput.vue';
 import AutocompleteInput from 'components/common/inputs/AutocompleteInput.vue';
-import ExpenseCategorySelect from 'components/campManagement/expenses/ExpenseCategorySelect.vue';
-import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import { useExpenseCategories } from 'src/composables/expenseCategories';
 
 const { t } = useI18n();
+const { categories } = useExpenseCategories();
 
 const model = defineModel<Partial<ExpenseCreateData>>({
-  default: {
-    date: new Date().toISOString().split('T')[0],
-  },
+  required: true,
 });
 
-const { people, categories } = defineProps<{
+const { people } = defineProps<{
   people: string[];
-  categories: ExpenseCategory[];
 }>();
+
+const categoryOptions = computed<QSelectOption[]>(() => {
+  const type = (model.value.amount ?? 0) < 0 ? 'income' : 'expense';
+
+  return categories.value.filter((c) => c.type === type);
+});
 
 watch(
   () => model.value.paidBy,
@@ -226,6 +233,7 @@ function currentDate(): string {
 field:
   amount:
     label: 'Amount'
+    hint: 'Negative value for income'
     rule:
       required: 'Amount is required'
   category:
@@ -259,6 +267,7 @@ action:
 field:
   amount:
     label: 'Betrag'
+    hint: 'Negativer Wert für Einnahmen'
     rule:
       required: 'Betrag ist erforderlich'
   category:
@@ -292,6 +301,7 @@ action:
 field:
   amount:
     label: 'Montant'
+    hint: 'Valeur négative pour les revenus'
     rule:
       required: 'Le montant est requis'
   category:

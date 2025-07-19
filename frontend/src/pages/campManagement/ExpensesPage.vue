@@ -46,6 +46,19 @@
             class="col-12"
             style="max-width: 300px"
           >
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>
+                    {{ scope.opt.label }}
+                  </q-item-label>
+                  <q-item-label caption>
+                    {{ t(`category.${scope.opt.type}`) }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+
             <template #prepend>
               <q-icon name="sell" />
             </template>
@@ -159,12 +172,14 @@ import ExpenseDetailsDialog from 'components/campManagement/expenses/ExpenseDeta
 import ExpenseUpdateDialog from 'components/campManagement/expenses/ExpenseUpdateDialog.vue';
 import { storeToRefs } from 'pinia';
 import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory';
+import { useExpenseCategories } from 'src/composables/expenseCategories';
 
 const { t, n } = useI18n();
 const quasar = useQuasar();
 const expensesStore = useExpensesStore();
-const { people, categories } = storeToRefs(expensesStore);
+const { people } = storeToRefs(expensesStore);
 const campDetailsStore = useCampDetailsStore();
+const { categories } = useExpenseCategories();
 
 onMounted(() => {
   campDetailsStore.fetchData();
@@ -283,7 +298,6 @@ function onAddExpense() {
     .dialog({
       component: ExpenseCreateDialog,
       componentProps: {
-        categories: categories.value,
         people: people.value,
       },
     })
@@ -358,6 +372,10 @@ action:
   delete: 'Delete'
   ok: 'Ok'
 
+category:
+  income: 'Income'
+  expense: 'Expense'
+
 dialog:
   delete:
     title: 'Delete expense "{ name }"?'
@@ -381,6 +399,10 @@ action:
   delete: 'Löschen'
   ok: 'Ok'
 
+category:
+  income: 'Einnahme'
+  expense: 'Ausgabe'
+
 dialog:
   delete:
     title: 'Ausgabe "{ name }" löschen?'
@@ -403,6 +425,10 @@ action:
   cancel: 'Annuler'
   delete: 'Supprimer'
   ok: 'Ok'
+
+category:
+  income: 'Revenu'
+  expense: 'Dépense'
 
 dialog:
   delete:

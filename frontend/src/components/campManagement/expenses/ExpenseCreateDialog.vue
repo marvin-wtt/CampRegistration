@@ -20,8 +20,7 @@
         <q-card-section :class="showFilePreview ? 'col-shrink' : 'col'">
           <expense-create-form
             v-model="expense"
-            :people="people"
-            :categories="categories"
+            :people
           />
         </q-card-section>
 
@@ -62,11 +61,9 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref, type StyleValue } from 'vue';
 import ExpenseCreateForm from 'components/campManagement/expenses/ExpenseCreateForm.vue';
 import ExpenseFileViewer from 'components/campManagement/expenses/ExpenseFileViewer.vue';
-import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
-const { people, categories } = defineProps<{
+const { people } = defineProps<{
   people: string[];
-  categories: ExpenseCategory[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -76,7 +73,10 @@ const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-const expense = ref<Partial<ExpenseCreateData>>({});
+const expense = ref<Partial<ExpenseCreateData>>({
+  amount: 0,
+  date: new Date().toISOString().split('T')[0]!,
+});
 
 const showFilePreview = computed<boolean>(() => {
   return previewFile.value != null && quasar.screen.gt.sm;
@@ -89,7 +89,7 @@ interface SimpleFile {
 }
 
 const previewFile = computed<SimpleFile | null>(() => {
-  if (expense.value.file == null) {
+  if (expense.value?.file == null) {
     return null;
   }
 

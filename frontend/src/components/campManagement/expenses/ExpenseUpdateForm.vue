@@ -35,12 +35,14 @@
       </template>
     </q-input>
 
-    <expense-category-select
+    <q-select
       v-model="model.category"
       :label="t('field.category.label')"
-      :options="categories"
       :rules="[(val?: string) => !!val || t('field.category.rule.required')]"
       hide-bottom-space
+      :options="categoryOptions"
+      map-options
+      emit-value
       clearable
       outlined
       rounded
@@ -48,7 +50,7 @@
       <template #prepend>
         <q-icon name="person" />
       </template>
-    </expense-category-select>
+    </q-select>
 
     <currency-input
       v-model="model.amount"
@@ -221,11 +223,12 @@ import type {
   Expense,
   ExpenseUpdateData,
 } from '@camp-registration/common/entities';
-import { toRaw, watch, defineModel, onBeforeMount } from 'vue';
-import ExpenseCategorySelect from 'components/campManagement/expenses/ExpenseCategorySelect.vue';
-import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
+import { toRaw, watch, defineModel, onBeforeMount, computed } from 'vue';
+import type { QSelectOption } from 'quasar';
+import { useExpenseCategories } from 'src/composables/expenseCategories';
 
 const { t } = useI18n();
+const { categories } = useExpenseCategories();
 
 const model = defineModel<ExpenseUpdateData>({
   default: {},
@@ -238,7 +241,6 @@ onBeforeMount(() => {
 const props = defineProps<{
   expense: Expense;
   people: string[];
-  categories: ExpenseCategory[];
 }>();
 
 function initialData(): ExpenseUpdateData {
@@ -265,6 +267,12 @@ function initialData(): ExpenseUpdateData {
   return data;
 }
 
+const categoryOptions = computed<QSelectOption[]>(() => {
+  const type = (model.value.amount ?? 0) < 0 ? 'income' : 'expense';
+
+  return categories.value.filter((c) => c.type === type);
+});
+
 watch(
   () => model.value.paidBy,
   (value, oldValue) => {
@@ -279,11 +287,11 @@ watch(
 );
 
 function formatDateString(date: string): string {
-  return date.split('T')[0];
+  return date.split('T')[0] ?? '';
 }
 
 function resetFile() {
-  model.value.file = initialData().file;
+  model.value.file = initialData().file!;
 }
 </script>
 

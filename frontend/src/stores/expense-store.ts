@@ -10,7 +10,6 @@ import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { computed } from 'vue';
 import { exportFile } from 'quasar';
-import type { ExpenseCategory } from 'components/campManagement/expenses/ExpenseCategory.ts';
 
 export const useExpensesStore = defineStore('expenses', () => {
   const route = useRoute();
@@ -114,15 +113,10 @@ export const useExpensesStore = defineStore('expenses', () => {
     return uniqueNames.sort((a, b) => a.localeCompare(b));
   });
 
-  const categories = computed<ExpenseCategory[]>(() => {
-    return [];
-  });
-
   return {
     reset,
     data,
     people,
-    categories,
     isLoading,
     error,
     fetchData,
