@@ -222,7 +222,7 @@ model File {
 }
 
 model Expense {
-  id            String    @id @unique(map: "expenses_id_unique") @db.Char(26)
+  id            String    @id @unique(map: "expenses_id_unique") @default(ulid()) @db.Char(26)
   receiptNumber Int?      @map("receipt_number") @db.UnsignedSmallInt
   name          String
   description   String?
