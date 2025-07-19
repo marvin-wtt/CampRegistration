@@ -12,7 +12,7 @@
         v-bind="moneyFormat"
         :id="id"
         class="q-field__input text-right"
-        :model-value="moneyModelValue"
+        :model-value="moneyModelValue ?? ''"
         @update:model-value="emitValue"
       />
     </template>
@@ -49,7 +49,7 @@ const formattedValue = computed<string | undefined>({
 });
 
 const moneyFormat = {
-  mask: true,
+  mask: false,
   prefix: '',
   suffix: '', // Set by field
   thousands: '.',
@@ -57,6 +57,7 @@ const moneyFormat = {
   precision: 2,
   disableNegative: false,
   allowBlank: false,
+  focusOnRight: true,
 };
 </script>
 
