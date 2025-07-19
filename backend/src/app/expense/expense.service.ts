@@ -1,8 +1,5 @@
-import { ulid } from '#utils/ulid';
 import type { Prisma } from '@prisma/client';
 import { BaseService } from '#core/base/BaseService';
-
-type RequestFile = Express.Multer.File;
 
 export class ExpenseService extends BaseService {
   async getExpenseById(campId: string, id: string) {
@@ -32,7 +29,6 @@ export class ExpenseService extends BaseService {
   async createExpense(
     campId: string,
     data: Omit<Prisma.ExpenseCreateInput, 'id' | 'receiptNumber' | 'camp'>,
-    file?: RequestFile,
   ) {
     return this.prisma.$transaction(async (prisma) => {
       const lastExpense = await prisma.expense.findFirst({
@@ -42,21 +38,11 @@ export class ExpenseService extends BaseService {
 
       const receiptNumber = (lastExpense?.receiptNumber ?? 0) + 1;
 
-      // Generate file data
-      const fileData = this.createFileCreateData(file);
-
-      // TODO Use storage
-      // if (file) {
-      //   await fileService.moveFileToStorage(file);
-      // }
-
       return prisma.expense.create({
         data: {
           ...data,
-          id: ulid(),
           receiptNumber,
           camp: { connect: { id: campId } },
-          file: fileData,
         },
         include: { file: true },
       });
@@ -66,21 +52,11 @@ export class ExpenseService extends BaseService {
   updateExpenseById = async (
     id: string,
     data: Omit<Prisma.ExpenseUpdateInput, 'id'>,
-    file?: RequestFile,
   ) => {
-    // Generate file data
-    const fileData = this.createFileCreateData(file);
-
-    // TODO Use storage
-    // if (file) {
-    //   await fileService.moveFileToStorage(file);
-    // }
-
     return this.prisma.expense.update({
       where: { id },
       data: {
         ...data,
-        file: fileData,
       },
       include: { file: true },
     });
@@ -91,19 +67,6 @@ export class ExpenseService extends BaseService {
       where: { id },
     });
   }
-
-  private createFileCreateData = (
-    file?: RequestFile,
-  ): Prisma.FileUpdateOneWithoutExpenseNestedInput | undefined => {
-    if (!file) {
-      return undefined;
-    }
-
-    // TODO Find a better way to implement this
-    // return {
-    //   create: fileService.modelFileCreateData(undefined, file),
-    // };
-  };
 }
 
 export default new ExpenseService();

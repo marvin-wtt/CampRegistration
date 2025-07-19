@@ -30,6 +30,7 @@ const store = z.object({
     paidBy: z.string().optional(),
     payee: z.string().optional(),
   }),
+  file: z.custom<Express.Multer.File>().optional().nullable(),
 });
 
 const update = z.object({
@@ -48,7 +49,7 @@ const update = z.object({
       paidAt: z.coerce.date().nullable(),
       paidBy: z.string().nullable(),
       payee: z.string().nullable(),
-      file: z.null(),
+      file: z.null(), // This is used to remove the file
     })
     .partial()
     .superRefine((val, ctx) => {
@@ -66,6 +67,7 @@ const update = z.object({
         });
       }
     }),
+  file: z.custom<Express.Multer.File>().optional().nullable(),
 });
 
 const destroy = z.object({
