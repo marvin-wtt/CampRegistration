@@ -18,7 +18,7 @@
           <!-- File -->
           <!-- TODO Maybe add reject message -->
           <q-file
-            v-model="file.file"
+            v-model="fileData.file"
             :label="t('fields.file.label')"
             :rules="[
               (val?: File) => !!val || t('fields.access_level.rules.required'),
@@ -40,10 +40,10 @@
             </template>
           </q-file>
 
-          <template v-if="file.file">
+          <template v-if="fileData.file">
             <!-- Name -->
             <q-input
-              v-model="file.name"
+              v-model="fileData.name"
               :label="t('fields.name.label')"
               :rules="[
                 (val?: string) => !!val || t('fields.name.rules.required'),
@@ -54,7 +54,7 @@
 
             <!-- Field -->
             <q-input
-              v-model="file.field"
+              v-model="fileData.field"
               :label="t('fields.field.label')"
               :hint="t('fields.field.hint')"
               :rules="[
@@ -68,7 +68,7 @@
 
             <!-- Access -->
             <q-select
-              v-model="file.accessLevel"
+              v-model="fileData.accessLevel"
               :options="accessLevelOptions"
               :label="t('fields.access_level.label')"
               :rules="[
@@ -133,14 +133,8 @@ const { t } = useI18n();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const file = reactive<ServiceFileCreateData>({
+const fileData = reactive<ServiceFileCreateData>({
   accessLevel: 'public',
 } as ServiceFileCreateData);
 
@@ -170,22 +164,22 @@ const accessLevelOptions: AccessLevelOption[] = [
 ];
 
 function onFileUpdate() {
-  if (!file.name || file.name.trim().length === 0) {
+  if (!fileData.name || fileData.name.trim().length === 0) {
     // File name without extension
-    file.name = file.file.name.replace(/\.[^/.]+$/, '');
+    fileData.name = fileData.file.name.replace(/\.[^/.]+$/, '');
   }
 
   // Generate default
-  if (file.name && !file.field) {
-    const name = file.name.trim().toLowerCase().replaceAll(' ', '-');
-    file.field = uniqueName(name, fields.value);
+  if (fileData.name && !fileData.field) {
+    const name = fileData.name.trim().toLowerCase().replaceAll(' ', '-');
+    fileData.field = uniqueName(name, fields.value);
   }
 }
 
 async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
-    await campFileStore.createEntry(file);
+    const file = await campFileStore.createEntry(fileData);
 
     onDialogOK(file);
   } finally {

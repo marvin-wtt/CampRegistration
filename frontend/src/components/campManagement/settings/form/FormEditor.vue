@@ -113,6 +113,13 @@ const creator = new SurveyCreatorModel(creatorOptions);
 creator.JSON = props.camp.form;
 creator.theme = props.camp.themes['light'] ?? {};
 
+// TODO This is a workaround for the issue with the theme not being applied correctly
+// See https://github.com/surveyjs/survey-creator/issues/5552
+if (creator.theme.backgroundImage === null) {
+  console.error('Theme background image is null');
+  creator.theme.backgroundImage = '';
+}
+
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
   // Allow restricted users to add only panels. If you want to hide the entire Toolbox, set `creator.showToolbox = false;`
