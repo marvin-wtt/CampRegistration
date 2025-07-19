@@ -9,23 +9,23 @@
       class="avatar-border"
     >
       <q-avatar>
-        {{ props.expense.receiptNumber ?? '-' }}
+        {{ expense.receiptNumber ?? '-' }}
       </q-avatar>
     </q-item-section>
 
     <q-item-section>
       <q-item-label>
-        {{ props.expense.name }}
+        {{ expense.name }}
       </q-item-label>
       <q-item-label caption>
-        {{ d(props.expense.date, 'short') }}
-        <template v-if="props.expense?.category">
+        {{ d(expense.date, 'short') }}
+        <template v-if="expense?.category">
           &middot;
-          {{ props.expense.category }}
+          {{ t('expense.category.' + expense.category) }}
         </template>
-        <template v-if="props.expense?.paidBy">
+        <template v-if="expense?.paidBy">
           &middot;
-          {{ props.expense.paidBy }}
+          {{ expense.paidBy }}
         </template>
       </q-item-label>
     </q-item-section>
@@ -67,7 +67,7 @@
       class="text-bold text-caption"
       side
     >
-      {{ n(props.expense.amount, 'currency') }}
+      {{ n(expense.amount, 'currency') }}
     </q-item-section>
 
     <q-item-section
@@ -96,7 +96,7 @@ import { computed, type StyleValue } from 'vue';
 
 const { t, d, n } = useI18n();
 
-const props = defineProps<{
+const { expense } = defineProps<{
   expense: Expense;
 }>();
 
@@ -109,30 +109,30 @@ const emit = defineEmits<{
 }>();
 
 const isUnpaid = computed<boolean>(() => {
-  if (props.expense.amount === 0) {
+  if (expense.amount === 0) {
     return false;
   }
 
-  return props.expense.paidBy == null || props.expense.paidAt == null;
+  return expense.paidBy == null || expense.paidAt == null;
 });
 
 const missingReceipt = computed<boolean>(() => {
-  return props.expense.file == null;
+  return expense.file == null;
 });
 
 const borderColor = (): string => {
   // Amount not defined
-  if (props.expense.amount === 0) {
+  if (expense.amount === 0) {
     return 'grey';
   }
 
   // Unpaid
-  if (props.expense.paidBy == null || props.expense.paidAt == null) {
+  if (expense.paidBy == null || expense.paidAt == null) {
     return '#ff0000';
   }
 
   // No receipt
-  if (props.expense.file == null) {
+  if (expense.file == null) {
     return '#f1c037';
   }
 

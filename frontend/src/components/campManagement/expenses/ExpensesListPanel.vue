@@ -5,7 +5,7 @@
         <div class="col-xs-12 col-sm-11 col-md-8 col-lg-6 col-xl-4 column">
           <!-- Loading -->
           <q-list
-            v-if="props.loading"
+            v-if="loading"
             separator
           >
             <q-item
@@ -41,7 +41,7 @@
           </q-list>
 
           <!-- No data -->
-          <q-list v-else-if="props.expenses.length === 0">
+          <q-list v-else-if="expenses.length === 0">
             <q-item>
               <q-item-section class="text-center text-italic">
                 <q-item-label>
@@ -60,9 +60,9 @@
             separator
           >
             <expense-item
-              v-for="expense in props.expenses"
+              v-for="expense in expenses"
               :key="expense.id"
-              :expense="expense"
+              :expense
               @click="emit('show', expense)"
             >
               <template #menu>
@@ -112,7 +112,7 @@ import ExpenseItem from 'components/campManagement/expenses/ExpenseItem.vue';
 
 const { t } = useI18n();
 
-const props = defineProps<{
+const { expenses, loading } = defineProps<{
   expenses: Expense[];
   loading: boolean;
 }>();
