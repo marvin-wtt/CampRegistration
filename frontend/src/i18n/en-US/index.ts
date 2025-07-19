@@ -1,10 +1,10 @@
-// This is just an example,
-// so you can safely delete all default props below
 import stores from './stores';
+import expense from './expense';
 
 export default {
   app_name: 'Camp Registration Service',
 
+  expense,
   stores,
 
   service: {

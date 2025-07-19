@@ -53,11 +53,11 @@ export function useFileService() {
   }
 
   return {
+    downloadFile,
     fetchCampFiles,
     createCampFile,
     createTemporaryFile,
     deleteCampFile,
-    downloadFile,
     getFileUrl,
   };
 }

@@ -5,7 +5,6 @@ import {
 } from 'passport-jwt';
 import { Strategy as AnonymousStrategy } from 'passport-anonymous';
 import type { Request } from 'express';
-
 import config from '#config/index';
 import { TokenType } from '@prisma/client';
 import passport from 'passport';

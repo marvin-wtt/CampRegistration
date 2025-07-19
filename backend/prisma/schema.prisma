@@ -40,6 +40,7 @@ enum Role {
 
 model Camp {
   id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  type            String?   @db.VarChar(50)
   active          Boolean
   public          Boolean
   /// ![Array<string>]
@@ -72,6 +73,7 @@ model Camp {
   tableTemplates   TableTemplate[]
   messageTemplates MessageTemplate[]
   files            File[]
+  expense          Expense[]
 
   @@map("camps")
 }
@@ -200,6 +202,7 @@ model File {
   registrationId    String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
   messageId         String?  @map("message_id") @db.Char(36) // Prisma does not support morth
   messageTemplateId String?  @map("message_template_id") @db.Char(36) // Prisma does not support morth
+  expenseId         String?  @unique @map("expense_id") @db.Char(36) // Prisma does not support morth
   name              String
   originalName      String   @map("original_name")
   field             String?
@@ -213,8 +216,27 @@ model File {
   registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
   messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
+  expense         Expense?         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@map("files")
+}
+
+model Expense {
+  id            String    @id @unique(map: "expenses_id_unique") @default(ulid()) @db.Char(26)
+  receiptNumber Int?      @map("receipt_number") @db.UnsignedSmallInt
+  name          String
+  description   String?
+  category      String
+  amount        Decimal
+  date          DateTime
+  paidAt        DateTime? @map("paid_at")
+  paidBy        String?   @map("paid_by")
+  payee         String?
+  campId        String    @map("camp_id")
+  camp          Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, map: "expenses_camp_id_foreign")
+  file          File?
+
+  @@map("expenses")
 }
 
 model Message {
