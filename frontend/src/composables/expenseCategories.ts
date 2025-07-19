@@ -20,41 +20,41 @@ type ExpensePresets = Record<string, RawCategory[]>;
 const presets: ExpensePresets = {
   default: [
     // income
-    { value: 'participation_fees', type: 'income' },
-    { value: 'donations', type: 'income' },
-    { value: 'sponsorships', type: 'income' },
-    { value: 'grants', type: 'income' },
-    { value: 'others', type: 'income' },
+    { value: 'default.income.participation_fees', type: 'income' },
+    { value: 'default.income.donations', type: 'income' },
+    { value: 'default.income.sponsorships', type: 'income' },
+    { value: 'default.income.grants', type: 'income' },
+    { value: 'default.income.others', type: 'income' },
     // expense
-    { value: 'travel', type: 'expense' },
-    { value: 'accommodation', type: 'expense' },
-    { value: 'food', type: 'expense' },
-    { value: 'materials', type: 'expense' },
-    { value: 'personnel', type: 'expense' },
-    { value: 'others', type: 'expense' },
+    { value: 'default.expense.travel', type: 'expense' },
+    { value: 'default.expense.accommodation', type: 'expense' },
+    { value: 'default.expense.food', type: 'expense' },
+    { value: 'default.expense.materials', type: 'expense' },
+    { value: 'default.expense.personnel', type: 'expense' },
+    { value: 'default.expense.others', type: 'expense' },
   ],
   fgyo: [
     // income
-    { value: 'subsidy', type: 'income' },
-    { value: 'public_funds', type: 'income' },
-    { value: 'local_organization', type: 'income' },
-    { value: 'partner_organization', type: 'income' },
-    { value: 'private_institution', type: 'income' },
-    { value: 'companies', type: 'income' },
-    { value: 'participation_fees', type: 'income' },
-    { value: 'foundation', type: 'income' },
-    { value: 'others', type: 'income' },
+    { value: 'fgyo.income.subsidy', type: 'income' },
+    { value: 'fgyo.income.public_funds', type: 'income' },
+    { value: 'fgyo.income.local_organization', type: 'income' },
+    { value: 'fgyo.income.partner_organization', type: 'income' },
+    { value: 'fgyo.income.private_institution', type: 'income' },
+    { value: 'fgyo.income.companies', type: 'income' },
+    { value: 'fgyo.income.participation_fees', type: 'income' },
+    { value: 'fgyo.income.foundation', type: 'income' },
+    { value: 'fgyo.income.others', type: 'income' },
     // expense
-    { value: 'travel_costs', type: 'expense' },
-    { value: 'basic_costs', type: 'expense' },
-    { value: 'project_costs', type: 'expense' },
-    { value: 'material_costs', type: 'expense' },
-    { value: 'language_support_costs', type: 'expense' },
-    { value: 'hybrid_project_costs', type: 'expense' },
-    { value: 'non_project_related_expenses', type: 'expense' },
-    { value: 'investment_costs', type: 'expense' },
-    { value: 'personnel_costs', type: 'expense' },
-    { value: 'others', type: 'expense' },
+    { value: 'fgyo.expense.travel_costs', type: 'expense' },
+    { value: 'fgyo.expense.basic_costs', type: 'expense' },
+    { value: 'fgyo.expense.project_costs', type: 'expense' },
+    { value: 'fgyo.expense.material_costs', type: 'expense' },
+    { value: 'fgyo.expense.language_support_costs', type: 'expense' },
+    { value: 'fgyo.expense.hybrid_project_costs', type: 'expense' },
+    { value: 'fgyo.expense.non_project_related_expenses', type: 'expense' },
+    { value: 'fgyo.expense.investment_costs', type: 'expense' },
+    { value: 'fgyo.expense.personnel_costs', type: 'expense' },
+    { value: 'fgyo.expense.others', type: 'expense' },
   ],
 };
 
@@ -67,10 +67,8 @@ export function useExpenseCategories() {
   const categories = computed(() => {
     const categories = presets[campType.value] || presets.default!;
 
-    const tPrefix = 'expense.category';
-
     return categories.map<ExpenseOption>((cat) => ({
-      label: t(`${tPrefix}.${campType.value}.${cat.type}.${cat.value}`),
+      label: t(`expense.category.${cat.value}`),
       value: cat.value,
       type: cat.type,
     }));
