@@ -2,20 +2,12 @@ import multer, { type Field } from 'multer';
 import config from '#config/index';
 import type { NextFunction, Request, Response } from 'express';
 import fileService from '#app/file/file.service';
+import convertEmptyStringsToNull from '#middlewares/string.middleware';
 
 type ParameterType = string | Field | readonly Field[] | null | undefined;
 
 const multiPart = (fields: ParameterType) => {
-  // Chain upload with formatter
-  return async (req: Request, res: Response, next: NextFunction) => {
-    await upload(fields)(req, res, (err?: unknown) => {
-      if (err) {
-        next(err);
-      } else {
-        formatterMiddleware(req, res, next);
-      }
-    });
-  };
+  return [upload(fields), formatterMiddleware, convertEmptyStringsToNull];
 };
 
 const upload = (fields: ParameterType) => {
