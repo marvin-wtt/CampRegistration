@@ -74,7 +74,6 @@ const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =
 const { t } = useI18n();
 
 const expense = ref<Partial<ExpenseCreateData>>({
-  amount: 0,
   date: new Date().toISOString().split('T')[0]!,
 });
 
