@@ -1,168 +1,122 @@
-import { useExcel } from '#app/expense/exporter/excel.expense.exporter';
-import ApiError from '#utils/ApiError';
-import httpStatus from 'http-status';
-import type {
-  ReceiptListFileConfig,
-  BudgetCategories,
-} from '#app/expense/exporter/excelFGYO/ReceiptListFileConfig';
-import type { Response } from 'express';
-import { receiptListConfigs } from '#app/expense/exporter/excelFGYO/receiptListConfigs';
-import type { Expense } from '@camp-registration/common/entities';
 import { publicPath } from '#utils/paths.js';
-import { objectValueByPath } from '@camp-registration/web/src/utils/objectValueByPath.js';
+import type { Expense } from '@camp-registration/common/entities';
+import { receiptListConfigs } from './receiptListConfigs.js';
+import { ExcelExporter } from '../excel.expense.exporter.js';
+import { prepareFGYOExcelData } from './prepareFGYOExcelData.js';
+import type { ExpenseExport } from '#app/expense/expense.exporter';
 
-export const exportExcelFGYO = async (data: Expense[], res: Response) => {
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  );
-  res.setHeader('Content-Disposition', 'attachment; filename="expenses.xlsx"');
-
-  // TODO Use the locale from the request or user settings
-  const config: ReceiptListFileConfig = receiptListConfigs.de;
-
-  const { income, eligibleExpenditures, nonEligibleExpenditures } =
-    prepareFGYOExcelData(data, {
-      income: config.sections.income.categories,
-      eligible: config.sections.eligibleExpenses.categories,
-      nonEligible: config.sections.nonEligibleExpenses.categories,
-    });
-
-  const { writeWithDefault, duplicateRows } = await useExcel(
-    publicPath(config.file),
-  );
-
-  const timestampDate = (timestamp: string | null): string | null => {
-    return timestamp?.split('T')[0] ?? null;
-  };
-
-  const addInformation = (startRow: number) => {
-    const expenditures = [...eligibleExpenditures, ...nonEligibleExpenditures];
-    const totalExpenditures = expenditures.reduce(
-      (acc, val) => acc + val.amount,
-      0,
-    );
-    writeWithDefault('F', startRow, totalExpenditures, 0);
-
-    const totalIncome = income.reduce((acc, val) => acc + val.amount, 0);
-    writeWithDefault('G', startRow, totalIncome, 0);
-  };
-
-  const addIncome = (startRow: number, rowCount: number) => {
-    duplicateRows(startRow, rowCount, nonEligibleExpenditures.length);
-
-    income.forEach((value, index) => {
-      const row = startRow + index;
-
-      writeWithDefault('A', row, value.name);
-      writeWithDefault('B', row, value.receiptNumber);
-      writeWithDefault('C', row, timestampDate(value.date));
-      writeWithDefault('D', row, value.payee);
-      writeWithDefault('E', row, value.category);
-      writeWithDefault('G', row, value.amount);
-    });
-  };
-
-  const addNonEligibleExpenditures = (startRow: number, rowCount: number) => {
-    duplicateRows(startRow, rowCount, nonEligibleExpenditures.length);
-
-    nonEligibleExpenditures.forEach((value, index) => {
-      const row = startRow + index;
-
-      writeWithDefault('A', row, value.name);
-      writeWithDefault('F', row, value.amount);
-    });
-  };
-
-  const addEligibleExpenditures = (startRow: number, rowCount: number) => {
-    duplicateRows(startRow, rowCount, eligibleExpenditures.length);
-
-    eligibleExpenditures.forEach((value, index) => {
-      const row = startRow + index;
-
-      writeWithDefault('A', row, value.name);
-      writeWithDefault('B', row, value.receiptNumber);
-      writeWithDefault('C', row, timestampDate(value.date));
-      writeWithDefault('D', row, value.payee);
-      writeWithDefault('E', row, value.category);
-      writeWithDefault('F', row, value.amount);
-    });
-  };
-
-  const sections: Record<string, (startRow: number, rowCount: number) => void> =
-    {
-      eligibleExpenditures: addEligibleExpenditures,
-      nonEligibleExpenditures: addNonEligibleExpenditures,
-      income: addIncome,
-      information: addInformation,
-    };
-
-  // Execute in reverse order as new rows are appended at the end of each section
-  Object.entries(config.sections)
-    .filter(([name]) => name in sections)
-    .map(([name, section]) => ({
-      ...section,
-      fn: sections[name],
-    }))
-    .sort((a, b) => b.startRow - a.startRow)
-    .forEach((section) => {
-      section.fn(section.startRow, section.rowCount);
-    });
-
-  throw new ApiError(httpStatus.NOT_IMPLEMENTED, 'Not implemented');
-};
-
-const prepareFGYOExcelData = (
+export const exportExcelFGYO = async (
   data: Expense[],
-  categories: BudgetCategories,
-) => {
-  data.forEach((expense) => {
-    // If the category is not defined or not a string, assign the default category
-    if (
-      !expense.category.startsWith('fgyo.') ||
-      typeof objectValueByPath(
-        expense.category.replace('fgyo.', ''),
-        categories,
-      ) !== 'string'
-    ) {
-      expense.category =
-        expense.amount >= 0 ? 'fgyo.nonEligible.others' : 'fgyo.income.others';
-    }
+  locale: string,
+): Promise<ExpenseExport> => {
+  const configKey = locale.split('-')[0]?.toLowerCase();
 
-    expense.category = expense.category.replace('fgyo.', '');
+  const config =
+    configKey in receiptListConfigs
+      ? receiptListConfigs[configKey as keyof typeof receiptListConfigs]
+      : receiptListConfigs.de;
+
+  const all = prepareFGYOExcelData(data, {
+    income: config.sections.income.categories,
+    eligible: config.sections.eligibleExpenses.categories,
+    nonEligible: config.sections.nonEligibleExpenses.categories,
   });
 
-  const eligibleExpenditures: Expense[] = data
-    .filter((expense) => expense.category.startsWith('eligible.'))
-    .map((expense) => ({
-      ...expense,
-      category: objectValueByPath(
-        expense.category,
-        categories.eligible,
-      ) as string,
-    }));
-  const nonEligibleExpenditures: Expense[] = data
-    .filter((expense) => expense.category.startsWith('nonEligible.'))
-    .map((expense) => ({
-      ...expense,
-      category: objectValueByPath(
-        expense.category,
-        categories.eligible,
-      ) as string,
-    }));
-  const income: Expense[] = data
-    .filter((expense) => expense.category.startsWith('income.'))
-    .map((expense) => ({
-      ...expense,
-      category: objectValueByPath(
-        expense.category,
-        categories.eligible,
-      ) as string,
-    }));
+  const eligibleExpenditures = all.filter((e) => e.section === 'eligible');
+  const nonEligibleExpenditures = all.filter(
+    (e) => e.section === 'nonEligible',
+  );
+  const income = all.filter((e) => e.section === 'income');
+
+  const xl = (await ExcelExporter.from(publicPath(config.file))).worksheet(
+    config.worksheet,
+  );
+
+  const dateOnly = (iso: string | null) => iso?.slice(0, 10) ?? null;
+
+  const addRows = <T extends Expense[]>(
+    rows: T,
+    start: number,
+    template: number,
+    cb: (rowIdx: number, item: T[number]) => void,
+  ) => {
+    xl.ensureRows(start, template, rows.length);
+    rows.forEach((item, i) => {
+      cb(start + i, item);
+    });
+  };
+
+  // Eligible
+  addRows(
+    eligibleExpenditures,
+    config.sections.eligibleExpenses.startRow,
+    config.sections.eligibleExpenses.rowCount,
+    (row, v) => {
+      xl.write('A', row, v.name)
+        .write('B', row, v.receiptNumber)
+        .write('C', row, dateOnly(v.date))
+        .write('D', row, v.payee)
+        .write('E', row, v.category)
+        .write('F', row, v.amount);
+    },
+  );
+
+  // Non-eligible
+  addRows(
+    nonEligibleExpenditures,
+    config.sections.nonEligibleExpenses.startRow,
+    config.sections.nonEligibleExpenses.rowCount,
+    (row, v) => {
+      xl.write('A', row, v.name).write('F', row, v.amount);
+    },
+  );
+
+  // Income
+  addRows(
+    income,
+    config.sections.income.startRow,
+    config.sections.income.rowCount,
+    (row, v) => {
+      xl.write('A', row, v.name)
+        .write('B', row, v.receiptNumber)
+        .write('C', row, dateOnly(v.date))
+        .write('D', row, v.payee)
+        .write('E', row, v.category)
+        .write('G', row, v.amount);
+    },
+  );
+
+  const totalsRow =
+    Math.max(
+      config.sections.income.startRow,
+      config.sections.nonEligibleExpenses.startRow,
+      config.sections.eligibleExpenses.startRow,
+    ) +
+    Math.max(
+      income.length,
+      nonEligibleExpenditures.length,
+      eligibleExpenditures.length,
+    );
+
+  xl.write(
+    'F',
+    totalsRow,
+    eligibleExpenditures
+      .concat(nonEligibleExpenditures)
+      .reduce((a, { amount }) => a + amount, 0),
+    0,
+  );
+  xl.write(
+    'G',
+    totalsRow,
+    income.reduce((a, { amount }) => a + amount, 0),
+    0,
+  );
 
   return {
-    income,
-    eligibleExpenditures,
-    nonEligibleExpenditures,
+    stream: xl.toStream(),
+    filename: 'expenses.xlsx',
+    contentType:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   };
 };

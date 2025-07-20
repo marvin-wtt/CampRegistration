@@ -1,19 +1,25 @@
 import { writeToStream } from '@fast-csv/format';
-import type { Response } from 'express';
-import type { ExpenseWithFile } from '#app/expense/expense.exporter';
+import type { Expense } from '@camp-registration/common/entities';
+import type { ExpenseExport } from '#app/expense/expense.exporter';
+import { PassThrough } from 'node:stream';
 
-export const exportCSV = (expenses: ExpenseWithFile[], res: Response): void => {
-  res.setHeader('Content-Disposition', 'attachment; filename="expenses.csv"');
-  res.setHeader('Content-Type', 'text/csv');
-
+export const exportCSV = (expenses: Expense[]): ExpenseExport => {
   const output = expenses.map((expense) => {
     return {
       ...expense,
-      file: expense.file?.name,
+      file: expense.file?.url,
     };
   });
 
-  writeToStream(res, output, {
-    headers: true,
-  });
+  const stream = new PassThrough();
+
+  writeToStream(stream, output, { headers: true }).once('error', (err) =>
+    stream.destroy(err),
+  );
+
+  return {
+    filename: 'expenses.csv',
+    contentType: 'text/csv',
+    stream,
+  };
 };

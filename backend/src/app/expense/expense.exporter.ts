@@ -5,13 +5,23 @@ import { exportExcelFGYO } from '#app/expense/exporter/excelFGYO/index';
 import type { Response } from 'express';
 import type { Expense } from '@camp-registration/common/entities';
 
-const exportExpenses = (type: string, expenses: Expense[], res: Response) => {
+export interface ExpenseExport {
+  filename: string;
+  contentType: string;
+  stream: NodeJS.ReadableStream;
+}
+
+const exportExpenses = (
+  type: string,
+  expenses: Expense[],
+  locale: string,
+  res: Response,
+): ExpenseExport | Promise<ExpenseExport> => {
   switch (type) {
     case 'csv':
-      exportCSV(expenses, res);
-      return;
+      return exportCSV(expenses);
     case 'excel-fgyp':
-      return exportExcelFGYO(expenses, res);
+      return exportExcelFGYO(expenses, locale, res);
     default:
       throw new ApiError(httpStatus.NOT_ACCEPTABLE, 'Invalid type ' + type);
   }

@@ -1,60 +1,53 @@
-import Excel from 'exceljs';
-import type Stream from 'node:stream';
+import ExcelJS, { type Worksheet, type CellValue } from 'exceljs';
+import { PassThrough, type Writable, type Readable } from 'node:stream';
 
-export async function useExcel(file: string) {
-  const workbook = new Excel.Workbook();
-  await workbook.xlsx.readFile(file);
+export class ExcelExporter {
+  private workbook = new ExcelJS.Workbook();
+  private ws?: Worksheet;
 
-  let ws: Excel.Worksheet | undefined = undefined;
-  function loadWorksheet(name: string) {
-    ws = workbook.getWorksheet(name);
-
-    if (!ws) {
-      throw new Error('Invalid workbook loaded!');
-    }
+  static async from(path: string): Promise<ExcelExporter> {
+    const exporter = new ExcelExporter();
+    await exporter.workbook.xlsx.readFile(path);
+    return exporter;
   }
 
-  const writeWithDefault = (
+  worksheet(name: string): this {
+    this.ws = this.workbook.getWorksheet(name);
+    if (!this.ws) throw new Error(`Worksheet “${name}” not found`);
+    return this;
+  }
+
+  write(
     col: string,
     row: number,
-    value: string | number | null,
-    fallback: string | number = '',
-  ) => {
-    if (!ws) {
-      throw new Error('No worksheet loaded');
-    }
-
-    ws.getCell(`${col}${row.toString()}`).value = value ?? fallback;
-  };
-
-  const duplicateRows = (
-    startRow: number,
-    rowCount: number,
-    itemCount: number,
-  ) => {
-    if (!ws) {
-      throw new Error('No worksheet loaded');
-    }
-
-    if (rowCount >= itemCount) {
-      return;
-    }
-
-    // It is not possible to duplicate multiple rows at the same time
-    const count = itemCount - rowCount;
-    for (let i = 0; i < count; i++) {
-      ws.duplicateRow(startRow, 1, true);
-    }
-  };
-
-  async function save(stream: Stream): Promise<void> {
-    await workbook.xlsx.write(stream);
+    value: CellValue | null | undefined,
+    fallback: CellValue = '',
+  ): this {
+    if (!this.ws) throw new Error('No worksheet loaded');
+    this.ws.getCell(`${col}${row.toString()}`).value = value ?? fallback;
+    return this;
   }
 
-  return {
-    loadWorksheet,
-    writeWithDefault,
-    duplicateRows,
-    save,
-  };
+  toStream(): Readable {
+    const stream = new PassThrough();
+
+    this.workbook.xlsx
+      .write(stream)
+      .then(() => stream.end())
+      .catch((err: unknown) => stream.emit('error', err));
+
+    return stream;
+  }
+
+  ensureRows(startRow: number, templateRows: number, needed: number): this {
+    if (!this.ws) throw new Error('No worksheet loaded');
+    for (let i = templateRows; i < needed; i++) {
+      this.ws.duplicateRow(startRow, 1, true);
+    }
+    return this;
+  }
+
+  async pipe(out: Writable): Promise<void> {
+    await this.workbook.xlsx.write(out);
+  }
 }
