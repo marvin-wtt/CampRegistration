@@ -2,48 +2,48 @@
   <q-list class="details-list">
     <expense-details-item
       :label="t('expense.name')"
-      :value="props.expense.name ?? '-'"
+      :value="expense.name ?? '-'"
     />
 
     <expense-details-item
       :label="t('expense.receiptNumber')"
-      :value="props.expense.receiptNumber ?? '-'"
+      :value="expense.receiptNumber ?? '-'"
     />
 
     <expense-details-item
       :label="t('expense.category')"
-      :value="props.expense.category ?? '-'"
+      :value="t('expense.category.' + expense.category) ?? '-'"
     />
 
     <expense-details-item
       :label="t('expense.amount')"
-      :value="n(props.expense.amount, 'currency')"
+      :value="n(expense.amount, 'currency')"
     />
 
     <expense-details-item
-      v-if="props.expense.date"
+      v-if="expense.date"
       :label="t('expense.date')"
-      :value="props.expense.date ? d(props.expense.date, 'short') : '-'"
+      :value="expense.date ? d(expense.date, 'short') : '-'"
     />
 
     <expense-details-item
       :label="t('expense.description')"
-      :value="props.expense.description ?? '-'"
+      :value="expense.description ?? '-'"
     />
 
     <expense-details-item
       :label="t('expense.paidBy')"
-      :value="props.expense.paidBy ?? '-'"
+      :value="expense.paidBy ?? '-'"
     />
 
     <expense-details-item
       :label="t('expense.paidAt')"
-      :value="props.expense.paidAt ? d(props.expense.paidAt, 'short') : '-'"
+      :value="expense.paidAt ? d(expense.paidAt, 'short') : '-'"
     />
 
     <expense-details-item
       :label="t('expense.payee')"
-      :value="props.expense.payee ?? '-'"
+      :value="expense.payee ?? '-'"
     />
 
     <expense-details-item
@@ -67,17 +67,17 @@ import ExpenseDetailsItem from 'components/campManagement/expenses/ExpenseDetail
 import { useI18n } from 'vue-i18n';
 import type { Expense } from '@camp-registration/common/entities';
 import { exportFile } from 'quasar';
-import { useAPIService } from 'src/services/APIService.ts';
+import { useAPIService } from 'src/services/APIService';
 
 const { t, d, n } = useI18n();
 const api = useAPIService();
 
-const props = defineProps<{
+const { expense } = defineProps<{
   expense: Expense;
 }>();
 
 async function downloadFile() {
-  const file = props.expense.file;
+  const file = expense.file;
 
   if (file == null) {
     return;
