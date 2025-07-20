@@ -1,11 +1,11 @@
 interface BudgetCategories {
-  nonEligibleExpenses: {
-    notDirectlyProjectRelatedExpenses: string;
+  nonEligible: {
+    notProjectRelatedExpenses: string;
     investmentCosts: string;
     personnelCosts: string;
     others: string;
   };
-  eligibleExpenses: {
+  eligible: {
     travelCosts: string;
     basicCosts: string;
     projectCosts: string;
@@ -14,9 +14,9 @@ interface BudgetCategories {
   };
   income: {
     fgyoRequestedGrant: string;
-    publicFundsYouthAssociationsPrivateOrganizations: string;
-    localOrganizationContributions: string;
-    partnerOrganizationContributions: string;
+    publicFunds: string;
+    localOrganization: string;
+    partnerOrganization: string;
     privateInstitutions: string;
     companies: string;
     participationFees: string;
@@ -35,8 +35,8 @@ export interface ReceiptListFileConfig {
   file: string;
   worksheet: string;
   sections: {
-    eligibleExpenses: Section<BudgetCategories['eligibleExpenses']>;
-    nonEligibleExpenses: Section<BudgetCategories['nonEligibleExpenses']>;
+    eligibleExpenses: Section<BudgetCategories['eligible']>;
+    nonEligibleExpenses: Section<BudgetCategories['nonEligible']>;
     income: Section<BudgetCategories['income']>;
   };
 }

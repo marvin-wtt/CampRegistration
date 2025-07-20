@@ -7,15 +7,14 @@ type Locales = 'de' | 'fr';
 
 const budgetCategories: Record<Locales, BudgetCategories> = {
   de: {
-    nonEligibleExpenses: {
-      notDirectlyProjectRelatedExpenses:
-        'Nicht direkt projektbezogene Ausgaben',
+    nonEligible: {
+      notProjectRelatedExpenses: 'Nicht direkt projektbezogene Ausgaben',
       investmentCosts: 'Investitionskosten',
       personnelCosts:
         'Personalkosten (außer den in Anhang 3 der Richtlinien aufgeführten Kosten)',
       others: 'Weiteres',
     },
-    eligibleExpenses: {
+    eligible: {
       travelCosts: 'Fahrtkosten',
       basicCosts: 'Basiskosten',
       projectCosts: 'Projektkosten',
@@ -24,10 +23,10 @@ const budgetCategories: Record<Locales, BudgetCategories> = {
     },
     income: {
       fgyoRequestedGrant: 'Beim DFJW beantragter Zuschuss',
-      publicFundsYouthAssociationsPrivateOrganizations:
+      publicFunds:
         'Öffentliche Mittel, Jugendverband, private Organisation oder Institution, Stiftung, Unternehmen',
-      localOrganizationContributions: 'Beiträge der örtlichen Organisation',
-      partnerOrganizationContributions: 'Beiträge der Partnerorganisation',
+      localOrganization: 'Beiträge der örtlichen Organisation',
+      partnerOrganization: 'Beiträge der Partnerorganisation',
       privateInstitutions: 'Private Einrichtung',
       companies: 'Unternehmen',
       participationFees: 'Teilnahmegebühren',
@@ -36,14 +35,13 @@ const budgetCategories: Record<Locales, BudgetCategories> = {
     },
   },
   fr: {
-    nonEligibleExpenses: {
-      notDirectlyProjectRelatedExpenses:
-        'Dépenses non liées directement au projet',
+    nonEligible: {
+      notProjectRelatedExpenses: 'Dépenses non liées directement au projet',
       investmentCosts: 'Dépenses d’investissement',
       personnelCosts: "Dépenses de personnel hors ceux de l'annexe 3",
       others: 'Autre',
     },
-    eligibleExpenses: {
+    eligible: {
       travelCosts: 'Frais de voyage',
       basicCosts: 'Frais de base',
       projectCosts: 'Frais de projet',
@@ -52,10 +50,10 @@ const budgetCategories: Record<Locales, BudgetCategories> = {
     },
     income: {
       fgyoRequestedGrant: "Subvention demandée à l'OFAJ",
-      publicFundsYouthAssociationsPrivateOrganizations:
+      publicFunds:
         'Fonds public, association de jeunesse, organisation ou institution privée, fondation, entreprise',
-      localOrganizationContributions: 'Contributions du porteur de projet',
-      partnerOrganizationContributions: 'Contributions du partenaire',
+      localOrganization: 'Contributions du porteur de projet',
+      partnerOrganization: 'Contributions du partenaire',
       privateInstitutions: 'Structure privée',
       companies: 'Entreprise',
       participationFees: 'Contribution des participantes et participants',
@@ -67,16 +65,16 @@ const budgetCategories: Record<Locales, BudgetCategories> = {
 
 export const receiptListConfigs: Record<Locales, ReceiptListFileConfig> = {
   de: {
-    file: 'belegliste.xlsx',
+    file: 'fgyo/belegliste.xlsx',
     worksheet: 'Liste des justificatifs',
     sections: {
       eligibleExpenses: {
-        categories: budgetCategories.de.eligibleExpenses,
+        categories: budgetCategories.de.eligible,
         startRow: 16,
         rowCount: 10,
       },
       nonEligibleExpenses: {
-        categories: budgetCategories.de.nonEligibleExpenses,
+        categories: budgetCategories.de.nonEligible,
         startRow: 27,
         rowCount: 6,
       },
@@ -88,16 +86,16 @@ export const receiptListConfigs: Record<Locales, ReceiptListFileConfig> = {
     },
   },
   fr: {
-    file: 'liste-des-justificatifs.xlsx',
+    file: 'fgyo/liste-des-justificatifs.xlsx',
     worksheet: 'Liste des justificatifs',
     sections: {
       eligibleExpenses: {
-        categories: budgetCategories.fr.eligibleExpenses,
+        categories: budgetCategories.fr.eligible,
         startRow: 16,
         rowCount: 9,
       },
       nonEligibleExpenses: {
-        categories: budgetCategories.fr.nonEligibleExpenses,
+        categories: budgetCategories.fr.nonEligible,
         startRow: 27,
         rowCount: 6,
       },

@@ -1,7 +1,7 @@
 export default {
   default: {
     income: {
-      participation_fees: 'Teilnahmegebühren',
+      participationFees: 'Teilnahmegebühren',
       donations: 'Spenden',
       sponsorships: 'Sponsoring',
       grants: 'Stipendien',
@@ -19,25 +19,26 @@ export default {
   fgyo: {
     income: {
       subsidy: 'Beim DFJW beantragter Zuschuss',
-      public_funds: 'Öffentliche Mittel',
-      local_organization: 'Beiträge der örtlichen Organisation',
-      partner_organization: 'Beiträge der Partnerorganisation',
-      private_institution: 'Private Einrichtung',
+      publicFunds: 'Öffentliche Mittel',
+      localOrganization: 'Beiträge der örtlichen Organisation',
+      partnerOrganization: 'Beiträge der Partnerorganisation',
+      privateInstitutions: 'Private Einrichtung',
       companies: 'Unternehmen',
-      participation_fees: 'Teilnahmegebühren',
+      participationFees: 'Teilnahmegebühren',
       foundation: 'Stiftung',
       others: 'Weiteres',
     },
-    expense: {
-      travel_costs: 'Fahrtkosten',
-      basic_costs: 'Basiskosten',
-      project_costs: 'Projektkosten',
-      material_costs: 'Materialkosten',
-      language_support_costs: 'Sprachförderkosten',
-      hybrid_project_costs: 'Kosten für hybride Projekte',
-      non_project_related_expenses: 'Nicht projektbezogene Ausgaben',
-      investment_costs: 'Investitionskosten',
-      personnel_costs: 'Personalkosten',
+    eligible: {
+      travelCosts: 'Fahrtkosten',
+      basicCosts: 'Basiskosten',
+      projectCosts: 'Projektkosten',
+      languageSupportCosts: 'Sprachförderkosten',
+      hybridProjectCosts: 'Kosten für hybride Projekte',
+    },
+    nonEligible: {
+      notProjectRelatedExpenses: 'Nicht projektbezogene Ausgaben',
+      investmentCosts: 'Investitionskosten',
+      personnelCosts: 'Personalkosten',
       others: 'Sonstiges',
     },
   },

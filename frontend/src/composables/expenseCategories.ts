@@ -19,12 +19,6 @@ type ExpensePresets = Record<string, RawCategory[]>;
 
 const presets: ExpensePresets = {
   default: [
-    // income
-    { value: 'default.income.participation_fees', type: 'income' },
-    { value: 'default.income.donations', type: 'income' },
-    { value: 'default.income.sponsorships', type: 'income' },
-    { value: 'default.income.grants', type: 'income' },
-    { value: 'default.income.others', type: 'income' },
     // expense
     { value: 'default.expense.travel', type: 'expense' },
     { value: 'default.expense.accommodation', type: 'expense' },
@@ -32,29 +26,35 @@ const presets: ExpensePresets = {
     { value: 'default.expense.materials', type: 'expense' },
     { value: 'default.expense.personnel', type: 'expense' },
     { value: 'default.expense.others', type: 'expense' },
+    // income
+    { value: 'default.income.participationFees', type: 'income' },
+    { value: 'default.income.donations', type: 'income' },
+    { value: 'default.income.sponsorships', type: 'income' },
+    { value: 'default.income.grants', type: 'income' },
+    { value: 'default.income.others', type: 'income' },
   ],
   fgyo: [
+    // eligible
+    { value: 'fgyo.eligible.travelCosts', type: 'expense' },
+    { value: 'fgyo.eligible.basicCosts', type: 'expense' },
+    { value: 'fgyo.eligible.projectCosts', type: 'expense' },
+    { value: 'fgyo.eligible.languageSupportCosts', type: 'expense' },
+    { value: 'fgyo.eligible.hybridProjectCosts', type: 'expense' },
+    // non-eligible
+    { value: 'fgyo.nonEligible.notProjectRelatedExpenses', type: 'expense' },
+    { value: 'fgyo.nonEligible.investmentCosts', type: 'expense' },
+    { value: 'fgyo.nonEligible.personnelCosts', type: 'expense' },
+    { value: 'fgyo.nonEligible.others', type: 'expense' },
     // income
     { value: 'fgyo.income.subsidy', type: 'income' },
-    { value: 'fgyo.income.public_funds', type: 'income' },
-    { value: 'fgyo.income.local_organization', type: 'income' },
-    { value: 'fgyo.income.partner_organization', type: 'income' },
-    { value: 'fgyo.income.private_institution', type: 'income' },
+    { value: 'fgyo.income.publicFunds', type: 'income' },
+    { value: 'fgyo.income.localOrganization', type: 'income' },
+    { value: 'fgyo.income.partnerOrganization', type: 'income' },
+    { value: 'fgyo.income.privateInstitutions', type: 'income' },
     { value: 'fgyo.income.companies', type: 'income' },
-    { value: 'fgyo.income.participation_fees', type: 'income' },
+    { value: 'fgyo.income.participationFees', type: 'income' },
     { value: 'fgyo.income.foundation', type: 'income' },
     { value: 'fgyo.income.others', type: 'income' },
-    // expense
-    { value: 'fgyo.expense.travel_costs', type: 'expense' },
-    { value: 'fgyo.expense.basic_costs', type: 'expense' },
-    { value: 'fgyo.expense.project_costs', type: 'expense' },
-    { value: 'fgyo.expense.material_costs', type: 'expense' },
-    { value: 'fgyo.expense.language_support_costs', type: 'expense' },
-    { value: 'fgyo.expense.hybrid_project_costs', type: 'expense' },
-    { value: 'fgyo.expense.non_project_related_expenses', type: 'expense' },
-    { value: 'fgyo.expense.investment_costs', type: 'expense' },
-    { value: 'fgyo.expense.personnel_costs', type: 'expense' },
-    { value: 'fgyo.expense.others', type: 'expense' },
   ],
 };
 
