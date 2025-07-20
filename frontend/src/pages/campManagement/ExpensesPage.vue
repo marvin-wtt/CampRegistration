@@ -115,6 +115,7 @@
                 <q-item-section side>
                   <q-btn
                     icon="download"
+                    :disable="expenses.length === 0"
                     outline
                     round
                     dense
@@ -131,7 +132,7 @@
       <expenses-list-panel
         class="col-grow q-pt-sm"
         :expenses="filteredExpenses"
-        :loading="loading"
+        :loading
         @show="onShowExpense"
         @edit="onEditExpense"
         @delete="onDeleteExpense"
