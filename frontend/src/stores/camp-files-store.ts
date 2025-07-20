@@ -82,7 +82,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
 
   async function downloadFile(file: ServiceFile) {
     await withErrorNotification('download', async () => {
-      const blob = await apiService.downloadFile(file.id);
+      const blob = await apiService.downloadFile(file.url);
 
       exportFile(file.name, blob, {
         mimeType: file.type,

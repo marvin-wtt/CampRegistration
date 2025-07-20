@@ -36,9 +36,7 @@ export function useFileService() {
     await api.delete(`camps/${campId}/files/${fileId}`);
   }
 
-  async function downloadFile(id: string): Promise<Blob> {
-    const url = getFileUrl(id);
-
+  async function downloadFile(url: string): Promise<Blob> {
     const response = await api.get(url, {
       responseType: 'blob',
     });
