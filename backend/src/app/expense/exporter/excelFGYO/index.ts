@@ -1,33 +1,36 @@
-import { useExcel } from '#app/expense/exporter/excel.expense.exporter.js';
-import ApiError from '#utils/ApiError.js';
+import { useExcel } from '#app/expense/exporter/excel.expense.exporter';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import type {
   ReceiptListFileConfig,
   BudgetCategories,
 } from '#app/expense/exporter/excelFGYO/ReceiptListFileConfig';
 import type { Response } from 'express';
-import type { ExpenseWithFile } from '#app/expense/expense.exporter.js';
+import { receiptListConfigs } from '#app/expense/exporter/excelFGYO/receiptListConfigs';
+import type { Expense } from '@camp-registration/common/entities';
+import { publicPath } from '#utils/paths.js';
+import { objectValueByPath } from '@camp-registration/web/src/utils/objectValueByPath.js';
 
-export const exportExcelFGYO = async (
-  data: ExpenseWithFile[],
-  res: Response,
-) => {
+export const exportExcelFGYO = async (data: Expense[], res: Response) => {
   res.setHeader(
     'Content-Type',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   );
   res.setHeader('Content-Disposition', 'attachment; filename="expenses.xlsx"');
 
-  const config: ReceiptListFileConfig = {};
+  // TODO Use the locale from the request or user settings
+  const config: ReceiptListFileConfig = receiptListConfigs.de;
 
   const { income, eligibleExpenditures, nonEligibleExpenditures } =
     prepareFGYOExcelData(data, {
       income: config.sections.income.categories,
-      eligibleExpenses: config.sections.eligibleExpenses.categories,
-      nonEligibleExpenses: config.sections.nonEligibleExpenses.categories,
+      eligible: config.sections.eligibleExpenses.categories,
+      nonEligible: config.sections.nonEligibleExpenses.categories,
     });
 
-  const { writeWithDefault, duplicateRows } = await useExcel(config.file);
+  const { writeWithDefault, duplicateRows } = await useExcel(
+    publicPath(config.file),
+  );
 
   const timestampDate = (timestamp: string | null): string | null => {
     return timestamp?.split('T')[0] ?? null;
@@ -113,52 +116,49 @@ const prepareFGYOExcelData = (
   data: Expense[],
   categories: BudgetCategories,
 ) => {
-  const eligibleExpenditures: Expense[] = [];
-  const nonEligibleExpenditures: Expense[] = [];
-  const income: Expense[] = [];
-
   data.forEach((expense) => {
-    if (expense.amount === 0) return;
-
-    // Income
-    if (expense.amount < 0) {
-      if (
-        !expense.category ||
-        !Object.values(categories.income).includes(expense.category)
-      ) {
-        expense = {
-          ...expense,
-          amount: expense.amount * -1,
-          category: categories.income.others,
-        };
-      }
-
-      income.push(expense);
-      return;
-    }
-
-    // Eligible expenditures
+    // If the category is not defined or not a string, assign the default category
     if (
-      expense.category &&
-      Object.values(categories.eligibleExpenses).includes(expense.category)
+      !expense.category.startsWith('fgyo.') ||
+      typeof objectValueByPath(
+        expense.category.replace('fgyo.', ''),
+        categories,
+      ) !== 'string'
     ) {
-      eligibleExpenditures.push(expense);
-      return;
+      expense.category =
+        expense.amount >= 0 ? 'fgyo.nonEligible.others' : 'fgyo.income.others';
     }
 
-    // Non-eligible expenditures
-    if (
-      !expense.category ||
-      !Object.values(categories.nonEligibleExpenses).includes(expense.category)
-    ) {
-      expense = {
-        ...expense,
-        category: categories.nonEligibleExpenses.others,
-      };
-    }
-
-    nonEligibleExpenditures.push(expense);
+    expense.category = expense.category.replace('fgyo.', '');
   });
+
+  const eligibleExpenditures: Expense[] = data
+    .filter((expense) => expense.category.startsWith('eligible.'))
+    .map((expense) => ({
+      ...expense,
+      category: objectValueByPath(
+        expense.category,
+        categories.eligible,
+      ) as string,
+    }));
+  const nonEligibleExpenditures: Expense[] = data
+    .filter((expense) => expense.category.startsWith('nonEligible.'))
+    .map((expense) => ({
+      ...expense,
+      category: objectValueByPath(
+        expense.category,
+        categories.eligible,
+      ) as string,
+    }));
+  const income: Expense[] = data
+    .filter((expense) => expense.category.startsWith('income.'))
+    .map((expense) => ({
+      ...expense,
+      category: objectValueByPath(
+        expense.category,
+        categories.eligible,
+      ) as string,
+    }));
 
   return {
     income,

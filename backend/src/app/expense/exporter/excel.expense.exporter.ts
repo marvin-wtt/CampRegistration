@@ -1,9 +1,9 @@
 import Excel from 'exceljs';
 import type Stream from 'node:stream';
 
-export async function useExcel(buffer: ArrayBuffer) {
+export async function useExcel(file: string) {
   const workbook = new Excel.Workbook();
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.readFile(file);
 
   let ws: Excel.Worksheet | undefined = undefined;
   function loadWorksheet(name: string) {

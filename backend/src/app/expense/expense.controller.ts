@@ -23,7 +23,11 @@ class ExpenseController extends BaseController {
     const expenses = await expenseService.queryExpenses(campId);
 
     if (exportType != null && exportType !== 'json') {
-      await exportExpenses(exportType, expenses, res);
+      await exportExpenses(
+        exportType,
+        ExpenseResource.collection(expenses).transform(),
+        res,
+      );
       return;
     }
 

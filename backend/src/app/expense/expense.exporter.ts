@@ -3,15 +3,9 @@ import httpStatus from 'http-status';
 import { exportCSV } from '#app/expense/exporter/csv.expense.exporter.js';
 import { exportExcelFGYO } from '#app/expense/exporter/excelFGYO/index';
 import type { Response } from 'express';
-import type { Expense, File } from '@prisma/client';
+import type { Expense } from '@camp-registration/common/entities';
 
-export type ExpenseWithFile = Expense & { file?: File | null };
-
-const exportExpenses = (
-  type: string,
-  expenses: ExpenseWithFile[],
-  res: Response,
-) => {
+const exportExpenses = (type: string, expenses: Expense[], res: Response) => {
   switch (type) {
     case 'csv':
       exportCSV(expenses, res);
