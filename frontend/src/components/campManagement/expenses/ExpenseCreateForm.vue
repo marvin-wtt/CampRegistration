@@ -222,6 +222,18 @@ watch(
   },
 );
 
+watch(
+  () => model.value.amount,
+  (value, oldValue) => {
+    if (
+      oldValue !== undefined &&
+      (value == undefined || value * oldValue < 0)
+    ) {
+      delete model.value.category;
+    }
+  },
+);
+
 function currentDate(): string {
   return new Date().toISOString().split('T')[0]!;
 }

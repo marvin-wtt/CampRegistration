@@ -286,6 +286,18 @@ watch(
   },
 );
 
+watch(
+  () => model.value.amount,
+  (value, oldValue) => {
+    if (
+      oldValue !== undefined &&
+      (value == undefined || value * oldValue < 0)
+    ) {
+      delete model.value.category;
+    }
+  },
+);
+
 function formatDateString(date: string): string {
   return date.split('T')[0] ?? '';
 }
