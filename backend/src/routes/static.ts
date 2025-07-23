@@ -8,7 +8,7 @@ const router = express.Router();
 router.use(staticLimiter);
 
 // public content
-router.use(express.static('public'));
+router.use('/public', express.static('public'));
 
 // Serve frontend content
 // TODO Is there a better way to load the files?

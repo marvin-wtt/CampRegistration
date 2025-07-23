@@ -8,6 +8,7 @@
     "clean": "rimraf ./build/ && rimraf ./node_modules/",
     "build": "prisma generate && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
     "build:views": "mkdirp ./build/views/emails/ && mjml src/views/emails/**/*.mjml -o ./build/views/emails/",
+    "seed": "prisma db seed",
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
     "db:reset": "npx prisma db push --force-reset --accept-data-loss",
@@ -62,6 +63,7 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@camp-registration/web": "*",
+    "@fast-csv/format": "^5.0.2",
     "@prisma/client": "^6.10.1",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.0",

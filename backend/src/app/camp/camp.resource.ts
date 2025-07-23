@@ -16,6 +16,7 @@ export class CampResource extends JsonResource<
   transform(): CampResourceData {
     return {
       id: this.data.id,
+      type: this.data.type ?? null,
       public: this.data.public,
       active: this.data.active,
       countries: this.data.countries,
