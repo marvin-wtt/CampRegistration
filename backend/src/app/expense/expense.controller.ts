@@ -27,7 +27,6 @@ class ExpenseController extends BaseController {
         exportType,
         ExpenseResource.collection(expenses).transform(),
         req.preferredLocale(),
-        res,
       );
 
       res.setHeader('Content-Type', contentType);

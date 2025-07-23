@@ -359,7 +359,7 @@ function onShowExpense(expense: Expense) {
 }
 
 function onExport() {
-  expensesStore.exportData('csv');
+  expensesStore.exportData('excel-fgyp');
 }
 </script>
 
