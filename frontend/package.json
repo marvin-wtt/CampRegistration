@@ -38,7 +38,7 @@
     "@tiptap/vue-3": "^2.11.9",
     "@vue/eslint-config-prettier": "^10.2.0",
     "apexcharts": "^4.7.0",
-    "axios": "^1.9.0",
+    "axios": "^1.11.0",
     "dom-to-image": "^2.6.0",
     "flag-icons": "^7.3.2",
     "http-status": "^2.1.0",
