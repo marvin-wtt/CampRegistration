@@ -1,8 +1,8 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const stream = z.object({
   params: z.object({
-    fileId: z.string().ulid(),
+    fileId: z.ulid(),
   }),
   query: z
     .object({
@@ -13,7 +13,7 @@ const stream = z.object({
 
 const show = z.object({
   params: z.object({
-    fileId: z.string().ulid(),
+    fileId: z.ulid(),
   }),
 });
 
@@ -33,11 +33,12 @@ const store = z.object({
     field: z.string().optional(),
     accessLevel: z.string().optional(),
   }),
+  file: z.custom<Express.Multer.File>(),
 });
 
 const destroy = z.object({
   params: z.object({
-    fileId: z.string().ulid(),
+    fileId: z.ulid(),
   }),
 });
 
