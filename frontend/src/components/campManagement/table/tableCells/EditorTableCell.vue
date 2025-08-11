@@ -2,7 +2,7 @@
   {{ cellProps.value }}
 
   <q-popup-proxy
-    v-if="!printing"
+    v-if="enabled"
     v-model="popupState"
   >
     <q-banner>
@@ -69,11 +69,13 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { usePermissions } from 'src/composables/permissions';
 
 const { props: cellProps, printing } = defineProps<TableCellProps>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { can } = usePermissions();
 const registrationsStore = useRegistrationsStore();
 
 const popupState = ref<boolean>(false);
@@ -93,6 +95,14 @@ const fieldName = computed<string | undefined>(() => {
 const registrationId = computed<string | undefined>(() =>
   getStringValue(cellProps.row, 'id'),
 );
+
+const enabled = computed<boolean>(() => {
+  if (printing) {
+    return false;
+  }
+
+  return can('camp.registrations.edit');
+});
 
 const error = computed<string | null>(() => {
   if (!registrationId.value) {
