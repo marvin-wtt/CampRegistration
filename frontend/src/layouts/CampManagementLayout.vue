@@ -155,8 +155,8 @@ const campDetailStore = useCampDetailsStore();
 const { user } = storeToRefs(profileStore);
 
 async function init() {
-  if (!user.value) {
-    // Fetch user instead of init to force redirect on error
+  // Initialize auth if user is not loaded and not already initializing
+  if (!user.value && !authStore.isInitializing) {
     await authStore.init();
   }
   if (route.params.camp) {
