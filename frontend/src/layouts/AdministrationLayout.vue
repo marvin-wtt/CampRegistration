@@ -112,7 +112,8 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const { user } = storeToRefs(profileStore);
 
-if (!profileStore.user) {
+// Initialize auth if user is not loaded and not already initializing
+if (!profileStore.user && !authStore.isInitializing) {
   authStore.init();
 }
 

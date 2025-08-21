@@ -8,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useProfileStore } from 'stores/profile-store';
+import { ref } from 'vue';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -29,9 +30,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
+  
+  // Track if auth is being initialized to prevent premature router redirects
+  const isInitializing = ref(false);
 
   router.beforeEach((to) => {
-    if (!to.meta.auth || profileStore.loading || profileStore.user) {
+    if (!to.meta.auth || profileStore.loading || profileStore.user || isInitializing.value) {
       return;
     }
 
@@ -66,20 +70,27 @@ export const useAuthStore = defineStore('auth', () => {
       accessTokenTimer = null;
     }
 
+    isInitializing.value = false;
     resetDefault();
   }
 
   async function init() {
-    const authenticated = await refreshTokens();
-    if (!authenticated) {
-      // Redirect, in case the user is not authenticated
-      if (route.meta.auth) {
-        await redirectToLogin();
+    isInitializing.value = true;
+    
+    try {
+      const authenticated = await refreshTokens();
+      if (!authenticated) {
+        // Redirect, in case the user is not authenticated
+        if (route.meta.auth) {
+          await redirectToLogin();
+        }
+        return;
       }
-      return;
-    }
 
-    await profileStore.fetchProfile();
+      await profileStore.fetchProfile();
+    } finally {
+      isInitializing.value = false;
+    }
   }
 
   async function login(
@@ -259,6 +270,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     error,
     loading: isLoading,
+    isInitializing,
     init,
     reset,
     login,
