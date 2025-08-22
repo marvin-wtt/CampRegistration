@@ -13,10 +13,15 @@ declare module '@vue/runtime-core' {
 // good idea to move this instance creation inside the
 // "export default () => {}" function below (which runs individually
 // for each client)
+const apiUrl = window.origin;
 const api = axios.create({
-  baseURL: `${window.origin}/api/v1/`,
+  baseURL: `${apiUrl}/api/v1/`,
   // Needed for auth
   withCredentials: true,
+});
+
+const publicFiles = axios.create({
+  baseURL: `${apiUrl}/`,
 });
 
 export default defineBoot(({ app }) => {
@@ -31,4 +36,4 @@ export default defineBoot(({ app }) => {
   //       so you can easily perform requests against your app's API
 });
 
-export { api };
+export { api, publicFiles };

@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import type {
@@ -123,3 +123,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     invalidate,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(
+    acceptHMRUpdate(useRegistrationsStore, import.meta.hot),
+  );
+}

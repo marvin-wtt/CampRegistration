@@ -41,6 +41,8 @@
           @logout="logout()"
         />
       </q-toolbar>
+
+      <div id="toolbar-content" />
     </q-header>
 
     <q-drawer
@@ -214,6 +216,13 @@ const items: NavigationItemProps[] = [
     icon: 'single_bed',
     permission: 'camp.rooms.view',
     to: { name: 'room-planner' },
+  },
+  {
+    name: 'expenses',
+    preview: true,
+    label: t('expenses'),
+    icon: 'payments',
+    to: { name: 'expenses' },
   },
   {
     name: 'settings',

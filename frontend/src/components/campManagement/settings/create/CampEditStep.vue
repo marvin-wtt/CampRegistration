@@ -4,6 +4,7 @@
     :title
     :done
     :header-nav="done"
+    :disable="props.disable"
     :error
     :icon
   >
@@ -40,7 +41,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { type QStepProps } from 'quasar';
 
 const { t } = useI18n();
@@ -53,7 +54,8 @@ type Props = QStepProps & {
   name: number;
   title?: string;
   last?: boolean;
-};
+    disable?: boolean;
+  };
 
 const { name, title = '', last = false } = defineProps<Props>();
 const emit = defineEmits<{
@@ -81,6 +83,21 @@ function previousStep() {
   step.value--;
   emit('previous-step');
 }
+
+watch(
+  () => step.value,
+  (value, oldValue) => {
+    if (!props.disable || value !== props.name) {
+      return;
+    }
+
+    if (value > oldValue) {
+      nextStep();
+    } else {
+      previousStep();
+    }
+  },
+);
 </script>
 
 <i18n lang="yaml" locale="en">

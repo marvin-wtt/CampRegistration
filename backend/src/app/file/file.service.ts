@@ -224,6 +224,7 @@ export class FileService extends BaseService {
         registrationId: null,
         messageId: null,
         messageTemplateId: null,
+        expenseId: null,
         createdAt: { lt: minAge },
       },
       select: {

@@ -43,6 +43,7 @@ function validateRecordKeys(
 const store = z.object({
   body: z
     .object({
+      type: z.string().optional(),
       active: z.boolean().optional(),
       public: z.boolean().optional(),
       countries: z.array(z.string().length(2)).min(1),
@@ -117,6 +118,7 @@ const update = (camp: Camp) =>
     }),
     body: z
       .object({
+        type: z.string().nullable(),
         active: z.boolean(),
         public: z.boolean(),
         countries: z.array(z.string().length(2)).min(1),

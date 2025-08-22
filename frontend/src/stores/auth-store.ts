@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useAPIService } from 'src/services/APIService';
 import type {
   AuthTokens,
@@ -26,7 +26,6 @@ export const useAuthStore = defineStore('auth', () => {
   } = useServiceHandler<void>('auth');
 
   let partialAuthToken: string | undefined = undefined;
-
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
 
@@ -271,3 +270,7 @@ export const useAuthStore = defineStore('auth', () => {
     verifyOtp,
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));
+}

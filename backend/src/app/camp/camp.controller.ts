@@ -95,6 +95,7 @@ class CampController extends BaseController {
     const camp = await campService.createCamp(
       userId,
       {
+        type: body.type,
         countries: body.countries,
         name: body.name,
         organizer: body.organizer,

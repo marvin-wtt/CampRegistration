@@ -162,7 +162,9 @@ function defaultValue(): string | number {
 }
 
 function defaultTranslations(): Translations {
-  return typeof model.value === 'object' && model.value ? model.value : {};
+  return model.value && typeof model.value === 'object' && model.value
+    ? model.value
+    : {};
 }
 
 const lastEmittedValue = ref<ModelValueType>();
@@ -193,7 +195,7 @@ watch(
     if (typeof newValue === 'string' || typeof newValue === 'number') {
       value.value = newValue;
       useTranslations.value = false;
-    } else if (typeof newValue === 'object' && newValue !== null) {
+    } else if (newValue && typeof newValue === 'object' && newValue !== null) {
       translations.value = newValue;
       useTranslations.value = true;
     } else {

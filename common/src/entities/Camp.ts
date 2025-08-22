@@ -4,6 +4,7 @@ import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable.js';
 
 export interface Camp extends Identifiable {
+  type: string | null;
   public: boolean;
   active: boolean;
   countries: string[];
@@ -40,6 +41,7 @@ export interface CampQuery {
   sortBy?: keyof Camp;
   sortType?: 'asc' | 'desc';
 
+  type?: string;
   name?: string;
   country?: string;
   age?: number;
