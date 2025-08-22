@@ -1,46 +1,46 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
-    email: z.string().email(),
+    email: z.email(),
     role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
-    expiresAt: z.string().datetime().optional(),
+    expiresAt: z.iso.datetime().optional(),
   }),
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    managerId: z.string().ulid(),
+    campId: z.ulid(),
+    managerId: z.ulid(),
   }),
   body: z
     .object({
       role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
-      expiresAt: z.string().datetime().nullable(),
+      expiresAt: z.iso.datetime().nullable(),
     })
     .partial(),
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    managerId: z.string().ulid(),
+    campId: z.ulid(),
+    managerId: z.ulid(),
   }),
 });
 
 const accept = z.object({
   params: z.object({
-    managerId: z.string().ulid(),
-    token: z.string().ulid(),
+    managerId: z.ulid(),
+    token: z.ulid(),
   }),
 });
 
