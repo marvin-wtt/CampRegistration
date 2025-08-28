@@ -162,7 +162,7 @@ async function uploadFile(file: File): Promise<string> {
 }
 </script>
 
-<i18n lang="yaml" locale="em">
+<i18n lang="yaml" locale="en">
 option:
   details: 'Show details'
   edit: 'Edit'
