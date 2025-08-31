@@ -29,10 +29,8 @@ const formattedPhoneNumber = computed<string | unknown>(() => {
 
   // If the camp has only one country, use that country as fallback
   const country =
-    (registrationHelper.country(registration.value) ??
-    camp.countries.length === 1)
-      ? camp.countries[0]
-      : undefined;
+    registrationHelper.country(registration.value) ??
+    (camp.countries.length === 1 ? camp.countries[0] : undefined);
 
   const countryCode =
     country && isSupportedCountry(country) ? country : undefined;
