@@ -82,7 +82,7 @@ function applyBinding(router: Router, model: keyof Request['models']) {
       next(
         new ApiError(
           httpStatus.NOT_FOUND,
-          `No handler registered for model ${String(model)}.`,
+          `No handler registered for model ${model}.`,
         ),
       );
       return;

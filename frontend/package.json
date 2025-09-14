@@ -44,6 +44,7 @@
     "http-status": "^2.1.0",
     "jsep": "^1.4.0",
     "jspdf": "^3.0.2",
+    "libphonenumber-js": "^1.12.17",
     "pinia": "^3.0.2",
     "qrcode": "^1.5.4",
     "qrcode.vue": "^3.6.0",
