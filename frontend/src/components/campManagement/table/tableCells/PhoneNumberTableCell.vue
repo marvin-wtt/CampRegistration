@@ -32,8 +32,12 @@ const formattedPhoneNumber = computed<string | unknown>(() => {
     registrationHelper.country(registration.value) ??
     (camp.countries.length === 1 ? camp.countries[0] : undefined);
 
+  const normalizedCountry = country?.toUpperCase();
+
   const countryCode =
-    country && isSupportedCountry(country) ? country : undefined;
+    normalizedCountry && isSupportedCountry(normalizedCountry)
+      ? normalizedCountry
+      : undefined;
 
   return value
     .toString()
