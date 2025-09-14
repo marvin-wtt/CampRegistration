@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const AuthEnvSchema = z.object({
   JWT_SECRET: z.string().describe('JWT secret key').readonly(),
