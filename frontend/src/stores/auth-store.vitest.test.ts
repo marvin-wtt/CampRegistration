@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ref } from 'vue';
 
-// Simple unit test for the auth state management logic
+// Unit tests for the auth state management logic
 describe('Auth State Management', () => {
   it('should manage isInitializing state correctly', () => {
     // Simulate the auth store's isInitializing logic
@@ -19,36 +19,86 @@ describe('Auth State Management', () => {
     expect(isInitializing.value).toBe(false);
   });
 
-  it('should simulate router guard logic with isInitializing check', () => {
-    // Simulate the router guard conditions
+  it('should simulate new proactive router guard logic', () => {
+    // Simulate the new router guard conditions
     const isInitializing = ref(false);
     const profileLoading = false;
     const profileUser = null;
     const routeRequiresAuth = true;
     
-    // Function that simulates the router guard logic
-    const shouldRedirectToLogin = (
+    // Function that simulates the new router guard logic
+    const shouldTriggerInit = (
       requiresAuth: boolean,
       userLoading: boolean,
       user: any,
       initializing: boolean
     ) => {
-      return requiresAuth && !userLoading && !user && !initializing;
+      // Should trigger init if: route requires auth AND no user AND not loading AND not already initializing
+      return requiresAuth && !user && !userLoading && !initializing;
     };
     
-    // Test: Without isInitializing check (old behavior)
-    expect(shouldRedirectToLogin(routeRequiresAuth, profileLoading, profileUser, false)).toBe(true);
+    const shouldAllowNavigation = (
+      requiresAuth: boolean,
+      userLoading: boolean,
+      user: any
+    ) => {
+      // Should allow navigation if: route doesn't require auth OR user exists OR profile is loading
+      return !requiresAuth || !!user || userLoading;
+    };
     
-    // Test: With isInitializing check (new behavior) - should NOT redirect during initialization
-    expect(shouldRedirectToLogin(routeRequiresAuth, profileLoading, profileUser, true)).toBe(false);
+    // Test: Should trigger init when user visits protected route without auth
+    expect(shouldTriggerInit(routeRequiresAuth, profileLoading, profileUser, false)).toBe(true);
     
-    // Test: Should not redirect when user is present
-    expect(shouldRedirectToLogin(routeRequiresAuth, profileLoading, { id: 1 }, false)).toBe(false);
+    // Test: Should NOT trigger init when already initializing
+    expect(shouldTriggerInit(routeRequiresAuth, profileLoading, profileUser, true)).toBe(false);
     
-    // Test: Should not redirect when profile is loading
-    expect(shouldRedirectToLogin(routeRequiresAuth, true, profileUser, false)).toBe(false);
+    // Test: Should allow navigation when user is present
+    expect(shouldAllowNavigation(routeRequiresAuth, profileLoading, { id: 1 })).toBe(true);
     
-    // Test: Should not redirect when route doesn't require auth
-    expect(shouldRedirectToLogin(false, profileLoading, profileUser, false)).toBe(false);
+    // Test: Should allow navigation when profile is loading
+    expect(shouldAllowNavigation(routeRequiresAuth, true, profileUser)).toBe(true);
+    
+    // Test: Should allow navigation when route doesn't require auth
+    expect(shouldAllowNavigation(false, profileLoading, profileUser)).toBe(true);
+  });
+
+  it('should simulate the complete auth flow', async () => {
+    // Simulate a complete authentication flow
+    const isInitializing = ref(false);
+    let profileUser = null;
+    const profileLoading = false;
+    
+    // Simulate init function
+    const mockInit = async () => {
+      if (isInitializing.value) {
+        // Wait for existing init to complete
+        return;
+      }
+      
+      isInitializing.value = true;
+      
+      // Simulate async auth check
+      await new Promise(resolve => setTimeout(resolve, 1));
+      
+      // Simulate successful authentication
+      profileUser = { id: 1, name: 'Test User' };
+      
+      isInitializing.value = false;
+    };
+    
+    // Simulate router guard logic
+    const routeRequiresAuth = true;
+    
+    // Initially no user
+    expect(profileUser).toBe(null);
+    
+    // Should trigger init
+    if (routeRequiresAuth && !profileUser && !profileLoading && !isInitializing.value) {
+      await mockInit();
+    }
+    
+    // After init, should have user
+    expect(profileUser).not.toBe(null);
+    expect(isInitializing.value).toBe(false);
   });
 });

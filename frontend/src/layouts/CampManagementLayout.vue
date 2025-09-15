@@ -156,6 +156,8 @@ const { user } = storeToRefs(profileStore);
 
 async function init() {
   // Initialize auth if user is not loaded and not already initializing
+  // Note: Router guard now handles auth initialization for protected routes,
+  // but we still call it here in case this layout renders for other reasons
   if (!user.value && !authStore.isInitializing) {
     await authStore.init();
   }

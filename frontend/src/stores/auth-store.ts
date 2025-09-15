@@ -30,15 +30,35 @@ export const useAuthStore = defineStore('auth', () => {
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
+  let ongoingInit: Promise<void> | null = null;
   
   // Track if auth is being initialized to prevent premature router redirects
   const isInitializing = ref(false);
 
-  router.beforeEach((to) => {
-    if (!to.meta.auth || profileStore.loading || profileStore.user || isInitializing.value) {
+  router.beforeEach(async (to) => {
+    // Allow navigation for non-protected routes
+    if (!to.meta.auth) {
       return;
     }
 
+    // Allow navigation if user is already authenticated or profile is loading
+    if (profileStore.user || profileStore.loading) {
+      return;
+    }
+
+    // If auth initialization is not in progress, start it and wait for completion
+    if (!ongoingInit) {
+      ongoingInit = init();
+    }
+    
+    await ongoingInit;
+
+    // After initialization, check if user is now authenticated
+    if (profileStore.user) {
+      return; // Allow navigation
+    }
+
+    // If still not authenticated after initialization, redirect to login
     return buildLoginRoute();
   });
 
@@ -71,26 +91,34 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     isInitializing.value = false;
+    ongoingInit = null;
     resetDefault();
   }
 
   async function init() {
-    isInitializing.value = true;
-    
-    try {
-      const authenticated = await refreshTokens();
-      if (!authenticated) {
-        // Redirect, in case the user is not authenticated
-        if (route.meta.auth) {
-          await redirectToLogin();
-        }
-        return;
-      }
-
-      await profileStore.fetchProfile();
-    } finally {
-      isInitializing.value = false;
+    // If already initializing, wait for the existing initialization to complete
+    if (ongoingInit) {
+      return ongoingInit;
     }
+
+    // Create the initialization promise
+    ongoingInit = (async () => {
+      isInitializing.value = true;
+      
+      try {
+        const authenticated = await refreshTokens();
+        if (!authenticated) {
+          // Don't redirect from init - let the router guard handle this
+          return;
+        }
+
+        await profileStore.fetchProfile();
+      } finally {
+        isInitializing.value = false;
+      }
+    })();
+
+    return ongoingInit;
   }
 
   async function login(
