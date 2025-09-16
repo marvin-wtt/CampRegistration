@@ -4,13 +4,13 @@
     :loading
   >
     <result-table
-      v-if="camp.data.value"
+      v-if="campDetailStore.data"
       ref="table"
       class="absolute fit"
       :questions="columns"
-      :results="results"
-      :templates="templates.data.value ?? []"
-      :camp="camp.data.value"
+      :results="registrationStore.data ?? []"
+      :templates="templateStore.data ?? []"
+      :camp="campDetailStore.data"
     />
   </page-state-handler>
 </template>
@@ -18,15 +18,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { storeToRefs } from 'pinia';
 import { useRegistrationsStore } from 'stores/registration-store';
 import ResultTable from 'components/campManagement/table/ResultTable.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import type {
-  Registration,
-  TableColumnTemplate,
-} from '@camp-registration/common/entities';
+import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const campDetailStore = useCampDetailsStore();
@@ -38,24 +34,20 @@ campDetailStore.fetchData();
 registrationStore.fetchData();
 templateStore.fetchData();
 
-const camp = storeToRefs(campDetailStore);
-const registrations = storeToRefs(registrationStore);
-const templates = storeToRefs(templateStore);
-
 const loading = computed<boolean>(() => {
   return (
-    registrations.isLoading.value ||
-    camp.isLoading.value ||
-    templates.isLoading.value
+    registrationStore.isLoading ||
+    campDetailStore.isLoading ||
+    templateStore.isLoading
   );
 });
 
 const error = computed<string | null>(() => {
-  return camp.error.value ?? registrations.error.value;
+  return campDetailStore.error ?? registrationStore.error;
 });
 
 const columns = computed<TableColumnTemplate[]>(() => {
-  const data = camp.data.value;
+  const data = campDetailStore.data;
 
   const columns: TableColumnTemplate[] = [];
 
@@ -87,15 +79,5 @@ const columns = computed<TableColumnTemplate[]>(() => {
   });
 
   return columns;
-});
-
-const results = computed<Registration[]>(() => {
-  const results = registrations.data.value;
-
-  if (!results) {
-    return [];
-  }
-
-  return results;
 });
 </script>
