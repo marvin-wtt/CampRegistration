@@ -10,7 +10,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 const { t, d } = useI18n();
 const timeIntervals = {
   second: 1000,
@@ -23,22 +23,22 @@ const timeIntervals = {
 };
 
 const timestamp = computed<string | unknown>(() => {
-  if (typeof props.props.value !== 'string') {
-    return props.props.value;
+  if (typeof cellProps.value !== 'string') {
+    return cellProps.value;
   }
 
-  return d(props.props.value, {
+  return d(cellProps.value, {
     dateStyle: 'long',
     timeStyle: 'long',
   });
 });
 
 const timeAgo = computed<string>(() => {
-  if (typeof props.props.value !== 'string') {
+  if (typeof cellProps.value !== 'string') {
     return '?';
   }
 
-  const date = new Date(props.props.value);
+  const date = new Date(cellProps.value);
   if (isNaN(date.getTime())) {
     return '!';
   }

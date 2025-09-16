@@ -24,10 +24,10 @@ interface Icon {
   opacity: number;
 }
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 const icons = computed<Icon[]>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
 
   if (typeof value !== 'object' || value === null) {
     return [];
@@ -98,7 +98,7 @@ const levelToOpacity = (level: string): number => {
 };
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 </script>
 

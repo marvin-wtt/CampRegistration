@@ -167,6 +167,12 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
     return;
   }
 
+  // An error was thrown here in production - not sure why it should be nullish
+  if (!options.value) {
+    console.warn('Options has no value');
+    return;
+  }
+
   // Internal variables start with _
   if (options.value.startsWith('_')) {
     options.error = 'Zero is not allowed here.';

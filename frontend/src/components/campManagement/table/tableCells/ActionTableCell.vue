@@ -1,6 +1,6 @@
 <template>
   <q-btn
-    v-if="!props.printing"
+    v-if="!printing"
     :size="size"
     dense
     field="edit"
@@ -20,7 +20,7 @@
       </q-item>
 
       <q-item
-        v-if="!props.readonly && can('camp.registrations.edit')"
+        v-if="!readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="editItem"
@@ -30,7 +30,7 @@
         </q-item-section>
       </q-item>
       <q-item
-        v-if="waitingList && !props.readonly && can('camp.registrations.edit')"
+        v-if="waitingList && !readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="accept"
@@ -41,7 +41,7 @@
       </q-item>
       <q-separator />
       <q-item
-        v-if="!props.readonly && can('camp.registrations.delete')"
+        v-if="!readonly && can('camp.registrations.delete')"
         v-close-popup
         class="text-negative"
         clickable
@@ -70,7 +70,7 @@ import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { usePermissions } from 'src/composables/permissions';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailStore = useCampDetailsStore();
@@ -80,15 +80,15 @@ const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 
 const registration = computed<Registration>(() => {
-  return props.props.row as Registration;
+  return cellProps.row;
 });
 
 const waitingList = computed<boolean>(() => {
-  return registration.value.waitingList;
+  return cellProps.row.waitingList;
 });
 
 function deleteItem(): void {
@@ -105,7 +105,7 @@ function deleteItem(): void {
       },
     })
     .onOk(async () => {
-      const id = registration.value.id;
+      const id = cellProps.row.id;
       await registrationStore.deleteData(id);
     });
 }
@@ -128,7 +128,7 @@ function accept(): void {
       },
     })
     .onOk(async () => {
-      const id = registration.value.id;
+      const id = cellProps.row.id;
       await registrationStore.updateData(id, {
         waitingList: false,
       });
@@ -141,12 +141,12 @@ function editItem(): void {
       component: EditResultComponent,
       componentProps: {
         camp: camp.data.value,
-        data: registration.value.data,
+        data: cellProps.row.data,
         uploadFileFn: uploadFile,
       },
     })
     .onOk((payload) => {
-      const id = registration.value.id;
+      const id = cellProps.row.id;
       registrationStore.updateData(id, { data: payload });
     });
 }

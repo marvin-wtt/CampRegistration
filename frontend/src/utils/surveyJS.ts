@@ -2,6 +2,7 @@ import {
   type PageModel,
   type PanelModel,
   type Question,
+  type QuestionSelectBase,
   SurveyModel,
 } from 'survey-core';
 
@@ -97,4 +98,101 @@ export function extractFormFields(form: object, prefix?: string): SelectData[] {
 
   // For each question, recursively collect all SelectData items.
   return survey.getAllQuestions().flatMap((q) => collectSelectData(q, prefix));
+}
+
+function getNestedQuestion(
+  question: Question | null | undefined,
+  path: string[],
+): Question | undefined {
+  path = [...path]; // Create a copy to avoid mutating the original array
+
+  while (path.length > 0) {
+    if (!question) {
+      return undefined;
+    }
+
+    if (IGNORED_TYPES.has(question.getType())) {
+      return undefined;
+    }
+
+    if (question.getType() === 'paneldynamic') {
+      question = (question.getPanel() as PanelModel).getQuestionByValueName(
+        path.shift()!,
+      );
+      continue;
+    }
+
+    const key = path.shift()!;
+    question = question
+      .getNestedQuestions()
+      .find((value) => value.getValueName() === key);
+  }
+
+  // Special handling for custom questions
+  if (question?.questionWrapper) {
+    return question.questionWrapper as Question;
+  }
+
+  return question ?? undefined;
+}
+
+function isSelectQuestion(question: Question): question is QuestionSelectBase {
+  const selectTypes = [
+    'dropdown',
+    'checkbox',
+    'radiogroup',
+    'imagepicker',
+    'ranking',
+  ];
+  return selectTypes.includes(question.getType());
+}
+
+function getQuestionOptions(
+  question: Question,
+): Record<string, string | Record<string, string>> | undefined {
+  if (!isSelectQuestion(question)) {
+    return undefined;
+  }
+
+  if (!question.choices || question.choices.length === 0) {
+    return undefined;
+  }
+
+  // Normalize choices
+  return question.choices.reduce((acc, choice) => {
+    if (typeof choice === 'string') {
+      acc[choice] = choice;
+      return acc;
+    }
+
+    acc[choice.value] = choice.locText
+      ? choice.locText.getJson()
+      : (choice.text ?? choice.value);
+
+    return acc;
+  }, {});
+}
+
+export function getSelectOptions(
+  form: object,
+  field: string,
+): Record<string, string | Record<string, string>> | undefined {
+  const model = new SurveyModel(form);
+
+  const parts = field.split('.');
+  const firstField = parts.shift();
+  if (firstField === undefined) {
+    return undefined;
+  }
+
+  const question = getNestedQuestion(
+    model.getQuestionByValueName(firstField),
+    parts,
+  );
+
+  if (question == null) {
+    return undefined;
+  }
+
+  return getQuestionOptions(question);
 }
