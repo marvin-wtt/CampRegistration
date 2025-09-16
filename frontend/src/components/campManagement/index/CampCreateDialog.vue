@@ -250,8 +250,8 @@
             :disable="loading"
             :label="t('field.minAge')"
             :rules="[
-              (val?: number) => !!val || t('validation.minAge.empty'),
-              (val: number) => val > 0 || t('validation.minAge.positive'),
+              (val?: number) => val != null || t('validation.minAge.empty'),
+              (val: number) => val >= 0 || t('validation.minAge.nonNegative'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
             hide-bottom-space
@@ -270,9 +270,9 @@
             :disable="loading"
             :label="t('field.maxAge')"
             :rules="[
-              (val: number) => !!val || t('validation.maxAge.empty'),
+              (val: number) => val != null || t('validation.maxAge.empty'),
               (val: number) =>
-                (data.minAge && val >= data.minAge) ||
+                (data.minAge != null && val >= data.minAge) ||
                 t('validation.maxAge.min'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
@@ -320,9 +320,8 @@
             :disable="loading"
             :label="t('field.price')"
             :rules="[
-              (val?: number) =>
-                !!val || val === 0 || t('validation.price.empty'),
-              (val: number) => val >= 0 || t('validation.price.positive'),
+              (val?: number) => val != null || t('validation.price.empty'),
+              (val: number) => val >= 0 || t('validation.price.nonNegative'),
             ]"
             hide-bottom-space
             input-class="text-right"
@@ -467,7 +466,7 @@ validation:
     empty: 'Please select an end time'
   minAge:
     empty: 'Please enter a minimum age'
-    positive: 'Minimum age must be a positive number'
+    nonNegative: 'Minimum age must not be negative'
     max: 'Minimum age must be less than 100'
   maxAge:
     empty: 'Please enter a maximum age'
@@ -478,7 +477,7 @@ validation:
     length: 'Location must not exceed 255 characters'
   price:
     empty: 'Please enter a price greater than or equal to 0'
-    positive: 'Price must be a positive number'
+    nonNegative: 'Price must not be negative'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -534,7 +533,7 @@ validation:
     empty: 'Bitte wählen Sie eine Endzeit aus'
   minAge:
     empty: 'Bitte geben Sie ein Mindestalter ein'
-    positive: 'Das Mindestalter muss eine positive Zahl sein'
+    nonNegative: 'Das Mindestalter darf nicht negativ sein'
     max: 'Das Mindestalter muss kleiner als 100 sein'
   maxAge:
     empty: 'Bitte geben Sie ein Höchstalter ein'
@@ -545,7 +544,7 @@ validation:
     length: 'Der Ort darf maximal 255 Zeichen haben'
   price:
     empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
-    positive: 'Der Preis muss eine positive Zahl sein'
+    nonNegative: 'Der Preis darf nicht negativ sein'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -601,7 +600,7 @@ validation:
     empty: 'Veuillez sélectionner une heure de fin'
   minAge:
     empty: 'Veuillez entrer un âge minimum'
-    positive: "L'âge minimum doit être un nombre positif"
+    nonNegative: "L'âge minimum ne doit pas être négatif"
     max: "L'âge minimum doit être inférieur à 100"
   maxAge:
     empty: 'Veuillez entrer un âge maximum'
@@ -612,5 +611,5 @@ validation:
     length: 'Le lieu ne doit pas dépasser 255 caractères'
   price:
     empty: 'Veuillez entrer un prix supérieur ou égal à 0'
-    positive: 'Le prix doit être un nombre positif'
+    nonNegative: 'Le prix ne doit pas être négatif'
 </i18n>
