@@ -250,8 +250,8 @@
             :disable="loading"
             :label="t('field.minAge')"
             :rules="[
-              (val?: number) => !!val || t('validation.minAge.empty'),
-              (val: number) => val > 0 || t('validation.minAge.positive'),
+              (val?: number) => val != null || t('validation.minAge.empty'),
+              (val: number) => val >= 0 || t('validation.minAge.positive'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
             hide-bottom-space
@@ -270,9 +270,9 @@
             :disable="loading"
             :label="t('field.maxAge')"
             :rules="[
-              (val: number) => !!val || t('validation.maxAge.empty'),
+              (val: number) => val != null || t('validation.maxAge.empty'),
               (val: number) =>
-                (data.minAge && val >= data.minAge) ||
+                (data.minAge != null && val >= data.minAge) ||
                 t('validation.maxAge.min'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
