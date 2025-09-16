@@ -11,6 +11,9 @@ interface SelectData {
   value: string;
 }
 
+const WILDCARD = '*';
+const SEPARATOR = '.';
+
 function removeMarkdownUrls(input: string): string {
   // Regular expression to match Markdown URLs
   const markdownUrlRegex = /\[([^\]]+)]\(([^)]+)\)/g;
@@ -41,13 +44,13 @@ function buildLabelAndValue(
   const nameParts = [parentName, question.getValueName()].filter(Boolean);
 
   if (ARRAY_OUTPUT_TYPES.has(question.getType())) {
-    titleParts.push('*');
-    nameParts.push('*');
+    titleParts.push(WILDCARD);
+    nameParts.push(WILDCARD);
   }
 
   return {
     label: removeMarkdownUrls(titleParts.join(' > ')),
-    value: nameParts.join('.'),
+    value: nameParts.join(SEPARATOR),
   };
 }
 
@@ -111,18 +114,22 @@ function getNestedQuestion(
       return undefined;
     }
 
+    const key = path.shift()!;
+    if (key === WILDCARD) {
+      continue;
+    }
+
     if (IGNORED_TYPES.has(question.getType())) {
       return undefined;
     }
 
     if (question.getType() === 'paneldynamic') {
       question = (question.getPanel() as PanelModel).getQuestionByValueName(
-        path.shift()!,
+        key,
       );
       continue;
     }
 
-    const key = path.shift()!;
     question = question
       .getNestedQuestions()
       .find((value) => value.getValueName() === key);
@@ -179,7 +186,7 @@ export function getSelectOptions(
 ): Record<string, string | Record<string, string>> | undefined {
   const model = new SurveyModel(form);
 
-  const parts = field.split('.');
+  const parts = field.split(SEPARATOR);
   const firstField = parts.shift();
   if (firstField === undefined) {
     return undefined;
