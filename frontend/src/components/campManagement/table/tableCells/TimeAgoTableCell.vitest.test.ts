@@ -3,6 +3,10 @@ import { mount } from '@vue/test-utils';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest';
+import type {
+  CampDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 
 installQuasarPlugin();
 
@@ -21,7 +25,13 @@ const createCellProps = (
   value: '2023-01-01T00:00:00Z',
   sort: () => {},
   row: {
-    startAt: '2023-01-01T00:00:00Z',
+    id: '' as Registration['id'],
+    locale: '' as Registration['locale'],
+    data: {} as Registration['data'],
+    computedData: {} as Registration['computedData'],
+    customData: {} as Registration['customData'],
+    waitingList: false,
+    createdAt: '2023-01-01T00:00:00Z',
   },
   rowIndex: 0,
   pageIndex: 0,
@@ -56,6 +66,8 @@ const createCamp = (
   price: 50,
   location: 'Test Location',
   freePlaces: 10,
+  form: {} as CampDetails['form'],
+  themes: {} as CampDetails['themes'],
   ...overrides,
 });
 
