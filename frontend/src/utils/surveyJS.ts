@@ -104,6 +104,8 @@ function getNestedQuestion(
   question: Question | null | undefined,
   path: string[],
 ): Question | undefined {
+  path = [...path]; // Create a copy to avoid mutating the original array
+
   while (path.length > 0) {
     if (!question) {
       return undefined;
