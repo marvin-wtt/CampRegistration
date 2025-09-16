@@ -2,7 +2,7 @@
   {{ formattedPhoneNumber }}
 
   <q-tooltip v-if="formattedPhoneNumber">
-    {{ props.value }}
+    {{ cellProps.value }}
   </q-tooltip>
 </template>
 
@@ -13,15 +13,15 @@ import type { TableCellProps } from 'components/campManagement/table/tableCells/
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import type { Registration } from '@camp-registration/common/entities';
 
-const { props, camp } = defineProps<TableCellProps>();
+const { props: cellProps, camp } = defineProps<TableCellProps>();
 const registrationHelper = useRegistrationHelper();
 
 const registration = computed<Registration>(() => {
-  return props.row;
+  return cellProps.row;
 });
 
 const formattedPhoneNumber = computed<string | unknown>(() => {
-  const value = props.value;
+  const value = cellProps.value;
 
   if (typeof value !== 'string' && typeof value !== 'number') {
     return value;

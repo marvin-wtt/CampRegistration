@@ -1,7 +1,7 @@
 <template>
   <q-btn
     v-if="visible"
-    :size="size"
+    :size
     class="q-mx-sm q-px-sm"
     dense
     flat
@@ -12,13 +12,13 @@
         dense
         style="max-width: 500px"
       >
-        {{ props.props.value }}
+        {{ props.value }}
       </q-banner>
     </q-popup-proxy>
   </q-btn>
 
   <template v-if="invalid">
-    {{ props.props.value }}
+    {{ props.value }}
   </template>
 </template>
 
@@ -26,26 +26,26 @@
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 const invalid = computed<boolean>(() => {
-  return props.props.value !== undefined && !isString(props.props.value);
+  return cellProps.value !== undefined && !isString(cellProps.value);
 });
 
 const visible = computed<boolean>(() => {
   return (
-    props.props.value !== undefined &&
-    isString(props.props.value) &&
-    props.props.value.length > 0
+    cellProps.value !== undefined &&
+    isString(cellProps.value) &&
+    cellProps.value.length > 0
   );
 });
 
 function isString(data: unknown): data is string {
-  return typeof props.props.value === 'string';
+  return typeof cellProps.value === 'string';
 }
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 </script>
 
