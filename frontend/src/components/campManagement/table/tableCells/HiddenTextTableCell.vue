@@ -12,13 +12,13 @@
         dense
         style="max-width: 500px"
       >
-        {{ props.value }}
+        {{ cellProps.value }}
       </q-banner>
     </q-popup-proxy>
   </q-btn>
 
   <template v-if="invalid">
-    {{ props.value }}
+    {{ cellProps.value }}
   </template>
 </template>
 
@@ -41,7 +41,7 @@ const visible = computed<boolean>(() => {
 });
 
 function isString(data: unknown): data is string {
-  return typeof cellProps.value === 'string';
+  return typeof data === 'string';
 }
 
 const size = computed<string>(() => {
