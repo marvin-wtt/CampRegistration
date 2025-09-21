@@ -68,19 +68,19 @@ const tokens = computed<TokenRegistry[]>(() => {
           items: [
             {
               label: t('token.registration.computed.entry.email'),
-              value: 'email.[0]',
+              value: 'emails.[0]',
             },
             {
               label: t('token.registration.computed.entry.firstName'),
-              value: 'first_name.[0]',
+              value: 'firstName',
             },
             {
               label: t('token.registration.computed.entry.lastName'),
-              value: 'last_name.[0]',
+              value: 'lastName',
             },
             {
               label: t('token.registration.computed.entry.role'),
-              value: 'role.[0]',
+              value: 'role',
             },
           ],
         },
