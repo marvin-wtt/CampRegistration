@@ -132,8 +132,24 @@ export class CampService extends BaseService {
       createdAt: undefined,
     }));
 
-    const messageTemplateData = messageTemplates.map((value) => ({
-      ...value,
+    // Only keep message templates for the countries of the camp
+    // Other languages can't be edited by the user
+    messageTemplates = messageTemplates.map((template) => ({
+      ...template,
+      subject: Object.fromEntries(
+        Object.entries(template.subject).filter(([lang]) =>
+          data.countries.includes(lang),
+        ),
+      ),
+      body: Object.fromEntries(
+        Object.entries(template.body).filter(([lang]) =>
+          data.countries.includes(lang),
+        ),
+      ),
+    }));
+
+    const messageTemplateData = messageTemplates.map((template) => ({
+      ...template,
       attachments: undefined,
     }));
 
