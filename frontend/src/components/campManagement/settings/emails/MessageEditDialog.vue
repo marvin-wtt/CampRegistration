@@ -12,7 +12,7 @@
         @reset="onDialogCancel"
       >
         <q-card-section class="text-h5">
-          {{ t('page.title', { name: props.name }) }}
+          {{ t('page.title', { name }) }}
         </q-card-section>
 
         <q-card-section class="row no-wrap">
@@ -28,7 +28,7 @@
             class="col"
           >
             <q-expansion-item
-              v-for="(country, i) in props.countries"
+              v-for="(country, i) in countries"
               :key="country"
               group="country"
               :default-opened="i === 0"
@@ -130,7 +130,7 @@
           </div>
 
           <div
-            v-if="props.countries.length > 1"
+            v-if="countries.length > 1"
             class="col-shrink self-center q-ml-sm"
           >
             <translation-toggle-btn
@@ -179,7 +179,7 @@ const { t } = useI18n();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const props = defineProps<{
+const { name, subject, body, form, countries } = defineProps<{
   name: string;
   subject: string | Record<string, string>;
   body: string | Record<string, string>;
@@ -188,8 +188,8 @@ const props = defineProps<{
 }>();
 
 const message = reactive({
-  subject: structuredClone(deepToRaw(props.subject)),
-  body: structuredClone(deepToRaw(props.body)),
+  subject: structuredClone(deepToRaw(dropUnsupportedLangs(subject))),
+  body: structuredClone(deepToRaw(dropUnsupportedLangs(body))),
 });
 
 const translated = computed<boolean>(() => {
@@ -198,18 +198,34 @@ const translated = computed<boolean>(() => {
   );
 });
 
+function dropUnsupportedLangs(input: string | Record<string, string>) {
+  return typeof input === 'string' ? input : buildTranslationObject(input);
+}
+
+function buildTranslationObject(
+  object: Record<string, string>,
+): Record<string, string> {
+  return Object.fromEntries(
+    countries.map((country) => [
+      country,
+      // if no value for country, take the first available value or empty string
+      object[country] ?? Object.values(object)[0] ?? '',
+    ]),
+  );
+}
+
 function toggleTranslations() {
   if (translated.value) {
-    message.subject = defaultString(props.subject);
-    message.body = defaultString(props.body);
+    message.subject = defaultString(subject);
+    message.body = defaultString(body);
   } else {
-    message.subject = defaultObject(props.subject);
-    message.body = defaultObject(props.body);
+    message.subject = defaultObject(subject);
+    message.body = defaultObject(body);
 
     // Set empty string as default value
-    for (const country in props.countries) {
-      message.subject[country] = message.subject[country] ?? '';
-      message.body[country] = message.body[country] ?? '';
+    for (const country in countries) {
+      message.subject[country] ??= '';
+      message.body[country] ??= '';
     }
   }
 }
@@ -217,18 +233,24 @@ function toggleTranslations() {
 function defaultObject(
   value: string | Record<string, string>,
 ): Record<string, string> {
-  return typeof value === 'string' ? {} : value;
+  if (typeof value === 'string') {
+    return Object.fromEntries(countries.map((country) => [country, value]));
+  }
+
+  return buildTranslationObject(value);
 }
 
 function defaultString(value: string | Record<string, string>): string {
-  return typeof value === 'string' ? value : '';
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return Object.values(value)[0] ?? '';
 }
 
 function onSave() {
   onDialogOK(message);
 }
-
-// TODO translate
 </script>
 
 <style scoped></style>
