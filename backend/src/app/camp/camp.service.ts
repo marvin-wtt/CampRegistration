@@ -136,13 +136,18 @@ export class CampService extends BaseService {
     // Other languages can't be edited by the user
     messageTemplates = messageTemplates.map((template) => ({
       ...template,
-      subject: Object.fromEntries(
-        data.countries.map((lang) => [lang, template.subject[lang]]),
-      ),
-      body: Object.fromEntries(
-        data.countries.map((lang) => [lang, template.body[lang]]),
-      ),
+      subject: filterLangs(template.body, data.countries),
+      body: filterLangs(template.body, data.countries),
     }));
+
+    const filterLangs = (
+      value: string | Record<string, unknown>,
+      langs: string[],
+    ) => {
+      return typeof value === 'string'
+        ? value
+        : Object.fromEntries(langs.map((lang) => [lang, value[lang]]));
+    };
 
     const messageTemplateData = messageTemplates.map((template) => ({
       ...template,
