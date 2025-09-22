@@ -223,7 +223,7 @@ function toggleTranslations() {
     message.body = defaultObject(body);
 
     // Set empty string as default value
-    for (const country in countries) {
+    for (const country of countries) {
       message.subject[country] ??= '';
       message.body[country] ??= '';
     }
