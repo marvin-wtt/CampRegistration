@@ -137,14 +137,10 @@ export class CampService extends BaseService {
     messageTemplates = messageTemplates.map((template) => ({
       ...template,
       subject: Object.fromEntries(
-        Object.entries(template.subject).filter(([lang]) =>
-          data.countries.includes(lang),
-        ),
+        data.countries.map((lang) => [lang, template.subject[lang]]),
       ),
       body: Object.fromEntries(
-        Object.entries(template.body).filter(([lang]) =>
-          data.countries.includes(lang),
-        ),
+        data.countries.map((lang) => [lang, template.body[lang]]),
       ),
     }));
 
