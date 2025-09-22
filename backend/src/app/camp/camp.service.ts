@@ -136,7 +136,7 @@ export class CampService extends BaseService {
     // Other languages can't be edited by the user
     messageTemplates = messageTemplates.map((template) => ({
       ...template,
-      subject: filterLangs(template.body, data.countries),
+      subject: filterLangs(template.subject, data.countries),
       body: filterLangs(template.body, data.countries),
     }));
 
