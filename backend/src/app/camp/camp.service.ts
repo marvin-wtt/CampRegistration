@@ -141,9 +141,9 @@ export class CampService extends BaseService {
     }));
 
     const filterLangs = (
-      value: string | Record<string, unknown>,
+      value: string | Record<string, string>,
       langs: string[],
-    ) => {
+    ): string | Record<string, string> => {
       return typeof value === 'string'
         ? value
         : Object.fromEntries(langs.map((lang) => [lang, value[lang]]));
