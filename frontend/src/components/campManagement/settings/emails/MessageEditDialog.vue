@@ -17,10 +17,7 @@
 
         <q-card-section class="row no-wrap">
           <q-list
-            v-if="
-              typeof message.subject !== 'string' &&
-              typeof message.body !== 'string'
-            "
+            v-if="!isString(message.subject) && !isString(message.body)"
             bordered
             outlined
             separator
@@ -36,7 +33,7 @@
               <template #header>
                 <q-item-section avatar>
                   <country-icon
-                    :country="country"
+                    :country
                     size="sm"
                   />
                 </q-item-section>
@@ -91,10 +88,7 @@
           </q-list>
 
           <div
-            v-if="
-              typeof message.subject === 'string' &&
-              typeof message.body === 'string'
-            "
+            v-if="isString(message.subject) && isString(message.body)"
             class="col-grow column no-wrap q-gutter-sm"
           >
             <registration-email-editor
@@ -193,10 +187,12 @@ const message = reactive({
 });
 
 const translated = computed<boolean>(() => {
-  return (
-    typeof message.subject !== 'string' && typeof message.body !== 'string'
-  );
+  return !isString(message.subject) || !isString(message.body);
 });
+
+function isString(value: string | Record<string, string>): value is string {
+  return typeof value === 'string';
+}
 
 function dropUnsupportedLangs(input: string | Record<string, string>) {
   return typeof input === 'string' ? input : buildTranslationObject(input);
