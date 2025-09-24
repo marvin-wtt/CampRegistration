@@ -8,10 +8,15 @@
 <script setup lang="ts">
 import type { CampDetails } from '@camp-registration/common/entities';
 import { computed } from 'vue';
-import type { TokenRegistry } from 'components/campManagement/contact/TokenRegistry';
 import { extractFormFields } from 'src/utils/surveyJS';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
 import { useI18n } from 'vue-i18n';
+import type {
+  RegistrationComputedPath,
+  RegistrationDataPath,
+  TokenNode,
+  TokenValue,
+} from 'components/campManagement/contact/TokenNode';
 
 const { t } = useI18n();
 
@@ -36,7 +41,9 @@ const campTokens: (keyof CampDetails)[] = [
   'location',
 ];
 
-const tokens = computed<TokenRegistry[]>(() => {
+const tokens = computed<
+  TokenNode<RegistrationComputedPath | RegistrationDataPath>[]
+>(() => {
   return [
     {
       value: 'camp',
@@ -82,7 +89,7 @@ const tokens = computed<TokenRegistry[]>(() => {
               label: t('token.registration.computed.entry.role'),
               value: 'role',
             },
-          ],
+          ] satisfies TokenValue<RegistrationComputedPath>[],
         },
       ],
     },
