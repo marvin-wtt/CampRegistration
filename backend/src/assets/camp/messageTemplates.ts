@@ -14,7 +14,7 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Vielen Dank für deine Anmeldung zum Camp <strong>{{ camp.name }}</strong>. Wir haben deine Anmeldung erhalten und freuen uns, dass du dabei bist. In Kürze erhältst du weitere Informationen – bleib gespannt!</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Liebe Grüße,<br>Dein Camp Team</p>`,
+           <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Merci pour ton inscription au camp <strong>{{ camp.name }}</strong>. Nous avons bien reçu ton inscription et sommes ravis de te compter parmi nous. Nous te contacterons bientôt avec plus de détails – reste à l'écoute !</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
@@ -36,7 +36,7 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Deine Anmeldung für das Camp <strong>{{ camp.name }}</strong> wurde bestätigt! Wir freuen uns sehr darauf, dich willkommen zu heißen und gemeinsam eine unvergessliche Zeit zu erleben.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Liebe Grüße,<br>Dein Camp Team</p>`,
+           <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Ton inscription au camp <strong>{{ camp.name }}</strong> a été confirmée ! Nous avons hâte de t'accueillir et de vivre ensemble une expérience inoubliable.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
@@ -58,7 +58,7 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Deine Anmeldung für das Camp <strong>{{ camp.name }}</strong> wurde auf die Warteliste gesetzt, da das Länderkontingent erreicht wurde. Wir halten dich auf dem Laufenden und informieren dich, sobald ein Platz frei wird.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Liebe Grüße,<br>Dein Camp Team</p>`,
+           <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Ton inscription au camp <strong>{{ camp.name }}</strong> a été placée sur la liste d'attente car la limite pour ton pays a été atteinte. Nous te tiendrons informé(e) et te contacterons dès qu'une place sera disponible.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
@@ -80,7 +80,7 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Gute Nachrichten! Deine Anmeldung von der Warteliste für das Camp <strong>{{ camp.name }}</strong> wurde nun bestätigt. Wir freuen uns sehr, dass du dabei bist, und erwarten eine fantastische Camp-Zeit.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Liebe Grüße,<br>Dein Camp Team</p>`,
+           <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Excellente nouvelle ! Ton inscription en liste d'attente pour le camp <strong>{{ camp.name }}</strong> a été confirmée. Nous sommes ravis de t'accueillir et attendons avec impatience une expérience de camp formidable ensemble.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
@@ -102,7 +102,7 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Deine Anmeldedaten für das Camp <strong>{{ camp.name }}</strong> wurden aktualisiert. Bitte prüfe die Änderungen und gib uns Bescheid, ob alles passt.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Liebe Grüße,<br>Dein Camp Team</p>`,
+           <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Les détails de ton inscription au camp <strong>{{ camp.name }}</strong> ont été mis à jour. Merci de vérifier les modifications et de nous dire si tout est en ordre.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
@@ -122,7 +122,7 @@ const messageTemplatesObj = {
            <p>Best regards,<br>Your Camp Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Wir bedauern, dir mitteilen zu müssen, dass deine Anmeldung für das Camp <strong>{{ camp.name }}</strong> storniert wurde. Falls du denkst, dass dies ein Fehler ist oder du Fragen hast, antworte bitte auf diese E-Mail.</p>
-           <p>Liebe Grüße,<br>Dein Camp Team</p>`,
+           <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Nous sommes désolés de t'informer que ton inscription au camp <strong>{{ camp.name }}</strong> a été annulée. Si tu penses qu'il s'agit d'une erreur ou si tu as des questions, réponds à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe du camp</p>`,
