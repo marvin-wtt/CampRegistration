@@ -24,6 +24,7 @@ import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
+import { extractFormFields } from 'src/utils/surveyJS';
 
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
@@ -48,36 +49,18 @@ const error = computed<string | null>(() => {
 
 const columns = computed<TableColumnTemplate[]>(() => {
   const data = campDetailStore.data;
-
-  const columns: TableColumnTemplate[] = [];
-
-  if (data?.form === undefined || !('pages' in data.form)) {
+  if (!data?.form) {
     return [];
   }
 
-  data.form.pages.forEach((data) => {
-    if (!('elements' in data)) {
-      return;
-    }
-
-    data.elements.forEach((data) => {
-      // Filter text-only elements
-      if (data.type === 'expression') {
-        return;
-      }
-
-      const label = to(data.title);
-      const field = data.name;
-      columns.push({
-        name: data.name,
-        label: label,
-        field: field,
-        align: 'left',
-        sortable: true,
-      });
-    });
-  });
-
-  return columns;
+  return extractFormFields(data.form).map<TableColumnTemplate>(
+    ({ label, value }) => ({
+      name: value,
+      label: to(label),
+      field: value,
+      align: 'left',
+      sortable: true,
+    }),
+  );
 });
 </script>
