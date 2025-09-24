@@ -88,7 +88,10 @@ const title = computed<string>(() => {
   return camp.value ? to(camp.value.name) : t('app_name');
 });
 
-if (!profileStore.user) {
+// Initialize auth if user is not loaded and not already initializing
+// Note: Router guard now handles auth initialization for protected routes,
+// but we still need this for layouts that might render on non-protected routes
+if (!profileStore.user && !authStore.isInitializing) {
   authStore.init();
 }
 
