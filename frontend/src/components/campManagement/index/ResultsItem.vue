@@ -232,8 +232,11 @@ function disableAction() {
 
 async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   flag.value = true;
-  await fn();
-  flag.value = false;
+  try {
+    await fn();
+  } finally {
+    flag.value = false;
+  }
 }
 </script>
 
