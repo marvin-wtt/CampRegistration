@@ -12,13 +12,13 @@
     <q-item-section side>
       <div class="q-gutter-xs">
         <q-skeleton
-          v-if="!props.public"
+          v-if="!isPublic"
           type="QBtn"
           class="gt-xs"
         />
 
         <q-skeleton
-          v-if="!props.public"
+          v-if="!isPublic"
           type="QBtn"
           class="gt-sm"
         />
@@ -34,13 +34,13 @@
         />
 
         <q-skeleton
-          v-if="!props.public"
+          v-if="!isPublic"
           type="QBtn"
           class="gt-sm"
         />
 
         <q-skeleton
-          v-if="!props.public"
+          v-if="!isPublic"
           type="QBtn"
           class="gt-sm"
         />
@@ -54,6 +54,10 @@
   </q-item>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+const { isPublic = false } = defineProps<{
+  isPublic?: boolean;
+}>();
+</script>
 
 <style scoped></style>
