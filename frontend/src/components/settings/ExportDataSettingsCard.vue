@@ -65,3 +65,21 @@ description: 'Exportez toutes les données liées à ce compte.'
 action:
   export: 'Demander l’exportation des données'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Eksport danych'
+
+description: 'Wyeksportuj wszystkie dane powiązane z tym kontem.'
+
+action:
+  export: 'Zażądaj eksportu danych'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Export dat'
+
+description: 'Exportujte všechna data spojená s tímto účtem.'
+
+action:
+  export: 'Požádat o export dat'
+</i18n>

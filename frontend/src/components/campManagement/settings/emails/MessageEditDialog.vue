@@ -316,3 +316,47 @@ field:
 page:
   title: 'Modifier le modèle "{ name }"'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  save: 'Zapisz'
+  cancel: 'Anuluj'
+
+field:
+  country: 'Edytuj szablon dla uczestników z:'
+  subject:
+    label: 'Temat:'
+    placeholder: 'Wpisz tutaj temat...'
+    rule:
+      required: 'Temat jest wymagany'
+  body:
+    label: 'Wiadomość:'
+    placeholder: 'Wpisz tutaj swoją wiadomość...'
+    rule:
+      required: 'Wiadomość jest wymagana'
+
+page:
+  title: 'Edytuj szablon „{ name }”'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  save: 'Uložit'
+  cancel: 'Zrušit'
+
+field:
+  country: 'Upravit šablonu pro účastníky z:'
+  subject:
+    label: 'Předmět:'
+    placeholder: 'Zadejte zde předmět...'
+    rule:
+      required: 'Předmět je povinný'
+  body:
+    label: 'Zpráva:'
+    placeholder: 'Zadejte zde svou zprávu...'
+    rule:
+      required: 'Zpráva je povinná'
+
+page:
+  title: 'Upravit šablonu „{ name }”'
+</i18n>

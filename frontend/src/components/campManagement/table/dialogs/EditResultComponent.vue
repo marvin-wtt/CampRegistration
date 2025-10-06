@@ -87,4 +87,16 @@ action:
   close: 'Fermer'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj zgłoszenie'
+action:
+  close: 'Zamknij'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit registraci'
+action:
+  close: 'Zavřít'
+</i18n>
+
 <style></style>

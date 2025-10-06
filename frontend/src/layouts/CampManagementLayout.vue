@@ -367,6 +367,50 @@ tools: 'Tools'
 notifications: 'Notifications'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+footer:
+  imprint: 'Nota prawna'
+  privacy_policy: 'Polityka prywatności'
+
+access: 'Dostęp'
+contact: 'Kontakt'
+dashboard: 'Panel główny'
+edit: 'Edytuj'
+email_templates: 'Szablony e-maili'
+files: 'Pliki'
+expenses: 'Wydatki'
+form: 'Formularz rejestracyjny'
+participants: 'Uczestnicy'
+program_planner: 'Program'
+room_planner: 'Plan pokoi'
+settings: 'Ustawienia'
+statistics: 'Statystyki'
+tools: 'Narzędzia'
+notifications: 'Powiadomienia'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+footer:
+  imprint: 'Tiráž'
+  privacy_policy: 'Zásady ochrany osobních údajů'
+
+access: 'Přístup'
+contact: 'Kontakt'
+dashboard: 'Přehled'
+edit: 'Upravit'
+email_templates: 'E-mailové šablony'
+files: 'Soubory'
+expenses: 'Výdaje'
+form: 'Registrační formulář'
+participants: 'Účastníci'
+program_planner: 'Program'
+room_planner: 'Plán pokojů'
+settings: 'Nastavení'
+statistics: 'Statistiky'
+tools: 'Nástroje'
+notifications: 'Oznámení'
+</i18n>
+
 <style>
 /* width */
 ::-webkit-scrollbar {

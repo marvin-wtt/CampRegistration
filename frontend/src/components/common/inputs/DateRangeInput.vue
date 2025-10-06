@@ -163,15 +163,25 @@ function combineDateWithTime(date?: string, time?: string): string | undefined {
 
 <i18n lang="yaml" locale="en">
 actions:
-  ok: Ok
+  ok: 'Ok'
 </i18n>
 
-<i18n lang="yaml" locale="en">
+<i18n lang="yaml" locale="de">
 actions:
-  ok: Ok
+  ok: 'Ok'
 </i18n>
 
-<i18n lang="yaml" locale="en">
+<i18n lang="yaml" locale="fr">
 actions:
-  ok: Ok
+  ok: 'Ok'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+actions:
+  ok: 'Ok'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+actions:
+  ok: 'Ok'
 </i18n>

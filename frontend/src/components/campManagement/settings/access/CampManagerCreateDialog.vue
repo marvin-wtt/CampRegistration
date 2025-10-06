@@ -169,3 +169,43 @@ action:
   invite: 'Inviter'
   cancel: 'Annuler'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Przyznaj dostęp'
+
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Adres e-mail jest wymagany'
+  role:
+    label: 'Rola'
+    rule:
+      required: 'Rola jest wymagana'
+  expiresAt: 'Data wygaśnięcia'
+  showExpiresAt: 'Ustaw datę wygaśnięcia dostępu'
+
+action:
+  invite: 'Zaproś'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Udělte přístup'
+
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail je povinný'
+  role:
+    label: 'Role'
+    rule:
+      required: 'Role je povinná'
+  expiresAt: 'Datum vypršení platnosti'
+  showExpiresAt: 'Nastavit datum vypršení přístupu'
+
+action:
+  invite: 'Pozvat'
+  cancel: 'Zrušit'
+</i18n>

@@ -45,5 +45,13 @@ const options = [
     label: 'English (US)',
     value: 'en-US',
   },
+  {
+    label: 'Polski',
+    value: 'pl-PL',
+  },
+  {
+    label: 'Česky',
+    value: 'cs-CZ',
+  },
 ];
 </script>

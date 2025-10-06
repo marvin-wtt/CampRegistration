@@ -251,4 +251,28 @@ action:
   upload: 'Télécharger'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Wybierz plik'
+
+column:
+  name: 'Nazwa'
+
+action:
+  cancel: 'Anuluj'
+  upload: 'Prześlij'
+  ok: 'Wybierz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Vyberte soubor'
+
+column:
+  name: 'Název'
+
+action:
+  cancel: 'Zrušit'
+  upload: 'Nahrát'
+  ok: 'Vybrat'
+</i18n>
+
 <style scoped></style>

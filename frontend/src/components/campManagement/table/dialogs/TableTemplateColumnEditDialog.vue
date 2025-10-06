@@ -582,3 +582,135 @@ field:
     label: 'Afficher si'
     hint: "Expression lorsqu'il faut"
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj kolumnę szablonu'
+
+action:
+  ok: 'OK'
+  cancel: 'Anuluj'
+
+advanced:
+  hide: 'Ukryj zaawansowane opcje'
+  show: 'Pokaż zaawansowane opcje'
+
+field:
+  name:
+    label: 'Nazwa'
+    hint: 'Unikalna nazwa identyfikacyjna (np. some_name)'
+    rules:
+      required: 'Nazwa nie może być pusta'
+      no_spaces: 'Użyj podkreśleń zamiast spacji'
+  label:
+    label: 'Etykieta'
+    hint: ''
+  source:
+    label: 'Źródło pola'
+    options:
+      form: 'Formularz rejestracyjny'
+      custom: 'Niestandardowe'
+  field:
+    label: 'Pole'
+    hint: 'Nazwa odpowiedniego pola formularza'
+    options:
+      createdAt: 'Data utworzenia'
+      room: 'Pokój'
+      waitingList: 'Lista oczekujących'
+  isArray:
+    label: 'Wiele wartości'
+    hint: 'Wartości są podzielone na kilka wierszy'
+  align:
+    label: 'Wyrównanie'
+    hint: 'Kierunek wyrównania zawartości komórki'
+    options:
+      left: 'Lewo'
+      right: 'Prawo'
+      center: 'Środek'
+  renderAs:
+    label: 'Wyświetl jako'
+    hint: 'Nazwa niestandardowego typu wyświetlania'
+  renderOptions:
+    label: 'Niestandardowe opcje renderowania'
+    hint: 'Zawartość powinna być prawidłowym JSON-em'
+  sortable:
+    label: 'Sortowalne'
+    hint: ''
+  headerVertical:
+    label: 'Pionowy nagłówek'
+    hint: ''
+  shrink:
+    label: 'Zwiń kolumnę'
+    hint: ''
+  hideIf:
+    label: 'Ukryj, jeśli'
+    hint: 'Wyrażenie określające, kiedy komórka ma być ukryta'
+  showIf:
+    label: 'Pokaż, jeśli'
+    hint: 'Wyrażenie określające, kiedy komórka ma być pokazana'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit sloupec šablony'
+
+action:
+  ok: 'OK'
+  cancel: 'Zrušit'
+
+advanced:
+  hide: 'Skrýt pokročilé možnosti'
+  show: 'Zobrazit pokročilé možnosti'
+
+field:
+  name:
+    label: 'Název'
+    hint: 'Jedinečný název pro identifikaci (např. some_name)'
+    rules:
+      required: 'Název nesmí být prázdný'
+      no_spaces: 'Použijte podtržítka místo mezer'
+  label:
+    label: 'Popisek'
+    hint: ''
+  source:
+    label: 'Zdroj pole'
+    options:
+      form: 'Registrační formulář'
+      custom: 'Vlastní'
+  field:
+    label: 'Pole'
+    hint: 'Název odpovídajícího pole ve formuláři'
+    options:
+      createdAt: 'Datum vytvoření'
+      room: 'Pokoj'
+      waitingList: 'Čekací seznam'
+  isArray:
+    label: 'Více hodnot'
+    hint: 'Hodnoty jsou rozděleny do více řádků'
+  align:
+    label: 'Zarovnání'
+    hint: 'Směr zarovnání obsahu buňky'
+    options:
+      left: 'Vlevo'
+      right: 'Vpravo'
+      center: 'Na střed'
+  renderAs:
+    label: 'Zobrazit jako'
+    hint: 'Název vlastního typu zobrazení'
+  renderOptions:
+    label: 'Vlastní možnosti zobrazení'
+    hint: 'Obsah musí být platný JSON'
+  sortable:
+    label: 'Tříditelné'
+    hint: ''
+  headerVertical:
+    label: 'Vertikální záhlaví'
+    hint: ''
+  shrink:
+    label: 'Zúžit sloupec'
+    hint: ''
+  hideIf:
+    label: 'Skrýt, pokud'
+    hint: 'Výraz určující, kdy se buňka nemá zobrazit'
+  showIf:
+    label: 'Zobrazit, pokud'
+    hint: 'Výraz určující, kdy se buňka má zobrazit'
+</i18n>

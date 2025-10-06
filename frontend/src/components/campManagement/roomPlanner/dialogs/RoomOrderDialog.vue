@@ -106,3 +106,19 @@ action:
   ok: 'Ok'
   cancel: 'Annuler'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj pokój'
+
+action:
+  ok: 'OK'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit pokoj'
+
+action:
+  ok: 'OK'
+  cancel: 'Zrušit'
+</i18n>

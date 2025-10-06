@@ -130,3 +130,21 @@ action:
   delete: 'Supprimer'
   cancel: 'Annuler'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+text:
+  confirm: 'Aby potwierdzić, wpisz {label}:'
+
+action:
+  delete: 'Usuń'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+text:
+  confirm: 'Pro potvrzení zadejte {label}:'
+
+action:
+  delete: 'Smazat'
+  cancel: 'Zrušit'
+</i18n>

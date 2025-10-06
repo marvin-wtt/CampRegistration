@@ -7,8 +7,16 @@
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
-import 'survey-core/survey.i18n';
-import 'survey-creator-core/survey-creator-core.i18n';
+import 'survey-core/i18n/english';
+import 'survey-creator-core/i18n/english';
+import 'survey-core/i18n/german';
+import 'survey-creator-core/i18n/german';
+import 'survey-core/i18n/french';
+import 'survey-creator-core/i18n/french';
+import 'survey-core/i18n/polish';
+import 'survey-creator-core/i18n/polish';
+import 'survey-core/i18n/czech';
+import 'survey-creator-core/i18n/czech';
 
 import { watch, watchEffect } from 'vue';
 import {
@@ -32,6 +40,7 @@ import SurveyCreatorTheme from 'survey-creator-core/themes';
 import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
 import { registerSurveyTheme } from 'survey-creator-core';
+import { surveyLocalization } from 'survey-core';
 import showdown from 'showdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
@@ -108,17 +117,12 @@ const markdownConverter = new showdown.Converter({
 registerSurveyTheme(SurveyTheme);
 registerCreatorTheme(SurveyCreatorTheme);
 
+surveyLocalization.supportedLocales = ['en', ...props.camp.countries];
+
 const creator = new SurveyCreatorModel(creatorOptions);
 
 creator.JSON = props.camp.form;
 creator.theme = props.camp.themes['light'] ?? {};
-
-// TODO This is a workaround for the issue with the theme not being applied correctly
-// See https://github.com/surveyjs/survey-creator/issues/5552
-if (creator.theme.backgroundImage === null) {
-  console.error('Theme background image is null');
-  creator.theme.backgroundImage = '';
-}
 
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
@@ -159,6 +163,14 @@ function applyCreatorTheme(isDark: boolean) {
       '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
     },
   });
+
+  // TODO This is a workaround for the issue with the theme not being applied correctly
+  // The value is null because the backend middleware
+  // converts empty strings to null
+  // See https://github.com/surveyjs/survey-creator/issues/5552
+  if (creator.theme.backgroundImage === null) {
+    creator.theme.backgroundImage = '';
+  }
 }
 
 // Restrict valueName characters

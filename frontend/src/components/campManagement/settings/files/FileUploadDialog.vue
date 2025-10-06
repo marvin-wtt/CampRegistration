@@ -302,6 +302,78 @@ access_level:
     description: 'Visible uniquement par les gestionnaires de camp'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Prześlij plik'
+
+fields:
+  access_level:
+    label: 'Dostęp'
+    rules:
+      required: 'To pole jest wymagane'
+  field:
+    label: 'Identyfikator'
+    hint: 'Używany do odwoływania się do pliku w formularzu'
+    rules:
+      required: 'To pole jest wymagane'
+      unique: 'Plik o tym identyfikatorze już istnieje'
+  file:
+    label: 'Plik'
+    rules:
+      required: 'Wybierz plik do przesłania'
+  name:
+    label: 'Nazwa'
+    rules:
+      required: 'Podaj nową nazwę pliku'
+
+action:
+  ok: 'Prześlij'
+  cancel: 'Anuluj'
+
+access_level:
+  public:
+    label: 'Publiczny'
+    description: 'Widoczny dla wszystkich'
+  private:
+    label: 'Prywatny'
+    description: 'Widoczny tylko dla menedżerów obozu'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Nahrát soubor'
+
+fields:
+  access_level:
+    label: 'Přístup'
+    rules:
+      required: 'Toto pole je povinné'
+  field:
+    label: 'Identifikátor'
+    hint: 'Používá se pro odkazování na soubor ve formuláři'
+    rules:
+      required: 'Toto pole je povinné'
+      unique: 'Soubor s tímto identifikátorem již existuje'
+  file:
+    label: 'Soubor'
+    rules:
+      required: 'Vyberte soubor k nahrání'
+  name:
+    label: 'Název'
+    rules:
+      required: 'Zadejte nový název souboru'
+
+action:
+  ok: 'Nahrát'
+  cancel: 'Zrušit'
+
+access_level:
+  public:
+    label: 'Veřejný'
+    description: 'Viditelné pro všechny'
+  private:
+    label: 'Soukromý'
+    description: 'Viditelné pouze pro správce tábora'
+</i18n>
+
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

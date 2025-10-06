@@ -19,6 +19,8 @@ const roleQuestion: RoleQuestionConfiguration = {
       de: 'Rolle auswählen...',
       en: 'Select a role...',
       fr: 'Sélectionner un rôle...',
+      pl: 'Wybierz rolkę...',
+      cs: 'Vyberte roli...',
     },
     choices: [
       {
@@ -27,6 +29,8 @@ const roleQuestion: RoleQuestionConfiguration = {
           de: 'Teilnehmer',
           en: 'Particiapnt',
           fr: 'Participant',
+          pl: 'Uczestnicy',
+          cs: 'Účastníci',
         },
       },
       {
@@ -35,6 +39,8 @@ const roleQuestion: RoleQuestionConfiguration = {
           de: 'Betreuer',
           en: 'Counselor',
           fr: 'Conseiller',
+          pl: 'Opiekun',
+          cs: 'Pečovatel',
         },
       },
     ],

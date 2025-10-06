@@ -174,3 +174,15 @@ menu:
   edit: 'Modifier'
   delete: 'Supprimer'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+menu:
+  edit: 'Edytuj'
+  delete: 'Usuń'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+menu:
+  edit: 'Upravit'
+  delete: 'Smazat'
+</i18n>
