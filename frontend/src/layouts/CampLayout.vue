@@ -154,3 +154,13 @@ create: 'Camp organisieren'
 camps: 'Camps'
 create: 'Organiser un camp'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+camps: 'Obozy'
+create: 'Zorganizuj obóz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+camps: 'Tábory'
+create: 'Zorganizovat tábor'
+</i18n>

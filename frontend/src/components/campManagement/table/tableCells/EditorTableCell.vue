@@ -198,6 +198,7 @@ error:
   registration_id: 'Registration ID was not found!'
   field_name: 'Field name is required!'
 </i18n>
+
 <i18n lang="yaml" locale="de">
 action:
   cancel: 'Abbrechen'
@@ -208,6 +209,7 @@ error:
   registration_id: 'Registrierungs-ID wurde nicht gefunden!'
   field_name: 'Feldname ist erforderlich!'
 </i18n>
+
 <i18n lang="yaml" locale="fr">
 action:
   cancel: 'Annuler'
@@ -217,6 +219,28 @@ error:
   hint: 'Veuillez mettre à jour la définition de la colonne.'
   registration_id: "L'ID d'enregistrement n'a pas été trouvé!"
   field_name: 'Le nom du champ est requis!'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  cancel: 'Anuluj'
+  save: 'Zapisz'
+
+error:
+  hint: 'Zaktualizuj definicję kolumny.'
+  registration_id: 'Nie znaleziono identyfikatora rejestracji!'
+  field_name: 'Nazwa pola jest wymagana!'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  cancel: 'Zrušit'
+  save: 'Uložit'
+
+error:
+  hint: 'Aktualizujte definici sloupce.'
+  registration_id: 'ID registrace nebylo nalezeno!'
+  field_name: 'Název pole je povinný!'
 </i18n>
 
 <style lang="scss" scoped></style>

@@ -196,3 +196,65 @@ token:
         lastName: 'Nom de famille'
         role: 'Rôle'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+token:
+  camp:
+    label: 'Obóz'
+    item:
+      countries: 'Kraje'
+      name: 'Nazwa'
+      organizer: 'Organizator'
+      contactEmail: 'E-mail kontaktowy'
+      maxParticipants: 'Maksymalna liczba uczestników'
+      startAt: 'Czas rozpoczęcia'
+      endAt: 'Czas zakończenia'
+      minAge: 'Minimalny wiek'
+      maxAge: 'Maksymalny wiek'
+      location: 'Miejsce'
+      price: 'Cena'
+  registration:
+    label: 'Rejestracja'
+    data:
+      label: 'Formularz'
+      caption: 'Bezpośredni dostęp do pól formularza rejestracyjnego'
+    computed:
+      label: 'Obliczone'
+      caption: 'Pola obliczane na podstawie danych zgłoszenia'
+      entry:
+        email: 'E-mail'
+        firstName: 'Imię'
+        lastName: 'Nazwisko'
+        role: 'Rola'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+token:
+  camp:
+    label: 'Tábor'
+    item:
+      countries: 'Země'
+      name: 'Název'
+      organizer: 'Organizátor'
+      contactEmail: 'Kontaktní e-mail'
+      maxParticipants: 'Maximální počet účastníků'
+      startAt: 'Čas začátku'
+      endAt: 'Čas konce'
+      minAge: 'Minimální věk'
+      maxAge: 'Maximální věk'
+      location: 'Místo'
+      price: 'Cena'
+  registration:
+    label: 'Registrace'
+    data:
+      label: 'Formulář'
+      caption: 'Přímý přístup k polím registračního formuláře'
+    computed:
+      label: 'Vypočtené'
+      caption: 'Pole vypočítaná na základě dat registrace'
+      entry:
+        email: 'E-mail'
+        firstName: 'Jméno'
+        lastName: 'Příjmení'
+        role: 'Role'
+</i18n>

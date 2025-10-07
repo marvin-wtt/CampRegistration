@@ -170,6 +170,8 @@ const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
   { label: 'English', value: 'en-US' },
+  { label: 'Polski', value: 'pl-PL' },
+  { label: 'Česky', value: 'cs-CZ' },
 ]);
 
 const authenticated = computed<boolean>(() => {
@@ -233,4 +235,28 @@ login: 'Connexion'
 logout: 'Déconnexion'
 language: 'Langue'
 dark_mode: 'Mode sombre'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+account: 'Konto'
+username: 'Zalogowany jako'
+camps: 'Moje obozy'
+administration: 'Administracja'
+light_mode: 'Tryb jasny'
+login: 'Zaloguj się'
+logout: 'Wyloguj się'
+language: 'Język'
+dark_mode: 'Tryb ciemny'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+account: 'Účet'
+username: 'Přihlášen jako'
+camps: 'Moje tábory'
+administration: 'Administrace'
+light_mode: 'Světlý režim'
+login: 'Přihlásit se'
+logout: 'Odhlásit se'
+language: 'Jazyk'
+dark_mode: 'Tmavý režim'
 </i18n>

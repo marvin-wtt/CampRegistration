@@ -139,3 +139,23 @@ action:
   share: 'Partager'
   disable: 'Désactiver'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  create: 'Utwórz nowe'
+  delete: 'Usuń'
+  edit: 'Edytuj'
+  enable: 'Aktywuj'
+  share: 'Udostępnij'
+  disable: 'Dezaktywuj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  create: 'Vytvořit nový'
+  delete: 'Smazat'
+  edit: 'Upravit'
+  enable: 'Aktivovat'
+  share: 'Sdílet'
+  disable: 'Deaktivovat'
+</i18n>

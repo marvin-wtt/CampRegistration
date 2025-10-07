@@ -24,4 +24,8 @@ export default {
   de: format,
   'fr-FR': format,
   fr: format,
+  'pl-PL': format,
+  pl: format,
+  'cs-CZ': format,
+  cs: format,
 } as const;

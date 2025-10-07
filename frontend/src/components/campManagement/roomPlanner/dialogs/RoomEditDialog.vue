@@ -119,3 +119,29 @@ action:
   save: 'Enregistrer'
   cancel: 'Annuler'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj pokój'
+fields:
+  name:
+    label: 'Nazwa'
+    rules:
+      required: 'Nazwa jest wymagana'
+
+action:
+  save: 'Zapisz'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit pokoj'
+fields:
+  name:
+    label: 'Název'
+    rules:
+      required: 'Název je povinný'
+
+action:
+  save: 'Uložit'
+  cancel: 'Zrušit'
+</i18n>

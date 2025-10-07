@@ -159,6 +159,44 @@ actions:
   cancel: 'Annuler'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Utwórz pokój'
+
+fields:
+  name:
+    label: 'Nazwa'
+    rules:
+      required: 'Nazwa jest wymagana'
+  capacity:
+    label: 'Liczba łóżek'
+    rules:
+      required: 'Liczba łóżek jest wymagana'
+      positive: 'Pokój musi mieć co najmniej jedno łóżko'
+
+actions:
+  save: 'Zapisz'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Vytvořit pokoj'
+
+fields:
+  name:
+    label: 'Název'
+    rules:
+      required: 'Název je povinný'
+  capacity:
+    label: 'Počet lůžek'
+    rules:
+      required: 'Počet lůžek je povinný'
+      positive: 'Pokoj musí mít alespoň jedno lůžko'
+
+actions:
+  save: 'Uložit'
+  cancel: 'Zrušit'
+</i18n>
+
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

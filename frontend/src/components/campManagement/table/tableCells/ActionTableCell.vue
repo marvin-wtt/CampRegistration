@@ -222,4 +222,44 @@ dialog:
     label: 'Nom'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+option:
+  details: 'Pokaż szczegóły'
+  edit: 'Edytuj'
+  delete: 'Usuń'
+  accept: 'Akceptuj zgłoszenie'
+
+dialog:
+  accept:
+    title: 'Akceptuj rejestrację'
+    message: 'Akceptuj zgłoszenie z listy oczekujących. Uczestnik otrzyma e-mail z potwierdzeniem.'
+    action:
+      ok: 'Akceptuj'
+      cancel: 'Anuluj'
+  delete:
+    title: 'Usuń rejestrację'
+    message: 'Usunięcie rejestracji spowoduje utratę wszystkich danych tej osoby.'
+    label: 'Imię i nazwisko'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+option:
+  details: 'Zobrazit podrobnosti'
+  edit: 'Upravit'
+  delete: 'Smazat'
+  accept: 'Přijmout registraci'
+
+dialog:
+  accept:
+    title: 'Přijmout registraci'
+    message: 'Přijmout registraci z čekací listiny. Účastník obdrží potvrzovací e-mail.'
+    action:
+      ok: 'Přijmout'
+      cancel: 'Zrušit'
+  delete:
+    title: 'Smazat registraci'
+    message: 'Pokud odstraníte registraci, všechna data této osoby budou ztracena.'
+    label: 'Jméno'
+</i18n>
+
 <style scoped></style>

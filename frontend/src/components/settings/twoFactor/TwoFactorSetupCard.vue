@@ -87,6 +87,7 @@ field:
 action:
   generate: 'Generate QR Code'
 </i18n>
+
 <i18n lang="yaml" locale="de">
 title: 'Zwei-Faktor-Authentifizierung'
 description: 'Um Ihr Konto mit der Zwei-Faktor-Authentifizierung zu sichern,
@@ -100,6 +101,7 @@ field:
 action:
   generate: 'QR-Code generieren'
 </i18n>
+
 <i18n lang="yaml" locale="fr">
 title: 'Authentification à deux facteurs'
 description: "Pour sécuriser votre compte avec l'authentification à deux
@@ -112,4 +114,28 @@ field:
       required: 'Le mot de passe est requis.'
 action:
   generate: 'Générer un code QR'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Uwierzytelnianie dwuskładnikowe'
+description: 'Aby zabezpieczyć swoje konto za pomocą uwierzytelniania dwuskładnikowego, wprowadź swoje hasło, aby wygenerować kod QR do konfiguracji.'
+field:
+  password:
+    label: 'Hasło'
+    rule:
+      required: 'Hasło jest wymagane.'
+action:
+  generate: 'Wygeneruj kod QR'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Dvoufázové ověřování'
+description: 'Pro zabezpečení vašeho účtu pomocí dvoufázového ověřování zadejte své heslo a vygenerujte QR kód pro nastavení.'
+field:
+  password:
+    label: 'Heslo'
+    rule:
+      required: 'Heslo je povinné.'
+action:
+  generate: 'Vygenerovat QR kód'
 </i18n>

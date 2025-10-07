@@ -81,6 +81,10 @@ const langOptions = computed<QSelectOption[]>(() => [
     label: t('country.pl'),
     value: 'pl',
   },
+  {
+    label: t('country.cz'),
+    value: 'cz',
+  },
 ]);
 
 // NOTE: Translations are stored in global translations

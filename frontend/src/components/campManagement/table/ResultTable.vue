@@ -679,3 +679,43 @@ export:
       save: 'Enregistrement de(s) table(s) dans le fichier...'
     error: "Échec de l'exportation de(s) table(s)"
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+template: 'Szablon'
+title: 'Uczestnicy'
+menu:
+  download: 'Pobierz tabelę'
+  edit_templates: 'Edytuj szablony'
+
+export:
+  dialog:
+    title: 'Eksportuj tabele'
+    message: 'Wybierz, które tabele chcesz wyeksportować'
+    download: 'Pobierz'
+    cancel: 'Anuluj'
+  pdf:
+    loading:
+      template: 'Przygotowywanie szablonu: '
+      save: 'Zapisywanie tabel(i) do pliku...'
+    error: 'Błąd podczas eksportowania tabel(i)'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+template: 'Šablona'
+title: 'Účastníci'
+menu:
+  download: 'Stáhnout tabulku'
+  edit_templates: 'Upravit šablony'
+
+export:
+  dialog:
+    title: 'Export tabulek'
+    message: 'Vyberte, které tabulky chcete exportovat'
+    download: 'Stáhnout'
+    cancel: 'Zrušit'
+  pdf:
+    loading:
+      template: 'Připravuji šablonu: '
+      save: 'Ukládám tabulku(y) do souboru...'
+    error: 'Chyba při exportu tabulky/tabulek'
+</i18n>

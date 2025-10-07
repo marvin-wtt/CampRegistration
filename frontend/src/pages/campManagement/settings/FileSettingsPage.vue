@@ -300,3 +300,57 @@ notification:
     success: 'Lien copié dans le presse-papiers'
     failed: 'Échec de la copie du lien dans le presse-papiers'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Pliki'
+
+action:
+  delete: 'Usuń'
+  download: 'Pobierz'
+  upload: 'Prześlij'
+
+column:
+  access_level: 'Dostęp'
+  field: 'Identyfikator'
+  last_modified: 'Ostatnia modyfikacja'
+  link: 'Link'
+  name: 'Nazwa'
+  size: 'Rozmiar'
+  type: 'Typ'
+
+access_level:
+  public: 'Publiczny'
+  private: 'Prywatny'
+
+notification:
+  copy_link:
+    success: 'Link skopiowany do schowka'
+    failed: 'Nie udało się skopiować linku do schowka'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Soubory'
+
+action:
+  delete: 'Smazat'
+  download: 'Stáhnout'
+  upload: 'Nahrát'
+
+column:
+  access_level: 'Přístup'
+  field: 'Identifikátor'
+  last_modified: 'Naposledy změněno'
+  link: 'Odkaz'
+  name: 'Název'
+  size: 'Velikost'
+  type: 'Typ'
+
+access_level:
+  public: 'Veřejný'
+  private: 'Soukromý'
+
+notification:
+  copy_link:
+    success: 'Odkaz zkopírován do schránky'
+    failed: 'Nepodařilo se zkopírovat odkaz do schránky'
+</i18n>

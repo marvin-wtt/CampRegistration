@@ -104,4 +104,18 @@ action:
   finish: 'Terminer'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+action:
+  back: 'Wstecz'
+  continue: 'Dalej'
+  finish: 'Zakończ'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  back: 'Zpět'
+  continue: 'Pokračovat'
+  finish: 'Dokončit'
+</i18n>
+
 <style scoped></style>

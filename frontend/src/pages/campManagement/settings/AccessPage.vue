@@ -349,4 +349,76 @@ role:
   viewer: 'Lecteur'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Zarządzaj dostępem'
+
+action:
+  add: 'Dodaj'
+  delete: 'Usuń'
+  edit: 'Edytuj'
+
+dialog:
+  delete:
+    title: 'Cofnij dostęp'
+    message: 'Czy na pewno chcesz cofnąć dostęp temu użytkownikowi?'
+    label: 'E-mail'
+
+column:
+  email: 'E-mail'
+  expiresAt: 'Wygasa'
+  name: 'Imię i nazwisko'
+  role: 'Rola'
+  status: 'Status'
+
+expiresAt:
+  never: 'Nigdy'
+  expired: 'Wygasł'
+
+status:
+  accepted: 'Zaakceptowany'
+  pending: 'Oczekujący'
+
+role:
+  coordinator: 'Koordynator'
+  counselor: 'Opiekun'
+  director: 'Kierownik'
+  viewer: 'Podglądający'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Správa přístupu'
+
+action:
+  add: 'Přidat'
+  delete: 'Odstranit'
+  edit: 'Upravit'
+
+dialog:
+  delete:
+    title: 'Odebrat přístup'
+    message: 'Opravdu chcete odebrat přístup tomuto uživateli?'
+    label: 'E-mail'
+
+column:
+  email: 'E-mail'
+  expiresAt: 'Vyprší'
+  name: 'Jméno'
+  role: 'Role'
+  status: 'Stav'
+
+expiresAt:
+  never: 'Nikdy'
+  expired: 'Vypršelo'
+
+status:
+  accepted: 'Přijato'
+  pending: 'Čeká na vyřízení'
+
+role:
+  coordinator: 'Koordinátor'
+  counselor: 'Vedoucí'
+  director: 'Ředitel'
+  viewer: 'Pozorovatel'
+</i18n>
+
 <style scoped></style>

@@ -462,3 +462,87 @@ template:
     label: 'Inscription Annulée'
     description: "Déclenché lorsque l'inscription est annulée."
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  add: 'Dodaj szablon'
+  edit: 'Edytuj szablon'
+  delete: 'Usuń szablon'
+
+page:
+  title: 'Zdarzenia rejestracji'
+  description: 'Zarządzaj i edytuj szablony e-maili dla każdego zdarzenia rejestracyjnego.'
+
+request:
+  create:
+    success: 'Szablon wiadomości został pomyślnie utworzony'
+    error: 'Błąd podczas tworzenia szablonu wiadomości'
+  update:
+    success: 'Szablon wiadomości został pomyślnie zaktualizowany'
+    error: 'Błąd podczas aktualizowania szablonu wiadomości'
+  delete:
+    success: 'Szablon wiadomości został pomyślnie usunięty'
+    error: 'Błąd podczas usuwania szablonu wiadomości'
+
+template:
+  registration_submitted:
+    label: 'Rejestracja przesłana'
+    description: 'Wyzwalane, gdy użytkownik przesyła nową rejestrację.'
+  registration_confirmed:
+    label: 'Rejestracja potwierdzona'
+    description: 'Wyzwalane, gdy rejestracja zostaje potwierdzona bez umieszczania na liście oczekujących.'
+  registration_waitlisted:
+    label: 'Rejestracja na liście oczekujących'
+    description: 'Wyzwalane, gdy rejestracja zostaje umieszczona na liście oczekujących, ponieważ limit dla tego kraju został osiągnięty.'
+  registration_waitlist_accepted:
+    label: 'Rejestracja z listy oczekujących zaakceptowana'
+    description: 'Wyzwalane, gdy rejestracja z listy oczekujących zostaje potwierdzona.'
+  registration_updated:
+    label: 'Rejestracja zaktualizowana'
+    description: 'Wyzwalane, gdy szczegóły rejestracji zostają zaktualizowane po jej przesłaniu.'
+  registration_canceled:
+    label: 'Rejestracja anulowana'
+    description: 'Wyzwalane, gdy rejestracja zostaje anulowana.'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  add: 'Přidat šablonu'
+  edit: 'Upravit šablonu'
+  delete: 'Smazat šablonu'
+
+page:
+  title: 'Události registrace'
+  description: 'Spravujte a upravujte e-mailové šablony pro jednotlivé registrační události.'
+
+request:
+  create:
+    success: 'Šablona zprávy byla úspěšně vytvořena'
+    error: 'Chyba při vytváření šablony zprávy'
+  update:
+    success: 'Šablona zprávy byla úspěšně aktualizována'
+    error: 'Chyba při aktualizaci šablony zprávy'
+  delete:
+    success: 'Šablona zprávy byla úspěšně smazána'
+    error: 'Chyba při mazání šablony zprávy'
+
+template:
+  registration_submitted:
+    label: 'Registrace odeslána'
+    description: 'Spouští se, když uživatel odešle novou registraci.'
+  registration_confirmed:
+    label: 'Registrace potvrzena'
+    description: 'Spouští se, když je registrace potvrzena přímo a není na čekací listině.'
+  registration_waitlisted:
+    label: 'Registrace na čekací listině'
+    description: 'Spouští se, když je registrace zařazena na čekací listinu, protože byl dosažen limit pro tuto zemi.'
+  registration_waitlist_accepted:
+    label: 'Registrace z čekací listiny přijata'
+    description: 'Spouští se, když je registrace z čekací listiny potvrzena.'
+  registration_updated:
+    label: 'Registrace aktualizována'
+    description: 'Spouští se, když jsou po odeslání registrace aktualizovány její údaje.'
+  registration_canceled:
+    label: 'Registrace zrušena'
+    description: 'Spouští se, když je registrace zrušena.'
+</i18n>

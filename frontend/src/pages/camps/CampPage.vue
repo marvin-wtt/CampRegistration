@@ -194,3 +194,21 @@ error:
   not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'
     URL ou contacter l'administration du camp."
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  home: 'Szukaj innych obozów'
+
+error:
+  unavailable: 'Rejestracja na ten obóz nie jest jeszcze możliwa lub została już zamknięta. Sprawdź dane rejestracyjne obozu. Jeśli uważasz, że to błąd, skontaktuj się z administracją obozu.'
+  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL lub skontaktuj się z administracją obozu.'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  home: 'Hledat jiné tábory'
+
+error:
+  unavailable: 'Registrace na tento tábor zatím není možná nebo již byla uzavřena. Zkontrolujte registrační údaje tábora. Pokud si myslíte, že jde o chybu, kontaktujte správu tábora.'
+  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu nebo kontaktujte správu tábora.'
+</i18n>

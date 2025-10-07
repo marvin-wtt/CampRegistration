@@ -133,12 +133,22 @@ actions:
   ok: 'Ok'
 </i18n>
 
-<i18n lang="yaml" locale="en">
+<i18n lang="yaml" locale="de">
 actions:
   ok: 'Ok'
 </i18n>
 
-<i18n lang="yaml" locale="en">
+<i18n lang="yaml" locale="fr">
+actions:
+  ok: 'Ok'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+actions:
+  ok: 'Ok'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
 actions:
   ok: 'Ok'
 </i18n>

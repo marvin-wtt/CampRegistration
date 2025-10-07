@@ -93,4 +93,26 @@ month: 'Il y a {n} mois | Il y a {n} mois'
 year: 'Il y a {n} an | Il y a {n} ans'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+millisecond: '{n} milisekundę temu | {n} milisekundy temu | {n} milisekund temu'
+second: '{n} sekundę temu | {n} sekundy temu | {n} sekund temu'
+minute: '{n} minutę temu | {n} minuty temu | {n} minut temu'
+hour: '{n} godzinę temu | {n} godziny temu | {n} godzin temu'
+day: '{n} dzień temu | {n} dni temu'
+week: '{n} tydzień temu | {n} tygodnie temu | {n} tygodni temu'
+month: '{n} miesiąc temu | {n} miesiące temu | {n} miesięcy temu'
+year: '{n} rok temu | {n} lata temu | {n} lat temu'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+millisecond: 'před {n} milisekundou | před {n} milisekundami'
+second: 'před {n} sekundou | před {n} sekundami'
+minute: 'před {n} minutou | před {n} minutami'
+hour: 'před {n} hodinou | před {n} hodinami'
+day: 'před {n} dnem | před {n} dny'
+week: 'před {n} týdnem | před {n} týdny'
+month: 'před {n} měsícem | před {n} měsíci'
+year: 'před {n} rokem | před {n} lety'
+</i18n>
+
 <style scoped></style>
