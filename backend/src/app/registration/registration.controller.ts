@@ -58,6 +58,7 @@ class RegistrationController extends BaseController {
     const {
       body: { data, customData, waitingList },
       params: { registrationId },
+      query: { suppressEmail },
     } = await req.validate(validator.update);
     const camp = req.modelOrFail('camp');
     const previousRegistration = req.modelOrFail('registration');
@@ -74,27 +75,34 @@ class RegistrationController extends BaseController {
       updateData,
     );
 
-    if (previousRegistration.data !== registration.data) {
-      await registrationMessages.sendRegistrationUpdated(camp, registration);
-    }
+    if (!suppressEmail) {
+      if (previousRegistration.data !== registration.data) {
+        await registrationMessages.sendRegistrationUpdated(camp, registration);
+      }
 
-    if (previousRegistration.waitingList && !registration.waitingList) {
-      await registrationMessages.sendRegistrationWaitlistAccepted(
-        camp,
-        registration,
-      );
+      if (previousRegistration.waitingList && !registration.waitingList) {
+        await registrationMessages.sendRegistrationWaitlistAccepted(
+          camp,
+          registration,
+        );
+      }
     }
 
     res.resource(new RegistrationResource(registration));
   }
 
   async destroy(req: Request, res: Response) {
+    const {
+      query: { suppressEmail },
+    } = await req.validate(validator.destroy);
     const camp = req.modelOrFail('camp');
     const registration = req.modelOrFail('registration');
 
     await registrationService.deleteRegistration(registration);
 
-    await registrationMessages.sendRegistrationCanceled(camp, registration);
+    if (!suppressEmail) {
+      await registrationMessages.sendRegistrationCanceled(camp, registration);
+    }
 
     res.status(httpStatus.NO_CONTENT).send();
   }
