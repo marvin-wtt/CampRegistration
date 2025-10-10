@@ -40,7 +40,7 @@ const update = z.object({
     .partial(),
   query: z
     .object({
-      suppressEmail: BooleanStringSchema,
+      suppressMessage: BooleanStringSchema,
     })
     .partial(),
 });
@@ -52,7 +52,7 @@ const destroy = z.object({
   }),
   query: z
     .object({
-      suppressEmail: BooleanStringSchema,
+      suppressMessage: BooleanStringSchema,
     })
     .partial(),
 });
