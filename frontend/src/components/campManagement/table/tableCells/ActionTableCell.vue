@@ -101,7 +101,7 @@ function deleteItem(): void {
         title: t('dialog.delete.title'),
         message: t('dialog.delete.message'),
         label: t('dialog.delete.label'),
-        value: value,
+        value,
       },
     })
     .onOk(async () => {
@@ -179,7 +179,7 @@ dialog:
   delete:
     title: 'Delete registration'
     message: 'Once you delete the registration, all data about this person is lost.'
-    label: 'Name'
+    label: 'name of the person'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -199,7 +199,7 @@ dialog:
   delete:
     title: 'Registrierung löschen'
     message: 'Wenn Sie die Registrierung löschen, gehen alle Daten dieser Person verloren.'
-    label: 'Name'
+    label: 'Name der Person'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -219,7 +219,7 @@ dialog:
   delete:
     title: "Supprimer l'inscription"
     message: "Une fois que vous supprimez l'inscription, toutes les données concernant cette personne sont perdues."
-    label: 'Nom'
+    label: 'nom de la personne'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -239,7 +239,7 @@ dialog:
   delete:
     title: 'Usuń rejestrację'
     message: 'Usunięcie rejestracji spowoduje utratę wszystkich danych tej osoby.'
-    label: 'Imię i nazwisko'
+    label: 'imię i nazwisko osoby'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -259,7 +259,7 @@ dialog:
   delete:
     title: 'Smazat registraci'
     message: 'Pokud odstraníte registraci, všechna data této osoby budou ztracena.'
-    label: 'Jméno'
+    label: 'jméno a příjmení osoby'
 </i18n>
 
 <style scoped></style>
