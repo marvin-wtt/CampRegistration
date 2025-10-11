@@ -38,7 +38,7 @@ export function createApp() {
   // enable cors
   app.use(
     cors({
-      origin: config.origin || '*',
+      origin: config.origin,
       credentials: true,
     }),
   );

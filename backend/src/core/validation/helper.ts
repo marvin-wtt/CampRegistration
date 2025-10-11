@@ -7,8 +7,12 @@ export const LocaleSchema = z.string().regex(/^[a-z]{2}(?:[_-][A-Z]{2})?$/);
 
 export const BooleanStringSchema = z.preprocess((val) => {
   if (typeof val === 'string') {
-    if (['1', 'true'].includes(val.toLowerCase())) return true;
-    if (['0', 'false'].includes(val.toLowerCase())) return false;
+    if (['1', 'true'].includes(val.toLowerCase())) {
+      return true;
+    }
+    if (['0', 'false'].includes(val.toLowerCase())) {
+      return false;
+    }
   }
   return val;
 }, z.coerce.boolean());
