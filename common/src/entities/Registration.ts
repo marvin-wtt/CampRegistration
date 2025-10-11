@@ -31,3 +31,10 @@ export type RegistrationCreateData = Pick<Registration, 'data'> &
 export type RegistrationUpdateData = Partial<
   Pick<Registration, 'data' | 'customData' | 'waitingList'>
 >;
+
+export interface RegistrationUpdateQuery {
+  supressMessage?: boolean | undefined;
+}
+export interface RegistrationDeleteQuery {
+  supressMessage?: boolean | undefined;
+}

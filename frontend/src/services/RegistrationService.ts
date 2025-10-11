@@ -1,7 +1,9 @@
 import type {
   Registration,
   RegistrationCreateData,
+  RegistrationDeleteQuery,
   RegistrationUpdateData,
+  RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
 import { api } from 'boot/axios';
 
@@ -36,10 +38,12 @@ export function useRegistrationService() {
     campId: string,
     registrationId: string,
     data: RegistrationUpdateData,
+    params?: RegistrationUpdateQuery,
   ): Promise<Registration> {
     const response = await api.patch(
       `camps/${campId}/registrations/${registrationId}/`,
       data,
+      { params },
     );
 
     return response?.data?.data;
@@ -48,8 +52,11 @@ export function useRegistrationService() {
   async function deleteRegistration(
     campId: string,
     registrationId: string,
+    params?: RegistrationDeleteQuery,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/registrations/${registrationId}/`);
+    await api.delete(`camps/${campId}/registrations/${registrationId}/`, {
+      params,
+    });
   }
 
   return {
