@@ -1,18 +1,58 @@
-version: '3.8'
+version: "3.9"
+
 services:
   db:
     image: mariadb:10.5.27
-    restart: unless-stopped
+    profiles: ["_base"]          # avoids accidental start
     environment:
-      MYSQL_DATABASE: 'database'
-      MYSQL_USER: 'user'
-      MYSQL_PASSWORD: 'password'
-      MYSQL_ROOT_PASSWORD: 'root'
-      MYSQL_TCP_PORT: 3307
+      MYSQL_DATABASE: "database"
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # DEV DB:
+  db_dev:
+    extends:
+      service: db
+    profiles: ["dev"]
     ports:
-      - '3307:3307'
+      - "3306:3306"
     volumes:
       - db:/var/lib/mysql
+
+  # TEST DB:
+  db_test:
+    extends:
+      service: db
+    profiles: ["test"]
+    ports:
+      - "3307:3306"
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # MailDev
+  maildev:
+    image: maildev/maildev:2.2.1
+    profiles: ["dev", "test"]
+    ports:
+      - "1080:1080" # Web UI
+      - "1025:1025" # SMTP
+
 volumes:
   db:
     driver: local

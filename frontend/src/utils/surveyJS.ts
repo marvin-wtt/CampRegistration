@@ -84,15 +84,6 @@ function collectSelectData(
       .flatMap((child) => collectSelectData(child, value, label)),
   );
 
-  // Special handling for paneldynamic questions without nested questions
-  if (question.getType() === 'paneldynamic') {
-    result.push(
-      ...(question.getPanel() as PanelModel)
-        .getQuestions(true)
-        .flatMap((child) => collectSelectData(child, value, label)),
-    );
-  }
-
   return result;
 }
 
