@@ -88,7 +88,7 @@
     "passport-jwt": "^4.0.1",
     "pkg-dir": "^8.0.0",
     "prisma-extension-soft-delete": "^2.0.1",
-    "survey-core": "^2.2.6",
+    "survey-core": "^2.3.10",
     "ulidx": "^2.4.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
