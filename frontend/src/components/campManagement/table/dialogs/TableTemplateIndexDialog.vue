@@ -93,6 +93,7 @@ function addTemplate() {
     indexed: true,
     actions: true,
     sortBy: 'first_name',
+    filterWaitingList: 'exclude',
     columns: [
       {
         label: {
