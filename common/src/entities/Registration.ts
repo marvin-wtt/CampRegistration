@@ -33,8 +33,8 @@ export type RegistrationUpdateData = Partial<
 >;
 
 export interface RegistrationUpdateQuery {
-  supressMessage?: boolean | undefined;
+  suppressMessage?: boolean | undefined;
 }
 export interface RegistrationDeleteQuery {
-  supressMessage?: boolean | undefined;
+  suppressMessage?: boolean | undefined;
 }
