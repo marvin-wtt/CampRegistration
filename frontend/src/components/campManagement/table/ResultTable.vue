@@ -22,7 +22,7 @@
         <q-select
           v-if="!printing && countries.length > 1 && !quasar.screen.xs"
           v-model="countryFilter"
-          :label="t('filter')"
+          :label="t('filter.country')"
           :options="countries"
           borderless
           rounded
@@ -623,9 +623,13 @@ function editTemplates() {
 <i18n lang="yaml" locale="en">
 template: 'Template'
 title: 'Participants'
+
 menu:
   download: 'Download Table'
   edit_templates: 'Edit templates'
+
+filter:
+  country: 'Country'
 
 export:
   dialog:
@@ -643,9 +647,13 @@ export:
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
 title: 'Teilnehmende'
+
 menu:
   download: 'Tabelle herunterladen'
   edit_templates: 'Vorlagen bearbeiten'
+
+filter:
+  country: 'Land'
 
 export:
   dialog:
@@ -663,9 +671,13 @@ export:
 <i18n lang="yaml" locale="fr">
 template: 'Modèle'
 title: 'Participants'
+
 menu:
   download: 'Télécharger le tableau'
   edit_templates: 'Modifier les modèles'
+
+filter:
+  country: 'Pays'
 
 export:
   dialog:
@@ -683,9 +695,13 @@ export:
 <i18n lang="yaml" locale="pl">
 template: 'Szablon'
 title: 'Uczestnicy'
+
 menu:
   download: 'Pobierz tabelę'
   edit_templates: 'Edytuj szablony'
+
+filter:
+  country: 'Kraj'
 
 export:
   dialog:
@@ -703,9 +719,13 @@ export:
 <i18n lang="yaml" locale="cs">
 template: 'Šablona'
 title: 'Účastníci'
+
 menu:
   download: 'Stáhnout tabulku'
   edit_templates: 'Upravit šablony'
+
+filter:
+  country: 'Země'
 
 export:
   dialog:
