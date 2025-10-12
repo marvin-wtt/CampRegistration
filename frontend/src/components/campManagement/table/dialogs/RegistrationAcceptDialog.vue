@@ -92,7 +92,7 @@ const confirmationMessage = ref<boolean>(true);
 
 function onConfirm() {
   onDialogOK({
-    supressMessage: !confirmationMessage.value,
+    suppressMessage: !confirmationMessage.value,
   });
 }
 </script>
