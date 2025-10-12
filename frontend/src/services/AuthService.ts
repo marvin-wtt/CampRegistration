@@ -212,7 +212,6 @@ export function useAuthService() {
     resetPassword,
     verifyEmail,
     sendEmailVerify,
-    requestCsrfToken,
     refreshTokens,
     setOnUnauthenticated,
     extractPartialAuthResponse,
