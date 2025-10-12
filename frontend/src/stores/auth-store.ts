@@ -8,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useProfileStore } from 'stores/profile-store';
+import { ref } from 'vue';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -29,12 +30,35 @@ export const useAuthStore = defineStore('auth', () => {
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
   let ongoingRefresh: Promise<boolean> | null = null;
+  let ongoingInit: Promise<void> | null = null;
+  
+  // Track if auth is being initialized to prevent premature router redirects
+  const isInitializing = ref(false);
 
-  router.beforeEach((to) => {
-    if (!to.meta.auth || profileStore.loading || profileStore.user) {
+  router.beforeEach(async (to) => {
+    // Allow navigation for non-protected routes
+    if (!to.meta.auth) {
       return;
     }
 
+    // Allow navigation if user is already authenticated or profile is loading
+    if (profileStore.user || profileStore.loading) {
+      return;
+    }
+
+    // If auth initialization is not in progress, start it and wait for completion
+    if (!ongoingInit) {
+      ongoingInit = init();
+    }
+    
+    await ongoingInit;
+
+    // After initialization, check if user is now authenticated
+    if (profileStore.user) {
+      return; // Allow navigation
+    }
+
+    // If still not authenticated after initialization, redirect to login
     return buildLoginRoute();
   });
 
@@ -66,20 +90,35 @@ export const useAuthStore = defineStore('auth', () => {
       accessTokenTimer = null;
     }
 
+    isInitializing.value = false;
+    ongoingInit = null;
     resetDefault();
   }
 
   async function init() {
-    const authenticated = await refreshTokens();
-    if (!authenticated) {
-      // Redirect, in case the user is not authenticated
-      if (route.meta.auth) {
-        await redirectToLogin();
-      }
-      return;
+    // If already initializing, wait for the existing initialization to complete
+    if (ongoingInit) {
+      return ongoingInit;
     }
 
-    await profileStore.fetchProfile();
+    // Create the initialization promise
+    ongoingInit = (async () => {
+      isInitializing.value = true;
+      
+      try {
+        const authenticated = await refreshTokens();
+        if (!authenticated) {
+          // Don't redirect from init - let the router guard handle this
+          return;
+        }
+
+        await profileStore.fetchProfile();
+      } finally {
+        isInitializing.value = false;
+      }
+    })();
+
+    return ongoingInit;
   }
 
   async function login(
@@ -258,6 +297,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     error,
     loading: isLoading,
+    isInitializing,
     init,
     reset,
     login,
