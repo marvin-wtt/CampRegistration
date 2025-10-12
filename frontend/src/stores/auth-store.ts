@@ -167,8 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     ongoingRefresh = apiService
-      .requestCsrfToken()
-      .then(() => apiService.refreshTokens())
+      .refreshTokens()
       .then(handleTokenRefresh)
       .then(() => true)
       .catch(() => false)
