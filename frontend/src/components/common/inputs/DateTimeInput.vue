@@ -27,7 +27,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                :label="t('actions.ok')"
+                :label="t('action.ok')"
               />
             </div>
           </q-date>
@@ -55,7 +55,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                :label="t('actions.ok')"
+                :label="t('action.ok')"
               />
             </div>
           </q-time>
@@ -115,11 +115,21 @@ function dateTimeToIso(dateTime: ModelValue): ModelValue {
     return dateTime;
   }
 
-  // Replace " " with "T" to make it a valid ISO string and append seconds/milliseconds
-  const isoString = dateTime.replace(' ', 'T') + ':00.000Z';
+  // "YYYY-MM-DD HH:mm" → ["YYYY-MM-DD", "HH:mm"]
+  const [datePart, timePart] = dateTime.split(' ');
+  if (!datePart || !timePart) {
+    return null;
+  }
 
-  // Parse the resulting string to ensure validity and return it
-  const date = new Date(isoString);
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+
+  if (!year || !month || !day || hour === undefined || minute === undefined) {
+    return null;
+  }
+
+  // Create local time → store as UTC
+  const date = new Date(year, month - 1, day, hour, minute);
 
   // Convert back to ISO string
   return date.toISOString();
@@ -129,26 +139,26 @@ function dateTimeToIso(dateTime: ModelValue): ModelValue {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-actions:
+action:
   ok: 'Ok'
 </i18n>

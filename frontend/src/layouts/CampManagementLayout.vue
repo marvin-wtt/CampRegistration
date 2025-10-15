@@ -36,10 +36,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -136,7 +133,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
@@ -152,10 +148,8 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(profileStore);
-
 async function init() {
-  if (!user.value) {
+  if (!profileStore.user) {
     // Fetch user instead of init to force redirect on error
     await authStore.init();
   }
@@ -294,10 +288,6 @@ function toggleDrawer() {
 
 function navigateHome() {
   router.push({ name: 'management' });
-}
-
-function logout() {
-  authStore.logout();
 }
 </script>
 
