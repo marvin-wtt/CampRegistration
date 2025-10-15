@@ -36,10 +36,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -95,10 +92,6 @@ if (!profileStore.user) {
 const administrator = computed<boolean>(() => {
   return profileStore.user?.role === 'ADMIN';
 });
-
-function logout() {
-  authStore.logout();
-}
 </script>
 
 <style>

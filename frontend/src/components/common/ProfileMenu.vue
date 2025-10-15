@@ -139,6 +139,7 @@
     v-else
     :to="{ name: 'login' }"
     :label="t('login')"
+    :loading
     rounded
     flat
   />
@@ -150,20 +151,17 @@ import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
+import { useProfileStore } from 'stores/profile-store';
+import { useAuthStore } from 'stores/auth-store';
+
+const profileStore = useProfileStore();
+const authStore = useAuthStore();
 
 const quasar = useQuasar();
 const { t } = useI18n();
 const { locale } = useI18n({
   useScope: 'global',
 });
-
-const { profile } = defineProps<{
-  profile: Profile | undefined;
-}>();
-
-const emit = defineEmits<{
-  (e: 'logout'): void;
-}>();
 
 // TODO Read from config
 const locales = computed(() => [
@@ -174,12 +172,20 @@ const locales = computed(() => [
   { label: 'Česky', value: 'cs-CZ' },
 ]);
 
+const profile = computed<Profile | undefined>(() => {
+  return profileStore.user;
+});
+
+const loading = computed<boolean>(() => {
+  return authStore.loading || profileStore.loading;
+});
+
 const authenticated = computed<boolean>(() => {
-  return profile !== undefined;
+  return profile.value !== undefined;
 });
 
 const administrator = computed<boolean>(() => {
-  return profile?.role === 'ADMIN';
+  return profile.value?.role === 'ADMIN';
 });
 
 const darkMode = computed<boolean>(() => {
@@ -195,7 +201,7 @@ function toggleDarkMode() {
 }
 
 function logout() {
-  emit('logout');
+  authStore.logout();
 }
 </script>
 
