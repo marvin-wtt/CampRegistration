@@ -221,7 +221,7 @@ const rows = computed<CampManager[]>(() => {
 });
 
 function getRoleOptions(): QSelectOption[] {
-  const roles = ['VIEWER', 'COORDINATOR', 'COUNSELOR', 'DIRECTOR'] as const;
+  const roles = ['VIEWER', 'COUNSELOR', 'COORDINATOR', 'DIRECTOR'] as const;
 
   return roles.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
