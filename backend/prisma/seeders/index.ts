@@ -3,12 +3,16 @@ import userSeeder from './user.seeder';
 import campSeeder from './camp.seeder';
 import messageTemplate from './message-template.seeder';
 import registrationSeeder from './registration.seeder';
+import campManagerSeeder from './camp-manager.seeder';
+import tableTemplate from './table-template.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
 async function main() {
   const seeders: BaseSeeder[] = [
     userSeeder,
     campSeeder,
+    tableTemplate,
+    campManagerSeeder,
     messageTemplate,
     registrationSeeder,
   ];

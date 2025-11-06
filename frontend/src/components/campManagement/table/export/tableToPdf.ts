@@ -1,5 +1,6 @@
 import { default as JsPdf } from 'jspdf';
-import DomToImage from 'dom-to-image';
+import { toPng } from 'html-to-image';
+import { inlineSvgImages } from 'components/campManagement/table/export/svg-inline';
 
 export interface ExportOptions {
   scale?: number | undefined;
@@ -169,7 +170,7 @@ export function createPDF() {
 }
 
 export async function createImage(
-  node: Node,
+  node: HTMLElement,
   options: ExportOptions,
 ): Promise<HTMLImageElement> {
   const width = options.captureWidth ?? 0;
@@ -185,11 +186,16 @@ export async function createImage(
     },
   };
 
-  const dataUrl = await DomToImage.toPng(node, o);
+  const undo = await inlineSvgImages(node);
 
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = dataUrl;
+  try {
+    const dataUrl = await toPng(node, o);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = dataUrl;
 
-  return img;
+    return img;
+  } finally {
+    undo();
+  }
 }
