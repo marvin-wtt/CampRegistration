@@ -14,6 +14,7 @@
     hide-bottom
     row-key="name"
     virtual-scroll
+    :virtual-scroll-slice-size="printing ? rows.length : 10"
     binary-state-sort
   >
     <template #top-right>
