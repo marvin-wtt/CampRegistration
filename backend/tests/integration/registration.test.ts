@@ -91,8 +91,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
     };
   };
 
-  const createRegistration = async (camp: Camp) => {
+  const createRegistration = async (
+    camp: Camp,
+    data?: Partial<Prisma.RegistrationCreateInput>,
+  ) => {
     return RegistrationFactory.create({
+      ...data,
       camp: { connect: { id: camp.id } },
     });
   };
@@ -1410,7 +1414,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
             }),
           },
         });
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(camp, {
+          waitingList: true,
+        });
 
         const data = {
           email: 'test@example.com',
