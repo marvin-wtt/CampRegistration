@@ -171,6 +171,7 @@ const columns: QTableColumn[] = [
   {
     name: 'name',
     required: true,
+    sortable: true,
     label: t('column.name'),
     field: 'name',
     align: 'left',
@@ -178,6 +179,7 @@ const columns: QTableColumn[] = [
   {
     name: 'email',
     required: true,
+    sortable: true,
     label: t('column.email'),
     field: 'email',
     align: 'left',
@@ -185,6 +187,7 @@ const columns: QTableColumn[] = [
   {
     name: 'role',
     required: true,
+    sortable: true,
     label: t('column.role'),
     field: 'role',
     align: 'center',
@@ -192,6 +195,7 @@ const columns: QTableColumn[] = [
   {
     name: 'status',
     required: true,
+    sortable: true,
     label: t('column.status'),
     field: 'status',
     align: 'center',
@@ -199,6 +203,7 @@ const columns: QTableColumn[] = [
   {
     name: 'expiresAt',
     required: true,
+    sortable: true,
     label: t('column.expiresAt'),
     field: 'expiresAt',
     align: 'center',
