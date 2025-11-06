@@ -496,7 +496,7 @@ async function printTablesCore(templates: CTableTemplate[]) {
     // Update view
     template.value = printingTemplate;
     // Wait for DOM to finish updating the template
-    await new Promise<void>((resolve) => nextTick(resolve));
+    await waitForStableLayout();
 
     const { element, width, height, orientation } = prepareTableForExport();
 
@@ -518,6 +518,13 @@ async function printTablesCore(templates: CTableTemplate[]) {
 
   const filename = `${year}_${month}_${day}_${t('title')}`;
   pdf.save(filename);
+}
+
+async function waitForStableLayout(): Promise<void> {
+  await new Promise<void>((r) => nextTick(r));
+
+  await new Promise((r) => requestAnimationFrame(() => r(null)));
+  await new Promise((r) => requestAnimationFrame(() => r(null)));
 }
 
 function prepareTableForExport() {
