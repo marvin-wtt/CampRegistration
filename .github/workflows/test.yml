@@ -68,7 +68,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:10.5.27
+        image: mariadb:10.11.15
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -155,7 +155,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:10.5.27
+        image: mariadb:10.11.15
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123

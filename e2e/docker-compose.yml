@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   db:
-    image: mariadb:10.5.27
+    image: mariadb:10.11.15
     restart: on-failure
     environment:
       MYSQL_DATABASE: 'database'
