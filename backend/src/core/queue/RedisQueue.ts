@@ -16,7 +16,7 @@ import config from '#config/index';
 
 export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
   private bull: BullQueue<BullJob<P, R, N>>;
-  private worker: Worker<P, unknown> | undefined;
+  private worker: Worker<P, R, N> | undefined;
   private events: QueueEvents;
   private connection: ConnectionOptions;
 
@@ -50,17 +50,23 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
       logger.error(`Error in queue ${queue}:`, error);
     });
 
-    this.events = new QueueEvents(this.queue);
+    this.events = new QueueEvents(this.queue, {
+      connection: this.connection,
+    });
 
-    this.events.on('failed', (job, error) => {
+    this.events.on('failed', (job) => {
       logger.error(
-        `Error while processing job ${job.jobId.toString()} in queue ${queue}:`,
-        error,
+        `Error while processing job ${job.jobId} in queue ${queue}:`,
+        job.failedReason,
       );
     });
 
     this.events.on('stalled', (job) => {
-      logger.warn(`Job ${job.jobId.toString()} in queue ${queue} has stalled.`);
+      logger.warn(`Job ${job.jobId} in queue ${queue} has stalled.`);
+    });
+
+    this.events.on('error', (err) => {
+      logger.error(`QueueEvents error ${queue}`, err);
     });
   }
 
@@ -94,7 +100,7 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
 
     return [
-      ...activeJobs.map(mapJob('PENDING')),
+      ...activeJobs.map(mapJob('RUNNING')),
       ...completedJobs.map(mapJob('COMPLETED')),
       ...failedJobs.map(mapJob('FAILED')),
       ...pendingJobs.map(mapJob('PENDING')),
@@ -116,7 +122,7 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
       throw new Error(`Worker for queue ${this.queue} already exists.`);
     }
 
-    this.worker = new Worker<P, unknown>(
+    this.worker = new Worker<P, R, N>(
       this.queue,
       (job) => {
         return handler(job.data);
