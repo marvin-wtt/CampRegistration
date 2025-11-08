@@ -23,7 +23,7 @@ const model = defineModel<boolean>({
 });
 
 const label = computed<string>(() => {
-  return model.value ? t('actions.disable') : t('actions.enable');
+  return model.value ? t('action.disable') : t('action.enable');
 });
 
 const icon = computed<string>(() => {
@@ -31,22 +31,34 @@ const icon = computed<string>(() => {
 });
 </script>
 
-<style scoped></style>
-
 <i18n lang="yaml" locale="en">
-actions:
+action:
   enable: 'Use translations'
   disable: "Don't use translations"
 </i18n>
 
 <i18n lang="yaml" locale="de">
-actions:
+action:
   enable: 'Übersetzungen verwenden'
   disable: 'Keine Übersetzungen verwenden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-actions:
+action:
   enable: 'Utiliser les traductions'
   disable: 'Ne pas utiliser les traductions'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  enable: 'Użyj tłumaczeń'
+  disable: 'Nie używaj tłumaczeń'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  enable: 'Použít překlady'
+  disable: 'Nepoužívat překlady'
+</i18n>
+
+<style scoped></style>

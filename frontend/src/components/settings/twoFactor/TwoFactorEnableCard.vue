@@ -145,3 +145,33 @@ field:
 action:
   enable: 'Activer 2FA'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Uwierzytelnianie dwuskładnikowe'
+description: 'Zabezpiecz swoje konto, włączając uwierzytelnianie dwuskładnikowe. Zeskanuj kod QR lub użyj klucza tajnego, aby skonfigurować aplikację uwierzytelniającą. Następnie wprowadź kod OTP, aby zakończyć aktywację.'
+secret: 'Klucz tajny'
+secretInstructions: 'Możesz użyć tego klucza, aby ręcznie skonfigurować uwierzytelnianie dwuskładnikowe, jeśli to konieczne.'
+field:
+  otp:
+    label: 'OTP'
+    rule:
+      required: 'Kod OTP jest wymagany.'
+      invalid: 'Kod OTP musi składać się z 6 cyfr.'
+action:
+  enable: 'Włącz 2FA'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Dvoufázové ověřování'
+description: 'Zabezpečte svůj účet aktivací dvoufázového ověřování. Naskenujte QR kód nebo použijte tajný klíč k nastavení ověřovací aplikace. Poté zadejte OTP kód pro dokončení aktivace.'
+secret: 'Tajný klíč'
+secretInstructions: 'Tento klíč můžete použít pro ruční nastavení dvoufázového ověřování, pokud je to nutné.'
+field:
+  otp:
+    label: 'OTP'
+    rule:
+      required: 'OTP kód je povinný.'
+      invalid: 'OTP kód musí mít 6 číslic.'
+action:
+  enable: 'Aktivovat 2FA'
+</i18n>

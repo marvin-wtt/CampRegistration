@@ -95,3 +95,11 @@ title: 'Wählen Sie ein Token aus'
 <i18n lang="yaml" locale="fr">
 title: 'Sélectionner un jeton'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Wybierz zmienną'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Vyberte token'
+</i18n>

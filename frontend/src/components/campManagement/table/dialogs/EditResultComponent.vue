@@ -46,24 +46,17 @@ import type {
 import RegistrationForm from 'components/common/RegistrationForm.vue';
 import { useI18n } from 'vue-i18n';
 
-interface Props {
+const props = defineProps<{
   camp: CampDetails;
   data: Registration['data'];
   uploadFileFn: (file: File) => Promise<string>;
-}
+}>();
 
-const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 function onSubmit(id: string, data: unknown) {
   onDialogOK(data);
@@ -92,6 +85,18 @@ action:
 title: "Modifier l'inscription"
 action:
   close: 'Fermer'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj zgłoszenie'
+action:
+  close: 'Zamknij'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit registraci'
+action:
+  close: 'Zavřít'
 </i18n>
 
 <style></style>

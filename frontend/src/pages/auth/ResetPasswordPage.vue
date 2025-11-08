@@ -177,3 +177,41 @@ field:
 action:
   register: 'Réinitialiser le mot de passe'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Zresetuj hasło'
+
+describe: 'Utwórz nowe hasło, aby odzyskać dostęp do swojego konta.'
+
+field:
+  password:
+    label: 'Nowe hasło'
+    rule:
+      required: 'Musisz podać prawidłowe hasło'
+  confirm-password:
+    label: 'Potwierdź hasło'
+    rule:
+      identical: 'Hasła nie są identyczne'
+
+action:
+  register: 'Zresetuj hasło'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Obnovení hesla'
+
+describe: 'Vytvořte nové heslo, abyste znovu získali přístup ke svému účtu.'
+
+field:
+  password:
+    label: 'Nové heslo'
+    rule:
+      required: 'Musíte zadat platné heslo'
+  confirm-password:
+    label: 'Potvrďte heslo'
+    rule:
+      identical: 'Hesla se neshodují'
+
+action:
+  register: 'Obnovit heslo'
+</i18n>

@@ -107,7 +107,7 @@ async function saveFile(file: File): Promise<string> {
   const campId = campData.value?.id;
 
   if (!campId) {
-    throw 'Camp not loaded';
+    throw new Error('Camp not defined');
   }
 
   // When file is selected via custom picker, then the file is already present on the server

@@ -93,6 +93,7 @@ function addTemplate() {
     indexed: true,
     actions: true,
     sortBy: 'first_name',
+    filterWaitingList: 'exclude',
     columns: [
       {
         label: {
@@ -192,4 +193,26 @@ action:
 
 default:
   title: 'Nouveau modèle'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj szablony'
+
+action:
+  ok: 'OK'
+  cancel: 'Anuluj'
+
+default:
+  title: 'Nowy szablon'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit šablony'
+
+action:
+  ok: 'OK'
+  cancel: 'Zrušit'
+
+default:
+  title: 'Nová šablona'
 </i18n>

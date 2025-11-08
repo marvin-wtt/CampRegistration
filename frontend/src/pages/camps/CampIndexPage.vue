@@ -71,3 +71,9 @@ no_data: 'Keine Camps gefunden, die diesen Kriterien entsprechen.'
 <i18n lang="yaml" locale="fr">
 no_data: "Aucun camp correspondant à ces critères n'a été trouvé."
 </i18n>
+<i18n lang="yaml" locale="pl">
+no_data: 'Nie znaleziono obozów spełniających te kryteria.'
+</i18n>
+<i18n lang="yaml" locale="cs">
+no_data: 'Nebyly nalezeny žádné tábory odpovídající těmto kritériím.'
+</i18n>

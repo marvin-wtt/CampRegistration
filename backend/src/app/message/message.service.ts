@@ -12,6 +12,7 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service';
 import { BaseService } from '#core/base/BaseService';
+import { RegistrationResource } from '#app/registration/registration.resource.js';
 
 type MessageWithAttachments = Message & { attachments: File[] };
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
@@ -97,7 +98,7 @@ export class MessageService extends BaseService {
         maxParticipants: translateObject(camp.maxParticipants, locale),
         location: translateObject(camp.location, locale),
       },
-      registration,
+      registration: new RegistrationResource(registration).transform(),
     };
   }
 

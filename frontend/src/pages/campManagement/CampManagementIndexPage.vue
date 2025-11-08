@@ -78,4 +78,16 @@ header:
   closed: 'Inscription fermée'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+header:
+  open: 'Rejestracja otwarta'
+  closed: 'Rejestracja zamknięta'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+header:
+  open: 'Registrace otevřena'
+  closed: 'Registrace uzavřena'
+</i18n>
+
 <style scoped></style>

@@ -11,7 +11,7 @@
   />
 
   <template v-else>
-    {{ props.props.value }}
+    {{ cellProps.value }}
   </template>
 </template>
 
@@ -20,24 +20,22 @@ import { computed } from 'vue';
 import { openURL } from 'quasar';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 function open() {
-  if (typeof props.props.value !== 'string') {
+  if (typeof cellProps.value !== 'string') {
     return;
   }
 
-  openURL(props.props.value);
+  openURL(cellProps.value);
 }
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 
 const visible = computed<boolean>(() => {
-  return (
-    props.props.value !== undefined && typeof props.props.value === 'string'
-  );
+  return cellProps.value !== undefined && typeof cellProps.value === 'string';
 });
 </script>
 

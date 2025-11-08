@@ -87,4 +87,22 @@ action:
   cancel: 'Accès complet'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Ograniczony dostęp'
+line1: 'Niektóre zgłoszenia zostały już przesłane za pomocą tego formularza. Zmiany w formularzu mogą spowodować niespójność danych lub wpłynąć na istniejące zgłoszenia.'
+line2: 'Czy chcesz kontynuować z ograniczonym dostępem, aby ograniczyć zmiany w formularzu, czy kontynuować z pełnym dostępem, aby edytować formularz?'
+action:
+  ok: 'Ograniczony dostęp'
+  cancel: 'Pełny dostęp'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Omezený přístup'
+line1: 'Některé registrace již byly odeslány pomocí tohoto formuláře. Úpravy formuláře mohou způsobit nekonzistenci dat nebo ovlivnit stávající přihlášky.'
+line2: 'Chcete pokračovat s omezeným přístupem, abyste omezili změny ve formuláři, nebo pokračovat s plným přístupem a formulář upravit?'
+action:
+  ok: 'Omezený přístup'
+  cancel: 'Plný přístup'
+</i18n>
+
 <style scoped></style>

@@ -14,6 +14,7 @@
     hide-bottom
     row-key="name"
     virtual-scroll
+    :virtual-scroll-slice-size="printing ? rows.length : 10"
     binary-state-sort
   >
     <template #top-right>
@@ -22,7 +23,7 @@
         <q-select
           v-if="!printing && countries.length > 1 && !quasar.screen.xs"
           v-model="countryFilter"
-          :label="t('filter')"
+          :label="t('filter.country')"
           :options="countries"
           borderless
           rounded
@@ -495,7 +496,7 @@ async function printTablesCore(templates: CTableTemplate[]) {
     // Update view
     template.value = printingTemplate;
     // Wait for DOM to finish updating the template
-    await new Promise<void>((resolve) => nextTick(resolve));
+    await waitForStableLayout();
 
     const { element, width, height, orientation } = prepareTableForExport();
 
@@ -517,6 +518,13 @@ async function printTablesCore(templates: CTableTemplate[]) {
 
   const filename = `${year}_${month}_${day}_${t('title')}`;
   pdf.save(filename);
+}
+
+async function waitForStableLayout(): Promise<void> {
+  await new Promise<void>((r) => nextTick(r));
+
+  await new Promise((r) => requestAnimationFrame(() => r(null)));
+  await new Promise((r) => requestAnimationFrame(() => r(null)));
 }
 
 function prepareTableForExport() {
@@ -623,9 +631,13 @@ function editTemplates() {
 <i18n lang="yaml" locale="en">
 template: 'Template'
 title: 'Participants'
+
 menu:
   download: 'Download Table'
   edit_templates: 'Edit templates'
+
+filter:
+  country: 'Country'
 
 export:
   dialog:
@@ -643,9 +655,13 @@ export:
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
 title: 'Teilnehmende'
+
 menu:
   download: 'Tabelle herunterladen'
   edit_templates: 'Vorlagen bearbeiten'
+
+filter:
+  country: 'Land'
 
 export:
   dialog:
@@ -663,9 +679,13 @@ export:
 <i18n lang="yaml" locale="fr">
 template: 'Modèle'
 title: 'Participants'
+
 menu:
   download: 'Télécharger le tableau'
   edit_templates: 'Modifier les modèles'
+
+filter:
+  country: 'Pays'
 
 export:
   dialog:
@@ -678,4 +698,52 @@ export:
       template: 'Préparation du modèle : '
       save: 'Enregistrement de(s) table(s) dans le fichier...'
     error: "Échec de l'exportation de(s) table(s)"
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+template: 'Szablon'
+title: 'Uczestnicy'
+
+menu:
+  download: 'Pobierz tabelę'
+  edit_templates: 'Edytuj szablony'
+
+filter:
+  country: 'Kraj'
+
+export:
+  dialog:
+    title: 'Eksportuj tabele'
+    message: 'Wybierz, które tabele chcesz wyeksportować'
+    download: 'Pobierz'
+    cancel: 'Anuluj'
+  pdf:
+    loading:
+      template: 'Przygotowywanie szablonu: '
+      save: 'Zapisywanie tabel(i) do pliku...'
+    error: 'Błąd podczas eksportowania tabel(i)'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+template: 'Šablona'
+title: 'Účastníci'
+
+menu:
+  download: 'Stáhnout tabulku'
+  edit_templates: 'Upravit šablony'
+
+filter:
+  country: 'Země'
+
+export:
+  dialog:
+    title: 'Export tabulek'
+    message: 'Vyberte, které tabulky chcete exportovat'
+    download: 'Stáhnout'
+    cancel: 'Zrušit'
+  pdf:
+    loading:
+      template: 'Připravuji šablonu: '
+      save: 'Ukládám tabulku(y) do souboru...'
+    error: 'Chyba při exportu tabulky/tabulek'
 </i18n>

@@ -8,10 +8,8 @@
         @submit="onOKClick"
         @reset="onCancelClick"
       >
-        <q-card-section>
-          <div class="text-h6">
-            {{ t('title') }}
-          </div>
+        <q-card-section class="text-h6">
+          {{ t('title') }}
         </q-card-section>
         <q-card-section>
           <q-list
@@ -48,7 +46,7 @@
                 top
               >
                 <q-checkbox
-                  v-if="props.multiple"
+                  v-if="multiple"
                   :model-value="selected.includes(file)"
                   :val="file.name"
                 />
@@ -64,7 +62,6 @@
                 </q-item-label>
               </q-item-section>
             </q-item>
-            <!-- TODO Fix style -->
             <q-item
               v-ripple
               clickable
@@ -127,7 +124,7 @@ campFileStore.fetchData();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const props = defineProps<{
+const { multiple, accept, accessLevel } = defineProps<{
   multiple?: boolean;
   accept?: string;
   accessLevel?: string;
@@ -140,11 +137,11 @@ const selected = ref<ServiceFile[]>([]);
 
 // Parse the accept string into an array, separating by commas and trimming whitespace
 const acceptedTypes = computed<string[]>(() => {
-  if (!props.accept) {
+  if (!accept) {
     return [];
   }
 
-  return props.accept
+  return accept
     .split(',')
     .map((type) => type.trim())
     .filter((value) => value.length > 0);
@@ -163,7 +160,7 @@ function onCancelClick() {
 }
 
 function filterAccessLevel(file: ServiceFile): boolean {
-  return !props.accessLevel || file.accessLevel === props.accessLevel;
+  return !accessLevel || file.accessLevel === accessLevel;
 }
 
 function filterFileType(file: ServiceFile): boolean {
@@ -180,7 +177,7 @@ function filterFileType(file: ServiceFile): boolean {
 
     if (acceptType.endsWith('/*')) {
       // If it's a media type (e.g., image/*), check the file's MIME type prefix
-      const baseMimeType = acceptType.split('/')[0];
+      const baseMimeType = acceptType.split('/')[0]!;
       return file.type.startsWith(baseMimeType);
     }
 
@@ -190,7 +187,7 @@ function filterFileType(file: ServiceFile): boolean {
 }
 
 function toggleFileSelect(file: ServiceFile) {
-  if (!props.multiple) {
+  if (!multiple) {
     selected.value = [file];
     return;
   }
@@ -204,9 +201,17 @@ function toggleFileSelect(file: ServiceFile) {
 }
 
 function upload() {
-  quasar.dialog({
-    component: FileUploadDialog,
-  });
+  quasar
+    .dialog({
+      component: FileUploadDialog,
+    })
+    .onOk((file: ServiceFile) => {
+      if (multiple) {
+        selected.value.push(file);
+      } else {
+        selected.value = [file];
+      }
+    });
 }
 </script>
 
@@ -244,6 +249,30 @@ action:
   ok: 'Sélectionner'
   cancel: 'Annuler'
   upload: 'Télécharger'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Wybierz plik'
+
+column:
+  name: 'Nazwa'
+
+action:
+  cancel: 'Anuluj'
+  upload: 'Prześlij'
+  ok: 'Wybierz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Vyberte soubor'
+
+column:
+  name: 'Název'
+
+action:
+  cancel: 'Zrušit'
+  upload: 'Nahrát'
+  ok: 'Vybrat'
 </i18n>
 
 <style scoped></style>

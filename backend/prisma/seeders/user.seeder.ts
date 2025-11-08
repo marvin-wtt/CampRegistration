@@ -16,7 +16,6 @@ class UserSeeder extends BaseSeeder {
     });
 
     await UserFactory.create({
-      id: '',
       name: 'Admin User',
       email: 'admin@email.com',
       password: 'admin-password',

@@ -497,3 +497,91 @@ fields:
       include: 'Afficher toutes les inscriptions'
       only: 'Afficher uniquement la liste d’attente'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj szablon'
+
+advanced:
+  hide: 'Ukryj opcje zaawansowane'
+  show: 'Pokaż opcje zaawansowane'
+
+sections:
+  advanced: 'Opcje zaawansowane'
+  columns: 'Kolumny'
+  options: 'Opcje'
+
+actions:
+  ok: 'OK'
+  cancel: 'Anuluj'
+
+fields:
+  title:
+    label: 'Tytuł'
+    hint: ''
+  indexed:
+    label: 'Numeruj kolumny'
+    hint: ''
+  actions:
+    label: 'Pokaż akcje'
+    hint: ''
+  sortBy:
+    label: 'Sortuj według kolumny'
+    hint: ''
+  filter:
+    label: 'Filtruj wiersze według'
+    hint: 'Wyrażenie określające, kiedy wiersz ma być wyświetlony'
+  filter_roles:
+    label: 'Ukryj rejestracje z rolą'
+    hint: ''
+  filter_waiting_list:
+    label: 'Lista oczekujących'
+    hint: ''
+    options:
+      exclude: 'Wyklucz listę oczekujących'
+      include: 'Pokaż wszystkie rejestracje'
+      only: 'Pokaż tylko listę oczekujących'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit šablonu'
+
+advanced:
+  hide: 'Skrýt pokročilé možnosti'
+  show: 'Zobrazit pokročilé možnosti'
+
+sections:
+  advanced: 'Pokročilé možnosti'
+  columns: 'Sloupce'
+  options: 'Možnosti'
+
+actions:
+  ok: 'OK'
+  cancel: 'Zrušit'
+
+fields:
+  title:
+    label: 'Název'
+    hint: ''
+  indexed:
+    label: 'Číslovat sloupce'
+    hint: ''
+  actions:
+    label: 'Zobrazit akce'
+    hint: ''
+  sortBy:
+    label: 'Řadit podle sloupce'
+    hint: ''
+  filter:
+    label: 'Filtrovat řádky podle'
+    hint: 'Výraz určující, kdy se má řádek zobrazit'
+  filter_roles:
+    label: 'Skrýt registrace s rolí'
+    hint: ''
+  filter_waiting_list:
+    label: 'Čekací seznam'
+    hint: ''
+    options:
+      exclude: 'Vyloučit čekací seznam'
+      include: 'Zobrazit všechny registrace'
+      only: 'Zobrazit pouze čekací seznam'
+</i18n>

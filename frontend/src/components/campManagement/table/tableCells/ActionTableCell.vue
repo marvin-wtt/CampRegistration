@@ -1,6 +1,6 @@
 <template>
   <q-btn
-    v-if="!props.printing"
+    v-if="!printing"
     :size="size"
     dense
     field="edit"
@@ -20,7 +20,7 @@
       </q-item>
 
       <q-item
-        v-if="!props.readonly && can('camp.registrations.edit')"
+        v-if="!readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="editItem"
@@ -30,7 +30,7 @@
         </q-item-section>
       </q-item>
       <q-item
-        v-if="waitingList && !props.readonly && can('camp.registrations.edit')"
+        v-if="waitingList && !readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="accept"
@@ -41,7 +41,7 @@
       </q-item>
       <q-separator />
       <q-item
-        v-if="!props.readonly && can('camp.registrations.delete')"
+        v-if="!readonly && can('camp.registrations.delete')"
         v-close-popup
         class="text-negative"
         clickable
@@ -64,74 +64,69 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import type { Registration } from '@camp-registration/common/entities';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import type {
+  Registration,
+  RegistrationDeleteQuery,
+  RegistrationUpdateQuery,
+} from '@camp-registration/common/entities';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { usePermissions } from 'src/composables/permissions';
+import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
+import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
 const camp = storeToRefs(campDetailStore);
-const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 
 const registration = computed<Registration>(() => {
-  return props.props.row as Registration;
+  return cellProps.row;
 });
 
 const waitingList = computed<boolean>(() => {
-  return registration.value.waitingList;
+  return cellProps.row.waitingList;
 });
 
 function deleteItem(): void {
-  const value = registrationHelper.fullName(registration.value);
-
   quasar
     .dialog({
-      component: SafeDeleteDialog,
+      component: RegistrationDeleteDialog,
       componentProps: {
-        title: t('dialog.delete.title'),
-        message: t('dialog.delete.message'),
-        label: t('dialog.delete.label'),
-        value: value,
+        registration: registration.value,
+        camp: camp.data.value,
       },
     })
-    .onOk(async () => {
-      const id = registration.value.id;
-      await registrationStore.deleteData(id);
+    .onOk(async (params: RegistrationDeleteQuery) => {
+      const id = cellProps.row.id;
+      await registrationStore.deleteData(id, params);
     });
 }
 
 function accept(): void {
   quasar
     .dialog({
-      title: t('dialog.accept.title'),
-      message: t('dialog.accept.message'),
-      ok: {
-        label: t('dialog.accept.action.ok'),
-        rounded: true,
-        color: 'primary',
-      },
-      cancel: {
-        label: t('dialog.accept.action.cancel'),
-        outline: true,
-        rounded: true,
-        color: 'primary',
+      component: RegistrationAcceptDialog,
+      componentProps: {
+        registration: registration.value,
+        camp: camp.data.value,
       },
     })
-    .onOk(async () => {
-      const id = registration.value.id;
-      await registrationStore.updateData(id, {
-        waitingList: false,
-      });
+    .onOk(async (params: RegistrationUpdateQuery) => {
+      const id = cellProps.row.id;
+      await registrationStore.updateData(
+        id,
+        {
+          waitingList: false,
+        },
+        params,
+      );
     });
 }
 
@@ -141,12 +136,12 @@ function editItem(): void {
       component: EditResultComponent,
       componentProps: {
         camp: camp.data.value,
-        data: registration.value.data,
+        data: cellProps.row.data,
         uploadFileFn: uploadFile,
       },
     })
     .onOk((payload) => {
-      const id = registration.value.id;
+      const id = cellProps.row.id;
       registrationStore.updateData(id, { data: payload });
     });
 }
@@ -162,24 +157,12 @@ async function uploadFile(file: File): Promise<string> {
 }
 </script>
 
-<i18n lang="yaml" locale="em">
+<i18n lang="yaml" locale="en">
 option:
   details: 'Show details'
   edit: 'Edit'
   delete: 'Delete'
   accept: 'Accept registration'
-
-dialog:
-  accept:
-    title: 'Accept registration'
-    message: 'Accept registration from waiting list. The participant will revive the confirmation email.'
-    action:
-      ok: 'Accept'
-      cancel: 'Cancel'
-  delete:
-    title: 'Delete registration'
-    message: 'Once you delete the registration, all data about this person is lost.'
-    label: 'Name'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -188,18 +171,6 @@ option:
   edit: 'Bearbeiten'
   delete: 'Löschen'
   accept: 'Anmeldung akzeptieren'
-
-dialog:
-  accept:
-    title: 'Registrierung akzeptieren'
-    message: 'Anmeldung aus der Warteliste akzeptieren. Der Teilnehmer erhält eine Bestätigungs-E-Mail.'
-    action:
-      ok: 'Akzeptieren'
-      cancel: 'Abbrechen'
-  delete:
-    title: 'Registrierung löschen'
-    message: 'Wenn Sie die Registrierung löschen, gehen alle Daten dieser Person verloren.'
-    label: 'Name'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -208,18 +179,22 @@ option:
   edit: 'Modifier'
   delete: 'Supprimer'
   accept: "Accepter l'inscription"
+</i18n>
 
-dialog:
-  accept:
-    title: "Accepter l'inscription"
-    message: "Accepter l'inscription de la liste d'attente. Le participant recevra un courriel de confirmation."
-    action:
-      ok: 'Accepter'
-      cancel: 'Annuler'
-  delete:
-    title: "Supprimer l'inscription"
-    message: "Une fois que vous supprimez l'inscription, toutes les données concernant cette personne sont perdues."
-    label: 'Nom'
+<i18n lang="yaml" locale="pl">
+option:
+  details: 'Pokaż szczegóły'
+  edit: 'Edytuj'
+  delete: 'Usuń'
+  accept: 'Akceptuj zgłoszenie'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+option:
+  details: 'Zobrazit podrobnosti'
+  edit: 'Upravit'
+  delete: 'Smazat'
+  accept: 'Přijmout registraci'
 </i18n>
 
 <style scoped></style>

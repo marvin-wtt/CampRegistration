@@ -6,10 +6,10 @@
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 const address = computed<string>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
   if (typeof value === 'string') {
     return value;
   }

@@ -4,7 +4,9 @@ import { useAPIService } from 'src/services/APIService';
 import type {
   Registration,
   RegistrationCreateData,
+  RegistrationDeleteQuery,
   RegistrationUpdateData,
+  RegistrationUpdateQuery,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
@@ -72,6 +74,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   async function updateData(
     registrationId: string | undefined,
     updateData: RegistrationUpdateData,
+    params?: RegistrationUpdateQuery,
   ) {
     const campId = route.params.camp as string;
 
@@ -82,6 +85,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
         cid,
         rid,
         updateData,
+        params,
       );
 
       // Replace the registration with a new one
@@ -93,13 +97,16 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
-  async function deleteData(registrationId?: string) {
+  async function deleteData(
+    registrationId?: string,
+    params?: RegistrationDeleteQuery,
+  ) {
     const campId = route.params.camp as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(registrationId);
     await withProgressNotification('delete', async () => {
-      await apiService.deleteRegistration(cid, rid);
+      await apiService.deleteRegistration(cid, rid, params);
 
       // Replace the registration with a new one
       data.value = data.value?.filter(
@@ -120,5 +127,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     storeFile,
     updateData,
     deleteData,
+    invalidate,
   };
 });

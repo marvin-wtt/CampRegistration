@@ -36,10 +36,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -95,10 +92,6 @@ if (!profileStore.user) {
 const administrator = computed<boolean>(() => {
   return profileStore.user?.role === 'ADMIN';
 });
-
-function logout() {
-  authStore.logout();
-}
 </script>
 
 <style>
@@ -153,4 +146,14 @@ create: 'Camp organisieren'
 <i18n lang="yaml" locale="fr">
 camps: 'Camps'
 create: 'Organiser un camp'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+camps: 'Obozy'
+create: 'Zorganizuj obóz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+camps: 'Tábory'
+create: 'Zorganizovat tábor'
 </i18n>

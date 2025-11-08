@@ -117,3 +117,21 @@ no_data:
 action:
   create: 'Créer un nouveau'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+no_data:
+  open: 'Obecnie nie ma obozów otwartych do rejestracji. Utwórz nowy obóz, aby rozpocząć.'
+  closed: 'Nie ma obozów, które zostały zamknięte dla rejestracji.'
+
+action:
+  create: 'Utwórz nowe'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+no_data:
+  open: 'Momentálně nejsou žádné tábory otevřené pro registraci. Vytvořte nový tábor, abyste mohli začít.'
+  closed: 'Nejsou žádné tábory, které by byly uzavřeny pro registraci.'
+
+action:
+  create: 'Vytvořit nový'
+</i18n>

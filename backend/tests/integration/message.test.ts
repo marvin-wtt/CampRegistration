@@ -213,6 +213,7 @@ describe('/api/v1/camps/:campId/messages', () => {
           first_name: 'Paula',
         },
         emails: ['some@example.com'],
+        country: undefined,
       });
 
       const data = {

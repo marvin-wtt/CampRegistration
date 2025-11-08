@@ -183,7 +183,7 @@
 </template>
 
 <script lang="ts" setup>
-import { type QTableColumn } from 'quasar';
+import { type QTableColumn, type QTableProps } from 'quasar';
 import type {
   User,
   UserUpdateData,
@@ -211,8 +211,10 @@ const {
 } = useServiceHandler<User[]>('user');
 
 const filterQuery = ref<string>('');
-const pagination = ref({
+const pagination = ref<QTableProps['pagination']>({
   rowsPerPage: 0,
+  sortBy: 'lastSeen',
+  descending: true,
 });
 
 fetchAll();

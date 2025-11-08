@@ -19,6 +19,7 @@ import TextTableCell from 'components/campManagement/table/tableCells/TextTableC
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import TranslatedValueTableCell from 'components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
 import EditorTableCell from 'components/campManagement/table/tableCells/EditorTableCell.vue';
+import FormSelectTableCell from 'components/campManagement/table/tableCells/FormSelectTableCell.vue';
 
 // TODO Add custom config options
 const components = () => {
@@ -75,6 +76,13 @@ const components = () => {
       en: 'File',
       de: 'Datei',
       fr: 'Ficher',
+    },
+  });
+  TableComponentRegistry.register('form_select', FormSelectTableCell, {
+    label: {
+      en: 'Form Select',
+      de: 'Formular Auswahl',
+      fr: 'Sélection de Formulaire',
     },
   });
   TableComponentRegistry.register('gender', GenderTableCell, {

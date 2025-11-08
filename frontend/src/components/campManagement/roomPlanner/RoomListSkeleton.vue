@@ -49,21 +49,3 @@ const options = computed<unknown[]>(() => {
 </script>
 
 <style scoped></style>
-
-<i18n lang="yaml" locale="en">
-menu:
-  edit: 'Edit'
-  delete: 'Delete'
-</i18n>
-
-<i18n lang="yaml" locale="de">
-menu:
-  edit: 'Bearbeiten'
-  delete: 'Löschen'
-</i18n>
-
-<i18n lang="yaml" locale="fr">
-menu:
-  edit: 'Modifier'
-  delete: 'Supprimer'
-</i18n>

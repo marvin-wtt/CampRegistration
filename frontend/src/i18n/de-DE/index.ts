@@ -20,5 +20,6 @@ export default {
     fr: 'Frankreich',
     us: 'USA',
     pl: 'Polen',
+    cz: 'Tschechien',
   },
 };

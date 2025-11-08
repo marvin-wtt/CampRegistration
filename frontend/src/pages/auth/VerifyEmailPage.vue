@@ -143,3 +143,21 @@ action:
   resend: 'Renvoyer'
   resendIn: 'Renvoyer dans {time}s'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Potwierdź adres e-mail'
+description: 'Wysłaliśmy wiadomość potwierdzającą na Twój adres e-mail. Kliknij w link, aby zweryfikować swoje konto.'
+action:
+  login: 'Zaloguj się'
+  resend: 'Wyślij ponownie'
+  resendIn: 'Wyślij ponownie za {time}s'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Potvrďte e-mail'
+description: 'Odeslali jsme potvrzovací e-mail na vaši adresu. Klikněte na odkaz pro ověření vašeho účtu.'
+action:
+  login: 'Přihlásit se'
+  resend: 'Znovu odeslat'
+  resendIn: 'Znovu odeslat za {time}s'
+</i18n>

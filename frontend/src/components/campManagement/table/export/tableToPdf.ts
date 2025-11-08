@@ -1,5 +1,6 @@
 import { default as JsPdf } from 'jspdf';
-import DomToImage, { type Options } from 'dom-to-image';
+import { toPng } from 'html-to-image';
+import { inlineSvgImages } from 'components/campManagement/table/export/svg-inline';
 
 export interface ExportOptions {
   scale?: number | undefined;
@@ -22,7 +23,7 @@ export interface Dimension {
   height: number;
 }
 
-export function scaleImage(
+function scaleImage(
   input: Dimension,
   output: Dimension,
   orientation: 'portrait' | 'landscape',
@@ -80,7 +81,7 @@ function normalizeMargin(margin: number | number[]): number[] {
     return [margin[0]!, margin[1]!, margin[0]!, margin[1]!];
   }
 
-  throw 'Invalid page margin';
+  throw new Error('Invalid page margin');
 }
 
 export function createPDF() {
@@ -169,15 +170,13 @@ export function createPDF() {
 }
 
 export async function createImage(
-  node: Node,
+  node: HTMLElement,
   options: ExportOptions,
 ): Promise<HTMLImageElement> {
   const width = options.captureWidth ?? 0;
   const height = options.captureHeight ?? 0;
-
-  // Scale dom to increase resolution
   const scale = options.scale ?? 1;
-  const o: Options = {
+  const o = {
     quality: 1,
     width: width * scale,
     height: height * scale,
@@ -187,10 +186,16 @@ export async function createImage(
     },
   };
 
-  const dataUrl = await DomToImage.toPng(node, o);
+  const undo = await inlineSvgImages(node);
 
-  const img = new Image();
-  img.src = dataUrl;
+  try {
+    const dataUrl = await toPng(node, o);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = dataUrl;
 
-  return img;
+    return img;
+  } finally {
+    undo();
+  }
 }
