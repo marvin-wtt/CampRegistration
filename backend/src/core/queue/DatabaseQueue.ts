@@ -9,6 +9,10 @@ import {
 import { Cron } from 'croner';
 import logger from '#core/logger';
 
+type PrismaTransaction = Parameters<
+  Parameters<typeof prisma.$transaction>[0]
+>[0];
+
 export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   private poller: Cron;
   private handler: ((payload: P) => Promise<R>) | null = null;
@@ -122,12 +126,13 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   async poll() {
-    if (await this.isRateLimitExceeded()) {
-      return null;
-    }
+    await this.handleStalled();
 
     return prisma.$transaction(async (tx) => {
-      // See https://github.com/prisma/prisma/issues/5983
+      if (await this.isRateLimitExceeded(tx)) {
+        return null;
+      }
+
       const rows = await tx.$queryRaw<{ id: string; payload: string }[]>`
         SELECT id, payload
         FROM jobs
@@ -135,13 +140,12 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
           AND run_at <= NOW()
           AND queue = ${this.queue}
           AND reserved_at IS NULL
-        ORDER BY priority,
-                 run_at ASC,
-                 created_at ASC LIMIT 1
-        FOR UPDATE
+        ORDER BY priority, run_at, created_at
+        LIMIT 1
+        FOR
+        UPDATE
+        SKIP LOCKED
       `;
-
-      // TODO FOR UPDATE SKIP LOCKED requires MariaDB 10.6+
 
       if (rows.length === 0) {
         return null;
@@ -153,9 +157,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         where: { id: job.id },
         data: {
           status: 'RUNNING',
-          attempts: {
-            increment: 1,
-          },
+          attempts: { increment: 1 },
           error: null,
           reservedAt: new Date(),
         },
@@ -165,6 +167,21 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         id: job.id,
         payload: JSON.parse(job.payload) as P,
       };
+    });
+  }
+
+  async handleStalled(): Promise<void> {
+    await prisma.jobs.updateMany({
+      where: {
+        queue: this.queue,
+        status: 'RUNNING',
+        reservedAt: { lt: new Date(Date.now() - this.options.stallTimeout) },
+      },
+      data: {
+        status: 'PENDING',
+        reservedAt: null,
+        runAt: new Date(),
+      },
     });
   }
 
@@ -186,17 +203,19 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   async release(id: string, error: unknown): Promise<void> {
     const job = await prisma.jobs.findUnique({
-      where: {
-        id,
-        queue: this.queue,
-      },
+      where: { id },
       select: {
         attempts: true,
+        queue: true,
       },
     });
 
     if (!job) {
       throw new Error(`Job with id ${id} not found`);
+    }
+
+    if (job.queue !== this.queue) {
+      throw new Error(`Job with id ${id} is not in this queue`);
     }
 
     if (job.attempts >= this.options.maxAttempts) {
@@ -221,59 +240,57 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         reservedAt: null,
         error: error ?? null,
         runAt: this.retryTime(job.attempts),
-        finishedAt: new Date(),
+        finishedAt: null,
       },
     });
   }
 
-  private async isRateLimitExceeded(): Promise<boolean> {
+  private async isRateLimitExceeded(tx: PrismaTransaction): Promise<boolean> {
     const limit = this.options.limit;
     if (!limit) {
       return false;
     }
 
-    return prisma.$transaction(async (tx) => {
-      const now = new Date();
+    const now = new Date();
 
-      const rows = await tx.$queryRaw<{ tokens: number; refilled_at: Date }[]>`
+    const rows = await tx.$queryRaw<{ tokens: number; refilled_at: Date }[]>`
         SELECT tokens, refilled_at
         FROM job_rate_limits
         WHERE queue = ${this.queue}
           FOR UPDATE
       `;
 
-      if (rows.length === 0) {
-        await tx.jobRateLimit.create({
-          data: {
-            queue: this.queue,
-            tokens: limit.max - 1,
-            refilledAt: new Date(),
-          },
-        });
-        return false;
-      }
-
-      const { tokens, refilled_at: lastRefill } = rows[0];
-
-      const elapsedMs = now.getTime() - lastRefill.getTime();
-      const refillRate = limit.max / limit.duration; // tokens per ms
-      const refillable = elapsedMs * refillRate;
-      const newTokens = Math.min(limit.max, tokens + refillable) - 1;
-
-      if (newTokens < 0) {
-        return true;
-      }
-
-      await tx.jobRateLimit.update({
-        where: { queue: this.queue },
+    if (rows.length === 0) {
+      await tx.jobRateLimit.create({
         data: {
-          tokens: newTokens,
-          refilledAt: now,
+          queue: this.queue,
+          tokens: limit.max - 1,
+          refilledAt: new Date(),
         },
       });
-
       return false;
+    }
+
+    const { tokens, refilled_at: lastRefill } = rows[0];
+
+    const elapsedMs = now.getTime() - lastRefill.getTime();
+    const refillRate = limit.max / limit.duration; // tokens per ms
+    const refillable = Math.floor(tokens + elapsedMs * refillRate);
+    const available = Math.min(limit.max, refillable);
+
+    if (available <= 0) {
+      return true;
+    }
+
+    await tx.jobRateLimit.update({
+      where: { queue: this.queue },
+      data: {
+        tokens: available - 1,
+        refilledAt: now,
+      },
     });
+
+    return false;
   }
 
   public close() {
