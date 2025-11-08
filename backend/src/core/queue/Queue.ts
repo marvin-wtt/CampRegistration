@@ -2,6 +2,7 @@ export interface QueueOptions {
   maxAttempts: number;
   retryDelay: number; // milliseconds
   retryDelayType: 'fixed' | 'exponential';
+  stallTimeout: number; // milliseconds
   limit?: {
     max: number;
     duration: number; // in milliseconds
@@ -44,6 +45,7 @@ export interface Job<T> {
 export abstract class Queue<P, R = void, N extends string = string> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,
+    stallTimeout: 60 * 1000,
     retryDelay: 5000,
     retryDelayType: 'exponential',
   };
