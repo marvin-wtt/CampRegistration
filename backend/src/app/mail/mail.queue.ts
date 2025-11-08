@@ -1,5 +1,5 @@
-import queueManager from '#core/queue/QueueManager.js';
-import type { AdvancedMailPayload } from '#app/mail/mail.types.js';
+import queueManager from '#core/queue/QueueManager';
+import type { AdvancedMailPayload } from '#app/mail/mail.types';
 
 export const mailQueue = queueManager.createQueue<
   AdvancedMailPayload,
