@@ -7,11 +7,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     include: ['tests/integration/**/*.test.ts'],
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
     setupFiles: ['tests/utils/setup.ts'],
     coverage: {
       enabled: true,
