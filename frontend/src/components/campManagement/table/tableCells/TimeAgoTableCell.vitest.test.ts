@@ -147,8 +147,6 @@ describe('TimeAgoTableCell', () => {
       },
     });
 
-    console.log(wrapper.text());
-
     expect(wrapper.text()).toBe('4 month');
   });
 

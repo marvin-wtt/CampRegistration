@@ -6,7 +6,7 @@ import type {
   File,
 } from '@prisma/client';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
-import mailService from '#core/mail/mail.service';
+import mailService from '#app/mail/mail.service';
 import { translateObject } from '#utils/translateObject';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';

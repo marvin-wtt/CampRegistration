@@ -8,6 +8,8 @@ import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
+import { fileNameExtension } from '#utils/file.js';
+import { fileQueue } from '#app/file/file.queue.js';
 
 type RequestFile = Express.Multer.File;
 
@@ -15,16 +17,6 @@ interface ModelData {
   id: string;
   name: string;
 }
-
-const fileNameExtension = (fileName: string): string => {
-  if (!fileName.includes('.')) {
-    return '';
-  }
-
-  const extension = fileName.split('.').pop() ?? '';
-
-  return `.${extension}`;
-};
 
 export class FileService extends BaseService {
   private tmpStorage = new DiskStorage(config.storage.tmpDir);
@@ -53,8 +45,7 @@ export class FileService extends BaseService {
     });
   }
 
-  private async moveFile(file: RequestFile) {
-    // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?
+  public async uploadFile(file: RequestFile) {
     await this.storageRegistry.getStorage().moveToStorage(file.filename);
   }
 
@@ -71,8 +62,7 @@ export class FileService extends BaseService {
     const fileData = this.mapFields(file, fileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-    // Move file first to ensure that they really exist
-    await this.moveFile(file);
+    await fileQueue.add('upload', file);
 
     return this.prisma.file.create({
       data: {
@@ -173,7 +163,7 @@ export class FileService extends BaseService {
     const fileName = ulid();
     const fileExtension = fileNameExtension(originalName);
 
-    return `${fileName}.${fileExtension}`;
+    return fileName + fileExtension;
   }
 
   async deleteUnreferencedFiles(): Promise<void> {
