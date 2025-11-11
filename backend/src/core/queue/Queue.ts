@@ -2,7 +2,8 @@ export interface QueueOptions {
   maxAttempts: number;
   retryDelay: number; // milliseconds
   retryDelayType: 'fixed' | 'exponential';
-  stallTimeout: number; // milliseconds
+  stalledInterval: number; // milliseconds
+  maxStalledCount: number;
   limit?: {
     max: number;
     duration: number; // in milliseconds
@@ -45,7 +46,8 @@ export interface Job<T> {
 export abstract class Queue<P, R = void, N extends string = string> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,
-    stallTimeout: 60 * 1000,
+    stalledInterval: 30_1000,
+    maxStalledCount: 1,
     retryDelay: 5000,
     retryDelayType: 'exponential',
   };
@@ -60,11 +62,15 @@ export abstract class Queue<P, R = void, N extends string = string> {
     };
   }
 
+  public abstract get type(): string;
+
   public abstract process(
     handler: (payload: P) => Promise<R>,
   ): void | Promise<void>;
 
   public abstract all(status?: JobStatus): Promise<Job<P>[]>;
+
+  public abstract count(): Promise<number>;
 
   public abstract add(name: N, payload: P, options?: JobOptions): Promise<void>;
 
