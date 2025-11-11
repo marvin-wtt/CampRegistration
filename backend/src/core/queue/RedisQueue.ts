@@ -15,6 +15,8 @@ import logger from '#core/logger';
 import config from '#config/index';
 
 export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
+  public readonly type = 'redis';
+
   private bull: BullQueue<BullJob<P, R, N>>;
   private worker: Worker<P, R, N> | undefined;
   private events: QueueEvents;
@@ -129,8 +131,14 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
       },
       {
         connection: this.connection,
+        stalledInterval: this.options.stalledInterval,
+        maxStalledCount: this.options.maxStalledCount,
       },
     );
+  }
+
+  public async count(): Promise<number> {
+    return this.bull.count();
   }
 
   public async close(): Promise<void> {
