@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
-import prisma from '../utils/prisma';
+import prisma from '../../utils/prisma';
 import { TokenType, User } from '@prisma/client';
 import {
   CampFactory,
@@ -8,7 +8,7 @@ import {
   TokenFactory,
   CampManagerFactory,
   InvitationFactory,
-} from '../../prisma/factories';
+} from '../../../prisma/factories';
 import {
   generateAccessToken,
   generateExpiredToken,
@@ -19,9 +19,9 @@ import {
   generateToken,
   generateVerifyEmailToken,
   verifyToken,
-} from '../utils/token';
-import { request } from '../utils/request';
-import { NoOpMailer } from '../../src/app/mail/noop.mailer';
+} from '../../utils/token';
+import { request } from '../../utils/request';
+import { NoOpMailer } from '../../../src/app/mail/noop.mailer';
 import * as OTPAuth from 'otpauth';
 
 const mailer = NoOpMailer.prototype;

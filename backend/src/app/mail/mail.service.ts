@@ -64,7 +64,7 @@ class MailService {
     });
   }
 
-  public async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
+  private async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
     const from = {
       name: config.appName,
       address: config.email.from,

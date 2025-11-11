@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import prisma from '../utils/prisma';
-import { generateAccessToken } from '../utils/token';
+import prisma from '../../utils/prisma';
+import { generateAccessToken } from './utils/token';
 import {
   CampFactory,
   FileFactory,
@@ -8,7 +8,7 @@ import {
   UserFactory,
   CampManagerFactory,
   MessageTemplateFactory,
-} from '../../prisma/factories';
+} from '../../../prisma/factories';
 import { Camp, Prisma } from '@prisma/client';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
@@ -35,10 +35,10 @@ import {
   campWithAddress,
   campWithMultipleFilesRequired,
   campWithAddressCampDataTypes,
-} from '../fixtures/registration/camp.fixtures';
-import { request } from '../utils/request';
-import { NoOpMailer } from '../../src/app/mail/noop.mailer';
-import { uploadFile } from '../utils/file';
+} from './fixtures/registration.fixtures';
+import { request } from '../../utils/request';
+import { NoOpMailer } from '../../../src/app/mail/noop.mailer';
+import { uploadFile } from './utils/file';
 
 const mailer = NoOpMailer.prototype;
 

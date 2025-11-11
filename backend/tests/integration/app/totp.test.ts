@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import * as OTPAuth from 'otpauth';
-import { UserFactory } from '../../prisma/factories';
+import { UserFactory } from '../../../prisma/factories';
 import { User } from '@prisma/client';
-import { request } from '../utils/request';
-import { generateAccessToken } from '../utils/token';
-import prisma from '../utils/prisma';
+import { request } from '../../utils/request';
+import { generateAccessToken } from './utils/token';
+import prisma from '../../utils/prisma';
 
 describe('/api/v1/totp/', () => {
   const generateTOTP = (user: User) => {

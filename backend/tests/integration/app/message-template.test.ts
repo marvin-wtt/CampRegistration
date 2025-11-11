@@ -5,13 +5,13 @@ import {
   CampManagerFactory,
   MessageTemplateFactory,
   FileFactory,
-} from '../../prisma/factories';
-import { generateAccessToken } from '../utils/token';
-import { request } from '../utils/request';
-import prisma from '../utils/prisma';
+} from '../../../prisma/factories';
+import { generateAccessToken } from './utils/token';
+import { request } from '../../utils/request';
+import prisma from '../../utils/prisma';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
-import { uploadFile } from '../utils/file';
+import { uploadFile } from './utils/file';
 
 const createCampWithManagerAndToken = async (
   campData?: Parameters<(typeof CampFactory)['create']>[0],

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { request } from '../utils/request';
-import prisma from '../utils/prisma';
-import { FileFactory } from '../../prisma/factories';
+import { request } from '../../utils/request';
+import prisma from '../../utils/prisma';
+import { FileFactory } from '../../../prisma/factories';
 
 describe('/api/v1/files/', () => {
   describe('POST /api/v1/files', () => {

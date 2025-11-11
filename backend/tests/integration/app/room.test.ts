@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   CampFactory,
   CampManagerFactory,
   RoomFactory,
   UserFactory,
-} from '../../prisma/factories';
-import { request } from '../utils/request';
-import prisma from '../utils/prisma';
-import { generateAccessToken } from '../utils/token';
+} from '../../../prisma/factories';
+import { request } from '../../utils/request';
+import prisma from '../../utils/prisma';
+import { generateAccessToken } from './utils/token';
 import { Camp, Room } from '@prisma/client';
 import { ulid } from 'ulidx';
 

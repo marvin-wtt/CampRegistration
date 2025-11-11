@@ -5,14 +5,14 @@ import {
   RegistrationFactory,
   UserFactory,
   TokenFactory,
-} from '../../prisma/factories';
-import config from '../../src/config';
+} from '../../../prisma/factories';
+import config from '../../../src/config';
 import fse from 'fs-extra';
 import path from 'path';
 import { ulid } from 'ulidx';
 import moment from 'moment';
-import prisma from '../utils/prisma';
-import { findJob, startJobs } from '../../src/jobs';
+import prisma from '../../utils/prisma';
+import { findJob, startJobs } from '../../../src/jobs';
 
 describe('jobs', () => {
   beforeEach(() => {

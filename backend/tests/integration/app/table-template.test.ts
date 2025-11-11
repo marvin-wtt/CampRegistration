@@ -4,10 +4,10 @@ import {
   CampManagerFactory,
   TableTemplateFactory,
   UserFactory,
-} from '../../prisma/factories';
-import { generateAccessToken } from '../utils/token';
-import { request } from '../utils/request';
-import prisma from '../utils/prisma';
+} from '../../../prisma/factories';
+import { generateAccessToken } from './utils/token';
+import { request } from '../../utils/request';
+import prisma from '../../utils/prisma';
 import { ulid } from 'ulidx';
 import { Camp } from '@prisma/client';
 

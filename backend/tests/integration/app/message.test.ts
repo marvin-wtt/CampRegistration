@@ -6,16 +6,16 @@ import {
   UserFactory,
   MessageFactory,
   FileFactory,
-} from '../../prisma/factories';
-import { generateAccessToken } from '../utils/token';
-import { request } from '../utils/request';
+} from '../../../prisma/factories';
+import { generateAccessToken } from './utils/token';
+import { request } from '../../utils/request';
 import { ulid } from 'ulidx';
 import { encode } from 'html-entities';
-import prisma from '../utils/prisma';
-import { mailer } from '../utils/mailer';
-import { messageCreateBody } from '../fixtures/message/message.fixture';
+import prisma from '../../utils/prisma';
+import { mailer } from '../../utils/mailer';
+import { messageCreateBody } from './fixtures/message.fixture';
 import crypto from 'crypto';
-import { uploadFile } from '../utils/file';
+import { uploadFile } from './utils/file';
 
 const crateCampWithManager = async (
   campCreateData?: Parameters<(typeof CampFactory)['create']>[0],

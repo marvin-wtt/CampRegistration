@@ -6,11 +6,11 @@ import {
   RegistrationFactory,
   RoomFactory,
   UserFactory,
-} from '../../prisma/factories';
-import { generateAccessToken } from '../utils/token';
+} from '../../../prisma/factories';
+import { generateAccessToken } from '../../utils/token';
 import { Camp, Room } from '@prisma/client';
-import { request } from '../utils/request';
-import prisma from '../utils/prisma';
+import { request } from '../../utils/request';
+import prisma from '../../utils/prisma';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
