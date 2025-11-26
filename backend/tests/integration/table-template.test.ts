@@ -9,7 +9,7 @@ import { generateAccessToken } from '../utils/token';
 import { request } from '../utils/request';
 import prisma from '../utils/prisma';
 import { ulid } from 'ulidx';
-import { Camp } from '@prisma/client';
+import { Camp } from '#/generated/prisma/client.js';
 
 describe('/api/v1/camps/:campId/table-templates', () => {
   const createCampWithManagerAndToken = async (role = 'DIRECTOR') => {

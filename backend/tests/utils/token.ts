@@ -1,4 +1,4 @@
-import { TokenType, User } from '@prisma/client';
+import { TokenType, User } from '#/generated/prisma/client.js';
 import moment from 'moment/moment';
 import jwt from 'jsonwebtoken';
 

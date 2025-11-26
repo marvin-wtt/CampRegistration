@@ -1,4 +1,4 @@
-import type { File } from '@prisma/client';
+import type { File } from '#/generated/prisma/client.js';
 import type { ServiceFile as FileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import config from '#config/index';

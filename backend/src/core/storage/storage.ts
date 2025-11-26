@@ -1,4 +1,4 @@
-import type { File } from '@prisma/client';
+import type { File } from '#/generated/prisma/client.js';
 import type fs from 'fs';
 
 export interface Storage {

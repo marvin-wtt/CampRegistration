@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 import userService from '#app/user/user.service';
 import tokenService from '#app/token/token.service';
 import ApiError from '#utils/ApiError';
-import { TokenType } from '@prisma/client';
+import { TokenType } from '#/generated/prisma/client.js';
 import { isPasswordMatch } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
@@ -69,7 +69,7 @@ export class AuthService extends BaseService {
       TokenType.RESET_PASSWORD,
     );
     const user = await userService.getUserById(resetPasswordTokenData.userId);
-    if (!user || user.email !== email) {
+    if (user?.email !== email) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
     await userService.updateUserById(user.id, {

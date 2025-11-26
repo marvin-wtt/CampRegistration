@@ -9,7 +9,7 @@ import {
   CampManagerFactory,
   MessageTemplateFactory,
 } from '../../prisma/factories';
-import { Camp, Prisma } from '@prisma/client';
+import { Camp, Prisma } from '#/generated/prisma/client.js';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import {

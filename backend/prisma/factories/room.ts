@@ -1,5 +1,5 @@
 import { fakerDE as faker } from '@faker-js/faker';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#/generated/prisma/client.js';
 import prisma from './prisma';
 
 export const RoomFactory = {

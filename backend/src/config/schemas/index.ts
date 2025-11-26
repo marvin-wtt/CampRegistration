@@ -4,8 +4,10 @@ import { AuthEnvSchema } from './auth.schema.js';
 import { EmailEnvSchema } from './email.schema.js';
 import { StorageEnvSchema } from './storage.schema.js';
 import { CsrfEnvSchema } from './csrf.schema.js';
+import { DatabaseSchema } from './database.schema.js';
 
 export const EnvSchema = MainEnvSchema.merge(AuthEnvSchema)
+  .merge(DatabaseSchema)
   .merge(EmailEnvSchema)
   .merge(StorageEnvSchema)
   .merge(CsrfEnvSchema)

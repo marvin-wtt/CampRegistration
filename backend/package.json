@@ -29,9 +29,6 @@
     "dev:serve": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "production": "cross-env NODE_ENV=production node build/entry.cjs"
   },
-  "prisma": {
-    "seed": "tsx prisma/seeders/index.ts"
-  },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
@@ -56,12 +53,14 @@
     "#routes/*": "./src/routes/*.js",
     "#utils/*": "./src/utils/*.js",
     "#views/*": "./src/views/*.js",
-    "#types/*": "./src/types/*.js"
+    "#types/*": "./src/types/*.js",
+    "#generated/*": "./src/generated/*.js"
   },
   "dependencies": {
     "@camp-registration/common": "*",
     "@camp-registration/web": "*",
-    "@prisma/client": "^6.10.1",
+    "@prisma/adapter-mariadb": "^7.0.0",
+    "@prisma/client": "^7.0.0",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.0",
     "cookie-parser": "^1.4.7",
@@ -126,8 +125,8 @@
     "nodemailer-mock": "^2.0.8",
     "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
-    "prisma": "^6.7.0",
-    "prisma-json-types-generator": "^3.3.1",
+    "prisma": "^7.0.0",
+    "prisma-json-types-generator": "^3.6.2",
     "smtp-tester": "^2.1.0",
     "supertest": "^7.1.0",
     "tsc-alias": "^1.8.16",

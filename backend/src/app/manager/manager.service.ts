@@ -1,5 +1,5 @@
 import { BaseService } from '#core/base/BaseService';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#/generated/prisma/client.js';
 
 type ManagerCreateData = Pick<
   Prisma.CampManagerCreateInput,

@@ -1,4 +1,4 @@
-import type { Camp, File, Prisma } from '@prisma/client';
+import type { Camp, File, Prisma } from '#/generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';

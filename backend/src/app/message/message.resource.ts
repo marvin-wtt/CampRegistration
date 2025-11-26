@@ -1,4 +1,4 @@
-import type { Message, File } from '@prisma/client';
+import type { Message, File } from '#/generated/prisma/client.js';
 import type { Message as MessageData } from '@camp-registration/common/entities';
 import { FileResource } from '#app/file/file.resource';
 import { JsonResource } from '#core/resource/JsonResource';

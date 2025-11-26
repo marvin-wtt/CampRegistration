@@ -1,4 +1,4 @@
-import type { Message } from '@prisma/client';
+import type { Message } from '#/generated/prisma/client.js';
 import config from '#config/index';
 import renderer from '#core/mail/mail.renderer';
 import { MailFactory } from '#core/mail/mail.factory';

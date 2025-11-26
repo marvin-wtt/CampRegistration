@@ -1,9 +1,19 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#/generated/prisma/client.js';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { createSoftDeleteExtension } from 'prisma-extension-soft-delete';
 import logger from '#core/logger';
+import config from '#config/index';
 
 function createClient(): PrismaClient {
-  return new PrismaClient().$extends(
+  const adapter = new PrismaMariaDb({
+    host: config.database.host,
+    port: config.database.port,
+    database: config.database.name,
+    user: config.database.user,
+    password: config.database.password,
+  });
+
+  return new PrismaClient({ adapter }).$extends(
     createSoftDeleteExtension({
       models: {
         Registration: true,

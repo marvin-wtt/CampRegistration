@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import type { File } from '@prisma/client';
+import type { File } from '#/generated/prisma/client.js';
 import path from 'path';
 
 export class DiskStorage implements Storage {

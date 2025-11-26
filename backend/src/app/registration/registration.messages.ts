@@ -1,4 +1,4 @@
-import type { Camp, Registration } from '@prisma/client';
+import type { Camp, Registration } from '#/generated/prisma/client.js';
 import messageService from '#app/message/message.service';
 import { objectValueOrAll } from '#utils/translateObject';
 import mailService from '#core/mail/mail.service';

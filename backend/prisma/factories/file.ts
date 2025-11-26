@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker/locale/en';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#/generated/prisma/client.js';
 import prisma from './prisma';
 
 export const FileFactory = {

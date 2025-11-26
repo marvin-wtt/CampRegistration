@@ -8,7 +8,7 @@ import {
 import { request } from '../utils/request';
 import prisma from '../utils/prisma';
 import { generateAccessToken } from '../utils/token';
-import { Camp, Room } from '@prisma/client';
+import { Camp, Room } from '#/generated/prisma/client.js';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/camps/:campId/rooms/', () => {

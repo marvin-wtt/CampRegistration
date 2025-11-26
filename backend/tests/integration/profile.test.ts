@@ -8,7 +8,7 @@ import {
 } from '../../prisma/factories';
 import { generateAccessToken } from '../utils/token';
 import prisma from '../utils/prisma';
-import { TokenType } from '@prisma/client';
+import { TokenType } from '#/generated/prisma/client.js';
 import bcrypt from 'bcryptjs';
 import { profileUpdateBody } from '../fixtures/profile/profile.fixtures';
 

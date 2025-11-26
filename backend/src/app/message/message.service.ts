@@ -4,7 +4,7 @@ import type {
   MessageTemplate,
   Message,
   File,
-} from '@prisma/client';
+} from '#generated/prisma/client.js';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
 import mailService from '#core/mail/mail.service';
 import { translateObject } from '#utils/translateObject';

@@ -1,4 +1,4 @@
-import type { File, Prisma } from '@prisma/client';
+import type { File, Prisma } from '#/generated/prisma/client.js';
 import config from '#config/index';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';

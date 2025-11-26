@@ -1,4 +1,4 @@
-import { type User, Role } from '@prisma/client';
+import { type User, Role } from '#/generated/prisma/client.js';
 import type { User as UserResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 

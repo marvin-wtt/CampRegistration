@@ -1,4 +1,4 @@
-import type { Bed, Room } from '@prisma/client';
+import type { Bed, Room } from '#/generated/prisma/client.js';
 import type { Room as RoomData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { BedResource } from '#app/bed/bed.resource';

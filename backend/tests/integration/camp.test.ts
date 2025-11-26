@@ -10,7 +10,7 @@ import {
   FileFactory,
   MessageTemplateFactory,
 } from '../../prisma/factories';
-import { Camp, Prisma } from '@prisma/client';
+import { Camp, Prisma } from '#/generated/prisma/client.js';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
