@@ -33,7 +33,7 @@ describe("registration page", () => {
 
     // Submit
     cy.getBySel("registration-form")
-      .find("#sv-nav-complete")
+      .find(".sd-navigation__complete-btn")
       .find("input")
       .click();
 
