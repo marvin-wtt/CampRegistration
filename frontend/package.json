@@ -65,7 +65,7 @@
     "@intlify/unplugin-vue-i18n": "^6.0.8",
     "@quasar/app-vite": "^2.2.1",
     "@quasar/cli": "^2.5.0",
-    "@quasar/quasar-app-extension-testing-unit-vitest": "^1.2.3",
+    "@quasar/quasar-app-extension-testing-unit-vitest": "1.2.3",
     "@types/node": "^24.0.4",
     "@types/qrcode": "^1.5.5",
     "@types/showdown": "^2.0.6",

@@ -26,10 +26,23 @@
     "e2e"
   ],
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/express-serve-static-core": "^5.0.0",
     "cross-env": "^7.0.3",
     "npm-run-all": "^4.1.5",
     "rimraf": "^6.0.1"
+  },
+  "overrides": {
+    "quasar": {
+      "@types/express": "^5.0.0",
+      "@types/express-serve-static-core": "^5.0.0"
+    },
+    "@quasar/quasar-app-extension-testing-unit-vitest": {
+      "happy-dom": "^20.0.10"
+    },
+    "mailparser": {
+      "nodemailer": "^7.0.11"
+    },
+    "smtp-tester": {
+      "nodemailer": "^7.0.11"
+    }
   }
 }
