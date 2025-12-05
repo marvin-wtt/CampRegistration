@@ -34,7 +34,6 @@ describe("registration page", () => {
     // Submit
     cy.getBySel("registration-form")
       .find(".sd-navigation__complete-btn")
-      .find("input")
       .click();
 
     cy.wait("@createCampRegistration").then((interception) => {
@@ -84,8 +83,7 @@ describe("registration page", () => {
 
     // Submit
     cy.getBySel("registration-form")
-      .find("#sv-nav-complete")
-      .find("input")
+      .find(".sd-navigation__complete-btn")
       .click();
 
     cy.wait("@createCampRegistration").then((interception) => {
