@@ -160,9 +160,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'emails',
                 name: 'edit-email-templates',
                 component: () =>
-                  import(
-                    'pages/campManagement/settings/MessageTemplateEditPage.vue'
-                  ),
+                  import('pages/campManagement/settings/MessageTemplateEditPage.vue'),
               },
               {
                 path: 'files',

@@ -40,6 +40,12 @@
       "@vitest/coverage-v8": "^4.0.8",
       "@vitest/ui": "^4.0.8",
       "happy-dom": "^20.0.10"
+    },
+    "mailparser": {
+      "nodemailer": "^7.0.11"
+    },
+    "smtp-tester": {
+      "nodemailer": "^7.0.11"
     }
   }
 }
