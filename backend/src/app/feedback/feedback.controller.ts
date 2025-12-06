@@ -1,9 +1,8 @@
-import feedbackService from './feedback.service.js';
-import { catchAndResolve } from '#utils/promiseUtils';
 import validator from './feedback.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import httpStatus from 'http-status';
+import { FeedbackMessage } from '#app/feedback/feedback.messages';
 
 class FeedbackController extends BaseController {
   async store(req: Request, res: Response) {
@@ -11,9 +10,12 @@ class FeedbackController extends BaseController {
       body: { message, email, location, userAgent },
     } = await req.validate(validator.store);
 
-    await catchAndResolve(
-      feedbackService.saveFeedback(message, location, userAgent, email),
-    );
+    await FeedbackMessage.sendNow({
+      message,
+      email,
+      location,
+      userAgent,
+    });
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

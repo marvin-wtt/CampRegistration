@@ -7,7 +7,7 @@ import { ProfileResource } from './profile.resource.js';
 import validator from './profile.validation.js';
 import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
-import authMessages from '#app/auth/auth.messages';
+import { VerifyEmailMessage } from '#app/auth/auth.messages';
 import { BaseController } from '#core/base/BaseController';
 import { isPasswordMatch } from '#core/encryption';
 
@@ -54,7 +54,11 @@ class ProfileController extends BaseController {
     if (emailVerified === false) {
       const verifyEmailToken =
         await tokenService.generateVerifyEmailToken(user);
-      await authMessages.sendVerificationEmail(user, verifyEmailToken);
+
+      await VerifyEmailMessage.enqueue({
+        user,
+        token: verifyEmailToken,
+      });
     }
 
     const camps = await campService.getCampsByUserId(userId);

@@ -7,11 +7,13 @@ import type { AuthTokensResponse } from '#types/response';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import managerService from '#app/manager/manager.service';
-import { catchAndResolve } from '#utils/promiseUtils';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import totpService from '#app/totp/totp.service';
-import authMessages from '#app/auth/auth.messages';
+import {
+  ResetPasswordMessage,
+  VerifyEmailMessage,
+} from '#app/auth/auth.messages';
 import { BaseController } from '#core/base/BaseController';
 
 class AuthController extends BaseController {
@@ -31,9 +33,10 @@ class AuthController extends BaseController {
     await managerService.resolveManagerInvitations(user.email, user.id);
 
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    await catchAndResolve(
-      authMessages.sendVerificationEmail(user, verifyEmailToken),
-    );
+    await VerifyEmailMessage.enqueue({
+      user,
+      token: verifyEmailToken,
+    });
 
     res.status(httpStatus.CREATED).json({
       name: user.name,
@@ -170,7 +173,10 @@ class AuthController extends BaseController {
     );
 
     if (resetPasswordToken !== undefined) {
-      await authMessages.sendResetPasswordEmail(user, resetPasswordToken);
+      await ResetPasswordMessage.enqueue({
+        user,
+        token: resetPasswordToken,
+      });
     }
 
     res.sendStatus(httpStatus.NO_CONTENT);
@@ -199,7 +205,10 @@ class AuthController extends BaseController {
     }
 
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    await authMessages.sendVerificationEmail(user, verifyEmailToken);
+    await VerifyEmailMessage.enqueue({
+      user,
+      token: verifyEmailToken,
+    });
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

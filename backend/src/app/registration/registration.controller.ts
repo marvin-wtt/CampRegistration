@@ -6,7 +6,9 @@ import {
 } from './registration.resource.js';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
-import registrationMessages from '#app/registration/registration.messages';
+import registrationMessages, {
+  RegistrationNotifyMessage,
+} from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
 
 class RegistrationController extends BaseController {
@@ -47,7 +49,7 @@ class RegistrationController extends BaseController {
     }
 
     // Notify contact email
-    await registrationMessages.notifyContactEmail(camp, registration);
+    await RegistrationNotifyMessage.enqueue({ camp, registration });
 
     res
       .status(httpStatus.CREATED)
