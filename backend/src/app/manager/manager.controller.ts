@@ -3,10 +3,9 @@ import httpStatus from 'http-status';
 import userService from '#app/user/user.service';
 import managerService from '#app/manager/manager.service';
 import { ManagerResource } from '#app/manager/manager.resource';
-import { catchAndResolve } from '#utils/promiseUtils';
 import validator from '#app/manager/manager.validation';
 import { type Request, type Response } from 'express';
-import managerMessages from '#app/manager/manager.messages';
+import { ManagerInvitationMessage } from '#app/manager/manager.messages';
 import { BaseController } from '#core/base/BaseController';
 
 class ManagerController extends BaseController {
@@ -49,7 +48,10 @@ class ManagerController extends BaseController {
         ? await managerService.inviteManager(camp.id, email, data)
         : await managerService.addManager(camp.id, user.id, data);
 
-    await catchAndResolve(managerMessages.sendManagerInvitation(camp, manager));
+    await ManagerInvitationMessage.enqueue({
+      camp,
+      manager,
+    });
 
     res.status(httpStatus.CREATED).resource(new ManagerResource(manager));
   }

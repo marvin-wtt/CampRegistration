@@ -1,6 +1,6 @@
-import { NodeMailer } from '#app/mail/node.mailer.js';
-import type { IMailer } from '#app/mail/mail.types.js';
-import logger from '#core/logger.js';
+import { NodeMailer } from '#app/mail/node.mailer';
+import type { IMailer } from '#app/mail/mailer.types';
+import logger from '#core/logger';
 
 export class MailFactory {
   // Mailers that are used in descending order

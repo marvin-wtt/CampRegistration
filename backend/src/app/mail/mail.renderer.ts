@@ -3,18 +3,26 @@ import i18n from '#core/i18n';
 import path from 'path';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
+import type { AddressLike, Envelope, Translator } from '#app/mail/mail.types';
+import { generateUrl } from '#utils/url.js';
 
 interface RenderContentOptions {
-  subject: string;
+  envelope: Pick<Envelope, 'to' | 'subject'>;
   body: string;
-  footer: string;
-  email: string;
+  footer?: string | undefined;
 }
 
 interface RenderFileOptions {
-  fileName: string;
-  subject: string;
+  envelope: Pick<Envelope, 'to' | 'subject'>;
+  template: string;
   context: Record<string, unknown>;
+}
+
+function envelopeToAddressString(to: AddressLike): string {
+  const items = Array.isArray(to) ? to : [to];
+  return items
+    .map((entry) => (typeof entry === 'string' ? entry : entry.address))
+    .join(', ');
 }
 
 export class MailRenderer {
@@ -23,16 +31,14 @@ export class MailRenderer {
   private readonly viewEngine: ExpressHandlebars;
   private readonly viewsPath: string;
 
-  constructor() {
+  constructor(t: Translator = i18n.t) {
     this.viewsPath = appBuildPath('views', 'emails');
 
     this.viewEngine = create({
       partialsDir: this.getViewDirectory('partials'),
       layoutsDir: this.getViewDirectory('layouts'),
       defaultLayout: undefined,
-      helpers: {
-        t: i18n.t,
-      },
+      helpers: { t },
     });
   }
 
@@ -46,12 +52,12 @@ export class MailRenderer {
 
   async renderContent(options: RenderContentOptions): Promise<string> {
     return this.renderFile({
-      fileName: 'default',
-      subject: options.subject,
+      template: 'default',
+      envelope: options.envelope,
       context: {
         body: options.body,
         footer: options.footer,
-        email: options.email,
+        email: envelopeToAddressString(options.envelope.to),
       },
     });
   }
@@ -60,13 +66,13 @@ export class MailRenderer {
     const globalContext = {
       appName: config.appName,
       style: {
-        primaryColor: '#338d8e',
+        primaryColor: '#338d8e', // TODO Import from config
       },
     };
-    const filepath = this.getView(options.fileName);
+    const filepath = this.getView(options.template);
 
     return this.viewEngine.render(filepath, {
-      subject: options.subject,
+      subject: options.envelope.subject,
       ...options.context,
       ...globalContext,
     });

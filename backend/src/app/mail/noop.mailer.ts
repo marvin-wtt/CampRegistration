@@ -1,20 +1,17 @@
-import type {
-  IMailer,
-  AdvancedMailPayload,
-  MailAddress,
-} from '#app/mail/mail.types';
+import type { IMailer } from '#app/mail/mailer.types';
 import logger from '#core/logger';
+import type { Address, BuiltMail } from '#app/mail/mail.types';
 
 export class NoOpMailer implements IMailer {
-  public sendMail(payload: AdvancedMailPayload): void {
+  public sendMail(payload: BuiltMail): void {
     // Do nothing or log. Useful for testing or fallback scenarios.
     logger.debug(
       `No-op email to: ${this.mailToString(payload.to)}, subject: ${payload.subject}`,
     );
   }
 
-  private mailToString(mails: AdvancedMailPayload['to']): string {
-    const converter = (mail: MailAddress): string => {
+  private mailToString(mails: BuiltMail['to']): string {
+    const converter = (mail: Address): string => {
       return typeof mail === 'object' ? mail.address : mail;
     };
 

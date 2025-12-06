@@ -1,8 +1,8 @@
 import queueManager from '#core/queue/QueueManager';
-import type { AdvancedMailPayload } from '#app/mail/mail.types';
+import type { BuiltMail } from '#app/mail/mail.types';
 
 export const mailQueue = queueManager.createQueue<
-  AdvancedMailPayload,
+  BuiltMail,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   void,
   'send'

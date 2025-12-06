@@ -22,6 +22,7 @@ export const EmailEnvSchema = z.object({
   EMAIL_REPLY_TO: z
     .string()
     .email()
+    .optional()
     .describe('The replyTo field in the emails sent by the app.'),
   EMAIL_ADMIN: z
     .string()

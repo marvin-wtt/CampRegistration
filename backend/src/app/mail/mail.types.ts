@@ -1,34 +1,54 @@
-export type MailAddress = string | { name: string; address: string };
+import type i18n from '#core/i18n';
+
+export type Address = string | { name: string; address: string };
+
+export type AddressLike = Address | Address[];
+
+export interface MailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+  contentDisposition?: 'attachment' | 'inline';
+}
 
 export type MailPriority = 'low' | 'normal' | 'high';
 
-export interface MailPayload {
-  to: MailAddress | MailAddress[];
-  replyTo?: MailAddress | MailAddress[] | undefined;
-  priority?: MailPriority | undefined;
+export interface Envelope {
   subject: string;
-  body: string; // The compiled text/HTML
-  attachments?: { filename: string; content: Buffer | string }[] | undefined;
+  to: AddressLike;
+  from?: Address | undefined;
+  replyTo?: AddressLike | undefined;
+  cc?: AddressLike | undefined;
+  bcc?: AddressLike | undefined;
+  priority?: MailPriority | undefined;
+  headers?: Record<string, string> | undefined;
 }
 
-export interface TemplateMailData extends Omit<MailPayload, 'body'> {
+export interface TextContent {
+  text: string;
+}
+
+export interface ViewContent {
   template: string;
   context: Record<string, unknown>;
+  text?: string;
 }
 
-export interface AdvancedMailPayload extends MailPayload {
-  from: MailAddress;
-  inReplyTo?: MailAddress | undefined;
-  references?: string | string[] | undefined;
-  messageId?: string | undefined;
+export interface HtmlContent extends TextContent {
+  html: string;
 }
 
-export interface IMailer {
-  sendMail(payload: AdvancedMailPayload): Promise<void> | void;
+export type Content = ViewContent | HtmlContent | Required<TextContent>;
 
-  isAvailable(): Promise<boolean> | boolean;
+export interface BuiltMail extends Envelope {
+  text?: string;
+  html?: string;
+  attachments?: MailAttachment[];
+}
 
-  name(): string;
+export type Translator = typeof i18n.t;
 
-  close(): Promise<void> | void;
+export interface TranslationOptions {
+  namespace?: string | undefined;
+  keyPrefix?: string | undefined;
 }

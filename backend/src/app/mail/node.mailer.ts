@@ -1,4 +1,5 @@
-import type { IMailer, AdvancedMailPayload } from '#app/mail/mail.types';
+import type { IMailer } from '#app/mail/mailer.types';
+import type { BuiltMail } from '#app/mail/mail.types';
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index';
 
@@ -39,14 +40,19 @@ export class NodeMailer implements IMailer {
     return 'SMTP-Mailer';
   }
 
-  async sendMail(payload: AdvancedMailPayload): Promise<void> {
+  async sendMail(payload: BuiltMail): Promise<void> {
     await this.transport.sendMail({
       to: payload.to,
-      replyTo: payload.replyTo,
+      cc: payload.cc,
+      bcc: payload.bcc,
       from: payload.from,
-      priority: payload.priority,
+      replyTo: payload.replyTo,
       subject: payload.subject,
-      html: payload.body,
+      html: payload.html,
+      text: payload.text,
+      attachments: payload.attachments,
+      priority: payload.priority,
+      headers: payload.headers,
     });
   }
 

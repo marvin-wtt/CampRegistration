@@ -13,15 +13,12 @@ import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationResource } from '#app/registration/registration.resource.js';
+import { uniqueLowerCase } from '#utils/string';
 
 type MessageWithAttachments = Message & { attachments: File[] };
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
 export class MessageService extends BaseService {
-  public uniqueEmails(emails: string[]): string[] {
-    return [...new Set(emails.map((value) => value.trim().toLowerCase()))];
-  }
-
   async sendTemplateMessage(
     template: MessageTemplateWithAttachments,
     camp: Camp,
@@ -71,18 +68,6 @@ export class MessageService extends BaseService {
     return message;
   }
 
-  createCampContext(camp: Camp, locale: string) {
-    return {
-      ...camp,
-      // Translate values
-      name: translateObject(camp.name, locale),
-      organizer: translateObject(camp.organizer, locale),
-      contactEmail: translateObject(camp.contactEmail, locale),
-      maxParticipants: translateObject(camp.maxParticipants, locale),
-      location: translateObject(camp.location, locale),
-    };
-  }
-
   createRegistrationContext(
     camp: Camp,
     registration: Registration,
@@ -107,7 +92,7 @@ export class MessageService extends BaseService {
     registration: Registration,
   ) {
     // Filter duplicate emails
-    const emails = this.uniqueEmails(registration.emails ?? []);
+    const emails = uniqueLowerCase(registration.emails ?? []);
     await mailService.sendMessages(message, emails);
   }
 

@@ -4,12 +4,8 @@ import renderer from '#app/mail/mail.renderer';
 import { MailFactory } from '#app/mail/mail.factory';
 import logger from '#core/logger';
 import { NoOpMailer } from '#app/mail/noop.mailer';
-import type {
-  AdvancedMailPayload,
-  IMailer,
-  MailPriority,
-  TemplateMailData,
-} from '#app/mail/mail.types';
+import type { IMailer, TemplateMailData } from '#app/mail/mailer.types';
+import type { MailPriority, BuiltMail } from '#app/mail/mail.types';
 import { mailQueue } from '#app/mail/mail.queue';
 
 const isMailPriority = (value: string): value is MailPriority => {
@@ -42,11 +38,12 @@ class MailService {
     await this.mailer.close();
   }
 
+  // TODO Refactor
   async sendTemplateMail(data: TemplateMailData): Promise<void> {
     // Render content into global template
     const html = await renderer.renderFile({
-      subject: data.subject,
-      fileName: data.template,
+      envelope: data,
+      template: data.template,
       context: {
         ...data.context,
         email: data.to,
@@ -59,12 +56,12 @@ class MailService {
       replyTo: data.replyTo,
       priority: data.priority,
       subject: data.subject,
-      body: html,
+      html,
       attachments: data.attachments,
     });
   }
 
-  private async sendMailBase(data: Omit<AdvancedMailPayload, 'from'>) {
+  private async sendMailBase(data: Omit<BuiltMail, 'from'>) {
     const from = {
       name: config.appName,
       address: config.email.from,
@@ -77,21 +74,24 @@ class MailService {
       replyTo: data.replyTo ?? config.email.replyTo,
       priority: data.priority ?? 'normal',
       subject: data.subject,
-      body: data.body,
+      body: data.html,
       attachments: data.attachments,
     });
   }
 
-  public async sendMail(data: AdvancedMailPayload): Promise<void> {
+  public async sendMail(data: BuiltMail): Promise<void> {
     await this.mailer.sendMail(data);
   }
 
+  // TODO Refactor
   async sendMessage(message: Message, email: string): Promise<void> {
     const html = await renderer.renderContent({
-      subject: message.subject,
+      envelope: {
+        subject: message.subject,
+        to: email,
+      },
       body: message.body,
       footer: '', // TODO
-      email,
     });
 
     // Send email via mailer
@@ -100,11 +100,12 @@ class MailService {
       replyTo: message.replyTo ?? config.email.replyTo,
       priority: isMailPriority(message.priority) ? message.priority : 'normal',
       subject: message.subject,
-      body: html,
+      html,
       attachments: [],
     });
   }
 
+  // TODO Refactor
   async sendMessages(message: Message, emails: string[]): Promise<void> {
     if (emails.length === 0) {
       logger.warn('Failed to send email. No recipient defined.');
