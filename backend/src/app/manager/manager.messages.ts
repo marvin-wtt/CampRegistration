@@ -30,7 +30,7 @@ abstract class ManagerMessage<
     return email;
   }
 
-  protected getLocale(): string | undefined {
+  protected locale(): string | undefined {
     return this.payload.manager.user?.locale;
   }
 }
@@ -54,7 +54,7 @@ export class ManagerInvitationMessage extends ManagerMessage<{
     return t('subject');
   }
 
-  protected getLocale(): string | undefined {
+  protected locale(): string | undefined {
     return (
       this.payload.manager.user?.locale ??
       (this.payload.camp.countries.length === 1
@@ -65,7 +65,7 @@ export class ManagerInvitationMessage extends ManagerMessage<{
 
   protected content() {
     const camp = this.payload.camp;
-    const campName = translateObject(camp.name, this.getLocale());
+    const campName = translateObject(camp.name, this.locale());
     const url = generateUrl(['management', camp.id]);
 
     return {

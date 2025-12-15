@@ -4,7 +4,6 @@ import path from 'path';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
 import type { AddressLike, Envelope, Translator } from '#app/mail/mail.types';
-import { generateUrl } from '#utils/url.js';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;

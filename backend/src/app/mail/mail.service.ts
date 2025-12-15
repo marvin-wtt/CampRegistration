@@ -4,7 +4,7 @@ import renderer from '#app/mail/mail.renderer';
 import { MailFactory } from '#app/mail/mail.factory';
 import logger from '#core/logger';
 import { NoOpMailer } from '#app/mail/noop.mailer';
-import type { IMailer, TemplateMailData } from '#app/mail/mailer.types';
+import type { IMailer } from '#app/mail/mailer.types';
 import type { MailPriority, BuiltMail } from '#app/mail/mail.types';
 import { mailQueue } from '#app/mail/mail.queue';
 
@@ -38,30 +38,8 @@ class MailService {
     await this.mailer.close();
   }
 
-  // TODO Refactor
-  async sendTemplateMail(data: TemplateMailData): Promise<void> {
-    // Render content into global template
-    const html = await renderer.renderFile({
-      envelope: data,
-      template: data.template,
-      context: {
-        ...data.context,
-        email: data.to,
-      },
-    });
-
-    // Send email via mailer
-    await this.sendMailBase({
-      to: data.to,
-      replyTo: data.replyTo,
-      priority: data.priority,
-      subject: data.subject,
-      html,
-      attachments: data.attachments,
-    });
-  }
-
   private async sendMailBase(data: Omit<BuiltMail, 'from'>) {
+    // TODO Use Mailbase instead of built mail
     const from = {
       name: config.appName,
       address: config.email.from,
@@ -74,7 +52,7 @@ class MailService {
       replyTo: data.replyTo ?? config.email.replyTo,
       priority: data.priority ?? 'normal',
       subject: data.subject,
-      body: data.html,
+      html: data.html,
       attachments: data.attachments,
     });
   }

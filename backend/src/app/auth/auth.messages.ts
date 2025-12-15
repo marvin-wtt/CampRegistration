@@ -11,7 +11,7 @@ abstract class UserMessage<T extends { user: User }> extends MailBase<T> {
     };
   }
 
-  protected getLocale(): string {
+  protected locale(): string {
     return this.payload.user.locale;
   }
 }

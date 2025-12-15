@@ -1,4 +1,4 @@
-import type { Camp, Registration } from '@prisma/client';
+import type { Camp, MessageTemplate, Registration } from '@prisma/client';
 import messageService from '#app/message/message.service';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
 import { MailBase } from '#app/mail/mail.base';
@@ -11,6 +11,7 @@ import type {
 } from '#app/mail/mail.types';
 import { generateUrl } from '#utils/url.js';
 import { uniqueLowerCase } from '#utils/string.js';
+import Handlebars from 'handlebars';
 
 abstract class RegistrationMessage<
   T extends { registration: Registration },
@@ -44,7 +45,7 @@ abstract class RegistrationMessage<
     };
   }
 
-  protected getLocale(): string {
+  protected locale(): string {
     return this.payload.registration.locale;
   }
 }
@@ -99,7 +100,7 @@ export class RegistrationNotifyMessage extends RegistrationMessage<{
   }
 
   private createCampContext() {
-    const locale = this.getLocale();
+    const locale = this.locale();
     const camp = this.payload.camp;
 
     return {
@@ -121,6 +122,53 @@ export class RegistrationNotifyMessage extends RegistrationMessage<{
         content: JSON.stringify(this.payload.registration),
       },
     ];
+  }
+}
+
+abstract class RegistrationEventMessage<
+  T extends {
+    registration: Registration;
+    camp: Camp;
+    messageTemplate: MessageTemplate;
+  },
+> extends RegistrationMessage<T> {
+  protected subject(): string | Promise<string> {
+    let template = translateObject(
+      this.payload.messageTemplate.subject,
+      this.locale(),
+    );
+
+    template = template.trim();
+
+    // Remove paragraph tags if they are present
+    if (template.startsWith('<p>') && template.endsWith('</p>')) {
+      template = template.slice(3, -4).trim();
+    }
+
+    const compile = Handlebars.compile(template, {
+      knownHelpersOnly: true,
+      knownHelpers: {
+        if: true,
+        unless: true,
+        each: true,
+        with: true,
+      },
+      noEscape: true, // No escape needed for subjects
+    });
+
+    const context = {
+      // TODO
+    };
+
+    return compile(context);
+  }
+
+  protected content(): Content | Promise<Content> {
+    return undefined;
+  }
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [];
   }
 }
 

@@ -44,14 +44,14 @@ export abstract class MailBase<P> {
     return {};
   }
 
-  protected getLocale(): string | undefined {
+  protected locale(): string | undefined {
     return undefined;
   }
 
   public getT(): Translator {
     if (!this.t) {
       const { namespace, keyPrefix } = this.getTranslationOptions();
-      const locale = this.getLocale() ?? i18n.language;
+      const locale = this.locale() ?? i18n.language;
 
       this.t = i18n.getFixedT(locale, namespace, keyPrefix);
     }
