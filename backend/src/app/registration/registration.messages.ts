@@ -12,6 +12,7 @@ import type {
 import { generateUrl } from '#utils/url.js';
 import { uniqueLowerCase } from '#utils/string.js';
 import Handlebars from 'handlebars';
+import { RegistrationResource } from '#app/registration/registration.resource.js';
 
 abstract class RegistrationMessage<
   T extends { registration: Registration },
@@ -156,15 +157,52 @@ abstract class RegistrationEventMessage<
       noEscape: true, // No escape needed for subjects
     });
 
-    const context = {
-      // TODO
-    };
+    return compile(this.context());
+  }
 
-    return compile(context);
+  private context(): object {
+    return {
+      camp: {
+        ...this.payload.camp,
+        // Translate values
+        name: translateObject(this.payload.camp.name, this.locale()),
+        organizer: translateObject(this.payload.camp.organizer, this.locale()),
+        contactEmail: translateObject(
+          this.payload.camp.contactEmail,
+          this.locale(),
+        ),
+        maxParticipants: translateObject(
+          this.payload.camp.maxParticipants,
+          this.locale(),
+        ),
+        location: translateObject(this.payload.camp.location, this.locale()),
+      },
+      registration: new RegistrationResource(
+        this.payload.registration,
+      ).transform(),
+    };
   }
 
   protected content(): Content | Promise<Content> {
-    return undefined;
+    const template = translateObject(
+      this.payload.messageTemplate.body,
+      this.locale(),
+    );
+
+    const compile = Handlebars.compile(template, {
+      knownHelpersOnly: true,
+      knownHelpers: {
+        if: true,
+        unless: true,
+        each: true,
+        with: true,
+      },
+    });
+
+    return {
+      template: '', // TODO
+      context: compile(this.context()),
+    };
   }
 
   protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
