@@ -65,9 +65,7 @@ export abstract class Queue<P, R = void, N extends string = string> {
 
   public abstract get type(): string;
 
-  public abstract process(
-    handler: (payload: P) => Promise<R>,
-  ): void | Promise<void>;
+  public abstract process(handler: (payload: P) => Promise<R>): void;
 
   public abstract all(status?: JobStatus): Promise<Job<P>[]>;
 

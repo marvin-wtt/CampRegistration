@@ -4,6 +4,7 @@ import {
   Queue,
   type Job,
   type JobStatus,
+  type QueueOptions,
 } from '#core/queue/Queue';
 import logger from '#core/logger';
 
@@ -22,6 +23,10 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   private maxSleepMs = 2000;
   private minErrorBackoffMs = 1000;
   private maxErrorBackoffMs = 30000;
+
+  public constructor(queue: string, options?: Partial<QueueOptions>) {
+    super(queue, options);
+  }
 
   public start() {
     if (this.running) {
@@ -283,7 +288,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
       this.options.retryDelayType === 'exponential'
         ? this.options.retryDelay * Math.pow(2, attempts - 1)
         : this.options.retryDelay;
-    ('');
+
     return new Date(Date.now() + delay);
   }
 

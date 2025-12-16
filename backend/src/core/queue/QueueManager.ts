@@ -10,10 +10,6 @@ export class QueueManager {
     return Object.values(this.queues);
   }
 
-  async closeAll(): Promise<void> {
-    await Promise.all(this.all().map((queue) => queue.close()));
-  }
-
   createQueue<P, R = void, N extends string = string>(
     name: string,
     options?: Partial<QueueOptions>,
