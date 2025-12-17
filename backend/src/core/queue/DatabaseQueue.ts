@@ -5,6 +5,7 @@ import {
   type Job,
   type JobStatus,
   type QueueOptions,
+  type SimpleJob,
 } from '#core/queue/Queue';
 import logger from '#core/logger';
 
@@ -15,7 +16,7 @@ type PrismaTransaction = Parameters<
 export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   public readonly type = 'database';
 
-  private handler: ((payload: P) => Promise<R>) | null = null;
+  private handler: ((payload: SimpleJob<P>) => Promise<R>) | null = null;
   private sleepResolve: (() => void) | null = null;
   private running = false;
 
@@ -55,7 +56,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     }
   }
 
-  public process(handler: (payload: P) => Promise<R>): void {
+  public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
     if (this.handler != null) {
       logger.warn('Queue handler already defined, overwriting it.');
     }
@@ -71,7 +72,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
       ? new Date(Date.now() + options.delay)
       : new Date();
 
-    await prisma.jobs.create({
+    await prisma.job.create({
       data: {
         name,
         queue: this.queue,
@@ -132,13 +133,13 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     logger.info(`Worker for queue ${this.queue} stopped`);
   }
 
-  private async processJob(job: { id: string; payload: P }) {
+  private async processJob(job: SimpleJob<P> & { id: string }) {
     if (!this.handler) {
       throw new Error('No handler defined for the queue');
     }
 
     try {
-      await this.handler(job.payload);
+      await this.handler(job);
 
       await this.complete(job.id);
     } catch (err) {
@@ -179,11 +180,11 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public count(): Promise<number> {
-    return prisma.jobs.count({ where: { queue: this.queue } });
+    return prisma.job.count({ where: { queue: this.queue } });
   }
 
   public async all(status?: JobStatus): Promise<Job<P>[]> {
-    const jobs = await prisma.jobs.findMany({
+    const jobs = await prisma.job.findMany({
       where: {
         queue: this.queue,
         status: status === 'DELAYED' ? 'PENDING' : status,
@@ -210,7 +211,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   async handleStalled(): Promise<void> {
-    await prisma.jobs.updateMany({
+    await prisma.job.updateMany({
       where: {
         queue: this.queue,
         status: 'RUNNING',
@@ -225,7 +226,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   async complete(id: string): Promise<void> {
-    await prisma.jobs.update({
+    await prisma.job.update({
       where: {
         id,
         status: 'RUNNING',
@@ -241,7 +242,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   async release(id: string, error: unknown): Promise<void> {
-    const job = await prisma.jobs.findUnique({
+    const job = await prisma.job.findUnique({
       where: { id },
       select: { attempts: true, queue: true },
     });
@@ -258,7 +259,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
     if (job.attempts >= this.options.maxAttempts) {
       // If the job has reached the maximum number of attempts, mark it as failed
-      await prisma.jobs.update({
+      await prisma.job.update({
         where: { id },
         data: {
           status: 'FAILED',
@@ -271,7 +272,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
       return;
     }
 
-    await prisma.jobs.update({
+    await prisma.job.update({
       where: { id },
       data: {
         status: 'PENDING',
@@ -292,14 +293,16 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     return new Date(Date.now() + delay);
   }
 
-  async poll() {
+  async poll(): Promise<(SimpleJob<P> & { id: string }) | null> {
     return prisma.$transaction(async (tx) => {
       if (await this.isRateLimitExceeded(tx)) {
         return null;
       }
 
-      const rows = await tx.$queryRaw<{ id: string; payload: string }[]>`
-        SELECT id, payload
+      const rows = await tx.$queryRaw<
+        { id: string; name: string; payload: string }[]
+      >`
+        SELECT id, name, payload
         FROM jobs
         WHERE status = 'PENDING'
           AND run_at <= NOW(3)
@@ -317,7 +320,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
       const job = rows[0];
 
-      await tx.jobs.update({
+      await tx.job.update({
         where: { id: job.id },
         data: {
           status: 'RUNNING',
@@ -329,6 +332,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
       return {
         id: job.id,
+        name: job.name,
         payload: JSON.parse(job.payload) as P,
       };
     });

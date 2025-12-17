@@ -3,6 +3,7 @@ import {
   type QueueOptions,
   type JobOptions,
   type JobStatus,
+  type SimpleJob,
 } from '#core/queue/Queue';
 import {
   Queue as BullQueue,
@@ -119,7 +120,7 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
   }
 
-  public process(handler: (payload: P) => Promise<R>): void {
+  public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
     if (this.worker) {
       throw new Error(`Worker for queue ${this.queue} already exists.`);
     }
@@ -127,7 +128,10 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     this.worker = new Worker<P, R, N>(
       this.queue,
       (job) => {
-        return handler(job.data);
+        return handler({
+          name: job.name,
+          payload: job.data,
+        });
       },
       {
         connection: this.connection,

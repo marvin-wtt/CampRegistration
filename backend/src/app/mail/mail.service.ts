@@ -7,6 +7,7 @@ import { NoOpMailer } from '#app/mail/noop.mailer';
 import type { IMailer } from '#app/mail/mailer.types';
 import type { MailPriority, BuiltMail } from '#app/mail/mail.types';
 import { mailQueue } from '#app/mail/mail.queue';
+import { MailBase } from '#app/mail/mail.base.js';
 
 const isMailPriority = (value: string): value is MailPriority => {
   return ['low', 'normal', 'high'].includes(value);
@@ -57,7 +58,9 @@ class MailService {
     });
   }
 
-  public async sendMail(data: BuiltMail): Promise<void> {
+  public async sendMail(mailable: MailBase<unknown>): Promise<void> {
+    const data = await mailable.build();
+
     await this.mailer.sendMail(data);
   }
 

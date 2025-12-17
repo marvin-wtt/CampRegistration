@@ -264,7 +264,7 @@ enum JobStatus {
   FAILED
 }
 
-model Jobs {
+model Job {
   id         String    @id @unique(map: "jobs_id_unique") @default(ulid()) @db.Char(26)
   name       String    @db.VarChar(255)
   queue      String    @db.VarChar(255)

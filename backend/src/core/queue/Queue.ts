@@ -30,12 +30,15 @@ export type JobStatus =
   | 'COMPLETED'
   | 'FAILED';
 
-export interface Job<T> {
-  id: string;
+export interface SimpleJob<T> {
   name: string;
+  payload: T;
+}
+
+export interface Job<T> extends SimpleJob<T> {
+  id: string;
   queue: string;
   status: JobStatus;
-  payload: T;
   reservedAt: Date | null;
   runAt: Date | null;
   finishedAt: Date | null;
@@ -65,7 +68,7 @@ export abstract class Queue<P, R = void, N extends string = string> {
 
   public abstract get type(): string;
 
-  public abstract process(handler: (payload: P) => Promise<R>): void;
+  public abstract process(handler: (job: SimpleJob<P>) => Promise<R>): void;
 
   public abstract all(status?: JobStatus): Promise<Job<P>[]>;
 

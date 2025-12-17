@@ -1,4 +1,3 @@
-import messageService from './message.service.js';
 import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
@@ -60,14 +59,11 @@ class MessageController extends BaseController {
   }
 
   async resend(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
-    const requestMessage = req.modelOrFail('message');
     await req.validate(validator.resend);
 
-    // TODO Enqueue message instead
-    await messageService.resendMessage(camp, requestMessage);
+    // TODO Create and enqueue new message
 
-    res.sendStatus(httpStatus.CREATED);
+    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
   destroy(_req: Request, res: Response) {

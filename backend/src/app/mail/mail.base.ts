@@ -15,23 +15,13 @@ import { MailRenderer } from '#app/mail/mail.renderer.js';
 import mailService from '#app/mail/mail.service.js';
 import { htmlToText } from 'html-to-text';
 import logger from '#core/logger';
+import { registerMailable } from '#app/mail/mail.registry.js';
+import { mailQueue } from '#app/mail/mail.queue.js';
 
 export interface MailableCtor<P> {
   new (payload: P): MailBase<P>;
   readonly type: string;
 }
-
-// TODO Use real types for queue and mailer
-export interface EmailJob<P = unknown> {
-  mailable: string; // internal type name
-  payload: P; // JSON-serializable payload
-}
-
-export interface EmailQueue {
-  add(job: EmailJob): Promise<void>;
-}
-
-const mailQueue: EmailQueue = undefined as unknown as EmailQueue;
 
 export abstract class MailBase<P> {
   private t?: Translator;
@@ -160,29 +150,23 @@ export abstract class MailBase<P> {
     };
   }
 
-  // TODO Add soft error handling
   static enqueue<P>(
     this: MailableCtor<P> & { type: string },
     payload: P,
   ): void {
-    const job: EmailJob<P> = {
-      mailable: this.type,
-      payload,
-    };
+    registerMailable(
+      this as unknown as MailableCtor<unknown> & { type: string },
+    );
 
-    mailQueue.add(job).catch((error: unknown) => {
+    mailQueue.add(this.type, payload).catch((error: unknown) => {
       logger.error('Failed to enqueue mail job:', error);
     });
   }
 
-  // TODO Add soft error handling
   static async send<P>(
     this: MailableCtor<P> & { type: string },
     payload: P,
   ): Promise<void> {
-    const mailable = new this(payload);
-    const data = await mailable.build();
-
-    await mailService.sendMail(data);
+    await mailService.sendMail(new this(payload));
   }
 }
