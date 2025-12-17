@@ -55,7 +55,7 @@ class ProfileController extends BaseController {
       const verifyEmailToken =
         await tokenService.generateVerifyEmailToken(user);
 
-      await VerifyEmailMessage.enqueue({
+      VerifyEmailMessage.enqueue({
         user,
         token: verifyEmailToken,
       });

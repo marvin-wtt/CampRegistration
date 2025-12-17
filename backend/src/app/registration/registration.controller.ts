@@ -6,8 +6,13 @@ import {
 } from './registration.resource.js';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
-import registrationMessages, {
+import {
+  RegistrationAcceptedMessage,
+  RegistrationConfirmedMessage,
+  RegistrationDeletedMessage,
   RegistrationNotifyMessage,
+  RegistrationUpdatedMessage,
+  RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
 
@@ -43,13 +48,13 @@ class RegistrationController extends BaseController {
 
     // Notify participant
     if (registration.waitingList) {
-      await registrationMessages.sendRegistrationWaitlisted(camp, registration);
+      void RegistrationWaitlistedMessage.enqueueFor(camp, registration);
     } else {
-      await registrationMessages.sendRegistrationConfirmed(camp, registration);
+      void RegistrationConfirmedMessage.enqueueFor(camp, registration);
     }
 
     // Notify contact email
-    await RegistrationNotifyMessage.enqueue({ camp, registration });
+    RegistrationNotifyMessage.enqueue({ camp, registration });
 
     res
       .status(httpStatus.CREATED)
@@ -79,14 +84,11 @@ class RegistrationController extends BaseController {
 
     if (!suppressMessage) {
       if (previousRegistration.data !== registration.data) {
-        await registrationMessages.sendRegistrationUpdated(camp, registration);
+        void RegistrationUpdatedMessage.enqueueFor(camp, registration);
       }
 
       if (previousRegistration.waitingList && !registration.waitingList) {
-        await registrationMessages.sendRegistrationWaitlistAccepted(
-          camp,
-          registration,
-        );
+        void RegistrationAcceptedMessage.enqueueFor(camp, registration);
       }
     }
 
@@ -103,7 +105,7 @@ class RegistrationController extends BaseController {
     await registrationService.deleteRegistration(registration);
 
     if (!suppressMessage) {
-      await registrationMessages.sendRegistrationCanceled(camp, registration);
+      void RegistrationDeletedMessage.enqueueFor(camp, registration);
     }
 
     res.status(httpStatus.NO_CONTENT).send();

@@ -34,11 +34,11 @@ export interface ViewContent {
   text?: string;
 }
 
-export interface HtmlContent extends TextContent {
+export interface HtmlContent extends Partial<TextContent> {
   html: string;
 }
 
-export type Content = ViewContent | HtmlContent | Required<TextContent>;
+export type Content = ViewContent | HtmlContent | TextContent;
 
 export interface BuiltMail extends Envelope {
   text?: string;

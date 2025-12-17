@@ -48,7 +48,7 @@ class ManagerController extends BaseController {
         ? await managerService.inviteManager(camp.id, email, data)
         : await managerService.addManager(camp.id, user.id, data);
 
-    await ManagerInvitationMessage.enqueue({
+    ManagerInvitationMessage.enqueue({
       camp,
       manager,
     });

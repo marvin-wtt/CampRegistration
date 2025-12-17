@@ -1,18 +1,18 @@
-import type { Camp, MessageTemplate, Registration } from '@prisma/client';
-import messageService from '#app/message/message.service';
+import type { Camp, MessageTemplate, Registration, File } from '@prisma/client';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
 import { MailBase } from '#app/mail/mail.base';
-import { BaseMessages } from '#core/base/BaseMessages';
-import { catchAndResolve } from '#utils/promiseUtils';
 import type {
   AddressLike,
+  BuiltMail,
   Content,
   MailAttachment,
 } from '#app/mail/mail.types';
-import { generateUrl } from '#utils/url.js';
-import { uniqueLowerCase } from '#utils/string.js';
+import { generateUrl } from '#utils/url';
+import { uniqueLowerCase } from '#utils/string';
 import Handlebars from 'handlebars';
-import { RegistrationResource } from '#app/registration/registration.resource.js';
+import { RegistrationResource } from '#app/registration/registration.resource';
+import messageTemplateService from '#app/messageTemplate/message-template.service';
+import logger from '#core/logger';
 
 abstract class RegistrationMessage<
   T extends { registration: Registration },
@@ -126,13 +126,15 @@ export class RegistrationNotifyMessage extends RegistrationMessage<{
   }
 }
 
-abstract class RegistrationEventMessage<
-  T extends {
-    registration: Registration;
-    camp: Camp;
-    messageTemplate: MessageTemplate;
-  },
-> extends RegistrationMessage<T> {
+export interface RegistrationTemplatePayload {
+  registration: Registration;
+  camp: Camp;
+  messageTemplate: MessageTemplate;
+}
+
+export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
+  static readonly type = 'registration:template';
+
   protected subject(): string | Promise<string> {
     let template = translateObject(
       this.payload.messageTemplate.subject,
@@ -183,6 +185,14 @@ abstract class RegistrationEventMessage<
     };
   }
 
+  async build(): Promise<BuiltMail> {
+    const mail = super.build();
+
+    // TODO Create message
+
+    return mail;
+  }
+
   protected content(): Content | Promise<Content> {
     const template = translateObject(
       this.payload.messageTemplate.body,
@@ -200,69 +210,91 @@ abstract class RegistrationEventMessage<
     });
 
     return {
-      template: '', // TODO
-      context: compile(this.context()),
+      html: compile(this.context()),
     };
   }
+}
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [];
+type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
+
+async function loadMessageTemplate(
+  campId: string,
+  event: string,
+): Promise<MessageTemplateWithFiles | null> {
+  try {
+    return await messageTemplateService.getMessageTemplateByName(event, campId);
+  } catch (error) {
+    logger.error(error);
+    return null;
   }
 }
 
-class RegistrationMessages extends BaseMessages {
-  async sendRegistrationConfirmed(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_confirmed',
-        camp,
-        registration,
-      ),
-    );
-  }
+abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
+  static readonly event: string;
 
-  async sendRegistrationWaitlisted(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_waitlisted',
-        camp,
-        registration,
-      ),
-    );
-  }
-
-  async sendRegistrationWaitlistAccepted(
+  static async enqueueFor(
+    this: typeof RegistrationTemplateMessage & { event: string },
     camp: Camp,
     registration: Registration,
-  ) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_waitlist_accepted',
-        camp,
-        registration,
-      ),
-    );
+  ): Promise<void> {
+    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    if (!messageTemplate) {
+      return;
+    }
+
+    this.enqueue({
+      registration,
+      camp,
+      messageTemplate,
+    });
   }
 
-  async sendRegistrationUpdated(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_updated',
-        camp,
-        registration,
-      ),
-    );
-  }
+  static async sendFor(
+    this: typeof RegistrationTemplateMessage & { event: string },
+    camp: Camp,
+    registration: Registration,
+  ): Promise<void> {
+    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    if (!messageTemplate) {
+      return;
+    }
 
-  async sendRegistrationCanceled(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_canceled',
-        camp,
-        registration,
-      ),
-    );
+    return this.send({
+      registration,
+      camp,
+      messageTemplate,
+    });
   }
 }
 
-export default new RegistrationMessages();
+export class RegistrationConfirmedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_confirmed';
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [
+      // Attach registration data PDF here
+    ];
+  }
+}
+
+export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_waitlisted';
+}
+
+export class RegistrationUpdatedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_updated';
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [
+      // Attach registration data PDF here
+    ];
+  }
+}
+
+export class RegistrationDeletedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_canceled';
+}
+
+export class RegistrationAcceptedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_accepted';
+}

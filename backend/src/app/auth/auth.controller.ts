@@ -33,7 +33,7 @@ class AuthController extends BaseController {
     await managerService.resolveManagerInvitations(user.email, user.id);
 
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    await VerifyEmailMessage.enqueue({
+    VerifyEmailMessage.enqueue({
       user,
       token: verifyEmailToken,
     });
@@ -173,7 +173,7 @@ class AuthController extends BaseController {
     );
 
     if (resetPasswordToken !== undefined) {
-      await ResetPasswordMessage.enqueue({
+      ResetPasswordMessage.enqueue({
         user,
         token: resetPasswordToken,
       });
@@ -205,7 +205,7 @@ class AuthController extends BaseController {
     }
 
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    await VerifyEmailMessage.enqueue({
+    VerifyEmailMessage.enqueue({
       user,
       token: verifyEmailToken,
     });

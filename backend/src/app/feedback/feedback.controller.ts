@@ -10,7 +10,7 @@ class FeedbackController extends BaseController {
       body: { message, email, location, userAgent },
     } = await req.validate(validator.store);
 
-    await FeedbackMessage.sendNow({
+    await FeedbackMessage.send({
       message,
       email,
       location,

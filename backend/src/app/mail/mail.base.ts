@@ -13,6 +13,8 @@ import config from '#config/index';
 import i18n from '#core/i18n';
 import { MailRenderer } from '#app/mail/mail.renderer.js';
 import mailService from '#app/mail/mail.service.js';
+import { htmlToText } from 'html-to-text';
+import logger from '#core/logger';
 
 export interface MailableCtor<P> {
   new (payload: P): MailBase<P>;
@@ -26,11 +28,7 @@ export interface EmailJob<P = unknown> {
 }
 
 export interface EmailQueue {
-  add(job: EmailJob<any>): Promise<void>;
-}
-
-export interface Mailer {
-  send(mail: BuiltMail): Promise<void>;
+  add(job: EmailJob): Promise<void>;
 }
 
 const mailQueue: EmailQueue = undefined as unknown as EmailQueue;
@@ -152,30 +150,33 @@ export abstract class MailBase<P> {
     ]);
 
     const html = await this.render(envelop, content);
+    const text = content.text ?? htmlToText(html ?? '');
 
     return {
       ...envelop,
       html,
-      text: content.text,
+      text,
       attachments: attachments.length ? attachments : undefined,
     };
   }
 
   // TODO Add soft error handling
-  static async enqueue<P>(
+  static enqueue<P>(
     this: MailableCtor<P> & { type: string },
     payload: P,
-  ): Promise<void> {
+  ): void {
     const job: EmailJob<P> = {
       mailable: this.type,
       payload,
     };
 
-    await mailQueue.add(job);
+    mailQueue.add(job).catch((error: unknown) => {
+      logger.error('Failed to enqueue mail job:', error);
+    });
   }
 
   // TODO Add soft error handling
-  static async sendNow<P>(
+  static async send<P>(
     this: MailableCtor<P> & { type: string },
     payload: P,
   ): Promise<void> {
