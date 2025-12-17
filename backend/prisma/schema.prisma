@@ -221,6 +221,9 @@ model Message {
   id             String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
   templateId     String?  @map("message_template_id") @db.Char(26)
   registrationId String?  @map("registration_id") @db.Char(26)
+  to             String?  @db.TinyText
+  cc             String?  @db.TinyText
+  bcc            String?  @db.TinyText
   replyTo        String?  @map("reply_to")
   subject        String   @db.MediumText
   body           String   @db.MediumText

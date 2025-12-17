@@ -1,58 +1,41 @@
 import type {
+  Prisma,
   Camp,
   Registration,
   MessageTemplate,
   Message,
   File,
 } from '@prisma/client';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
 import mailService from '#app/mail/mail.service';
-import { translateObject } from '#utils/translateObject';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import registrationService from '#app/registration/registration.service';
 import { BaseService } from '#core/base/BaseService';
-import { RegistrationResource } from '#app/registration/registration.resource.js';
 import { uniqueLowerCase } from '#utils/string';
 
 type MessageWithAttachments = Message & { attachments: File[] };
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
 export class MessageService extends BaseService {
-  async sendTemplateMessage(
-    template: MessageTemplateWithAttachments,
-    camp: Camp,
+  async createMessage(
     registration: Registration,
-  ): Promise<MessageWithAttachments> {
-    const country = registration.country ?? camp.countries[0];
-
-    // Create compiler
-    const subjectCompiler = messageTemplateService.createSubjectCompiler(
-      translateObject(template.subject, country),
-    );
-    const bodyCompiler = messageTemplateService.createBodyCompiler(
-      translateObject(template.body, country),
-    );
-
-    const context = this.createRegistrationContext(camp, registration, country);
-
-    const message = await this.prisma.message.create({
+    template: MessageTemplateWithAttachments,
+    data: Omit<
+      Prisma.MessageCreateInput,
+      'id' | 'template' | 'registration' | 'createdAt' | 'attachments'
+    >,
+  ) {
+    return this.prisma.message.create({
       data: {
+        ...data,
         registration: { connect: { id: registration.id } },
         template: { connect: { id: template.id } },
-        replyTo:
-          template.replyTo ?? translateObject(camp.contactEmail, country),
-        priority: template.priority,
-        subject: subjectCompiler(context),
-        body: bodyCompiler(context),
         attachments: {
+          // TODO Can I use connect instead?
           createMany: {
             data: template.attachments.map((file) => ({
-              name: file.name,
-              storageLocation: file.storageLocation,
-              originalName: file.originalName,
-              type: file.type,
-              size: file.size,
+              ...file,
+              id: undefined,
               accessLevel: 'private',
             })),
           },
@@ -62,29 +45,6 @@ export class MessageService extends BaseService {
         attachments: true,
       },
     });
-
-    await this.sendMessageToRegistration(message, registration);
-
-    return message;
-  }
-
-  createRegistrationContext(
-    camp: Camp,
-    registration: Registration,
-    locale: string,
-  ): object {
-    return {
-      camp: {
-        ...camp,
-        // Translate values
-        name: translateObject(camp.name, locale),
-        organizer: translateObject(camp.organizer, locale),
-        contactEmail: translateObject(camp.contactEmail, locale),
-        maxParticipants: translateObject(camp.maxParticipants, locale),
-        location: translateObject(camp.location, locale),
-      },
-      registration: new RegistrationResource(registration).transform(),
-    };
   }
 
   private async sendMessageToRegistration(
@@ -94,28 +54,6 @@ export class MessageService extends BaseService {
     // Filter duplicate emails
     const emails = uniqueLowerCase(registration.emails ?? []);
     await mailService.sendMessages(message, emails);
-  }
-
-  async sendEventMessage(
-    event: string,
-    camp: Camp,
-    registration: Registration,
-  ) {
-    const template = await messageTemplateService.getMessageTemplateByName(
-      event,
-      camp.id,
-    );
-
-    // Only send email when template is present
-    // No template means, that emails are disabled
-    if (!template) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Template event "${event}" not found`,
-      );
-    }
-
-    return this.sendTemplateMessage(template, camp, registration);
   }
 
   async resendMessage(
@@ -138,23 +76,10 @@ export class MessageService extends BaseService {
       throw new ApiError(httpStatus.CONFLICT, 'Invalid registration id');
     }
 
-    if (!message.templateId) {
-      await this.sendMessageToRegistration(message, registration);
+    // TODO Create new message instead
+    await this.sendMessageToRegistration(message, registration);
 
-      return message;
-    }
-
-    // Regenerate message
-    const template = await messageTemplateService.getMessageTemplateById(
-      camp.id,
-      message.templateId,
-    );
-
-    if (!template) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid message template');
-    }
-
-    return this.sendTemplateMessage(template, camp, registration);
+    return message;
   }
 
   async getMessageById(campId: string, id: string) {

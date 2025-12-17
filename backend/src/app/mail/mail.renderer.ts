@@ -3,7 +3,8 @@ import i18n from '#core/i18n';
 import path from 'path';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
-import type { AddressLike, Envelope, Translator } from '#app/mail/mail.types';
+import type { Envelope, Translator } from '#app/mail/mail.types';
+import { addressLikeToString } from '#app/mail/mail.utils';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;
@@ -15,13 +16,6 @@ interface RenderFileOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;
   template: string;
   context: Record<string, unknown>;
-}
-
-function envelopeToAddressString(to: AddressLike): string {
-  const items = Array.isArray(to) ? to : [to];
-  return items
-    .map((entry) => (typeof entry === 'string' ? entry : entry.address))
-    .join(', ');
 }
 
 export class MailRenderer {
@@ -56,7 +50,7 @@ export class MailRenderer {
       context: {
         body: options.body,
         footer: options.footer,
-        email: envelopeToAddressString(options.envelope.to),
+        email: addressLikeToString(options.envelope.to),
       },
     });
   }

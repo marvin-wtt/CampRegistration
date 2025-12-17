@@ -13,6 +13,8 @@ import Handlebars from 'handlebars';
 import { RegistrationResource } from '#app/registration/registration.resource';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
+import messageService from '#app/message/message.service';
+import { addressLikeToString } from '#app/mail/mail.utils';
 
 abstract class RegistrationMessage<
   T extends { registration: Registration },
@@ -129,7 +131,7 @@ export class RegistrationNotifyMessage extends RegistrationMessage<{
 export interface RegistrationTemplatePayload {
   registration: Registration;
   camp: Camp;
-  messageTemplate: MessageTemplate;
+  messageTemplate: MessageTemplateWithFiles;
 }
 
 export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
@@ -186,9 +188,23 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 
   async build(): Promise<BuiltMail> {
-    const mail = super.build();
+    const mail = await super.build();
 
-    // TODO Create message
+    // TODO Store to address as well
+
+    await messageService.createMessage(
+      this.payload.registration,
+      this.payload.messageTemplate,
+      {
+        subject: mail.subject,
+        body: mail.html ?? mail.text ?? '',
+        priority: mail.priority,
+        to: mail.to ? addressLikeToString(mail.to) : undefined,
+        cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
+        bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
+        replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
+      },
+    );
 
     return mail;
   }
