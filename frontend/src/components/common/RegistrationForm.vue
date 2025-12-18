@@ -11,7 +11,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import showdown from 'showdown';
+import { marked } from 'marked';
 import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
@@ -42,10 +42,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
 }>();
-
-const markdownConverter = new showdown.Converter({
-  openLinksInNewWindow: true,
-});
 
 const model = ref<SurveyModel>();
 const bgColor = ref<string>();
@@ -137,9 +133,10 @@ function createModel(campId: string, form: object): SurveyModel {
   });
   // Convert markdown to html
   survey.onTextMarkdown.add((survey, options) => {
-    const str = markdownConverter.makeHtml(options.text);
     // Remove root paragraphs <p></p>
-    options.html = str.substring(3, str.length - 4);
+    options.html = marked.parseInline(options.text, {
+      async: false,
+    }) as string;
   });
   // Workaround for date input for Safari < 4.1
   survey.onAfterRenderPage.add((survey, options) => {
