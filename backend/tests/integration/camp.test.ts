@@ -632,22 +632,51 @@ describe('/api/v1/camps', () => {
         expect(templates.length).not.toBe(0);
       });
 
-      it('should create default message templates', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+      describe('message templates', () => {
+        it('should create default message templates', async () => {
+          const accessToken = generateAccessToken(await UserFactory.create());
 
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(campCreateNational)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
+          const { body } = await request()
+            .post(`/api/v1/camps/`)
+            .send(campCreateNational)
+            .auth(accessToken, { type: 'bearer' })
+            .expect(201);
 
-        const templates = await prisma.messageTemplate.findMany({
-          where: {
-            camp: { id: body.data.id },
-          },
+          const templates = await prisma.messageTemplate.findMany({
+            where: {
+              camp: { id: body.data.id },
+            },
+          });
+
+          expect(templates.length).not.toBe(0);
         });
 
-        expect(templates.length).not.toBe(0);
+        it('should filter message template languages based on camp countries', async () => {
+          const accessToken = generateAccessToken(await UserFactory.create());
+
+          const { body } = await request()
+            .post(`/api/v1/camps/`)
+            .send({
+              ...campCreateNational,
+              // Use Czech Republic to test that 'cs' is included (not 'cz')
+              countries: ['de', 'cz'],
+            })
+            .auth(accessToken, { type: 'bearer' })
+            .expect(201);
+
+          const templates = await prisma.messageTemplate.findMany({
+            where: {
+              camp: { id: body.data.id },
+            },
+          });
+
+          expect(templates.length).not.toBe(0);
+
+          const template = templates[0];
+
+          expect(Object.keys(template.subject)).toContainEqual(['de', 'cs']);
+          expect(Object.keys(template.body)).toContainEqual(['de', 'cs']);
+        });
       });
 
       it('should create default files', async () => {
