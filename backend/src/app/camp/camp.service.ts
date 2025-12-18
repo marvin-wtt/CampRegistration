@@ -135,7 +135,7 @@ export class CampService extends BaseService {
     }));
 
     const languages = data.countries
-      .filter((code): code is TCountryCode => !!code)
+      .map((code): TCountryCode => code.toUpperCase() as TCountryCode)
       .map(getCountryData)
       .flatMap((country) => country.languages);
 

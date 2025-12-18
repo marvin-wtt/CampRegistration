@@ -674,8 +674,12 @@ describe('/api/v1/camps', () => {
 
           const template = templates[0];
 
-          expect(Object.keys(template.subject)).toContainEqual(['de', 'cs']);
-          expect(Object.keys(template.body)).toContainEqual(['de', 'cs']);
+          expect(Object.keys(template.subject).sort()).toEqual(
+            ['de', 'cs'].sort(),
+          );
+          expect(Object.keys(template.body).sort()).toEqual(
+            ['de', 'cs'].sort(),
+          );
         });
       });
 
