@@ -41,7 +41,7 @@ import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
 import { registerSurveyTheme } from 'survey-creator-core';
 import { surveyLocalization } from 'survey-core';
-import showdown from 'showdown';
+import { marked } from 'marked';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -100,6 +100,8 @@ frLocale.pehelp.campDataType =
   'Les informations sont mises à la disposition du service indépendamment du ' +
   'nom du champ.';
 
+// TODO Add translations
+
 const creatorOptions: ICreatorOptions = {
   showLogicTab: true,
   showTranslationTab: true,
@@ -110,8 +112,9 @@ const creatorOptions: ICreatorOptions = {
   showJSONEditorTab: !props.restrictedAccess,
 };
 
-const markdownConverter = new showdown.Converter({
-  openLinksInNewWindow: true,
+marked.use({
+  gfm: false,
+  async: false,
 });
 
 registerSurveyTheme(SurveyTheme);
@@ -239,9 +242,9 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     // Convert markdown to html
     survey.onTextMarkdown.add((_, options) => {
-      const str = markdownConverter.makeHtml(options.text);
-      // Remove root paragraphs <p></p>
-      options.html = str.substring(3, str.length - 4);
+      options.html = marked.parseInline(options.text, {
+        async: false,
+      }) as string;
     });
   }
 
