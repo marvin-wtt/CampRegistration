@@ -1,101 +1,316 @@
-import type { Camp, Registration } from '@prisma/client';
+import type { Camp, MessageTemplate, Registration, File } from '@prisma/client';
+import { objectValueOrAll, translateObject } from '#utils/translateObject';
+import { MailBase } from '#app/mail/mail.base';
+import type {
+  AddressLike,
+  BuiltMail,
+  Content,
+  MailAttachment,
+} from '#app/mail/mail.types';
+import { generateUrl } from '#utils/url';
+import { uniqueLowerCase } from '#utils/string';
+import Handlebars from 'handlebars';
+import { RegistrationResource } from '#app/registration/registration.resource';
+import messageTemplateService from '#app/messageTemplate/message-template.service';
+import logger from '#core/logger';
 import messageService from '#app/message/message.service';
-import { objectValueOrAll } from '#utils/translateObject';
-import mailService from '#core/mail/mail.service';
-import i18n, { t } from '#core/i18n';
-import { BaseMessages } from '#core/base/BaseMessages';
-import { catchAndResolve } from '#utils/promiseUtils';
+import { addressLikeToString } from '#app/mail/mail.utils';
 
-class RegistrationMessages extends BaseMessages {
-  async sendRegistrationConfirmed(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_confirmed',
-        camp,
-        registration,
-      ),
-    );
-  }
+abstract class RegistrationMessage<
+  T extends { registration: Registration },
+> extends MailBase<T> {
+  protected to(): AddressLike {
+    const emails = this.payload.registration.emails;
+    if (emails == null) {
+      throw new Error('Registration has no email address');
+    }
 
-  async sendRegistrationWaitlisted(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_waitlisted',
-        camp,
-        registration,
-      ),
-    );
-  }
+    if (emails.length > 0) {
+      return emails;
+    }
 
-  async sendRegistrationWaitlistAccepted(
-    camp: Camp,
-    registration: Registration,
-  ) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_waitlist_accepted',
-        camp,
-        registration,
-      ),
-    );
-  }
+    const address = emails[0];
+    const firstName = this.payload.registration.firstName;
+    const lastName = this.payload.registration.lastName;
 
-  async sendRegistrationUpdated(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_updated',
-        camp,
-        registration,
-      ),
-    );
-  }
+    const name =
+      firstName && lastName
+        ? `${firstName} ${lastName}`
+        : (lastName ?? firstName);
 
-  async sendRegistrationCanceled(camp: Camp, registration: Registration) {
-    return catchAndResolve(
-      messageService.sendEventMessage(
-        'registration_canceled',
-        camp,
-        registration,
-      ),
-    );
-  }
+    if (name == null) {
+      return address;
+    }
 
-  async notifyContactEmail(camp: Camp, registration: Registration) {
-    const fn = async () => {
-      const country = registration.country;
-
-      const locale = country ?? registration.locale;
-      await i18n.changeLanguage(locale);
-
-      const context = {
-        camp: messageService.createCampContext(camp, locale),
-        registration: {
-          url: this.generateUrl(`management/${camp.id}`),
-          ...registration,
-        },
-      };
-
-      // Use camp in context as the name is translated there
-      const subject = `${t('registration:email.managerNotification.subject')} | ${context.camp.name}`;
-
-      const attachment = {
-        filename: 'data.json',
-        contentType: 'application/json',
-        content: JSON.stringify(registration),
-      };
-
-      await mailService.sendTemplateMail({
-        template: 'registration-manager-notification',
-        to: objectValueOrAll(camp.contactEmail, country ?? 'unknown'),
-        replyTo: messageService.uniqueEmails(registration.emails ?? []),
-        subject,
-        context,
-        attachments: [attachment],
-      });
+    return {
+      name,
+      address,
     };
+  }
 
-    return catchAndResolve(fn());
+  protected locale(): string {
+    return this.payload.registration.locale;
   }
 }
 
-export default new RegistrationMessages();
+export class RegistrationNotifyMessage extends RegistrationMessage<{
+  camp: Camp;
+  registration: Registration;
+}> {
+  static readonly type = 'registration:notify';
+
+  protected getTranslationOptions() {
+    return {
+      namespace: 'registration',
+      keyPrefix: 'email.managerNotification',
+    };
+  }
+
+  protected to(): AddressLike {
+    const country = this.payload.registration.country;
+    const camp = this.payload.camp;
+
+    return objectValueOrAll(camp.contactEmail, country ?? 'unknown');
+  }
+
+  protected replyTo(): AddressLike | undefined {
+    return uniqueLowerCase(this.payload.registration.emails ?? []);
+  }
+
+  protected subject(): string {
+    const t = this.getT();
+    const camp = this.createCampContext();
+
+    return t('subject', { camp });
+  }
+
+  protected content(): Content {
+    const camp = this.payload.camp;
+    const registration = this.payload.registration;
+    // TODO Use handlebars helper instead of generating url manually
+    const url = generateUrl(['management', camp.id]);
+
+    return {
+      template: 'registration-manager-notification',
+      context: {
+        camp: this.createCampContext(),
+        registration: {
+          ...registration,
+          url,
+        },
+      },
+    };
+  }
+
+  private createCampContext() {
+    const locale = this.locale();
+    const camp = this.payload.camp;
+
+    return {
+      ...camp,
+      // Translate values
+      name: translateObject(camp.name, locale),
+      organizer: translateObject(camp.organizer, locale),
+      contactEmail: translateObject(camp.contactEmail, locale),
+      maxParticipants: translateObject(camp.maxParticipants, locale),
+      location: translateObject(camp.location, locale),
+    };
+  }
+
+  protected attachments(): MailAttachment[] {
+    return [
+      {
+        filename: 'data.json',
+        contentType: 'application/json',
+        content: JSON.stringify(this.payload.registration),
+      },
+    ];
+  }
+}
+
+export interface RegistrationTemplatePayload {
+  registration: Registration;
+  camp: Camp;
+  messageTemplate: MessageTemplateWithFiles;
+}
+
+export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
+  static readonly type = 'registration:template';
+
+  protected subject(): string | Promise<string> {
+    let template = translateObject(
+      this.payload.messageTemplate.subject,
+      this.locale(),
+    );
+
+    template = template.trim();
+
+    // Remove paragraph tags if they are present
+    if (template.startsWith('<p>') && template.endsWith('</p>')) {
+      template = template.slice(3, -4).trim();
+    }
+
+    const compile = Handlebars.compile(template, {
+      knownHelpersOnly: true,
+      knownHelpers: {
+        if: true,
+        unless: true,
+        each: true,
+        with: true,
+      },
+      noEscape: true, // No escape needed for subjects
+    });
+
+    return compile(this.context());
+  }
+
+  private context(): object {
+    return {
+      camp: {
+        ...this.payload.camp,
+        // Translate values
+        name: translateObject(this.payload.camp.name, this.locale()),
+        organizer: translateObject(this.payload.camp.organizer, this.locale()),
+        contactEmail: translateObject(
+          this.payload.camp.contactEmail,
+          this.locale(),
+        ),
+        maxParticipants: translateObject(
+          this.payload.camp.maxParticipants,
+          this.locale(),
+        ),
+        location: translateObject(this.payload.camp.location, this.locale()),
+      },
+      registration: new RegistrationResource(
+        this.payload.registration,
+      ).transform(),
+    };
+  }
+
+  async build(): Promise<BuiltMail> {
+    const mail = await super.build();
+
+    // TODO Store to address as well
+
+    await messageService.createMessage(
+      this.payload.registration,
+      this.payload.messageTemplate,
+      {
+        subject: mail.subject,
+        body: mail.html ?? mail.text ?? '',
+        priority: mail.priority,
+        to: mail.to ? addressLikeToString(mail.to) : undefined,
+        cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
+        bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
+        replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
+      },
+    );
+
+    return mail;
+  }
+
+  protected content(): Content | Promise<Content> {
+    const template = translateObject(
+      this.payload.messageTemplate.body,
+      this.locale(),
+    );
+
+    const compile = Handlebars.compile(template, {
+      knownHelpersOnly: true,
+      knownHelpers: {
+        if: true,
+        unless: true,
+        each: true,
+        with: true,
+      },
+    });
+
+    return {
+      html: compile(this.context()),
+    };
+  }
+}
+
+type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
+
+async function loadMessageTemplate(
+  campId: string,
+  event: string,
+): Promise<MessageTemplateWithFiles | null> {
+  try {
+    return await messageTemplateService.getMessageTemplateByName(event, campId);
+  } catch (error) {
+    logger.error(error);
+    return null;
+  }
+}
+
+abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
+  static readonly event: string;
+
+  static async enqueueFor(
+    this: typeof RegistrationTemplateMessage & { event: string },
+    camp: Camp,
+    registration: Registration,
+  ): Promise<void> {
+    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    if (!messageTemplate) {
+      return;
+    }
+
+    this.enqueue({
+      registration,
+      camp,
+      messageTemplate,
+    });
+  }
+
+  static async sendFor(
+    this: typeof RegistrationTemplateMessage & { event: string },
+    camp: Camp,
+    registration: Registration,
+  ): Promise<void> {
+    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    if (!messageTemplate) {
+      return;
+    }
+
+    return this.send({
+      registration,
+      camp,
+      messageTemplate,
+    });
+  }
+}
+
+export class RegistrationConfirmedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_confirmed';
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [
+      // Attach registration data PDF here
+    ];
+  }
+}
+
+export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_waitlisted';
+}
+
+export class RegistrationUpdatedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_updated';
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [
+      // Attach registration data PDF here
+    ];
+  }
+}
+
+export class RegistrationDeletedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_canceled';
+}
+
+export class RegistrationAcceptedMessage extends RegistrationEventMessage {
+  readonly event = 'registration_accepted';
+}

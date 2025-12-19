@@ -1,3 +1,3 @@
-import { NoOpMailer } from '../../src/core/mail/noop.mailer';
+import { NoOpMailer } from '../../src/app/mail/noop.mailer';
 
 export const mailer = NoOpMailer.prototype;

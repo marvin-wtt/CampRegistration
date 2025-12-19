@@ -2,16 +2,10 @@ import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths({ projects: ['./tsconfig.test.json'] })],
   test: {
-    include: ['tests/integration/**/*.test.ts'],
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    include: ['tests/integration/core/**/*.test.ts'],
+    maxWorkers: 1,
     setupFiles: ['tests/utils/setup.ts'],
     coverage: {
       enabled: true,

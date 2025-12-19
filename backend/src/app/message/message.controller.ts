@@ -1,12 +1,12 @@
-import messageService from './message.service.js';
 import httpStatus from 'http-status';
-import { MessageResource, type MessageWithFiles } from './message.resource.js';
 import registrationService from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
 import ApiError from '#utils/ApiError';
+import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
+import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
 
 class MessageController extends BaseController {
   index(_req: Request, res: Response) {
@@ -45,29 +45,25 @@ class MessageController extends BaseController {
       replyTo: body.replyTo,
     });
 
-    const messageResults = await Promise.allSettled(
-      registrations.map((registration) =>
-        messageService.sendTemplateMessage(template, camp, registration),
-      ),
-    );
-
-    const messages: MessageWithFiles[] = messageResults
-      .filter((value) => value.status === 'fulfilled')
-      .map(({ value }) => value);
+    registrations.forEach((registration) => {
+      RegistrationTemplateMessage.enqueue({
+        camp,
+        registration,
+        messageTemplate: template,
+      });
+    });
 
     res
       .status(httpStatus.CREATED)
-      .resource(MessageResource.collection(messages));
+      .resource(new MessageTemplateResource(template));
   }
 
   async resend(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
-    const requestMessage = req.modelOrFail('message');
     await req.validate(validator.resend);
 
-    const message = await messageService.resendMessage(camp, requestMessage);
+    // TODO Create and enqueue new message
 
-    res.status(httpStatus.CREATED).resource(new MessageResource(message));
+    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
   destroy(_req: Request, res: Response) {

@@ -1,50 +1,85 @@
-import mailService from '#core/mail/mail.service';
-import i18n, { t } from '#core/i18n';
 import type { User } from '@prisma/client';
-import { BaseMessages } from '#core/base/BaseMessages';
+import { MailBase } from '#app/mail/mail.base';
+import type { Content } from '#app/mail/mail.types';
+import { generateUrl } from '#utils/url';
 
-class AuthMessages extends BaseMessages {
-  async sendVerificationEmail(user: User, token: string) {
-    await i18n.changeLanguage(user.locale);
-
-    const subject = t('auth:email.verifyEmail.subject');
-    const url = this.generateUrl('login', {
-      email: user.email,
-      token,
-    });
-
-    const context = {
-      url,
+abstract class UserMessage<T extends { user: User }> extends MailBase<T> {
+  protected to() {
+    return {
+      name: this.payload.user.name,
+      address: this.payload.user.email,
     };
-
-    await mailService.sendTemplateMail({
-      template: 'verify-email',
-      to: user.email,
-      subject,
-      context,
-    });
   }
 
-  async sendResetPasswordEmail(user: User, token: string) {
-    await i18n.changeLanguage(user.locale);
-
-    const subject = t('auth:email.resetPassword.subject');
-    const url = this.generateUrl('reset-password', {
-      email: user.email,
-      token,
-    });
-
-    const context = {
-      url,
-    };
-
-    await mailService.sendTemplateMail({
-      template: 'reset-password',
-      to: user.email,
-      subject,
-      context,
-    });
+  protected locale(): string {
+    return this.payload.user.locale;
   }
 }
 
-export default new AuthMessages();
+export class VerifyEmailMessage extends UserMessage<{
+  user: User;
+  token: string;
+}> {
+  static readonly type = 'auth:verify-email';
+
+  protected getTranslationOptions() {
+    return {
+      namespace: 'auth',
+      keyPrefix: 'email.verifyEmail',
+    };
+  }
+
+  protected subject() {
+    const t = this.getT();
+
+    return t('subject');
+  }
+
+  protected content(): Content {
+    const url = generateUrl('login', {
+      email: this.payload.user.email,
+      token: this.payload.token,
+    });
+
+    return {
+      template: 'verify-email',
+      context: {
+        url,
+      },
+    };
+  }
+}
+
+export class ResetPasswordMessage extends UserMessage<{
+  user: User;
+  token: string;
+}> {
+  static readonly type = 'auth:reset-password';
+
+  protected getTranslationOptions() {
+    return {
+      namespace: 'auth',
+      keyPrefix: 'email.resetPassword',
+    };
+  }
+
+  protected subject() {
+    const t = this.getT();
+
+    return t('subject');
+  }
+
+  protected content(): Content {
+    const url = generateUrl('reset-password', {
+      email: this.payload.user.email,
+      token: this.payload.token,
+    });
+
+    return {
+      template: 'reset-password',
+      context: {
+        url,
+      },
+    };
+  }
+}
