@@ -12,7 +12,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { marked } from 'marked';
-import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
+import { computed, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import {
