@@ -1,11 +1,11 @@
-import resetDb from './reset-db';
+import resetDb from './reset-db.js';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
-import { stopJobs } from '../../src/jobs';
-import { NoOpMailer } from '../../src/app/mail/noop.mailer.js';
+import { stopJobs } from '#jobs/index';
+import { NoOpMailer } from '#app/mail/noop.mailer.js';
 import { Request, Response, NextFunction, Express } from 'express';
-import { boot, shutdown } from '../../src/boot';
-import { createApp } from '../../src/app';
+import { boot, shutdown } from '#boot.js';
+import { createApp } from '#app.js';
 import path from 'path';
 
 vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
@@ -17,11 +17,24 @@ vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
 
 export let app: Express | undefined;
 
-beforeAll(async () => {
+export async function bootApp() {
   await boot();
 
   app = createApp();
-});
+}
+
+export async function restartApp() {
+  await stopApp();
+  await bootApp();
+}
+
+export async function stopApp() {
+  stopJobs();
+
+  await shutdown();
+}
+
+beforeAll(bootApp);
 
 beforeEach(async () => {
   // mailer
@@ -43,8 +56,4 @@ afterEach(async () => {
   vi.resetAllMocks();
 });
 
-afterAll(async () => {
-  stopJobs();
-
-  await shutdown();
-});
+afterAll(stopApp);

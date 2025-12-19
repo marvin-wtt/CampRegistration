@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
-import prisma from '../../utils/prisma';
+import prisma from '../../utils/prisma.js';
 import { TokenType, User } from '@prisma/client';
 import {
   CampFactory,
@@ -8,7 +8,7 @@ import {
   TokenFactory,
   CampManagerFactory,
   InvitationFactory,
-} from '../../../prisma/factories';
+} from '../../../prisma/factories/index.js';
 import {
   generateAccessToken,
   generateExpiredToken,
@@ -19,9 +19,9 @@ import {
   generateToken,
   generateVerifyEmailToken,
   verifyToken,
-} from '../../utils/token';
-import { request } from '../../utils/request';
-import { NoOpMailer } from '../../../src/app/mail/noop.mailer';
+} from './utils/token.js';
+import { request } from '../../utils/request.js';
+import { NoOpMailer } from '#app/mail/noop.mailer';
 import * as OTPAuth from 'otpauth';
 
 const mailer = NoOpMailer.prototype;
@@ -109,7 +109,7 @@ describe('/api/v1/auth', async () => {
         },
       });
 
-      expect(user.role).toBe('USER');
+      expect(user?.role).toBe('USER');
     });
 
     it('should respond with a `400` status code if an invalid email body is provided', async () => {
@@ -179,7 +179,7 @@ describe('/api/v1/auth', async () => {
         },
       });
 
-      expect(user.role).toBe('USER');
+      expect(user?.role).toBe('USER');
     });
 
     it('should encode the user password', async () => {
@@ -463,7 +463,7 @@ describe('/api/v1/auth', async () => {
         where: { id },
       });
 
-      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
+      expect(user?.lastSeen?.getTime()).toBeGreaterThanOrEqual(timestamp);
     });
 
     it('should respond with a `403` status code when 2fA is enabled', async () => {
@@ -593,7 +593,7 @@ describe('/api/v1/auth', async () => {
 
     const generateTOTP = (user: User) => {
       const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(user.totpSecret),
+        secret: OTPAuth.Secret.fromBase32(user.totpSecret!),
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -897,7 +897,7 @@ describe('/api/v1/auth', async () => {
         where: { id },
       });
 
-      expect(user.lastSeen.getTime()).toBeGreaterThanOrEqual(timestamp);
+      expect(user?.lastSeen?.getTime()).toBeGreaterThanOrEqual(timestamp);
     });
 
     it('should respond with `400` status code when the user has no refresh token', async () => {

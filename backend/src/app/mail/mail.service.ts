@@ -7,7 +7,7 @@ import { NoOpMailer } from '#app/mail/noop.mailer';
 import type { IMailer } from '#app/mail/mailer.types';
 import type { MailPriority, BuiltMail } from '#app/mail/mail.types';
 import { mailQueue } from '#app/mail/mail.queue';
-import { MailBase } from '#app/mail/mail.base.js';
+import type { MailBase } from '#app/mail/mail.base.js';
 
 const isMailPriority = (value: string): value is MailPriority => {
   return ['low', 'normal', 'high'].includes(value);

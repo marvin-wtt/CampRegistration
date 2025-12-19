@@ -1,9 +1,15 @@
 import { TokenType, User } from '@prisma/client';
-import moment from 'moment/moment';
+import moment from 'moment';
 import jwt from 'jsonwebtoken';
 
 export const verifyToken = (token: string) => {
-  return jwt.verify(token, process.env.JWT_SECRET as string);
+  const data = jwt.verify(token, process.env.JWT_SECRET as string);
+
+  if (typeof data === 'string') {
+    throw new Error('Invalid result');
+  }
+
+  return data;
 };
 
 export const generateToken = (user: User, type: TokenType, data?: object) => {

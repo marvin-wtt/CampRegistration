@@ -22,5 +22,5 @@ declare module 'supertest' {
 };
 
 export const request = () => {
-  return supertest(app);
+  return supertest(app!);
 };
