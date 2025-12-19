@@ -23,6 +23,13 @@ export function registerFileGuard(
   guardRegistry[modelId] = resolver;
 }
 
+export function unregisterAllFileGuards(): void {
+  Object.keys(guardRegistry).forEach((key) => {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete guardRegistry[key];
+  });
+}
+
 const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
 

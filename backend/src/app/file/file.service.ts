@@ -62,6 +62,7 @@ export class FileService extends BaseService {
     const fileData = this.mapFields(file, fileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
+    // FIXME: We should not store the fine the queue!
     await fileQueue.add('upload', file);
 
     return this.prisma.file.create({
