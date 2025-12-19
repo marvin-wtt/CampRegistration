@@ -43,7 +43,17 @@ const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
 }>();
 
-const model = ref<SurveyModel>();
+const model = createModel(
+  props.campDetails.id,
+  props.moderation
+    ? createModerationForm(props.campDetails.form)
+    : props.campDetails.form,
+);
+model.validationEnabled = !props.moderation;
+if (props.data) {
+  model.data = props.data;
+}
+
 const bgColor = ref<string>();
 
 const campData = toRef(props.campDetails);
@@ -59,22 +69,6 @@ const files = computed<ServiceFile[] | undefined>(() => {
 // Auto variables update on locale change
 startAutoDataUpdate(model, campData, files);
 startAutoThemeUpdate(model, campData, bgColor);
-
-onMounted(async () => {
-  const camp = props.campDetails;
-  const form = camp.form;
-  const id = camp.id;
-
-  const modelForm = props.moderation ? createModerationForm(form) : form;
-  model.value = createModel(id, modelForm);
-
-  // Disable validation to allow manual adjustments that otherwise violate the validation rules
-  model.value.validationEnabled = !props.moderation;
-
-  if (props.data) {
-    model.value.data = props.data;
-  }
-});
 
 function createModerationForm(form: object) {
   return {
