@@ -137,6 +137,12 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
         connection: this.connection,
         stalledInterval: this.options.stalledInterval,
         maxStalledCount: this.options.maxStalledCount,
+        limiter: this.options.limit
+          ? {
+              max: this.options.limit.max,
+              duration: this.options.limit.duration,
+            }
+          : undefined,
       },
     );
   }

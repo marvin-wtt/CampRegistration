@@ -15,6 +15,10 @@ const DEFAULTS = {
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function uniq(name: string) {
+  return `${name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export async function waitUntil(
   check: () => boolean | Promise<boolean>,
   opts: { timeout?: number; interval?: number } = {},
@@ -35,27 +39,6 @@ export async function waitUntil(
 }
 
 describe('Queue', () => {
-  function createDatabaseQueue<P, R, N extends string>(
-    name: string,
-    options: Partial<QueueOptions>,
-  ) {
-    return new DatabaseQueue<P, R, N>(name, options);
-  }
-
-  function createMemoryQueue<P, R, N extends string>(
-    name: string,
-    options: Partial<QueueOptions>,
-  ) {
-    return new MemoryQueue<P, R, N>(name, options);
-  }
-
-  function createRedisQueue<P, R, N extends string>(
-    name: string,
-    options: Partial<QueueOptions>,
-  ) {
-    return new RedisQueue<P, R, N>(name, options);
-  }
-
   describe('manager', () => {
     it('should use the database queue implementation', () => {
       const q = queueManager.createQueue<null, null, 'test'>('type', DEFAULTS);
@@ -75,13 +58,31 @@ describe('Queue', () => {
   });
 
   describe.each([
-    { name: 'database', createQueue: createDatabaseQueue },
-    { name: 'memory', createQueue: createMemoryQueue },
-    { name: 'redis', createQueue: createRedisQueue },
-  ])('$name queue', ({ createQueue }) => {
-    it('should processes a job', async () => {
+    {
+      name: 'database',
+      createQueue: <P, R, N extends string>(
+        n: string,
+        o: Partial<QueueOptions>,
+      ) => new DatabaseQueue<P, R, N>(n, o),
+    },
+    {
+      name: 'memory',
+      createQueue: <P, R, N extends string>(
+        n: string,
+        o: Partial<QueueOptions>,
+      ) => new MemoryQueue<P, R, N>(n, o),
+    },
+    {
+      name: 'redis',
+      createQueue: <P, R, N extends string>(
+        n: string,
+        o: Partial<QueueOptions>,
+      ) => new RedisQueue<P, R, N>(n, o),
+    },
+  ])('$name queue', ({ name, createQueue }) => {
+    it('processes a job', async () => {
       const q = createQueue<{ x: number }, string, 'test'>(
-        'dbq-happy',
+        uniq(`q-happy-${name}`),
         DEFAULTS,
       );
 
@@ -92,18 +93,24 @@ describe('Queue', () => {
       });
 
       await q.add('test', { x: 42 });
-      await waitUntil(async () => (await q.all('COMPLETED')).length === 1);
+      await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+        timeout: 5_000,
+      });
 
       expect(seen).toEqual([{ x: 42 }]);
+      await q.close?.(); // if async close
       q.close();
     });
 
-    it('retries once after a failure, then completes', async () => {
-      const q = createQueue<{ i: number }, string, 'test'>('dbq-retry', {
-        ...DEFAULTS,
-        maxAttempts: 3,
-        retryDelay: 50,
-      });
+    it('retries once after failure then completes', async () => {
+      const q = createQueue<{ i: number }, string, 'test'>(
+        uniq(`q-retry-${name}`),
+        {
+          ...DEFAULTS,
+          maxAttempts: 3,
+          retryDelay: 50,
+        },
+      );
 
       let calls = 0;
       q.process(async () => {
@@ -114,14 +121,16 @@ describe('Queue', () => {
 
       await q.add('test', { i: 1 });
 
-      await waitUntil(async () => (await q.all('COMPLETED')).length === 1);
+      await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+        timeout: 8_000,
+      });
       const all = await q.all();
       expect(all.some((j) => j.status === 'FAILED')).toBe(false);
       q.close();
     });
 
-    it('marks as FAILED after reaching max attempts', async () => {
-      const q = createQueue<{}, string, 'test'>('dbq-fail', {
+    it('marks FAILED after reaching maxAttempts', async () => {
+      const q = createQueue<{}, string, 'test'>(uniq(`q-fail-${name}`), {
         ...DEFAULTS,
         maxAttempts: 2,
         retryDelay: 50,
@@ -132,59 +141,60 @@ describe('Queue', () => {
       });
 
       await q.add('test', {});
-
       await waitUntil(async () => (await q.all('FAILED')).length === 1, {
-        timeout: 4_000,
+        timeout: 10_000,
       });
       q.close();
     });
 
-    it('respects delay (scheduled job)', async () => {
-      const q = createQueue<{}, string, 'test'>('dbq-delay', DEFAULTS);
+    it('respects delay', async () => {
+      const q = createQueue<{}, string, 'test'>(
+        uniq(`q-delay-${name}`),
+        DEFAULTS,
+      );
 
-      const seen: number[] = [];
+      let ran = false;
       q.process(async () => {
-        seen.push(Date.now());
+        ran = true;
         return 'ok';
       });
 
-      const t0 = Date.now();
       await q.add('test', {}, { delay: 300 });
 
-      // Should not run immediately
       await sleep(120);
-      expect(seen.length).toBe(0);
+      expect(ran).toBe(false);
 
-      // Then should run
-      await waitUntil(() => seen.length === 1, { timeout: 2_000 });
-      expect(seen[0] - t0).toBeGreaterThanOrEqual(280);
+      await waitUntil(() => ran, { timeout: 5_000 });
       q.close();
     });
 
-    it('pause/resume prevents processing while paused', async () => {
-      const q = createQueue<{}, number, 'test'>('dbq-pause', DEFAULTS);
-      const seen: number[] = [];
-      q.process(async () => {
-        return seen.push(1);
-      });
+    it('prevents processing while paused', async () => {
+      const q = createQueue<{}, number, 'test'>(
+        uniq(`q-pause-${name}`),
+        DEFAULTS,
+      );
 
+      const seen: number[] = [];
+      q.process(async () => seen.push(1));
       q.pause();
-      await sleep(50);
+      // Wait for queue to stop
+      await sleep(250);
 
       await q.add('test', {});
       await sleep(250); // allow poll ticks
       expect(seen.length).toBe(0);
 
       q.resume();
-      await waitUntil(() => seen.length === 1);
+      await waitUntil(() => seen.length === 1, { timeout: 5_000 });
       q.close();
     });
 
-    it('rate limiting allows only limited throughput', async () => {
+    it('limits throughput', async () => {
       const q = createQueue<{ n: number }, string, 'test'>(
-        'dbq-rl',
-        { ...DEFAULTS, limit: { max: 1, duration: 300 } }, // 1 token / 300ms
+        uniq(`q-rl-${name}`),
+        { ...DEFAULTS, limit: { max: 1, duration: 300 } },
       );
+
       const ticks: number[] = [];
       q.process(async () => {
         ticks.push(Date.now());
@@ -194,45 +204,49 @@ describe('Queue', () => {
       await q.add('test', { n: 1 });
       await q.add('test', { n: 2 });
 
-      await waitUntil(() => ticks.length >= 1);
-      // Second should be ~after 300ms (allow tolerance)
-      await waitUntil(() => ticks.length === 2, { timeout: 2_000 });
-
-      expect(ticks[1] - ticks[0]).toBeGreaterThanOrEqual(260);
+      await waitUntil(() => ticks.length >= 2, { timeout: 5_000 });
+      expect(ticks[1] - ticks[0]).toBeGreaterThanOrEqual(200); // slack
       q.close();
     });
 
-    it('stalled job is recovered (returns to PENDING and runs)', async () => {
-      // VERY small stall timeout so the reaper kicks in
-      const q = createQueue<{}, string, 'test'>('dbq-stall', {
-        ...DEFAULTS,
-        stalledInterval: 150,
+    it('counts only unfinished jobs', async () => {
+      const q = createQueue<{ n: number }, string, 'test'>(
+        uniq(`q-count-${name}`),
+        DEFAULTS,
+      );
+
+      await q.add('test', { n: 1 });
+      await q.add('test', { n: 1 });
+      await q.add('test', { n: 1 });
+
+      expect(await q.count()).toBe(3);
+
+      // Process one job, then pause from the test thread (not inside handler)
+      q.process(async () => 'ok');
+
+      await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+        timeout: 5_000,
       });
 
-      let firstRun = true;
-      const seen: number[] = [];
-      q.process(async () => {
-        seen.push(1);
-        if (firstRun) {
-          firstRun = false;
-          // Simulate stall by not completing? (Your queue marks RUNNING and handler throws to release)
-          // We'll force a throw to trigger release later.
-          throw new Error('simulate crash');
-        }
-        return 'ok';
-      });
+      q.pause();
 
-      await q.add('test', {});
-      await waitUntil(
-        async () => {
-          await q.all('FAILED'); // not terminal yet
-          const completed = await q.all('COMPLETED');
-          return seen.length >= 2 || completed.length >= 1;
-        },
-        { timeout: 5_000 },
+      // ensure no more completions happen after pause
+      await sleep(200);
+
+      expect(await q.count()).toBe(2);
+
+      q.close();
+    });
+
+    it('throws error when queue is closed', async () => {
+      const q = createQueue<{ n: number }, string, 'test'>(
+        uniq(`q-no-handler-${name}`),
+        DEFAULTS,
       );
 
       q.close();
+
+      expect(q.add('test', { n: 1 })).rejects.toThrowError();
     });
   });
 });

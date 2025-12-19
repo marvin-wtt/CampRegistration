@@ -179,8 +179,13 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     }
   }
 
-  public count(): Promise<number> {
-    return prisma.job.count({ where: { queue: this.queue } });
+  async count(): Promise<number> {
+    return prisma.job.count({
+      where: {
+        queue: this.queue,
+        status: { in: ['PENDING', 'RUNNING'] },
+      },
+    });
   }
 
   public async all(status?: JobStatus): Promise<Job<P>[]> {

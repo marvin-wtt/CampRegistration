@@ -56,7 +56,7 @@ export abstract class Queue<P, R = void, N extends string = string> {
     retryDelayType: 'exponential',
   };
 
-  protected constructor(
+  constructor(
     protected queue: string,
     options?: Partial<QueueOptions>,
   ) {
