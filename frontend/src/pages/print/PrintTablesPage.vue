@@ -10,13 +10,6 @@
         class="bg-negative text-white"
       >
         {{ error }}
-        <template #action>
-          <q-btn
-            flat
-            label="Close"
-            @click="closeIfStandalone"
-          />
-        </template>
       </q-banner>
     </div>
 
@@ -120,13 +113,16 @@ function closeIfStandalone() {
 }
 
 watch(payload, (value) => {
-  timestamp.value = formatedDate(value?.timestamp ?? new Date().toISOString());
+  timestamp.value = formatDate(
+    value?.timestamp ?? new Date().toISOString(),
+    value?.locale,
+  );
 });
 
-function formatedDate(iso: string): string {
+function formatDate(iso: string, locale?: string): string {
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat(payload.value?.locale, {
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -202,9 +198,9 @@ function onAfterPrint() {
 
 function onMessage(e: MessageEvent) {
   quasar.notify({
-    type: 'info',
+    type: 'negative',
     message: 'Print error',
-    caption: e.data?.error ?? 'Unknown error',
+    caption: e.data?.message ?? e.data?.error ?? 'Unknown error',
     timeout: 2000,
   });
 }

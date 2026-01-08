@@ -91,6 +91,7 @@ async function onTemplatesPrint(templateIds: string[]) {
     registrations: registrations.value ?? [],
     camp: camp.value,
     templates,
+    timestamp: new Date().toISOString(),
   };
 
   // Store payload for the print route
