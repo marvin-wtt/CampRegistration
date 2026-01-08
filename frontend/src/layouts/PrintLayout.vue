@@ -23,6 +23,22 @@ quasar.dark.set(false);
   background: white;
 }
 
+@page {
+  margin: 12mm;
+
+  @top-left {
+    content: '';
+  }
+
+  @bottom-center {
+    content: counter(page) ' / ' counter(pages);
+  }
+
+  @bottom-left {
+    content: '';
+  }
+}
+
 @media print {
   html,
   body,
@@ -33,12 +49,7 @@ quasar.dark.set(false);
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    margin: 12mm;
-  }
-
-  @page {
-    /* Remove default header and footer added by browsers */
-    margin: 0;
+    margin: 0 !important; /* IMPORTANT: do not fight @page */
   }
 }
 </style>

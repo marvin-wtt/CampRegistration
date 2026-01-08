@@ -6,8 +6,7 @@ import type {
 } from '@camp-registration/common/entities';
 
 export interface PrintTablesPayload {
-  title?: string;
-  campTitle?: string;
+  timestamp?: string;
   locale?: string;
 
   questions: TableColumnTemplate[];

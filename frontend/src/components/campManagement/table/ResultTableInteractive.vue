@@ -38,7 +38,7 @@
         <q-select
           v-model="template"
           :label="t('template')"
-          :options="templates"
+          :options="templateOptions"
           borderless
           rounded
           dense
@@ -179,7 +179,7 @@ import type { CTableTemplate } from 'src/types/CTableTemplate';
 
 import { useResultTableModel } from './useResultTableModel';
 
-const props = defineProps<{
+const { questions, registrations, templates, camp } = defineProps<{
   questions: TableColumnTemplate[];
   registrations: Registration[];
   templates: TableTemplate[];
@@ -201,7 +201,7 @@ const templateStore = useTemplateStore();
 
 const {
   pagination,
-  templates,
+  templateOptions,
   template,
   rows,
   columns,
@@ -210,10 +210,10 @@ const {
   countries,
 } = useResultTableModel(
   {
-    questions: props.questions,
-    registrations: props.registrations,
-    templates: props.templates,
-    camp: props.camp,
+    questions,
+    registrations,
+    templates,
+    camp,
   },
   {
     initialTemplateId: route.hash.length > 1 ? route.hash.substring(1) : null,
@@ -225,7 +225,7 @@ function onTemplateChange() {
 }
 
 function openExportDialog() {
-  const items = templates.value
+  const items = templateOptions.value
     .filter((value) => !value.generated)
     .map((value) => ({
       label: to(value.title),
@@ -270,8 +270,8 @@ function editTemplates() {
     .dialog({
       component: TableTemplateIndexDialog,
       componentProps: {
-        templates: props.templates,
-        camp: props.camp,
+        templates,
+        camp,
       },
     })
     .onOk((payload: TableTemplate[]) => {

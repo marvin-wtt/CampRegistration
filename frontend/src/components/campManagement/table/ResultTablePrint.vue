@@ -75,7 +75,7 @@ const { questions, registrations, template, camp, title } = defineProps<{
   registrations: Registration[];
   template: TableTemplate;
   camp: CampDetails;
-  title?: string;
+  title?: string | undefined;
 }>();
 
 const { to } = useObjectTranslation();

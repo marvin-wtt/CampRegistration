@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import ResultTableInteractive from 'components/campManagement/table/ResultTableInteractive.vue';
@@ -73,9 +73,6 @@ const columns = computed<TableColumnTemplate[]>(() => {
   );
 });
 
-// TODO Set loading state
-const isPreparingPrint = ref<boolean>(false);
-
 async function onTemplatesPrint(templateIds: string[]) {
   if (!templateStore.data || !camp.value) {
     return;
@@ -89,13 +86,11 @@ async function onTemplatesPrint(templateIds: string[]) {
 
   // Build payload
   const payload: PrintTablesPayload = {
-    title: 'Participants', // TODO
     locale: locale.value,
-    campTitle: to(camp.value.name) ?? undefined, // if you have it
     questions: columns.value,
     registrations: registrations.value ?? [],
     camp: camp.value,
-    templates,
+    templateOptions: templates,
   };
 
   // Store payload for the print route
@@ -103,7 +98,6 @@ async function onTemplatesPrint(templateIds: string[]) {
   sessionStorage.setItem(key, JSON.stringify(payload));
 
   // Create iframe pointing to print route
-  isPreparingPrint.value = true;
   const iframe = createHiddenPrintIframe(
     `/print/tables?key=${encodeURIComponent(key)}`,
   );
@@ -120,7 +114,6 @@ async function onTemplatesPrint(templateIds: string[]) {
       window.removeEventListener('message', onMessage);
       iframe.remove();
       sessionStorage.removeItem(key);
-      isPreparingPrint.value = false;
     };
 
     if (ev.data.type === 'PRINT_TABLES:ERROR') {

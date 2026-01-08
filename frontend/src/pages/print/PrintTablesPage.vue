@@ -42,53 +42,51 @@
         :key="template.id ?? i"
         class="print-sheet"
       >
-        <header
-          v-if="showHeader"
-          class="print-sheet__header"
-        >
+        <header class="print-sheet__header">
           <div class="text-subtitle1">
-            {{ payload.title || 'Export' }}
+            {{ to(template.title) }}
           </div>
           <div class="text-caption">
-            <span v-if="payload.campTitle">{{ payload.campTitle }} · </span>
-            <span>{{ template.title }}</span>
-            <span> · {{ formatDate(generatedAt) }}</span>
+            <span>{{ to(payload.camp.name) }}</span>
           </div>
         </header>
 
-        <!-- TODO What about the title? -->
         <result-table-print
+          :title="to(template.title)"
           :questions="payload.questions"
           :registrations="payload.registrations"
           :camp="payload.camp"
-          :template="template"
+          :template
         />
 
-        <footer
-          v-if="showFooter"
-          class="print-sheet__footer text-caption"
-        >
-          {{ i + 1 }} / {{ payload.templates.length }}
-        </footer>
+        <footer class="print-sheet__footer">{{ timestamp }}</footer>
       </section>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, nextTick, ref, computed } from 'vue';
+import {
+  onBeforeUnmount,
+  onMounted,
+  nextTick,
+  ref,
+  computed,
+  watch,
+} from 'vue';
 import { useRoute } from 'vue-router';
 import ResultTablePrint from 'components/campManagement/table/ResultTablePrint.vue';
 import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useQuasar } from 'quasar';
 
+const quasar = useQuasar();
 const route = useRoute();
+const { to } = useObjectTranslation();
 
-const generatedAt = formatDate(new Date().toISOString());
 const payload = ref<PrintTablesPayload | null>(null);
+const timestamp = ref<string>('');
 const error = ref<string | null>(null);
-
-const showHeader = computed<boolean>(() => route.query.header !== '0');
-const showFooter = computed<boolean>(() => route.query.footer === '1');
 
 // Storage key can be provided (recommended when multiple exports could overlap)
 const storageKey = computed<string>(() => {
@@ -115,7 +113,11 @@ function closeIfStandalone() {
   }
 }
 
-function formatDate(iso: string) {
+watch(payload, (value) => {
+  timestamp.value = formatedDate(value?.timestamp ?? new Date().toISOString());
+});
+
+function formatedDate(iso: string): string {
   try {
     const d = new Date(iso);
     return new Intl.DateTimeFormat(payload.value?.locale, {
@@ -126,13 +128,15 @@ function formatDate(iso: string) {
       minute: '2-digit',
     }).format(d);
   } catch {
-    return iso;
+    return new Date().toISOString();
   }
 }
 
 function readPayloadFromSessionStorage(): PrintTablesPayload | null {
   const raw = sessionStorage.getItem(storageKey.value);
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     return JSON.parse(raw) as PrintTablesPayload;
   } catch {
@@ -177,8 +181,6 @@ function triggerPrint() {
 }
 
 function onAfterPrint() {
-  return;
-
   // Signal parent to cleanup iframe
   postToParent({ type: 'PRINT_TABLES:AFTERPRINT' });
 
@@ -193,7 +195,12 @@ function onAfterPrint() {
 }
 
 function onMessage(e: MessageEvent) {
-  console.log('PrintTablesPage received message:', e);
+  quasar.notify({
+    type: 'info',
+    message: 'Print error',
+    caption: e.data?.error ?? 'Unknown error',
+    timeout: 2000,
+  });
 }
 
 onMounted(async () => {
@@ -242,11 +249,11 @@ onBeforeUnmount(() => {
 }
 
 .print-sheet__header {
-  margin-bottom: 8mm;
+  margin-bottom: 4mm;
 }
 
 .print-sheet__footer {
   margin-top: 6mm;
-  text-align: right;
+  text-align: center;
 }
 </style>

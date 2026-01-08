@@ -19,16 +19,16 @@ import type {
 
 type Pagination = Exclude<QTable['pagination'], undefined>;
 
-export type ResultTableModelInput = {
+export interface ResultTableModelInput {
   questions: TableColumnTemplate[];
   registrations: Registration[];
   templates: TableTemplate[];
   camp: CampDetails;
-};
+}
 
-export type ResultTableModelOptions = {
+export interface ResultTableModelOptions {
   initialTemplateId?: string | null;
-};
+}
 
 export function useResultTableModel(
   input: ResultTableModelInput,
@@ -45,7 +45,7 @@ export function useResultTableModel(
 
   const countries = computed(() => input.camp.countries);
 
-  const templates = computed<CTableTemplate[]>(() => {
+  const templateOptions = computed<CTableTemplate[]>(() => {
     const mapped: CTableTemplate[] = input.templates.map((template) => ({
       ...template,
       columns: template.columns.map((column) => ({
@@ -75,7 +75,7 @@ export function useResultTableModel(
   function defaultTemplate(): CTableTemplate {
     const id = options.initialTemplateId ?? null;
     if (id) {
-      const found = templates.value.find((v) => v.id == id);
+      const found = templateOptions.value.find((v) => v.id == id);
       if (found) {
         pagination.value.sortBy = found.sortBy ?? null;
         pagination.value.descending = found.sortDirection === 'desc';
@@ -83,10 +83,10 @@ export function useResultTableModel(
       }
     }
 
-    if (templates.value.length === 0) {
+    if (templateOptions.value.length === 0) {
       throw new Error('No templates available');
     }
-    return templates.value[0]!;
+    return templateOptions.value[0]!;
   }
 
   const template = ref<CTableTemplate>(defaultTemplate());
@@ -197,7 +197,7 @@ export function useResultTableModel(
 
   return {
     pagination,
-    templates,
+    templateOptions,
     template,
     rows,
     columns,
