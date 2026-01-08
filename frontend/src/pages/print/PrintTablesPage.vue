@@ -1,4 +1,3 @@
-<!-- src/pages/print/PrintTablesPage.vue -->
 <template>
   <q-page>
     <div

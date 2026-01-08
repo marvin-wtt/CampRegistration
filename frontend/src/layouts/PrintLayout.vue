@@ -1,4 +1,3 @@
-<!-- src/layouts/PrintLayout.vue -->
 <template>
   <q-layout
     view="lHh Lpr lFf"
