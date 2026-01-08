@@ -78,9 +78,9 @@ async function onTemplatesPrint(templateIds: string[]) {
     return;
   }
 
-  const templates = templateStore.data?.filter((t) =>
-    templateIds.includes(t.id),
-  );
+  const templates = templateStore.data
+    ?.filter((t) => templateIds.includes(t.id))
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
   // Ensure data is present
 

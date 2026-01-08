@@ -161,23 +161,20 @@
 import { type QTableColumn, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-
 import type {
   CampDetails,
   TableTemplate,
   TableColumnTemplate,
   Registration,
 } from '@camp-registration/common/entities';
-
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { usePermissions } from 'src/composables/permissions';
 import { useTemplateStore } from 'stores/template-store';
 import TableTemplateIndexDialog from 'components/campManagement/table/dialogs/TableTemplateIndexDialog.vue';
 import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
-import type { CTableTemplate } from 'src/types/CTableTemplate';
-
 import { useResultTableModel } from './useResultTableModel';
+import PrintTableDialog from 'components/campManagement/table/dialogs/PrintTableDialog.vue';
 
 const { questions, registrations, templates, camp } = defineProps<{
   questions: TableColumnTemplate[];
@@ -225,43 +222,15 @@ function onTemplateChange() {
 }
 
 function openExportDialog() {
-  const items = templateOptions.value
-    .filter((value) => !value.generated)
-    .map((value) => ({
-      label: to(value.title),
-      value,
-    }));
-
   quasar
     .dialog({
-      title: t('export.dialog.title'),
-      message: t('export.dialog.message'),
-      options: {
-        type: 'checkbox',
-        model: [template.value],
-        items,
-        color: 'primary',
+      component: PrintTableDialog,
+      componentProps: {
+        templates,
       },
-      ok: {
-        color: 'primary',
-        rounded: true,
-        label: t('export.dialog.download'),
-        icon: 'download',
-      },
-      cancel: {
-        color: 'primary',
-        rounded: true,
-        outline: true,
-        label: t('export.dialog.cancel'),
-      },
-      persistent: true,
     })
-    .onOk((data: CTableTemplate[]) => {
-      const templateIds = data
-        .sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
-        .map((value) => value.id);
-
-      emit('export', templateIds);
+    .onOk((data: string[]) => {
+      emit('export', data);
     });
 }
 
@@ -335,18 +304,6 @@ menu:
 
 filter:
   country: 'Country'
-
-export:
-  dialog:
-    title: 'Export tables'
-    message: 'Select which tables to export'
-    download: 'Download'
-    cancel: 'Cancel'
-  pdf:
-    loading:
-      template: 'Preparing template: '
-      save: 'Saving table(s) to file...'
-    error: 'Failed to export table(s)'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -359,18 +316,6 @@ menu:
 
 filter:
   country: 'Land'
-
-export:
-  dialog:
-    title: 'Tabellen exportieren'
-    message: 'Wählen Sie aus, welche Tabellen exportiert werden sollen'
-    download: 'Herunterladen'
-    cancel: 'Abbrechen'
-  pdf:
-    loading:
-      template: 'Vorlage wird vorbereitet: '
-      save: 'Tabelle(n) werden in Datei gespeichert...'
-    error: 'Fehler beim Exportieren der Tabelle(n)'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -383,18 +328,6 @@ menu:
 
 filter:
   country: 'Pays'
-
-export:
-  dialog:
-    title: 'Exporter les tables'
-    message: 'Sélectionnez les tables à exporter'
-    download: 'Télécharger'
-    cancel: 'Annuler'
-  pdf:
-    loading:
-      template: 'Préparation du modèle : '
-      save: 'Enregistrement de(s) table(s) dans le fichier...'
-    error: "Échec de l'exportation de(s) table(s)"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -407,18 +340,6 @@ menu:
 
 filter:
   country: 'Kraj'
-
-export:
-  dialog:
-    title: 'Eksportuj tabele'
-    message: 'Wybierz, które tabele chcesz wyeksportować'
-    download: 'Pobierz'
-    cancel: 'Anuluj'
-  pdf:
-    loading:
-      template: 'Przygotowywanie szablonu: '
-      save: 'Zapisywanie tabel(i) do pliku...'
-    error: 'Błąd podczas eksportowania tabel(i)'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -431,16 +352,4 @@ menu:
 
 filter:
   country: 'Země'
-
-export:
-  dialog:
-    title: 'Export tabulek'
-    message: 'Vyberte, které tabulky chcete exportovat'
-    download: 'Stáhnout'
-    cancel: 'Zrušit'
-  pdf:
-    loading:
-      template: 'Připravuji šablonu: '
-      save: 'Ukládám tabulku(y) do souboru...'
-    error: 'Chyba při exportu tabulky/tabulek'
 </i18n>
