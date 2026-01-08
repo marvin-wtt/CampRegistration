@@ -1,5 +1,5 @@
 <template>
-  <q-page>
+  <q-page class="print-page">
     <div
       v-if="error"
       class="q-pa-md"
@@ -41,11 +41,12 @@
         :key="template.id ?? i"
         class="print-sheet"
       >
-        <header class="print-sheet__header">
-          <div class="text-subtitle1">
+        <header class="print-header">
+          <div class="print-header__title">
             {{ to(template.title) }}
           </div>
-          <div class="text-caption">
+
+          <div class="print-header__meta">
             <span>{{ to(payload.camp.name) }}</span>
           </div>
         </header>
@@ -58,7 +59,13 @@
           :template
         />
 
-        <footer class="print-sheet__footer">{{ timestamp }}</footer>
+        <footer class="print-footer">
+          <div class="print-footer__left">{{ to(template.title) }}</div>
+          <div class="print-footer__center">{{ timestamp }}</div>
+          <div class="print-footer__right">
+            {{ i + 1 }} / {{ payload.templates.length }}
+          </div>
+        </footer>
       </section>
     </div>
   </q-page>
@@ -235,6 +242,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.print-page {
+  background: white;
+}
+
 /* Each table on its own page */
 .print-sheet {
   break-after: page;
@@ -247,12 +258,57 @@ onBeforeUnmount(() => {
   page-break-after: auto;
 }
 
-.print-sheet__header {
-  margin-bottom: 4mm;
+/* Header */
+.print-header {
+  margin-bottom: 5mm;
+  padding-bottom: 3mm;
 }
 
-.print-sheet__footer {
-  margin-top: 6mm;
-  text-align: center;
+.print-header__title {
+  font-size: 14pt;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.print-header__meta {
+  margin-top: 1.5mm;
+  font-size: 9.5pt;
+  line-height: 1.2;
+  opacity: 0.75;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* Footer */
+.print-footer {
+  margin-top: 3mm;
+  padding-top: 3mm;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+
+  font-size: 9pt;
+  opacity: 0.75;
+
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.print-footer__left {
+  justify-self: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70mm;
+}
+
+.print-footer__center {
+  justify-self: center;
+  white-space: nowrap;
+}
+
+.print-footer__right {
+  justify-self: end;
+  white-space: nowrap;
 }
 </style>
