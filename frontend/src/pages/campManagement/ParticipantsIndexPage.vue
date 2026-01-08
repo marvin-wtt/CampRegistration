@@ -90,7 +90,7 @@ async function onTemplatesPrint(templateIds: string[]) {
     questions: columns.value,
     registrations: registrations.value ?? [],
     camp: camp.value,
-    templateOptions: templates,
+    templates,
   };
 
   // Store payload for the print route
