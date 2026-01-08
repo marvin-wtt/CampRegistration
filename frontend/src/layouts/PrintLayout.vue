@@ -31,6 +31,8 @@ quasar.dark.set(false);
 
   @bottom-center {
     content: counter(page) ' / ' counter(pages);
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 12px;
   }
 
   @bottom-left {
