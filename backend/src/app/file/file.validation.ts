@@ -33,7 +33,9 @@ const store = z.object({
     field: z.string().optional(),
     accessLevel: z.string().optional(),
   }),
-  file: z.custom<Express.Multer.File>(),
+  file: z.custom<Express.Multer.File>((file) => {
+    return file !== undefined;
+  }),
 });
 
 const destroy = z.object({
