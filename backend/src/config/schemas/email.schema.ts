@@ -8,8 +8,8 @@ export const EmailEnvSchema = z.object({
     .max(65535)
     .describe('Port to connect to the email server')
     .default(587),
-  SMTP_SECURE: z
-    .stringbool()
+  SMTP_SECURE: z.coerce
+    .boolean()
     .describe('Encrypt the connection to the server')
     .default(true),
   SMTP_USERNAME: z.string().describe('Username for email server'),

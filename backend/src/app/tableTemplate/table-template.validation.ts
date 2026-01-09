@@ -1,22 +1,20 @@
 import { z } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 
-const StringOrFunctionSchema = z.union([z.string()]);
-
 const TableTemplateBodySchema = z.object({
   title: translatedValue(z.string()),
   columns: z.array(
     z.object({
       name: z.string(),
       source: z.enum(['form', 'custom']).optional(),
-      field: StringOrFunctionSchema,
+      field: z.string(),
       label: translatedValue(z.string()),
       required: z.boolean().optional(),
       align: z.enum(['left', 'right', 'center']).optional(),
       sortable: z.boolean().optional(),
       sortOrder: z.enum(['ad', 'da']).optional(),
-      style: StringOrFunctionSchema.optional(),
-      classes: StringOrFunctionSchema.optional(),
+      style: z.string().optional(),
+      classes: z.string().optional(),
       headerStyle: z.string().optional(),
       headerClasses: z.string().optional(),
       renderAs: z.string().optional(),

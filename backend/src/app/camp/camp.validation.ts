@@ -60,9 +60,7 @@ const store = z.object({
       themes: z.record(z.string(), z.unknown()).optional(),
       referenceCampId: z.ulid().optional(),
     })
-    .check((ctx) => {
-      const val = ctx.value;
-
+    .superRefine((val, ctx) => {
       const recordKeys = [
         'name',
         'organizer',
@@ -78,7 +76,7 @@ const store = z.object({
           typeof value === 'object' &&
           !validateRecordKeys(value, val.countries)
         ) {
-          ctx.issues.push({
+          ctx.addIssue({
             code: 'custom',
             message: 'Missing or invalid key(s)',
             path: [key],
@@ -97,7 +95,7 @@ const store = z.object({
         const maxVal = val[keyMax];
 
         if (minVal > maxVal) {
-          ctx.issues.push({
+          ctx.addIssue({
             code: 'custom',
             message: 'Min value must be smaller than or equal to max value',
             path: [keyMin],
@@ -132,8 +130,7 @@ const update = (camp: Camp) =>
         themes: z.record(z.string(), z.unknown()),
       })
       .partial()
-      .check((ctx) => {
-        const val = ctx.value;
+      .superRefine((val, ctx) => {
         const recordKeys = [
           'name',
           'organizer',
@@ -150,7 +147,7 @@ const update = (camp: Camp) =>
             typeof value === 'object' &&
             !validateRecordKeys(value, val.countries ?? camp.countries)
           ) {
-            ctx.issues.push({
+            ctx.addIssue({
               code: 'custom',
               message: 'Missing or invalid key(s)',
               path: [key],
@@ -169,7 +166,7 @@ const update = (camp: Camp) =>
           const maxVal = val[keyMax] ?? camp[keyMax];
 
           if (minVal > maxVal) {
-            ctx.issues.push({
+            ctx.addIssue({
               code: 'custom',
               message: 'Min value must be smaller than or equal to max value',
               path: [keyMin],
