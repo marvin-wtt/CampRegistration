@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const EmailEnvSchema = z.object({
   SMTP_HOST: z.string().describe('Server that will send the emails'),

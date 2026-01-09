@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import { type ZodObject, type z, ZodError } from 'zod/v4';
+import { type ZodObject, type z, ZodError } from 'zod';
 import { fromError } from 'zod-validation-error';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';

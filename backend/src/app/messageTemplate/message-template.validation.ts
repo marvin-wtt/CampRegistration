@@ -1,4 +1,4 @@
-import { z, type ZodType } from 'zod/v4';
+import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import type {
   MessageTemplateCreateData,

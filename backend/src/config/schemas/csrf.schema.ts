@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const CsrfEnvSchema = z.object({
   CSRF_SECRET: z.string(),

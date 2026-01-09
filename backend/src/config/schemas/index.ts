@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { MainEnvSchema } from './main.schema.js';
 import { AuthEnvSchema } from './auth.schema.js';
 import { EmailEnvSchema } from './email.schema.js';

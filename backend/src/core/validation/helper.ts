@@ -1,4 +1,4 @@
-import { z, type ZodType } from 'zod/v4';
+import { z, type ZodType } from 'zod';
 
 export const PasswordSchema = z.string().min(8).max(26);
 

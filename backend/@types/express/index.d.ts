@@ -11,7 +11,7 @@ import type {
   Room,
   File,
 } from '@prisma/client';
-import type { ZodObject, z } from 'zod/v4';
+import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 
 declare global {

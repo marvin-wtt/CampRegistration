@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
 
 const RoleSchema = z.enum(['USER', 'ADMIN']);

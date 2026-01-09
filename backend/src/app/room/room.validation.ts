@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import z from 'zod';
 import { translatedValue } from '#core/validation/helper';
 
 const show = z.object({
@@ -39,13 +39,13 @@ const update = z.object({
 
 const bulkUpdate = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
     rooms: z
       .array(
         z.object({
-          id: z.string().ulid(),
+          id: z.ulid(),
           name: translatedValue(z.string()).optional(),
           sortOrder: z.number().int().optional(),
         }),

@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const StorageEnvSchema = z.object({
   TMP_DIR: z

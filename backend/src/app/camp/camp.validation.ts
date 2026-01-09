@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import type { Camp } from '@prisma/client';
 
