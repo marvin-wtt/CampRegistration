@@ -1,84 +1,62 @@
 <template>
-  <i
-    :aria-label="props.country ?? props.locale"
-    aria-hidden="true"
-    role="presentation"
-    class="fi country-icon q-icon"
-    :class="className"
-    :style
+  <img
+    v-if="isoCode && hasFlag(isoCode)"
+    :src="`/flags/${isoCode}.svg`"
+    :alt="`Flag of ${isoCode}`"
+    class="flag-icon"
   />
+
+  <span v-else>
+    {{ country ?? locale }}
+  </span>
 </template>
 
 <script lang="ts" setup>
-import 'flag-icons/css/flag-icons.min.css';
-import { computed, type StyleValue } from 'vue';
+import { hasFlag } from 'country-flag-icons';
+import { defineProps, computed } from 'vue';
 
 type Props =
   | {
       locale: string;
       country?: never;
-      size?: string;
     }
   | {
       locale?: never;
       country: string;
-      size?: string;
     };
 
-const props = defineProps<Props>();
+const { country, locale } = defineProps<Props>();
 
-const overrides: Record<string, string> = {
-  en: 'us', // Use US as default for english
-};
+const DEFAULT_COUNTRY_BY_LANG: Record<string, string> = {
+  en: 'GB',
+} as const;
 
-const className = computed<string>(() => {
-  const isoCode = props.country ?? localeToCountry(props.locale);
+const isoCode = computed<string>(() => {
+  const code = locale ? localeToIso(locale) : country;
 
-  return `fi-${isoCode}`;
+  return code?.toUpperCase() ?? '';
 });
 
-const style = computed<StyleValue | null>(() => {
-  if (!props.size) {
-    return null;
+function localeToIso(locale: string): string | undefined {
+  const tag = locale.replace('_', '-');
+  const [lang, region] = tag.split('-');
+
+  if (region) {
+    return region;
   }
 
-  const defaultSizes = {
-    xs: 18,
-    sm: 24,
-    md: 32,
-    lg: 38,
-    xl: 46,
-  } as const;
-
-  return {
-    fontSize:
-      props.size in defaultSizes
-        ? `${defaultSizes[props.size as keyof typeof defaultSizes]!}px`
-        : props.size,
-  };
-});
-
-function localeToCountry(value: string): string {
-  // Use country as value for locales of type aa-AA
-  if (value.length > 2) {
-    if (!value.includes('-')) {
-      throw new Error(`Invalid value for prop locale: ${value}`);
-    }
-
-    value = value.split('-')[1]!.toLowerCase();
+  if (!lang) {
+    return undefined;
   }
 
-  if (value in overrides) {
-    return overrides[value]!;
-  }
-
-  return value;
+  return DEFAULT_COUNTRY_BY_LANG[lang] ?? lang;
 }
 </script>
 
 <style scoped>
-.country-icon {
-  width: 1em !important;
-  height: auto !important;
+.flag-icon {
+  width: 1.5em;
+  height: auto;
+  vertical-align: middle;
 }
 </style>

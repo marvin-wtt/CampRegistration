@@ -9,6 +9,7 @@
           v-for="option in options"
           :key="option.value"
           clickable
+          v-close-popup
           v-ripple
           @click="locale = option.value"
         >
@@ -44,6 +45,14 @@ const options = [
   {
     label: 'English (US)',
     value: 'en-US',
+  },
+  {
+    label: 'Polski',
+    value: 'pl-PL',
+  },
+  {
+    label: 'Česky',
+    value: 'cs-CZ',
   },
 ];
 </script>

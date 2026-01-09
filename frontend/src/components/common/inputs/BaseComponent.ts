@@ -22,8 +22,7 @@ export interface InputComponent extends ComponentProps<QInputProps> {
   componentType: 'input';
 }
 
-export interface OptionGroupComponent
-  extends ComponentProps<QOptionGroupProps> {
+export interface OptionGroupComponent extends ComponentProps<QOptionGroupProps> {
   componentType: 'option-group';
 }
 

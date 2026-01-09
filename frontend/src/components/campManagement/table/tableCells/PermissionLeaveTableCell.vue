@@ -1,23 +1,30 @@
 <template>
   <q-icon
     v-if="leaveAlone"
-    :size="size"
+    :size
     color="positive"
     name="person"
   />
 
   <q-icon
     v-else-if="leaveGroup"
-    :size="size"
+    :size
     color="warning"
     name="groups"
   />
 
   <q-icon
-    v-else
-    :size="size"
+    v-else-if="leaveNone"
+    :size
     color="negative"
     name="close"
+  />
+
+  <q-icon
+    v-else
+    :size
+    color="grey"
+    name="question_mark"
   />
 </template>
 
@@ -25,22 +32,22 @@
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 
 const leaveAlone = computed<boolean>(() => {
-  const value = props.props.value;
-
-  return value === undefined || value === 2;
+  return cellProps.value === 2 || cellProps.value === 'alone';
 });
 
 const leaveGroup = computed<boolean>(() => {
-  const value = props.props.value;
+  return cellProps.value === 1 || cellProps.value === 'group';
+});
 
-  return value !== undefined && value === 1;
+const leaveNone = computed<boolean>(() => {
+  return cellProps.value === 0 || cellProps.value === 'none';
 });
 </script>
 

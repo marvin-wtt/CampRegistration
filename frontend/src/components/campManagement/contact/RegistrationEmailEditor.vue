@@ -8,10 +8,15 @@
 <script setup lang="ts">
 import type { CampDetails } from '@camp-registration/common/entities';
 import { computed } from 'vue';
-import type { TokenRegistry } from 'components/campManagement/contact/TokenRegistry';
 import { extractFormFields } from 'src/utils/surveyJS';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
 import { useI18n } from 'vue-i18n';
+import type {
+  RegistrationComputedPath,
+  RegistrationDataPath,
+  TokenNode,
+  TokenValue,
+} from 'components/campManagement/contact/TokenNode';
 
 const { t } = useI18n();
 
@@ -36,7 +41,9 @@ const campTokens: (keyof CampDetails)[] = [
   'location',
 ];
 
-const tokens = computed<TokenRegistry[]>(() => {
+const tokens = computed<
+  TokenNode<RegistrationComputedPath | RegistrationDataPath>[]
+>(() => {
   return [
     {
       value: 'camp',
@@ -68,21 +75,21 @@ const tokens = computed<TokenRegistry[]>(() => {
           items: [
             {
               label: t('token.registration.computed.entry.email'),
-              value: 'email.[0]',
+              value: 'emails.[0]',
             },
             {
               label: t('token.registration.computed.entry.firstName'),
-              value: 'first_name.[0]',
+              value: 'firstName',
             },
             {
               label: t('token.registration.computed.entry.lastName'),
-              value: 'last_name.[0]',
+              value: 'lastName',
             },
             {
               label: t('token.registration.computed.entry.role'),
-              value: 'role.[0]',
+              value: 'role',
             },
-          ],
+          ] satisfies TokenValue<RegistrationComputedPath>[],
         },
       ],
     },
@@ -188,4 +195,66 @@ token:
         firstName: 'Prénom'
         lastName: 'Nom de famille'
         role: 'Rôle'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+token:
+  camp:
+    label: 'Obóz'
+    item:
+      countries: 'Kraje'
+      name: 'Nazwa'
+      organizer: 'Organizator'
+      contactEmail: 'E-mail kontaktowy'
+      maxParticipants: 'Maksymalna liczba uczestników'
+      startAt: 'Czas rozpoczęcia'
+      endAt: 'Czas zakończenia'
+      minAge: 'Minimalny wiek'
+      maxAge: 'Maksymalny wiek'
+      location: 'Miejsce'
+      price: 'Cena'
+  registration:
+    label: 'Rejestracja'
+    data:
+      label: 'Formularz'
+      caption: 'Bezpośredni dostęp do pól formularza rejestracyjnego'
+    computed:
+      label: 'Obliczone'
+      caption: 'Pola obliczane na podstawie danych zgłoszenia'
+      entry:
+        email: 'E-mail'
+        firstName: 'Imię'
+        lastName: 'Nazwisko'
+        role: 'Rola'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+token:
+  camp:
+    label: 'Tábor'
+    item:
+      countries: 'Země'
+      name: 'Název'
+      organizer: 'Organizátor'
+      contactEmail: 'Kontaktní e-mail'
+      maxParticipants: 'Maximální počet účastníků'
+      startAt: 'Čas začátku'
+      endAt: 'Čas konce'
+      minAge: 'Minimální věk'
+      maxAge: 'Maximální věk'
+      location: 'Místo'
+      price: 'Cena'
+  registration:
+    label: 'Registrace'
+    data:
+      label: 'Formulář'
+      caption: 'Přímý přístup k polím registračního formuláře'
+    computed:
+      label: 'Vypočtené'
+      caption: 'Pole vypočítaná na základě dat registrace'
+      entry:
+        email: 'E-mail'
+        firstName: 'Jméno'
+        lastName: 'Příjmení'
+        role: 'Role'
 </i18n>

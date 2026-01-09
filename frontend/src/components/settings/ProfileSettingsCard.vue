@@ -174,3 +174,45 @@ action:
   save: 'Mettre à jour le profil'
   reset: 'Réinitialiser'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Profil'
+
+field:
+  name:
+    label: 'Imię i nazwisko'
+    rule:
+      required: 'Nazwa jest wymagana.'
+      minlength: 'Nazwa jest za krótka.'
+      maxlength: 'Nazwa jest za długa.'
+  locale:
+    label: 'Język'
+    rule:
+      required: 'Język jest wymagany.'
+      invalid: 'Nieprawidłowy język.'
+
+action:
+  save: 'Zaktualizuj profil'
+  reset: 'Resetuj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Profil'
+
+field:
+  name:
+    label: 'Jméno'
+    rule:
+      required: 'Jméno je povinné.'
+      minlength: 'Jméno je příliš krátké.'
+      maxlength: 'Jméno je příliš dlouhé.'
+  locale:
+    label: 'Jazyk'
+    rule:
+      required: 'Jazyk je povinný.'
+      invalid: 'Neplatný jazyk.'
+
+action:
+  save: 'Aktualizovat profil'
+  reset: 'Obnovit'
+</i18n>

@@ -113,6 +113,22 @@ profile: 'Profil'
 security: 'Sécurité'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+account: 'Konto'
+general: 'Ogólne'
+preferences: 'Preferencje'
+profile: 'Profil'
+security: 'Bezpieczeństwo'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+account: 'Účet'
+general: 'Obecné'
+preferences: 'Předvolby'
+profile: 'Profil'
+security: 'Zabezpečení'
+</i18n>
+
 <style>
 .settings-input {
   max-width: 450px;

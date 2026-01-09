@@ -31,10 +31,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -98,7 +95,6 @@ import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
@@ -110,7 +106,6 @@ const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
-const { user } = storeToRefs(profileStore);
 
 if (!profileStore.user) {
   authStore.init();
@@ -174,10 +169,6 @@ const administrator = computed<boolean>(() => {
 const dev = computed<boolean>(() => {
   return process.env.NODE_ENV === 'development';
 });
-
-function logout() {
-  authStore.logout();
-}
 </script>
 
 <i18n lang="yaml" locale="en">

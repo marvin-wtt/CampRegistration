@@ -69,9 +69,10 @@ export class AuthService extends BaseService {
       TokenType.RESET_PASSWORD,
     );
     const user = await userService.getUserById(resetPasswordTokenData.userId);
-    if (!user || user.email !== email) {
+    if (user?.email !== email) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
+
     await userService.updateUserById(user.id, {
       password,
       emailVerified: true,

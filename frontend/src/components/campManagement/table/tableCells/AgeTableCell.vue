@@ -25,19 +25,19 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps, camp } = defineProps<TableCellProps>();
 const { d } = useI18n();
 
 const startAt = computed<Date>(() => {
-  return new Date(props.camp.startAt);
+  return new Date(camp.startAt);
 });
 
 const endAt = computed<Date>(() => {
-  return new Date(props.camp.endAt);
+  return new Date(camp.endAt);
 });
 
 const hasBirthDay = computed<boolean>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
   if (typeof value !== 'string') {
     return false;
   }
@@ -47,7 +47,7 @@ const hasBirthDay = computed<boolean>(() => {
 });
 
 const birthday = computed<string>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
 
   if (typeof value !== 'string') {
     return 'Invalid';
@@ -57,7 +57,7 @@ const birthday = computed<string>(() => {
 });
 
 const age = computed<string>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
   if (typeof value !== 'string') {
     return 'Invalid';
   }

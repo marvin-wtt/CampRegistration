@@ -299,3 +299,27 @@ role:
   counselor: 'Conseiller'
   participant: 'Participant'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+type:
+  counselor: 'Opiekun'
+  group: 'Grupa'
+  participant: 'Uczestnik'
+  waitingList: 'Lista oczekujących'
+
+role:
+  counselor: 'Opiekun'
+  participant: 'Uczestnik'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+type:
+  counselor: 'Vedoucí'
+  group: 'Skupina'
+  participant: 'Účastník'
+  waitingList: 'Čekací listina'
+
+role:
+  counselor: 'Vedoucí'
+  participant: 'Účastník'
+</i18n>

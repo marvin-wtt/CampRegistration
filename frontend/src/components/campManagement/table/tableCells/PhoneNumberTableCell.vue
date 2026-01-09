@@ -2,37 +2,51 @@
   {{ formattedPhoneNumber }}
 
   <q-tooltip v-if="formattedPhoneNumber">
-    {{ props.props.value }}
+    {{ cellProps.value }}
   </q-tooltip>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { formatPhoneNumber } from 'src/utils/formatters';
+import parsePhoneNumber, { isSupportedCountry } from 'libphonenumber-js';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import type { Registration } from '@camp-registration/common/entities';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps, camp } = defineProps<TableCellProps>();
 const registrationHelper = useRegistrationHelper();
 
 const registration = computed<Registration>(() => {
-  return props.props.row as Registration;
+  return cellProps.row;
 });
 
 const formattedPhoneNumber = computed<string | unknown>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
 
   if (typeof value !== 'string' && typeof value !== 'number') {
     return value;
   }
 
-  const country = registrationHelper.country(registration.value);
+  // If the camp has only one country, use that country as fallback
+  const country =
+    registrationHelper.country(registration.value) ??
+    (camp.countries.length === 1 ? camp.countries[0] : undefined);
+
+  const normalizedCountry = country?.toUpperCase();
+
+  const countryCode =
+    normalizedCountry && isSupportedCountry(normalizedCountry)
+      ? normalizedCountry
+      : undefined;
 
   return value
     .toString()
     .split(/[,;]+/g)
-    .map((value: string) => formatPhoneNumber(value.trim(), country))
+    .map(
+      (value: string) =>
+        parsePhoneNumber(value.trim(), countryCode)?.formatInternational() ??
+        value,
+    )
     .join(', ');
 });
 </script>

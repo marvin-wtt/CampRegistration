@@ -4,6 +4,8 @@ import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
+import { filterByKeys } from '#utils/object.js';
+import { type TCountryCode, getCountryData } from 'countries-list';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: number | Record<string, number>;
@@ -132,8 +134,21 @@ export class CampService extends BaseService {
       createdAt: undefined,
     }));
 
-    const messageTemplateData = messageTemplates.map((value) => ({
-      ...value,
+    const languages = data.countries
+      .map((code): TCountryCode => code.toUpperCase() as TCountryCode)
+      .map(getCountryData)
+      .flatMap((country) => country.languages);
+
+    // Only keep message templates for the countries of the camp
+    // Other languages can't be edited by the user
+    messageTemplates = messageTemplates.map((template) => ({
+      ...template,
+      subject: filterByKeys(template.subject, languages),
+      body: filterByKeys(template.body, languages),
+    }));
+
+    const messageTemplateData = messageTemplates.map((template) => ({
+      ...template,
       attachments: undefined,
     }));
 

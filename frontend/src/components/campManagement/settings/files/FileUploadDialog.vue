@@ -18,7 +18,7 @@
           <!-- File -->
           <!-- TODO Maybe add reject message -->
           <q-file
-            v-model="file.file"
+            v-model="fileData.file"
             :label="t('fields.file.label')"
             :rules="[
               (val?: File) => !!val || t('fields.access_level.rules.required'),
@@ -40,10 +40,10 @@
             </template>
           </q-file>
 
-          <template v-if="file.file">
+          <template v-if="fileData.file">
             <!-- Name -->
             <q-input
-              v-model="file.name"
+              v-model="fileData.name"
               :label="t('fields.name.label')"
               :rules="[
                 (val?: string) => !!val || t('fields.name.rules.required'),
@@ -54,7 +54,7 @@
 
             <!-- Field -->
             <q-input
-              v-model="file.field"
+              v-model="fileData.field"
               :label="t('fields.field.label')"
               :hint="t('fields.field.hint')"
               :rules="[
@@ -68,7 +68,7 @@
 
             <!-- Access -->
             <q-select
-              v-model="file.accessLevel"
+              v-model="fileData.accessLevel"
               :options="accessLevelOptions"
               :label="t('fields.access_level.label')"
               :rules="[
@@ -133,14 +133,8 @@ const { t } = useI18n();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-const file = reactive<ServiceFileCreateData>({
+const fileData = reactive<ServiceFileCreateData>({
   accessLevel: 'public',
 } as ServiceFileCreateData);
 
@@ -170,22 +164,22 @@ const accessLevelOptions: AccessLevelOption[] = [
 ];
 
 function onFileUpdate() {
-  if (!file.name || file.name.trim().length === 0) {
+  if (!fileData.name || fileData.name.trim().length === 0) {
     // File name without extension
-    file.name = file.file.name.replace(/\.[^/.]+$/, '');
+    fileData.name = fileData.file.name.replace(/\.[^/.]+$/, '');
   }
 
   // Generate default
-  if (file.name && !file.field) {
-    const name = file.name.trim().toLowerCase().replaceAll(' ', '-');
-    file.field = uniqueName(name, fields.value);
+  if (fileData.name && !fileData.field) {
+    const name = fileData.name.trim().toLowerCase().replaceAll(' ', '-');
+    fileData.field = uniqueName(name, fields.value);
   }
 }
 
 async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
-    await campFileStore.createEntry(file);
+    const file = await campFileStore.createEntry(fileData);
 
     onDialogOK(file);
   } finally {
@@ -306,6 +300,78 @@ access_level:
   private:
     label: 'Privé'
     description: 'Visible uniquement par les gestionnaires de camp'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Prześlij plik'
+
+fields:
+  access_level:
+    label: 'Dostęp'
+    rules:
+      required: 'To pole jest wymagane'
+  field:
+    label: 'Identyfikator'
+    hint: 'Używany do odwoływania się do pliku w formularzu'
+    rules:
+      required: 'To pole jest wymagane'
+      unique: 'Plik o tym identyfikatorze już istnieje'
+  file:
+    label: 'Plik'
+    rules:
+      required: 'Wybierz plik do przesłania'
+  name:
+    label: 'Nazwa'
+    rules:
+      required: 'Podaj nową nazwę pliku'
+
+action:
+  ok: 'Prześlij'
+  cancel: 'Anuluj'
+
+access_level:
+  public:
+    label: 'Publiczny'
+    description: 'Widoczny dla wszystkich'
+  private:
+    label: 'Prywatny'
+    description: 'Widoczny tylko dla menedżerów obozu'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Nahrát soubor'
+
+fields:
+  access_level:
+    label: 'Přístup'
+    rules:
+      required: 'Toto pole je povinné'
+  field:
+    label: 'Identifikátor'
+    hint: 'Používá se pro odkazování na soubor ve formuláři'
+    rules:
+      required: 'Toto pole je povinné'
+      unique: 'Soubor s tímto identifikátorem již existuje'
+  file:
+    label: 'Soubor'
+    rules:
+      required: 'Vyberte soubor k nahrání'
+  name:
+    label: 'Název'
+    rules:
+      required: 'Zadejte nový název souboru'
+
+action:
+  ok: 'Nahrát'
+  cancel: 'Zrušit'
+
+access_level:
+  public:
+    label: 'Veřejný'
+    description: 'Viditelné pro všechny'
+  private:
+    label: 'Soukromý'
+    description: 'Viditelné pouze pro správce tábora'
 </i18n>
 
 <style lang="scss">

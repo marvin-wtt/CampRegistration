@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { LocaleSchema } from '#core/validation/helper';
+import { BooleanStringSchema, LocaleSchema } from '#core/validation/helper';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
@@ -38,6 +38,11 @@ const update = z.object({
       waitingList: z.boolean(),
     })
     .partial(),
+  query: z
+    .object({
+      suppressMessage: BooleanStringSchema,
+    })
+    .partial(),
 });
 
 const destroy = z.object({
@@ -45,6 +50,11 @@ const destroy = z.object({
     campId: z.ulid(),
     registrationId: z.ulid(),
   }),
+  query: z
+    .object({
+      suppressMessage: BooleanStringSchema,
+    })
+    .partial(),
 });
 
 export default {

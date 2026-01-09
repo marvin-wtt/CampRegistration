@@ -36,10 +36,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -136,7 +133,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
@@ -152,10 +148,8 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(profileStore);
-
 async function init() {
-  if (!user.value) {
+  if (!profileStore.user) {
     // Fetch user instead of init to force redirect on error
     await authStore.init();
   }
@@ -295,10 +289,6 @@ function toggleDrawer() {
 function navigateHome() {
   router.push({ name: 'management' });
 }
-
-function logout() {
-  authStore.logout();
-}
 </script>
 
 <i18n lang="yaml" locale="en">
@@ -365,6 +355,50 @@ settings: 'Paramètres'
 statistics: 'Statistiques'
 tools: 'Tools'
 notifications: 'Notifications'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+footer:
+  imprint: 'Nota prawna'
+  privacy_policy: 'Polityka prywatności'
+
+access: 'Dostęp'
+contact: 'Kontakt'
+dashboard: 'Panel główny'
+edit: 'Edytuj'
+email_templates: 'Szablony e-maili'
+files: 'Pliki'
+expenses: 'Wydatki'
+form: 'Formularz rejestracyjny'
+participants: 'Uczestnicy'
+program_planner: 'Program'
+room_planner: 'Plan pokoi'
+settings: 'Ustawienia'
+statistics: 'Statystyki'
+tools: 'Narzędzia'
+notifications: 'Powiadomienia'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+footer:
+  imprint: 'Tiráž'
+  privacy_policy: 'Zásady ochrany osobních údajů'
+
+access: 'Přístup'
+contact: 'Kontakt'
+dashboard: 'Přehled'
+edit: 'Upravit'
+email_templates: 'E-mailové šablony'
+files: 'Soubory'
+expenses: 'Výdaje'
+form: 'Registrační formulář'
+participants: 'Účastníci'
+program_planner: 'Program'
+room_planner: 'Plán pokojů'
+settings: 'Nastavení'
+statistics: 'Statistiky'
+tools: 'Nástroje'
+notifications: 'Oznámení'
 </i18n>
 
 <style>

@@ -32,8 +32,26 @@ const update = z.object({
   body: z
     .object({
       name: translatedValue(z.string()),
+      sortOrder: z.number(),
     })
     .partial(),
+});
+
+const bulkUpdate = z.object({
+  params: z.object({
+    campId: z.string().ulid(),
+  }),
+  body: z.object({
+    rooms: z
+      .array(
+        z.object({
+          id: z.string().ulid(),
+          name: translatedValue(z.string()).optional(),
+          sortOrder: z.number().int().optional(),
+        }),
+      )
+      .min(1),
+  }),
 });
 
 const destroy = z.object({
@@ -48,5 +66,6 @@ export default {
   index,
   store,
   update,
+  bulkUpdate,
   destroy,
 };

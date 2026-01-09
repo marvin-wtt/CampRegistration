@@ -153,3 +153,43 @@ field:
 action:
   disable: 'Désactiver 2FA'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Uwierzytelnianie dwuskładnikowe'
+
+description: 'Uwierzytelnianie dwuskładnikowe jest obecnie aktywne. Możesz je wyłączyć, wprowadzając swoje hasło i kod OTP.'
+
+field:
+  password:
+    label: 'Hasło'
+    rule:
+      required: 'Hasło jest wymagane.'
+  otp:
+    label: 'OTP'
+    rule:
+      required: 'Kod OTP jest wymagany.'
+      invalid: 'Kod OTP musi składać się z 6 cyfr.'
+
+action:
+  disable: 'Wyłącz 2FA'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Dvoufázové ověřování'
+
+description: 'Dvoufázové ověřování je momentálně aktivní. Můžete jej vypnout zadáním hesla a kódu OTP.'
+
+field:
+  password:
+    label: 'Heslo'
+    rule:
+      required: 'Heslo je povinné.'
+  otp:
+    label: 'OTP'
+    rule:
+      required: 'OTP kód je povinný.'
+      invalid: 'OTP kód musí mít 6 číslic.'
+
+action:
+  disable: 'Deaktivovat 2FA'
+</i18n>

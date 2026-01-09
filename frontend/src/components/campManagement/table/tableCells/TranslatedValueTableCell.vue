@@ -9,10 +9,10 @@ import { computed } from 'vue';
 
 const { to } = useObjectTranslation();
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 const value = computed(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
   if (isStringOrRecord(value)) {
     return to(value);
   }

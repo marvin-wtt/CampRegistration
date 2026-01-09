@@ -1,7 +1,10 @@
 <template>
   {{ cellProps.value }}
 
-  <q-popup-proxy v-model="popupState">
+  <q-popup-proxy
+    v-if="enabled"
+    v-model="popupState"
+  >
     <q-banner>
       <div
         class="column q-gutter-sm q-ma-xs"
@@ -66,11 +69,13 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { usePermissions } from 'src/composables/permissions';
 
-const { props: cellProps } = defineProps<TableCellProps>();
+const { props: cellProps, printing } = defineProps<TableCellProps>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const { can } = usePermissions();
 const registrationsStore = useRegistrationsStore();
 
 const popupState = ref<boolean>(false);
@@ -90,6 +95,14 @@ const fieldName = computed<string | undefined>(() => {
 const registrationId = computed<string | undefined>(() =>
   getStringValue(cellProps.row, 'id'),
 );
+
+const enabled = computed<boolean>(() => {
+  if (printing) {
+    return false;
+  }
+
+  return can('camp.registrations.edit');
+});
 
 const error = computed<string | null>(() => {
   if (!registrationId.value) {
@@ -185,6 +198,7 @@ error:
   registration_id: 'Registration ID was not found!'
   field_name: 'Field name is required!'
 </i18n>
+
 <i18n lang="yaml" locale="de">
 action:
   cancel: 'Abbrechen'
@@ -195,6 +209,7 @@ error:
   registration_id: 'Registrierungs-ID wurde nicht gefunden!'
   field_name: 'Feldname ist erforderlich!'
 </i18n>
+
 <i18n lang="yaml" locale="fr">
 action:
   cancel: 'Annuler'
@@ -204,6 +219,28 @@ error:
   hint: 'Veuillez mettre à jour la définition de la colonne.'
   registration_id: "L'ID d'enregistrement n'a pas été trouvé!"
   field_name: 'Le nom du champ est requis!'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  cancel: 'Anuluj'
+  save: 'Zapisz'
+
+error:
+  hint: 'Zaktualizuj definicję kolumny.'
+  registration_id: 'Nie znaleziono identyfikatora rejestracji!'
+  field_name: 'Nazwa pola jest wymagana!'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  cancel: 'Zrušit'
+  save: 'Uložit'
+
+error:
+  hint: 'Aktualizujte definici sloupce.'
+  registration_id: 'ID registrace nebylo nalezeno!'
+  field_name: 'Název pole je povinný!'
 </i18n>
 
 <style lang="scss" scoped></style>

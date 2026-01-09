@@ -41,14 +41,14 @@
     "@vitest/ui": "^3.2.4",
     "eslint": "^9.29.0",
     "prettier": "^3.6.0",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.2",
     "typescript-eslint": "^8.35.0",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "survey-core": "^2.2.1"
+    "survey-core": "^2.5.5"
   },
   "engines": {
-    "node": "^22"
+    "node": ">=22 <25"
   }
 }

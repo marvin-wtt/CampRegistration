@@ -78,6 +78,8 @@ export function useAuthService() {
   }
 
   async function refreshTokens(): Promise<AuthTokens> {
+    await requestCsrfToken();
+
     const response = await api.post('auth/refresh-tokens', undefined, {
       _skipRetry: true,
       _skipAuthenticationHandler: true,
@@ -210,7 +212,6 @@ export function useAuthService() {
     resetPassword,
     verifyEmail,
     sendEmailVerify,
-    requestCsrfToken,
     refreshTokens,
     setOnUnauthenticated,
     extractPartialAuthResponse,

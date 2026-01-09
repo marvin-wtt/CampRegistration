@@ -35,7 +35,7 @@
             v-model="data.countries"
             :disable="loading"
             :label="t('field.countries')"
-            :countries="['de', 'fr', 'pl']"
+            :countries="['de', 'fr', 'pl', 'cz']"
             :rules="[
               (val?: string[]) =>
                 (val && val.length > 0) || t('validation.countries.empty'),
@@ -250,8 +250,8 @@
             :disable="loading"
             :label="t('field.minAge')"
             :rules="[
-              (val?: number) => !!val || t('validation.minAge.empty'),
-              (val: number) => val > 0 || t('validation.minAge.positive'),
+              (val?: number) => val != null || t('validation.minAge.empty'),
+              (val: number) => val >= 0 || t('validation.minAge.nonNegative'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
             hide-bottom-space
@@ -270,9 +270,9 @@
             :disable="loading"
             :label="t('field.maxAge')"
             :rules="[
-              (val: number) => !!val || t('validation.maxAge.empty'),
+              (val: number) => val != null || t('validation.maxAge.empty'),
               (val: number) =>
-                (data.minAge && val >= data.minAge) ||
+                (data.minAge != null && val >= data.minAge) ||
                 t('validation.maxAge.min'),
               (val: number) => val < 100 || t('validation.minAge.max'),
             ]"
@@ -320,9 +320,8 @@
             :disable="loading"
             :label="t('field.price')"
             :rules="[
-              (val?: number) =>
-                !!val || val === 0 || t('validation.price.empty'),
-              (val: number) => val >= 0 || t('validation.price.positive'),
+              (val?: number) => val != null || t('validation.price.empty'),
+              (val: number) => val >= 0 || t('validation.price.nonNegative'),
             ]"
             hide-bottom-space
             input-class="text-right"
@@ -467,7 +466,7 @@ validation:
     empty: 'Please select an end time'
   minAge:
     empty: 'Please enter a minimum age'
-    positive: 'Minimum age must be a positive number'
+    nonNegative: 'Minimum age must not be negative'
     max: 'Minimum age must be less than 100'
   maxAge:
     empty: 'Please enter a maximum age'
@@ -478,7 +477,7 @@ validation:
     length: 'Location must not exceed 255 characters'
   price:
     empty: 'Please enter a price greater than or equal to 0'
-    positive: 'Price must be a positive number'
+    nonNegative: 'Price must not be negative'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -534,7 +533,7 @@ validation:
     empty: 'Bitte wählen Sie eine Endzeit aus'
   minAge:
     empty: 'Bitte geben Sie ein Mindestalter ein'
-    positive: 'Das Mindestalter muss eine positive Zahl sein'
+    nonNegative: 'Das Mindestalter darf nicht negativ sein'
     max: 'Das Mindestalter muss kleiner als 100 sein'
   maxAge:
     empty: 'Bitte geben Sie ein Höchstalter ein'
@@ -545,7 +544,7 @@ validation:
     length: 'Der Ort darf maximal 255 Zeichen haben'
   price:
     empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
-    positive: 'Der Preis muss eine positive Zahl sein'
+    nonNegative: 'Der Preis darf nicht negativ sein'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -601,7 +600,7 @@ validation:
     empty: 'Veuillez sélectionner une heure de fin'
   minAge:
     empty: 'Veuillez entrer un âge minimum'
-    positive: "L'âge minimum doit être un nombre positif"
+    nonNegative: "L'âge minimum ne doit pas être négatif"
     max: "L'âge minimum doit être inférieur à 100"
   maxAge:
     empty: 'Veuillez entrer un âge maximum'
@@ -612,5 +611,139 @@ validation:
     length: 'Le lieu ne doit pas dépasser 255 caractères'
   price:
     empty: 'Veuillez entrer un prix supérieur ou égal à 0'
-    positive: 'Le prix doit être un nombre positif'
+    nonNegative: 'Le prix ne doit pas être négatif'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+step:
+  general: 'Ogólne'
+  template: 'Szablon'
+  details: 'Szczegóły'
+  organizer: 'Organizator'
+  dates: 'Terminy'
+  participants: 'Uczestnicy'
+  settings: 'Ustawienia'
+
+field:
+  countries: 'Kraje'
+  name: 'Nazwa obozu'
+  use_template: 'Użyj innego obozu jako szablonu'
+  template:
+    label: 'Szablon'
+    options:
+      default: 'Domyślny'
+  organizer: 'Organizator'
+  contactEmail: 'E-mail kontaktowy'
+  maxParticipants: 'Maksymalna liczba uczestników'
+  dateRange: 'Data rozpoczęcia i zakończenia'
+  startTime: 'Godzina rozpoczęcia'
+  endTime: 'Godzina zakończenia'
+  minAge: 'Minimalny wiek'
+  maxAge: 'Maksymalny wiek'
+  location: 'Miejsce'
+  price: 'Cena'
+  public: 'Pokaż obóz na stronie głównej'
+
+validation:
+  countries:
+    empty: 'Wybierz co najmniej jeden kraj'
+  name:
+    empty: 'Podaj nazwę obozu'
+    length: 'Nazwa obozu może mieć maksymalnie 255 znaków'
+  template:
+    empty: 'Wybierz szablon'
+  organizer:
+    empty: 'Podaj organizatora'
+  contactEmail:
+    empty: 'Podaj adres e-mail'
+  maxParticipants:
+    empty: 'Podaj maksymalną liczbę uczestników'
+    positive: 'Maksymalna liczba uczestników musi być liczbą dodatnią'
+  dateRange:
+    empty: 'Wybierz datę rozpoczęcia i zakończenia'
+  startAt:
+    empty: 'Wybierz godzinę rozpoczęcia'
+  endAt:
+    empty: 'Wybierz godzinę zakończenia'
+  minAge:
+    empty: 'Podaj minimalny wiek'
+    nonNegative: 'Minimalny wiek nie może być liczbą ujemną'
+    max: 'Minimalny wiek musi być mniejszy niż 100'
+  maxAge:
+    empty: 'Podaj maksymalny wiek'
+    min: 'Maksymalny wiek musi być większy lub równy minimalnemu wiekowi'
+    max: 'Maksymalny wiek musi być mniejszy niż 100'
+  location:
+    empty: 'Podaj miejsce'
+    length: 'Miejsce może mieć maksymalnie 255 znaków'
+  price:
+    empty: 'Podaj cenę większą lub równą 0'
+    nonNegative: 'Cena nie może być ujemna'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+step:
+  general: 'Obecné'
+  template: 'Šablona'
+  details: 'Podrobnosti'
+  organizer: 'Organizátor'
+  dates: 'Termíny'
+  participants: 'Účastníci'
+  settings: 'Nastavení'
+
+field:
+  countries: 'Země'
+  name: 'Název tábora'
+  use_template: 'Použít jiný tábor jako šablonu'
+  template:
+    label: 'Šablona'
+    options:
+      default: 'Výchozí'
+  organizer: 'Organizátor'
+  contactEmail: 'Kontaktní e-mail'
+  maxParticipants: 'Maximální počet účastníků'
+  dateRange: 'Datum začátku a konce'
+  startTime: 'Čas začátku'
+  endTime: 'Čas konce'
+  minAge: 'Minimální věk'
+  maxAge: 'Maximální věk'
+  location: 'Místo'
+  price: 'Cena'
+  public: 'Zobrazit tábor na úvodní stránce'
+
+validation:
+  countries:
+    empty: 'Vyberte alespoň jednu zemi'
+  name:
+    empty: 'Zadejte název tábora'
+    length: 'Název tábora může mít maximálně 255 znaků'
+  template:
+    empty: 'Vyberte šablonu'
+  organizer:
+    empty: 'Zadejte organizátora'
+  contactEmail:
+    empty: 'Zadejte e-mailovou adresu'
+  maxParticipants:
+    empty: 'Zadejte maximální počet účastníků'
+    positive: 'Maximální počet účastníků musí být kladné číslo'
+  dateRange:
+    empty: 'Vyberte datum začátku a konce'
+  startAt:
+    empty: 'Vyberte čas začátku'
+  endAt:
+    empty: 'Vyberte čas konce'
+  minAge:
+    empty: 'Zadejte minimální věk'
+    nonNegative: 'Minimální věk nesmí být záporný'
+    max: 'Minimální věk musí být menší než 100'
+  maxAge:
+    empty: 'Zadejte maximální věk'
+    min: 'Maximální věk musí být větší nebo roven minimálnímu věku'
+    max: 'Maximální věk musí být menší než 100'
+  location:
+    empty: 'Zadejte místo'
+    length: 'Místo může mít maximálně 255 znaků'
+  price:
+    empty: 'Zadejte cenu větší nebo rovnou 0'
+    nonNegative: 'Cena nesmí být záporná'
 </i18n>

@@ -91,8 +91,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
     };
   };
 
-  const createRegistration = async (camp: Camp) => {
+  const createRegistration = async (
+    camp: Camp,
+    data?: Partial<Prisma.RegistrationCreateInput>,
+  ) => {
     return RegistrationFactory.create({
+      ...data,
       camp: { connect: { id: camp.id } },
     });
   };
@@ -1365,6 +1369,41 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
+      it('should not send update email when suppressed', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_updated',
+              subject: 'Registration updated',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/registrations/${registration.id}?suppressMessage=true`,
+          )
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(mailer.sendMail).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: data.email,
+            replyTo: camp.contactEmail,
+            subject: 'Registration updated',
+          }),
+        );
+      });
+
       it('should send waiting list confirmation', async () => {
         const { camp, accessToken } = await createCampWithManagerAndToken({
           ...campWithEmail,
@@ -1375,7 +1414,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
             }),
           },
         });
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(camp, {
+          waitingList: true,
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1669,6 +1710,37 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(204);
 
         expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'test@email.com',
+            replyTo: camp.contactEmail,
+            subject: 'Registration canceled',
+          }),
+        );
+      });
+
+      it('should not send email when suppressed', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_canceled',
+              subject: 'Registration canceled',
+            }),
+          },
+        });
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@email.com'],
+        });
+        await request()
+          .delete(
+            `/api/v1/camps/${camp.id}/registrations/${registration.id}?suppressMessage=true`,
+          )
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        expect(mailer.sendMail).not.toHaveBeenCalledWith(
           expect.objectContaining({
             to: 'test@email.com',
             replyTo: camp.contactEmail,

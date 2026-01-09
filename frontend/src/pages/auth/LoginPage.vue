@@ -227,3 +227,43 @@ action:
   register: "S'inscrire"
   forgot_password: 'Mot de passe oublié ?'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Zaloguj się'
+
+fields:
+  email:
+    label: 'E-mail'
+    rules:
+      required: 'Musisz podać prawidłowy adres e-mail'
+  password:
+    label: 'Hasło'
+    rules:
+      required: 'Musisz podać prawidłowe hasło'
+  remember: 'Pozostań zalogowany'
+
+action:
+  login: 'Zaloguj się'
+  register: 'Zarejestruj się'
+  forgot_password: 'Zapomniałeś hasła?'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Přihlásit se'
+
+fields:
+  email:
+    label: 'E-mail'
+    rules:
+      required: 'Musíte zadat platnou e-mailovou adresu'
+  password:
+    label: 'Heslo'
+    rules:
+      required: 'Musíte zadat platné heslo'
+  remember: 'Zůstat přihlášen'
+
+action:
+  login: 'Přihlásit se'
+  register: 'Registrovat se'
+  forgot_password: 'Zapomněli jste heslo?'
+</i18n>

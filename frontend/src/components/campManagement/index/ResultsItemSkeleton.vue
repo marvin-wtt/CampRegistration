@@ -11,49 +11,53 @@
 
     <q-item-section side>
       <div class="q-gutter-xs">
-        <!--        <q-skeleton-->
-        <!--          v-if="!props.public"-->
-        <!--          type="QBtn"-->
-        <!--          class="gt-xs"-->
-        <!--        />-->
+        <q-skeleton
+          v-if="!isPublic"
+          type="QBtn"
+          class="gt-xs"
+        />
 
-        <!--        <q-skeleton-->
-        <!--          v-if="!props.public"-->
-        <!--          type="QBtn"-->
-        <!--          class="gt-sm"-->
-        <!--        />-->
+        <q-skeleton
+          v-if="!isPublic"
+          type="QBtn"
+          class="gt-sm"
+        />
 
-        <!--        <q-skeleton-->
-        <!--          type="QBtn"-->
-        <!--          class="gt-xs"-->
-        <!--        />-->
+        <q-skeleton
+          type="QBtn"
+          class="gt-xs"
+        />
 
-        <!--        <q-skeleton-->
-        <!--          type="QBtn"-->
-        <!--          class="gt-sm"-->
-        <!--        />-->
+        <q-skeleton
+          type="QBtn"
+          class="gt-sm"
+        />
 
-        <!--        <q-skeleton-->
-        <!--          v-if="!props.public"-->
-        <!--          type="QBtn"-->
-        <!--          class="gt-sm"-->
-        <!--        />-->
+        <q-skeleton
+          v-if="!isPublic"
+          type="QBtn"
+          class="gt-sm"
+        />
 
-        <!--        <q-skeleton-->
-        <!--          v-if="!props.public"-->
-        <!--          type="QBtn"-->
-        <!--          class="gt-sm"-->
-        <!--        />-->
+        <q-skeleton
+          v-if="!isPublic"
+          type="QBtn"
+          class="gt-sm"
+        />
 
-        <!--        <q-skeleton-->
-        <!--          type="QBtn"-->
-        <!--          class="lt-md"-->
-        <!--        />-->
+        <q-skeleton
+          type="QBtn"
+          class="lt-md"
+        />
       </div>
     </q-item-section>
   </q-item>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+const { isPublic = false } = defineProps<{
+  isPublic?: boolean;
+}>();
+</script>
 
 <style scoped></style>

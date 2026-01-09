@@ -739,3 +739,49 @@ tooltip:
   undo: 'Annuler'
   redo: 'Rétablir'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+placeholder: 'Wpisz tutaj swoją wiadomość...'
+
+token:
+  label: 'Zmienne'
+
+tooltip:
+  formatBold: 'Pogrubienie'
+  formatItalic: 'Kursywa'
+  formatUnderlined: 'Podkreślenie'
+  formatStrikethrough: 'Przekreślenie'
+  formatColorText: 'Kolor tekstu'
+  formatColorFill: 'Kolor tła'
+  formatBulleted: 'Lista punktowana'
+  formatOrdered: 'Lista numerowana'
+  formatIndentDecrease: 'Zmniejsz wcięcie'
+  formatIndentIncrease: 'Zwiększ wcięcie'
+  formatClear: 'Wyczyść formatowanie'
+  addToken: 'Dodaj zmienną'
+  undo: 'Cofnij'
+  redo: 'Ponów'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+placeholder: 'Zadejte svou zprávu sem...'
+
+token:
+  label: 'Proměnné'
+
+tooltip:
+  formatBold: 'Tučné'
+  formatItalic: 'Kurzíva'
+  formatUnderlined: 'Podtržené'
+  formatStrikethrough: 'Přeškrtnuté'
+  formatColorText: 'Barva textu'
+  formatColorFill: 'Barva zvýraznění'
+  formatBulleted: 'Odrážkový seznam'
+  formatOrdered: 'Číslovaný seznam'
+  formatIndentDecrease: 'Zmenšit odsazení'
+  formatIndentIncrease: 'Zvětšit odsazení'
+  formatClear: 'Vymazat formátování'
+  addToken: 'Přidat proměnnou'
+  undo: 'Zpět'
+  redo: 'Znovu'
+</i18n>

@@ -181,3 +181,47 @@ field:
 action:
   save: 'Mettre à jour l’e-mail'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'E-mail'
+
+field:
+  confirmEmail:
+    label: 'Potwierdź e-mail'
+    rule:
+      required: 'Adres e-mail jest wymagany.'
+      match: 'Adresy e-mail nie są zgodne.'
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Adres e-mail jest wymagany.'
+  password:
+    label: 'Aktualne hasło'
+    rule:
+      required: 'Hasło jest wymagane.'
+
+action:
+  save: 'Zaktualizuj e-mail'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'E-mail'
+
+field:
+  confirmEmail:
+    label: 'Potvrďte e-mail'
+    rule:
+      required: 'E-mail je povinný.'
+      match: 'E-mailové adresy se neshodují.'
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail je povinný.'
+  password:
+    label: 'Aktuální heslo'
+    rule:
+      required: 'Heslo je povinné.'
+
+action:
+  save: 'Aktualizovat e-mail'
+</i18n>

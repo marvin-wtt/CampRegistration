@@ -74,3 +74,17 @@ delete:
   message: 'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.'
   label: 'E-mail'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+delete:
+  title: 'Trwale usuń swoje konto'
+  message: 'Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna.'
+  label: 'E-mail'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+delete:
+  title: 'Trvale odstranit účet'
+  message: 'Opravdu chcete odstranit svůj účet? Tato akce je nevratná.'
+  label: 'E-mail'
+</i18n>
