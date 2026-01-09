@@ -170,6 +170,9 @@ function mmToPx(mm: number): number {
   return (mm / 25.4) * 96;
 }
 
+const UPRIGHT_CLASS_NAME = 'print-sheet--upright' as const;
+const LEFT_CLASS_NAME = 'print-sheet--left' as const;
+
 function assignPageOrientation() {
   const pageWidthPx = mmToPx(210); // A4 width
   const marginPx = mmToPx(12 * 2); // left + right
@@ -181,7 +184,7 @@ function assignPageOrientation() {
   sheets.forEach((sheet) => {
     if (
       sheet.classList.contains('left') ||
-      sheet.classList.contains('upright')
+      sheet.classList.contains(UPRIGHT_CLASS_NAME)
     ) {
       // already assigned
       return;
@@ -191,7 +194,7 @@ function assignPageOrientation() {
     const table = sheet.querySelector<HTMLTableElement>('table');
 
     if (!table) {
-      sheet.classList.add('upright');
+      sheet.classList.add(UPRIGHT_CLASS_NAME);
       return;
     }
 
@@ -199,11 +202,9 @@ function assignPageOrientation() {
     const requiredWidth = table.scrollWidth;
 
     if (requiredWidth > printableWidthPx) {
-      sheet.classList.remove('print-sheet--upright');
-      sheet.classList.add('print-sheet--left');
+      sheet.classList.add(LEFT_CLASS_NAME);
     } else {
-      sheet.classList.remove('print-sheet--left');
-      sheet.classList.add('print-sheet--upright');
+      sheet.classList.add(UPRIGHT_CLASS_NAME);
     }
   });
 }
@@ -212,11 +213,13 @@ function printOrientationClass(
   orientation: 'portrait' | 'landscape' | undefined,
 ) {
   if (orientation === 'landscape') {
-    return 'print-sheet--left';
+    return LEFT_CLASS_NAME;
   }
   if (orientation === 'portrait') {
-    return 'print-sheet--upright';
+    return UPRIGHT_CLASS_NAME;
   }
+
+  return '';
 }
 
 async function waitForStableLayout() {
