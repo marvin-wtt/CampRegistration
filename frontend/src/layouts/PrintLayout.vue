@@ -40,6 +40,16 @@ quasar.dark.set(false);
   }
 }
 
+@page upright {
+  size: A4 portrait;
+  page-orientation: upright;
+}
+
+@page left {
+  size: A4 landscape;
+  page-orientation: rotate-left;
+}
+
 @media print {
   html,
   body,
@@ -51,6 +61,14 @@ quasar.dark.set(false);
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     margin: 0 !important; /* IMPORTANT: do not fight @page */
+  }
+
+  .print-sheet.print-sheet--upright {
+    page: upright;
+  }
+
+  .print-sheet.print-sheet--left {
+    page: left;
   }
 }
 </style>

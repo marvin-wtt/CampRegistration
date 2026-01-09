@@ -104,7 +104,7 @@
                 @click="openPrintDialog"
               >
                 <q-item-section avatar>
-                  <q-icon name="e8ad" />
+                  <q-icon name="print" />
                 </q-item-section>
                 <q-item-section>
                   {{ t('menu.print') }}

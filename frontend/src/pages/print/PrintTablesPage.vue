@@ -33,6 +33,7 @@
         v-for="(template, i) in payload.templates"
         :key="template.id ?? i"
         class="print-sheet"
+        :class="printOrientationClass(template.printOptions?.orientation)"
       >
         <header class="print-header">
           <div class="print-header__title">
@@ -164,6 +165,63 @@ async function waitForFonts() {
   }
 }
 
+function mmToPx(mm: number): number {
+  // CSS inches are fixed: 96px per inch
+  return (mm / 25.4) * 96;
+}
+
+const UPRIGHT_CLASS_NAME = 'print-sheet--upright' as const;
+const LEFT_CLASS_NAME = 'print-sheet--left' as const;
+
+function assignPageOrientation() {
+  const pageWidthPx = mmToPx(210); // A4 width
+  const marginPx = mmToPx(12 * 2); // left + right
+  const printableWidthPx = pageWidthPx - marginPx;
+
+  const sheets = document.querySelectorAll<HTMLElement>('.print-sheet');
+  console.log(sheets.length);
+
+  sheets.forEach((sheet) => {
+    if (
+      sheet.classList.contains('left') ||
+      sheet.classList.contains(UPRIGHT_CLASS_NAME)
+    ) {
+      // already assigned
+      return;
+    }
+
+    // IMPORTANT: target the actual <table>, not q-table wrappers
+    const table = sheet.querySelector<HTMLTableElement>('table');
+
+    if (!table) {
+      sheet.classList.add(UPRIGHT_CLASS_NAME);
+      return;
+    }
+
+    // scrollWidth = real required width
+    const requiredWidth = table.scrollWidth;
+
+    if (requiredWidth > printableWidthPx) {
+      sheet.classList.add(LEFT_CLASS_NAME);
+    } else {
+      sheet.classList.add(UPRIGHT_CLASS_NAME);
+    }
+  });
+}
+
+function printOrientationClass(
+  orientation: 'portrait' | 'landscape' | undefined,
+) {
+  if (orientation === 'landscape') {
+    return LEFT_CLASS_NAME;
+  }
+  if (orientation === 'portrait') {
+    return UPRIGHT_CLASS_NAME;
+  }
+
+  return '';
+}
+
 async function waitForStableLayout() {
   await nextTick();
   await waitForFonts();
@@ -212,6 +270,8 @@ onMounted(async () => {
   postToParent({ type: 'PRINT_TABLES:LOADED' });
 
   await waitForStableLayout();
+
+  assignPageOrientation();
 
   // Ready → parent can call iframeWindow.print() too, but we can auto-print.
   postToParent({ type: 'PRINT_TABLES:READY' });
