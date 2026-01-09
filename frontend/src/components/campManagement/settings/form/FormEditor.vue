@@ -50,6 +50,7 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
+import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -67,40 +68,20 @@ const { locale } = useI18n();
 PropertyGridEditorCollection.register(campDataMapping);
 
 // Add localization
-const deLocale = localization.getLocale('de');
-deLocale.qt.address = 'Adresse';
-deLocale.qt.country = 'Land';
-deLocale.qt.date_of_birth = 'Geburtstag';
-deLocale.qt.role = 'Rolle';
-deLocale.p.campDataType = 'Daten-Tag';
-deLocale.pehelp.campDataType =
-  'Wählen Sie aus, welche Art von Daten der Benutzer eingibt. ' +
-  'Die Informationen werden dem Dienst unabhängig vom ' +
-  'Feldnamen zur Verfügung gestellt.';
+for (const [locale, sections] of Object.entries(
+  surveyCreatorCustomLocaleConfig,
+)) {
+  const l = localization.getLocale(locale);
 
-const enLocale = localization.getLocale('en');
-enLocale.qt.address = 'Address';
-enLocale.qt.country = 'Country';
-enLocale.qt.date_of_birth = 'Birthday';
-enLocale.qt.rolle = 'Role';
-enLocale.p.campDataType = 'Data Tag';
-enLocale.pehelp.campDataType =
-  'Select what type of data the user enters. ' +
-  'The information makes information available to the service regardless of the ' +
-  'field name.';
+  Object.keys(sections).forEach((key) => {
+    const target = l[key];
+    const source = sections[key as keyof typeof sections];
 
-const frLocale = localization.getLocale('fr');
-frLocale.qt.address = 'Adresse';
-frLocale.qt.country = 'Pays';
-frLocale.qt.date_of_birth = 'Date de Naissance';
-frLocale.qt.role = 'Rôle';
-frLocale.p.campDataType = 'Étiquette de données';
-frLocale.pehelp.campDataType =
-  'Sélectionnez le type de données que l’utilisateur saisit. ' +
-  'Les informations sont mises à la disposition du service indépendamment du ' +
-  'nom du champ.';
-
-// TODO Add translations
+    if (target && typeof target === 'object' && source) {
+      Object.assign(target, source);
+    }
+  });
+}
 
 const creatorOptions: ICreatorOptions = {
   showLogicTab: true,

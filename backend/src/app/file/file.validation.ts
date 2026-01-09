@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const stream = z.object({
   params: z.object({
-    fileId: z.string().ulid(),
+    fileId: z.ulid(),
   }),
   query: z
     .object({
@@ -13,7 +13,7 @@ const stream = z.object({
 
 const show = z.object({
   params: z.object({
-    fileId: z.string().ulid(),
+    fileId: z.ulid(),
   }),
 });
 
@@ -33,11 +33,14 @@ const store = z.object({
     field: z.string().optional(),
     accessLevel: z.string().optional(),
   }),
+  file: z.custom<Express.Multer.File>((file) => {
+    return file !== undefined;
+  }),
 });
 
 const destroy = z.object({
   params: z.object({
-    fileId: z.string().ulid(),
+    fileId: z.ulid(),
   }),
 });
 

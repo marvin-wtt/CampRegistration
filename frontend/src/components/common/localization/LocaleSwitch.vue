@@ -9,6 +9,7 @@
           v-for="option in options"
           :key="option.value"
           clickable
+          v-close-popup
           v-ripple
           @click="locale = option.value"
         >

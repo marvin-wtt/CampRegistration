@@ -11,7 +11,7 @@ import { PlainLight, PlainDark } from 'survey-core/themes';
 import { useAPIService } from 'src/services/APIService';
 
 export function startAutoDataUpdate(
-  model: Ref<SurveyModel | undefined>,
+  model: SurveyModel,
   data: Ref<CampDetails | undefined>,
   files: Ref<ServiceFile[] | undefined>,
 ) {
@@ -19,19 +19,15 @@ export function startAutoDataUpdate(
   const { locale } = useI18n();
 
   watch(locale, (value) => {
-    updateVariables(model.value, data.value, files.value, value);
-  });
-
-  watch(model, (value) => {
-    updateVariables(value, data.value, files.value, locale.value);
+    updateVariables(model, data.value, files.value, value);
   });
 
   watch(data, (value) => {
-    updateVariables(model.value, value, files.value, locale.value);
+    updateVariables(model, value, files.value, locale.value);
   });
 
   watch(files, (value) => {
-    updateVariables(model.value, data.value, value, locale.value);
+    updateVariables(model, data.value, value, locale.value);
   });
 
   const updateVariables = (
@@ -61,10 +57,12 @@ export function startAutoDataUpdate(
       });
     }
   };
+
+  updateVariables(model, data.value, files.value, locale.value);
 }
 
 export const startAutoThemeUpdate = (
-  model: Ref<SurveyModel | undefined>,
+  model: SurveyModel,
   data: Ref<CampDetails | undefined>,
   bgColor?: Ref<string | undefined> | undefined,
 ) => {
@@ -108,6 +106,6 @@ export const startAutoThemeUpdate = (
   };
 
   watchEffect(() => {
-    applyTheme(model.value, data.value, quasar.dark.isActive);
+    applyTheme(model, data.value, quasar.dark.isActive);
   });
 };
