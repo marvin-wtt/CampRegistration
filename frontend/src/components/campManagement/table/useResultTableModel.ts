@@ -117,19 +117,10 @@ export function useResultTableModel(
     // Role
     if (template.value.filterRoles) {
       r = r.filter((row) => {
-        const role = row.computedData.role;
-
         // If no role is set for a given registration, it is assumed that it is a participant registration
-        if (
-          template.value.filterRoles?.includes('participant') &&
-          role === null
-        ) {
-          return false;
-        }
+        const role = row.computedData.role ?? 'participant';
 
-        return !template.value.filterRoles?.some(
-          (filterRole) => filterRole === role,
-        );
+        return !template.value.filterRoles!.includes(role);
       });
     }
 
