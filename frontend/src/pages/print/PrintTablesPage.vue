@@ -77,9 +77,7 @@ import { useRoute } from 'vue-router';
 import ResultTablePrint from 'components/campManagement/table/ResultTablePrint.vue';
 import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useQuasar } from 'quasar';
 
-const quasar = useQuasar();
 const route = useRoute();
 const { to } = useObjectTranslation();
 
@@ -120,17 +118,17 @@ watch(payload, (value) => {
 });
 
 function formatDate(iso: string, locale?: string): string {
+  const date = new Date(iso);
   try {
-    const d = new Date(iso);
     return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(d);
+    }).format(date);
   } catch {
-    return new Date().toISOString();
+    return date.toISOString();
   }
 }
 
@@ -196,18 +194,8 @@ function onAfterPrint() {
   }
 }
 
-function onMessage(e: MessageEvent) {
-  quasar.notify({
-    type: 'negative',
-    message: 'Print error',
-    caption: e.data?.message ?? e.data?.error ?? 'Unknown error',
-    timeout: 2000,
-  });
-}
-
 onMounted(async () => {
   window.addEventListener('afterprint', onAfterPrint);
-  window.addEventListener('message', onMessage);
 
   // Load payload (sessionStorage is simplest)
   const p = readPayloadFromSessionStorage();
@@ -233,7 +221,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('afterprint', onAfterPrint);
-  window.removeEventListener('message', onMessage);
 });
 </script>
 

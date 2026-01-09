@@ -46,14 +46,14 @@
           option-label="title"
           option-value="id"
           style="min-width: 150px"
-          @update:model-value="onTemplateChange()"
+          @update:model-value="onTemplateChange"
         >
           <template #selected-item="scope">
             {{ to(scope.opt.title) }}
           </template>
           <template #option="scope">
             <!-- Custom separator for plain option -->
-            <q-separator v-if="scope.opt.id === -1" />
+            <q-separator v-if="scope.opt.id === '-1'" />
 
             <q-item v-bind="scope.itemProps">
               <q-item-section>
