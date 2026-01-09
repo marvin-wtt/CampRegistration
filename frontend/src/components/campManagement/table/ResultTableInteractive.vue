@@ -97,17 +97,17 @@
 
               <q-separator />
 
-              <!-- Export -->
+              <!-- Print -->
               <q-item
                 v-close-popup
                 clickable
-                @click="openExportDialog"
+                @click="openPrintDialog"
               >
                 <q-item-section avatar>
-                  <q-icon name="download" />
+                  <q-icon name="e8ad" />
                 </q-item-section>
                 <q-item-section>
-                  {{ t('menu.download') }}
+                  {{ t('menu.print') }}
                 </q-item-section>
               </q-item>
             </q-list>
@@ -221,7 +221,7 @@ function onTemplateChange() {
   router.replace({ hash: `#${template.value?.id}` });
 }
 
-function openExportDialog() {
+function openPrintDialog() {
   quasar
     .dialog({
       component: PrintTableDialog,
@@ -299,7 +299,7 @@ template: 'Template'
 title: 'Participants'
 
 menu:
-  download: 'Download Table'
+  print: 'Print tables'
   edit_templates: 'Edit templates'
 
 filter:
@@ -311,7 +311,7 @@ template: 'Vorlage'
 title: 'Teilnehmende'
 
 menu:
-  download: 'Tabelle herunterladen'
+  print: 'Tabellen drucken'
   edit_templates: 'Vorlagen bearbeiten'
 
 filter:
@@ -323,7 +323,7 @@ template: 'Modèle'
 title: 'Participants'
 
 menu:
-  download: 'Télécharger le tableau'
+  print: 'Imprimer les tableaux'
   edit_templates: 'Modifier les modèles'
 
 filter:
@@ -335,7 +335,7 @@ template: 'Szablon'
 title: 'Uczestnicy'
 
 menu:
-  download: 'Pobierz tabelę'
+  print: 'Wydrukuj tabele'
   edit_templates: 'Edytuj szablony'
 
 filter:
@@ -347,7 +347,7 @@ template: 'Šablona'
 title: 'Účastníci'
 
 menu:
-  download: 'Stáhnout tabulku'
+  print: 'Tisknout tabulky'
   edit_templates: 'Upravit šablony'
 
 filter:
