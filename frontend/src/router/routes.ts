@@ -237,6 +237,17 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/print',
+    component: () => import('layouts/PrintLayout.vue'),
+    children: [
+      {
+        path: 'tables',
+        name: 'print.tables',
+        component: () => import('pages/print/PrintTablesPage.vue'),
+      },
+    ],
+  },
   // Always leave this as last one,
   // but you can also remove it
   {
