@@ -1,18 +1,18 @@
 import type { Request } from 'express';
-import { type AnyZodObject, type z, ZodError } from 'zod';
+import { type ZodObject, type z, ZodError } from 'zod';
 import { fromError } from 'zod-validation-error';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import fileService from '#app/file/file.service';
 import logger from '#core/logger';
 
-export async function validateRequest<T extends AnyZodObject>(
+export async function validateRequest<T extends ZodObject>(
   req: Request,
   schema: T,
 ): Promise<Readonly<z.infer<T>>> {
   try {
     // It is important to await here to catch the error
-    return await schema.readonly().parseAsync(req);
+    return (await schema.readonly().parseAsync(req)) as Readonly<z.infer<T>>;
   } catch (err) {
     handleFileError(req);
 

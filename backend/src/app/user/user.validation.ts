@@ -5,7 +5,7 @@ const RoleSchema = z.enum(['USER', 'ADMIN']);
 
 const show = z.object({
   params: z.object({
-    userId: z.string().ulid(),
+    userId: z.ulid(),
   }),
 });
 
@@ -13,7 +13,7 @@ const index = z.object({
   query: z
     .object({
       name: z.string(),
-      email: z.string().email(),
+      email: z.email(),
       role: z.string(),
       sortBy: z.string(),
       limit: z.number().int().positive(),
@@ -24,7 +24,7 @@ const index = z.object({
 
 const store = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: z.email(),
     password: PasswordSchema,
     name: z.string(),
     role: RoleSchema.optional(),
@@ -35,11 +35,11 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    userId: z.string().ulid(),
+    userId: z.ulid(),
   }),
   body: z
     .object({
-      email: z.string().email(),
+      email: z.email(),
       password: PasswordSchema,
       name: z.string(),
       role: RoleSchema,
@@ -52,7 +52,7 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    userId: z.string().ulid(),
+    userId: z.ulid(),
   }),
 });
 

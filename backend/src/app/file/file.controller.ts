@@ -68,12 +68,8 @@ class FileController extends BaseController {
   async store(req: Request, res: Response) {
     const {
       body: { accessLevel, field, name },
+      file,
     } = await req.validate(validator.store);
-    const file = req.file;
-
-    if (!file) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'No files provided.');
-    }
 
     const model = this.getRelationModel(req);
     const data = await fileService.saveModelFile(

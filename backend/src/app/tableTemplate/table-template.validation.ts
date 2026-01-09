@@ -1,22 +1,20 @@
 import { z } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 
-const StringOrFunctionSchema = z.union([z.string(), z.function()]);
-
 const TableTemplateBodySchema = z.object({
   title: translatedValue(z.string()),
   columns: z.array(
     z.object({
       name: z.string(),
       source: z.enum(['form', 'custom']).optional(),
-      field: StringOrFunctionSchema,
+      field: z.string(),
       label: translatedValue(z.string()),
       required: z.boolean().optional(),
       align: z.enum(['left', 'right', 'center']).optional(),
       sortable: z.boolean().optional(),
       sortOrder: z.enum(['ad', 'da']).optional(),
-      style: StringOrFunctionSchema.optional(),
-      classes: StringOrFunctionSchema.optional(),
+      style: z.string().optional(),
+      classes: z.string().optional(),
       headerStyle: z.string().optional(),
       headerClasses: z.string().optional(),
       renderAs: z.string().optional(),
@@ -46,36 +44,36 @@ const TableTemplateBodySchema = z.object({
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    tableTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    tableTemplateId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    tableTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    tableTemplateId: z.ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    tableTemplateId: z.string().ulid(),
+    campId: z.ulid(),
+    tableTemplateId: z.ulid(),
   }),
 });
 

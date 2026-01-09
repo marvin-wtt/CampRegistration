@@ -9,7 +9,7 @@ async function main() {
 
   const app = createApp();
 
-  const server = app.listen(config.port, '', () => {
+  const server = app.listen(config.port, () => {
     logger.info(`Listening to port ${config.port.toString()}`);
   });
 
