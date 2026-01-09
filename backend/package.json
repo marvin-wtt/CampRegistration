@@ -94,7 +94,7 @@
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^4.3.5",
-    "zod-validation-error": "^3.5.2"
+    "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
