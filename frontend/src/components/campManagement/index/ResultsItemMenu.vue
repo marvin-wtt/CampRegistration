@@ -94,7 +94,7 @@ import { useI18n } from 'vue-i18n';
 import { usePermissions } from 'src/composables/permissions';
 
 const { t } = useI18n();
-const { can } = usePermissions();
+const { canFor } = usePermissions();
 
 const { camp, active = false } = defineProps<{
   camp: Camp;
@@ -108,6 +108,12 @@ const emit = defineEmits<{
   (e: 'disable'): void;
   (e: 'delete'): void;
 }>();
+
+type Tail<T extends unknown[]> = T extends [unknown, ...infer Rest] ? Rest : [];
+
+function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
+  return canFor(camp.id, ...permissions);
+}
 </script>
 
 <i18n lang="yaml" locale="en">

@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { translatedValue, BooleanStringSchema } from '#core/validation/helper';
+import { translatedValue } from '#core/validation/helper';
 import type { Camp } from '#/generated/prisma/client.js';
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
@@ -13,11 +13,11 @@ const index = z.object({
     .object({
       // Filter
       name: z.string(),
-      startAt: z.string().datetime(),
-      endAt: z.string().datetime(),
+      startAt: z.iso.datetime(),
+      endAt: z.iso.datetime(),
       age: z.coerce.number(),
       country: z.string().length(2),
-      showAll: BooleanStringSchema,
+      showAll: z.coerce.boolean(),
       // Options
       page: z.coerce.number().positive(),
       limit: z.coerce.number().int().positive(),
@@ -48,23 +48,17 @@ const store = z.object({
       countries: z.array(z.string().length(2)).min(1),
       name: translatedValue(z.string()),
       organizer: translatedValue(z.string()),
-      contactEmail: translatedValue(z.string().email()),
+      contactEmail: translatedValue(z.email()),
       maxParticipants: translatedValue(z.number().int().nonnegative()),
-      startAt: z
-        .string()
-        .datetime()
-        .transform((val) => new Date(val)),
-      endAt: z
-        .string()
-        .datetime()
-        .transform((val) => new Date(val)),
+      startAt: z.iso.datetime().transform((val) => new Date(val)),
+      endAt: z.iso.datetime().transform((val) => new Date(val)),
       minAge: z.number().int().nonnegative(),
       maxAge: z.number().int().max(99),
       location: translatedValue(z.string()),
       price: z.number().multipleOf(0.01).nonnegative(),
-      form: z.record(z.unknown()).optional(),
+      form: z.record(z.string(), z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
-      referenceCampId: z.string().ulid().optional(),
+      referenceCampId: z.ulid().optional(),
     })
     .superRefine((val, ctx) => {
       const recordKeys = [
@@ -86,6 +80,7 @@ const store = z.object({
             code: 'custom',
             message: 'Missing or invalid key(s)',
             path: [key],
+            input: val[key],
           });
         }
       }
@@ -104,6 +99,7 @@ const store = z.object({
             code: 'custom',
             message: 'Min value must be smaller than or equal to max value',
             path: [keyMin],
+            input: val[keyMin],
           });
         }
       }
@@ -113,7 +109,7 @@ const store = z.object({
 const update = (camp: Camp) =>
   z.object({
     params: z.object({
-      campId: z.string().ulid(),
+      campId: z.ulid(),
     }),
     body: z
       .object({
@@ -122,21 +118,15 @@ const update = (camp: Camp) =>
         countries: z.array(z.string().length(2)).min(1),
         name: translatedValue(z.string()),
         organizer: translatedValue(z.string()),
-        contactEmail: translatedValue(z.string().email()),
+        contactEmail: translatedValue(z.email()),
         maxParticipants: translatedValue(z.number().int().nonnegative()),
-        startAt: z
-          .string()
-          .datetime()
-          .transform((val) => new Date(val)),
-        endAt: z
-          .string()
-          .datetime()
-          .transform((val) => new Date(val)),
+        startAt: z.iso.datetime().transform((val) => new Date(val)),
+        endAt: z.iso.datetime().transform((val) => new Date(val)),
         minAge: z.number().int().nonnegative(),
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),
         price: z.number().nonnegative().multipleOf(0.01),
-        form: z.record(z.unknown()),
+        form: z.record(z.string(), z.unknown()),
         themes: z.record(z.string(), z.unknown()),
       })
       .partial()
@@ -161,6 +151,7 @@ const update = (camp: Camp) =>
               code: 'custom',
               message: 'Missing or invalid key(s)',
               path: [key],
+              input: val[key],
             });
           }
         }
@@ -179,6 +170,7 @@ const update = (camp: Camp) =>
               code: 'custom',
               message: 'Min value must be smaller than or equal to max value',
               path: [keyMin],
+              input: val[keyMin],
             });
           }
         }
@@ -187,7 +179,7 @@ const update = (camp: Camp) =>
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 

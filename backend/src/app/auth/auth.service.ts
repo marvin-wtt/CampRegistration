@@ -72,6 +72,7 @@ export class AuthService extends BaseService {
     if (user?.email !== email) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
+
     await userService.updateUserById(user.id, {
       password,
       emailVerified: true,

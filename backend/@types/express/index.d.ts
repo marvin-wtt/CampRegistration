@@ -11,7 +11,7 @@ import type {
   Room,
   File,
 } from 'src/generated/prisma/client.js';
-import type { AnyZodObject, z } from 'zod';
+import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 
 declare global {
@@ -39,7 +39,7 @@ declare global {
       models: Models;
 
       // Validation
-      validate: <T extends AnyZodObject>(
+      validate: <T extends ZodObject>(
         schema: T,
       ) => Promise<Readonly<z.infer<T>>>;
 

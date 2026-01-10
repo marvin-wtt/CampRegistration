@@ -5,7 +5,7 @@ const store = z.object({
     message: z.string(),
     location: z.string().optional(),
     userAgent: z.string().optional(),
-    email: z.string().email().optional(),
+    email: z.email().optional(),
   }),
 });
 

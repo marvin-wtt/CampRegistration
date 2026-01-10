@@ -1,24 +1,24 @@
 import { z } from 'zod';
-import { BooleanStringSchema, LocaleSchema } from '#core/validation/helper';
+import { LocaleSchema } from '#core/validation/helper';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    registrationId: z.string().ulid(),
+    campId: z.ulid(),
+    registrationId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
     data: RegistrationDataSchema,
@@ -28,8 +28,8 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    registrationId: z.string().ulid(),
+    campId: z.ulid(),
+    registrationId: z.ulid(),
   }),
   body: z
     .object({
@@ -40,19 +40,19 @@ const update = z.object({
     .partial(),
   query: z
     .object({
-      suppressMessage: BooleanStringSchema,
+      suppressMessage: z.coerce.boolean(),
     })
     .partial(),
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    registrationId: z.string().ulid(),
+    campId: z.ulid(),
+    registrationId: z.ulid(),
   }),
   query: z
     .object({
-      suppressMessage: BooleanStringSchema,
+      suppressMessage: z.coerce.boolean(),
     })
     .partial(),
 });

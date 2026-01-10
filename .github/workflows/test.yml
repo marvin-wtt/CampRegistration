@@ -48,7 +48,7 @@ jobs:
           node-version: 24
 
       - name: Install prisma
-        run: npm i prisma
+        run: npm i prisma@6
 
       - name: Verify migrations
         run: >
@@ -92,6 +92,7 @@ jobs:
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
       SMTP_PORT: 587
+      SMTP_SECURE: false
       SMTP_USERNAME: user
       SMTP_PASSWORD: password
       EMAIL_FROM: noreply@yourapp.com
@@ -189,9 +190,9 @@ jobs:
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       SMTP_HOST: localhost
       SMTP_PORT: 1025
+      SMTP_SECURE: false
       SMTP_USERNAME: user
       SMTP_PASSWORD: password
-      SMTP_SECURE: false
       EMAIL_FROM: noreply@yourapp.com
       EMAIL_REPLY_TO: noreply@yourapp.com
       EMAIL_ADMIN: admin@yourapp.com
