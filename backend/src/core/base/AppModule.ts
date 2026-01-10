@@ -22,4 +22,6 @@ export interface AppModule {
   registerRoutes?(router?: Router): void;
 
   registerPermissions?(): RoleToPermissions<Permission>;
+
+  shutdown?(): Promise<void> | void;
 }

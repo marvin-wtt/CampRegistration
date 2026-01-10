@@ -1,7 +1,7 @@
 export default {
   email: {
     managerNotification: {
-      subject: 'Nová registrace',
+      subject: 'Nová registrace | {{ camp.name }}',
       preview: 'Nová registrace na tábor: {{ camp.name }}',
       text: {
         title: 'Dobrý den,',

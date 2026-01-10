@@ -1,4 +1,4 @@
-import prisma from './prisma';
+import prisma from './prisma.js';
 import { PrismaPromise } from '@prisma/client';
 
 export default async () => {
@@ -6,7 +6,7 @@ export default async () => {
   const transactions: PrismaPromise<any>[] = [];
   transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`);
 
-  const db = process.env.DATABASE_URL.split('/')[3];
+  const db = process.env.DATABASE_URL?.split('/')[3];
 
   const tableNames = await prisma.$queryRaw<
     Array<{ TABLE_NAME: string }>
