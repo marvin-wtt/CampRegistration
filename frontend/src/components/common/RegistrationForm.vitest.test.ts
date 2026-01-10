@@ -30,14 +30,14 @@ describe('RegistrationForm', () => {
     themes: {},
   };
 
-  it('should mount', async () => {
+  it('should mount', () => {
     const wrapper = mount(RegistrationForm, {
       props: {
         campDetails: {
           ...simpleCampDetails,
         },
-        submitFn: () => Promise.reject(),
-        uploadFileFn: () => Promise.reject(),
+        submitFn: () => Promise.reject(new Error()),
+        uploadFileFn: () => Promise.reject(new Error()),
       },
     });
     expect(wrapper.exists()).toBeTruthy();

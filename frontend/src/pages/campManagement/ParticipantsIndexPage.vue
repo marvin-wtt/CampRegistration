@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import ResultTableInteractive from 'components/campManagement/table/ResultTableInteractive.vue';
@@ -41,9 +41,13 @@ const quasar = useQuasar();
 const { locale } = useI18n();
 const { to } = useObjectTranslation();
 
-campDetailStore.fetchData();
-registrationStore.fetchData();
-templateStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([
+    campDetailStore.fetchData(),
+    registrationStore.fetchData(),
+    templateStore.fetchData(),
+  ]);
+});
 
 const loading = computed<boolean>(() => {
   return (
@@ -73,7 +77,7 @@ const columns = computed<TableColumnTemplate[]>(() => {
   );
 });
 
-async function onTemplatesPrint(templateIds: string[]) {
+function onTemplatesPrint(templateIds: string[]) {
   if (!templateStore.data || !camp.value) {
     return;
   }

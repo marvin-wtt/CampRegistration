@@ -165,7 +165,6 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
 
   // An error was thrown here in production - not sure why it should be nullish
   if (!options.value) {
-    console.warn('Options has no value');
     return;
   }
 
@@ -225,7 +224,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     survey.onTextMarkdown.add((_, options) => {
       options.html = marked.parseInline(options.text, {
         async: false,
-      }) as string;
+      });
     });
   }
 

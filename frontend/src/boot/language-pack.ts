@@ -19,13 +19,18 @@ function updateLang(lang: string) {
     return;
   }
 
-  module().then((lang) => {
-    if (!lang || typeof lang !== 'object' || !('default' in lang)) {
-      return;
-    }
+  module()
+    .then((lang) => {
+      if (!lang || typeof lang !== 'object' || !('default' in lang)) {
+        return;
+      }
 
-    Quasar.lang.set(lang?.default as unknown as QuasarLanguage);
-  });
+      Quasar.lang.set(lang?.default as QuasarLanguage);
+    })
+    .catch(() => {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load Quasar language pack');
+    });
 }
 
 export default defineBoot(({ app }) => {

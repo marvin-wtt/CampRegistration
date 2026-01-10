@@ -69,7 +69,11 @@ export const useAuthStore = defineStore('auth', () => {
     resetDefault();
   }
 
-  async function init() {
+  async function init(forceRefresh = false) {
+    if (profileStore.user && !forceRefresh) {
+      return;
+    }
+
     const authenticated = await refreshTokens();
     if (!authenticated) {
       // Redirect, in case the user is not authenticated
@@ -187,7 +191,10 @@ export const useAuthStore = defineStore('auth', () => {
     const expires = new Date(tokens.access.expires);
     const now = Date.now();
     const refreshTime = expires.getTime() - now - 1000 * 60;
-    accessTokenTimer = setTimeout(refreshTokens, refreshTime);
+    accessTokenTimer = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      refreshTokens().catch(console.error);
+    }, refreshTime);
   }
 
   async function logout(): Promise<void> {

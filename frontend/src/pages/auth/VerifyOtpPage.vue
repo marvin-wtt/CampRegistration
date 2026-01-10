@@ -84,7 +84,7 @@ const otp = ref<string>('');
 authStore.reset();
 
 function verify() {
-  authStore.verifyOtp(otp.value);
+  void authStore.verifyOtp(otp.value);
 }
 </script>
 

@@ -22,7 +22,7 @@ const timeIntervals = {
   year: 12,
 };
 
-const timestamp = computed<string | unknown>(() => {
+const timestamp = computed<unknown>(() => {
   if (typeof cellProps.value !== 'string') {
     return cellProps.value;
   }

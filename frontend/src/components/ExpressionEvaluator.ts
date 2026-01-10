@@ -316,7 +316,7 @@ export class ExpressionEvaluator {
             `Unsupported expression unary operator as suffix: ${expression.operator}`,
           );
         }
-        if (!isNotNullOrUndefined(argument)) {
+        if (!isNumber(argument)) {
           throw new Error(
             `Unsupported expression value for unary operator: ${expression.operator}`,
           );

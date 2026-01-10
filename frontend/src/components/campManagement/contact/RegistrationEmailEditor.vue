@@ -42,6 +42,7 @@ const campTokens: (keyof CampDetails)[] = [
 ];
 
 const tokens = computed<
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   TokenNode<RegistrationComputedPath | RegistrationDataPath>[]
 >(() => {
   return [

@@ -95,7 +95,7 @@ function formatDate(dateString: string | Date) {
 }
 
 function navigateToRegistration() {
-  router.push({
+  void router.push({
     name: 'camp',
     params: {
       camp: props.camp.id,

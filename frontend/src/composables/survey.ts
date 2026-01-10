@@ -64,11 +64,11 @@ export function startAutoDataUpdate(
 export const startAutoThemeUpdate = (
   model: SurveyModel,
   data: Ref<CampDetails | undefined>,
-  bgColor?: Ref<string | undefined> | undefined,
+  bgColor?: Ref<string | undefined>,
 ) => {
   const quasar = useQuasar();
 
-  const applyTheme = (
+  const applyTheme = async (
     model: SurveyModel | undefined,
     data: CampDetails | undefined,
     dark: boolean,
@@ -97,7 +97,8 @@ export const startAutoThemeUpdate = (
     if (!bgColor) {
       return;
     }
-    nextTick(() => {
+
+    await nextTick(() => {
       const element = document.getElementById('survey');
       if (element) {
         bgColor.value = window.getComputedStyle(element).backgroundColor;
@@ -106,6 +107,6 @@ export const startAutoThemeUpdate = (
   };
 
   watchEffect(() => {
-    applyTheme(model, data.value, quasar.dark.isActive);
+    void applyTheme(model, data.value, quasar.dark.isActive);
   });
 };

@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
@@ -133,8 +133,10 @@ const {
 
 // TODO Inform camp bus go update or update registrations
 
-registrationsStore.fetchData();
-fetchRooms();
+onMounted(async () => {
+  await registrationsStore.fetchData();
+  await fetchRooms();
+});
 
 const loading = computed<boolean>(() => {
   return registrationsStore.isLoading || isLoading.value;
@@ -205,7 +207,7 @@ function addRoom() {
       },
     })
     .onOk((payload: RoomCreateData) => {
-      createRoom(payload);
+      void createRoom(payload);
     });
 }
 
@@ -223,7 +225,7 @@ function editRoom(room: RoomWithRoommates): void {
       },
     })
     .onOk((payload: RoomUpdateData) => {
-      updateRoom(room.id, payload);
+      void updateRoom(room.id, payload);
     });
 }
 
@@ -237,7 +239,7 @@ function orderRooms() {
       persistent: true,
     })
     .onOk((payload: RoomWithRoommates[]) => {
-      bulkUpdateRooms(payload);
+      void bulkUpdateRooms(payload);
     });
 }
 
@@ -246,7 +248,7 @@ function onBedUpdate(
   position: number,
   roommate: Roommate | null,
 ) {
-  updateBed(room, position, roommate);
+  void updateBed(room, position, roommate);
 }
 
 async function createRoom(
@@ -325,7 +327,7 @@ async function updateBed(
     return;
   }
 
-  asyncUpdate(() => {
+  await asyncUpdate(() => {
     return withErrorNotification('update-bed', () => {
       const updatedBed = apiService.updateBed(
         campId,

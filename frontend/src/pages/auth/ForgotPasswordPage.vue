@@ -98,7 +98,7 @@ const email = ref<string>('');
 authStore.reset();
 
 function resetPassword() {
-  authStore.forgotPassword(email.value);
+  void authStore.forgotPassword(email.value);
 }
 </script>
 

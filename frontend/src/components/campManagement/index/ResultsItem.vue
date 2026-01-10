@@ -146,7 +146,7 @@ function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
 }
 
 function resultsAction() {
-  withLoading(resultLoading, async () => {
+  void withLoading(resultLoading, async () => {
     await router.push({
       name: 'participants',
       params: {
@@ -183,7 +183,7 @@ function shareAction() {
 }
 
 function editAction() {
-  withLoading(editLoading, async () => {
+  void withLoading(editLoading, async () => {
     await router.push({
       name: 'edit-camp',
       params: {
@@ -206,14 +206,14 @@ function deleteAction() {
       persistent: true,
     })
     .onOk(() => {
-      withLoading(deleteLoading, async () => {
+      void withLoading(deleteLoading, async () => {
         await capsStore.deleteEntry(camp.id);
       });
     });
 }
 
 function enableAction() {
-  withLoading(enableLoading, async () => {
+  void withLoading(enableLoading, async () => {
     await capsStore.updateEntry(camp.id, {
       active: true,
     });
@@ -222,7 +222,7 @@ function enableAction() {
 }
 
 function disableAction() {
-  withLoading(disableLoading, async () => {
+  void withLoading(disableLoading, async () => {
     await capsStore.updateEntry(camp.id, {
       active: false,
     });

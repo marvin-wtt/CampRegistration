@@ -22,9 +22,9 @@ export const useCampsStore = defineStore('camps', () => {
   } = useServiceHandler<Camp[]>('camp');
 
   // Always fetch again since the permissions could have changed
-  bus.on('create', reload);
-  bus.on('update', reload);
-  bus.on('delete', reload);
+  bus.on('create', () => void reload());
+  bus.on('update', () => void reload());
+  bus.on('delete', () => void reload());
 
   async function reload() {
     reset();

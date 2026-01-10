@@ -22,18 +22,18 @@ export const useProfileStore = defineStore('profile', () => {
     errorOnFailure,
   } = useServiceHandler<Profile>('profile');
 
-  campBus.on('create', async () => {
-    await fetchProfile();
+  campBus.on('create', () => {
+    void fetchProfile();
   });
 
-  campBus.on('delete', async (campId) => {
+  campBus.on('delete', (campId) => {
     const index = data.value?.camps.findIndex((camp) => camp.id === campId);
     if (index !== undefined && index >= 0) {
       data.value?.camps.splice(index);
     }
   });
 
-  authBus.on('login', async (profile) => {
+  authBus.on('login', (profile) => {
     data.value = profile;
   });
 

@@ -117,7 +117,7 @@ const confirmPassword = ref<string>('');
 authStore.reset();
 
 function resetPassword() {
-  authStore.resetPassword(password.value);
+  void authStore.resetPassword(password.value);
 }
 </script>
 

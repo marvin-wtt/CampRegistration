@@ -108,7 +108,7 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
@@ -120,7 +120,9 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { data, isLoading } = storeToRefs(campFileStore);
 
-campFileStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([campFileStore.fetchData()]);
+});
 
 defineEmits([...useDialogPluginComponent.emits]);
 

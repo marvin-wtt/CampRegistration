@@ -79,7 +79,7 @@ const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
-const camp = storeToRefs(campDetailStore);
+const { data: campData } = storeToRefs(campDetailStore);
 const { can } = usePermissions();
 
 const size = computed<string>(() => {
@@ -100,12 +100,12 @@ function deleteItem(): void {
       component: RegistrationDeleteDialog,
       componentProps: {
         registration: registration.value,
-        camp: camp.data.value,
+        camp: campData.value,
       },
     })
-    .onOk(async (params: RegistrationDeleteQuery) => {
+    .onOk((params: RegistrationDeleteQuery) => {
       const id = cellProps.row.id;
-      await registrationStore.deleteData(id, params);
+      void registrationStore.deleteData(id, params);
     });
 }
 
@@ -115,12 +115,12 @@ function accept(): void {
       component: RegistrationAcceptDialog,
       componentProps: {
         registration: registration.value,
-        camp: camp.data.value,
+        camp: campData.value,
       },
     })
-    .onOk(async (params: RegistrationUpdateQuery) => {
+    .onOk((params: RegistrationUpdateQuery) => {
       const id = cellProps.row.id;
-      await registrationStore.updateData(
+      void registrationStore.updateData(
         id,
         {
           waitingList: false,
@@ -135,14 +135,14 @@ function editItem(): void {
     .dialog({
       component: EditResultComponent,
       componentProps: {
-        camp: camp.data.value,
+        camp: campData.value,
         data: cellProps.row.data,
         uploadFileFn: uploadFile,
       },
     })
     .onOk((payload) => {
       const id = cellProps.row.id;
-      registrationStore.updateData(id, { data: payload });
+      void registrationStore.updateData(id, { data: payload });
     });
 }
 

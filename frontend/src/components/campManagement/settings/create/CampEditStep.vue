@@ -2,16 +2,16 @@
   <q-step
     :name
     :title
-    :done
-    :header-nav="done"
-    :error
+    :done="isDone"
+    :header-nav="isDone"
+    :error="hasError"
     :icon
   >
     <q-form
       @submit="nextStep"
       @reset="previousStep"
-      @validation-success="error = false"
-      @validation-error="error = true"
+      @validation-success="hasError = false"
+      @validation-error="hasError = true"
     >
       <div class="q-gutter-y-md">
         <slot />
@@ -61,14 +61,14 @@ const emit = defineEmits<{
   (e: 'previous-step'): void;
 }>();
 
-const error = ref<boolean>();
+const hasError = ref<boolean>();
 
 const nextLabel = computed<string>(() => {
   return last ? t('action.finish') : t('action.continue');
 });
 
-const done = computed<boolean>(() => {
-  return error.value === false;
+const isDone = computed<boolean>(() => {
+  return hasError.value === false;
 });
 
 function nextStep() {

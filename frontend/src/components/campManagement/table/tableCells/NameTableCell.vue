@@ -9,7 +9,7 @@ import type { TableCellProps } from 'components/campManagement/table/tableCells/
 
 const { props: cellProps } = defineProps<TableCellProps>();
 
-const formattedName = computed<string | unknown>(() => {
+const formattedName = computed<unknown>(() => {
   const value = cellProps.value;
 
   if (typeof value !== 'string') {
