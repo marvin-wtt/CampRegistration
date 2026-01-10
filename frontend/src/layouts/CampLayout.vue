@@ -60,7 +60,7 @@ import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
 import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
 import { useCampDetailsStore } from 'stores/camp-details-store';
@@ -74,6 +74,10 @@ const { user } = storeToRefs(profileStore);
 const campDetailStore = useCampDetailsStore();
 const { data: camp } = storeToRefs(campDetailStore);
 
+onMounted(async () => {
+  await Promise.allSettled([authStore.init()]);
+});
+
 useMeta(() => {
   return {
     title: camp.value ? to(camp.value.name) : t('camps'),
@@ -84,10 +88,6 @@ useMeta(() => {
 const title = computed<string>(() => {
   return camp.value ? to(camp.value.name) : t('app_name');
 });
-
-if (!profileStore.user) {
-  authStore.init();
-}
 
 const administrator = computed<boolean>(() => {
   return profileStore.user?.role === 'ADMIN';

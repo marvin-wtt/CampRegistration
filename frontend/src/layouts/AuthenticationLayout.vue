@@ -10,12 +10,13 @@
 
 <script lang="ts" setup>
 import { useAuthStore } from 'stores/auth-store';
-import { onBeforeMount } from 'vue';
+import { onMounted } from 'vue';
 
 const authStore = useAuthStore();
 
-onBeforeMount(async () => {
-  await authStore.init();
+onMounted(async () => {
+  // TODO Why force?
+  await authStore.init(true);
 });
 </script>
 

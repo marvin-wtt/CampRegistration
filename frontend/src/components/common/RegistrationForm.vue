@@ -12,7 +12,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { marked } from 'marked';
-import { computed, ref, toRef, watchEffect } from 'vue';
+import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import {
@@ -66,9 +66,11 @@ const files = computed<ServiceFile[] | undefined>(() => {
   return props.files;
 });
 
-// Auto variables update on locale change
-startAutoDataUpdate(model, campData, files);
-startAutoThemeUpdate(model, campData, bgColor);
+onMounted(() => {
+  // Auto variables update on locale change
+  startAutoDataUpdate(model, campData, files);
+  startAutoThemeUpdate(model, campData, bgColor);
+});
 
 function createModerationForm(form: object) {
   return {
@@ -130,7 +132,7 @@ function createModel(campId: string, form: object): SurveyModel {
     // Remove root paragraphs <p></p>
     options.html = marked.parseInline(options.text, {
       async: false,
-    }) as string;
+    });
   });
   // Workaround for date input for Safari < 4.1
   survey.onAfterRenderPage.add((survey, options) => {

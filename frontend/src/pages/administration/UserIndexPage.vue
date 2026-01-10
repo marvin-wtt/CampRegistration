@@ -191,7 +191,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from 'components/administration/users/UserCreateDialog.vue';
@@ -217,7 +217,9 @@ const pagination = ref<QTableProps['pagination']>({
   descending: true,
 });
 
-fetchAll();
+onMounted(async () => {
+  await forceFetch(() => api.fetchUsers());
+});
 
 const rows = computed<User[]>(() => {
   if (!users.value) {
@@ -330,7 +332,7 @@ function onAddUser() {
       component: UserCreateDialog,
     })
     .onOk((payload: UserCreateData) => {
-      createUser(payload);
+      void createUser(payload);
     });
 }
 
@@ -343,7 +345,7 @@ function onEditUser(user: User) {
       },
     })
     .onOk((payload: UserUpdateData) => {
-      updateUser(user.id, payload);
+      void updateUser(user.id, payload);
     });
 }
 
@@ -359,7 +361,7 @@ function onDeleteUser(user: User) {
       },
     })
     .onOk(() => {
-      deleteUser(user.id);
+      void deleteUser(user.id);
     });
 }
 
@@ -381,7 +383,7 @@ function onLockUser(user: User) {
       },
     })
     .onOk(() => {
-      updateUser(user.id, {
+      void updateUser(user.id, {
         locked: true,
       });
     });
@@ -405,14 +407,10 @@ function onUnlockUser(user: User) {
       },
     })
     .onOk(() => {
-      updateUser(user.id, {
+      void updateUser(user.id, {
         locked: false,
       });
     });
-}
-
-async function fetchAll() {
-  return forceFetch(() => api.fetchUsers());
 }
 
 async function createUser(data: UserCreateData) {

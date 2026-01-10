@@ -110,7 +110,7 @@ function onPaste(event: ClipboardEvent, index: number) {
 
   model.value = fieldValues.value.join('');
 
-  nextTick(() => {
+  void nextTick(() => {
     // Postpone focus to wait for initial update by the input
     focus(index + pastedData.length);
   });

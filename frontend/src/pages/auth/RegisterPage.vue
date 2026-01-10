@@ -190,7 +190,7 @@ const passwordRules = [
 ];
 
 function register() {
-  authStore.register(name.value, email.value, password.value);
+  void authStore.register(name.value, email.value, password.value);
 }
 </script>
 

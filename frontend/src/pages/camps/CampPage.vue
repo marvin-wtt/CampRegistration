@@ -49,7 +49,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
@@ -72,7 +72,7 @@ const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
 
-onBeforeMount(async () => {
+onMounted(async () => {
   await init();
 });
 

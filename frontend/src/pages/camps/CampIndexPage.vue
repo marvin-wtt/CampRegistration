@@ -37,7 +37,7 @@
 
 <script lang="ts" setup>
 import { useCampsStore } from 'stores/camps-store';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import CampCard from 'components/camps/CampCard.vue';
@@ -47,7 +47,9 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const campsStore = useCampsStore();
 
-campsStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([campsStore.fetchData()]);
+});
 
 const filteredCamps = computed<Camp[]>(() => {
   return campsStore.data ?? [];

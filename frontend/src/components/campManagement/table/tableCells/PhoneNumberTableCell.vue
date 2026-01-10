@@ -20,7 +20,7 @@ const registration = computed<Registration>(() => {
   return cellProps.row;
 });
 
-const formattedPhoneNumber = computed<string | unknown>(() => {
+const formattedPhoneNumber = computed<unknown>(() => {
   const value = cellProps.value;
 
   if (typeof value !== 'string' && typeof value !== 'number') {

@@ -27,7 +27,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     reset();
   });
 
-  bus.on('update', async (camp) => {
+  bus.on('update', (camp) => {
     if (camp?.id !== data.value?.id) {
       return;
     }
@@ -38,7 +38,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     } else {
       // It's a normal camp - we need to fetch the details
       invalidate();
-      await fetchData(camp?.id);
+      void fetchData(camp?.id);
     }
   });
 

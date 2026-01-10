@@ -144,7 +144,7 @@ function send() {
     const location = window.location.href;
     const userAgent = navigator.userAgent;
 
-    api.sendFeedback(location, userAgent, message.value, email.value);
+    void api.sendFeedback(location, userAgent, message.value, email.value);
   }
 
   clear();

@@ -218,7 +218,7 @@ const {
 );
 
 function onTemplateChange() {
-  router.replace({ hash: `#${template.value?.id}` });
+  void router.replace({ hash: `#${template.value?.id}` });
 }
 
 function openPrintDialog() {
@@ -244,7 +244,7 @@ function editTemplates() {
       },
     })
     .onOk((payload: TableTemplate[]) => {
-      templateStore.updateCollection(payload);
+      void templateStore.updateCollection(payload);
     });
 }
 </script>
