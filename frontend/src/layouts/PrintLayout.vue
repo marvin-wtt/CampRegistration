@@ -51,6 +51,14 @@ quasar.dark.set(false);
 }
 
 @media print {
+  /* Remove Quasar UI */
+  #q-notify,
+  div[id^="q-portal--"],
+  /* Dev only */
+  vite-plugin-checker-error-overlay {
+    display: none;
+  }
+
   html,
   body,
   .print-layout {

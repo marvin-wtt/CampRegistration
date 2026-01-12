@@ -101,16 +101,6 @@ function postToParent(msg: unknown) {
   }
 }
 
-function closeIfStandalone() {
-  // If this page is inside an iframe, parent should remove it.
-  // If user opened it directly, we can try to close.
-  try {
-    window.close();
-  } catch {
-    // ignore
-  }
-}
-
 watch(payload, (value) => {
   timestamp.value = formatDate(
     value?.timestamp ?? new Date().toISOString(),
@@ -179,7 +169,6 @@ function assignPageOrientation() {
   const printableWidthPx = pageWidthPx - marginPx;
 
   const sheets = document.querySelectorAll<HTMLElement>('.print-sheet');
-  console.log(sheets.length);
 
   sheets.forEach((sheet) => {
     if (
@@ -239,17 +228,11 @@ function triggerPrint() {
 }
 
 function onAfterPrint() {
-  // Signal parent to cleanup iframe
-  postToParent({ type: 'PRINT_TABLES:AFTERPRINT' });
-
   // Cleanup storage to avoid stale data
   cleanupSessionStorage();
 
-  // If someone opened /print/tables directly, optionally close.
-  if (window.parent === window) {
-    // standalone tab
-    closeIfStandalone();
-  }
+  // Signal parent to cleanup iframe
+  postToParent({ type: 'PRINT_TABLES:AFTERPRINT' });
 }
 
 onMounted(async () => {
