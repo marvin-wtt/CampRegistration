@@ -23,10 +23,6 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
   private events: QueueEvents;
   private connection: ConnectionOptions;
 
-  static isAvailable(): boolean {
-    return config.redis.host !== undefined;
-  }
-
   constructor(queue: string, options?: Partial<QueueOptions>) {
     super(queue, options);
 

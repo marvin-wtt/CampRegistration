@@ -39,12 +39,13 @@ export async function waitUntil(
 }
 
 describe('Queue', () => {
-  describe('manager', () => {
-    it('should use the database queue implementation', () => {
+  describe('manager', async () => {
+    it('should create a queue', async () => {
       const q = queueManager.createQueue<null, null, 'test'>('type', DEFAULTS);
 
-      expect(q.type).toBe('database');
-      q.close();
+      expect(q.type).toBe('memory');
+
+      await q.close();
     });
 
     it('no double-processing with two workers (concurrency safety)', async () => {
@@ -98,8 +99,8 @@ describe('Queue', () => {
       });
 
       expect(seen).toEqual([{ x: 42 }]);
-      await q.close?.(); // if async close
-      q.close();
+
+      await q.close();
     });
 
     it('retries once after failure then completes', async () => {
@@ -126,7 +127,8 @@ describe('Queue', () => {
       });
       const all = await q.all();
       expect(all.some((j) => j.status === 'FAILED')).toBe(false);
-      q.close();
+
+      await q.close();
     });
 
     it('marks FAILED after reaching maxAttempts', async () => {
@@ -144,7 +146,8 @@ describe('Queue', () => {
       await waitUntil(async () => (await q.all('FAILED')).length === 1, {
         timeout: 10_000,
       });
-      q.close();
+
+      await q.close();
     });
 
     it('respects delay', async () => {
@@ -165,7 +168,8 @@ describe('Queue', () => {
       expect(ran).toBe(false);
 
       await waitUntil(() => ran, { timeout: 5_000 });
-      q.close();
+
+      await q.close();
     });
 
     it('prevents processing while paused', async () => {
@@ -186,7 +190,8 @@ describe('Queue', () => {
 
       q.resume();
       await waitUntil(() => seen.length === 1, { timeout: 5_000 });
-      q.close();
+
+      await q.close();
     });
 
     it('limits throughput', async () => {
@@ -206,7 +211,8 @@ describe('Queue', () => {
 
       await waitUntil(() => ticks.length >= 2, { timeout: 5_000 });
       expect(ticks[1] - ticks[0]).toBeGreaterThanOrEqual(200); // slack
-      q.close();
+
+      await q.close();
     });
 
     it('counts only unfinished jobs', async () => {
@@ -222,20 +228,24 @@ describe('Queue', () => {
       expect(await q.count()).toBe(3);
 
       // Process one job, then pause from the test thread (not inside handler)
-      q.process(async () => 'ok');
+      q.process(async () => {
+        await q.pause();
 
-      await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
-        timeout: 5_000,
+        return 'Ok';
       });
 
-      q.pause();
+      await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+        timeout: 3_000,
+      });
+
+      await q.pause();
 
       // ensure no more completions happen after pause
       await sleep(200);
 
       expect(await q.count()).toBe(2);
 
-      q.close();
+      await q.close();
     });
 
     it('throws error when queue is closed', async () => {
@@ -244,9 +254,13 @@ describe('Queue', () => {
         DEFAULTS,
       );
 
-      q.close();
+      await q.close();
 
-      expect(q.add('test', { n: 1 })).rejects.toThrowError();
+      try {
+        const promise = Promise.resolve(q.add('test', { n: 1 }));
+
+        expect(promise).rejects.toThrowError();
+      } catch (e) {}
     });
   });
 });

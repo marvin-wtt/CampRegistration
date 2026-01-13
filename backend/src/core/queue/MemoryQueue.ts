@@ -133,7 +133,9 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   private startRepeatIfConfigured(): void {
     const rep = this.options.repeat;
-    if (!rep) return;
+    if (!rep) {
+      return;
+    }
 
     if ('cron' in rep) {
       throw new Error(
@@ -141,7 +143,9 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
       );
     }
 
-    if (this.repeatTimer) return;
+    if (this.repeatTimer) {
+      return;
+    }
 
     const interval = Math.max(1, rep.interval);
     const limit = rep.limit;
@@ -149,7 +153,9 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     let created = 0;
 
     this.repeatTimer = setInterval(() => {
-      if (this.closed) return;
+      if (this.closed) {
+        return;
+      }
 
       if (typeof limit === 'number' && created >= limit) {
         this.stopRepeat();
@@ -188,7 +194,9 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     }
 
     const next = this.pickNextRunnableJob();
-    if (!next) return;
+    if (!next) {
+      return;
+    }
 
     // reserve + run
     next.status = 'RUNNING';
@@ -249,11 +257,14 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     const interval = this.options.stalledInterval;
 
     for (const job of this.jobs.values()) {
-      if (job.status !== 'RUNNING') continue;
-      if (!job.reservedAt) continue;
+      if (job.status !== 'RUNNING' || !job.reservedAt) {
+        continue;
+      }
 
       const reservedAt = job.reservedAt.getTime();
-      if (now - reservedAt < interval) continue;
+      if (now - reservedAt < interval) {
+        continue;
+      }
 
       job.stalledCount += 1;
 
@@ -286,7 +297,9 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   private canRunAnotherJob(now: number): boolean {
     const limit = this.options.limit;
-    if (!limit) return true;
+    if (!limit) {
+      return true;
+    }
 
     const elapsed = now - this.windowStartedAt;
 
