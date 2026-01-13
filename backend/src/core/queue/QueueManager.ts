@@ -1,7 +1,8 @@
 import type { Queue, QueueOptions } from '#core/queue/Queue';
 import { RedisQueue } from '#core/queue/RedisQueue';
 import { DatabaseQueue } from '#core/queue/DatabaseQueue';
-import logger from '#core/logger';
+import { MemoryQueue } from '#core/queue/MemoryQueue';
+import config from '#config/index';
 
 export class QueueManager {
   private queues: Record<string, Queue<unknown, unknown>> = {};
@@ -28,15 +29,14 @@ export class QueueManager {
     queue: string,
     options?: Partial<QueueOptions>,
   ): Queue<P, R, N> {
-    if (RedisQueue.isAvailable()) {
-      logger.info(`Creating queue ${queue} using Redis`);
-
+    if (config.queue.driver === 'redis') {
       return new RedisQueue<P, R, N>(queue, options);
     }
+    if (config.queue.driver === 'database') {
+      return new DatabaseQueue<P, R, N>(queue, options);
+    }
 
-    logger.info(`Creating queue ${queue} using Database`);
-
-    return new DatabaseQueue<P, R, N>(queue, options);
+    return new MemoryQueue<P, R, N>(queue, options);
   }
 }
 

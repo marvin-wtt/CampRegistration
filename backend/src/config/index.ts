@@ -5,25 +5,17 @@ import emailConfig from './email.config.js';
 import storageOptions from './storage.config.js';
 import csrfConfig from './csrf.config.js';
 import redisConfig from './redis.config.js';
+import queueConfig from './queue.config.js';
 
 export default {
   env: env.NODE_ENV,
   appName: env.APP_NAME,
   port: env.APP_PORT,
   origin: env.APP_URL,
-  jwt: {
-    ...authConfig,
-  },
-  email: {
-    ...emailConfig,
-  },
-  storage: {
-    ...storageOptions,
-  },
-  csrf: {
-    ...csrfConfig,
-  },
-  redis: {
-    ...redisConfig,
-  },
+  jwt: authConfig,
+  email: emailConfig,
+  storage: storageOptions,
+  csrf: csrfConfig,
+  redis: redisConfig,
+  queue: queueConfig,
 };
