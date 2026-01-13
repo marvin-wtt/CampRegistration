@@ -243,4 +243,55 @@ describe('jobs', () => {
       ).toBeNull();
     });
   });
+
+  describe('queue-job-cleanup', () => {
+    it('should be scheduled', async () => {
+      const job = findJob('queue-job-cleanup');
+
+      expect(job.isRunning()).toBeTruthy();
+    });
+
+    it('should delete expired completed jobs', async () => {
+      const jobs = [
+        { status: 'PENDING', days: 1 },
+        { status: 'PENDING', days: 29 },
+        { status: 'PENDING', days: 31 },
+        { status: 'PENDING', days: 365 },
+        { status: 'RUNNING', days: 1 },
+        { status: 'RUNNING', days: 29 },
+        { status: 'RUNNING', days: 31 },
+        { status: 'RUNNING', days: 365 },
+        { status: 'COMPLETED', days: 1 },
+        { status: 'COMPLETED', days: 29 },
+        { status: 'COMPLETED', days: 31 }, // DELETED
+        { status: 'COMPLETED', days: 365 }, // DELETED
+        { status: 'FAILED', days: 1 },
+        { status: 'FAILED', days: 89 },
+        { status: 'FAILED', days: 91 }, // DELETED
+        { status: 'FAILED', days: 365 }, // DELETED
+      ];
+
+      for (const [i, { status, days }] of jobs.entries()) {
+        const executed = status === 'COMPLETED' || status === 'FAILED';
+
+        await prisma.job.create({
+          data: {
+            queue: 'test-queue',
+            name: `test-job-${i}`,
+            status,
+            createdAt: moment().subtract(32, 'days').toDate(),
+            finishedAt: executed
+              ? moment().subtract(days, 'days').toDate()
+              : null,
+            payload: {},
+          },
+        });
+      }
+
+      await findJob('queue-job-cleanup')?.trigger();
+
+      const count = await prisma.job.count();
+      expect(count).toBe(jobs.length - 4);
+    });
+  });
 });
