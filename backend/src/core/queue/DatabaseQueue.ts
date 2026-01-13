@@ -19,6 +19,9 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   private handler: ((payload: SimpleJob<P>) => Promise<R>) | null = null;
   private sleepResolve: (() => void) | null = null;
   private running = false;
+  private closed = false;
+
+  private workerLoopPromise: Promise<void> | null = null;
 
   private minSleepMs = 200;
   private maxSleepMs = 2000;
@@ -35,22 +38,33 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     }
     this.running = true;
 
-    this.workerLoop().catch((error: unknown) => {
+    this.workerLoopPromise = this.workerLoop().catch((error: unknown) => {
       logger.error(
         `Fatal for queue ${this.queue} crashed: ${errorMessage(error)}`,
       );
     });
   }
 
-  public close() {
+  public async close() {
+    this.closed = true;
     this.running = false;
+
+    this.wake();
+
+    if (this.workerLoopPromise) {
+      await this.workerLoopPromise;
+    }
   }
 
   public pause() {
+    this.assertOpen();
+
     this.running = false;
   }
 
   public resume() {
+    this.assertOpen();
+
     if (!this.running) {
       this.start();
     }
@@ -68,6 +82,8 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public async add(name: N, payload: P, options?: JobOptions): Promise<void> {
+    this.assertOpen();
+
     const runAt = options?.delay
       ? new Date(Date.now() + options.delay)
       : new Date();
@@ -101,6 +117,11 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
       try {
         await this.handleStalled();
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!this.running) {
+          break;
+        }
 
         const job = await this.poll();
         if (!job) {
@@ -388,6 +409,12 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
 
     return false;
+  }
+
+  private assertOpen(): void {
+    if (this.closed) {
+      throw new Error('MemoryQueue is closed');
+    }
   }
 }
 
