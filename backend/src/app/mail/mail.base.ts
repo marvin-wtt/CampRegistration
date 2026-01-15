@@ -24,6 +24,8 @@ export interface MailableCtor<P> {
 }
 
 export abstract class MailBase<P> {
+  public static isRegistered = false;
+
   private t?: Translator;
 
   constructor(protected readonly payload: P) {}
@@ -150,13 +152,22 @@ export abstract class MailBase<P> {
     };
   }
 
+  static register(): void {
+    if (this.isRegistered) {
+      return;
+    }
+    registerMailable(
+      this as unknown as MailableCtor<unknown> & { type: string },
+    );
+
+    this.isRegistered = true;
+  }
+
   static enqueue<P>(
     this: MailableCtor<P> & { type: string },
     payload: P,
   ): void {
-    registerMailable(
-      this as unknown as MailableCtor<unknown> & { type: string },
-    );
+    MailBase.register();
 
     mailQueue.add(this.type, payload).catch((error: unknown) => {
       logger.error('Failed to enqueue mail job:', error);
