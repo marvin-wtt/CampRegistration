@@ -1,5 +1,4 @@
 import type { MailableCtor, MailBase } from '#app/mail/mail.base';
-import type { BuiltMail } from '#app/mail/mail.types';
 import type { SimpleJob } from '#core/queue/Queue';
 
 const registry = new Map<string, MailableCtor<unknown>>();
@@ -16,7 +15,7 @@ export function registerMailable(ctor: MailableCtor<unknown>) {
 }
 
 export function createMailableFromJob(
-  job: SimpleJob<BuiltMail>,
+  job: SimpleJob<unknown>,
 ): MailBase<unknown> {
   const ctor = registry.get(job.name);
   if (!ctor) {
