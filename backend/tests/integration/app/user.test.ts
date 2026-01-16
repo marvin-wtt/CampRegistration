@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { UserFactory } from '../../../prisma/factories';
-import { request } from '../../utils/request';
-import prisma from '../../utils/prisma';
-import { generateAccessToken } from './utils/token';
+import { UserFactory } from '../../../prisma/factories/index.js';
+import { request } from '../utils/request.js';
+import prisma from '../utils/prisma.js';
+import { generateAccessToken } from './utils/token.js';
 import { ulid } from 'ulidx';
 
 describe('/api/v1/users/', () => {
@@ -228,7 +228,7 @@ describe('/api/v1/users/', () => {
         const { accessToken } = await createAdminWithToken();
         const user = await UserFactory.create();
 
-        const { body } = await request()
+        await request()
           .patch(`/api/v1/users/${user.id}`)
           .send({
             password: 'Password123',

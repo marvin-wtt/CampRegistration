@@ -4,10 +4,10 @@ import {
   CampManagerFactory,
   RoomFactory,
   UserFactory,
-} from '../../../prisma/factories';
-import { request } from '../../utils/request';
-import prisma from '../../utils/prisma';
-import { generateAccessToken } from './utils/token';
+} from '../../../prisma/factories/index.js';
+import { request } from '../utils/request.js';
+import prisma from '../utils/prisma.js';
+import { generateAccessToken } from './utils/token.js';
 import { Camp, Room } from '@prisma/client';
 import { ulid } from 'ulidx';
 
@@ -167,7 +167,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
     const ROOM_ID = Symbol('roomId');
 
     it.each([
-      { name: 'id is missing', rooms: [{ sortOrder: 1 }] },
+      { name: 'id is missing', rooms: [{ id: undefined, sortOrder: 1 }] },
       { name: 'id is invalid', rooms: [{ id: 'invalid', sortOrder: 1 }] },
       { name: 'id does not exists', rooms: [{ id: ulid(), sortOrder: 1 }] },
       {
@@ -211,7 +211,7 @@ describe('/api/v1/camps/:campId/rooms/', () => {
     it('should respond with `401` status code when unauthenticated', async () => {
       const camp = await CampFactory.create();
 
-      const data = [];
+      const data: unknown[] = [];
 
       await request()
         .patch(`/api/v1/camps/${camp.id}/rooms/`)

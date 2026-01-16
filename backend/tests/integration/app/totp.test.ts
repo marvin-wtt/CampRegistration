@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import * as OTPAuth from 'otpauth';
-import { UserFactory } from '../../../prisma/factories';
+import { UserFactory } from '../../../prisma/factories/index.js';
 import { User } from '@prisma/client';
-import { request } from '../../utils/request';
-import { generateAccessToken } from './utils/token';
-import prisma from '../../utils/prisma';
+import { request } from '../utils/request.js';
+import { generateAccessToken } from './utils/token.js';
+import prisma from '../utils/prisma.js';
 
 describe('/api/v1/totp/', () => {
   const generateTOTP = (user: User) => {
     const totp = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(user.totpSecret),
+      secret: OTPAuth.Secret.fromBase32(user.totpSecret!),
       algorithm: 'SHA1',
       digits: 6,
       period: 30,
@@ -42,8 +42,8 @@ describe('/api/v1/totp/', () => {
         where: { id: user.id },
       });
 
-      expect(dbUser.twoFactorEnabled).toBe(false);
-      expect(dbUser.totpSecret).toBe(body.data.secret);
+      expect(dbUser?.twoFactorEnabled).toBe(false);
+      expect(dbUser?.totpSecret).toBe(body.data.secret);
     });
 
     it('should respond with a `400` status code when password does not match', async () => {
@@ -106,7 +106,7 @@ describe('/api/v1/totp/', () => {
       const dbUser = await prisma.user.findUnique({
         where: { id: user.id },
       });
-      expect(dbUser.twoFactorEnabled).toBe(true);
+      expect(dbUser?.twoFactorEnabled).toBe(true);
     });
 
     it('should respond with a `400` status code when otp is invalid', async () => {
@@ -175,7 +175,7 @@ describe('/api/v1/totp/', () => {
       const dbUser = await prisma.user.findUnique({
         where: { id: user.id },
       });
-      expect(dbUser.twoFactorEnabled).toBe(false);
+      expect(dbUser?.twoFactorEnabled).toBe(false);
     });
 
     it('should respond with a `400` status code when otp is invalid', async () => {

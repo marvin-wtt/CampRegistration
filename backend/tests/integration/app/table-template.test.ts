@@ -4,10 +4,10 @@ import {
   CampManagerFactory,
   TableTemplateFactory,
   UserFactory,
-} from '../../../prisma/factories';
-import { generateAccessToken } from './utils/token';
-import { request } from '../../utils/request';
-import prisma from '../../utils/prisma';
+} from '../../../prisma/factories/index.js';
+import { generateAccessToken } from './utils/token.js';
+import { request } from '../utils/request.js';
+import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import { Camp } from '@prisma/client';
 
@@ -264,7 +264,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
 
           const updatedTemplate = await prisma.tableTemplate.findFirst();
           expect(updatedTemplate).toBeDefined();
-          expect(updatedTemplate.data).toHaveProperty(
+          expect(updatedTemplate?.data).toHaveProperty(
             'title',
             'Updated Template',
           );

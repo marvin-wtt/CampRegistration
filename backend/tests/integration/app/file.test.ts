@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { request } from '../../utils/request';
-import prisma from '../../utils/prisma';
-import { FileFactory } from '../../../prisma/factories';
+import { request } from '../utils/request.js';
+import prisma from '../utils/prisma.js';
+import { FileFactory } from '../../../prisma/factories/index.js';
 
 describe('/api/v1/files/', () => {
   describe('POST /api/v1/files', () => {
@@ -20,8 +20,9 @@ describe('/api/v1/files/', () => {
         where: { id },
       });
 
-      expect(file.campId).toBeNull();
-      expect(file.registrationId).toBeNull();
+      expect(file).not.toBeNull();
+      expect(file?.campId).toBeNull();
+      expect(file?.registrationId).toBeNull();
     });
 
     it('should set the access level to private by default', async () => {

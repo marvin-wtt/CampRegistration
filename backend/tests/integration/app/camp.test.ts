@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import prisma from '../../utils/prisma';
-import { generateAccessToken } from './utils/token';
+import prisma from '../utils/prisma.js';
+import { generateAccessToken } from './utils/token.js';
 import {
   CampFactory,
   UserFactory,
@@ -9,7 +9,7 @@ import {
   TableTemplateFactory,
   FileFactory,
   MessageTemplateFactory,
-} from '../../../prisma/factories';
+} from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '@prisma/client';
 import moment from 'moment';
 import { ulid } from 'ulidx';
@@ -21,10 +21,10 @@ import {
   campCreateNational,
   campInactive,
   campUpdateBody,
-} from './fixtures/camp.fixtures';
-import { request } from '../../utils/request';
-import { campWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures';
-import { uploadFile } from './utils/file';
+} from './fixtures/camp.fixtures.js';
+import { request } from '../utils/request.js';
+import { campWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
+import { uploadFile } from './utils/file.js';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -199,10 +199,10 @@ describe('/api/v1/camps', () => {
       expect(body).toHaveProperty('data');
       expect(body.data.length).toBe(2);
 
-      const campResultA = body.data.find((v) => v.id === campA.id);
+      const campResultA = body.data.find((v: any) => v.id === campA.id);
       expect(campResultA).toHaveProperty('freePlaces', 8);
 
-      const campResultB = body.data.find((v) => v.id === campB.id);
+      const campResultB = body.data.find((v: any) => v.id === campB.id);
       expect(campResultB).toHaveProperty('freePlaces.de', 10);
       expect(campResultB).toHaveProperty('freePlaces.fr', 4);
     });
@@ -929,8 +929,10 @@ describe('/api/v1/camps', () => {
           },
         });
 
+        expect(newFile1).not.toBeNull();
+        expect(newFile2).not.toBeNull();
         expect(body.data.form).toStrictEqual(
-          createForm(newFile1.id, newFile2.id),
+          createForm(newFile1!.id, newFile2!.id),
         );
       });
 

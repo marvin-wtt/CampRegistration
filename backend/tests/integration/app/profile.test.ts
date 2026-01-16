@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { request } from '../../utils/request';
+import { request } from '../utils/request.js';
 import {
   CampFactory,
   CampManagerFactory,
   TokenFactory,
   UserFactory,
-} from '../../../prisma/factories';
-import { generateAccessToken } from './utils/token';
-import prisma from '../../utils/prisma';
+} from '../../../prisma/factories/index.js';
+import { generateAccessToken } from './utils/token.js';
+import prisma from '../utils/prisma.js';
 import { TokenType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { profileUpdateBody } from './fixtures/profile.fixtures';
+import { profileUpdateBody } from './fixtures/profile.fixtures.js';
 
 describe('/api/v1/profile', () => {
   describe('GET /api/v1/profile/', () => {
@@ -211,7 +211,7 @@ describe('/api/v1/profile', () => {
         where: { id: user.id },
       });
 
-      expect(updatedUser.emailVerified).toBe(false);
+      expect(updatedUser?.emailVerified).toBe(false);
     });
 
     it('should send the email verification email', async () => {});
@@ -236,7 +236,7 @@ describe('/api/v1/profile', () => {
         where: { id: user.id },
       });
 
-      expect(updatedUser.emailVerified).toBe(true);
+      expect(updatedUser?.emailVerified).toBe(true);
     });
 
     it('should logout all devices when password is updated', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import prisma from '../../utils/prisma';
-import { generateAccessToken } from './utils/token';
+import prisma from '../utils/prisma.js';
+import { generateAccessToken } from './utils/token.js';
 import {
   CampFactory,
   FileFactory,
@@ -8,7 +8,7 @@ import {
   UserFactory,
   CampManagerFactory,
   MessageTemplateFactory,
-} from '../../../prisma/factories';
+} from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '@prisma/client';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
@@ -35,10 +35,11 @@ import {
   campWithAddress,
   campWithMultipleFilesRequired,
   campWithAddressCampDataTypes,
-} from './fixtures/registration.fixtures';
-import { request } from '../../utils/request';
-import { NoOpMailer } from '../../../src/app/mail/noop.mailer';
-import { uploadFile } from './utils/file';
+} from './fixtures/registration.fixtures.js';
+import { request } from '../utils/request.js';
+import { NoOpMailer } from '#app/mail/noop.mailer.js';
+import { uploadFile } from './utils/file.js';
+import { expectEmailWith, mockMailer } from '../mocks/mockMailer.js';
 
 const mailer = NoOpMailer.prototype;
 
@@ -512,7 +513,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           where: { id: file.id },
         });
 
-        expect(updatedFile.registrationId).toBe(body.data.id);
+        expect(updatedFile?.registrationId).toBe(body.data.id);
       });
 
       it('should respond with `201` status code when form has multiple files', async () => {
@@ -1073,6 +1074,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user', async () => {
+        mockMailer();
+
         const camp = await CampFactory.create({
           ...campWithEmail,
           messageTemplates: {
@@ -1097,13 +1100,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.email,
-            replyTo: camp.contactEmail,
-            subject: 'Registration confirmed',
-          }),
-        );
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail,
+          subject: 'Registration confirmed',
+        });
       });
 
       it('should send a confirmation email to multiple emails', async () => {

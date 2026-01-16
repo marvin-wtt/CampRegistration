@@ -5,14 +5,15 @@ import {
   RegistrationFactory,
   UserFactory,
   TokenFactory,
-} from '../../../prisma/factories';
-import config from '../../../src/config';
+} from '../../../prisma/factories/index.js';
+import config from '#config/index';
 import fse from 'fs-extra';
 import path from 'path';
 import { ulid } from 'ulidx';
 import moment from 'moment';
-import prisma from '../../utils/prisma';
-import { findJob, startJobs } from '../../../src/jobs';
+import prisma from '../utils/prisma.js';
+import { findJob, startJobs } from '#jobs/index';
+import { JobStatus } from '@prisma/client';
 
 describe('jobs', () => {
   beforeEach(() => {
@@ -23,7 +24,7 @@ describe('jobs', () => {
     it('should be scheduled', async () => {
       const job = findJob('unused-file-cleanup');
 
-      expect(job.isRunning()).toBeTruthy();
+      expect(job?.isRunning()).toBeTruthy();
     });
 
     it('should clear all uploaded files that are not used', async () => {
@@ -64,7 +65,7 @@ describe('jobs', () => {
     it('should be scheduled', async () => {
       const job = findJob('unassigned-file-cleanup');
 
-      expect(job.isRunning()).toBeTruthy();
+      expect(job?.isRunning()).toBeTruthy();
     });
 
     const createFile = async (dir: string, name: string) => {
@@ -183,7 +184,7 @@ describe('jobs', () => {
     it('should be scheduled', async () => {
       const job = findJob('tmp-file-cleanup');
 
-      expect(job.isRunning()).toBeTruthy();
+      expect(job?.isRunning()).toBeTruthy();
     });
 
     it('should delete temporary files from storage', async () => {
@@ -220,7 +221,7 @@ describe('jobs', () => {
     it('should be scheduled', async () => {
       const job = findJob('expired-token-cleanup');
 
-      expect(job.isRunning()).toBeTruthy();
+      expect(job?.isRunning()).toBeTruthy();
     });
 
     it('should delete tokens that are expired', async () => {
@@ -248,11 +249,11 @@ describe('jobs', () => {
     it('should be scheduled', async () => {
       const job = findJob('queue-job-cleanup');
 
-      expect(job.isRunning()).toBeTruthy();
+      expect(job?.isRunning()).toBeTruthy();
     });
 
     it('should delete expired completed jobs', async () => {
-      const jobs = [
+      const jobs: { status: JobStatus; days: number }[] = [
         { status: 'PENDING', days: 1 },
         { status: 'PENDING', days: 29 },
         { status: 'PENDING', days: 31 },

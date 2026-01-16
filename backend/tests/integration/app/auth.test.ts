@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
-import prisma from '../../utils/prisma.js';
+import prisma from '../utils/prisma.js';
 import { TokenType, User } from '@prisma/client';
 import {
   CampFactory,
@@ -20,11 +20,9 @@ import {
   generateVerifyEmailToken,
   verifyToken,
 } from './utils/token.js';
-import { request } from '../../utils/request.js';
-import { NoOpMailer } from '#app/mail/noop.mailer';
+import { request } from '../utils/request.js';
 import * as OTPAuth from 'otpauth';
-
-const mailer = NoOpMailer.prototype;
+import { expectEmailTo } from '../mocks/mockMailer.js';
 
 describe('/api/v1/auth', async () => {
   describe('POST /api/v1/auth/register', () => {
@@ -245,7 +243,7 @@ describe('/api/v1/auth', async () => {
       expect(body).toHaveProperty('locale', 'en-US');
     });
 
-    it('should send a welcome notification to the user', async () => {
+    it('should send verify email notification to the user', async () => {
       const data = {
         name: 'testuser',
         email: 'test@email.net',
@@ -254,12 +252,7 @@ describe('/api/v1/auth', async () => {
 
       await request().post('/api/v1/auth/register').send(data).expect(201);
 
-      expect(mailer.sendMail).toBeCalledTimes(1);
-      expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: data.email,
-        }),
-      );
+      expectEmailTo('test@email.net', 'testuser');
     });
   });
 
@@ -1032,12 +1025,7 @@ describe('/api/v1/auth', async () => {
         })
         .expect(204);
 
-      expect(mailer.sendMail).toBeCalledTimes(1);
-      expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@email.net',
-        }),
-      );
+      expectEmailTo('test@email.net');
     });
   });
 
@@ -1226,12 +1214,7 @@ describe('/api/v1/auth', async () => {
         .send({ token })
         .expect(204);
 
-      expect(mailer.sendMail).toBeCalledTimes(1);
-      expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: user.email,
-        }),
-      );
+      expectEmailTo(user.email);
     });
   });
 

@@ -4,7 +4,7 @@ import { NoOpMailer } from '#app/mail/noop.mailer.js';
 
 const mailer = NoOpMailer.prototype;
 
-describe.skip('Mail', () => {
+describe('Mail', () => {
   it('should send an email', async () => {
     await TestMail.send('value 123');
 

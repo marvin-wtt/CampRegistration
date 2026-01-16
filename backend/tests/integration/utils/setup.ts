@@ -1,19 +1,17 @@
 import resetDb from './reset-db.js';
-import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
 import { stopJobs } from '#jobs/index';
-import { NoOpMailer } from '#app/mail/noop.mailer.js';
-import { Request, Response, NextFunction, Express } from 'express';
+import { Express } from 'express';
 import { boot, shutdown } from '#boot.js';
 import { createApp } from '#app.js';
 import path from 'path';
+import { mockQueue } from '../mocks/mockQueue.js';
+import { mockMailer } from '../mocks/mockMailer.js';
+import { mockRateLimiter } from '../mocks/mockRateLimiter.js';
 
-vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
-  // Mock rate limiters to do nothing
-  generalLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
-  authLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
-  staticLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
-}));
+mockRateLimiter();
+mockQueue();
 
 export let app: Express | undefined;
 
@@ -37,8 +35,7 @@ export async function stopApp() {
 beforeAll(bootApp);
 
 beforeEach(async () => {
-  // mailer
-  vi.spyOn(NoOpMailer.prototype, 'sendMail').mockResolvedValue();
+  mockMailer();
 
   await resetDb();
   await clearDirectory(path.join(__dirname, '..', 'tmp', 'storage', 'tmp'));
@@ -51,7 +48,7 @@ async function clearDirectory(directory: string) {
   await fse.emptyDir(directory);
 }
 
-afterEach(async () => {
+afterAll(async () => {
   vi.clearAllMocks();
   vi.resetAllMocks();
 });
