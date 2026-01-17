@@ -39,7 +39,7 @@ import {
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
 import { uploadFile } from './utils/file.js';
-import { expectEmailWith, mockMailer } from '../mocks/mockMailer.js';
+import { expectEmailWith } from '../utils/mail.js';
 
 const mailer = NoOpMailer.prototype;
 
@@ -1074,8 +1074,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user', async () => {
-        mockMailer();
-
         const camp = await CampFactory.create({
           ...campWithEmail,
           messageTemplates: {
@@ -1101,7 +1099,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(201);
 
         expectEmailWith({
-          to: data.email,
+          to: {
+            address: data.email,
+            name: `${data.first_name} ${data.last_name}`,
+          },
           replyTo: camp.contactEmail,
           subject: 'Registration confirmed',
         });

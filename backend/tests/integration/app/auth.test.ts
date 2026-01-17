@@ -22,7 +22,8 @@ import {
 } from './utils/token.js';
 import { request } from '../utils/request.js';
 import * as OTPAuth from 'otpauth';
-import { expectEmailTo } from '../mocks/mockMailer.js';
+import { expectEmailTo } from '../utils/mail.js';
+import { wait } from '../utils/wait.js';
 
 describe('/api/v1/auth', async () => {
   describe('POST /api/v1/auth/register', () => {
@@ -1024,6 +1025,8 @@ describe('/api/v1/auth', async () => {
           email: 'test@email.net',
         })
         .expect(204);
+
+      await wait(100);
 
       expectEmailTo('test@email.net');
     });

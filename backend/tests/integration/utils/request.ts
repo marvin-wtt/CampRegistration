@@ -1,5 +1,5 @@
 import supertest from 'supertest';
-import { app } from './setup.js';
+import { app } from '../setup.js';
 
 declare module 'supertest' {
   interface Test {

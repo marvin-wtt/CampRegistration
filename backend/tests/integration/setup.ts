@@ -1,4 +1,6 @@
-import resetDb from './reset-db.js';
+import './mocks/mockRateLimiter.js';
+
+import resetDb from './utils/reset-db.js';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
 import { stopJobs } from '#jobs/index';
@@ -6,11 +8,9 @@ import { Express } from 'express';
 import { boot, shutdown } from '#boot.js';
 import { createApp } from '#app.js';
 import path from 'path';
-import { mockQueue } from '../mocks/mockQueue.js';
-import { mockMailer } from '../mocks/mockMailer.js';
-import { mockRateLimiter } from '../mocks/mockRateLimiter.js';
+import { mockQueue } from './mocks/mockQueue.js';
+import { mockMailer } from './mocks/mockMailer.js';
 
-mockRateLimiter();
 mockQueue();
 
 export let app: Express | undefined;
