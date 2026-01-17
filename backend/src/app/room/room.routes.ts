@@ -1,15 +1,24 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import roomController from './room.controller.js';
+import { RoomController } from './room.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import roomService from '#app/room/room.service';
+import { RoomService } from '#app/room/room.service';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class RoomRouter extends ModuleRouter {
+  constructor(
+    @inject(RoomController) private readonly roomController: RoomController,
+    @inject(RoomService) private readonly roomService: RoomService,
+  ) {
+    super();
+  }
+
   protected registerBindings() {
     this.bindModel('room', (req, id) => {
       const camp = req.modelOrFail('camp');
-      return roomService.getRoomById(camp.id, id);
+      return this.roomService.getRoomById(camp.id, id);
     });
   }
 
@@ -20,37 +29,37 @@ export class RoomRouter extends ModuleRouter {
       '/',
       auth(),
       guard(campManager('camp.rooms.view')),
-      controller(roomController, 'index'),
+      controller(this.roomController, 'index'),
     );
     this.router.post(
       '/',
       auth(),
       guard(campManager('camp.rooms.create')),
-      controller(roomController, 'store'),
+      controller(this.roomController, 'store'),
     );
     this.router.patch(
       '/',
       auth(),
       guard(campManager('camp.rooms.edit')),
-      controller(roomController, 'bulkUpdate'),
+      controller(this.roomController, 'bulkUpdate'),
     );
     this.router.get(
       '/:roomId',
       auth(),
       guard(campManager('camp.rooms.view')),
-      controller(roomController, 'show'),
+      controller(this.roomController, 'show'),
     );
     this.router.patch(
       '/:roomId',
       auth(),
       guard(campManager('camp.rooms.edit')),
-      controller(roomController, 'update'),
+      controller(this.roomController, 'update'),
     );
     this.router.delete(
       '/:roomId',
       auth(),
       guard(campManager('camp.rooms.delete')),
-      controller(roomController, 'destroy'),
+      controller(this.roomController, 'destroy'),
     );
   }
 }

@@ -71,5 +71,3 @@ export class MailRenderer {
     });
   }
 }
-
-export default new MailRenderer();

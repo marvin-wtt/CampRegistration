@@ -1,7 +1,9 @@
 import type { Prisma } from '@prisma/client';
 import Handlebars from 'handlebars';
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
+@injectable()
 export class MessageTemplateService extends BaseService {
   async getMessageTemplateById(campId: string, id: string) {
     return this.prisma.messageTemplate.findFirst({
@@ -127,5 +129,3 @@ export class MessageTemplateService extends BaseService {
     return compile(context);
   }
 }
-
-export default new MessageTemplateService();

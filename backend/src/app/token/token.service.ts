@@ -252,5 +252,3 @@ export class TokenService extends BaseService {
     await this.prisma.token.delete({ where: { id } });
   };
 }
-
-export default new TokenService();

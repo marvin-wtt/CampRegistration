@@ -2,7 +2,7 @@ import { CampService } from './camp.service.js';
 import { CampResource, CampDetailsResource } from './camp.resource.js';
 import { FileService } from '#app/file/file.service';
 import { RegistrationService } from '#app/registration/registration.service';
-import tableTemplateService from '#app/tableTemplate/table-template.service';
+import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import defaultForm from '#assets/camp/form';
 import defaultThemes from '#assets/camp/themes';
@@ -12,7 +12,7 @@ import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import { ManagerService } from '#app/manager/manager.service';
 import ApiError from '#utils/ApiError';
 import { inject, injectable } from 'inversify';
@@ -25,6 +25,10 @@ export class CampController extends BaseController {
     @inject(ManagerService) private readonly managerService: ManagerService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(TableTemplateService)
+    private readonly tableTemplateService: TableTemplateService,
+    @inject(MessageTemplateService)
+    private readonly messageTemplateService: MessageTemplateService,
   ) {
     super();
   }
@@ -97,11 +101,13 @@ export class CampController extends BaseController {
 
     // Copy table templates from reference or use defaults
     const tableTemplates = body.referenceCampId
-      ? await tableTemplateService.queryTemplates(body.referenceCampId)
+      ? await this.tableTemplateService.queryTemplates(body.referenceCampId)
       : defaultTableTemplates.map((value) => ({ data: value }));
 
     const messageTemplates = body.referenceCampId
-      ? await messageTemplateService.queryMessageTemplates(body.referenceCampId)
+      ? await this.messageTemplateService.queryMessageTemplates(
+          body.referenceCampId,
+        )
       : defaultMessageTemplates;
 
     const camp = await this.campService.createCamp(

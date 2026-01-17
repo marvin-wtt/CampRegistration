@@ -68,5 +68,3 @@ export class MessageService extends BaseService {
     });
   }
 }
-
-export default new MessageService();

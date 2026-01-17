@@ -3,8 +3,10 @@ import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import httpStatus from 'http-status';
 import { FeedbackMessage } from '#app/feedback/feedback.messages';
+import { injectable } from 'inversify';
 
-class FeedbackController extends BaseController {
+@injectable()
+export class FeedbackController extends BaseController {
   async store(req: Request, res: Response) {
     const {
       body: { message, email, location, userAgent },
@@ -20,5 +22,3 @@ class FeedbackController extends BaseController {
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 }
-
-export default new FeedbackController();

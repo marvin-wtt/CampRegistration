@@ -1,4 +1,4 @@
-import type { Camp, MessageTemplate, Registration, File } from '@prisma/client';
+import type { Camp, File, MessageTemplate, Registration } from '@prisma/client';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
 import { MailBase } from '#app/mail/mail.base';
 import type {
@@ -30,23 +30,7 @@ abstract class RegistrationMessage<
       return emails;
     }
 
-    const address = emails[0];
-    const firstName = this.payload.registration.firstName;
-    const lastName = this.payload.registration.lastName;
-
-    const name =
-      firstName && lastName
-        ? `${firstName} ${lastName}`
-        : (lastName ?? firstName);
-
-    if (name == null) {
-      return address;
-    }
-
-    return {
-      name,
-      address,
-    };
+    return emails[0];
   }
 
   protected locale(): string {
