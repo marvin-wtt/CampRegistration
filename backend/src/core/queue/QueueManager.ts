@@ -33,14 +33,14 @@ export class QueueManager {
     name: string,
     options?: Partial<QueueOptions>,
   ): Queue<P, R, N> {
-    logger.info(`Creating queue ${name}`);
-
     if (name in this.queues) {
       throw new Error(`Queue ${name} already exists.`);
     }
 
     const queue = this.createImpl<P, R, N>(name, options);
     this.queues[name] = queue;
+
+    logger.info(`Created ${queue.type} queue: '${name}'`);
 
     return queue;
   }
