@@ -3,6 +3,10 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 
 export class RegistrationFilesRouter extends ModuleRouter {
+  constructor() {
+    super(false);
+  }
+
   protected registerBindings() {
     this.bindModel('file', (req, id) => {
       const fileService = resolve(FileService);

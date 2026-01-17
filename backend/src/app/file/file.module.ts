@@ -9,10 +9,11 @@ export class FileModule implements AppModule {
   bindContainers(options: BindOptions) {
     options.bind(FileService).toSelf().inSingletonScope();
     options.bind(FileController).toSelf().inSingletonScope();
+    options.bind(FileRouter).toSelf().inSingletonScope();
   }
 
   registerRoutes(router: AppRouter) {
-    router.useRouter('/files', new FileRouter());
+    router.useRouter('/files', resolve(FileRouter));
   }
 
   async shutdown() {

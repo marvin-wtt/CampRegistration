@@ -7,6 +7,10 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 
 export class CampFilesRouter extends ModuleRouter {
+  constructor() {
+    super(false);
+  }
+
   protected registerBindings() {
     const fileService = resolve(FileService);
 
