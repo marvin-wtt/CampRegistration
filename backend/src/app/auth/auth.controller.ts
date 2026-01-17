@@ -1,10 +1,10 @@
 import httpStatus from 'http-status';
-import authService from './auth.service.js';
-import userService from '#app/user/user.service';
+import { AuthService } from './auth.service.js';
+import { UserService } from '#app/user/user.service';
 import tokenService from '#app/token/token.service';
 import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
-import config from '#config/index';
+import type { AppConfig } from '#config/index';
 import ApiError from '#utils/ApiError';
 import managerService from '#app/manager/manager.service';
 import authResource from './auth.resource.js';
@@ -15,15 +15,26 @@ import {
   VerifyEmailMessage,
 } from '#app/auth/auth.messages';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
+import { Config } from '#core/ioc/decorators';
 
-class AuthController extends BaseController {
+@injectable()
+export class AuthController extends BaseController {
+  constructor(
+    @Config() private readonly config: AppConfig,
+    @inject(AuthService) private readonly authService: AuthService,
+    @inject(UserService) private readonly userService: UserService,
+  ) {
+    super();
+  }
+
   async register(req: Request, res: Response) {
     const {
       body: { name, email, password },
     } = await req.validate(validator.register);
     const locale = req.preferredLocale();
 
-    const user = await userService.createUser({
+    const user = await this.userService.createUser({
       name,
       email,
       password,
@@ -33,7 +44,7 @@ class AuthController extends BaseController {
     await managerService.resolveManagerInvitations(user.email, user.id);
 
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    VerifyEmailMessage.enqueue({
+    await VerifyEmailMessage.enqueue({
       user,
       token: verifyEmailToken,
     });
@@ -50,7 +61,7 @@ class AuthController extends BaseController {
       body: { email, password, remember },
     } = await req.validate(validator.login);
 
-    const user = await authService.loginWithEmailPassword(email, password);
+    const user = await this.authService.loginWithEmailPassword(email, password);
 
     // Check if totp is required
     if (user.twoFactorEnabled) {
@@ -58,7 +69,7 @@ class AuthController extends BaseController {
       // Set auth header
       res.setHeader(
         'WWW-Authenticate',
-        `OTP realm="${config.appName}", charset="UTF-8"`,
+        `OTP realm="${this.config.appName}", charset="UTF-8"`,
       );
 
       this.sendPartialAuthResponse(res, token, 'TOTP_REQUIRED');
@@ -82,14 +93,14 @@ class AuthController extends BaseController {
     } = await req.validate(validator.verifyOTP);
 
     const { userId } = tokenService.verifyTotpToken(token);
-    const user = await userService.getUserByIdOrFail(userId);
+    const user = await this.userService.getUserByIdOrFail(userId);
     totpService.verifyTOTP(user, otp);
 
     await this.sendAuthResponse(res, userId, remember);
   }
 
   async sendAuthResponse(res: Response, userId: string, remember: boolean) {
-    const user = await userService.updateUserLastSeenByIdWithCamps(userId);
+    const user = await this.userService.updateUserLastSeenByIdWithCamps(userId);
 
     const tokens = await tokenService.generateAuthTokens(user, remember);
     this.setAuthCookies(res, tokens);
@@ -116,7 +127,7 @@ class AuthController extends BaseController {
       body.refreshToken ?? this.extractCookieRefreshToken(req);
 
     if (refreshToken) {
-      await authService.logout(refreshToken);
+      await this.authService.logout(refreshToken);
     }
 
     this.destroyAuthCookies(res);
@@ -134,7 +145,7 @@ class AuthController extends BaseController {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Missing refresh token');
     }
 
-    const tokens = await authService.refreshAuth(refreshToken);
+    const tokens = await this.authService.refreshAuth(refreshToken);
     this.destroyAuthCookies(res);
     this.setAuthCookies(res, tokens);
 
@@ -160,7 +171,7 @@ class AuthController extends BaseController {
       body: { email },
     } = await req.validate(validator.forgotPassword);
 
-    const user = await userService.getUserByEmail(email);
+    const user = await this.userService.getUserByEmail(email);
     if (!user) {
       // No not throw error so that it's not possible to check wherever a user
       //  exists by abusing this function.
@@ -173,7 +184,7 @@ class AuthController extends BaseController {
     );
 
     if (resetPasswordToken !== undefined) {
-      ResetPasswordMessage.enqueue({
+      await ResetPasswordMessage.enqueue({
         user,
         token: resetPasswordToken,
       });
@@ -187,7 +198,7 @@ class AuthController extends BaseController {
       body: { password, token, email },
     } = await req.validate(validator.resetPassword);
 
-    await authService.resetPassword(token, email, password);
+    await this.authService.resetPassword(token, email, password);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
@@ -198,14 +209,14 @@ class AuthController extends BaseController {
     } = await req.validate(validator.sendEmailVerification);
 
     const { userId } = tokenService.verifySendVerifyEmailToken(token);
-    const user = await userService.getUserByIdWithCamps(userId);
+    const user = await this.userService.getUserByIdWithCamps(userId);
 
     if (user.emailVerified) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');
     }
 
     const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-    VerifyEmailMessage.enqueue({
+    await VerifyEmailMessage.enqueue({
       user,
       token: verifyEmailToken,
     });
@@ -218,14 +229,14 @@ class AuthController extends BaseController {
       body: { token },
     } = await req.validate(validator.verifyEmail);
 
-    await authService.verifyEmail(token);
+    await this.authService.verifyEmail(token);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
   setAuthCookies(res: Response, tokens: AuthTokensResponse) {
     const httpOnly = true;
-    const secure = config.env !== 'development';
+    const secure = this.config.env !== 'development';
     const sameSite = 'strict';
     const path = '/';
 
@@ -266,5 +277,3 @@ class AuthController extends BaseController {
     res.json({ csrfToken });
   }
 }
-
-export default new AuthController();

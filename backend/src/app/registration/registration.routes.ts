@@ -1,7 +1,6 @@
 import registrationController from './registration.controller.js';
 import { auth, guard } from '#middlewares/index';
 import { campActive, campManager } from '#guards/index';
-import registrationFiles from './registration-files.routes.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import registrationService from '#app/registration/registration.service';
@@ -15,8 +14,6 @@ export class RegistrationRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    this.router.use('/:registrationId/files', registrationFiles);
-
     this.router.get(
       '/',
       auth(),

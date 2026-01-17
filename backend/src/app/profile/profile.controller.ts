@@ -1,7 +1,7 @@
 import tokenService from '#app/token/token.service';
-import userService from '#app/user/user.service';
-import authService from '#app/auth/auth.service';
-import campService from '#app/camp/camp.service';
+import { UserService } from '#app/user/user.service';
+import { AuthService } from '#app/auth/auth.service';
+import { CampService } from '#app/camp/camp.service';
 import httpStatus from 'http-status';
 import { ProfileResource } from './profile.resource.js';
 import validator from './profile.validation.js';
@@ -10,11 +10,21 @@ import { type Request, type Response } from 'express';
 import { VerifyEmailMessage } from '#app/auth/auth.messages';
 import { BaseController } from '#core/base/BaseController';
 import { isPasswordMatch } from '#core/encryption';
+import { inject, injectable } from 'inversify';
 
-class ProfileController extends BaseController {
+@injectable()
+export class ProfileController extends BaseController {
+  constructor(
+    @inject(UserService) private readonly userService: UserService,
+    @inject(CampService) private readonly campService: CampService,
+    @inject(AuthService) private readonly authService: AuthService,
+  ) {
+    super();
+  }
+
   async show(req: Request, res: Response) {
     const userId = req.authUserId();
-    const user = await userService.getUserByIdWithCamps(userId);
+    const user = await this.userService.getUserByIdWithCamps(userId);
 
     res.resource(new ProfileResource(user));
   }
@@ -27,7 +37,7 @@ class ProfileController extends BaseController {
 
     // Verify currentPassword matches
     if (currentPassword) {
-      const user = await userService.getUserByIdOrFail(userId);
+      const user = await this.userService.getUserByIdOrFail(userId);
       const match = await isPasswordMatch(currentPassword, user.password);
 
       if (!match) {
@@ -37,7 +47,7 @@ class ProfileController extends BaseController {
 
     // Mark email as unverified if it is updated
     const emailVerified = email !== undefined ? false : undefined;
-    const user = await userService.updateUserById(userId, {
+    const user = await this.userService.updateUserById(userId, {
       name,
       email,
       password,
@@ -47,7 +57,7 @@ class ProfileController extends BaseController {
 
     // Logout devices
     if (password || email) {
-      await authService.revokeAllUserTokens(userId);
+      await this.authService.revokeAllUserTokens(userId);
     }
 
     // Send email verification
@@ -55,13 +65,13 @@ class ProfileController extends BaseController {
       const verifyEmailToken =
         await tokenService.generateVerifyEmailToken(user);
 
-      VerifyEmailMessage.enqueue({
+      await VerifyEmailMessage.enqueue({
         user,
         token: verifyEmailToken,
       });
     }
 
-    const camps = await campService.getCampsByUserId(userId);
+    const camps = await this.campService.getCampsByUserId(userId);
 
     res.resource(new ProfileResource({ ...user, camps }));
   }
@@ -69,7 +79,7 @@ class ProfileController extends BaseController {
   async destroy(req: Request, res: Response) {
     const userId = req.authUserId();
 
-    await userService.deleteUserById(userId);
+    await this.userService.deleteUserById(userId);
 
     // Clear auth cookies
     res.clearCookie('accessToken');
@@ -78,5 +88,3 @@ class ProfileController extends BaseController {
     res.status(httpStatus.NO_CONTENT).end();
   }
 }
-
-export default new ProfileController();

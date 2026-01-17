@@ -1,17 +1,17 @@
 import type { Storage } from '#core/storage/storage';
-import config from '#config/index';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StaticStorage } from '#core/storage/static.storage';
+import type { StorageConfig } from '#config/index';
 
 export class StorageRegistry {
   private storageCache: Map<string, Storage>;
 
-  constructor() {
+  constructor(private options: StorageConfig) {
     this.storageCache = new Map();
   }
 
   getStorage(identifier?: string): Storage {
-    identifier ??= config.storage.location;
+    identifier ??= this.options.location;
 
     if (!this.storageCache.has(identifier)) {
       this.storageCache.set(identifier, this.loadStorage(identifier));
@@ -28,7 +28,7 @@ export class StorageRegistry {
 
   private loadStorage(identifier: string): Storage {
     if (identifier === 'local') {
-      return new DiskStorage(config.storage.uploadDir);
+      return new DiskStorage(this.options.uploadDir);
     }
 
     if (identifier === 'static') {

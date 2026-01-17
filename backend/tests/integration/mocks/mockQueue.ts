@@ -6,37 +6,27 @@ import {
   type SimpleJob,
   type QueueOptions,
 } from '#core/queue/Queue.js';
-import { vi } from 'vitest';
+import { container } from '#core/ioc/container';
+import { QueueManager } from '#core/queue/QueueManager';
 
 export function mockQueue() {
-  const queues = new Map<string, TestQueue<any, any, any>>();
+  container.rebindSync(QueueManager).to(TestQueueManager);
+}
 
-  vi.mock('../../src/queue/QueueManager.js', () => ({
-    all: () => Object.values(queues),
-    createQueue: (name: string, options?: Partial<QueueOptions>) => {
-      const q = new TestQueue<any, any, any>(name, options);
-      queues.set(name, q);
-      return q;
-    },
-  }));
+class TestQueueManager extends QueueManager {
+  create<P, R = void, N extends string = string>(
+    name: string,
+    options?: Partial<QueueOptions>,
+  ): Queue<P, R, N> {
+    if (name in this.queues) {
+      throw new Error(`Queue ${name} already exists.`);
+    }
 
-  // // Intercept QueueManager's driver selection (Redis/DB) and return our TestQueue instead.
-  // const createQueueSpy = vi
-  //   .spyOn(queueManager, 'createQueue')
-  //   .mockImplementation((name: string, options?: Partial<QueueOptions>) => {
-  //     const q = new TestQueue<any, any, any>(name, options);
-  //     queues.set(name, q);
-  //     return q;
-  //   });
-  //
-  // const allQueueSpy = vi
-  //   .spyOn(queueManager, 'all')
-  //   .mockImplementation(() => Object.values(queues));
-  //
-  // return () => {
-  //   createQueueSpy.mockRestore();
-  //   allQueueSpy.mockRestore();
-  // };
+    const queue = new TestQueue<P, R, N>(name, options);
+    this.queues[name] = queue;
+
+    return queue;
+  }
 }
 
 class TestQueue<P, R, N extends string> extends Queue<P, R, N> {

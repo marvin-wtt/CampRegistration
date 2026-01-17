@@ -1,15 +1,21 @@
 import httpStatus from 'http-status';
-import userService from '#app/user/user.service';
+import { UserService } from '#app/user/user.service';
 import tokenService from '#app/token/token.service';
 import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
 import { isPasswordMatch } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class AuthService extends BaseService {
+  constructor(@inject(UserService) private readonly userService: UserService) {
+    super();
+  }
+
   async loginWithEmailPassword(email: string, password: string) {
-    const user = await userService.getUserByEmail(email);
+    const user = await this.userService.getUserByEmail(email);
 
     if (!user || !(await isPasswordMatch(password, user.password))) {
       throw new ApiError(
@@ -47,10 +53,10 @@ export class AuthService extends BaseService {
 
       await tokenService.deleteTokenById(id);
 
-      await userService.updateUserLastSeenById(userId);
+      await this.userService.updateUserLastSeenById(userId);
 
       // Fetch user because role is required
-      const user = await userService.getUserByIdOrFail(userId);
+      const user = await this.userService.getUserByIdOrFail(userId);
 
       return await tokenService.generateAuthTokens(user, true);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -68,12 +74,14 @@ export class AuthService extends BaseService {
       token,
       TokenType.RESET_PASSWORD,
     );
-    const user = await userService.getUserById(resetPasswordTokenData.userId);
+    const user = await this.userService.getUserById(
+      resetPasswordTokenData.userId,
+    );
     if (user?.email !== email) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
 
-    await userService.updateUserById(user.id, {
+    await this.userService.updateUserById(user.id, {
       password,
       emailVerified: true,
     });
@@ -107,10 +115,8 @@ export class AuthService extends BaseService {
       },
     });
 
-    await userService.updateUserById(verifyEmailTokenData.userId, {
+    await this.userService.updateUserById(verifyEmailTokenData.userId, {
       emailVerified: true,
     });
   }
 }
-
-export default new AuthService();

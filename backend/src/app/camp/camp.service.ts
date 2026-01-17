@@ -2,10 +2,12 @@ import type { Camp, File, Prisma } from '@prisma/client';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
-import config from '#config/index';
+import type { AppConfig } from '#config/index';
 import { BaseService } from '#core/base/BaseService';
 import { filterByKeys } from '#utils/object.js';
 import { type TCountryCode, getCountryData } from 'countries-list';
+import { injectable } from 'inversify';
+import { Config } from '#core/ioc/decorators';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: number | Record<string, number>;
@@ -21,7 +23,12 @@ type MessageTemplateCreateData = (OptionalByKeys<
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
+@injectable()
 export class CampService extends BaseService {
+  constructor(@Config() private readonly config: AppConfig) {
+    super();
+  }
+
   async getCampById(id: string) {
     const camp = await this.prisma.camp.findFirst({
       where: { id },
@@ -205,7 +212,7 @@ export class CampService extends BaseService {
       const urlObj = new URL(url);
 
       // Only replace app urls
-      if (urlObj.origin !== config.origin) {
+      if (urlObj.origin !== this.config.origin) {
         return url;
       }
 
@@ -276,5 +283,3 @@ const enrichFreePlaces = (
     ),
   };
 };
-
-export default new CampService();

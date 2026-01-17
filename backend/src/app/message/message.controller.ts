@@ -5,7 +5,7 @@ import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
 import ApiError from '#utils/ApiError';
-import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
+import { SimpleRegistrationTemplateMessage } from '#app/registration/registration.messages';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
 
 class MessageController extends BaseController {
@@ -45,13 +45,15 @@ class MessageController extends BaseController {
       replyTo: body.replyTo,
     });
 
-    registrations.forEach((registration) => {
-      RegistrationTemplateMessage.enqueue({
-        camp,
-        registration,
-        messageTemplate: template,
-      });
-    });
+    await Promise.all(
+      registrations.map((registration) =>
+        SimpleRegistrationTemplateMessage.enqueue({
+          camp,
+          registration,
+          messageTemplate: template,
+        }),
+      ),
+    );
 
     res
       .status(httpStatus.CREATED)

@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     include: ['tests/integration/**/*.test.ts'],
     maxWorkers: 1,
-    setupFiles: ['tests/integration/utils/setup.ts'],
+    setupFiles: ['tests/integration/setup.ts'],
     coverage: {
       enabled: true,
       include: ['src/*'],

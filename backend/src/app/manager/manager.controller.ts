@@ -1,14 +1,20 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import userService from '#app/user/user.service';
+import { UserService } from '#app/user/user.service';
 import managerService from '#app/manager/manager.service';
 import { ManagerResource } from '#app/manager/manager.resource';
 import validator from '#app/manager/manager.validation';
 import { type Request, type Response } from 'express';
 import { ManagerInvitationMessage } from '#app/manager/manager.messages';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
-class ManagerController extends BaseController {
+@injectable()
+export class ManagerController extends BaseController {
+  constructor(@inject(UserService) private readonly userService: UserService) {
+    super();
+  }
+
   async index(req: Request, res: Response) {
     const {
       params: { campId },
@@ -36,7 +42,7 @@ class ManagerController extends BaseController {
       );
     }
 
-    const user = await userService.getUserByEmail(email);
+    const user = await this.userService.getUserByEmail(email);
 
     const data = {
       role,
@@ -48,7 +54,7 @@ class ManagerController extends BaseController {
         ? await managerService.inviteManager(camp.id, email, data)
         : await managerService.addManager(camp.id, user.id, data);
 
-    ManagerInvitationMessage.enqueue({
+    await ManagerInvitationMessage.enqueue({
       camp,
       manager,
     });
@@ -88,5 +94,3 @@ class ManagerController extends BaseController {
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 }
-
-export default new ManagerController();

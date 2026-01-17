@@ -9,14 +9,15 @@ import type {
   MailPriority,
   Address,
 } from './mail.types.js';
-import config from '#config/index';
+import type { AppConfig } from '#config/index';
+import { config } from '#core/ioc/facades';
 import i18n from '#core/i18n';
-import { MailRenderer } from '#app/mail/mail.renderer.js';
-import mailService from '#app/mail/mail.service.js';
+import { MailRenderer } from '#app/mail/mail.renderer';
+import { MailService } from '#app/mail/mail.service';
 import { htmlToText } from 'html-to-text';
 import logger from '#core/logger';
-import { registerMailable } from '#app/mail/mail.registry.js';
-import { mailQueue } from '#app/mail/mail.queue.js';
+import { registerMailable } from '#app/mail/mail.registry';
+import { container } from '#core/ioc/container';
 
 export interface MailableCtor<P> {
   new (payload: P): MailBase<P>;
@@ -24,11 +25,12 @@ export interface MailableCtor<P> {
 }
 
 export abstract class MailBase<P> {
-  public static isRegistered = false;
-
   private t?: Translator;
+  private config: AppConfig;
 
-  constructor(protected readonly payload: P) {}
+  constructor(protected readonly payload: P) {
+    this.config = config();
+  }
 
   protected getTranslationOptions(): TranslationOptions {
     return {};
@@ -53,13 +55,13 @@ export abstract class MailBase<P> {
 
   protected from(): Address | undefined {
     return {
-      name: config.appName,
-      address: config.email.from,
+      name: this.config.appName,
+      address: this.config.email.from,
     };
   }
 
   protected replyTo(): AddressLike | undefined {
-    return config.email.replyTo;
+    return this.config.email.replyTo;
   }
 
   protected cc(): AddressLike | undefined {
@@ -152,24 +154,12 @@ export abstract class MailBase<P> {
     };
   }
 
-  static register(): void {
-    if (this.isRegistered) {
-      return;
-    }
-    registerMailable(
-      this as unknown as MailableCtor<unknown> & { type: string },
-    );
+  static async enqueue<P>(this: MailableCtor<P>, payload: P): Promise<void> {
+    registerMailable(this as MailableCtor<unknown>);
 
-    this.isRegistered = true;
-  }
+    const mailService = container.get(MailService);
 
-  static enqueue<P>(
-    this: MailableCtor<P> & { type: string },
-    payload: P,
-  ): void {
-    MailBase.register();
-
-    mailQueue.add(this.type, payload).catch((error: unknown) => {
+    await mailService.dispatchMail(this, payload).catch((error: unknown) => {
       logger.error('Failed to enqueue mail job:', error);
     });
   }
@@ -178,6 +168,8 @@ export abstract class MailBase<P> {
     this: MailableCtor<P> & { type: string },
     payload: P,
   ): Promise<void> {
+    const mailService = container.get(MailService);
+
     await mailService.sendMail(new this(payload));
   }
 }

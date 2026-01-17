@@ -1,19 +1,21 @@
 import type { AppModule } from '#core/base/AppModule';
-import mailService from '#app/mail/mail.service';
-import { mailQueue } from '#app/mail/mail.queue';
-import { createMailableFromJob } from '#app/mail/mail.registry';
+import { MailService } from '#app/mail/mail.service';
+import { container } from '#core/ioc/container.js';
 
 export class MailModule implements AppModule {
-  async configure() {
-    await mailService.connect();
+  private mailService: MailService;
 
-    mailQueue.process(async (job) => {
-      await mailService.sendMail(createMailableFromJob(job));
+  constructor() {
+    this.mailService = container.get(MailService, {
+      autobind: true,
     });
   }
 
+  async configure() {
+    await this.mailService.connect();
+  }
+
   async shutdown(): Promise<void> {
-    await mailQueue.close();
-    await mailService.close();
+    await this.mailService.close();
   }
 }

@@ -21,6 +21,8 @@ import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
 import { startJobs, stopJobs } from '#jobs/index';
 import { connectDatabase, disconnectDatabase } from '#core/database';
+import { ContainerModule } from 'inversify';
+import { container } from '#core/ioc/container.js';
 
 let modules: AppModule[] = [];
 
@@ -33,9 +35,9 @@ const loadModules = () =>
     new AuthModule(),
     new TotpModule(),
     new ProfileModule(),
-    new UserModule(),
     new FileModule(),
     new CampModule(),
+    new UserModule(),
     new RegistrationModule(),
     new TableTemplateModule(),
     new ManagerModule(),
@@ -55,7 +57,6 @@ export async function boot() {
 
   await bootModules();
 
-  // Start jobs
   startJobs();
 }
 
@@ -74,6 +75,17 @@ async function bootModules() {
       await module.configure({});
     }
   }
+
+  console.log('Modules loaded');
+  // Bind module services
+  await container.load(
+    ...modules.map(
+      (module) =>
+        new ContainerModule((options) => {
+          module.bindContainers?.(options);
+        }),
+    ),
+  );
 
   // Register permissions
   for (const module of modules) {

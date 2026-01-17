@@ -1,16 +1,27 @@
 import { multipart, guard } from '#middlewares/index';
-import fileController from './file.controller.js';
+import { FileController } from './file.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import fileAccessGuard from './file.guard.js';
-import fileService from '#app/file/file.service.js';
+import { FileService } from '#app/file/file.service.js';
+import { resolve } from '#core/ioc/container.js';
 
 export class FileRouter extends ModuleRouter {
+  private fileService: FileService;
+
+  constructor() {
+    super();
+
+    this.fileService = resolve(FileService);
+  }
+
   protected registerBindings() {
-    this.bindModel('file', (_req, id) => fileService.getFileById(id));
+    this.bindModel('file', (_req, id) => this.fileService.getFileById(id));
   }
 
   protected defineRoutes() {
+    const fileController = new FileController();
+
     this.router.get(
       '/:fileId',
       guard(fileAccessGuard),

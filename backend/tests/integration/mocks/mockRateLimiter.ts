@@ -1,13 +1,16 @@
 import { vi } from 'vitest';
-import { NextFunction } from 'express';
 
-export function mockRateLimiter() {
-  vi.mock('../../src/middlewares/rateLimiter.middleware', () => ({
-    // Mock rate limiters to do nothing
-    generalLimiter: (_req: Request, _res: Response, next: NextFunction) =>
-      next(),
-    authLimiter: (_req: Request, _res: Response, next: NextFunction) => next(),
-    staticLimiter: (_req: Request, _res: Response, next: NextFunction) =>
-      next(),
-  }));
-}
+vi.mock('#middlewares/rateLimiter.middleware', () => {
+  const passThrough = (_req: any, _res: any, next: any) => next();
+
+  return {
+    authLimiter: passThrough,
+    generalLimiter: passThrough,
+    staticLimiter: passThrough,
+    default: {
+      authLimiter: passThrough,
+      generalLimiter: passThrough,
+      staticLimiter: passThrough,
+    },
+  };
+});

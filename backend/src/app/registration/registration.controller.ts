@@ -48,13 +48,13 @@ class RegistrationController extends BaseController {
 
     // Notify participant
     if (registration.waitingList) {
-      void RegistrationWaitlistedMessage.enqueueFor(camp, registration);
+      await RegistrationWaitlistedMessage.enqueueFor(camp, registration);
     } else {
-      void RegistrationConfirmedMessage.enqueueFor(camp, registration);
+      await RegistrationConfirmedMessage.enqueueFor(camp, registration);
     }
 
     // Notify contact email
-    RegistrationNotifyMessage.enqueue({ camp, registration });
+    await RegistrationNotifyMessage.enqueue({ camp, registration });
 
     res
       .status(httpStatus.CREATED)
@@ -84,11 +84,11 @@ class RegistrationController extends BaseController {
 
     if (!suppressMessage) {
       if (previousRegistration.data !== registration.data) {
-        void RegistrationUpdatedMessage.enqueueFor(camp, registration);
+        await RegistrationUpdatedMessage.enqueueFor(camp, registration);
       }
 
       if (previousRegistration.waitingList && !registration.waitingList) {
-        void RegistrationAcceptedMessage.enqueueFor(camp, registration);
+        await RegistrationAcceptedMessage.enqueueFor(camp, registration);
       }
     }
 
@@ -105,7 +105,7 @@ class RegistrationController extends BaseController {
     await registrationService.deleteRegistration(registration);
 
     if (!suppressMessage) {
-      void RegistrationDeletedMessage.enqueueFor(camp, registration);
+      await RegistrationDeletedMessage.enqueueFor(camp, registration);
     }
 
     res.status(httpStatus.NO_CONTENT).send();

@@ -21,11 +21,11 @@ abstract class RegistrationMessage<
 > extends MailBase<T> {
   protected to(): AddressLike {
     const emails = this.payload.registration.emails;
-    if (emails == null) {
+    if (emails == null || emails.length === 0) {
       throw new Error('Registration has no email address');
     }
 
-    if (emails.length > 0) {
+    if (emails.length > 1) {
       return emails;
     }
 
@@ -134,8 +134,9 @@ export interface RegistrationTemplatePayload {
   messageTemplate: MessageTemplateWithFiles;
 }
 
-export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
-  static readonly type = 'registration:template';
+// NOTE: DO NOT CALL THIS DIRECTLY! It has no type
+class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
+  static readonly type: string;
 
   protected subject(): string | Promise<string> {
     let template = translateObject(
@@ -162,6 +163,13 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     });
 
     return compile(this.context());
+  }
+
+  protected replyTo(): AddressLike | undefined {
+    return translateObject(
+      this.payload.camp.contactEmail,
+      this.payload.registration.country ?? '',
+    );
   }
 
   private context(): object {
@@ -231,6 +239,10 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 }
 
+export class SimpleRegistrationTemplateMessage extends RegistrationTemplateMessage {
+  static readonly type = 'registration:template:simple';
+}
+
 type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
 
 async function loadMessageTemplate(
@@ -247,6 +259,7 @@ async function loadMessageTemplate(
 
 abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
   static readonly event: string;
+  static readonly type: string;
 
   static async enqueueFor(
     this: typeof RegistrationTemplateMessage & { event: string },
@@ -258,7 +271,7 @@ abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
       return;
     }
 
-    this.enqueue({
+    await this.enqueue({
       registration,
       camp,
       messageTemplate,
@@ -284,7 +297,8 @@ abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
 }
 
 export class RegistrationConfirmedMessage extends RegistrationEventMessage {
-  readonly event = 'registration_confirmed';
+  static readonly event = 'registration_confirmed';
+  static readonly type = 'registration:template:confirmed';
 
   protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
     return [
@@ -294,11 +308,13 @@ export class RegistrationConfirmedMessage extends RegistrationEventMessage {
 }
 
 export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
-  readonly event = 'registration_waitlisted';
+  static readonly event = 'registration_waitlisted';
+  static readonly type = 'registration:template:waitlisted';
 }
 
 export class RegistrationUpdatedMessage extends RegistrationEventMessage {
-  readonly event = 'registration_updated';
+  static readonly event = 'registration_updated';
+  static readonly type = 'registration:template:updated';
 
   protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
     return [
@@ -308,9 +324,11 @@ export class RegistrationUpdatedMessage extends RegistrationEventMessage {
 }
 
 export class RegistrationDeletedMessage extends RegistrationEventMessage {
-  readonly event = 'registration_canceled';
+  static readonly event = 'registration_canceled';
+  static readonly type = 'registration:template:canceled';
 }
 
 export class RegistrationAcceptedMessage extends RegistrationEventMessage {
-  readonly event = 'registration_accepted';
+  static readonly event = 'registration_accepted';
+  static readonly type = 'registration:template:accepted';
 }

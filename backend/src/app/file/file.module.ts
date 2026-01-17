@@ -1,19 +1,12 @@
-import type { AppModule, AppRouter } from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { FileRouter } from '#app/file/file.routes';
-import { fileQueue } from '#app/file/file.queue';
-import fileService from '#app/file/file.service';
-import { unregisterAllFileGuards } from '#app/file/file.guard.js';
+import { unregisterAllFileGuards } from '#app/file/file.guard';
+import { FileService } from '#app/file/file.service';
+import { resolve } from '#core/ioc/container';
 
 export class FileModule implements AppModule {
-  configure() {
-    fileQueue.process(async (job) => {
-      if (job.name === 'upload') {
-        await fileService.uploadFile(job.payload);
-        return;
-      }
-
-      throw new Error(`Unknown file job: "${job.name}"`);
-    });
+  bindContainers(options: BindOptions) {
+    options.bind(FileService).toSelf().inSingletonScope();
   }
 
   registerRoutes(router: AppRouter) {
@@ -21,7 +14,7 @@ export class FileModule implements AppModule {
   }
 
   async shutdown() {
-    await fileQueue.close();
+    await resolve(FileService).close();
 
     unregisterAllFileGuards();
   }

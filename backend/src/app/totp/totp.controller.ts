@@ -1,4 +1,4 @@
-import userService from '#app/user/user.service';
+import { UserService } from '#app/user/user.service';
 import totpService from './totp.service.js';
 import httpStatus from 'http-status';
 import validator from './totp.validation.js';
@@ -7,15 +7,21 @@ import ApiError from '#utils/ApiError';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { isPasswordMatch } from '#core/encryption';
+import { inject, injectable } from 'inversify';
 
-class TotPController extends BaseController {
+@injectable()
+export class TotPController extends BaseController {
+  constructor(@inject(UserService) private readonly userService: UserService) {
+    super();
+  }
+
   async setup(req: Request, res: Response) {
     const {
       body: { password },
     } = await req.validate(validator.setup);
 
     const userId = req.authUserId();
-    const user = await userService.getUserByIdOrFail(userId);
+    const user = await this.userService.getUserByIdOrFail(userId);
 
     // Verify password
     const match = await isPasswordMatch(password, user.password);
@@ -41,7 +47,7 @@ class TotPController extends BaseController {
       body: { otp },
     } = await req.validate(validator.enable);
     const userId = req.authUserId();
-    const user = await userService.getUserByIdOrFail(userId);
+    const user = await this.userService.getUserByIdOrFail(userId);
 
     await totpService.validateTOTP(user, otp);
 
@@ -54,7 +60,7 @@ class TotPController extends BaseController {
     } = await req.validate(validator.disable);
 
     const userId = req.authUserId();
-    const user = await userService.getUserByIdOrFail(userId);
+    const user = await this.userService.getUserByIdOrFail(userId);
 
     // Verify password
     const match = await isPasswordMatch(password, user.password);
@@ -78,5 +84,3 @@ class TotPController extends BaseController {
     res.status(httpStatus.NO_CONTENT).end();
   }
 }
-
-export default new TotPController();
