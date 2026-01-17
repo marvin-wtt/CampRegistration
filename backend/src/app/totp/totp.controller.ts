@@ -1,5 +1,5 @@
 import { UserService } from '#app/user/user.service';
-import totpService from './totp.service.js';
+import { TotpService } from './totp.service.js';
 import httpStatus from 'http-status';
 import validator from './totp.validation.js';
 import { TotpResource } from './totp.resource.js';
@@ -11,7 +11,10 @@ import { inject, injectable } from 'inversify';
 
 @injectable()
 export class TotPController extends BaseController {
-  constructor(@inject(UserService) private readonly userService: UserService) {
+  constructor(
+    @inject(UserService) private readonly userService: UserService,
+    @inject(TotpService) private readonly totpService: TotpService,
+  ) {
     super();
   }
 
@@ -37,7 +40,7 @@ export class TotPController extends BaseController {
       );
     }
 
-    const totp = await totpService.generateTOTP(user);
+    const totp = await this.totpService.generateTOTP(user);
 
     res.resource(new TotpResource(totp));
   }
@@ -49,7 +52,7 @@ export class TotPController extends BaseController {
     const userId = req.authUserId();
     const user = await this.userService.getUserByIdOrFail(userId);
 
-    await totpService.validateTOTP(user, otp);
+    await this.totpService.validateTOTP(user, otp);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
@@ -76,10 +79,10 @@ export class TotPController extends BaseController {
     }
 
     // Verify TOTP
-    totpService.verifyTOTP(user, otp);
+    this.totpService.verifyTOTP(user, otp);
 
     // Disable
-    await totpService.disableTOTP(user);
+    await this.totpService.disableTOTP(user);
 
     res.status(httpStatus.NO_CONTENT).end();
   }

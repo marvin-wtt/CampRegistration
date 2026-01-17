@@ -5,7 +5,7 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { FileService } from '#app/file/file.service';
 import logger from '#core/logger';
-import { resolve } from '#core/ioc/container.js';
+import { resolve } from '#core/ioc/container';
 
 export async function validateRequest<T extends ZodObject>(
   req: Request,

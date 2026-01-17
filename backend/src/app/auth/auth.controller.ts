@@ -1,15 +1,15 @@
 import httpStatus from 'http-status';
 import { AuthService } from './auth.service.js';
 import { UserService } from '#app/user/user.service';
-import tokenService from '#app/token/token.service';
+import { TokenService } from '#app/token/token.service';
 import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config/index';
 import ApiError from '#utils/ApiError';
-import managerService from '#app/manager/manager.service';
+import { ManagerService } from '#app/manager/manager.service';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
-import totpService from '#app/totp/totp.service';
+import { TotpService } from '#app/totp/totp.service';
 import {
   ResetPasswordMessage,
   VerifyEmailMessage,
@@ -24,6 +24,9 @@ export class AuthController extends BaseController {
     @Config() private readonly config: AppConfig,
     @inject(AuthService) private readonly authService: AuthService,
     @inject(UserService) private readonly userService: UserService,
+    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(TokenService) private readonly tokenService: TokenService,
+    @inject(TotpService) private readonly totpService: TotpService,
   ) {
     super();
   }
@@ -41,9 +44,10 @@ export class AuthController extends BaseController {
       locale,
     });
 
-    await managerService.resolveManagerInvitations(user.email, user.id);
+    await this.managerService.resolveManagerInvitations(user.email, user.id);
 
-    const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
+    const verifyEmailToken =
+      await this.tokenService.generateVerifyEmailToken(user);
     await VerifyEmailMessage.enqueue({
       user,
       token: verifyEmailToken,
@@ -65,7 +69,7 @@ export class AuthController extends BaseController {
 
     // Check if totp is required
     if (user.twoFactorEnabled) {
-      const token = tokenService.generateTotpToken(user);
+      const token = this.tokenService.generateTotpToken(user);
       // Set auth header
       res.setHeader(
         'WWW-Authenticate',
@@ -78,7 +82,7 @@ export class AuthController extends BaseController {
 
     // Check if email is required
     if (!user.emailVerified) {
-      const token = tokenService.generateSendVerifyEmailToken(user);
+      const token = this.tokenService.generateSendVerifyEmailToken(user);
 
       this.sendPartialAuthResponse(res, token, 'EMAIL_NOT_VERIFIED');
       return;
@@ -92,9 +96,9 @@ export class AuthController extends BaseController {
       body: { otp, token, remember },
     } = await req.validate(validator.verifyOTP);
 
-    const { userId } = tokenService.verifyTotpToken(token);
+    const { userId } = this.tokenService.verifyTotpToken(token);
     const user = await this.userService.getUserByIdOrFail(userId);
-    totpService.verifyTOTP(user, otp);
+    this.totpService.verifyTOTP(user, otp);
 
     await this.sendAuthResponse(res, userId, remember);
   }
@@ -102,7 +106,7 @@ export class AuthController extends BaseController {
   async sendAuthResponse(res: Response, userId: string, remember: boolean) {
     const user = await this.userService.updateUserLastSeenByIdWithCamps(userId);
 
-    const tokens = await tokenService.generateAuthTokens(user, remember);
+    const tokens = await this.tokenService.generateAuthTokens(user, remember);
     this.setAuthCookies(res, tokens);
 
     res.json(
@@ -179,9 +183,8 @@ export class AuthController extends BaseController {
       return;
     }
 
-    const resetPasswordToken = await tokenService.generateResetPasswordToken(
-      user.id,
-    );
+    const resetPasswordToken =
+      await this.tokenService.generateResetPasswordToken(user.id);
 
     if (resetPasswordToken !== undefined) {
       await ResetPasswordMessage.enqueue({
@@ -208,14 +211,15 @@ export class AuthController extends BaseController {
       body: { token },
     } = await req.validate(validator.sendEmailVerification);
 
-    const { userId } = tokenService.verifySendVerifyEmailToken(token);
+    const { userId } = this.tokenService.verifySendVerifyEmailToken(token);
     const user = await this.userService.getUserByIdWithCamps(userId);
 
     if (user.emailVerified) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');
     }
 
-    const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
+    const verifyEmailToken =
+      await this.tokenService.generateVerifyEmailToken(user);
     await VerifyEmailMessage.enqueue({
       user,
       token: verifyEmailToken,

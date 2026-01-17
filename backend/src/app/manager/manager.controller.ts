@@ -1,7 +1,7 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { UserService } from '#app/user/user.service';
-import managerService from '#app/manager/manager.service';
+import { ManagerService } from '#app/manager/manager.service';
 import { ManagerResource } from '#app/manager/manager.resource';
 import validator from '#app/manager/manager.validation';
 import { type Request, type Response } from 'express';
@@ -11,7 +11,10 @@ import { inject, injectable } from 'inversify';
 
 @injectable()
 export class ManagerController extends BaseController {
-  constructor(@inject(UserService) private readonly userService: UserService) {
+  constructor(
+    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(UserService) private readonly userService: UserService,
+  ) {
     super();
   }
 
@@ -20,7 +23,7 @@ export class ManagerController extends BaseController {
       params: { campId },
     } = await req.validate(validator.index);
 
-    const managers = await managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(campId);
 
     res.resource(ManagerResource.collection(managers));
   }
@@ -31,7 +34,7 @@ export class ManagerController extends BaseController {
       body: { email, role, expiresAt },
     } = await req.validate(validator.store);
 
-    const existingCampManager = await managerService.getManagerByEmail(
+    const existingCampManager = await this.managerService.getManagerByEmail(
       camp.id,
       email,
     );
@@ -51,8 +54,8 @@ export class ManagerController extends BaseController {
 
     const manager =
       user === null
-        ? await managerService.inviteManager(camp.id, email, data)
-        : await managerService.addManager(camp.id, user.id, data);
+        ? await this.managerService.inviteManager(camp.id, email, data)
+        : await this.managerService.addManager(camp.id, user.id, data);
 
     await ManagerInvitationMessage.enqueue({
       camp,
@@ -68,10 +71,13 @@ export class ManagerController extends BaseController {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
 
-    const updatedManager = await managerService.updateManagerById(manager.id, {
-      role,
-      expiresAt,
-    });
+    const updatedManager = await this.managerService.updateManagerById(
+      manager.id,
+      {
+        role,
+        expiresAt,
+      },
+    );
 
     res.resource(new ManagerResource(updatedManager));
   }
@@ -81,7 +87,7 @@ export class ManagerController extends BaseController {
       params: { campId, managerId },
     } = await req.validate(validator.destroy);
 
-    const managers = await managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(campId);
     if (managers.length <= 1) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -89,7 +95,7 @@ export class ManagerController extends BaseController {
       );
     }
 
-    await managerService.removeManager(managerId);
+    await this.managerService.removeManager(managerId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

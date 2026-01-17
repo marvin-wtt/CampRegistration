@@ -10,7 +10,7 @@ import config from '#config/index';
 import { TokenType } from '@prisma/client';
 import passport from 'passport';
 import { UserService } from '#app/user/user.service';
-import { resolve } from '#core/ioc/container.js';
+import { resolve } from '#core/ioc/container';
 
 function cookieExtractor(req: Request) {
   const cookies: unknown = req.cookies;

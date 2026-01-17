@@ -1,4 +1,4 @@
-import tokenService from '#app/token/token.service';
+import { TokenService } from '#app/token/token.service';
 import { UserService } from '#app/user/user.service';
 import { AuthService } from '#app/auth/auth.service';
 import { CampService } from '#app/camp/camp.service';
@@ -18,6 +18,7 @@ export class ProfileController extends BaseController {
     @inject(UserService) private readonly userService: UserService,
     @inject(CampService) private readonly campService: CampService,
     @inject(AuthService) private readonly authService: AuthService,
+    @inject(TokenService) private readonly tokenService: TokenService,
   ) {
     super();
   }
@@ -63,7 +64,7 @@ export class ProfileController extends BaseController {
     // Send email verification
     if (emailVerified === false) {
       const verifyEmailToken =
-        await tokenService.generateVerifyEmailToken(user);
+        await this.tokenService.generateVerifyEmailToken(user);
 
       await VerifyEmailMessage.enqueue({
         user,

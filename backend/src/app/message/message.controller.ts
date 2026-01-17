@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import registrationService from '#app/registration/registration.service';
+import { RegistrationService } from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
@@ -7,8 +7,17 @@ import messageTemplateService from '#app/messageTemplate/message-template.servic
 import ApiError from '#utils/ApiError';
 import { SimpleRegistrationTemplateMessage } from '#app/registration/registration.messages';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
+import { inject, injectable } from 'inversify';
 
-class MessageController extends BaseController {
+@injectable()
+export class MessageController extends BaseController {
+  constructor(
+    @inject(RegistrationService)
+    private readonly registrationService: RegistrationService,
+  ) {
+    super();
+  }
+
   index(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
@@ -21,7 +30,7 @@ class MessageController extends BaseController {
     const camp = req.modelOrFail('camp');
     const { body } = await req.validate(validator.store);
 
-    const registrations = await registrationService.getRegistrationsByIds(
+    const registrations = await this.registrationService.getRegistrationsByIds(
       camp.id,
       body.registrationIds,
     );
@@ -72,5 +81,3 @@ class MessageController extends BaseController {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 }
-
-export default new MessageController();

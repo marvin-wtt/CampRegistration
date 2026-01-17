@@ -4,7 +4,7 @@ import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { resolve } from '#core/ioc/container.js';
+import { resolve } from '#core/ioc/container';
 
 export class CampFilesRouter extends ModuleRouter {
   protected registerBindings() {
@@ -17,7 +17,7 @@ export class CampFilesRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const fileController = new FileController();
+    const fileController = resolve(FileController);
 
     // This route is used to redirect to the file API endpoint
     // In the future, it should serve the file model instead

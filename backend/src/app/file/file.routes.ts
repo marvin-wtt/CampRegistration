@@ -3,8 +3,8 @@ import { FileController } from './file.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import fileAccessGuard from './file.guard.js';
-import { FileService } from '#app/file/file.service.js';
-import { resolve } from '#core/ioc/container.js';
+import { FileService } from '#app/file/file.service';
+import { resolve } from '#core/ioc/container';
 
 export class FileRouter extends ModuleRouter {
   private fileService: FileService;
@@ -20,7 +20,7 @@ export class FileRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const fileController = new FileController();
+    const fileController = resolve(FileController);
 
     this.router.get(
       '/:fileId',

@@ -6,6 +6,7 @@ import {
   type JobStatus,
   type JobOptions,
 } from '#core/queue/Queue.js';
+import logger from '#core/logger';
 
 type InternalJob<P> = Job<P> & {
   priority: number; // default 100
@@ -91,6 +92,10 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public close(): void {
+    if (this.closed) {
+      return;
+    }
+
     this.closed = true;
     this.stopTick();
     this.stopRepeat();
@@ -225,6 +230,10 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
         next.status = 'FAILED';
         next.finishedAt = new Date();
         this.pruneFinished();
+
+        logger.error(
+          `Job ${next.id} failed after ${next.attempts.toString()} attempts: ${next.error as string}`,
+        );
         return;
       }
 
@@ -232,6 +241,10 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
       const delay = this.computeRetryDelayMs(next.attempts);
       next.status = 'DELAYED';
       next.runAt = new Date(Date.now() + delay);
+
+      logger.warn(
+        `Job ${next.id} failed: ${next.error as string}. Retrying in ${delay.toString()}ms.`,
+      );
     }
   }
 

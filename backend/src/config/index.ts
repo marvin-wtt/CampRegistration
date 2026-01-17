@@ -1,5 +1,5 @@
 import { env } from '#config/enviroment';
-import { appPath } from '#utils/paths.js';
+import { appPath } from '#utils/paths';
 
 const config = {
   env: env.NODE_ENV,

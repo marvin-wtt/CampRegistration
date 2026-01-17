@@ -3,10 +3,12 @@ import { FileRouter } from '#app/file/file.routes';
 import { unregisterAllFileGuards } from '#app/file/file.guard';
 import { FileService } from '#app/file/file.service';
 import { resolve } from '#core/ioc/container';
+import { FileController } from '#app/file/file.controller';
 
 export class FileModule implements AppModule {
   bindContainers(options: BindOptions) {
     options.bind(FileService).toSelf().inSingletonScope();
+    options.bind(FileController).toSelf().inSingletonScope();
   }
 
   registerRoutes(router: AppRouter) {

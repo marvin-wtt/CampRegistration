@@ -7,10 +7,12 @@ import type {
 import { ManagerRouter } from '#app/manager/manager.routes';
 import type { ManagerPermission } from '@camp-registration/common/permissions';
 import { ManagerController } from '#app/manager/manager.controller';
+import { ManagerService } from '#app/manager/manager.service';
 
 export class ManagerModule implements AppModule {
   bindContainers(options: BindOptions) {
     options.bind(ManagerController).toSelf().inSingletonScope();
+    options.bind(ManagerService).toSelf().inSingletonScope();
   }
 
   registerRoutes(router: AppRouter): void {

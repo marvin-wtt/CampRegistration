@@ -13,8 +13,9 @@ import Handlebars from 'handlebars';
 import { RegistrationResource } from '#app/registration/registration.resource';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
-import messageService from '#app/message/message.service';
+import { MessageService } from '#app/message/message.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
+import { resolve } from '#core/ioc/container';
 
 abstract class RegistrationMessage<
   T extends { registration: Registration },
@@ -200,6 +201,7 @@ class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTempla
 
     // TODO Store to address as well
 
+    const messageService = resolve(MessageService);
     await messageService.createMessage(
       this.payload.registration,
       this.payload.messageTemplate,

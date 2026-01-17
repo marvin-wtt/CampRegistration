@@ -5,20 +5,17 @@ import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
-import { resolve } from '#core/ioc/container.js';
+import { inject, injectable } from 'inversify';
 
 interface ModelData {
   id: string;
   name: string;
 }
 
+@injectable()
 export class FileController extends BaseController {
-  private fileService: FileService;
-
-  constructor() {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
     super();
-
-    this.fileService = resolve(FileService);
   }
 
   async stream(req: Request, res: Response) {

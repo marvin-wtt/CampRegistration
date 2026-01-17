@@ -1,7 +1,8 @@
-import managerService from '#app/manager/manager.service';
+import { ManagerService } from '#app/manager/manager.service';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
 import { permissionRegistry } from '#core/permission-registry';
+import { resolve } from '#core/ioc/container';
 
 export const campManager = (
   permission: Permission,
@@ -10,6 +11,7 @@ export const campManager = (
     const userId = req.authUserId();
     const campId = req.modelOrFail('camp').id;
 
+    const managerService = resolve(ManagerService);
     const manager = await managerService.getManagerByUserId(campId, userId);
     if (manager === null) {
       return false;

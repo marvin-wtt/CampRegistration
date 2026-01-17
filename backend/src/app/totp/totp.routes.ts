@@ -3,7 +3,7 @@ import { TotPController } from '#app/totp/totp.controller';
 import { authLimiter } from '#middlewares/index';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { resolve } from '#core/ioc/container.js';
+import { resolve } from '#core/ioc/container';
 
 export class TotpRouter extends ModuleRouter {
   protected registerBindings() {

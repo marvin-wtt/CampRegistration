@@ -17,7 +17,7 @@ import { MailService } from '#app/mail/mail.service';
 import { htmlToText } from 'html-to-text';
 import logger from '#core/logger';
 import { registerMailable } from '#app/mail/mail.registry';
-import { container } from '#core/ioc/container';
+import { resolve } from '#core/ioc/container';
 
 export interface MailableCtor<P> {
   new (payload: P): MailBase<P>;
@@ -157,7 +157,7 @@ export abstract class MailBase<P> {
   static async enqueue<P>(this: MailableCtor<P>, payload: P): Promise<void> {
     registerMailable(this as MailableCtor<unknown>);
 
-    const mailService = container.get(MailService);
+    const mailService = resolve(MailService);
 
     await mailService.dispatchMail(this, payload).catch((error: unknown) => {
       logger.error('Failed to enqueue mail job:', error);
@@ -168,7 +168,7 @@ export abstract class MailBase<P> {
     this: MailableCtor<P> & { type: string },
     payload: P,
   ): Promise<void> {
-    const mailService = container.get(MailService);
+    const mailService = resolve(MailService);
 
     await mailService.sendMail(new this(payload));
   }

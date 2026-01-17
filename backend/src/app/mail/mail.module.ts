@@ -1,21 +1,17 @@
 import type { AppModule } from '#core/base/AppModule';
 import { MailService } from '#app/mail/mail.service';
-import { container } from '#core/ioc/container.js';
+import { container, resolve } from '#core/ioc/container';
 
 export class MailModule implements AppModule {
-  private mailService: MailService;
-
-  constructor() {
-    this.mailService = container.get(MailService, {
-      autobind: true,
-    });
+  bindContainers() {
+    container.bind(MailService).toSelf().inSingletonScope();
   }
 
   async configure() {
-    await this.mailService.connect();
+    await resolve(MailService).connect();
   }
 
   async shutdown(): Promise<void> {
-    await this.mailService.close();
+    await resolve(MailService).close();
   }
 }

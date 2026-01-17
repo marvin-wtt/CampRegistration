@@ -1,6 +1,6 @@
 import { FileService } from '#app/file/file.service';
-import { ModuleRouter } from '#core/router/ModuleRouter.js';
-import { resolve } from '#core/ioc/container.js';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import { resolve } from '#core/ioc/container';
 
 export class RegistrationFilesRouter extends ModuleRouter {
   protected registerBindings() {

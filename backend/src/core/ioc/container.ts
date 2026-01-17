@@ -1,7 +1,7 @@
 import { Container, type ServiceIdentifier } from 'inversify';
 import { TYPES } from './types.js';
 import config, { type AppConfig } from '#config/index';
-import { QueueManager } from '#core/queue/QueueManager.js';
+import { QueueManager } from '#core/queue/QueueManager';
 
 export const container = new Container({
   defaultScope: 'Singleton',

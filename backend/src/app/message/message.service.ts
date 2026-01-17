@@ -5,9 +5,11 @@ import type {
   File,
 } from '@prisma/client';
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
+@injectable()
 export class MessageService extends BaseService {
   async createMessage(
     registration: Registration,

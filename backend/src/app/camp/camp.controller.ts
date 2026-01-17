@@ -1,7 +1,7 @@
 import { CampService } from './camp.service.js';
 import { CampResource, CampDetailsResource } from './camp.resource.js';
 import { FileService } from '#app/file/file.service';
-import registrationService from '#app/registration/registration.service';
+import { RegistrationService } from '#app/registration/registration.service';
 import tableTemplateService from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import defaultForm from '#assets/camp/form';
@@ -13,19 +13,20 @@ import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import messageTemplateService from '#app/messageTemplate/message-template.service';
-import managerService from '#app/manager/manager.service';
+import { ManagerService } from '#app/manager/manager.service';
 import ApiError from '#utils/ApiError';
-import { resolve } from '#core/ioc/container';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class CampController extends BaseController {
-  private fileService: FileService;
-  private campService: CampService;
-
-  constructor() {
+  constructor(
+    @inject(CampService) private readonly campService: CampService,
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(RegistrationService)
+    private readonly registrationService: RegistrationService,
+  ) {
     super();
-
-    this.fileService = resolve(FileService);
-    this.campService = resolve(CampService);
   }
 
   show(req: Request, res: Response) {
@@ -66,7 +67,7 @@ export class CampController extends BaseController {
     // This must happen here because the body needs to be validated first
     if (body.referenceCampId) {
       const isManager =
-        await managerService.campManagerExistsWithUserIdAndCampId(
+        await this.managerService.campManagerExistsWithUserIdAndCampId(
           body.referenceCampId,
           userId,
         );
@@ -154,7 +155,7 @@ export class CampController extends BaseController {
 
     // Re-generate computed data fields
     if (body.form) {
-      await registrationService.updateRegistrationsComputedDataByCamp(
+      await this.registrationService.updateRegistrationsComputedDataByCamp(
         updatedCamp,
       );
     }

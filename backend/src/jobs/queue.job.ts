@@ -1,5 +1,5 @@
-import prisma from '#core/database.js';
-import logger from '#core/logger.js';
+import prisma from '#core/database';
+import logger from '#core/logger';
 import moment from 'moment';
 
 export async function deleteOldQueueJobs() {

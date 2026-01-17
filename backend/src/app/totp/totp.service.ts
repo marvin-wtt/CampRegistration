@@ -4,7 +4,9 @@ import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
+@injectable()
 export class TotpService extends BaseService {
   async generateTOTP(user: User) {
     const secret = new OTPAuth.Secret();
@@ -75,5 +77,3 @@ export class TotpService extends BaseService {
     });
   }
 }
-
-export default new TotpService();

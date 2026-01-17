@@ -14,7 +14,7 @@ export class CampRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const campController = new CampController();
+    const campController = resolve(CampController);
 
     this.router.get(
       '/',

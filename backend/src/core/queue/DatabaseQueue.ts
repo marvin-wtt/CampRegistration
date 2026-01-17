@@ -46,6 +46,10 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public async close() {
+    if (this.closed) {
+      return;
+    }
+
     this.closed = true;
     this.running = false;
 

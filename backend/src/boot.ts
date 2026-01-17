@@ -22,7 +22,7 @@ import { initI18n } from '#core/i18n';
 import { startJobs, stopJobs } from '#jobs/index';
 import { connectDatabase, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
-import { container } from '#core/ioc/container.js';
+import { container } from '#core/ioc/container';
 
 let modules: AppModule[] = [];
 
@@ -69,14 +69,6 @@ export async function shutdown() {
 }
 
 async function bootModules() {
-  // Configure modules
-  for (const module of modules) {
-    if (module.configure) {
-      await module.configure({});
-    }
-  }
-
-  console.log('Modules loaded');
   // Bind module services
   await container.load(
     ...modules.map(
@@ -86,6 +78,13 @@ async function bootModules() {
         }),
     ),
   );
+
+  // Configure modules
+  for (const module of modules) {
+    if (module.configure) {
+      await module.configure({});
+    }
+  }
 
   // Register permissions
   for (const module of modules) {

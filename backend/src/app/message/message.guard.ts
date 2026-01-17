@@ -2,9 +2,9 @@ import type { Request } from 'express';
 import { campManager, type GuardFn } from '#guards/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import messageService from '#app/message/message.service';
+import { MessageService } from '#app/message/message.service';
 import { CampService } from '#app/camp/camp.service';
-import { resolve } from '#core/ioc/container.js';
+import { resolve } from '#core/ioc/container';
 
 export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
@@ -17,6 +17,7 @@ export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
   }
 
   // Load models for guard
+  const messageService = resolve(MessageService);
   const message = await messageService.getMessageWithCampById(file.messageId);
   if (!message || !message.registration) {
     throw new ApiError(

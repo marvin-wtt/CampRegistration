@@ -5,7 +5,9 @@ import { formUtils } from '#utils/form';
 import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
+import { injectable } from 'inversify';
 
+@injectable()
 export class RegistrationService extends BaseService {
   async getRegistrationById(campId: string, id: string) {
     return this.prisma.registration.findFirst({
@@ -239,5 +241,3 @@ export class RegistrationService extends BaseService {
     };
   }
 }
-
-export default new RegistrationService();

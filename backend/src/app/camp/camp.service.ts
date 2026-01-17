@@ -4,7 +4,7 @@ import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import type { AppConfig } from '#config/index';
 import { BaseService } from '#core/base/BaseService';
-import { filterByKeys } from '#utils/object.js';
+import { filterByKeys } from '#utils/object';
 import { type TCountryCode, getCountryData } from 'countries-list';
 import { injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';

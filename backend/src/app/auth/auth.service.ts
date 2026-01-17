@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import { UserService } from '#app/user/user.service';
-import tokenService from '#app/token/token.service';
+import { TokenService } from '#app/token/token.service';
 import ApiError from '#utils/ApiError';
 import { TokenType } from '@prisma/client';
 import { isPasswordMatch } from '#core/encryption';
@@ -10,7 +10,10 @@ import { inject, injectable } from 'inversify';
 
 @injectable()
 export class AuthService extends BaseService {
-  constructor(@inject(UserService) private readonly userService: UserService) {
+  constructor(
+    @inject(UserService) private readonly userService: UserService,
+    @inject(TokenService) private readonly tokenService: TokenService,
+  ) {
     super();
   }
 
@@ -45,20 +48,20 @@ export class AuthService extends BaseService {
 
   async refreshAuth(refreshToken: string): Promise<AuthTokensResponse> {
     try {
-      const refreshTokenData = await tokenService.verifyDatabaseToken(
+      const refreshTokenData = await this.tokenService.verifyDatabaseToken(
         refreshToken,
         TokenType.REFRESH,
       );
       const { id, userId } = refreshTokenData;
 
-      await tokenService.deleteTokenById(id);
+      await this.tokenService.deleteTokenById(id);
 
       await this.userService.updateUserLastSeenById(userId);
 
       // Fetch user because role is required
       const user = await this.userService.getUserByIdOrFail(userId);
 
-      return await tokenService.generateAuthTokens(user, true);
+      return await this.tokenService.generateAuthTokens(user, true);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
@@ -70,7 +73,7 @@ export class AuthService extends BaseService {
     email: string,
     password: string,
   ): Promise<void> {
-    const resetPasswordTokenData = await tokenService.verifyDatabaseToken(
+    const resetPasswordTokenData = await this.tokenService.verifyDatabaseToken(
       token,
       TokenType.RESET_PASSWORD,
     );
@@ -90,13 +93,13 @@ export class AuthService extends BaseService {
   }
 
   async revokeAllUserTokens(userId: string) {
-    await tokenService.blacklistTokens(userId);
+    await this.tokenService.blacklistTokens(userId);
   }
 
   async verifyEmail(token: string): Promise<void> {
     let verifyEmailTokenData;
     try {
-      verifyEmailTokenData = await tokenService.verifyDatabaseToken(
+      verifyEmailTokenData = await this.tokenService.verifyDatabaseToken(
         token,
         TokenType.VERIFY_EMAIL,
       );
