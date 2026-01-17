@@ -1,46 +1,48 @@
-import { catchParamAsync } from '#utils/catchAsync';
-import fileController from '#app/file/file.controller';
-import fileService from '#app/file/file.service';
-import express from 'express';
+import { FileController } from '#app/file/file.controller';
+import { FileService } from '#app/file/file.service';
 import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import { resolve } from '#core/ioc/container.js';
 
-const router = express.Router({ mergeParams: true });
+export class CampFilesRouter extends ModuleRouter {
+  protected registerBindings() {
+    const fileService = resolve(FileService);
 
-router.param(
-  'fileId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const file = await fileService.getModelFile('camp', camp.id, id);
-    req.setModelOrFail('file', file);
-  }),
-);
+    this.bindModel('file', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return fileService.getModelFile('camp', camp.id, id);
+    });
+  }
 
-// This route is used to redirect to the file API endpoint
-// In the future, it should serve the file model instead
-router.get('/:fileId', (req, res) => {
-  res.redirect('/api/v1/files/' + req.params.fileId);
-});
+  protected defineRoutes() {
+    const fileController = new FileController();
 
-router.get(
-  '/',
-  auth(),
-  guard(campManager('camp.files.view')),
-  controller(fileController, 'index'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager('camp.files.create')),
-  multipart('file'),
-  controller(fileController, 'store'),
-);
-router.delete(
-  '/:fileId',
-  auth(),
-  guard(campManager('camp.files.delete')),
-  controller(fileController, 'destroy'),
-);
+    // This route is used to redirect to the file API endpoint
+    // In the future, it should serve the file model instead
+    this.router.get('/:fileId', (req, res) => {
+      res.redirect('/api/v1/files/' + req.params.fileId);
+    });
 
-export default router;
+    this.router.get(
+      '/',
+      auth(),
+      guard(campManager('camp.files.view')),
+      controller(fileController, 'index'),
+    );
+    this.router.post(
+      '/',
+      auth(),
+      guard(campManager('camp.files.create')),
+      multipart('file'),
+      controller(fileController, 'store'),
+    );
+    this.router.delete(
+      '/:fileId',
+      auth(),
+      guard(campManager('camp.files.delete')),
+      controller(fileController, 'destroy'),
+    );
+  }
+}
