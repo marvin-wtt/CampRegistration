@@ -248,7 +248,7 @@ export class RegistrationService extends BaseService {
       });
     });
 
-    await Promise.allSettled(results);
+    await Promise.all(results);
   }
 
   private createComputedData(
@@ -257,16 +257,16 @@ export class RegistrationService extends BaseService {
     const helper = new RegistrationCampDataHelper(data);
 
     return {
-      firstName: helper.firstName(),
-      lastName: helper.lastName(),
-      street: helper.street(),
-      city: helper.city(),
-      zipCode: helper.zipCode(),
-      country: helper.country(),
-      dateOfBirth: helper.dateOfBirth(),
-      emails: helper.emails(),
-      role: helper.role(),
-      gender: helper.gender(),
+      firstName: helper.firstName() ?? null,
+      lastName: helper.lastName() ?? null,
+      street: helper.street() ?? null,
+      city: helper.city() ?? null,
+      zipCode: helper.zipCode() ?? null,
+      country: helper.country() ?? null,
+      dateOfBirth: helper.dateOfBirth() ?? null,
+      emails: helper.emails() ?? [],
+      role: helper.role() ?? null,
+      gender: helper.gender() ?? null,
     };
   }
 }
