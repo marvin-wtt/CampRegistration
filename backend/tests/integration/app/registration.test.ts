@@ -1218,10 +1218,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       },
     );
 
-    it.todo('should not overwrite camp data when updating waiting list');
-
-    it.todo('should upload files if attached');
-
     it('should respond with `403` status code when user is not camp manager', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
       const camp = await CampFactory.create();

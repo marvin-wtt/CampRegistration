@@ -21,6 +21,8 @@ import {
   campCreateNational,
   campInactive,
   campUpdateBody,
+  campWithForm,
+  campUpdateBodyWithForm,
 } from './fixtures/camp.fixtures.js';
 import { request } from '../utils/request.js';
 import { campWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
@@ -1021,7 +1023,49 @@ describe('/api/v1/camps', () => {
       },
     );
 
-    it.todo('should update camp data for all registrations');
+    it('should update camp data for all registrations', async () => {
+      const { camp, accessToken } =
+        await createCampWithManagerAndToken(campWithForm);
+
+      const names = ['John', 'Tom', 'Marry'];
+
+      for (const name of names) {
+        await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          data: {
+            first_name: name,
+            email: `${name}@example.com`,
+            role: 'participant',
+          },
+          role: 'participant',
+          firstName: name,
+        });
+      }
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}`)
+        .send(campUpdateBodyWithForm)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const registrations = await prisma.registration.findMany({
+        where: {
+          camp: { id: camp.id },
+        },
+      });
+
+      for (const name of names) {
+        const registration = registrations.find(
+          (r) => r.data.first_name === name,
+        );
+        expect(registration).toHaveProperty('firstName', name);
+        expect(registration).toHaveProperty('role', null);
+        expect(registration).toHaveProperty(
+          'emails',
+          expect.arrayContaining([`${name}@example.com`]),
+        );
+      }
+    });
 
     it('should update the free places when max participant change', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken(
@@ -1093,6 +1137,20 @@ describe('/api/v1/camps', () => {
       await request().patch(`/api/v1/camps/${camp.id}`).send().expect(401);
     });
 
+    it('should respond with `404` status code when camp id does not exists', async () => {
+      const accessToken = generateAccessToken(await UserFactory.create());
+      const campId = ulid();
+      const data = {
+        public: true,
+      };
+
+      await request()
+        .patch(`/api/v1/camps/${campId}`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
     describe('request body', () => {
       it.each(campUpdateBody)(
         'should validate the request body | $name',
@@ -1113,20 +1171,6 @@ describe('/api/v1/camps', () => {
             .expect(expected);
         },
       );
-    });
-
-    it('should respond with `404` status code when camp id does not exists', async () => {
-      const accessToken = generateAccessToken(await UserFactory.create());
-      const campId = ulid();
-      const data = {
-        public: true,
-      };
-
-      await request()
-        .patch(`/api/v1/camps/${campId}`)
-        .send(data)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
     });
   });
 

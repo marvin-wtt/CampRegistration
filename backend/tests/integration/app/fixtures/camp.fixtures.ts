@@ -1,5 +1,6 @@
-import moment from 'moment/moment';
+import moment from 'moment';
 import { Prisma } from '@prisma/client';
+import { createForm } from '../utils/form.js';
 
 export const campActivePublic = {
   active: true,
@@ -1216,3 +1217,47 @@ export const campUpdateBody: UpdateBodyData[] = [
     expected: 400,
   },
 ];
+
+export const campWithForm = {
+  form: createForm([
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+      isRequired: true,
+    },
+    {
+      name: 'email',
+      type: 'text',
+      isRequired: true,
+    },
+    {
+      name: 'role',
+      type: 'text',
+      campDataType: 'role',
+      isRequired: true,
+    },
+  ]),
+};
+
+export const campUpdateBodyWithForm = {
+  form: createForm([
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+      isRequired: true,
+    },
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+      isRequired: true,
+    },
+    {
+      name: 'role',
+      type: 'text',
+      isRequired: true,
+    },
+  ]),
+};
