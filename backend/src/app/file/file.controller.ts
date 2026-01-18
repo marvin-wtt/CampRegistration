@@ -78,11 +78,16 @@ export class FileController extends BaseController {
     } = await req.validate(validator.store);
 
     const model = this.getRelationModel(req);
+
+    // Use the session id as the default field value if no field is provided
+    // This helps to avoid that other people can hijack anonymous files
+    const fieldValue = field ?? req.sessionId;
+
     const data = await this.fileService.saveModelFile(
       model,
       file,
       name,
-      field,
+      fieldValue,
       accessLevel ?? 'private',
     );
 

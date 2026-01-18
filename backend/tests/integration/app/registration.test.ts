@@ -487,27 +487,31 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('files', () => {
       it('should respond with `201` status code when form has file', async () => {
+        const sessionId = crypto.randomUUID();
         const camp = await CampFactory.create(campWithFileRequired);
         const file = await FileFactory.create({
-          field: crypto.randomUUID(),
+          field: sessionId,
           accessLevel: 'private',
         });
 
         const data = {
           some_field: 'Some value',
-          some_file: `${file.id}#${file.field}`,
+          some_file: file.id,
         };
 
         const { body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
           .send({ data })
           .expect(201);
 
         expect(body).toHaveProperty(`data.id`);
         expect(body).toHaveProperty(`data.data.some_file`);
 
-        const expectedUrl = `/api/v1/camps/${camp.id}/registrations/${body.data.id}/files/${file.id}/`;
-        expect(body.data.data.some_file.endsWith(expectedUrl)).toBeTruthy();
+        expect(body.data.data.some_file).toBe(file.id);
 
         const updatedFile = await prisma.file.findFirst({
           where: { id: file.id },
@@ -517,26 +521,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `201` status code when form has multiple files', async () => {
+        const sessionId = crypto.randomUUID();
         const camp = await CampFactory.create(campWithMultipleFilesRequired);
         const file1 = await FileFactory.create({
-          field: crypto.randomUUID(),
+          field: sessionId,
           accessLevel: 'private',
         });
         const file2 = await FileFactory.create({
-          field: crypto.randomUUID(),
+          field: sessionId,
           accessLevel: 'private',
         });
 
         const data = {
           some_field: 'Some value',
-          some_files: [
-            `${file1.id}#${file1.field}`,
-            `${file2.id}#${file2.field}`,
-          ],
+          some_files: [file1.id, file2.id],
         };
 
         const { body } = await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
           .send({ data })
           .expect(201);
 
@@ -544,15 +550,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(body).toHaveProperty(`data.data.some_files`);
         expect(body.data.data.some_files).toHaveLength(2);
 
-        const expectedUrl = (fileId: string) =>
-          `/api/v1/camps/${camp.id}/registrations/${body.data.id}/files/${fileId}/`;
-
-        expect(
-          body.data.data.some_files[0].endsWith(expectedUrl(file1.id)),
-        ).toBeTruthy();
-        expect(
-          body.data.data.some_files[1].endsWith(expectedUrl(file2.id)),
-        ).toBeTruthy();
+        expect(body.data.data.some_files[0]).toBe(file1.id);
+        expect(body.data.data.some_files[1]).toBe(file2.id);
 
         const updatedFiles = await prisma.file.findMany({
           where: { registrationId: body.data.id },
@@ -577,29 +576,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
       it('should respond with `400` status code when file is missing', async () => {
         const camp = await CampFactory.create(campWithFileRequired);
         const fileId = ulid();
-        const fileField = crypto.randomUUID();
 
         const data = {
           some_field: 'Some value',
-          some_file: `${fileId}#${fileField}`,
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(400);
-      });
-
-      it('should respond with `400` status code when file field is missing', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const file = await FileFactory.create({
-          field: crypto.randomUUID(),
-          accessLevel: 'private',
-        });
-
-        const data = {
-          some_field: 'Some value',
-          some_file: `${file.id}`,
+          some_file: fileId,
         };
 
         await request()
@@ -609,20 +589,25 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `400` status code when file field is invalid', async () => {
+        const sessionId = crypto.randomUUID();
+
         const camp = await CampFactory.create(campWithFileRequired);
         const file = await FileFactory.create({
-          field: crypto.randomUUID(),
+          field: crypto.randomUUID(), // Does not match sessionId
           accessLevel: 'private',
         });
 
-        const invalidField = crypto.randomUUID();
         const data = {
           some_field: 'Some value',
-          some_file: `${file.id}#${invalidField}`,
+          some_file: file.id,
         };
 
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
           .send({ data })
           .expect(400);
       });
@@ -645,23 +630,28 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `400` status code when file is already assigned to a registration', async () => {
+        const sessionId = crypto.randomUUID();
         const camp = await CampFactory.create(campWithFileRequired);
         const registration = await RegistrationFactory.create({
           camp: { connect: { id: camp.id } },
         });
         const file = await FileFactory.create({
-          field: crypto.randomUUID(),
+          field: sessionId,
           accessLevel: 'private',
           registration: { connect: { id: registration.id } },
         });
 
         const data = {
           some_field: 'Some value',
-          some_file: `${file.id}#${file.field}`,
+          some_file: file.id,
         };
 
         await request()
           .post(`/api/v1/camps/${camp.id}/registrations`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
           .send({ data })
           .expect(400);
       });
@@ -1362,13 +1352,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.email,
-            replyTo: camp.contactEmail,
-            subject: 'Registration updated',
-          }),
-        );
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail,
+          subject: 'Registration updated',
+        });
       });
 
       it('should not send update email when suppressed', async () => {
@@ -1397,13 +1385,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
-        expect(mailer.sendMail).not.toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.email,
-            replyTo: camp.contactEmail,
-            subject: 'Registration updated',
-          }),
-        );
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail,
+          subject: 'Registration updated',
+        });
       });
 
       it('should send waiting list confirmation', async () => {
@@ -1435,13 +1421,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.email,
-            replyTo: camp.contactEmail,
-            subject: 'Registration accepted',
-          }),
-        );
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail,
+          subject: 'Registration accepted',
+        });
       });
     });
 

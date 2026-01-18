@@ -46,6 +46,8 @@ export class RegistrationController extends BaseController {
     const {
       body: { data, locale: bodyLocale },
     } = await req.validate(validator.store);
+    // !! USE CAUTION, THE DATA IS NOT VALIDATED HERE !!
+
     const camp = req.modelOrFail('camp');
     const locale = bodyLocale ?? req.preferredLocale();
 
@@ -55,6 +57,7 @@ export class RegistrationController extends BaseController {
         data,
         locale,
       },
+      req.sessionId,
     );
 
     // Notify participant

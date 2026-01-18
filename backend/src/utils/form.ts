@@ -3,24 +3,21 @@ import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
 import type { Camp } from '@prisma/client';
 
-interface TemporaryFileIdentifier {
-  id: string;
-  field?: string;
-}
-
 export const formUtils = (
   camp: Camp & { freePlaces: number | Record<string, number> },
+  data?: unknown,
 ) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';
   setVariables(survey, camp);
+  survey.data = typeof data !== 'object' ? {} : data;
 
   const updateData = (data?: unknown) => {
     survey.data = typeof data !== 'object' ? {} : data;
   };
 
-  const data = () => {
+  const getData = () => {
     return survey.data as Record<string, unknown>;
   };
 
@@ -40,22 +37,12 @@ export const formUtils = (
     return [...formErrors, ...fileValueErrors].join(', ');
   };
 
-  const getFileIdentifiers = (): TemporaryFileIdentifier[] => {
-    const extractId = (value: unknown): TemporaryFileIdentifier | undefined => {
-      if (typeof value !== 'string') {
-        return undefined;
-      }
-
-      const parts = value.split('#');
-      return {
-        id: parts[0],
-        field: parts.length === 2 ? parts[1] : undefined,
-      };
+  const getFileIds = (): string[] => {
+    const extractId = (value: unknown): string | undefined => {
+      return typeof value === 'string' ? value : undefined;
     };
 
-    const extractIds = (
-      value: unknown,
-    ): (TemporaryFileIdentifier | undefined)[] => {
+    const extractIds = (value: unknown): (string | undefined)[] => {
       if (Array.isArray(value)) {
         return value.map(extractId);
       }
@@ -69,20 +56,7 @@ export const formUtils = (
       .filter((question) => question.value != null)
       .map((question) => question.value as unknown)
       .flatMap(extractIds)
-      .filter((fileId): fileId is TemporaryFileIdentifier => !!fileId);
-  };
-
-  const mapFileValues = (fn: (value: unknown) => string): void => {
-    survey
-      .getAllQuestions(false, undefined, true)
-      .filter((question) => question.getType() === 'file')
-      .filter((question) => question.value != null)
-      .forEach(
-        (question) =>
-          (question.value = Array.isArray(question.value)
-            ? question.value.map(fn)
-            : fn(question.value)),
-      );
+      .filter((fileId): fileId is string => !!fileId);
   };
 
   const hasFileValueErrors = (): boolean => {
@@ -156,10 +130,9 @@ export const formUtils = (
   };
 
   return {
-    data,
+    data: getData,
     updateData,
-    getFileIdentifiers,
-    mapFileValues,
+    getFileIds,
     hasDataErrors,
     getDataErrorFields,
     unknownDataFields,

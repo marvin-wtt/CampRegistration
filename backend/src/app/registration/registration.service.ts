@@ -2,7 +2,6 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { type Camp, Prisma, type Registration } from '@prisma/client';
 import { formUtils } from '#utils/form';
-import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { injectable } from 'inversify';
@@ -73,32 +72,24 @@ export class RegistrationService extends BaseService {
   async createRegistration(
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
+    fileField: string | undefined,
   ) {
-    const form = formUtils(camp);
-    form.updateData(data.data);
+    const form = formUtils(camp, data.data);
 
     // TODO Should this really be done here?
     //  Can't we do it at a better place?
     this.validateRegistrationData(form);
-
-    // Extract files first before the value are mapped to the URL
-    const fileIdentifiers = form.getFileIdentifiers();
-    form.mapFileValues((value) => {
-      if (typeof value !== 'string') {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
-      }
-      // The ID may contain the field name. Remove it.
-      const fileId = value.split('#')[0];
-      return `${config.origin}/api/v1/files/${fileId}/`;
-    });
-
     // Get updated data from form back
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 
-    const fileConnects = fileIdentifiers.map((entry) => ({
-      id: entry.id,
-    }));
+    const fileConnects: Prisma.FileWhereUniqueInput[] = form
+      .getFileIds()
+      .map((id) => ({
+        id,
+        field: fileField,
+        registrationId: null,
+      }));
 
     const isWaitingList = async (
       transaction: Prisma.TransactionClient,

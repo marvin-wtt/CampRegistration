@@ -1,7 +1,7 @@
 <template>
   <q-btn
     v-if="visible"
-    :size="size"
+    :size
     class="q-mx-sm q-px-sm"
     dense
     icon="attach_file"
@@ -22,13 +22,17 @@ import type { TableCellProps } from 'components/campManagement/table/tableCells/
 
 const { props: cellProps } = defineProps<TableCellProps>();
 
-function open() {
+const url = computed<string | undefined>(() => {
   if (typeof cellProps.value !== 'string') {
-    return;
+    return undefined;
   }
 
-  openURL(cellProps.value);
-}
+  if (cellProps.value.match(/^https?:\/\//)) {
+    return cellProps.value;
+  }
+
+  return `${window.origin}/api/v1/files/${cellProps.value}`;
+});
 
 const size = computed<string>(() => {
   return cellProps.dense ? 'xs' : 'md';
@@ -37,6 +41,14 @@ const size = computed<string>(() => {
 const visible = computed<boolean>(() => {
   return cellProps.value !== undefined && typeof cellProps.value === 'string';
 });
+
+function open() {
+  if (!url.value) {
+    return;
+  }
+
+  openURL(url.value);
+}
 </script>
 
 <style lang="scss" scoped>
