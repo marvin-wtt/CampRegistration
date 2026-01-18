@@ -26,11 +26,7 @@ describe('Mail', () => {
   });
 
   it('should send a queued email', async () => {
-    TestMail.enqueue('value 123');
-
-    expect.poll(() => undefined, {
-      timeout: 1000,
-    });
+    await TestMail.enqueue('value 123');
 
     expect(mailer.sendMail).toBeCalledTimes(1);
   });

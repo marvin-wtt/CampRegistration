@@ -39,7 +39,7 @@ import {
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
 import { uploadFile } from './utils/file.js';
-import { expectEmailWith } from '../utils/mail.js';
+import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
 
 const mailer = NoOpMailer.prototype;
 
@@ -1089,10 +1089,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(201);
 
         expectEmailWith({
-          to: {
-            address: data.email,
-            name: `${data.first_name} ${data.last_name}`,
-          },
+          to: data.email,
           replyTo: camp.contactEmail,
           subject: 'Registration confirmed',
         });
@@ -1112,19 +1109,15 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.email,
-            replyTo: camp.contactEmail,
-          }),
-        );
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail,
+        });
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.emailGuardian,
-            replyTo: camp.contactEmail,
-          }),
-        );
+        expectEmailWith({
+          to: data.emailGuardian,
+          replyTo: camp.contactEmail,
+        });
       });
 
       it('should send a copy to the contact email for national camp', async () => {
@@ -1141,12 +1134,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(201);
 
         // TODO Assert correct language
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: camp.contactEmail,
-            replyTo: expect.arrayContaining([data.email]),
-          }),
-        );
+        expectEmailWith({
+          to: camp.contactEmail,
+          replyTo: expect.arrayContaining([data.email]),
+        });
       });
 
       it('should send a copy to the contact emails for international camp', async () => {
@@ -1165,11 +1156,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         const expectedEmail = campWithContactEmailInternational.contactEmail.de;
         // TODO Assert correct language
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: expectedEmail,
-          }),
-        );
+        expectEmailWith({
+          to: expectedEmail,
+        });
       });
 
       it('should send a copy to all contact emails if country missing', async () => {
@@ -1187,11 +1176,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
           campWithContactEmailInternational.contactEmail,
         );
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: expect.arrayContaining(expectedEmails),
-          }),
-        );
+        expectEmailWith({
+          to: expect.arrayContaining(expectedEmails),
+        });
       });
 
       it('should send a waiting list information to the user', async () => {
@@ -1217,12 +1204,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(201);
 
-        expect(mailer.sendMail).toHaveBeenCalledWith(
-          expect.objectContaining({
-            to: data.email,
-            subject: 'Registration on waiting list',
-          }),
-        );
+        expectEmailWith({
+          to: data.email,
+          subject: 'Registration on waiting list',
+        });
       });
     });
   });
@@ -1385,11 +1370,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
-        expectEmailWith({
-          to: data.email,
-          replyTo: camp.contactEmail,
-          subject: 'Registration updated',
-        });
+        expectEmailCount(0);
       });
 
       it('should send waiting list confirmation', async () => {
@@ -1421,6 +1402,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
+        expectEmailCount(1);
         expectEmailWith({
           to: data.email,
           replyTo: camp.contactEmail,
@@ -1737,8 +1719,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
   });
 });
-
-describe.todo('/api/v1/camps/:campId/registrations/:registrationId/files/');
 
 describe('/api/v1/files/', () => {
   describe('GET /api/v1/files/:fileId', () => {
