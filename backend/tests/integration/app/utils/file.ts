@@ -1,9 +1,8 @@
 import path from 'path';
 import fse from 'fs-extra';
 
-export async function uploadFile(name: string, newName?: string) {
-  const from = path.join(__dirname, '..', 'resources', name);
-  const to = path.join(
+function getStoragePath(name: string) {
+  return path.join(
     __dirname,
     '..',
     '..',
@@ -11,8 +10,17 @@ export async function uploadFile(name: string, newName?: string) {
     'tmp',
     'storage',
     'uploads',
-    newName ?? name,
+    name,
   );
+}
+
+export async function uploadFile(name: string, newName?: string) {
+  const from = path.join(__dirname, '..', 'resources', name);
+  const to = getStoragePath(newName ?? name);
 
   await fse.copy(from, to);
+}
+
+export function verifyFileExists(name: string) {
+  return fse.existsSync(getStoragePath(name));
 }
