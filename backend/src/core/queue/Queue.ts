@@ -46,7 +46,6 @@ export interface Job<T> extends SimpleJob<T> {
   attempts: number;
 }
 
-// TODO P and R must depend on R or drop N completely
 export abstract class Queue<P, R = void, N extends string = string> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,

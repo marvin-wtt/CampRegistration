@@ -251,8 +251,6 @@ export class CampService extends BaseService {
   }
 
   async deleteCampById(id: string) {
-    // TODO All files need to be deleted
-
     await this.prisma.camp.delete({ where: { id } });
   }
 }

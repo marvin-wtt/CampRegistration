@@ -138,8 +138,6 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   static readonly type: string = 'registration:template:simple';
 
   protected subject(): string | Promise<string> {
-    console.log('Hello');
-
     let template = translateObject(
       this.payload.messageTemplate.subject,
       this.locale(),
