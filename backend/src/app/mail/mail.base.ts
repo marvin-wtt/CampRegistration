@@ -22,6 +22,10 @@ import { resolve } from '#core/ioc/container';
 export interface MailableCtor<P> {
   new (payload: P): MailBase<P>;
   readonly type: string;
+
+  // static methods provided by MailBase
+  enqueue(payload: P): Promise<void>;
+  send(payload: P): Promise<void>;
 }
 
 export abstract class MailBase<P> {
@@ -164,10 +168,7 @@ export abstract class MailBase<P> {
     });
   }
 
-  static async send<P>(
-    this: MailableCtor<P> & { type: string },
-    payload: P,
-  ): Promise<void> {
+  static async send<P>(this: MailableCtor<P>, payload: P): Promise<void> {
     const mailService = resolve(MailService);
 
     await mailService.sendMail(new this(payload));

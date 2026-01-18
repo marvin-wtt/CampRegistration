@@ -161,12 +161,22 @@ export class RegistrationService extends BaseService {
       'waitingList' | 'data' | 'customData'
     >,
   ) {
-    let computedData = {};
-    if (data.data) {
-      const form = formUtils(camp);
-      form.updateData(data.data);
-      computedData = this.createComputedData(form.extractCampData());
+    if (!data.data) {
+      return this.prisma.registration.update({
+        where: { id: registrationId },
+        data: {
+          customData: data.customData,
+          waitingList: data.waitingList,
+        },
+        include: {
+          bed: { include: { room: true } },
+        },
+      });
     }
+
+    const form = formUtils(camp);
+    form.updateData(data.data);
+    const computedData = this.createComputedData(form.extractCampData());
 
     // TODO Delete files if some where removed
     // TODO Associate files if new file values are present

@@ -3,7 +3,7 @@ import { campManager, type GuardFn } from '#guards/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { CampService } from '#app/camp/camp.service';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import { resolve } from '#core/ioc/container';
 
 export const messageTemplateFileGuard = async (
@@ -18,6 +18,7 @@ export const messageTemplateFileGuard = async (
   }
 
   // Load models for guard
+  const messageTemplateService = resolve(MessageTemplateService);
   const messageTemplate =
     await messageTemplateService.getMessageTemplateWithCamp(
       file.messageTemplateId,

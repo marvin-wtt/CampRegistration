@@ -1,44 +1,53 @@
 import type { Camp, File, MessageTemplate, Registration } from '@prisma/client';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
-import { MailBase } from '#app/mail/mail.base';
+import { type MailableCtor, MailBase } from '#app/mail/mail.base';
 import type {
   AddressLike,
   BuiltMail,
   Content,
   MailAttachment,
+  MailPriority,
 } from '#app/mail/mail.types';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
 import Handlebars from 'handlebars';
 import { RegistrationResource } from '#app/registration/registration.resource';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
 import { MessageService } from '#app/message/message.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 
 abstract class RegistrationMessage<
-  T extends { registration: Registration },
+  T extends {
+    registration: Registration;
+    email: string;
+  },
 > extends MailBase<T> {
   protected to(): AddressLike {
-    const emails = this.payload.registration.emails;
-    if (emails == null || emails.length === 0) {
-      throw new Error('Registration has no email address');
-    }
-
-    if (emails.length > 1) {
-      return emails;
-    }
-
-    return emails[0];
+    return this.payload.email;
   }
 
   protected locale(): string {
     return this.payload.registration.locale;
   }
+
+  static async enqueueMany<P>(
+    this: MailableCtor<P>,
+    payloads: Iterable<P> | Promise<Iterable<P>>,
+  ): Promise<void> {
+    await Promise.all(Array.from(await payloads).map((p) => this.enqueue(p)));
+  }
+
+  static async sendMany<P>(
+    this: MailableCtor<P>,
+    payloads: Iterable<P> | Promise<Iterable<P>>,
+  ): Promise<void> {
+    await Promise.all(Array.from(await payloads).map((p) => this.send(p)));
+  }
 }
 
-export class RegistrationNotifyMessage extends RegistrationMessage<{
+export class RegistrationNotifyMessage extends MailBase<{
   camp: Camp;
   registration: Registration;
 }> {
@@ -88,7 +97,7 @@ export class RegistrationNotifyMessage extends RegistrationMessage<{
   }
 
   private createCampContext() {
-    const locale = this.locale();
+    const locale = this.payload.registration.country ?? this.locale();
     const camp = this.payload.camp;
 
     return {
@@ -113,17 +122,24 @@ export class RegistrationNotifyMessage extends RegistrationMessage<{
   }
 }
 
-export interface RegistrationTemplatePayload {
+interface RegistrationTemplatePayload {
   registration: Registration;
   camp: Camp;
   messageTemplate: MessageTemplateWithFiles;
+  email: string;
 }
 
-// NOTE: DO NOT CALL THIS DIRECTLY! It has no type
-class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
-  static readonly type: string;
+export class RegistrationTemplateMessage extends RegistrationMessage<{
+  registration: Registration;
+  camp: Camp;
+  messageTemplate: MessageTemplateWithFiles;
+  email: string;
+}> {
+  static readonly type: string = 'registration:template:simple';
 
   protected subject(): string | Promise<string> {
+    console.log('Hello');
+
     let template = translateObject(
       this.payload.messageTemplate.subject,
       this.locale(),
@@ -157,22 +173,28 @@ class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTempla
     );
   }
 
+  protected priority(): MailPriority {
+    const priority = this.payload.messageTemplate.priority;
+    if (priority === 'low' || priority === 'normal' || priority === 'high') {
+      return priority;
+    }
+
+    return super.priority();
+  }
+
   private context(): object {
+    const locale = this.payload.registration.country ?? this.locale();
+    const camp = this.payload.camp;
+
     return {
       camp: {
-        ...this.payload.camp,
+        ...camp,
         // Translate values
-        name: translateObject(this.payload.camp.name, this.locale()),
-        organizer: translateObject(this.payload.camp.organizer, this.locale()),
-        contactEmail: translateObject(
-          this.payload.camp.contactEmail,
-          this.locale(),
-        ),
-        maxParticipants: translateObject(
-          this.payload.camp.maxParticipants,
-          this.locale(),
-        ),
-        location: translateObject(this.payload.camp.location, this.locale()),
+        name: translateObject(camp.name, locale),
+        organizer: translateObject(camp.organizer, locale),
+        contactEmail: translateObject(camp.contactEmail, locale),
+        maxParticipants: translateObject(camp.maxParticipants, locale),
+        location: translateObject(camp.location, locale),
       },
       registration: new RegistrationResource(
         this.payload.registration,
@@ -182,8 +204,6 @@ class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTempla
 
   async build(): Promise<BuiltMail> {
     const mail = await super.build();
-
-    // TODO Store to address as well
 
     const messageService = resolve(MessageService);
     await messageService.createMessage(
@@ -223,10 +243,59 @@ class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTempla
       html: compile(this.context()),
     };
   }
-}
 
-export class SimpleRegistrationTemplateMessage extends RegistrationTemplateMessage {
-  static readonly type = 'registration:template:simple';
+  static prepareForRegistration(
+    camp: Camp,
+    registration: Registration,
+    messageTemplate: MessageTemplateWithFiles,
+  ): RegistrationTemplatePayload[] | null {
+    const emails = registration.emails;
+    if (!emails?.length) {
+      logger.warn(`Registration ${registration.id} has no emails defined.`);
+      return null;
+    }
+
+    return emails.map((email) => ({
+      camp,
+      registration,
+      messageTemplate,
+      email,
+    }));
+  }
+
+  static async enqueueFor(
+    this: typeof RegistrationTemplateMessage,
+    camp: Camp,
+    registration: Registration,
+    messageTemplate: MessageTemplateWithFiles,
+  ): Promise<void> {
+    const payloads = this.prepareForRegistration(
+      camp,
+      registration,
+      messageTemplate,
+    );
+    if (!payloads) {
+      return;
+    }
+
+    await this.enqueueMany(payloads);
+  }
+
+  static async sendFor(
+    this: typeof RegistrationTemplateMessage,
+    camp: Camp,
+    registration: Registration,
+    messageTemplate: MessageTemplateWithFiles,
+  ): Promise<void> {
+    const payloads = this.prepareForRegistration(
+      camp,
+      registration,
+      messageTemplate,
+    );
+    if (!payloads) return;
+
+    await this.sendMany(payloads);
+  }
 }
 
 type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
@@ -236,6 +305,7 @@ async function loadMessageTemplate(
   event: string,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
+    const messageTemplateService = resolve(MessageTemplateService);
     return await messageTemplateService.getMessageTemplateByName(event, campId);
   } catch (error) {
     logger.error(error);
@@ -243,29 +313,38 @@ async function loadMessageTemplate(
   }
 }
 
-abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
+class RegistrationEventMessage extends RegistrationTemplateMessage {
   static readonly event: string;
   static readonly type: string;
 
   static async enqueueFor(
-    this: typeof RegistrationTemplateMessage & { event: string },
+    this: typeof RegistrationEventMessage,
     camp: Camp,
     registration: Registration,
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(camp.id, this.event);
     if (!messageTemplate) {
+      logger.debug(
+        `No message template for event ${this.event} and camp ${camp.id}`,
+      );
       return;
     }
 
-    await this.enqueue({
-      registration,
+    const payload = this.prepareForRegistration(
       camp,
+      registration,
       messageTemplate,
-    });
+    );
+
+    if (!payload) {
+      return;
+    }
+
+    await this.enqueueMany(payload);
   }
 
   static async sendFor(
-    this: typeof RegistrationTemplateMessage & { event: string },
+    this: typeof RegistrationEventMessage,
     camp: Camp,
     registration: Registration,
   ): Promise<void> {
@@ -274,11 +353,17 @@ abstract class RegistrationEventMessage extends RegistrationTemplateMessage {
       return;
     }
 
-    return this.send({
-      registration,
+    const payload = this.prepareForRegistration(
       camp,
+      registration,
       messageTemplate,
-    });
+    );
+
+    if (!payload) {
+      return;
+    }
+
+    await this.sendMany(payload);
   }
 }
 
@@ -315,6 +400,6 @@ export class RegistrationDeletedMessage extends RegistrationEventMessage {
 }
 
 export class RegistrationAcceptedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_accepted';
+  static readonly event = 'registration_waitlist_accepted';
   static readonly type = 'registration:template:accepted';
 }

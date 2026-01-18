@@ -4,8 +4,12 @@ import { NoOpMailer } from '#app/mail/noop.mailer';
 
 export const mailer = NoOpMailer.prototype;
 
-export function expectEmailWith(data: BuiltMail) {
+export function expectEmailWith(data: Partial<BuiltMail>) {
   expect(mailer.sendMail).toHaveBeenCalledWith(expect.objectContaining(data));
+}
+
+export function expectEmailCount(count: number) {
+  expect(mailer.sendMail).toBeCalledTimes(count);
 }
 
 export function expectEmailTo(address: string, name?: string) {

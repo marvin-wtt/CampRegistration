@@ -3,9 +3,9 @@ import { RegistrationService } from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import ApiError from '#utils/ApiError';
-import { SimpleRegistrationTemplateMessage } from '#app/registration/registration.messages';
+import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
 import { inject, injectable } from 'inversify';
 
@@ -14,6 +14,8 @@ export class MessageController extends BaseController {
   constructor(
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(MessageTemplateService)
+    private readonly messageTemplateService: MessageTemplateService,
   ) {
     super();
   }
@@ -47,7 +49,7 @@ export class MessageController extends BaseController {
       );
     }
 
-    const template = await messageTemplateService.createTemplate(camp.id, {
+    const template = await this.messageTemplateService.createTemplate(camp.id, {
       subject: body.subject,
       body: body.body,
       priority: body.priority,
@@ -56,11 +58,7 @@ export class MessageController extends BaseController {
 
     await Promise.all(
       registrations.map((registration) =>
-        SimpleRegistrationTemplateMessage.enqueue({
-          camp,
-          registration,
-          messageTemplate: template,
-        }),
+        RegistrationTemplateMessage.enqueueFor(camp, registration, template),
       ),
     );
 
