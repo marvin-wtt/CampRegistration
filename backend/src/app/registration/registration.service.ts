@@ -160,6 +160,7 @@ export class RegistrationService extends BaseService {
       Prisma.RegistrationUpdateInput,
       'waitingList' | 'data' | 'customData'
     >,
+    fileField: string | undefined,
   ) {
     if (!data.data) {
       return this.prisma.registration.update({
@@ -178,20 +179,47 @@ export class RegistrationService extends BaseService {
     form.updateData(data.data);
     const computedData = this.createComputedData(form.extractCampData());
 
-    // TODO Delete files if some where removed
-    // TODO Associate files if new file values are present
+    const fileIds = form.getFileIds();
 
-    return this.prisma.registration.update({
-      where: { id: registrationId },
-      data: {
-        ...computedData,
-        data: data.data,
-        customData: data.customData,
-        waitingList: data.waitingList,
-      },
-      include: {
-        bed: { include: { room: true } },
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // Unreferenced unused files - do not delete
+      await tx.file.updateMany({
+        where: {
+          registrationId,
+          id: { notIn: fileIds },
+        },
+        data: {
+          registrationId: null,
+          field: null,
+        },
+      });
+
+      return tx.registration.update({
+        where: { id: registrationId },
+        data: {
+          ...computedData,
+          data: data.data,
+          customData: data.customData,
+          waitingList: data.waitingList,
+          files: {
+            connect: fileIds.map((id) => ({
+              id,
+              OR: [
+                // Already connected to this registration
+                { registrationId },
+                // Not connected to any registration yet
+                {
+                  registrationId: null,
+                  field: fileField,
+                },
+              ],
+            })),
+          },
+        },
+        include: {
+          bed: { include: { room: true } },
+        },
+      });
     });
   }
 

@@ -25,14 +25,9 @@ export class MessageService extends BaseService {
         registration: { connect: { id: registration.id } },
         template: { connect: { id: template.id } },
         attachments: {
-          // TODO Can I use connect instead?
-          createMany: {
-            data: template.attachments.map((file) => ({
-              ...file,
-              id: undefined,
-              accessLevel: 'private',
-            })),
-          },
+          connect: template.attachments.map((file) => ({
+            id: file.id,
+          })),
         },
       },
       include: {

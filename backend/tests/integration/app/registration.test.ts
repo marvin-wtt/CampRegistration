@@ -655,25 +655,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .send({ data })
           .expect(400);
       });
-
-      it('should respond with `400` status code when file is already assigned to a camp', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
-        const file = await FileFactory.create({
-          field: crypto.randomUUID(),
-          accessLevel: 'private',
-          camp: { connect: { id: camp.id } },
-        });
-
-        const data = {
-          some_field: 'Some value',
-          some_file: `${file.id}#${file.field}`,
-        };
-
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(400);
-      });
     });
 
     describe('computed data', () => {
@@ -1290,6 +1271,231 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .send({})
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    describe('files', () => {
+      it('should respond with `200` status code when previous form has file', async () => {
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileRequired);
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+            some_file: file.id,
+          },
+          files: { connect: { id: file.id } },
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            data: {
+              some_field: 'Test',
+              some_file: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expectOrPrint(200);
+
+        expect(body.data.data).toHaveProperty('some_field', 'Test');
+        expect(body.data.data).toHaveProperty('some_file', file.id);
+
+        const files = await prisma.file.findMany({
+          where: {
+            registrationId: registration.id,
+          },
+        });
+
+        expect(files).toHaveLength(1);
+        expect(files[0].id).toBe(file.id);
+      });
+
+      it('should respond with `200` status code when new file is provided', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+          },
+        });
+
+        const file = await FileFactory.create({
+          field: sessionId,
+          accessLevel: 'private',
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
+          .send({
+            data: {
+              some_field: 'Test',
+              some_file: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.data).toHaveProperty('some_field', 'Test');
+        expect(body.data.data).toHaveProperty('some_file', file.id);
+
+        const files = await prisma.file.findMany({
+          where: {
+            registrationId: registration.id,
+          },
+        });
+
+        expect(files).toHaveLength(1);
+        expect(files[0].id).toBe(file.id);
+      });
+
+      it('should respond with `200` status code when new file is replaced', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileRequired);
+        const oldFile = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+            some_file: oldFile.id,
+          },
+          files: { connect: { id: oldFile.id } },
+        });
+        const file = await FileFactory.create({
+          field: sessionId,
+          accessLevel: 'private',
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
+          .send({
+            data: {
+              some_field: 'Test',
+              some_file: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.data).toHaveProperty('some_field', 'Test');
+        expect(body.data.data).toHaveProperty('some_file', file.id);
+
+        const files = await prisma.file.findMany({
+          where: {
+            registrationId: registration.id,
+          },
+        });
+
+        expect(files).toHaveLength(1);
+        expect(files[0].id).toBe(file.id);
+      });
+
+      it('should respond with `400` status code when file does not exist', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+          },
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
+          .send({
+            data: {
+              some_field: 'Test',
+              some_file: ulid(),
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when session id does not match', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+          },
+        });
+
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
+          .send({
+            data: {
+              some_field: 'Test',
+              some_file: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when file is already assigned', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+          },
+        });
+
+        const file = await FileFactory.create({
+          field: sessionId,
+          accessLevel: 'private',
+          registration: {
+            create: RegistrationFactory.build({
+              camp: { create: CampFactory.build() },
+            }),
+          },
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', [
+            'session=' + sessionId,
+            '__Host-session=' + sessionId,
+          ])
+          .send({
+            data: {
+              some_field: 'Test',
+              some_file: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
     });
 
     describe('sends messages', () => {

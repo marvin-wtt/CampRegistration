@@ -94,6 +94,7 @@ export class RegistrationController extends BaseController {
       camp,
       registrationId,
       updateData,
+      req.sessionId,
     );
 
     if (!suppressMessage) {
