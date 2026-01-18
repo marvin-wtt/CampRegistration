@@ -1,6 +1,4 @@
-import { FileService } from '#app/file/file.service';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { resolve } from '#core/ioc/container';
 
 export class RegistrationFilesRouter extends ModuleRouter {
   constructor() {
@@ -8,11 +6,7 @@ export class RegistrationFilesRouter extends ModuleRouter {
   }
 
   protected registerBindings() {
-    this.bindModel('file', (req, id) => {
-      const fileService = resolve(FileService);
-      const registration = req.modelOrFail('registration');
-      return fileService.getModelFile('registration', registration.id, id);
-    });
+    /* empty */
   }
 
   protected defineRoutes() {
