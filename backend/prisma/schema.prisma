@@ -209,10 +209,10 @@ model File {
   storageLocation   String   @map("storage_location")
   createdAt         DateTime @default(now()) @map("created_at")
 
-  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: Cascade)
-  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
+  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: SetNull)
+  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  message         Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
 
   @@map("files")
 }
