@@ -40,7 +40,14 @@ const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   });
 
   if (guardModels.length === 0) {
-    // We can assume that is file is a tmp file. It should never be accessed
+    // We can assume that is file is a tmp file.
+
+    // Temporary files are only accessible by the session that created them
+    if (file.field === req.sessionId) {
+      return () => true;
+    }
+
+    // It should never be accessed
     throw new ApiError(httpStatus.LOCKED, 'File is not linked to any model.');
   }
 
