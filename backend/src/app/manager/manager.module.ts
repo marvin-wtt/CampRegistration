@@ -2,11 +2,19 @@ import type {
   AppModule,
   AppRouter,
   RoleToPermissions,
+  BindOptions,
 } from '#core/base/AppModule';
 import { ManagerRouter } from '#app/manager/manager.routes';
 import type { ManagerPermission } from '@camp-registration/common/permissions';
+import { ManagerController } from '#app/manager/manager.controller';
+import { ManagerService } from '#app/manager/manager.service';
 
 export class ManagerModule implements AppModule {
+  bindContainers(options: BindOptions) {
+    options.bind(ManagerController).toSelf().inSingletonScope();
+    options.bind(ManagerService).toSelf().inSingletonScope();
+  }
+
   registerRoutes(router: AppRouter): void {
     router.useRouter('/camps/:campId/managers', new ManagerRouter());
   }

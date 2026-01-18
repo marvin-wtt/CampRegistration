@@ -1,5 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
+@injectable()
 export class TableTemplateService extends BaseService {
   async getTemplateById(campId: string, id: string) {
     return this.prisma.tableTemplate.findFirst({
@@ -35,5 +37,3 @@ export class TableTemplateService extends BaseService {
     await this.prisma.tableTemplate.delete({ where: { id: templateId } });
   }
 }
-
-export default new TableTemplateService();

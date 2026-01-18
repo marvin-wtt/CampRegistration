@@ -1,5 +1,4 @@
 import type { File, Prisma } from '@prisma/client';
-import config from '#config/index';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -8,6 +7,12 @@ import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
+import { fileNameExtension } from '#utils/file';
+import { inject, injectable } from 'inversify';
+import { Config } from '#core/ioc/decorators';
+import type { AppConfig } from '#config/index';
+import { Queue } from '#core/queue/Queue';
+import { QueueManager } from '#core/queue/QueueManager';
 
 type RequestFile = Express.Multer.File;
 
@@ -16,19 +21,34 @@ interface ModelData {
   name: string;
 }
 
-const fileNameExtension = (fileName: string): string => {
-  if (!fileName.includes('.')) {
-    return '';
-  }
-
-  const extension = fileName.split('.').pop() ?? '';
-
-  return `.${extension}`;
-};
-
+@injectable()
 export class FileService extends BaseService {
-  private tmpStorage = new DiskStorage(config.storage.tmpDir);
-  private storageRegistry = new StorageRegistry();
+  private tmpStorage: DiskStorage;
+  private storageRegistry: StorageRegistry;
+  private queue: Queue<string>;
+
+  constructor(
+    @Config() private readonly config: AppConfig,
+    @inject(QueueManager) queueManager: QueueManager,
+  ) {
+    super();
+
+    this.tmpStorage = new DiskStorage(config.storage.tmpDir);
+    this.storageRegistry = new StorageRegistry(config.storage);
+
+    this.queue = queueManager.create<string>('file', {
+      retryDelay: 1000 * 10,
+    });
+
+    this.queue.process(async (job) => {
+      if (job.name === 'upload') {
+        await this.uploadFile(job.payload);
+        return;
+      }
+
+      throw new Error(`Unknown file job: "${job.name}"`);
+    });
+  }
 
   private mapFields = (
     file: RequestFile,
@@ -42,7 +62,7 @@ export class FileService extends BaseService {
       name: file.filename,
       size: file.size,
       field: extractKeyFromFieldName(field ?? file.fieldname),
-      storageLocation: config.storage.location,
+      storageLocation: this.config.storage.location,
       accessLevel,
     };
   };
@@ -53,9 +73,8 @@ export class FileService extends BaseService {
     });
   }
 
-  private async moveFile(file: RequestFile) {
-    // TODO Do I need to wait? Can this be done in a job? What are the fail-safe mechanisms?
-    await this.storageRegistry.getStorage().moveToStorage(file.filename);
+  public async uploadFile(filename: string) {
+    await this.storageRegistry.getStorage().moveToStorage(filename);
   }
 
   async saveModelFile(
@@ -71,8 +90,7 @@ export class FileService extends BaseService {
     const fileData = this.mapFields(file, fileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-    // Move file first to ensure that they really exist
-    await this.moveFile(file);
+    await this.queue.add('upload', file.filename);
 
     return this.prisma.file.create({
       data: {
@@ -173,7 +191,7 @@ export class FileService extends BaseService {
     const fileName = ulid();
     const fileExtension = fileNameExtension(originalName);
 
-    return `${fileName}.${fileExtension}`;
+    return fileName + fileExtension;
   }
 
   async deleteUnreferencedFiles(): Promise<void> {
@@ -288,6 +306,8 @@ export class FileService extends BaseService {
       `Deleted ${results.length.toString()} unused temporary file(s) from disk`,
     );
   }
-}
 
-export default new FileService();
+  public async close() {
+    await this.queue.close();
+  }
+}

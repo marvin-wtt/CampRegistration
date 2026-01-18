@@ -1,11 +1,20 @@
 import httpStatus from 'http-status';
-import tableTemplateService from './table-template.service.js';
+import { TableTemplateService } from './table-template.service.js';
 import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
 import { TableTemplateResource } from '#app/tableTemplate/table-template.resource';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
-class TableTemplateController extends BaseController {
+@injectable()
+export class TableTemplateController extends BaseController {
+  constructor(
+    @inject(TableTemplateService)
+    private readonly tableTemplateService: TableTemplateService,
+  ) {
+    super();
+  }
+
   show(req: Request, res: Response) {
     const template = req.modelOrFail('tableTemplate');
 
@@ -17,7 +26,7 @@ class TableTemplateController extends BaseController {
       params: { campId },
     } = await req.validate(validator.index);
 
-    const templates = await tableTemplateService.queryTemplates(campId);
+    const templates = await this.tableTemplateService.queryTemplates(campId);
 
     res.resource(TableTemplateResource.collection(templates));
   }
@@ -28,7 +37,10 @@ class TableTemplateController extends BaseController {
       body,
     } = await req.validate(validator.store);
 
-    const template = await tableTemplateService.createTemplate(campId, body);
+    const template = await this.tableTemplateService.createTemplate(
+      campId,
+      body,
+    );
 
     res
       .status(httpStatus.CREATED)
@@ -41,7 +53,7 @@ class TableTemplateController extends BaseController {
       body,
     } = await req.validate(validator.update);
 
-    const template = await tableTemplateService.updateTemplateById(
+    const template = await this.tableTemplateService.updateTemplateById(
       tableTemplateId,
       body,
     );
@@ -54,10 +66,8 @@ class TableTemplateController extends BaseController {
       params: { tableTemplateId },
     } = await req.validate(validator.destroy);
 
-    await tableTemplateService.deleteTemplateById(tableTemplateId);
+    await this.tableTemplateService.deleteTemplateById(tableTemplateId);
 
     res.status(httpStatus.NO_CONTENT).send();
   }
 }
-
-export default new TableTemplateController();

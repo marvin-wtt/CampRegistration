@@ -1,12 +1,14 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
-import managerController from './manager.controller.js';
+import { ManagerController } from './manager.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import managerService from '#app/manager/manager.service';
+import { ManagerService } from '#app/manager/manager.service';
+import { resolve } from '#core/ioc/container';
 
 export class ManagerRouter extends ModuleRouter {
   protected registerBindings() {
+    const managerService = resolve(ManagerService);
     this.bindModel('manager', (req, id) => {
       const camp = req.modelOrFail('camp');
       return managerService.getManagerById(camp.id, id);
@@ -14,6 +16,8 @@ export class ManagerRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
+    const managerController = resolve(ManagerController);
+
     this.router.use(auth());
 
     this.router.get(

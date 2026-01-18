@@ -1,14 +1,23 @@
 import httpStatus from 'http-status';
-import authService from '#app/auth/auth.service';
-import userService from './user.service.js';
+import { AuthService } from '#app/auth/auth.service';
+import { UserService } from './user.service.js';
 import { UserResource } from './user.resource.js';
 import validator from './user.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
-class UserController extends BaseController {
+@injectable()
+export class UserController extends BaseController {
+  constructor(
+    @inject(AuthService) private readonly authService: AuthService,
+    @inject(UserService) private readonly userService: UserService,
+  ) {
+    super();
+  }
+
   async index(_req: Request, res: Response) {
-    const users = await userService.queryUsers();
+    const users = await this.userService.queryUsers();
 
     res.resource(UserResource.collection(users));
   }
@@ -24,7 +33,7 @@ class UserController extends BaseController {
       body: { email, password, name, role, locale, locked },
     } = await req.validate(validator.store);
 
-    const user = await userService.createUser({
+    const user = await this.userService.createUser({
       name,
       email,
       password,
@@ -43,10 +52,10 @@ class UserController extends BaseController {
     } = await req.validate(validator.update);
 
     if (password || locked) {
-      await authService.revokeAllUserTokens(userId);
+      await this.authService.revokeAllUserTokens(userId);
     }
 
-    const user = await userService.updateUserById(userId, {
+    const user = await this.userService.updateUserById(userId, {
       name,
       email,
       password,
@@ -61,10 +70,8 @@ class UserController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const { userId } = req.params;
-    await userService.deleteUserById(userId);
+    await this.userService.deleteUserById(userId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 }
-
-export default new UserController();

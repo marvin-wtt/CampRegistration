@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 export const routeModel = <T>(model: T): NonNullable<T> => {
   /* c8 ignore next 3 */
   if (model == null) {
+    console.trace('Route model not found');
     throw new ApiError(httpStatus.NOT_FOUND, 'Route model not found');
   }
 

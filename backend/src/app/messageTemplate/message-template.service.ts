@@ -1,7 +1,8 @@
 import type { Prisma } from '@prisma/client';
-import Handlebars from 'handlebars';
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
+@injectable()
 export class MessageTemplateService extends BaseService {
   async getMessageTemplateById(campId: string, id: string) {
     return this.prisma.messageTemplate.findFirst({
@@ -88,44 +89,4 @@ export class MessageTemplateService extends BaseService {
       },
     });
   }
-
-  createSubjectCompiler(template: string): (context: unknown) => string {
-    template = template.trim();
-
-    // Remove paragraph tags if they are present
-    if (template.startsWith('<p>') && template.endsWith('</p>')) {
-      template = template.slice(3, -4).trim();
-    }
-
-    return Handlebars.compile(template, {
-      knownHelpersOnly: true,
-      knownHelpers: {
-        if: true,
-        unless: true,
-        each: true,
-        with: true,
-      },
-      noEscape: true, // No escape needed for subjects
-    });
-  }
-
-  createBodyCompiler(template: string): (context: unknown) => string {
-    return Handlebars.compile(template, {
-      knownHelpersOnly: true,
-      knownHelpers: {
-        if: true,
-        unless: true,
-        each: true,
-        with: true,
-      },
-    });
-  }
-
-  compileText(template: string, context: object) {
-    const compile = this.createBodyCompiler(template);
-
-    return compile(context);
-  }
 }
-
-export default new MessageTemplateService();

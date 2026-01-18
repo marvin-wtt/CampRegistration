@@ -376,7 +376,6 @@ export default [
     ],
     sortBy: 'first_name',
     indexed: true,
-    actions: false,
     filterRoles: ['participant'],
   },
   {

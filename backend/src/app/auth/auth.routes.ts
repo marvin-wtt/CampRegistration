@@ -1,7 +1,8 @@
 import { auth, authLimiter, guest } from '#middlewares/index';
-import authController from './auth.controller.js';
+import { AuthController } from '#app/auth/auth.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
+import { resolve } from '#core/ioc/container';
 
 export class AuthRouter extends ModuleRouter {
   protected registerBindings() {
@@ -9,6 +10,8 @@ export class AuthRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
+    const authController = resolve(AuthController);
+
     this.router.use(authLimiter);
 
     this.router.post(

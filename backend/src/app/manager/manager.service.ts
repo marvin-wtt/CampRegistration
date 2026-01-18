@@ -1,5 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
 import type { Prisma } from '@prisma/client';
+import { injectable } from 'inversify';
 
 type ManagerCreateData = Pick<
   Prisma.CampManagerCreateInput,
@@ -11,6 +12,7 @@ type ManagerUpdateData = Pick<
   'role' | 'expiresAt'
 >;
 
+@injectable()
 export class ManagerService extends BaseService {
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {
     return this.prisma.campManager
@@ -129,5 +131,3 @@ export class ManagerService extends BaseService {
     });
   }
 }
-
-export default new ManagerService();

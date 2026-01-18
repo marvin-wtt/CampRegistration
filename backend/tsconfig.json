@@ -8,6 +8,8 @@
     "rootDir": "./src",
     "outDir": "./build/",
     "lib": ["ESNext"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "isolatedModules": true,
