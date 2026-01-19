@@ -283,9 +283,7 @@ function addTemplate(event: string) {
           subject: message.subject,
           body: message.body,
         });
-      }).then(async () => {
-        await loadData();
-      });
+      }).then(() => loadData());
     });
 }
 
@@ -318,13 +316,11 @@ function editTemplate(id: string | undefined | null) {
           subject: message.subject,
           body: message.body,
         });
-      }).then(async () => {
-        await loadData();
-      });
+      }).then(() => loadData());
     });
 }
 
-function deleteTemplate(id: string | undefined) {
+async function deleteTemplate(id: string | undefined) {
   if (!id) {
     return;
   }
@@ -334,7 +330,7 @@ function deleteTemplate(id: string | undefined) {
     return;
   }
 
-  void withResultNotification('delete', async () => {
+  await withResultNotification('delete', async () => {
     return api.deleteMessageTemplate(camp.id, id);
   }).then(async () => {
     await loadData();
