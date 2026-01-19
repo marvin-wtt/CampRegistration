@@ -10,6 +10,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       include: ['src/*'],
+      exclude: ['src/i18n/*', 'entry.js', 'index.ts'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'clover'],
     },
