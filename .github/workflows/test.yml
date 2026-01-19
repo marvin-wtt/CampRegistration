@@ -66,6 +66,9 @@ jobs:
       matrix:
         node: [ 22, 24 ]
 
+    container:
+      image: node:${{ matrix.node }}-bookworm
+
     services:
       mariadb:
         image: mariadb:10.11.15
