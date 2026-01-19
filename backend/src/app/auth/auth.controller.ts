@@ -187,7 +187,7 @@ export class AuthController extends BaseController {
       await this.tokenService.generateResetPasswordToken(user.id);
 
     if (resetPasswordToken !== undefined) {
-      await ResetPasswordMessage.enqueue({
+      await ResetPasswordMessage.send({
         user,
         token: resetPasswordToken,
       });
