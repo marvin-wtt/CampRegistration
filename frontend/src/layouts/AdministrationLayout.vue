@@ -86,7 +86,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -107,9 +107,9 @@ const { to } = useObjectTranslation();
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
 
-if (!profileStore.user) {
-  authStore.init();
-}
+onMounted(async () => {
+  await authStore.init();
+});
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;

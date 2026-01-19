@@ -80,7 +80,7 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
 import { type QTableColumn } from 'quasar';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
@@ -95,8 +95,9 @@ const campStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
 const { can } = usePermissions();
 
-campStore.fetchData();
-campFileStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([campStore.fetchData(), campFileStore.fetchData()]);
+});
 
 const uploadOngoing = ref(false);
 const deletionOngoing = ref(false);
@@ -192,14 +193,14 @@ function uploadFile() {
 
 function deleteFiles() {
   selected.value.forEach((value: ServiceFile) => {
-    campFileStore.deleteEntry(value.id);
+    void campFileStore.deleteEntry(value.id);
   });
 
   selected.value = [];
 }
 
 function downloadFiles() {
-  selected.value.forEach((file) => campFileStore.downloadFile(file));
+  selected.value.forEach((file) => void campFileStore.downloadFile(file));
 }
 
 function copyLink(url: string) {

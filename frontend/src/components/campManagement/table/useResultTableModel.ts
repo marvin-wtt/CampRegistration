@@ -50,7 +50,7 @@ export function useResultTableModel(
       ...template,
       columns: template.columns.map((column) => ({
         ...column,
-        field: (row: unknown) => objectValueByPath(column.field as string, row),
+        field: (row: unknown) => objectValueByPath(column.field, row),
         fieldName: column.field,
       })),
     }));
@@ -61,8 +61,7 @@ export function useResultTableModel(
       title: 'Original (Plain)',
       columns: input.questions.map((column) => ({
         ...column,
-        field: (row: unknown) =>
-          objectValueByPath(('data.' + column.field) as string, row),
+        field: (row: unknown) => objectValueByPath('data.' + column.field, row),
         fieldName: 'data.' + column.field,
       })),
       order: 99,

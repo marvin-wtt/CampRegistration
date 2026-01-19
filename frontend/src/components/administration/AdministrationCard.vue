@@ -58,7 +58,7 @@ function navigate() {
     return;
   }
 
-  router.push(props.to);
+  void router.push(props.to);
 }
 </script>
 

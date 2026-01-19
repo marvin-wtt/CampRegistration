@@ -129,7 +129,7 @@ const roleOptions = ref<QSelectOption[]>([
   },
 ]);
 
-async function onOKClick() {
+function onOKClick() {
   onDialogOK(data.value);
 }
 </script>

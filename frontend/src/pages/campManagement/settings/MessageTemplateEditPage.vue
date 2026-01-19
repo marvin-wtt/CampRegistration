@@ -148,7 +148,7 @@
 
 <script setup lang="ts">
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onBeforeMount } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import MessageEditDialog from 'components/campManagement/settings/emails/MessageEditDialog.vue';
@@ -173,9 +173,8 @@ const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
 const { can } = usePermissions();
 
-onBeforeMount(() => {
-  campDetailsStore.fetchData();
-  loadData();
+onMounted(async () => {
+  await Promise.allSettled([campDetailsStore.fetchData(), loadData()]);
 });
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -205,8 +204,8 @@ const loading = computed<boolean>(() => {
   return isLoading.value;
 });
 
-function loadData() {
-  forceFetch(async () => {
+async function loadData() {
+  await forceFetch(async () => {
     return api.fetchMessageTemplates(queryParam('camp'), {
       includeDefaults: true,
       hasEvent: true,
@@ -277,24 +276,26 @@ function addTemplate(event: string) {
         body: template.body,
       },
     })
-    .onOk(async (message) => {
-      await withResultNotification('create', async () => {
+    .onOk((message) => {
+      void withResultNotification('create', async () => {
         return api.createMessageTemplate(camp.id, {
           event,
           subject: message.subject,
           body: message.body,
         });
-      });
-
-      loadData();
+      }).then(() => loadData());
     });
 }
 
 function editTemplate(id: string | undefined | null) {
-  if (!id) return;
+  if (!id) {
+    return;
+  }
 
   const camp = campDetailsStore.data;
-  if (!camp) return;
+  if (!camp) {
+    return;
+  }
 
   const template = findTemplateById(id);
 
@@ -309,29 +310,31 @@ function editTemplate(id: string | undefined | null) {
         body: template.body,
       },
     })
-    .onOk(async (message) => {
-      await withResultNotification('update', async () => {
+    .onOk((message) => {
+      void withResultNotification('update', async () => {
         return api.updateMessageTemplate(camp.id, id, {
           subject: message.subject,
           body: message.body,
         });
-      });
-
-      loadData();
+      }).then(() => loadData());
     });
 }
 
 async function deleteTemplate(id: string | undefined) {
-  if (!id) return;
+  if (!id) {
+    return;
+  }
 
   const camp = campDetailsStore.data;
-  if (!camp) return;
+  if (!camp) {
+    return;
+  }
 
   await withResultNotification('delete', async () => {
     return api.deleteMessageTemplate(camp.id, id);
+  }).then(async () => {
+    await loadData();
   });
-
-  loadData();
 }
 </script>
 

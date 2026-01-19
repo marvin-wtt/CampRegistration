@@ -46,9 +46,9 @@ export function useServiceHandler<T>(storeName?: string) {
     needsUpdate.value = false;
   }
 
-  function asyncUpdate(fn: () => Promise<unknown>) {
+  async function asyncUpdate(fn: () => Promise<unknown>) {
     pendingRequests.value++;
-    fn().finally(() => pendingRequests.value--);
+    await fn().finally(() => pendingRequests.value--);
   }
 
   async function errorOnFailure(
@@ -221,7 +221,7 @@ export function useServiceNotifications(storeName?: string) {
     }
   }
 
-  function withMultiProgressNotification<T>(
+  async function withMultiProgressNotification<T>(
     promises: Promise<T>[],
     operation: string,
     options?: ProgressOptions,
@@ -229,19 +229,27 @@ export function useServiceNotifications(storeName?: string) {
     const func = async (
       notify: (props?: QNotifyUpdateOptions) => void,
     ): Promise<T[]> => {
-      let doneCounter = 0;
-      for (const promise of promises) {
-        promise.then(() => {
-          doneCounter++;
-          const percentage = Math.floor((doneCounter / promises.length) * 100);
+      const total = promises.length;
+
+      if (total === 0) {
+        notify({ caption: '100 %' });
+        return [];
+      }
+
+      let done = 0;
+
+      const wrappedPromises = promises.map((p) =>
+        p.finally(() => {
+          done++;
+          const percentage = Math.floor((done / total) * 100);
 
           notify({
             caption: `${percentage} %`,
           });
-        });
-      }
+        }),
+      );
 
-      return Promise.all(promises);
+      return Promise.all(wrappedPromises);
     };
 
     return withProgressNotification(operation, func, options);

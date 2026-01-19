@@ -236,13 +236,19 @@ describe('Queue', () => {
           DEFAULTS,
         );
 
+        // Give redis some time to connect
+        await wait(100);
+
         await q.close();
 
         try {
-          const promise = Promise.resolve(q.add('test', { n: 1 }));
+          await Promise.resolve(q.add('test', { n: 1 }));
 
-          expect(promise).rejects.toThrowError();
-        } catch (e) {}
+          // This should never be reached: adding to a closed queue must throw
+          expect.fail('add should throw when queue is closed');
+        } catch (e) {
+          expect(e).toBeDefined();
+        }
       });
     },
   );

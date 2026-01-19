@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { faker } from '@faker-js/faker/locale/en';
-import prisma from './prisma';
+import prisma from './prisma.js';
 
 export const TableTemplateFactory = {
   build: (

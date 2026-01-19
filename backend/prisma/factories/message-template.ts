@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import prisma from './prisma';
+import prisma from './prisma.js';
 import { faker } from '@faker-js/faker/locale/en';
 
 const defaultEvents = [
@@ -15,7 +15,7 @@ export const MessageTemplateFactory = {
     data: Partial<Prisma.MessageTemplateCreateInput> = {},
   ): Prisma.MessageTemplateCreateInput => {
     return {
-      camp: data.camp ?? undefined,
+      camp: data.camp! ?? undefined,
       subject: data.subject ?? {
         en: faker.lorem.sentence(),
         de: faker.lorem.sentence(),
