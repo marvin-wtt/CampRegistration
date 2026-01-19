@@ -244,8 +244,8 @@ describe('Queue', () => {
         try {
           await Promise.resolve(q.add('test', { n: 1 }));
 
-          // This should never be reached
-          expect(true).toBe(false);
+          // This should never be reached: adding to a closed queue must throw
+          expect.fail('add should throw when queue is closed');
         } catch (e) {
           expect(e).toBeDefined();
         }
