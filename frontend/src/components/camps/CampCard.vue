@@ -57,10 +57,7 @@
             v-for="locale in props.camp.countries"
             :key="locale"
           >
-            <country-icon
-              :locale
-              size="xs"
-            />
+            <country-icon :locale />
           </div>
         </div>
         <div>
@@ -98,7 +95,7 @@ function formatDate(dateString: string | Date) {
 }
 
 function navigateToRegistration() {
-  router.push({
+  void router.push({
     name: 'camp',
     params: {
       camp: props.camp.id,

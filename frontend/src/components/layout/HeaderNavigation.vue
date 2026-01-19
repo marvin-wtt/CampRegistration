@@ -42,3 +42,13 @@ camps: 'Meine Camps'
 administration: 'Administration'
 camps: 'Mes Camps'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+administration: 'Administracja'
+camps: 'Moje obozy'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+administration: 'Administrace'
+camps: 'Moje tábory'
+</i18n>

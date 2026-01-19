@@ -12,15 +12,12 @@
         @reset="onDialogCancel"
       >
         <q-card-section class="text-h5">
-          {{ t('page.title', { name: props.name }) }}
+          {{ t('page.title', { name }) }}
         </q-card-section>
 
         <q-card-section class="row no-wrap">
           <q-list
-            v-if="
-              typeof message.subject !== 'string' &&
-              typeof message.body !== 'string'
-            "
+            v-if="!isString(message.subject) && !isString(message.body)"
             bordered
             outlined
             separator
@@ -28,7 +25,7 @@
             class="col"
           >
             <q-expansion-item
-              v-for="(country, i) in props.countries"
+              v-for="(country, i) in countries"
               :key="country"
               group="country"
               :default-opened="i === 0"
@@ -36,7 +33,7 @@
               <template #header>
                 <q-item-section avatar>
                   <country-icon
-                    :country="country"
+                    :country
                     size="sm"
                   />
                 </q-item-section>
@@ -91,10 +88,7 @@
           </q-list>
 
           <div
-            v-if="
-              typeof message.subject === 'string' &&
-              typeof message.body === 'string'
-            "
+            v-if="isString(message.subject) && isString(message.body)"
             class="col-grow column no-wrap q-gutter-sm"
           >
             <registration-email-editor
@@ -130,7 +124,7 @@
           </div>
 
           <div
-            v-if="props.countries.length > 1"
+            v-if="countries.length > 1"
             class="col-shrink self-center q-ml-sm"
           >
             <translation-toggle-btn
@@ -166,11 +160,12 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, toRaw } from 'vue';
+import { computed, reactive } from 'vue';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -178,7 +173,7 @@ const { t } = useI18n();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const props = defineProps<{
+const { name, subject, body, form, countries } = defineProps<{
   name: string;
   subject: string | Record<string, string>;
   body: string | Record<string, string>;
@@ -187,28 +182,46 @@ const props = defineProps<{
 }>();
 
 const message = reactive({
-  subject: structuredClone(toRaw(props.subject)),
-  body: structuredClone(toRaw(props.body)),
+  subject: structuredClone(deepToRaw(dropUnsupportedLangs(subject))),
+  body: structuredClone(deepToRaw(dropUnsupportedLangs(body))),
 });
 
 const translated = computed<boolean>(() => {
-  return (
-    typeof message.subject !== 'string' && typeof message.body !== 'string'
-  );
+  return !isString(message.subject) || !isString(message.body);
 });
+
+function isString(value: string | Record<string, string>): value is string {
+  return typeof value === 'string';
+}
+
+function dropUnsupportedLangs(input: string | Record<string, string>) {
+  return typeof input === 'string' ? input : buildTranslationObject(input);
+}
+
+function buildTranslationObject(
+  object: Record<string, string>,
+): Record<string, string> {
+  return Object.fromEntries(
+    countries.map((country) => [
+      country,
+      // if no value for country, take the first available value or empty string
+      object[country] ?? Object.values(object)[0] ?? '',
+    ]),
+  );
+}
 
 function toggleTranslations() {
   if (translated.value) {
-    message.subject = defaultString(props.subject);
-    message.body = defaultString(props.body);
+    message.subject = defaultString(subject);
+    message.body = defaultString(body);
   } else {
-    message.subject = defaultObject(props.subject);
-    message.body = defaultObject(props.body);
+    message.subject = defaultObject(subject);
+    message.body = defaultObject(body);
 
     // Set empty string as default value
-    for (const country in props.countries) {
-      message.subject[country] = message.subject[country] ?? '';
-      message.body[country] = message.body[country] ?? '';
+    for (const country of countries) {
+      message.subject[country] ??= '';
+      message.body[country] ??= '';
     }
   }
 }
@@ -216,18 +229,24 @@ function toggleTranslations() {
 function defaultObject(
   value: string | Record<string, string>,
 ): Record<string, string> {
-  return typeof value === 'string' ? {} : value;
+  if (typeof value === 'string') {
+    return Object.fromEntries(countries.map((country) => [country, value]));
+  }
+
+  return buildTranslationObject(value);
 }
 
 function defaultString(value: string | Record<string, string>): string {
-  return typeof value === 'string' ? value : '';
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return Object.values(value)[0] ?? '';
 }
 
 function onSave() {
   onDialogOK(message);
 }
-
-// TODO translate
 </script>
 
 <style scoped></style>
@@ -296,4 +315,48 @@ field:
 
 page:
   title: 'Modifier le modèle "{ name }"'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  save: 'Zapisz'
+  cancel: 'Anuluj'
+
+field:
+  country: 'Edytuj szablon dla uczestników z:'
+  subject:
+    label: 'Temat:'
+    placeholder: 'Wpisz tutaj temat...'
+    rule:
+      required: 'Temat jest wymagany'
+  body:
+    label: 'Wiadomość:'
+    placeholder: 'Wpisz tutaj swoją wiadomość...'
+    rule:
+      required: 'Wiadomość jest wymagana'
+
+page:
+  title: 'Edytuj szablon „{ name }”'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  save: 'Uložit'
+  cancel: 'Zrušit'
+
+field:
+  country: 'Upravit šablonu pro účastníky z:'
+  subject:
+    label: 'Předmět:'
+    placeholder: 'Zadejte zde předmět...'
+    rule:
+      required: 'Předmět je povinný'
+  body:
+    label: 'Zpráva:'
+    placeholder: 'Zadejte zde svou zprávu...'
+    rule:
+      required: 'Zpráva je povinná'
+
+page:
+  title: 'Upravit šablonu „{ name }”'
 </i18n>

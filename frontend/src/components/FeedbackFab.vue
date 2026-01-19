@@ -144,7 +144,7 @@ function send() {
     const location = window.location.href;
     const userAgent = navigator.userAgent;
 
-    api.sendFeedback(location, userAgent, message.value, email.value);
+    void api.sendFeedback(location, userAgent, message.value, email.value);
   }
 
   clear();
@@ -222,4 +222,42 @@ action:
 dialog:
   title: 'Réaction'
   close: 'Fermez'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Prześlij nam opinię!'
+caption: 'Cieszymy się z Twojej opinii. Napisz tutaj swoje uwagi lub sugestie.'
+
+message:
+  label: 'Twoja opinia'
+
+email:
+  label: 'E-mail'
+  hint: 'Opcjonalnie'
+
+action:
+  send: 'Wyślij'
+
+dialog:
+  title: 'Opinie'
+  close: 'Zamknij'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Pošlete nám zpětnou vazbu!'
+caption: 'Těší nás váš názor. Napište nám zde své připomínky nebo návrhy.'
+
+message:
+  label: 'Vaše zpětná vazba'
+
+email:
+  label: 'E-mail'
+  hint: 'Volitelné'
+
+action:
+  send: 'Odeslat'
+
+dialog:
+  title: 'Zpětná vazba'
+  close: 'Zavřít'
 </i18n>

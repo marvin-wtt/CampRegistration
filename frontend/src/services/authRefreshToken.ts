@@ -43,6 +43,7 @@ export default (axiosClient: AxiosInstance, options: RetryOptions) => {
 
   const interceptor = (error: unknown) => {
     if (!isCustomAxiosError(error)) {
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
       return Promise.reject(error);
     }
 

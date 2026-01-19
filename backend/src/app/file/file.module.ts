@@ -1,8 +1,24 @@
-import type { AppModule, AppRouter } from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { FileRouter } from '#app/file/file.routes';
+import { unregisterAllFileGuards } from '#app/file/file.guard';
+import { FileService } from '#app/file/file.service';
+import { resolve } from '#core/ioc/container';
+import { FileController } from '#app/file/file.controller';
 
 export class FileModule implements AppModule {
-  registerRoutes(router: AppRouter): void {
-    router.useRouter('/files', new FileRouter());
+  bindContainers(options: BindOptions) {
+    options.bind(FileService).toSelf().inSingletonScope();
+    options.bind(FileController).toSelf().inSingletonScope();
+    options.bind(FileRouter).toSelf().inSingletonScope();
+  }
+
+  registerRoutes(router: AppRouter) {
+    router.useRouter('/files', resolve(FileRouter));
+  }
+
+  async shutdown() {
+    await resolve(FileService).close();
+
+    unregisterAllFileGuards();
   }
 }

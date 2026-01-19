@@ -173,3 +173,49 @@ field:
 action:
   save: 'Mettre à jour le mot de passe'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Hasło'
+
+field:
+  currentPassword:
+    label: 'Stare hasło'
+    rule:
+      required: 'Hasło jest wymagane.'
+  password:
+    label: 'Nowe hasło'
+    rule:
+      required: 'Hasło jest wymagane.'
+      minlength: 'Hasło musi mieć co najmniej 8 znaków.'
+  confirmPassword:
+    label: 'Potwierdź hasło'
+    rule:
+      required: 'Hasło jest wymagane.'
+      match: 'Hasła nie są zgodne.'
+
+action:
+  save: 'Zaktualizuj hasło'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Heslo'
+
+field:
+  currentPassword:
+    label: 'Staré heslo'
+    rule:
+      required: 'Heslo je povinné.'
+  password:
+    label: 'Nové heslo'
+    rule:
+      required: 'Heslo je povinné.'
+      minlength: 'Heslo musí mít alespoň 8 znaků.'
+  confirmPassword:
+    label: 'Potvrďte heslo'
+    rule:
+      required: 'Heslo je povinné.'
+      match: 'Hesla se neshodují.'
+
+action:
+  save: 'Aktualizovat heslo'
+</i18n>

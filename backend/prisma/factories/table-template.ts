@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { faker } from '@faker-js/faker/locale/en';
-import prisma from './prisma';
+import prisma from './prisma.js';
 
 export const TableTemplateFactory = {
   build: (
@@ -19,6 +19,7 @@ export const TableTemplateFactory = {
             en: faker.lorem.words(2),
             de: faker.lorem.words(2),
           },
+          source: 'form',
           field: faker.database.column(),
           required: faker.datatype.boolean(),
           align: faker.helpers.arrayElement(['left', 'center', 'right']),
@@ -28,7 +29,6 @@ export const TableTemplateFactory = {
           renderOptions: undefined,
           isArray: undefined,
           headerVertical: undefined,
-          editable: undefined,
           shrink: undefined,
           hideIf: undefined,
           showIf: undefined,

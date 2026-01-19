@@ -84,7 +84,7 @@ const otp = ref<string>('');
 authStore.reset();
 
 function verify() {
-  authStore.verifyOtp(otp.value);
+  void authStore.verifyOtp(otp.value);
 }
 </script>
 
@@ -113,4 +113,22 @@ description: 'Pour continuer, ouvrez votre application d’authentification et s
 
 action:
   verify: 'Vérifier'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Weryfikacja OTP'
+
+description: 'Aby kontynuować, otwórz swoją aplikację uwierzytelniającą i wprowadź wyświetlony 6-cyfrowy kod.'
+
+action:
+  verify: 'Zweryfikuj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Ověření OTP'
+
+description: 'Chcete-li pokračovat, otevřete svou autentizační aplikaci a zadejte zobrazený 6místný kód.'
+
+action:
+  verify: 'Ověřit'
 </i18n>

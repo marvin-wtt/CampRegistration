@@ -19,7 +19,7 @@ The Camp Registration Backend is a RESTful API service that powers the Camp Regi
 ## Prerequisites
 
 - Node.js v22+
-- MySQL database
+- MySQL >= 8.0.1 | MariaDB >= 10.6
 - npm or yarn
 
 ## Setup and Installation
@@ -38,7 +38,6 @@ The Camp Registration Backend is a RESTful API service that powers the Camp Regi
    ```
 
 3. Set up environment variables:
-
    - Copy `.env.dev` to `.env`
    - Update the database connection string and other configuration values
 

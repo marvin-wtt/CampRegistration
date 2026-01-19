@@ -34,11 +34,11 @@ export function useAuthService() {
     shouldIntercept: (error) => error.response?.status === 401,
   });
 
-  let onUnauthenticated: (() => unknown | Promise<unknown>) | undefined =
-    undefined;
+  let onUnauthenticated: (() => unknown) | undefined = undefined;
   // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
   api.interceptors.response.use(undefined, async (error) => {
     if (!isCustomAxiosError(error)) {
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
       return Promise.reject(error);
     }
 
@@ -78,6 +78,8 @@ export function useAuthService() {
   }
 
   async function refreshTokens(): Promise<AuthTokens> {
+    await requestCsrfToken();
+
     const response = await api.post('auth/refresh-tokens', undefined, {
       _skipRetry: true,
       _skipAuthenticationHandler: true,
@@ -159,7 +161,7 @@ export function useAuthService() {
     return;
   }
 
-  function setOnUnauthenticated(handler: () => unknown | Promise<unknown>) {
+  function setOnUnauthenticated(handler: () => unknown) {
     onUnauthenticated = handler;
   }
 
@@ -210,7 +212,6 @@ export function useAuthService() {
     resetPassword,
     verifyEmail,
     sendEmailVerify,
-    requestCsrfToken,
     refreshTokens,
     setOnUnauthenticated,
     extractPartialAuthResponse,

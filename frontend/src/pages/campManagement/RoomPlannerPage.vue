@@ -30,7 +30,7 @@
           <room-list
             v-for="(room, index) in rooms"
             :key="room.id"
-            v-model="rooms[index]!"
+            :room="rooms[index]!"
             :name="room.name"
             :people="availablePeople"
             class="q-ma-sm"
@@ -67,8 +67,6 @@
         icon="keyboard_arrow_up"
         direction="up"
       >
-        <!-- Room ordering is currently not supported -->
-        <!-- TODO Enable when ordering is supported -->
         <q-fab-action
           color="primary"
           icon="swap_vert"
@@ -86,11 +84,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { useRoomPlannerStore } from 'stores/room-planner-store';
 import type { Roommate, RoomWithRoommates } from 'src/types/Room';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
@@ -99,34 +96,58 @@ import RoomOrderDialog from 'components/campManagement/roomPlanner/dialogs/RoomO
 import RoomCreateDialog from 'components/campManagement/roomPlanner/dialogs/RoomCreateDialog.vue';
 import RoomEditDialog from 'components/campManagement/roomPlanner/dialogs/RoomEditDialog.vue';
 import type {
+  Room,
   RoomCreateData,
   RoomUpdateData,
+  Registration,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from 'src/composables/permissions';
+import { useServiceHandler } from 'src/composables/serviceHandler';
+import { formatPersonName } from 'src/utils/formatters';
+import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { useAPIService } from 'src/services/APIService';
 
 const quasar = useQuasar();
 const { t } = useI18n();
+const apiService = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const registrationsStore = useRegistrationsStore();
-const roomStore = useRoomPlannerStore();
+const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 
 const addLoading = ref(false);
 
-registrationsStore.fetchData();
-roomStore.fetchRooms();
+const {
+  data,
+  isLoading,
+  error: roomError,
+  withProgressNotification,
+  withErrorNotification,
+  lazyFetch,
+  queryParam,
+  asyncUpdate,
+  requestPending,
+  checkNotNullWithError,
+} = useServiceHandler<Room[]>();
+
+// TODO Inform camp bus go update or update registrations
+
+onMounted(async () => {
+  await registrationsStore.fetchData();
+  await fetchRooms();
+});
 
 const loading = computed<boolean>(() => {
-  return roomStore.isLoading;
+  return registrationsStore.isLoading || isLoading.value;
 });
 
 const error = computed<string | null>(() => {
-  return registrationsStore.error ?? roomStore.error;
+  return registrationsStore.error ?? roomError.value;
 });
 
 const updateInProgress = computed<boolean>(() => {
-  return roomStore.requestPending;
+  return requestPending.value;
 });
 
 const locales = computed<string[] | undefined>(() => {
@@ -134,17 +155,48 @@ const locales = computed<string[] | undefined>(() => {
 });
 
 const rooms = computed<RoomWithRoommates[]>(() => {
-  const rooms = roomStore.data;
-  if (rooms === undefined) {
+  if (!data.value) {
     return [];
   }
 
-  return rooms;
+  return data.value
+    .map(mapResponseRoom)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 });
 
 const availablePeople = computed<Roommate[]>(() => {
-  return roomStore.availableRoommates;
+  const localRooms = rooms.value;
+  const registrations: Registration[] | undefined = registrationsStore.data;
+
+  if (localRooms === undefined || registrations === undefined) {
+    return [];
+  }
+
+  const waitingListFilter = (registration: Registration): boolean => {
+    return !registration.waitingList;
+  };
+
+  // Filter out people who are already in a group
+  const alreadyAssignedFilter = (registration: Registration): boolean => {
+    return !localRooms.some((room) => {
+      return room.beds.some((value) => value?.person?.id === registration.id);
+    });
+  };
+
+  // Map to roommate type and sort by age
+  return registrations
+    .filter(waitingListFilter)
+    .filter(alreadyAssignedFilter)
+    .map(mapRegistrationRoommate)
+    .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });
+
+async function fetchRooms() {
+  const campId = queryParam('camp');
+
+  const cid = checkNotNullWithError(campId);
+  await lazyFetch(() => apiService.fetchRooms(cid));
+}
 
 function addRoom() {
   quasar
@@ -155,7 +207,7 @@ function addRoom() {
       },
     })
     .onOk((payload: RoomCreateData) => {
-      roomStore.createRoom(payload);
+      void createRoom(payload);
     });
 }
 
@@ -173,7 +225,7 @@ function editRoom(room: RoomWithRoommates): void {
       },
     })
     .onOk((payload: RoomUpdateData) => {
-      roomStore.updateRoom(room.id, payload);
+      void updateRoom(room.id, payload);
     });
 }
 
@@ -187,15 +239,8 @@ function orderRooms() {
       persistent: true,
     })
     .onOk((payload: RoomWithRoommates[]) => {
-      // TODO Rooms needs order property so safe the order
-      payload.forEach((room: RoomWithRoommates) => {
-        roomStore.updateRoom(room.id, room);
-      });
+      void bulkUpdateRooms(payload);
     });
-}
-
-function deleteRoom(id: string) {
-  roomStore.deleteRoom(id);
 }
 
 function onBedUpdate(
@@ -203,7 +248,164 @@ function onBedUpdate(
   position: number,
   roommate: Roommate | null,
 ) {
-  roomStore.updateBed(room, position, roommate);
+  void updateBed(room, position, roommate);
+}
+
+async function createRoom(
+  createData: RoomCreateData,
+): Promise<Room | undefined> {
+  const campId = queryParam('camp');
+
+  return withProgressNotification('create', async () => {
+    const room = await apiService.createRoom(campId, createData);
+
+    data.value?.push(room);
+
+    return room;
+  });
+}
+
+async function updateRoom(
+  roomId: string,
+  updateData: RoomUpdateData,
+): Promise<Room | undefined> {
+  const campId = queryParam('camp');
+
+  return withProgressNotification('update', async () => {
+    const room = await apiService.updateRoom(campId, roomId, updateData);
+
+    const index = data.value?.findIndex((value) => value.id === roomId);
+    if (index !== undefined && index != -1) {
+      data.value?.splice(index, 1, room);
+    }
+
+    return room;
+  });
+}
+
+async function bulkUpdateRooms(
+  rooms: RoomWithRoommates[],
+): Promise<Room[] | undefined> {
+  const campId = queryParam('camp');
+
+  return withProgressNotification('update', async () => {
+    const updatedRooms = await apiService.bulkUpdateRooms(campId, rooms);
+
+    data.value = data.value?.map((room) => {
+      return updatedRooms.find((r) => r.id === room.id) ?? room;
+    });
+
+    return updatedRooms;
+  });
+}
+
+async function deleteRoom(roomId: string) {
+  const campId = queryParam('camp');
+
+  await withProgressNotification('delete', async () => {
+    await apiService.deleteRoom(campId, roomId);
+
+    // Remove the room from the list
+    const index = data.value?.findIndex((value) => value.id === roomId);
+    if (index !== undefined && index != -1) {
+      data.value?.splice(index, 1);
+    }
+  });
+}
+
+async function updateBed(
+  room: RoomWithRoommates,
+  position: number,
+  person: Roommate | null,
+) {
+  const campId = queryParam('camp');
+  const roomId = room.id;
+  const bedId = room.beds[position]?.id;
+  const registrationId = person?.id ?? null;
+
+  if (bedId === undefined) {
+    return;
+  }
+
+  await asyncUpdate(() => {
+    return withErrorNotification('update-bed', () => {
+      const updatedBed = apiService.updateBed(
+        campId,
+        roomId,
+        bedId,
+        registrationId,
+      );
+
+      // Invalidate the registration store to ensure the data is fresh
+      // The registration store will contains the room as well
+      registrationsStore.invalidate();
+
+      return updatedBed;
+    });
+  });
+
+  // Optimistic update
+  data.value = data.value!.map((r) => {
+    if (r.id !== roomId) {
+      return r;
+    }
+
+    const updatedRoom = { ...r };
+    updatedRoom.beds[position] = { id: bedId, registrationId };
+
+    return updatedRoom;
+  });
+}
+
+function mapRegistrationRoommate(registration: Registration): Roommate {
+  const name = formatPersonName(registrationHelper.uniqueName(registration));
+  const age = registrationHelper.age(registration);
+  const gender = registrationHelper.gender(registration);
+  const country = registrationHelper.country(registration);
+  const participant = registrationHelper.participant(registration);
+
+  return {
+    id: registration.id,
+    name,
+    age,
+    gender,
+    country,
+    participant,
+  };
+}
+
+function mapResponseRoom(room: Room): RoomWithRoommates {
+  return {
+    id: room.id,
+    name: room.name,
+    sortOrder: room.sortOrder,
+    beds: room.beds.map((bed) => {
+      return {
+        id: bed.id,
+        person: findRegistrationById(bed.registrationId),
+      };
+    }),
+  };
+}
+
+function findRegistrationById(registrationId: string | null) {
+  if (!registrationId) {
+    return null;
+  }
+
+  const registrations = registrationsStore.data;
+  if (!registrations) {
+    return null;
+  }
+
+  const registration = registrations.find(
+    (value) => value.id === registrationId,
+  );
+  if (!registration) {
+    return null;
+  }
+
+  return mapRegistrationRoommate(registration);
 }
 </script>
 
@@ -221,12 +423,70 @@ function onBedUpdate(
 
 <i18n lang="yaml" locale="en">
 noEntries: 'Create new rooms to start'
+
+request:
+  fetch:
+    error: 'Failed to fetch rooms'
+  create:
+    progress: 'Creating room...'
+    success: 'Room created successfully'
+    error: 'Failed to create room'
+    invalid: 'Invalid camp id'
+  update:
+    progress: 'Updating room...'
+    success: 'Room updated successfully'
+    error: 'Failed to update room'
+    invalid: 'Invalid room id or camp id'
+  delete:
+    progress: 'Deleting room...'
+    success: 'Room deleted successfully'
+    error: 'Failed to delete room'
+    invalid: 'Invalid room id or camp id'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 noEntries: 'Neue Räume erstellen, um zu beginnen'
+
+request:
+  fetch:
+    error: 'Fehler beim Abrufen der Zimmer'
+  create:
+    progress: 'Zimmer wird erstellt...'
+    success: 'Zimmer erfolgreich erstellt'
+    error: 'Fehler beim Erstellen des Zimmers'
+    invalid: 'Ungültige Camp-ID'
+  update:
+    progress: 'Zimmer wird aktualisiert...'
+    success: 'Zimmer erfolgreich aktualisiert'
+    error: 'Fehler beim Aktualisieren des Zimmers'
+    invalid: 'Ungültige Zimmer-ID oder Camp-ID'
+  delete:
+    progress: 'Zimmer wird gelöscht...'
+    success: 'Zimmer erfolgreich gelöscht'
+    error: 'Fehler beim Löschen des Zimmers'
+    invalid: 'Ungültige Zimmer-ID oder Camp-ID'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 noEntries: 'Créer de nouvelles pièces pour commencer'
+
+request:
+  fetch:
+    error: 'Échec de la récupération des chambres'
+  create:
+    progress: 'Création de la chambre en cours...'
+    success: 'Chambre créée avec succès'
+    error: 'Impossible de créer la chambre'
+    invalid: 'ID du camp invalide'
+  update:
+    progress: 'Mise à jour de la chambre en cours...'
+    success: 'Chambre mise à jour avec succès'
+    error: 'Impossible de mettre à jour la chambre'
+    invalid: 'ID de la chambre ou du camp invalide'
+  delete:
+    progress: 'Suppression de la chambre en cours...'
+    success: 'Chambre supprimée avec succès'
+    error: 'Impossible de supprimer la chambre'
+    invalid: 'ID de la chambre ou du camp invalide'
+#
 </i18n>

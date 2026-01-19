@@ -1,7 +1,7 @@
 export function objectValueByPath(
   path: string | (string | number)[],
   obj: unknown,
-): unknown | unknown[] {
+): unknown {
   const keys = Array.isArray(path) ? path : path.split('.');
   let result: unknown = obj;
 
@@ -22,7 +22,7 @@ export function objectValueByPath(
       return result.flatMap((item) => objectValueByPath(remainingPath, item));
     }
 
-    if (typeof result !== 'object' || !(key in result)) {
+    if (typeof result !== 'object' || key === undefined || !(key in result)) {
       return undefined;
     }
 

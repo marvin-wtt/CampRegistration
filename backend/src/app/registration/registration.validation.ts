@@ -5,20 +5,20 @@ const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    registrationId: z.string().ulid(),
+    campId: z.ulid(),
+    registrationId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
     data: RegistrationDataSchema,
@@ -28,22 +28,33 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    registrationId: z.string().ulid(),
+    campId: z.ulid(),
+    registrationId: z.ulid(),
   }),
   body: z
     .object({
       data: RegistrationDataSchema,
+      customData: z.record(z.string(), z.unknown()),
       waitingList: z.boolean(),
+    })
+    .partial(),
+  query: z
+    .object({
+      suppressMessage: z.coerce.boolean(),
     })
     .partial(),
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    registrationId: z.string().ulid(),
+    campId: z.ulid(),
+    registrationId: z.ulid(),
   }),
+  query: z
+    .object({
+      suppressMessage: z.coerce.boolean(),
+    })
+    .partial(),
 });
 
 export default {

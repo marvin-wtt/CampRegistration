@@ -98,7 +98,7 @@ const email = ref<string>('');
 authStore.reset();
 
 function resetPassword() {
-  authStore.forgotPassword(email.value);
+  void authStore.forgotPassword(email.value);
 }
 </script>
 
@@ -145,4 +145,34 @@ field:
 
 action:
   register: 'Envoyer les instructions'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Zapomniałeś hasła'
+
+description: 'Wprowadź swój adres e-mail, a wyślemy Ci instrukcje dotyczące resetowania hasła.'
+
+field:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Musisz podać prawidłowy adres e-mail'
+
+action:
+  register: 'Wyślij instrukcje'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Zapomněli jste heslo'
+
+description: 'Zadejte svůj e-mail a my vám pošleme pokyny k obnovení hesla.'
+
+field:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Musíte zadat platnou e-mailovou adresu'
+
+action:
+  register: 'Odeslat pokyny'
 </i18n>

@@ -18,9 +18,14 @@ import PhoneNumberTableCell from 'components/campManagement/table/tableCells/Pho
 import TextTableCell from 'components/campManagement/table/tableCells/TextTableCell.vue';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import TranslatedValueTableCell from 'components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
+import EditorTableCell from 'components/campManagement/table/tableCells/EditorTableCell.vue';
+import FormSelectTableCell from 'components/campManagement/table/tableCells/FormSelectTableCell.vue';
 
 // TODO Add custom config options
 const components = () => {
+  TableComponentRegistry.register('editor', EditorTableCell, {
+    internal: true,
+  });
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,
   });
@@ -37,10 +42,6 @@ const components = () => {
       de: 'Alter',
       fr: 'Áge',
     },
-    edit: {
-      type: 'text',
-      inputType: 'number',
-    },
   });
   TableComponentRegistry.register('country_flag', CountryFlagTableCell, {
     label: {
@@ -54,10 +55,6 @@ const components = () => {
       en: 'Date',
       de: 'Datum',
       fr: 'Date',
-    },
-    edit: {
-      type: 'text',
-      inputType: 'date',
     },
   });
   TableComponentRegistry.register('default', DefaultTableCell, {
@@ -73,10 +70,6 @@ const components = () => {
       de: 'E-Mail',
       fr: 'E-Mail',
     },
-    edit: {
-      type: 'text',
-      inputType: 'email',
-    },
   });
   TableComponentRegistry.register('file', FileTableCell, {
     label: {
@@ -84,8 +77,12 @@ const components = () => {
       de: 'Datei',
       fr: 'Ficher',
     },
-    edit: {
-      type: 'file',
+  });
+  TableComponentRegistry.register('form_select', FormSelectTableCell, {
+    label: {
+      en: 'Form Select',
+      de: 'Formular Auswahl',
+      fr: 'Sélection de Formulaire',
     },
   });
   TableComponentRegistry.register('gender', GenderTableCell, {
@@ -94,27 +91,6 @@ const components = () => {
       de: 'Geschlecht',
       fr: 'Sexe',
     },
-    edit: {
-      type: 'dropdown',
-      choices: [
-        {
-          text: {
-            en: 'Female',
-            de: 'Weiblich',
-            fr: 'Femme',
-          },
-          value: 'f',
-        },
-        {
-          text: {
-            en: 'Male',
-            de: 'Männlich',
-            fr: 'Mâle',
-          },
-          value: 'm',
-        },
-      ],
-    },
   });
   TableComponentRegistry.register('hidden_text', HiddenTextTableCell, {
     label: {
@@ -122,18 +98,12 @@ const components = () => {
       de: 'Versteckter Text',
       fr: 'Texte Caché',
     },
-    edit: {
-      type: 'text',
-    },
   });
   TableComponentRegistry.register('icon', IconTableCell, {
     label: {
       en: 'Icon',
       de: 'Symbol',
       fr: 'Icône',
-    },
-    edit: {
-      type: 'text',
     },
   });
   TableComponentRegistry.register('index', IndexTableCell, {
@@ -145,18 +115,12 @@ const components = () => {
       de: 'Sprachkenntnisse',
       fr: 'Compétences linguistiques',
     },
-    edit: {
-      type: 'comment',
-    },
   });
   TableComponentRegistry.register('name', NameTableCell, {
     label: {
       en: 'Name',
       de: 'Name',
       fr: 'Nom',
-    },
-    edit: {
-      type: 'text',
     },
   });
   // TODO Can this be replaces with icon?
@@ -171,18 +135,12 @@ const components = () => {
       de: 'Telefonnummer',
       fr: 'Numéro de Téléphone',
     },
-    edit: {
-      type: 'text',
-    },
   });
   TableComponentRegistry.register('text', TextTableCell, {
     label: {
       en: 'Text',
       de: 'Text',
       fr: 'Texte',
-    },
-    edit: {
-      type: 'comment',
     },
   });
   TableComponentRegistry.register('time_ago', TimeAgoTableCell, {

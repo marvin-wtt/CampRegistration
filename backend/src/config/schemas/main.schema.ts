@@ -8,6 +8,6 @@ export const MainEnvSchema = z.object({
     .max(65535)
     .describe('The port on which is app listens')
     .default(8000),
-  APP_URL: z.string().url().describe('URL, where the app is hosted.'),
+  APP_URL: z.url().describe('URL, where the app is hosted.'),
   APP_NAME: z.string().readonly().describe('The name of the app.'),
 });

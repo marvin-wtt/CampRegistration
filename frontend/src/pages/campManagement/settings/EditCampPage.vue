@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { useRouter } from 'vue-router';
 import EditCampForm from 'components/campManagement/settings/EditCampForm.vue';
@@ -29,7 +29,9 @@ const loading = ref<boolean>(false);
 const campStore = useCampDetailsStore();
 const { data, error, isLoading } = storeToRefs(campStore);
 
-campStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([campStore.fetchData()]);
+});
 
 const camp = ref<Camp | undefined>(data.value as Camp);
 

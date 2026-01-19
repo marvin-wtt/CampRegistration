@@ -6,7 +6,7 @@ import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-v
 installQuasarPlugin();
 
 describe('SafeDeleteDialog', () => {
-  it('should mount', async () => {
+  it('should mount', () => {
     const wrapper = mount(TranslatedInput, {
       props: {
         modelValue: '',

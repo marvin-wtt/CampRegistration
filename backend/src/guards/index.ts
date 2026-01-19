@@ -1,10 +1,21 @@
 import type { Request } from 'express';
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 export * from './manager.guard.js';
 export { default as admin } from './admin.guard.js';
 
 export type GuardFn = (
   req: Request,
 ) => string | boolean | Promise<boolean | string>;
+
+const authErrorSet = new Set<number>([
+  httpStatus.UNAUTHORIZED,
+  httpStatus.PAYMENT_REQUIRED,
+  httpStatus.FORBIDDEN,
+]);
+function isAuthError(error: unknown): error is ApiError {
+  return error instanceof ApiError && authErrorSet.has(error.statusCode);
+}
 
 export const and = (...guardFns: GuardFn[]): GuardFn => {
   return async (req: Request) => {
@@ -15,8 +26,12 @@ export const and = (...guardFns: GuardFn[]): GuardFn => {
         if (result !== true) {
           return result;
         }
-      } catch (ignored) {
-        return false;
+      } catch (error) {
+        if (isAuthError(error)) {
+          return error.message;
+        }
+
+        throw error;
       }
     }
 
@@ -33,8 +48,13 @@ export const or = (...guardFns: GuardFn[]): GuardFn => {
         if (result === true) {
           return true;
         }
-      } catch (ignored) {
-        // noop
+      } catch (error) {
+        if (isAuthError(error)) {
+          result = error.message;
+          continue;
+        }
+
+        throw error;
       }
     }
 

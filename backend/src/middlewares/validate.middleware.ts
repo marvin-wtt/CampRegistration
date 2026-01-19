@@ -1,18 +1,19 @@
 import type { Request } from 'express';
-import { type AnyZodObject, type z, ZodError } from 'zod';
+import { type ZodObject, type z, ZodError } from 'zod';
 import { fromError } from 'zod-validation-error';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import fileService from '#app/file/file.service';
+import { FileService } from '#app/file/file.service';
 import logger from '#core/logger';
+import { resolve } from '#core/ioc/container';
 
-export async function validateRequest<T extends AnyZodObject>(
+export async function validateRequest<T extends ZodObject>(
   req: Request,
   schema: T,
 ): Promise<Readonly<z.infer<T>>> {
   try {
     // It is important to await here to catch the error
-    return await schema.readonly().parseAsync(req);
+    return (await schema.readonly().parseAsync(req)) as Readonly<z.infer<T>>;
   } catch (err) {
     handleFileError(req);
 
@@ -28,6 +29,9 @@ export async function validateRequest<T extends AnyZodObject>(
 
 const handleFileError = (req: Request) => {
   const files = extractRequestFiles(req);
+  const fileService = resolve(FileService);
+
+  // TODO Maybe await the promise
   files.forEach((file) => {
     fileService.deleteTempFile(file.filename).catch((reason: unknown) => {
       logger.error(

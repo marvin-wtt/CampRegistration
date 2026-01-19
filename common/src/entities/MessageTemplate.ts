@@ -23,12 +23,12 @@ export interface MessageTemplateCreateData {
   subject: Translatable;
   body: Translatable;
   priority?: string | undefined;
-  attachments?: File[] | string[] | undefined;
+  attachmentIds?: File[] | string[] | undefined;
 }
 
 export interface MessageTemplateUpdateData {
   subject?: Translatable | undefined;
   body?: Translatable | undefined;
   priority?: string | undefined | null;
-  attachments?: File[] | string[] | undefined | null;
+  attachmentIds?: File[] | string[] | undefined | null;
 }

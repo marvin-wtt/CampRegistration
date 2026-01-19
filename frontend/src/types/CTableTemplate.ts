@@ -5,9 +5,12 @@ import type {
 
 type FieldResolver = (row: unknown) => unknown;
 
-export interface CTableColumnTemplate
-  extends Omit<TableColumnTemplate, 'field'> {
+export interface CTableColumnTemplate extends Omit<
+  TableColumnTemplate,
+  'field'
+> {
   field: string | FieldResolver;
+  fieldName: string;
 }
 export interface CTableTemplate extends Omit<TableTemplate, 'columns'> {
   columns: CTableColumnTemplate[];

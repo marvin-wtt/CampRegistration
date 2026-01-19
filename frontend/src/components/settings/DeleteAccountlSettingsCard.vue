@@ -94,3 +94,35 @@ disclaimer:
 action:
   delete: 'Supprimer le compte'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Usuń konto'
+
+disclaimer:
+  title: 'Usunięcie konta'
+  description: 'Usunięcie konta jest działaniem trwałym i nieodwracalnym. Przed kontynuowaniem zapoznaj się z poniższymi informacjami:'
+  dataRemoval: 'Wszystkie Twoje dane osobowe, ustawienia i powiązane informacje zostaną trwale usunięte.'
+  accessLoss: 'Utracisz dostęp do wszystkich obozów, narzędzi i usług powiązanych z Twoim kontem.'
+  collaborationImpact: 'Inni współpracownicy mogą nie mieć już dostępu do Twoich treści.'
+  campDeletion: 'Obozy utworzone przez Ciebie mogą zostać trwale usunięte, jeśli nie są powiązane z innymi użytkownikami.'
+  irreversible: 'Ta operacja jest ostateczna.'
+
+action:
+  delete: 'Usuń konto'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Smazat účet'
+
+disclaimer:
+  title: 'Smazání účtu'
+  description: 'Smazání vašeho účtu je trvalý a nevratný krok. Před pokračováním si prosím přečtěte následující:'
+  dataRemoval: 'Všechny vaše osobní údaje, nastavení a související data budou trvale odstraněny.'
+  accessLoss: 'Ztratíte přístup ke všem táborům, nástrojům a službám spojeným s vaším účtem.'
+  collaborationImpact: 'Spolupracovníci již nemusí mít přístup k vašim příspěvkům.'
+  campDeletion: 'Tábory, které jste vytvořili, mohou být trvale smazány, pokud nejsou spojeny s jinými uživateli.'
+  irreversible: 'Tato akce je nevratná.'
+
+action:
+  delete: 'Smazat účet'
+</i18n>

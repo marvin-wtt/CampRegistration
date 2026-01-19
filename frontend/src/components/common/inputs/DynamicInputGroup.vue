@@ -19,7 +19,7 @@ import { computed } from 'vue';
 
 interface Props {
   elements: BaseComponent[];
-  modelValue?: Record<string, unknown>;
+  modelValue?: Record<string, unknown> | undefined;
 }
 
 const props = defineProps<Props>();

@@ -132,3 +132,33 @@ action:
   cancel: 'Annuler'
   update: 'Actualiser'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Przyznaj dostęp'
+
+input:
+  role:
+    label: 'Rola'
+    rule:
+      required: 'Rola jest wymagana'
+  expiresAt: 'Data wygaśnięcia'
+
+action:
+  cancel: 'Anuluj'
+  update: 'Zaktualizuj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Udělte přístup'
+
+input:
+  role:
+    label: 'Role'
+    rule:
+      required: 'Role je povinná'
+  expiresAt: 'Datum vypršení platnosti'
+
+action:
+  cancel: 'Zrušit'
+  update: 'Aktualizovat'
+</i18n>

@@ -1,13 +1,23 @@
-import bedService from './bed.service.js';
-import registrationService from '#app/registration/registration.service';
+import { BedService } from './bed.service.js';
+import { RegistrationService } from '#app/registration/registration.service';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
 import { BedResource } from '#app/bed/bed.resource';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
-class BedController extends BaseController {
+@injectable()
+export class BedController extends BaseController {
+  constructor(
+    @inject(BedService) private readonly bedService: BedService,
+    @inject(RegistrationService)
+    private readonly registrationService: RegistrationService,
+  ) {
+    super();
+  }
+
   async store(req: Request, res: Response) {
     const {
       params: { campId, roomId },
@@ -19,7 +29,7 @@ class BedController extends BaseController {
       await this.getRegistrationOrFail(campId, registrationId);
     }
 
-    const bed = await bedService.createBed(roomId, registrationId);
+    const bed = await this.bedService.createBed(roomId, registrationId);
 
     res.status(httpStatus.CREATED).resource(new BedResource(bed));
   }
@@ -35,7 +45,7 @@ class BedController extends BaseController {
       await this.getRegistrationOrFail(campId, registrationId);
     }
 
-    const bed = await bedService.updateBedById(bedId, registrationId);
+    const bed = await this.bedService.updateBedById(bedId, registrationId);
 
     res.resource(new BedResource(bed));
   }
@@ -45,13 +55,13 @@ class BedController extends BaseController {
       params: { bedId },
     } = await req.validate(validator.destroy);
 
-    await bedService.deleteBedById(bedId);
+    await this.bedService.deleteBedById(bedId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
   private async getRegistrationOrFail(campId: string, registrationId: string) {
-    const registration = await registrationService.getRegistrationById(
+    const registration = await this.registrationService.getRegistrationById(
       campId,
       registrationId,
     );
@@ -63,5 +73,3 @@ class BedController extends BaseController {
     return registration;
   }
 }
-
-export default new BedController();

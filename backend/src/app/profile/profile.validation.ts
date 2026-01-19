@@ -4,7 +4,7 @@ import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
 const update = z.object({
   body: z
     .object({
-      email: z.string().email(),
+      email: z.email(),
       password: PasswordSchema,
       currentPassword: z.string(),
       name: z.string(),
@@ -18,6 +18,7 @@ const update = z.object({
         ctx.addIssue({
           code: 'custom',
           message: 'Missing current password',
+          input: val.currentPassword,
         });
       }
     }),

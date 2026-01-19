@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { storeToRefs } from 'pinia';
@@ -52,10 +52,12 @@ const error = computed(() => {
   );
 });
 
-async function init() {
-  await campDetailsStore.fetchData();
-  await campFileStore.fetchData();
-  await registrationStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([
+    campDetailsStore.fetchData(),
+    campFileStore.fetchData(),
+    registrationStore.fetchData(),
+  ]);
 
   if (!campDetailsStore.data) {
     return;
@@ -79,8 +81,7 @@ async function init() {
   } else {
     showEditor.value = true;
   }
-}
-init();
+});
 
 async function saveForm(form: SurveyJSCampData): Promise<void> {
   const data = {
@@ -107,7 +108,7 @@ async function saveFile(file: File): Promise<string> {
   const campId = campData.value?.id;
 
   if (!campId) {
-    throw 'Camp not loaded';
+    throw new Error('Camp not defined');
   }
 
   // When file is selected via custom picker, then the file is already present on the server

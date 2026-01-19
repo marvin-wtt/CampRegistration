@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "scripts": {
     "depoly": "./post-deploy.sh",
-    "build": "npm run build -ws --if-present",
-    "migrate": "npm run migrate -ws --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "migrate": "npm run migrate --workspaces --if-present",
     "build-and-migrate": "run-s build migrate",
     "production": "cross-env NODE_ENV=production node backend/build/entry.cjs"
   },
@@ -16,6 +16,9 @@
     "type": "git",
     "url": "https://github.com/marvin-wtt/CampRegistration"
   },
+  "engines": {
+    "node": ">=22 <25"
+  },
   "workspaces": [
     "common",
     "backend",
@@ -23,10 +26,26 @@
     "e2e"
   ],
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/express-serve-static-core": "^5.0.0",
     "cross-env": "^7.0.3",
     "npm-run-all": "^4.1.5",
     "rimraf": "^6.0.1"
+  },
+  "overrides": {
+    "quasar": {
+      "@types/express": "^5.0.0",
+      "@types/express-serve-static-core": "^5.0.0"
+    },
+    "@quasar/quasar-app-extension-testing-unit-vitest": {
+      "vitest": "^4.0.8",
+      "@vitest/coverage-v8": "^4.0.8",
+      "@vitest/ui": "^4.0.8",
+      "happy-dom": "^20.0.10"
+    },
+    "mailparser": {
+      "nodemailer": "^7.0.11"
+    },
+    "smtp-tester": {
+      "nodemailer": "^7.0.11"
+    }
   }
 }

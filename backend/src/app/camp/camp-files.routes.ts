@@ -1,55 +1,52 @@
-import { catchParamAsync } from '#utils/catchAsync';
-import fileController from '#app/file/file.controller';
-import fileService from '#app/file/file.service';
-import express, { type Request } from 'express';
+import { FileController } from '#app/file/file.controller';
+import { FileService } from '#app/file/file.service';
 import { auth, guard, multipart } from '#middlewares/index';
-import { and, or, campManager, campActive } from '#guards/index';
+import { campManager } from '#guards/index';
 import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
+import { resolve } from '#core/ioc/container';
 
-const router = express.Router({ mergeParams: true });
+export class CampFilesRouter extends ModuleRouter {
+  constructor() {
+    super(false);
+  }
 
-router.param(
-  'fileId',
-  catchParamAsync(async (req, _res, id) => {
-    const camp = req.modelOrFail('camp');
-    const file = await fileService.getModelFile('camp', camp.id, id);
-    req.setModelOrFail('file', file);
-  }),
-);
+  protected registerBindings() {
+    const fileService = resolve(FileService);
 
-const fileAccessMiddleware = (req: Request): boolean | string => {
-  const file = req.modelOrFail('file');
+    this.bindModel('file', (req, id) => {
+      const camp = req.modelOrFail('camp');
+      return fileService.getModelFile('camp', camp.id, id);
+    });
+  }
 
-  // Camp managers always have access to all files
-  return file.accessLevel === 'public';
-};
+  protected defineRoutes() {
+    const fileController = resolve(FileController);
 
-// TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
-router.get(
-  '/:fileId',
-  guard(
-    or(campManager('camp.files.view'), and(fileAccessMiddleware, campActive)),
-  ),
-  controller(fileController, 'stream'),
-);
-router.get(
-  '/',
-  auth(),
-  guard(campManager('camp.files.view')),
-  controller(fileController, 'index'),
-);
-router.post(
-  '/',
-  auth(),
-  guard(campManager('camp.files.create')),
-  multipart('file'),
-  controller(fileController, 'store'),
-);
-router.delete(
-  '/:fileId',
-  auth(),
-  guard(campManager('camp.files.delete')),
-  controller(fileController, 'destroy'),
-);
+    // This route is used to redirect to the file API endpoint
+    // In the future, it should serve the file model instead
+    this.router.get('/:fileId', (req, res) => {
+      res.redirect('/api/v1/files/' + req.params.fileId);
+    });
 
-export default router;
+    this.router.get(
+      '/',
+      auth(),
+      guard(campManager('camp.files.view')),
+      controller(fileController, 'index'),
+    );
+    this.router.post(
+      '/',
+      auth(),
+      guard(campManager('camp.files.create')),
+      multipart('file'),
+      controller(fileController, 'store'),
+    );
+    this.router.delete(
+      '/:fileId',
+      auth(),
+      guard(campManager('camp.files.delete')),
+      controller(fileController, 'destroy'),
+    );
+  }
+}

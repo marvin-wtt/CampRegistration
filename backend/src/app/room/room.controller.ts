@@ -1,11 +1,17 @@
 import httpStatus from 'http-status';
-import roomService from './room.service.js';
+import { RoomService } from './room.service.js';
 import { RoomResource } from './room.resource.js';
 import validator from './room.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
-class RoomController extends BaseController {
+@injectable()
+export class RoomController extends BaseController {
+  constructor(@inject(RoomService) private readonly roomService: RoomService) {
+    super();
+  }
+
   show(req: Request, res: Response) {
     const room = req.modelOrFail('room');
 
@@ -17,7 +23,7 @@ class RoomController extends BaseController {
       params: { campId },
     } = await req.validate(validator.index);
 
-    const rooms = await roomService.queryRooms(campId);
+    const rooms = await this.roomService.queryRooms(campId);
 
     res.resource(RoomResource.collection(rooms));
   }
@@ -28,7 +34,7 @@ class RoomController extends BaseController {
       body: { name, capacity },
     } = await req.validate(validator.store);
 
-    const room = await roomService.createRoom(campId, name, capacity);
+    const room = await this.roomService.createRoom(campId, name, capacity);
 
     res.status(httpStatus.CREATED).resource(new RoomResource(room));
   }
@@ -36,12 +42,23 @@ class RoomController extends BaseController {
   async update(req: Request, res: Response) {
     const {
       params: { roomId },
-      body: { name },
+      body: { name, sortOrder },
     } = await req.validate(validator.update);
 
-    const room = await roomService.updateRoomById(roomId, name);
+    const room = await this.roomService.updateRoomById(roomId, name, sortOrder);
 
     res.resource(new RoomResource(room));
+  }
+
+  async bulkUpdate(req: Request, res: Response) {
+    const {
+      params: { campId },
+      body: { rooms },
+    } = await req.validate(validator.bulkUpdate);
+
+    const updatedRooms = await this.roomService.bulkUpdateRooms(campId, rooms);
+
+    res.resource(RoomResource.collection(updatedRooms));
   }
 
   async destroy(req: Request, res: Response) {
@@ -49,10 +66,8 @@ class RoomController extends BaseController {
       params: { roomId },
     } = await req.validate(validator.destroy);
 
-    await roomService.deleteRoomById(roomId);
+    await this.roomService.deleteRoomById(roomId);
 
     res.status(httpStatus.NO_CONTENT).send();
   }
 }
-
-export default new RoomController();

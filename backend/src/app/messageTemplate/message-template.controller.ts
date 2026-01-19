@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import validator from './message-template.validation.js';
-import service from './message-template.service.js';
+import { MessageTemplateService } from './message-template.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import {
@@ -11,8 +11,17 @@ import {
 } from '#app/messageTemplate/message-template.resource';
 import { BaseController } from '#core/base/BaseController';
 import defaultTemplates from '#assets/camp/messageTemplates';
+import { inject, injectable } from 'inversify';
 
-class MessageTemplateController extends BaseController {
+@injectable()
+export class MessageTemplateController extends BaseController {
+  constructor(
+    @inject(MessageTemplateService)
+    private readonly messageTemplateService: MessageTemplateService,
+  ) {
+    super();
+  }
+
   async show(req: Request, res: Response) {
     await req.validate(validator.show);
     const template = req.modelOrFail('messageTemplate');
@@ -26,7 +35,8 @@ class MessageTemplateController extends BaseController {
       query: { includeDefaults, hasEvent },
     } = await req.validate(validator.index);
 
-    let templates = await service.queryMessageTemplates(campId);
+    let templates =
+      await this.messageTemplateService.queryMessageTemplates(campId);
 
     if (hasEvent) {
       templates = templates.filter((template) => !!template.event === hasEvent);
@@ -52,12 +62,16 @@ class MessageTemplateController extends BaseController {
   async store(req: Request, res: Response) {
     const {
       params: { campId },
-      body: { event, subject, body, priority },
+      body: { event, subject, body, priority, attachmentIds },
     } = await req.validate(validator.store);
 
     // Duplicate events for the same camp are not allowed
     if (event) {
-      const existing = await service.getMessageTemplateByName(event, campId);
+      const existing =
+        await this.messageTemplateService.getMessageTemplateByName(
+          event,
+          campId,
+        );
       if (existing) {
         throw new ApiError(
           httpStatus.CONFLICT,
@@ -66,12 +80,11 @@ class MessageTemplateController extends BaseController {
       }
     }
 
-    const template = await service.createTemplate(campId, {
-      event,
-      subject,
-      body,
-      priority,
-    });
+    const template = await this.messageTemplateService.createTemplate(
+      campId,
+      { event, subject, body, priority, attachmentIds },
+      req.sessionId,
+    );
 
     res
       .status(httpStatus.CREATED)
@@ -81,17 +94,14 @@ class MessageTemplateController extends BaseController {
   async update(req: Request, res: Response) {
     const {
       params: { campId, messageTemplateId },
-      body: { subject, body, priority },
+      body: { subject, body, priority, attachmentIds },
     } = await req.validate(validator.update);
 
-    const template = await service.updateMessageTemplate(
+    const template = await this.messageTemplateService.updateMessageTemplate(
       messageTemplateId,
       campId,
-      {
-        subject,
-        body,
-        priority,
-      },
+      { subject, body, priority, attachmentIds },
+      req.sessionId,
     );
 
     res.status(httpStatus.OK).resource(new MessageTemplateResource(template));
@@ -102,10 +112,11 @@ class MessageTemplateController extends BaseController {
       params: { messageTemplateId, campId },
     } = await req.validate(validator.destroy);
 
-    await service.deleteMessageTemplateById(messageTemplateId, campId);
+    await this.messageTemplateService.deleteMessageTemplateById(
+      messageTemplateId,
+      campId,
+    );
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 }
-
-export default new MessageTemplateController();

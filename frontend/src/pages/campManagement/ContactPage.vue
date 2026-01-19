@@ -126,7 +126,7 @@
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
 import type { Registration } from '@camp-registration/common/entities';
@@ -147,8 +147,12 @@ const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
 const { withResultNotification } = useServiceNotifications();
 
-campDetailsStore.fetchData();
-registrationStore.fetchData();
+onMounted(async () => {
+  await Promise.all([
+    campDetailsStore.fetchData(),
+    registrationStore.fetchData(),
+  ]);
+});
 
 const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);

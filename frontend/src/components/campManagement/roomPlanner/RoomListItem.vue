@@ -1,17 +1,17 @@
 <template>
-  <q-item :dense="props.dense">
+  <q-item :dense>
     <q-item-section>
       <q-select
-        v-model="person"
+        v-model="model"
         :label
         option-label="name"
-        :options="props.options"
+        :options
         clearable
         option-value="id"
         outlined
         rounded
-        :dense="props.dense"
-        :disable="!props.assignable"
+        :dense
+        :disable="!assignable"
       >
         <template #prepend>
           <country-icon
@@ -52,41 +52,36 @@ import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import type { Roommate } from 'src/types/Room';
 
-interface Props {
-  modelValue: Roommate | null;
+const model = defineModel<Roommate | null>({
+  required: true,
+});
+
+const {
+  position,
+  options,
+  dense = false,
+  assignable = false,
+} = defineProps<{
   position: number;
   options: unknown[];
   dense?: boolean;
   assignable?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  dense: false,
-});
-
-const emit = defineEmits<{
-  (e: 'update', value: Roommate | null): void;
 }>();
 
 const flagVisible = computed<boolean>(() => {
-  return props.modelValue !== null && 'country' in props.modelValue;
+  return model.value !== null && 'country' in model.value;
 });
 
 const flag = computed<string>(() => {
-  return person.value?.country ?? '';
-});
-
-const person = computed<Roommate | null>({
-  get: () => props.modelValue,
-  set: (val) => emit('update', val),
+  return model.value?.country ?? '';
 });
 
 const label = computed<string>(() => {
-  return '#' + props.position;
+  return '#' + position;
 });
 
 const selected = computed<string>(() => {
-  const person = props.modelValue;
+  const person = model.value;
 
   if (person === null) {
     return '';

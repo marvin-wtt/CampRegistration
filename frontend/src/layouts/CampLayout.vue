@@ -36,10 +36,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -63,7 +60,7 @@ import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
 import { useProfileStore } from 'stores/profile-store';
 import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
 import { useCampDetailsStore } from 'stores/camp-details-store';
@@ -77,6 +74,10 @@ const { user } = storeToRefs(profileStore);
 const campDetailStore = useCampDetailsStore();
 const { data: camp } = storeToRefs(campDetailStore);
 
+onMounted(async () => {
+  await Promise.allSettled([authStore.init()]);
+});
+
 useMeta(() => {
   return {
     title: camp.value ? to(camp.value.name) : t('camps'),
@@ -88,17 +89,9 @@ const title = computed<string>(() => {
   return camp.value ? to(camp.value.name) : t('app_name');
 });
 
-if (!profileStore.user) {
-  authStore.init();
-}
-
 const administrator = computed<boolean>(() => {
   return profileStore.user?.role === 'ADMIN';
 });
-
-function logout() {
-  authStore.logout();
-}
 </script>
 
 <style>
@@ -153,4 +146,14 @@ create: 'Camp organisieren'
 <i18n lang="yaml" locale="fr">
 camps: 'Camps'
 create: 'Organiser un camp'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+camps: 'Obozy'
+create: 'Zorganizuj obóz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+camps: 'Tábory'
+create: 'Zorganizovat tábor'
 </i18n>

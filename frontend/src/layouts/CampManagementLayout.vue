@@ -36,10 +36,7 @@
           unelevated
         />
 
-        <profile-menu
-          :profile="user"
-          @logout="logout()"
-        />
+        <profile-menu />
       </q-toolbar>
     </q-header>
 
@@ -125,7 +122,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -136,7 +133,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { storeToRefs } from 'pinia';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
@@ -152,18 +148,13 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-const { user } = storeToRefs(profileStore);
+onMounted(async () => {
+  await authStore.init();
 
-async function init() {
-  if (!user.value) {
-    // Fetch user instead of init to force redirect on error
-    await authStore.init();
-  }
   if (route.params.camp) {
     await campDetailStore.fetchData();
   }
-}
-init();
+});
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
@@ -300,11 +291,7 @@ function toggleDrawer() {
 }
 
 function navigateHome() {
-  router.push({ name: 'management' });
-}
-
-function logout() {
-  authStore.logout();
+  void router.push({ name: 'management' });
 }
 </script>
 
@@ -372,6 +359,50 @@ settings: 'Paramètres'
 statistics: 'Statistiques'
 tools: 'Tools'
 notifications: 'Notifications'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+footer:
+  imprint: 'Nota prawna'
+  privacy_policy: 'Polityka prywatności'
+
+access: 'Dostęp'
+contact: 'Kontakt'
+dashboard: 'Panel główny'
+edit: 'Edytuj'
+email_templates: 'Szablony e-maili'
+files: 'Pliki'
+expenses: 'Wydatki'
+form: 'Formularz rejestracyjny'
+participants: 'Uczestnicy'
+program_planner: 'Program'
+room_planner: 'Plan pokoi'
+settings: 'Ustawienia'
+statistics: 'Statystyki'
+tools: 'Narzędzia'
+notifications: 'Powiadomienia'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+footer:
+  imprint: 'Tiráž'
+  privacy_policy: 'Zásady ochrany osobních údajů'
+
+access: 'Přístup'
+contact: 'Kontakt'
+dashboard: 'Přehled'
+edit: 'Upravit'
+email_templates: 'E-mailové šablony'
+files: 'Soubory'
+expenses: 'Výdaje'
+form: 'Registrační formulář'
+participants: 'Účastníci'
+program_planner: 'Program'
+room_planner: 'Plán pokojů'
+settings: 'Nastavení'
+statistics: 'Statistiky'
+tools: 'Nástroje'
+notifications: 'Oznámení'
 </i18n>
 
 <style>

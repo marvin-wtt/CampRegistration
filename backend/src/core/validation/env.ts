@@ -1,8 +1,8 @@
-import { type AnyZodObject, type z, ZodError } from 'zod';
+import { type ZodObject, type z, ZodError } from 'zod';
 import { type ZodReadonly } from 'zod';
 import process from 'node:process';
 
-export function validateEnv<R extends AnyZodObject, T extends ZodReadonly<R>>(
+export function validateEnv<R extends ZodObject, T extends ZodReadonly<R>>(
   schema: T,
 ): z.infer<T> {
   try {

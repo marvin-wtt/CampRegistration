@@ -67,21 +67,3 @@ const modelValue = computed<string>({
   }
 }
 </style>
-
-<i18n lang="yaml" locale="en">
-actions:
-  enable: 'Use translations'
-  disable: "Don't use translations"
-</i18n>
-
-<i18n lang="yaml" locale="de">
-actions:
-  enable: 'Übersetzungen verwenden'
-  disable: 'Keine Übersetzungen verwenden'
-</i18n>
-
-<i18n lang="yaml" locale="fr">
-actions:
-  enable: 'Utiliser les traductions'
-  disable: 'Ne pas utiliser les traductions'
-</i18n>

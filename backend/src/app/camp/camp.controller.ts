@@ -1,8 +1,8 @@
-import campService from './camp.service.js';
+import { CampService } from './camp.service.js';
 import { CampResource, CampDetailsResource } from './camp.resource.js';
-import fileService from '#app/file/file.service';
-import registrationService from '#app/registration/registration.service';
-import tableTemplateService from '#app/tableTemplate/table-template.service';
+import { FileService } from '#app/file/file.service';
+import { RegistrationService } from '#app/registration/registration.service';
+import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
 import defaultForm from '#assets/camp/form';
 import defaultThemes from '#assets/camp/themes';
@@ -12,11 +12,27 @@ import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
-import managerService from '#app/manager/manager.service.js';
-import ApiError from '#utils/ApiError.js';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
+import { ManagerService } from '#app/manager/manager.service';
+import ApiError from '#utils/ApiError';
+import { inject, injectable } from 'inversify';
 
-class CampController extends BaseController {
+@injectable()
+export class CampController extends BaseController {
+  constructor(
+    @inject(CampService) private readonly campService: CampService,
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(RegistrationService)
+    private readonly registrationService: RegistrationService,
+    @inject(TableTemplateService)
+    private readonly tableTemplateService: TableTemplateService,
+    @inject(MessageTemplateService)
+    private readonly messageTemplateService: MessageTemplateService,
+  ) {
+    super();
+  }
+
   show(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
 
@@ -26,7 +42,7 @@ class CampController extends BaseController {
   async index(req: Request, res: Response) {
     const { query } = await req.validate(validator.index);
 
-    const camps = await campService.queryCamps(
+    const camps = await this.campService.queryCamps(
       {
         public: query.showAll ? undefined : true,
         active: query.showAll ? undefined : true,
@@ -55,7 +71,7 @@ class CampController extends BaseController {
     // This must happen here because the body needs to be validated first
     if (body.referenceCampId) {
       const isManager =
-        await managerService.campManagerExistsWithUserIdAndCampId(
+        await this.managerService.campManagerExistsWithUserIdAndCampId(
           body.referenceCampId,
           userId,
         );
@@ -69,7 +85,7 @@ class CampController extends BaseController {
     }
 
     const referenceCamp = body.referenceCampId
-      ? await campService.getCampById(body.referenceCampId)
+      ? await this.campService.getCampById(body.referenceCampId)
       : undefined;
 
     const form = body.form ?? referenceCamp?.form ?? defaultForm;
@@ -77,7 +93,7 @@ class CampController extends BaseController {
 
     // Copy files from reference or use defaults
     const files = body.referenceCampId
-      ? await fileService.queryModelFiles({
+      ? await this.fileService.queryModelFiles({
           name: 'camp',
           id: body.referenceCampId,
         })
@@ -85,14 +101,16 @@ class CampController extends BaseController {
 
     // Copy table templates from reference or use defaults
     const tableTemplates = body.referenceCampId
-      ? await tableTemplateService.queryTemplates(body.referenceCampId)
+      ? await this.tableTemplateService.queryTemplates(body.referenceCampId)
       : defaultTableTemplates.map((value) => ({ data: value }));
 
     const messageTemplates = body.referenceCampId
-      ? await messageTemplateService.queryMessageTemplates(body.referenceCampId)
+      ? await this.messageTemplateService.queryMessageTemplates(
+          body.referenceCampId,
+        )
       : defaultMessageTemplates;
 
-    const camp = await campService.createCamp(
+    const camp = await this.campService.createCamp(
       userId,
       {
         countries: body.countries,
@@ -123,7 +141,7 @@ class CampController extends BaseController {
     const camp = req.modelOrFail('camp');
     const { body } = await req.validate(validator.update(camp));
 
-    const updatedCamp = await campService.updateCamp(camp, {
+    const updatedCamp = await this.campService.updateCamp(camp, {
       countries: body.countries,
       name: body.name,
       organizer: body.organizer,
@@ -143,7 +161,7 @@ class CampController extends BaseController {
 
     // Re-generate computed data fields
     if (body.form) {
-      await registrationService.updateRegistrationsComputedDataByCamp(
+      await this.registrationService.updateRegistrationsComputedDataByCamp(
         updatedCamp,
       );
     }
@@ -156,10 +174,8 @@ class CampController extends BaseController {
       params: { campId },
     } = await req.validate(validator.destroy);
 
-    await campService.deleteCampById(campId);
+    await this.campService.deleteCampById(campId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 }
-
-export default new CampController();

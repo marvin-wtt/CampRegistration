@@ -1,6 +1,6 @@
 <template>
   <template v-if="emails === undefined">
-    {{ props.props.value }}
+    {{ cellProps.value }}
   </template>
 
   <a
@@ -17,7 +17,7 @@
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
 interface Email {
   address: string;
@@ -26,11 +26,11 @@ interface Email {
 
 // Split multiple emails separated with comma or semicolon
 const emails = computed<Email[] | undefined>(() => {
-  if (typeof props.props.value !== 'string') {
+  if (typeof cellProps.value !== 'string') {
     return undefined;
   }
 
-  const addresses = props.props.value.split(/[\s,;]+/);
+  const addresses = cellProps.value.split(/[\s,;]+/);
 
   const emails: Email[] = [];
   addresses.forEach((value) => {

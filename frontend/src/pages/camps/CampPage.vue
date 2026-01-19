@@ -49,14 +49,13 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { isAPIServiceError, useAPIService } from 'src/services/APIService';
 import { useRoute } from 'vue-router';
-import { v7 as uuid } from 'uuid';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from 'src/composables/serviceHandler';
 
@@ -72,7 +71,7 @@ const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
 
-onBeforeMount(async () => {
+onMounted(async () => {
   await init();
 });
 
@@ -142,12 +141,7 @@ async function submit(campId: string, formData: Record<string, unknown>) {
 async function uploadFile(file: File): Promise<string> {
   const serviceFile = await api.createTemporaryFile({
     file,
-    field: uuid(),
   });
-
-  if (serviceFile.field) {
-    return `${serviceFile.id}#${serviceFile.field}`;
-  }
 
   return serviceFile.id;
 }
@@ -193,4 +187,22 @@ error:
     qu'il s'agit d'une erreur, veuillez contacter l'administration du camp."
   not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'
     URL ou contacter l'administration du camp."
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  home: 'Szukaj innych obozów'
+
+error:
+  unavailable: 'Rejestracja na ten obóz nie jest jeszcze możliwa lub została już zamknięta. Sprawdź dane rejestracyjne obozu. Jeśli uważasz, że to błąd, skontaktuj się z administracją obozu.'
+  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL lub skontaktuj się z administracją obozu.'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  home: 'Hledat jiné tábory'
+
+error:
+  unavailable: 'Registrace na tento tábor zatím není možná nebo již byla uzavřena. Zkontrolujte registrační údaje tábora. Pokud si myslíte, že jde o chybu, kontaktujte správu tábora.'
+  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu nebo kontaktujte správu tábora.'
 </i18n>

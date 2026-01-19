@@ -1,17 +1,19 @@
-import type { Express, Router } from 'express';
+import type { Router } from 'express';
 import type {
   ManagerRole,
   Permission,
 } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
+import type { ContainerModuleLoadOptions } from 'inversify';
 
 export type AppRouter = Router & {
   useRouter: (path: string, router: ModuleRouter) => void;
 };
 
-export interface ModuleOptions {
-  app: Express;
-}
+// Convert to interface to allow for more flexibility in the future
+export type ModuleOptions = object;
+
+export type BindOptions = ContainerModuleLoadOptions;
 
 export type RoleToPermissions<T extends Permission> = Partial<
   Record<ManagerRole, T[]>
@@ -20,7 +22,11 @@ export type RoleToPermissions<T extends Permission> = Partial<
 export interface AppModule {
   configure?(options: ModuleOptions): Promise<void> | void;
 
+  bindContainers?(options: BindOptions): void;
+
   registerRoutes?(router?: Router): void;
 
   registerPermissions?(): RoleToPermissions<Permission>;
+
+  shutdown?(): Promise<void> | void;
 }

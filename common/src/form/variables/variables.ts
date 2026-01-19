@@ -13,7 +13,7 @@ export interface Data {
   minAge: number;
   maxAge: number;
   location: Translatable | null;
-  price: number;
+  price: Translatable<number>;
   freePlaces: Translatable<number> | null;
 }
 
@@ -37,7 +37,7 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   model.setVariable('camp.minAge', data.minAge);
   model.setVariable('camp.maxAge', data.maxAge);
   model.setVariable('camp.location', data.location ? t(data.location) : null);
-  model.setVariable('camp.price', data.price);
+  model.setVariable('camp.price', t(data.price));
   model.setVariable('camp.freePlaces', data.freePlaces);
 
   model.setVariable('_validationEnabled', model.validationEnabled);
@@ -86,13 +86,13 @@ const converter = (locale: string) => {
   }
 
   const t = (
-    value: Record<string, unknown> | string,
+    value: Record<string, unknown> | string | number,
     fallback?: string,
   ): unknown => {
     // Expected input: [value: object | string, locale: string, fallback?: string]
     const defaultFallback = 'en-US';
 
-    if (typeof value === 'string') {
+    if (typeof value === 'string' || typeof value === 'number') {
       return value;
     }
 

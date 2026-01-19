@@ -15,7 +15,7 @@
       v-model="data.countries"
       :disable="loading"
       :label="t('field.countries')"
-      :countries="['de', 'fr', 'pl']"
+      :countries="['de', 'fr', 'pl', 'cz']"
       :rules="[
         (val?: string[]) =>
           (val && val.length > 0) || t('validation.countries.empty'),
@@ -268,14 +268,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, toRaw } from 'vue';
+import { computed, ref } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useI18n } from 'vue-i18n';
 import CountrySelect from 'components/common/CountrySelect.vue';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 const { t } = useI18n();
 
@@ -309,7 +309,7 @@ const submitLabel = computed<string>(() => {
 });
 
 function initialValue(): Partial<Camp> {
-  const camp = structuredClone(toRaw(props.modelValue));
+  const camp = structuredClone(deepToRaw(props.modelValue));
   camp.public = camp.public ?? false;
   return camp;
 }
@@ -505,6 +505,128 @@ action:
   submit:
     create: 'Créer'
     edit: 'Sauver'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title:
+  create: 'Utwórz nowy obóz'
+  edit: 'Edytuj obóz'
+
+field:
+  countries: 'Kraje'
+  name: 'Nazwa obozu'
+  organizer: 'Organizator'
+  contactEmail: 'E-mail kontaktowy'
+  maxParticipants: 'Maksymalna liczba uczestników'
+  dateRange: 'Data rozpoczęcia i zakończenia'
+  startTime: 'Czas rozpoczęcia'
+  endTime: 'Czas zakończenia'
+  minAge: 'Minimalny wiek'
+  maxAge: 'Maksymalny wiek'
+  location: 'Miejsce'
+  price: 'Cena'
+  public: 'Pokaż obóz na stronie głównej'
+
+validation:
+  countries:
+    empty: 'Wybierz co najmniej jeden kraj'
+  name:
+    empty: 'Podaj nazwę obozu'
+    length: 'Nazwa obozu może mieć maksymalnie 255 znaków'
+  organizer:
+    empty: 'Podaj organizatora'
+  contactEmail:
+    empty: 'Podaj adres e-mail'
+  maxParticipants:
+    empty: 'Podaj maksymalną liczbę uczestników'
+    positive: 'Maksymalna liczba uczestników musi być liczbą dodatnią'
+  dateRange:
+    empty: 'Wybierz datę rozpoczęcia i zakończenia'
+  startAt:
+    empty: 'Wybierz godzinę rozpoczęcia'
+  endAt:
+    empty: 'Wybierz godzinę zakończenia'
+  minAge:
+    empty: 'Podaj minimalny wiek'
+    positive: 'Minimalny wiek musi być liczbą dodatnią'
+    max: 'Minimalny wiek musi być mniejszy niż 100'
+  maxAge:
+    empty: 'Podaj maksymalny wiek'
+    min: 'Maksymalny wiek musi być większy lub równy minimalnemu'
+    max: 'Maksymalny wiek musi być mniejszy niż 100'
+  location:
+    empty: 'Podaj lokalizację'
+    length: 'Lokalizacja może mieć maksymalnie 255 znaków'
+  price:
+    empty: 'Podaj cenę większą lub równą 0'
+    positive: 'Cena musi być liczbą dodatnią'
+
+action:
+  reset: 'Resetuj'
+  submit:
+    create: 'Utwórz'
+    edit: 'Zapisz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title:
+  create: 'Vytvořit nový tábor'
+  edit: 'Upravit tábor'
+
+field:
+  countries: 'Země'
+  name: 'Název tábora'
+  organizer: 'Organizátor'
+  contactEmail: 'Kontaktní e-mail'
+  maxParticipants: 'Maximální počet účastníků'
+  dateRange: 'Datum začátku a konce'
+  startTime: 'Čas začátku'
+  endTime: 'Čas konce'
+  minAge: 'Minimální věk'
+  maxAge: 'Maximální věk'
+  location: 'Místo'
+  price: 'Cena'
+  public: 'Zobrazit tábor na úvodní stránce'
+
+validation:
+  countries:
+    empty: 'Vyberte alespoň jednu zemi'
+  name:
+    empty: 'Zadejte název tábora'
+    length: 'Název tábora může mít maximálně 255 znaků'
+  organizer:
+    empty: 'Zadejte organizátora'
+  contactEmail:
+    empty: 'Zadejte e-mailovou adresu'
+  maxParticipants:
+    empty: 'Zadejte maximální počet účastníků'
+    positive: 'Maximální počet účastníků musí být kladné číslo'
+  dateRange:
+    empty: 'Vyberte datum začátku a konce'
+  startAt:
+    empty: 'Vyberte čas začátku'
+  endAt:
+    empty: 'Vyberte čas konce'
+  minAge:
+    empty: 'Zadejte minimální věk'
+    positive: 'Minimální věk musí být kladné číslo'
+    max: 'Minimální věk musí být menší než 100'
+  maxAge:
+    empty: 'Zadejte maximální věk'
+    min: 'Maximální věk musí být větší nebo roven minimálnímu'
+    max: 'Maximální věk musí být menší než 100'
+  location:
+    empty: 'Zadejte místo'
+    length: 'Místo může mít maximálně 255 znaků'
+  price:
+    empty: 'Zadejte cenu větší nebo rovnu 0'
+    positive: 'Cena musí být kladné číslo'
+
+action:
+  reset: 'Resetovat'
+  submit:
+    create: 'Vytvořit'
+    edit: 'Uložit'
 </i18n>
 
 <style lang="scss">

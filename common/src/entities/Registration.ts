@@ -18,6 +18,7 @@ export interface Registration extends Identifiable, Timestamps {
       country: string | null;
     };
   };
+  customData: Record<string, unknown>;
   waitingList: boolean;
   locale: string;
   room?: Translatable | null;
@@ -28,5 +29,12 @@ export type RegistrationCreateData = Pick<Registration, 'data'> &
   Pick<Partial<Registration>, 'locale'>;
 
 export type RegistrationUpdateData = Partial<
-  Pick<Registration, 'data' | 'waitingList'>
+  Pick<Registration, 'data' | 'customData' | 'waitingList'>
 >;
+
+export interface RegistrationUpdateQuery {
+  suppressMessage?: boolean | undefined;
+}
+export interface RegistrationDeleteQuery {
+  suppressMessage?: boolean | undefined;
+}

@@ -10,7 +10,7 @@
           class="text-h6"
           data-testid="title"
         >
-          {{ props.title }}
+          {{ title }}
         </div>
       </q-card-section>
 
@@ -18,24 +18,24 @@
         class="q-pt-none"
         data-testid="message"
       >
-        {{ props.message }}
+        {{ message }}
       </q-card-section>
 
       <q-card-section class="q-pt-none">
-        {{ t('text.confirm', { label: props.label }) }}
+        {{ t('text.confirm', { label }) }}
       </q-card-section>
 
       <q-card-section
         class="q-pt-none text-center text-bold data-value"
         data-testid="value"
       >
-        {{ props.value }}
+        {{ value }}
       </q-card-section>
 
       <q-card-section class="q-pt-none">
         <q-input
           v-model="modelValue"
-          :label="props.label"
+          :label="formattedLabel"
           autofocus
           rounded
           outlined
@@ -77,23 +77,28 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-interface Props {
+const { title, message, value, label } = defineProps<{
   title: string;
   message: string;
   value: string;
   label: string;
-}
+}>();
 
-const props = defineProps<Props>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const modelValue = ref<string>('');
 
 const confirmDeleteDisabled = computed<boolean>(() => {
   return (
-    modelValue.value.trim().toLowerCase() !==
-    props.value.trim().toLocaleLowerCase()
+    modelValue.value.trim().toLowerCase() !== value.trim().toLocaleLowerCase()
   );
+});
+
+const formattedLabel = computed<string>(() => {
+  if (label.length > 0) {
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  return '';
 });
 </script>
 
@@ -129,4 +134,22 @@ text:
 action:
   delete: 'Supprimer'
   cancel: 'Annuler'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+text:
+  confirm: 'Aby potwierdzić, wpisz {label}:'
+
+action:
+  delete: 'Usuń'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+text:
+  confirm: 'Pro potvrzení zadejte {label}:'
+
+action:
+  delete: 'Smazat'
+  cancel: 'Zrušit'
 </i18n>

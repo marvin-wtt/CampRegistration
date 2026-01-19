@@ -128,7 +128,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { useCampManagerStore } from 'stores/camp-manager-store';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type {
   CampManager,
   CampManagerCreateData,
@@ -151,8 +151,12 @@ const profileStore = useProfileStore();
 const campDetailsStore = useCampDetailsStore();
 const { can } = usePermissions();
 
-campManagerStore.fetchData();
-campDetailsStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([
+    campManagerStore.fetchData(),
+    campDetailsStore.fetchData(),
+  ]);
+});
 
 const error = computed<string | null>(() => {
   return campManagerStore.error ?? campDetailsStore.error;
@@ -171,6 +175,7 @@ const columns: QTableColumn[] = [
   {
     name: 'name',
     required: true,
+    sortable: true,
     label: t('column.name'),
     field: 'name',
     align: 'left',
@@ -178,6 +183,7 @@ const columns: QTableColumn[] = [
   {
     name: 'email',
     required: true,
+    sortable: true,
     label: t('column.email'),
     field: 'email',
     align: 'left',
@@ -185,6 +191,7 @@ const columns: QTableColumn[] = [
   {
     name: 'role',
     required: true,
+    sortable: true,
     label: t('column.role'),
     field: 'role',
     align: 'center',
@@ -192,6 +199,7 @@ const columns: QTableColumn[] = [
   {
     name: 'status',
     required: true,
+    sortable: true,
     label: t('column.status'),
     field: 'status',
     align: 'center',
@@ -199,6 +207,7 @@ const columns: QTableColumn[] = [
   {
     name: 'expiresAt',
     required: true,
+    sortable: true,
     label: t('column.expiresAt'),
     field: 'expiresAt',
     align: 'center',
@@ -221,7 +230,7 @@ const rows = computed<CampManager[]>(() => {
 });
 
 function getRoleOptions(): QSelectOption[] {
-  const roles = ['VIEWER', 'COORDINATOR', 'COUNSELOR', 'DIRECTOR'] as const;
+  const roles = ['VIEWER', 'COUNSELOR', 'COORDINATOR', 'DIRECTOR'] as const;
 
   return roles.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
@@ -242,7 +251,7 @@ function showAddDialog() {
       },
     })
     .onOk((data: CampManagerCreateData) => {
-      campManagerStore.createData(data);
+      void campManagerStore.createData(data);
     });
 }
 
@@ -256,7 +265,7 @@ function showEditDialog(manager: CampManager) {
       },
     })
     .onOk((payload: CampManagerUpdateData) => {
-      campManagerStore.updateData(manager.id, payload);
+      void campManagerStore.updateData(manager.id, payload);
     });
 }
 
@@ -272,7 +281,7 @@ function showDeleteDialog(manager: CampManager) {
       },
     })
     .onOk(() => {
-      campManagerStore.deleteData(manager.id);
+      void campManagerStore.deleteData(manager.id);
     });
 }
 </script>
@@ -347,6 +356,78 @@ role:
   counselor: 'Conseiller'
   director: 'Directeur'
   viewer: 'Lecteur'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Zarządzaj dostępem'
+
+action:
+  add: 'Dodaj'
+  delete: 'Usuń'
+  edit: 'Edytuj'
+
+dialog:
+  delete:
+    title: 'Cofnij dostęp'
+    message: 'Czy na pewno chcesz cofnąć dostęp temu użytkownikowi?'
+    label: 'E-mail'
+
+column:
+  email: 'E-mail'
+  expiresAt: 'Wygasa'
+  name: 'Imię i nazwisko'
+  role: 'Rola'
+  status: 'Status'
+
+expiresAt:
+  never: 'Nigdy'
+  expired: 'Wygasł'
+
+status:
+  accepted: 'Zaakceptowany'
+  pending: 'Oczekujący'
+
+role:
+  coordinator: 'Koordynator'
+  counselor: 'Opiekun'
+  director: 'Kierownik'
+  viewer: 'Podglądający'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Správa přístupu'
+
+action:
+  add: 'Přidat'
+  delete: 'Odstranit'
+  edit: 'Upravit'
+
+dialog:
+  delete:
+    title: 'Odebrat přístup'
+    message: 'Opravdu chcete odebrat přístup tomuto uživateli?'
+    label: 'E-mail'
+
+column:
+  email: 'E-mail'
+  expiresAt: 'Vyprší'
+  name: 'Jméno'
+  role: 'Role'
+  status: 'Stav'
+
+expiresAt:
+  never: 'Nikdy'
+  expired: 'Vypršelo'
+
+status:
+  accepted: 'Přijato'
+  pending: 'Čeká na vyřízení'
+
+role:
+  coordinator: 'Koordinátor'
+  counselor: 'Vedoucí'
+  director: 'Ředitel'
+  viewer: 'Pozorovatel'
 </i18n>
 
 <style scoped></style>

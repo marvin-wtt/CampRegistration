@@ -2,8 +2,12 @@ import type { Camp, File, Prisma } from '@prisma/client';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
-import config from '#config/index';
+import type { AppConfig } from '#config/index';
 import { BaseService } from '#core/base/BaseService';
+import { filterByKeys } from '#utils/object';
+import { type TCountryCode, getCountryData } from 'countries-list';
+import { injectable } from 'inversify';
+import { Config } from '#core/ioc/decorators';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: number | Record<string, number>;
@@ -19,7 +23,12 @@ type MessageTemplateCreateData = (OptionalByKeys<
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
+@injectable()
 export class CampService extends BaseService {
+  constructor(@Config() private readonly config: AppConfig) {
+    super();
+  }
+
   async getCampById(id: string) {
     const camp = await this.prisma.camp.findFirst({
       where: { id },
@@ -132,8 +141,21 @@ export class CampService extends BaseService {
       createdAt: undefined,
     }));
 
-    const messageTemplateData = messageTemplates.map((value) => ({
-      ...value,
+    const languages = data.countries
+      .map((code): TCountryCode => code.toUpperCase() as TCountryCode)
+      .map(getCountryData)
+      .flatMap((country) => country.languages);
+
+    // Only keep message templates for the countries of the camp
+    // Other languages can't be edited by the user
+    messageTemplates = messageTemplates.map((template) => ({
+      ...template,
+      subject: filterByKeys(template.subject, languages),
+      body: filterByKeys(template.body, languages),
+    }));
+
+    const messageTemplateData = messageTemplates.map((template) => ({
+      ...template,
       attachments: undefined,
     }));
 
@@ -190,7 +212,7 @@ export class CampService extends BaseService {
       const urlObj = new URL(url);
 
       // Only replace app urls
-      if (urlObj.origin !== config.origin) {
+      if (urlObj.origin !== this.config.origin) {
         return url;
       }
 
@@ -229,8 +251,6 @@ export class CampService extends BaseService {
   }
 
   async deleteCampById(id: string) {
-    // TODO All files need to be deleted
-
     await this.prisma.camp.delete({ where: { id } });
   }
 }
@@ -261,5 +281,3 @@ const enrichFreePlaces = (
     ),
   };
 };
-
-export default new CampService();

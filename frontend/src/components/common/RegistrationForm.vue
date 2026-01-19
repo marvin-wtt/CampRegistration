@@ -11,7 +11,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import showdown from 'showdown';
+import { marked } from 'marked';
 import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
@@ -43,11 +43,17 @@ const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
 }>();
 
-const markdownConverter = new showdown.Converter({
-  openLinksInNewWindow: true,
-});
+const model = createModel(
+  props.campDetails.id,
+  props.moderation
+    ? createModerationForm(props.campDetails.form)
+    : props.campDetails.form,
+);
+model.validationEnabled = !props.moderation;
+if (props.data) {
+  model.data = props.data;
+}
 
-const model = ref<SurveyModel>();
 const bgColor = ref<string>();
 
 const campData = toRef(props.campDetails);
@@ -60,24 +66,10 @@ const files = computed<ServiceFile[] | undefined>(() => {
   return props.files;
 });
 
-// Auto variables update on locale change
-startAutoDataUpdate(model, campData, files);
-startAutoThemeUpdate(model, campData, bgColor);
-
-onMounted(async () => {
-  const camp = props.campDetails;
-  const form = camp.form;
-  const id = camp.id;
-
-  const modelForm = props.moderation ? createModerationForm(form) : form;
-  model.value = createModel(id, modelForm);
-
-  // Disable validation to allow manual adjustments that otherwise violate the validation rules
-  model.value.validationEnabled = !props.moderation;
-
-  if (props.data) {
-    model.value.data = props.data;
-  }
+onMounted(() => {
+  // Auto variables update on locale change
+  startAutoDataUpdate(model, campData, files);
+  startAutoThemeUpdate(model, campData, bgColor);
 });
 
 function createModerationForm(form: object) {
@@ -96,6 +88,10 @@ function createModerationForm(form: object) {
 function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
+
+  if (props.moderation) {
+    survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(true);
+  }
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
@@ -137,9 +133,10 @@ function createModel(campId: string, form: object): SurveyModel {
   });
   // Convert markdown to html
   survey.onTextMarkdown.add((survey, options) => {
-    const str = markdownConverter.makeHtml(options.text);
     // Remove root paragraphs <p></p>
-    options.html = str.substring(3, str.length - 4);
+    options.html = marked.parseInline(options.text, {
+      async: false,
+    });
   });
   // Workaround for date input for Safari < 4.1
   survey.onAfterRenderPage.add((survey, options) => {

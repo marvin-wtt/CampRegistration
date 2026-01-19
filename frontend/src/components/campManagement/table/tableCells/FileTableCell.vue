@@ -1,7 +1,7 @@
 <template>
   <q-btn
     v-if="visible"
-    :size="size"
+    :size
     class="q-mx-sm q-px-sm"
     dense
     icon="attach_file"
@@ -11,7 +11,7 @@
   />
 
   <template v-else>
-    {{ props.props.value }}
+    {{ cellProps.value }}
   </template>
 </template>
 
@@ -20,25 +20,35 @@ import { computed } from 'vue';
 import { openURL } from 'quasar';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps } = defineProps<TableCellProps>();
 
-function open() {
-  if (typeof props.props.value !== 'string') {
-    return;
+const url = computed<string | undefined>(() => {
+  if (typeof cellProps.value !== 'string') {
+    return undefined;
   }
 
-  openURL(props.props.value);
-}
+  if (cellProps.value.match(/^https?:\/\//)) {
+    return cellProps.value;
+  }
+
+  return `${window.origin}/api/v1/files/${cellProps.value}`;
+});
 
 const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
+  return cellProps.dense ? 'xs' : 'md';
 });
 
 const visible = computed<boolean>(() => {
-  return (
-    props.props.value !== undefined && typeof props.props.value === 'string'
-  );
+  return cellProps.value !== undefined && typeof cellProps.value === 'string';
 });
+
+function open() {
+  if (!url.value) {
+    return;
+  }
+
+  openURL(url.value);
+}
 </script>
 
 <style lang="scss" scoped>

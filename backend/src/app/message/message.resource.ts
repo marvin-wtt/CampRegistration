@@ -14,6 +14,9 @@ export class MessageResource extends JsonResource<
   transform(): MessageData {
     return {
       id: this.data.id,
+      to: this.data.to ?? null,
+      cc: this.data.cc ?? null,
+      bcc: this.data.bcc ?? null,
       replyTo: this.data.replyTo,
       subject: this.data.subject,
       body: this.data.body,

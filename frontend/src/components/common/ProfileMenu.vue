@@ -139,6 +139,7 @@
     v-else
     :to="{ name: 'login' }"
     :label="t('login')"
+    :loading
     rounded
     flat
   />
@@ -150,6 +151,11 @@ import { computed } from 'vue';
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
+import { useProfileStore } from 'stores/profile-store';
+import { useAuthStore } from 'stores/auth-store';
+
+const profileStore = useProfileStore();
+const authStore = useAuthStore();
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -157,27 +163,29 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-const { profile } = defineProps<{
-  profile: Profile | undefined;
-}>();
-
-const emit = defineEmits<{
-  (e: 'logout'): void;
-}>();
-
 // TODO Read from config
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
   { label: 'English', value: 'en-US' },
+  { label: 'Polski', value: 'pl-PL' },
+  { label: 'Česky', value: 'cs-CZ' },
 ]);
 
+const profile = computed<Profile | undefined>(() => {
+  return profileStore.user;
+});
+
+const loading = computed<boolean>(() => {
+  return authStore.loading || profileStore.loading;
+});
+
 const authenticated = computed<boolean>(() => {
-  return profile !== undefined;
+  return profile.value !== undefined;
 });
 
 const administrator = computed<boolean>(() => {
-  return profile?.role === 'ADMIN';
+  return profile.value?.role === 'ADMIN';
 });
 
 const darkMode = computed<boolean>(() => {
@@ -193,7 +201,7 @@ function toggleDarkMode() {
 }
 
 function logout() {
-  emit('logout');
+  void authStore.logout();
 }
 </script>
 
@@ -233,4 +241,28 @@ login: 'Connexion'
 logout: 'Déconnexion'
 language: 'Langue'
 dark_mode: 'Mode sombre'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+account: 'Konto'
+username: 'Zalogowany jako'
+camps: 'Moje obozy'
+administration: 'Administracja'
+light_mode: 'Tryb jasny'
+login: 'Zaloguj się'
+logout: 'Wyloguj się'
+language: 'Język'
+dark_mode: 'Tryb ciemny'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+account: 'Účet'
+username: 'Přihlášen jako'
+camps: 'Moje tábory'
+administration: 'Administrace'
+light_mode: 'Světlý režim'
+login: 'Přihlásit se'
+logout: 'Odhlásit se'
+language: 'Jazyk'
+dark_mode: 'Tmavý režim'
 </i18n>

@@ -166,9 +166,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'emails',
                 name: 'edit-email-templates',
                 component: () =>
-                  import(
-                    'pages/campManagement/settings/MessageTemplateEditPage.vue'
-                  ),
+                  import('pages/campManagement/settings/MessageTemplateEditPage.vue'),
               },
               {
                 path: 'files',
@@ -242,6 +240,17 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/settings/SecuritySettingsPage.vue'),
           },
         ],
+      },
+    ],
+  },
+  {
+    path: '/print',
+    component: () => import('layouts/PrintLayout.vue'),
+    children: [
+      {
+        path: 'tables',
+        name: 'print.tables',
+        component: () => import('pages/print/PrintTablesPage.vue'),
       },
     ],
   },

@@ -190,7 +190,7 @@ const passwordRules = [
 ];
 
 function register() {
-  authStore.register(name.value, email.value, password.value);
+  void authStore.register(name.value, email.value, password.value);
 }
 </script>
 
@@ -288,4 +288,68 @@ fields:
 action:
   login: 'Connexion'
   register: "S'inscrire"
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Zarejestruj się'
+
+field:
+  name:
+    label: 'Imię i nazwisko'
+    rule:
+      required: 'Musisz podać imię i nazwisko'
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Musisz podać prawidłowy adres e-mail'
+  password:
+    label: 'Hasło'
+    rule:
+      minLength: 'Minimalna długość to {min}'
+      maxLength: 'Maksymalna długość to {max}'
+      lowerCase: 'Wymagana co najmniej {count} mała litera'
+      upperCase: 'Wymagana co najmniej {count} wielka litera'
+      symbol: 'Wymagany co najmniej {count} symbol'
+      numeric: 'Wymagana co najmniej {count} cyfra'
+      requirementCount: 'Wymagane co najmniej {count} z 4 typów znaków'
+  confirm-password:
+    label: 'Potwierdź hasło'
+    rule:
+      identical: 'Hasła nie są identyczne'
+
+action:
+  login: 'Zaloguj się'
+  register: 'Zarejestruj się'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Registrovat se'
+
+field:
+  name:
+    label: 'Jméno a příjmení'
+    rule:
+      required: 'Musíte zadat jméno a příjmení'
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'Musíte zadat platnou e-mailovou adresu'
+  password:
+    label: 'Heslo'
+    rule:
+      minLength: 'Minimální délka je {min}'
+      maxLength: 'Maximální délka je {max}'
+      lowerCase: 'Je vyžadováno alespoň {count} malé písmeno'
+      upperCase: 'Je vyžadováno alespoň {count} velké písmeno'
+      symbol: 'Je vyžadován alespoň {count} symbol'
+      numeric: 'Je vyžadována alespoň {count} číslice'
+      requirementCount: 'Je vyžadováno alespoň {count} ze 4 typů znaků'
+  confirm-password:
+    label: 'Potvrďte heslo'
+    rule:
+      identical: 'Hesla se neshodují'
+
+action:
+  login: 'Přihlásit se'
+  register: 'Registrovat se'
 </i18n>

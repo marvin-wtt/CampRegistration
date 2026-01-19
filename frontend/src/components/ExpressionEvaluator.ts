@@ -55,7 +55,7 @@ export class ExpressionEvaluator {
         return this.evaluateUnaryExpression(expression as jsep.UnaryExpression);
     }
 
-    throw `Unsupported expression type: ${expression.type}`;
+    throw new Error(`Unsupported expression type: ${expression.type}`);
   }
 
   private evaluateArrayExpression(
@@ -70,14 +70,14 @@ export class ExpressionEvaluator {
     expression: jsep.CallExpression,
   ): jsep.baseTypes {
     if (expression.callee.type !== 'Identifier') {
-      throw `Unsupported callee type: ${expression.callee.type}`;
+      throw new Error(`Unsupported callee type: ${expression.callee.type}`);
     }
 
     const funcName = (expression.callee as jsep.Identifier).name;
     const func = this.callables[funcName];
 
     if (func === undefined) {
-      throw `Unsupported function name: ${funcName}`;
+      throw new Error(`Unsupported function name: ${funcName}`);
     }
 
     const args = expression.arguments.map((value) => {
@@ -115,7 +115,9 @@ export class ExpressionEvaluator {
           right = Date.parse(right);
         }
         if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left < right;
       case '>':
@@ -124,7 +126,9 @@ export class ExpressionEvaluator {
           right = Date.parse(right);
         }
         if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left > right;
       case '<=':
@@ -133,7 +137,9 @@ export class ExpressionEvaluator {
           right = Date.parse(right);
         }
         if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left <= right;
       case '>=':
@@ -142,22 +148,30 @@ export class ExpressionEvaluator {
           right = Date.parse(right);
         }
         if (!isNotNullOrUndefined(left) || !isNotNullOrUndefined(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left >= right;
       case '&&':
         if (!isBoolean(left) || !isBoolean(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left && right;
       case '||':
         if (!isBoolean(left) || !isBoolean(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left || right;
       case '-':
         if (!isNumber(left) || !isNumber(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left - right;
       case '+':
@@ -169,27 +183,35 @@ export class ExpressionEvaluator {
         }
 
         if (!isNumber(left) || !isNumber(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left + right;
       case '*':
         if (!isNumber(left) || !isNumber(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left * right;
       case '/':
         if (!isNumber(left) || !isNumber(right) || right === 0) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left / right;
       case '%':
         if (!isNumber(left) || !isNumber(right)) {
-          throw `Unsupported expression values of operator: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression values of operator: ${expression.operator}`,
+          );
         }
         return left % right;
     }
 
-    throw `Unsupported expression operator: ${expression.operator}`;
+    throw new Error(`Unsupported expression operator: ${expression.operator}`);
   }
 
   private evaluateIdentifier(
@@ -213,11 +235,15 @@ export class ExpressionEvaluator {
     // expression.computed is not used because I don't know how I should handle it
 
     if (!['Identifier', 'Literal'].includes(expression.property.type)) {
-      throw `Unsupported member expression property type ${expression.property.type}`;
+      throw new Error(
+        `Unsupported member expression property type ${expression.property.type}`,
+      );
     }
 
     if (!['Identifier', 'MemberExpression'].includes(expression.object.type)) {
-      throw `Unsupported member expression object of type ${expression.object.type}`;
+      throw new Error(
+        `Unsupported member expression object of type ${expression.object.type}`,
+      );
     }
 
     // Resolve object first
@@ -240,7 +266,9 @@ export class ExpressionEvaluator {
     if (expression.property.type === 'Literal') {
       const literal = expression.property as jsep.Literal;
       if (typeof literal.value !== 'number') {
-        throw `Unsupported literal in member expression (${literal.value}). Pleas use dot syntax.`;
+        throw new Error(
+          `Unsupported literal in member expression (${literal.value}). Please use dot syntax.`,
+        );
       }
 
       if (!Array.isArray(parent)) {
@@ -276,21 +304,29 @@ export class ExpressionEvaluator {
       // Logical NOT
       case '!':
         if (!expression.prefix) {
-          throw `Unsupported expression unary operator as suffix: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression unary operator as suffix: ${expression.operator}`,
+          );
         }
         return !argument;
       // Negative
       case '-':
         if (!expression.prefix) {
-          throw `Unsupported expression unary operator as suffix: ${expression.operator}`;
+          throw new Error(
+            `Unsupported expression unary operator as suffix: ${expression.operator}`,
+          );
         }
-        if (!isNotNullOrUndefined(argument)) {
-          throw `Unsupported expression value for unary operator: ${expression.operator}`;
+        if (!isNumber(argument)) {
+          throw new Error(
+            `Unsupported expression value for unary operator: ${expression.operator}`,
+          );
         }
         return -argument;
     }
 
-    throw `Unsupported expression unary operator: ${expression.operator}`;
+    throw new Error(
+      `Unsupported expression unary operator: ${expression.operator}`,
+    );
   }
 }
 

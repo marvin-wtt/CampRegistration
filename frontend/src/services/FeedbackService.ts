@@ -5,7 +5,7 @@ export function useFeedbackService() {
     location: string,
     userAgent: string,
     message: string,
-    email?: string | undefined,
+    email?: string,
   ): Promise<void> {
     const response = await api.post('feedback/', {
       location,

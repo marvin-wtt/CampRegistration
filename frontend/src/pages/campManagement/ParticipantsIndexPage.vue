@@ -3,192 +3,156 @@
     :error
     :loading
   >
-    <result-table
-      v-if="camp.data.value"
+    <result-table-interactive
+      v-if="camp"
       class="absolute fit"
       :questions="columns"
-      :results="results"
-      :templates="templates.data.value ?? []"
-      :camp="camp.data.value"
+      :registrations="registrations ?? []"
+      :templates="templates ?? []"
+      :camp
+      @export="onTemplatesPrint"
     />
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { storeToRefs } from 'pinia';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { DataProviderRegistry } from 'src/lib/registration/DataProviderRegistry';
-import ResultTable from 'components/campManagement/table/ResultTable.vue';
+import ResultTableInteractive from 'components/campManagement/table/ResultTableInteractive.vue';
 import { useTemplateStore } from 'stores/template-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import type {
-  Registration,
-  TableColumnTemplate,
-} from '@camp-registration/common/entities';
+import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
+import { extractFormFields } from 'src/utils/surveyJS';
+import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
 
 const campDetailStore = useCampDetailsStore();
+const { data: camp } = storeToRefs(campDetailStore);
 const registrationStore = useRegistrationsStore();
+const { data: registrations } = storeToRefs(registrationStore);
 const templateStore = useTemplateStore();
+const { data: templates } = storeToRefs(templateStore);
+
+const quasar = useQuasar();
+const { locale } = useI18n();
 const { to } = useObjectTranslation();
 
-campDetailStore.fetchData();
-registrationStore.fetchData();
-templateStore.fetchData();
-
-const camp = storeToRefs(campDetailStore);
-const registrations = storeToRefs(registrationStore);
-const templates = storeToRefs(templateStore);
+onMounted(async () => {
+  await Promise.allSettled([
+    campDetailStore.fetchData(),
+    registrationStore.fetchData(),
+    templateStore.fetchData(),
+  ]);
+});
 
 const loading = computed<boolean>(() => {
   return (
-    registrations.isLoading.value ||
-    camp.isLoading.value ||
-    templates.isLoading.value
+    registrationStore.isLoading ||
+    campDetailStore.isLoading ||
+    templateStore.isLoading
   );
 });
 
 const error = computed<string | null>(() => {
-  return camp.error.value ?? registrations.error.value;
+  return campDetailStore.error ?? registrationStore.error;
 });
 
 const columns = computed<TableColumnTemplate[]>(() => {
-  const data = camp.data.value;
-
-  const columns: TableColumnTemplate[] = [];
-
-  if (data?.form === undefined || !('pages' in data.form)) {
+  if (!camp.value?.form) {
     return [];
   }
 
-  data.form.pages.forEach((data) => {
-    if (!('elements' in data)) {
+  return extractFormFields(camp.value.form).map<TableColumnTemplate>(
+    ({ label, value }) => ({
+      name: value,
+      label: to(label),
+      field: value,
+      align: 'left',
+      sortable: true,
+    }),
+  );
+});
+
+function onTemplatesPrint(templateIds: string[]) {
+  if (!templateStore.data || !camp.value) {
+    return;
+  }
+
+  const templates = templateStore.data
+    .filter((t) => templateIds.includes(t.id))
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
+  // Build payload
+  const payload: PrintTablesPayload = {
+    locale: locale.value,
+    questions: columns.value,
+    registrations: registrations.value ?? [],
+    camp: camp.value,
+    templates,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Store payload for the print route
+  const key = `print:tables:${camp.value.id}:${Date.now()}`;
+  sessionStorage.setItem(key, JSON.stringify(payload));
+
+  // Create iframe pointing to print route
+  const iframe = createHiddenPrintIframe(
+    `/print/tables?key=${encodeURIComponent(key)}`,
+  );
+
+  const onMessage = (ev: MessageEvent) => {
+    if (ev.origin !== window.location.origin) {
+      return;
+    }
+    if (!ev.data || typeof ev.data !== 'object' || !('type' in ev.data)) {
       return;
     }
 
-    data.elements.forEach((data) => {
-      // Filter text-only elements
-      if (data.type === 'expression') {
-        return;
-      }
+    const cleanup = () => {
+      window.removeEventListener('message', onMessage);
+      iframe.remove();
+      sessionStorage.removeItem(key);
+    };
 
-      const label = to(data.title);
-      const field = data.name;
-      columns.push({
-        name: data.name,
-        label: label,
-        field: field,
-        align: 'left',
-        sortable: true,
+    if (ev.data.type === 'PRINT_TABLES:ERROR') {
+      quasar.notify({
+        type: 'negative',
+        message: 'An error occurred while preparing the printout.',
+        caption: ev.data.error,
       });
-    });
-  });
+      cleanup();
+      return;
+    }
 
-  return columns;
-});
+    // Can be used to show a loading indicator
+    if (ev.data.type === 'PRINT_TABLES:AFTERPRINT') {
+      cleanup();
+    }
+  };
 
-const results = computed<Registration[]>(() => {
-  const results = registrations.data.value;
-
-  if (!results) {
-    return [];
-  }
-
-  DataProviderRegistry.INSTANCE.providers.forEach((provider) => {
-    results.forEach((registration) => {
-      if (provider.isFit(registration.data)) {
-        registration.data[provider.name] = provider.generate(registration);
-      }
-    });
-  });
-
-  return results;
-});
-
-// Data Providers
-DataProviderRegistry.INSTANCE.register({
-  title: 'Full Name',
-  name: 'full_name',
-  isFit(data: unknown): boolean {
-    return hasFullName(data);
-  },
-  generate(data: unknown): string {
-    if (!hasFullName(data)) return '';
-
-    return `${data.first_name} ${data.last_name}`;
-  },
-});
-
-function hasFullName(
-  data: unknown,
-): data is { first_name?: string; last_name?: string } {
-  if (data === null || typeof data !== 'object') return false;
-  return (
-    'first_name' in data &&
-    typeof data.first_name === 'string' &&
-    'last_name' in data &&
-    typeof data.last_name === 'string'
-  );
+  window.addEventListener('message', onMessage);
 }
 
-DataProviderRegistry.INSTANCE.register({
-  title: 'Address',
-  name: 'full_address',
-  isFit(data: unknown): boolean {
-    return hasAddressRows(data);
-  },
-  generate(data: unknown): string | number {
-    if (!hasAddressRows(data)) return '';
+function createHiddenPrintIframe(src: string): HTMLIFrameElement {
+  const iframe = document.createElement('iframe');
+  iframe.src = src;
 
-    return data.address + ', ' + data.zip_code + ' ' + data.city;
-  },
-});
+  // IMPORTANT: do not use display:none (print needs layout)
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.opacity = '0';
+  iframe.style.pointerEvents = 'none';
 
-function hasAddressRows(
-  data: unknown,
-): data is { address: string; zip_code: string; city: string } {
-  if (data === null) return false;
-  if (typeof data !== 'object') return false;
-
-  return (
-    'address' in data &&
-    typeof data.address === 'string' &&
-    'zip_code' in data &&
-    typeof data.zip_code === 'number' &&
-    'city' in data &&
-    typeof data.city === 'string'
-  );
-}
-
-DataProviderRegistry.INSTANCE.register({
-  title: 'Age',
-  name: 'age',
-  isFit(data: unknown): boolean {
-    if (!hasAgeRows(data)) return false;
-
-    const date = data.date_of_birth;
-
-    return new Date(date).toString() !== 'Invalid Date';
-  },
-  generate(data: unknown): string | number {
-    if (!hasAgeRows(data)) return '';
-    return calculateAge(data.date_of_birth);
-  },
-});
-
-function hasAgeRows(data: unknown): data is { date_of_birth: string } {
-  if (data === null) return false;
-  if (typeof data !== 'object') return false;
-
-  return 'date_of_birth' in data && typeof data.date_of_birth === 'string';
-}
-
-function calculateAge(date: string): number {
-  const months = Date.now() - new Date(date).getTime();
-  const years = new Date(months);
-
-  return Math.abs(years.getUTCFullYear() - 1970);
+  document.body.appendChild(iframe);
+  return iframe;
 }
 </script>

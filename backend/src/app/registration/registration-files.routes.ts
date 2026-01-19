@@ -1,33 +1,19 @@
-import express from 'express';
-import { catchParamAsync } from '#utils/catchAsync';
-import { auth, guard } from '#middlewares/index';
-import { campManager } from '#guards/manager.guard';
-import fileController from '#app/file/file.controller';
-import fileService from '#app/file/file.service';
-import { controller } from '#utils/bindController';
+import { ModuleRouter } from '#core/router/ModuleRouter';
 
-const router = express.Router({ mergeParams: true });
+export class RegistrationFilesRouter extends ModuleRouter {
+  constructor() {
+    super(false);
+  }
 
-// Files
-router.param(
-  'fileId',
-  catchParamAsync(async (req, _res, id) => {
-    const registration = req.modelOrFail('registration');
-    const file = await fileService.getModelFile(
-      'registration',
-      registration.id,
-      id,
-    );
-    req.setModelOrFail('file', file);
-  }),
-);
+  protected registerBindings() {
+    /* empty */
+  }
 
-// TODO Files should be accessed via file route. This route is obsolete. Either redirect or delete
-router.get(
-  '/:fileId',
-  auth(),
-  guard(campManager('camp.registrations.view')),
-  controller(fileController, 'stream'),
-);
-
-export default router;
+  protected defineRoutes() {
+    // This route is used to redirect to the file API endpoint
+    // In the future, it should serve the file model instead or be removed
+    this.router.get('/:fileId', (req, res) => {
+      res.redirect('/api/v1/files/' + req.params.fileId);
+    });
+  }
+}

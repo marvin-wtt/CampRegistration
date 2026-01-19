@@ -1,4 +1,3 @@
-import { type Express } from 'express';
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
 import { AuthModule } from '#app/auth/auth.module';
@@ -18,22 +17,28 @@ import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
-import ApiError from '#utils/ApiError';
-import httpStatus from 'http-status';
-import staticRoutes from '#routes/static';
+import { MailModule } from '#app/mail/mail.module';
 import { permissionRegistry } from '#core/permission-registry';
+import { initI18n } from '#core/i18n';
+import { startJobs, stopJobs } from '#jobs/index';
+import { connectDatabase, disconnectDatabase } from '#core/database';
+import { ContainerModule } from 'inversify';
+import { container } from '#core/ioc/container';
 
-const loadModules = (): AppModule[] =>
+let modules: AppModule[] = [];
+
+const loadModules = () =>
   // Modules in order
-  [
+  (modules = [
+    new MailModule(),
     new HealthModule(),
     new TokenModule(),
     new AuthModule(),
     new TotpModule(),
     new ProfileModule(),
-    new UserModule(),
     new FileModule(),
     new CampModule(),
+    new UserModule(),
     new RegistrationModule(),
     new TableTemplateModule(),
     new ManagerModule(),
@@ -43,56 +48,66 @@ const loadModules = (): AppModule[] =>
     new BedModule(),
     new ProgramEventModule(),
     new FeedbackModule(),
-  ];
+  ]);
 
-export async function boot(app: Express) {
-  const modules = loadModules();
+export async function boot() {
+  await connectDatabase();
 
-  await configureModules(modules, app);
+  await initI18n();
 
-  registerModulePermissions(modules);
+  loadModules();
 
-  registerModuleRoutes(modules, app);
+  await bootModules();
+
+  startJobs();
 }
 
-async function configureModules(modules: AppModule[], app: Express) {
+export async function shutdown() {
+  stopJobs();
+
+  await shutdownModules();
+
+  await disconnectDatabase();
+}
+
+async function bootModules() {
+  // Bind module services
+  await container.load(
+    ...modules.map(
+      (module) =>
+        new ContainerModule((options) => {
+          module.bindContainers?.(options);
+        }),
+    ),
+  );
+
+  // Configure modules
   for (const module of modules) {
-    if (!module.configure) {
-      continue;
+    if (module.configure) {
+      await module.configure({});
     }
-
-    await module.configure({ app });
-  }
-}
-
-function registerModuleRoutes(modules: AppModule[], app: Express) {
-  // Create a new router that has the useRouter method
-  const router = apiRouter;
-
-  // Create a router for /api/v1 routes
-  for (const module of modules) {
-    if (!module.registerRoutes) {
-      continue;
-    }
-
-    module.registerRoutes(router);
   }
 
-  app.use('/api/v1', router);
-
-  // send back a 404 error for any unknown api request
-  app.use('/api', (_req, _res, next) => {
-    next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
-  });
-
-  app.use(staticRoutes);
-}
-
-function registerModulePermissions(modules: AppModule[]) {
+  // Register permissions
   for (const module of modules) {
     if (module.registerPermissions) {
       const permissions = module.registerPermissions();
       permissionRegistry.registerAll(permissions);
+    }
+  }
+
+  // Register routes
+  for (const module of modules) {
+    if (module.registerRoutes) {
+      module.registerRoutes(apiRouter);
+    }
+  }
+}
+
+async function shutdownModules() {
+  for (const module of modules) {
+    if (module.shutdown) {
+      await module.shutdown();
     }
   }
 }

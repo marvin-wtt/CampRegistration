@@ -146,7 +146,7 @@ function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
 }
 
 function resultsAction() {
-  withLoading(resultLoading, async () => {
+  void withLoading(resultLoading, async () => {
     await router.push({
       name: 'participants',
       params: {
@@ -183,7 +183,7 @@ function shareAction() {
 }
 
 function editAction() {
-  withLoading(editLoading, async () => {
+  void withLoading(editLoading, async () => {
     await router.push({
       name: 'edit-camp',
       params: {
@@ -206,14 +206,14 @@ function deleteAction() {
       persistent: true,
     })
     .onOk(() => {
-      withLoading(deleteLoading, async () => {
+      void withLoading(deleteLoading, async () => {
         await capsStore.deleteEntry(camp.id);
       });
     });
 }
 
 function enableAction() {
-  withLoading(enableLoading, async () => {
+  void withLoading(enableLoading, async () => {
     await capsStore.updateEntry(camp.id, {
       active: true,
     });
@@ -222,7 +222,7 @@ function enableAction() {
 }
 
 function disableAction() {
-  withLoading(disableLoading, async () => {
+  void withLoading(disableLoading, async () => {
     await capsStore.updateEntry(camp.id, {
       active: false,
     });
@@ -232,8 +232,11 @@ function disableAction() {
 
 async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   flag.value = true;
-  await fn();
-  flag.value = false;
+  try {
+    await fn();
+  } finally {
+    flag.value = false;
+  }
 }
 </script>
 
@@ -300,4 +303,46 @@ dialog:
 notification:
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  create: 'Utwórz nowe'
+  delete: 'Usuń'
+  edit: 'Edytuj'
+  enable: 'Aktywuj'
+  results: 'Wyniki'
+  share: 'Udostępnij'
+  disable: 'Dezaktywuj'
+
+dialog:
+  delete:
+    title: 'Usuń obóz'
+    message: 'Czy na pewno chcesz usunąć ten obóz? Wszystkie zgłoszenia zostaną utracone. Ten obóz nie będzie mógł być użyty jako szablon dla przyszłych obozów.'
+    label: 'Nazwa obozu'
+
+notification:
+  share_success: 'Link skopiowany do schowka'
+  share_fail: 'Błąd podczas kopiowania linku do schowka'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  create: 'Vytvořit nový'
+  delete: 'Smazat'
+  edit: 'Upravit'
+  enable: 'Aktivovat'
+  results: 'Výsledky'
+  share: 'Sdílet'
+  disable: 'Deaktivovat'
+
+dialog:
+  delete:
+    title: 'Smazat tábor'
+    message: 'Opravdu chcete tento tábor smazat? Všechny registrace budou ztraceny. Tento tábor nebude možné použít jako šablonu pro budoucí tábory.'
+    label: 'Název tábora'
+
+notification:
+  share_success: 'Odkaz zkopírován do schránky'
+  share_fail: 'Chyba při kopírování odkazu do schránky'
 </i18n>

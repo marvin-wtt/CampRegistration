@@ -7,8 +7,16 @@
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
-import 'survey-core/survey.i18n';
-import 'survey-creator-core/survey-creator-core.i18n';
+import 'survey-core/i18n/english';
+import 'survey-creator-core/i18n/english';
+import 'survey-core/i18n/german';
+import 'survey-creator-core/i18n/german';
+import 'survey-core/i18n/french';
+import 'survey-creator-core/i18n/french';
+import 'survey-core/i18n/polish';
+import 'survey-creator-core/i18n/polish';
+import 'survey-core/i18n/czech';
+import 'survey-creator-core/i18n/czech';
 
 import { watch, watchEffect } from 'vue';
 import {
@@ -32,7 +40,8 @@ import SurveyCreatorTheme from 'survey-creator-core/themes';
 import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
 import { registerSurveyTheme } from 'survey-creator-core';
-import showdown from 'showdown';
+import { surveyLocalization } from 'survey-core';
+import { marked } from 'marked';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -41,6 +50,7 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
+import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -58,38 +68,20 @@ const { locale } = useI18n();
 PropertyGridEditorCollection.register(campDataMapping);
 
 // Add localization
-const deLocale = localization.getLocale('de');
-deLocale.qt.address = 'Adresse';
-deLocale.qt.country = 'Land';
-deLocale.qt.date_of_birth = 'Geburtstag';
-deLocale.qt.role = 'Rolle';
-deLocale.p.campDataType = 'Daten-Tag';
-deLocale.pehelp.campDataType =
-  'Wählen Sie aus, welche Art von Daten der Benutzer eingibt. ' +
-  'Die Informationen werden dem Dienst unabhängig vom ' +
-  'Feldnamen zur Verfügung gestellt.';
+for (const [locale, sections] of Object.entries(
+  surveyCreatorCustomLocaleConfig,
+)) {
+  const l = localization.getLocale(locale);
 
-const enLocale = localization.getLocale('en');
-enLocale.qt.address = 'Address';
-enLocale.qt.country = 'Country';
-enLocale.qt.date_of_birth = 'Birthday';
-enLocale.qt.rolle = 'Role';
-enLocale.p.campDataType = 'Data Tag';
-enLocale.pehelp.campDataType =
-  'Select what type of data the user enters. ' +
-  'The information makes information available to the service regardless of the ' +
-  'field name.';
+  Object.keys(sections).forEach((key) => {
+    const target = l[key];
+    const source = sections[key as keyof typeof sections];
 
-const frLocale = localization.getLocale('fr');
-frLocale.qt.address = 'Adresse';
-frLocale.qt.country = 'Pays';
-frLocale.qt.date_of_birth = 'Date de Naissance';
-frLocale.qt.role = 'Rôle';
-frLocale.p.campDataType = 'Étiquette de données';
-frLocale.pehelp.campDataType =
-  'Sélectionnez le type de données que l’utilisateur saisit. ' +
-  'Les informations sont mises à la disposition du service indépendamment du ' +
-  'nom du champ.';
+    if (target && typeof target === 'object' && source) {
+      Object.assign(target, source);
+    }
+  });
+}
 
 const creatorOptions: ICreatorOptions = {
   showLogicTab: true,
@@ -101,12 +93,15 @@ const creatorOptions: ICreatorOptions = {
   showJSONEditorTab: !props.restrictedAccess,
 };
 
-const markdownConverter = new showdown.Converter({
-  openLinksInNewWindow: true,
+marked.use({
+  gfm: false,
+  async: false,
 });
 
 registerSurveyTheme(SurveyTheme);
 registerCreatorTheme(SurveyCreatorTheme);
+
+surveyLocalization.supportedLocales = ['en', ...props.camp.countries];
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
@@ -152,11 +147,24 @@ function applyCreatorTheme(isDark: boolean) {
       '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
     },
   });
+
+  // TODO This is a workaround for the issue with the theme not being applied correctly
+  // The value is null because the backend middleware
+  // converts empty strings to null
+  // See https://github.com/surveyjs/survey-creator/issues/5552
+  if (creator.theme.backgroundImage === null) {
+    creator.theme.backgroundImage = '';
+  }
 }
 
 // Restrict valueName characters
 creator.onPropertyDisplayCustomError.add((_, options) => {
   if (!['name', 'valueName'].includes(options.propertyName)) {
+    return;
+  }
+
+  // An error was thrown here in production - not sure why it should be nullish
+  if (!options.value) {
     return;
   }
 
@@ -214,9 +222,9 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     // Convert markdown to html
     survey.onTextMarkdown.add((_, options) => {
-      const str = markdownConverter.makeHtml(options.text);
-      // Remove root paragraphs <p></p>
-      options.html = str.substring(3, str.length - 4);
+      options.html = marked.parseInline(options.text, {
+        async: false,
+      });
     });
   }
 
@@ -224,6 +232,38 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     setVariables(survey, props.camp);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.camp);
+    });
+  }
+
+  if (['preview-tab'].includes(options.area)) {
+    function readAsDataURL(
+      file: File,
+    ): Promise<{ name: string; content: string; type: string; file: File }> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            name: file.name,
+            type: file.type,
+            content: reader.result as string,
+            file,
+          });
+        };
+        reader.onerror = () => {
+          reject(new Error(`Failed to read file "${file.name}"`));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    survey.onUploadFiles.add((_, options) => {
+      Promise.all(options.files.map(readAsDataURL))
+        .then((value) => {
+          options.callback('success', value);
+        })
+        .catch((reason) => {
+          options.callback('error', reason.message);
+        });
     });
   }
 });

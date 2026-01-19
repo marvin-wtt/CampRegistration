@@ -17,7 +17,7 @@
         @mouseenter="bannerHover = true"
         @mouseleave="bannerHover = false"
       >
-        {{ props.props.value }}
+        {{ cellProps.value }}
       </q-banner>
     </q-popup-proxy>
   </div>
@@ -27,19 +27,15 @@
 import { computed, ref } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+const { props: cellProps, options } = defineProps<TableCellProps>();
 const containerHover = ref<boolean>(false);
 const bannerHover = ref<boolean>(false);
 
 const defaultLimit = 25;
 
 const limit = computed<number>(() => {
-  if (
-    props.options &&
-    'limit' in props.options &&
-    typeof props.options.limit === 'number'
-  ) {
-    return props.options.limit;
+  if (options && 'limit' in options && typeof options.limit === 'number') {
+    return options.limit;
   }
 
   return defaultLimit;
@@ -52,13 +48,13 @@ const bannerVisible = computed<boolean>(() => {
 });
 
 const isTruncated = computed<boolean>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
 
   return typeof value === 'string' && value.trim().length > limit.value;
 });
 
-const truncatedText = computed<string | unknown>(() => {
-  const value = props.props.value;
+const truncatedText = computed<unknown>(() => {
+  const value = cellProps.value;
 
   if (typeof value !== 'string') {
     return value;
@@ -77,7 +73,7 @@ const truncatedText = computed<string | unknown>(() => {
 });
 
 const extraWords = computed<number>(() => {
-  const value = props.props.value;
+  const value = cellProps.value;
   const text = truncatedText.value;
 
   if (typeof value !== 'string' || typeof text !== 'string') {
