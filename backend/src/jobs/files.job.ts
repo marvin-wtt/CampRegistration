@@ -1,13 +1,14 @@
-import fileService from '#app/file/file.service';
+import { FileService } from '#app/file/file.service';
+import { resolve } from '#core/ioc/container';
 
 export const deleteUnusedFiles = async () => {
-  await fileService.deleteUnreferencedFiles();
+  await resolve(FileService).deleteUnreferencedFiles();
 };
 
 export const deleteUnassignedFiles = async () => {
-  await fileService.deleteUnassignedFiles();
+  await resolve(FileService).deleteUnassignedFiles();
 };
 
 export const deleteTemporaryFiles = async () => {
-  await fileService.deleteTempFiles();
+  await resolve(FileService).deleteTempFiles();
 };

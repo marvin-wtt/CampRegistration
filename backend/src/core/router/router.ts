@@ -8,19 +8,19 @@ import httpStatus from 'http-status';
 import type { AppRouter } from '#core/base/AppModule';
 
 type Models = Request['models'];
-type ModelKeys = keyof Models;
+export type ModelKey = keyof Models;
 
-type ModelHandler<T extends ModelKeys> = (
+export type ModelHandler<T extends ModelKey> = (
   req: Request,
   value: string,
 ) => Models[T] | null | Promise<Models[T] | null>;
 
 type HandlerMap = {
-  [K in ModelKeys]: ModelHandler<K>;
+  [K in ModelKey]: ModelHandler<K>;
 };
 
 const handlers: Partial<HandlerMap> = {};
-const routers: Router[] = [];
+const routers: AppRouter[] = [];
 
 /**
  * Creates an express router with all registered models applied to it
@@ -33,11 +33,12 @@ export function createRouter(
 ): AppRouter {
   const router = express.Router(options) as AppRouter;
   router.useRouter = (path, moduleRouter) => {
+    moduleRouter.build();
     router.use(path, moduleRouter.router);
   };
 
-  Object.keys(handlers).forEach((model) => {
-    applyBinding(router, model as ModelKeys);
+  Object.entries(handlers).forEach(([model, handler]) => {
+    applyBinding(router, model as ModelKey, handler);
   });
 
   routers.push(router);
@@ -50,7 +51,7 @@ export function createRouter(
  * @param name Name of the model
  * @param handler Function to resolve the model
  */
-export function registerRouteModelBinding<T extends ModelKeys>(
+export function registerRouteModelBinding<T extends ModelKey>(
   name: T,
   handler: ModelHandler<T>,
 ) {
@@ -60,11 +61,15 @@ export function registerRouteModelBinding<T extends ModelKeys>(
 
   // Apply binding to all already registered routers
   for (const r of routers) {
-    applyBinding(r, name);
+    applyBinding(r, name, handler);
   }
 }
 
-function applyBinding(router: Router, model: keyof Request['models']) {
+export function applyBinding<T extends ModelKey>(
+  router: Router,
+  model: T,
+  handler: ModelHandler<T>,
+) {
   router.param(`${model}Id`, async (req, _res, next, value) => {
     /* c8 ignore next */
     if (typeof value !== 'string') {
@@ -72,17 +77,6 @@ function applyBinding(router: Router, model: keyof Request['models']) {
         new ApiError(
           httpStatus.BAD_REQUEST,
           `Invalid request param value for param ${model}.`,
-        ),
-      );
-      return;
-    }
-
-    const handler = handlers[model];
-    if (!handler) {
-      next(
-        new ApiError(
-          httpStatus.NOT_FOUND,
-          `No handler registered for model ${model}.`,
         ),
       );
       return;

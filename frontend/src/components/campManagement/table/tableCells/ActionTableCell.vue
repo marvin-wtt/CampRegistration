@@ -149,10 +149,6 @@ function editItem(): void {
 async function uploadFile(file: File): Promise<string> {
   const serviceFile = await registrationStore.storeFile(file);
 
-  if (serviceFile.field) {
-    return `${serviceFile.id}#${serviceFile.field}`;
-  }
-
   return serviceFile.id;
 }
 </script>

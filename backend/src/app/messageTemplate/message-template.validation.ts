@@ -34,6 +34,7 @@ const store = z.object({
     subject: translatedValue(z.string()),
     body: translatedValue(z.string()),
     priority: z.enum(['low', 'normal', 'high']).optional(),
+    attachmentIds: z.array(z.ulid()).optional(),
   }) satisfies ZodType<MessageTemplateCreateData>,
 });
 
@@ -47,6 +48,7 @@ const update = z.object({
       subject: translatedValue(z.string()),
       body: translatedValue(z.string()),
       priority: z.enum(['low', 'normal', 'high']),
+      attachmentIds: z.array(z.ulid()),
     })
     .partial() satisfies ZodType<MessageTemplateUpdateData>,
 });

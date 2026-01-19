@@ -1,13 +1,18 @@
-import { ulid } from '#utils/ulid';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { type Camp, Prisma, type Registration } from '@prisma/client';
 import { formUtils } from '#utils/form';
-import config from '#config/index';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
+import { inject, injectable } from 'inversify';
+import { FileService } from '#app/file/file.service';
 
+@injectable()
 export class RegistrationService extends BaseService {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
+    super();
+  }
+
   async getRegistrationById(campId: string, id: string) {
     return this.prisma.registration.findFirst({
       where: { id, campId },
@@ -72,38 +77,18 @@ export class RegistrationService extends BaseService {
   async createRegistration(
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
+    fileField: string,
   ) {
-    const id = ulid();
-    const form = formUtils(camp);
-    form.updateData(data.data);
+    const form = formUtils(camp, data.data);
 
     // TODO Should this really be done here?
     //  Can't we do it at a better place?
     this.validateRegistrationData(form);
-
-    // Extract files first before the value are mapped to the URL
-    const fileIdentifiers = form.getFileIdentifiers();
-    form.mapFileValues((value) => {
-      if (typeof value !== 'string') {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid file information');
-      }
-      // The ID may contain the field name. Remove it.
-      const fileId = value.split('#')[0];
-      return `${config.origin}/api/v1/camps/${camp.id}/registrations/${id}/files/${fileId}/`;
-    });
     // Get updated data from form back
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 
-    const fileConnects = fileIdentifiers.map((identifier) => {
-      return {
-        id: identifier.id,
-        campId: null,
-        registrationId: null,
-        accessLevel: 'private',
-        field: identifier.field ?? null,
-      };
-    });
+    const fileIds = form.getFileIds();
 
     const isWaitingList = async (
       transaction: Prisma.TransactionClient,
@@ -155,11 +140,11 @@ export class RegistrationService extends BaseService {
           data: {
             ...data,
             ...computedData,
-            id,
+            id: undefined, // Force new ID generation
             data: formData,
             waitingList,
             camp: { connect: { id: camp.id } },
-            files: { connect: fileConnects },
+            files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
       },
@@ -174,28 +159,49 @@ export class RegistrationService extends BaseService {
       Prisma.RegistrationUpdateInput,
       'waitingList' | 'data' | 'customData'
     >,
+    sessionId: string,
   ) {
-    let computedData = {};
-    if (data.data) {
-      const form = formUtils(camp);
-      form.updateData(data.data);
-      computedData = this.createComputedData(form.extractCampData());
+    if (!data.data) {
+      return this.prisma.registration.update({
+        where: { id: registrationId },
+        data: {
+          customData: data.customData,
+          waitingList: data.waitingList,
+        },
+        include: {
+          bed: { include: { room: true } },
+        },
+      });
     }
 
-    // TODO Delete files if some where removed
-    // TODO Associate files if new file values are present
+    const form = formUtils(camp);
+    form.updateData(data.data);
+    const computedData = this.createComputedData(form.extractCampData());
 
-    return this.prisma.registration.update({
-      where: { id: registrationId },
-      data: {
-        ...computedData,
-        data: data.data,
-        customData: data.customData,
-        waitingList: data.waitingList,
-      },
-      include: {
-        bed: { include: { room: true } },
-      },
+    const fileIds = form.getFileIds();
+
+    return this.prisma.$transaction(async (tx) => {
+      const files = await this.fileService.syncFilesForOwner(
+        tx,
+        'registrationId',
+        registrationId,
+        fileIds,
+        sessionId,
+      );
+
+      return tx.registration.update({
+        where: { id: registrationId },
+        data: {
+          ...computedData,
+          data: data.data,
+          customData: data.customData,
+          waitingList: data.waitingList,
+          files,
+        },
+        include: {
+          bed: { include: { room: true } },
+        },
+      });
     });
   }
 
@@ -224,7 +230,7 @@ export class RegistrationService extends BaseService {
       });
     });
 
-    await Promise.allSettled(results);
+    await Promise.all(results);
   }
 
   private createComputedData(
@@ -233,18 +239,16 @@ export class RegistrationService extends BaseService {
     const helper = new RegistrationCampDataHelper(data);
 
     return {
-      firstName: helper.firstName(),
-      lastName: helper.lastName(),
-      street: helper.street(),
-      city: helper.city(),
-      zipCode: helper.zipCode(),
-      country: helper.country(),
-      dateOfBirth: helper.dateOfBirth(),
-      emails: helper.emails(),
-      role: helper.role(),
-      gender: helper.gender(),
+      firstName: helper.firstName() ?? null,
+      lastName: helper.lastName() ?? null,
+      street: helper.street() ?? null,
+      city: helper.city() ?? null,
+      zipCode: helper.zipCode() ?? null,
+      country: helper.country() ?? null,
+      dateOfBirth: helper.dateOfBirth() ?? null,
+      emails: helper.emails() ?? [],
+      role: helper.role() ?? null,
+      gender: helper.gender() ?? null,
     };
   }
 }
-
-export default new RegistrationService();

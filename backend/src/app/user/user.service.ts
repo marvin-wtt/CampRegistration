@@ -4,9 +4,15 @@ import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
-import campService from '#app/camp/camp.service';
+import { CampService } from '#app/camp/camp.service';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class UserService extends BaseService {
+  constructor(@inject(CampService) private readonly campService: CampService) {
+    super();
+  }
+
   async createUser(
     data: Pick<
       Prisma.UserCreateInput,
@@ -50,7 +56,7 @@ export class UserService extends BaseService {
       include: { campRoles: true },
     });
 
-    const camps = await campService.getCampsByUserId(id);
+    const camps = await this.campService.getCampsByUserId(id);
 
     return {
       ...user,
@@ -88,7 +94,7 @@ export class UserService extends BaseService {
       include: { campRoles: true },
     });
 
-    const camps = await campService.getCampsByUserId(userId);
+    const camps = await this.campService.getCampsByUserId(userId);
 
     return {
       ...user,
@@ -133,5 +139,3 @@ export class UserService extends BaseService {
     await this.prisma.user.delete({ where: { id: userId } });
   }
 }
-
-export default new UserService();

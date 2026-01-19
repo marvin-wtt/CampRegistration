@@ -1,19 +1,20 @@
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import campFileRouter from './camp-files.routes.js';
-import campController from '#app/camp/camp.controller';
-import campService from './camp.service.js';
+import { CampController } from '#app/camp/camp.controller';
+import { CampService } from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
 import { or, campActive, campManager } from '#guards/index';
 import type { CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
+import { resolve } from '#core/ioc/container';
 
 export class CampRouter extends ModuleRouter {
   protected registerBindings() {
+    const campService = resolve(CampService);
     this.bindModel('camp', (_req, id) => campService.getCampById(id));
   }
 
   protected defineRoutes() {
-    this.router.use('/:campId/files', campFileRouter);
+    const campController = resolve(CampController);
 
     this.router.get(
       '/',
@@ -44,4 +45,3 @@ export class CampRouter extends ModuleRouter {
     );
   }
 }
-export default CampRouter;

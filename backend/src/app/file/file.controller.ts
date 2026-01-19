@@ -1,24 +1,30 @@
-import fileService from './file.service.js';
+import { FileService } from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
 interface ModelData {
   id: string;
   name: string;
 }
 
-class FileController extends BaseController {
+@injectable()
+export class FileController extends BaseController {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
+    super();
+  }
+
   async stream(req: Request, res: Response) {
     const {
       query: { download },
     } = await req.validate(validator.stream);
 
     const file = req.modelOrFail('file');
-    const fileStream = fileService.getFileStream(file);
+    const fileStream = this.fileService.getFileStream(file);
 
     // Set response headers for image display
     res.contentType(file.type);
@@ -48,7 +54,7 @@ class FileController extends BaseController {
       throw new ApiError(httpStatus.NOT_FOUND, 'No relation model found');
     }
 
-    const data = await fileService.queryModelFiles(
+    const data = await this.fileService.queryModelFiles(
       model,
       {
         name,
@@ -72,11 +78,16 @@ class FileController extends BaseController {
     } = await req.validate(validator.store);
 
     const model = this.getRelationModel(req);
-    const data = await fileService.saveModelFile(
+
+    // Use the session id as the default field value if no field is provided
+    // This helps to avoid that other people can hijack anonymous files
+    const fieldValue = field ?? req.sessionId;
+
+    const data = await this.fileService.saveModelFile(
       model,
       file,
       name,
-      field,
+      fieldValue,
       accessLevel ?? 'private',
     );
 
@@ -86,7 +97,7 @@ class FileController extends BaseController {
   async destroy(req: Request, res: Response) {
     const file = req.modelOrFail('file');
 
-    await fileService.deleteFile(file.id);
+    await this.fileService.deleteFile(file.id);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
@@ -110,5 +121,3 @@ class FileController extends BaseController {
     return undefined;
   }
 }
-
-export default new FileController();

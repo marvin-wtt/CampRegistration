@@ -19,6 +19,7 @@ export const EmailEnvSchema = z.object({
     .describe('The from field in the emails sent by the app.'),
   EMAIL_REPLY_TO: z
     .email()
+    .optional()
     .describe('The replyTo field in the emails sent by the app.'),
   EMAIL_ADMIN: z
     .email()
