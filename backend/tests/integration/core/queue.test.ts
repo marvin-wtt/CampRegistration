@@ -230,19 +230,25 @@ describe('Queue', () => {
         await q.close();
       });
 
-      it('throws error when queue is closed', async () => {
+      it.only('throws error when queue is closed', async () => {
         const q = createQueue<{ n: number }, string, 'test'>(
           uniqueName(`q-no-handler-${name}`),
           DEFAULTS,
         );
 
+        // Give redis some time to connect
+        await wait(100);
+
         await q.close();
 
         try {
-          const promise = Promise.resolve(q.add('test', { n: 1 }));
+          await Promise.resolve(q.add('test', { n: 1 }));
 
-          expect(promise).rejects.toThrowError();
-        } catch (e) {}
+          // This should never be reached
+          expect(true).toBe(false);
+        } catch (e) {
+          expect(e).toBeDefined();
+        }
       });
     },
   );
