@@ -80,6 +80,14 @@ jobs:
         ports:
           - 3306:3306
 
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       APP_PORT: 3000
       APP_URL: http://localhost:3000
