@@ -230,7 +230,7 @@ describe('Queue', () => {
         await q.close();
       });
 
-      it.only('throws error when queue is closed', async () => {
+      it('throws error when queue is closed', async () => {
         const q = createQueue<{ n: number }, string, 'test'>(
           uniqueName(`q-no-handler-${name}`),
           DEFAULTS,
