@@ -1,22 +1,27 @@
 import jwt from 'jsonwebtoken';
 import moment, { type Moment } from 'moment';
 import httpStatus from 'http-status';
-import config from '#config/index';
+import type { AppConfig } from '#config/index';
 import ApiError from '#utils/ApiError';
 import { type Token, TokenType, type User } from '@prisma/client';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+import { Config } from '#core/ioc/decorators';
 
 @injectable()
 export class TokenService extends BaseService {
+  constructor(@Config() private readonly config: AppConfig) {
+    super();
+  }
+
   private generateToken(
     userId: string,
     expires: Moment,
     type: TokenType,
     extra?: object,
   ): string {
-    const secret = config.jwt.secret;
+    const secret = this.config.jwt.secret;
 
     const payload = {
       sub: userId,
@@ -60,7 +65,7 @@ export class TokenService extends BaseService {
     let payload;
     try {
       // token expiry is checked here
-      payload = jwt.verify(token, config.jwt.secret);
+      payload = jwt.verify(token, this.config.jwt.secret);
     } catch (ignored) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
@@ -126,7 +131,7 @@ export class TokenService extends BaseService {
 
   private generateAccessToken(user: Pick<User, 'id' | 'role'>) {
     const accessTokenExpires = moment().add(
-      config.jwt.accessExpirationMinutes,
+      this.config.jwt.accessExpirationMinutes,
       'minutes',
     );
 
@@ -149,7 +154,7 @@ export class TokenService extends BaseService {
 
   private async generateRefreshToken(user: Pick<User, 'id'>) {
     const refreshTokenExpires = moment().add(
-      config.jwt.refreshExpirationDays,
+      this.config.jwt.refreshExpirationDays,
       'days',
     );
     const refreshToken = this.generateToken(
@@ -177,7 +182,7 @@ export class TokenService extends BaseService {
     userId: string,
   ): Promise<string | undefined> {
     const expires = moment().add(
-      config.jwt.resetPasswordExpirationMinutes,
+      this.config.jwt.resetPasswordExpirationMinutes,
       'minutes',
     );
     const type = TokenType.RESET_PASSWORD;
@@ -190,7 +195,7 @@ export class TokenService extends BaseService {
 
   async generateVerifyEmailToken(user: Pick<User, 'id'>): Promise<string> {
     const expires = moment().add(
-      config.jwt.verifyEmailExpirationMinutes,
+      this.config.jwt.verifyEmailExpirationMinutes,
       'minutes',
     );
     const type = TokenType.VERIFY_EMAIL;

@@ -1,18 +1,23 @@
 import type { User } from '@prisma/client';
 import * as OTPAuth from 'otpauth';
-import config from '#config/index';
+import { type AppConfig } from '#config/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+import { Config } from '#core/ioc/decorators.js';
 
 @injectable()
 export class TotpService extends BaseService {
+  constructor(@Config() private readonly config: AppConfig) {
+    super();
+  }
+
   async generateTOTP(user: User) {
     const secret = new OTPAuth.Secret();
 
     const totp = new OTPAuth.TOTP({
-      issuer: config.appName,
+      issuer: this.config.appName,
       label: user.email,
       secret,
       algorithm: 'SHA1',
