@@ -196,10 +196,10 @@ enum TokenType {
 
 model File {
   id                String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
-  campId            String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
-  registrationId    String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
-  messageId         String?  @map("message_id") @db.Char(36) // Prisma does not support morth
-  messageTemplateId String?  @map("message_template_id") @db.Char(36) // Prisma does not support morth
+  campId            String?  @map("camp_id") @db.Char(26) // Prisma does not support morth
+  registrationId    String?  @map("registration_id") @db.Char(26) // Prisma does not support morth
+  messageId         String?  @map("message_id") @db.Char(26) // Prisma does not support morth
+  messageTemplateId String?  @map("message_template_id") @db.Char(26) // Prisma does not support morth
   name              String
   originalName      String   @map("original_name")
   field             String?
@@ -209,18 +209,21 @@ model File {
   storageLocation   String   @map("storage_location")
   createdAt         DateTime @default(now()) @map("created_at")
 
-  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: Cascade)
-  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
+  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: SetNull)
+  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  message         Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
 
   @@map("files")
 }
 
 model Message {
   id             String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  templateId     String?  @map("message_template_id") @db.Char(36)
-  registrationId String?  @map("registration_id") @db.Char(36)
+  templateId     String?  @map("message_template_id") @db.Char(26)
+  registrationId String?  @map("registration_id") @db.Char(26)
+  to             String?  @db.TinyText
+  cc             String?  @db.TinyText
+  bcc            String?  @db.TinyText
   replyTo        String?  @map("reply_to")
   subject        String   @db.MediumText
   body           String   @db.MediumText
@@ -236,7 +239,7 @@ model Message {
 
 model MessageTemplate {
   id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
-  campId    String    @map("camp_id") @db.Char(36)
+  campId    String    @map("camp_id") @db.Char(26)
   event     String?
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
@@ -252,4 +255,39 @@ model MessageTemplate {
   attachments File[]
 
   @@map("message_templates")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Job {
+  id         String    @id @unique(map: "jobs_id_unique") @default(ulid()) @db.Char(26)
+  name       String    @db.VarChar(255)
+  queue      String    @db.VarChar(255)
+  payload    Json      @db.Json
+  status     JobStatus @default(PENDING)
+  priority   Int       @default(1) @db.UnsignedTinyInt
+  attempts   Int       @default(0)
+  error      String?   @db.Text
+  runAt      DateTime? @map("run_at") @db.DateTime(3)
+  reservedAt DateTime? @map("reserved_at") @db.DateTime(3)
+  finishedAt DateTime? @map("finished_at") @db.DateTime(3)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@index([status, runAt], map: "jobs_status_run_at_index")
+  @@map("jobs")
+}
+
+model JobRateLimit {
+  queue      String   @id @unique(map: "queue_unique") @db.VarChar(255)
+  tokens     Float
+  refilledAt DateTime @map("refilled_at") @db.DateTime(3)
+
+  @@map("job_rate_limits")
 }

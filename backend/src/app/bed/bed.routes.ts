@@ -1,12 +1,14 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/manager.guard';
-import bedController from './bed.controller.js';
+import { BedController } from './bed.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import bedService from '#app/bed/bed.service';
+import { BedService } from '#app/bed/bed.service';
 import { controller } from '#utils/bindController';
+import { resolve } from '#core/ioc/container';
 
 export class BedRouter extends ModuleRouter {
   protected registerBindings() {
+    const bedService = resolve(BedService);
     this.bindModel('bed', (req, id) => {
       const room = req.modelOrFail('room');
       return bedService.getBedById(id, room.id);
@@ -14,6 +16,8 @@ export class BedRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
+    const bedController = resolve(BedController);
+
     this.router.post(
       '/',
       auth(),

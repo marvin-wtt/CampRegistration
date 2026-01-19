@@ -66,9 +66,12 @@ jobs:
       matrix:
         node: [ 22, 24 ]
 
+    container:
+      image: node:${{ matrix.node }}-bookworm
+
     services:
       mariadb:
-        image: mariadb:10.5.27
+        image: mariadb:10.11.15
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
@@ -77,14 +80,20 @@ jobs:
           --health-interval 10s 
           --health-timeout 5s 
           --health-retries 3
-        ports:
-          - 3306:3306
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       APP_PORT: 3000
       APP_URL: http://localhost:3000
       APP_NAME: Test App
-      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      DATABASE_URL: mysql://root:admin123@mariadb:3306/test_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
@@ -98,6 +107,8 @@ jobs:
       EMAIL_FROM: noreply@yourapp.com
       EMAIL_REPLY_TO: noreply@yourapp.com
       EMAIL_ADMIN: admin@yourapp.com
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
     steps:
       - name: Checkout code
@@ -156,7 +167,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:10.5.27
+        image: mariadb:10.11.15
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123

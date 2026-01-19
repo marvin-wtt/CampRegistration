@@ -4,7 +4,7 @@ import config from '#config/index';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    sessionId?: string;
+    sessionId: string;
   }
 }
 

@@ -9,7 +9,8 @@ import type { Request } from 'express';
 import config from '#config/index';
 import { TokenType } from '@prisma/client';
 import passport from 'passport';
-import userService from '#app/user/user.service';
+import { UserService } from '#app/user/user.service';
+import { resolve } from '#core/ioc/container';
 
 function cookieExtractor(req: Request) {
   const cookies: unknown = req.cookies;
@@ -55,6 +56,8 @@ const jwtVerify: VerifyCallback = (payload: unknown, done) => {
     done('Invalid token type', false);
     return;
   }
+
+  const userService = resolve(UserService);
 
   userService
     .getUserById(payload.sub)

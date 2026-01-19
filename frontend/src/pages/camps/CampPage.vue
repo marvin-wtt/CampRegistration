@@ -56,7 +56,6 @@ import RegistrationForm from 'components/common/RegistrationForm.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { isAPIServiceError, useAPIService } from 'src/services/APIService';
 import { useRoute } from 'vue-router';
-import { v7 as uuid } from 'uuid';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from 'src/composables/serviceHandler';
 
@@ -142,12 +141,7 @@ async function submit(campId: string, formData: Record<string, unknown>) {
 async function uploadFile(file: File): Promise<string> {
   const serviceFile = await api.createTemporaryFile({
     file,
-    field: uuid(),
   });
-
-  if (serviceFile.field) {
-    return `${serviceFile.id}#${serviceFile.field}`;
-  }
 
   return serviceFile.id;
 }

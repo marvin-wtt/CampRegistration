@@ -16,23 +16,28 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
+import { MailModule } from '#app/mail/mail.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
-import mailService from '#core/mail/mail.service';
 import { startJobs, stopJobs } from '#jobs/index';
 import { connectDatabase, disconnectDatabase } from '#core/database';
+import { ContainerModule } from 'inversify';
+import { container } from '#core/ioc/container';
 
-const loadModules = (): AppModule[] =>
+let modules: AppModule[] = [];
+
+const loadModules = () =>
   // Modules in order
-  [
+  (modules = [
+    new MailModule(),
     new HealthModule(),
     new TokenModule(),
     new AuthModule(),
     new TotpModule(),
     new ProfileModule(),
-    new UserModule(),
     new FileModule(),
     new CampModule(),
+    new UserModule(),
     new RegistrationModule(),
     new TableTemplateModule(),
     new ManagerModule(),
@@ -41,31 +46,39 @@ const loadModules = (): AppModule[] =>
     new RoomModule(),
     new BedModule(),
     new FeedbackModule(),
-  ];
+  ]);
 
 export async function boot() {
   await connectDatabase();
 
-  await mailService.connect();
-
-  // localization
   await initI18n();
 
-  const modules = loadModules();
+  loadModules();
 
-  await bootModules(modules);
+  await bootModules();
 
-  // Start jobs
   startJobs();
 }
 
 export async function shutdown() {
   stopJobs();
 
+  await shutdownModules();
+
   await disconnectDatabase();
 }
 
-async function bootModules(modules: AppModule[]) {
+async function bootModules() {
+  // Bind module services
+  await container.load(
+    ...modules.map(
+      (module) =>
+        new ContainerModule((options) => {
+          module.bindContainers?.(options);
+        }),
+    ),
+  );
+
   // Configure modules
   for (const module of modules) {
     if (module.configure) {
@@ -85,6 +98,14 @@ async function bootModules(modules: AppModule[]) {
   for (const module of modules) {
     if (module.registerRoutes) {
       module.registerRoutes(apiRouter);
+    }
+  }
+}
+
+async function shutdownModules() {
+  for (const module of modules) {
+    if (module.shutdown) {
+      await module.shutdown();
     }
   }
 }

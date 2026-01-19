@@ -87,6 +87,10 @@ function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
+  if (props.moderation) {
+    survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(true);
+  }
+
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
     interface FileOption {
