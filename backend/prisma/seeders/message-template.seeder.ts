@@ -19,6 +19,11 @@ class MessageTemplateSeeder extends BaseSeeder {
       'registration_canceled',
     ];
 
+    // Delete templates from the camp factory first
+    await prisma.messageTemplate.deleteMany({
+      where: { campId: { in: camps.map((camp) => camp.id) } },
+    });
+
     await Promise.all(
       camps.flatMap(async (camp) => {
         return events.map((event) => {

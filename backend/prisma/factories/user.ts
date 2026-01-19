@@ -1,6 +1,6 @@
 import { fakerDE as faker } from '@faker-js/faker';
 import { Prisma } from '@prisma/client';
-import prisma from './prisma';
+import prisma from './prisma.js';
 import bcrypt from 'bcryptjs';
 
 export const UserFactory = {
