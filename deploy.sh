@@ -5,9 +5,9 @@ export PATH=/opt/plesk/node/20/bin
 # Enable maintenance mode to prevent request after build
 export MAINTENANCE_MODE=true
 
-npm -ws run clean --if-present
+npm run clean --workspaces --if-present
 npm ci
-npm -ws run build --if-presentAd
+npm run build --workspaces --if-presentAd
 npm run db:migrate -w backend
 
 # Restart Node.JS on Plesk
