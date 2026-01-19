@@ -252,7 +252,104 @@ describe('/api/v1/camps/:campId/messages', () => {
       ]);
     });
 
-    it.todo('should respond with `201` status code with attachments');
+    it('should respond with `201` status code with attachments', async () => {
+      const sessionId = crypto.randomUUID();
+      const { camp, accessToken } = await crateCampWithManager({
+        countries: ['de', 'fr'],
+        name: { de: 'Test Camp DE', fr: 'Test Camp FR' },
+        organizer: { de: 'Organizer DE', fr: 'Organizer FR' },
+        location: { de: 'Location DE', fr: 'Location FR' },
+        contactEmail: { de: 'de@email.com', fr: 'fr@email.com' },
+        maxParticipants: { de: 8, fr: 9 },
+      });
+
+      const file1 = await FileFactory.create({
+        field: sessionId,
+      });
+      const file2 = await FileFactory.create({
+        field: sessionId,
+      });
+
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Max',
+        },
+        emails: ['test@example.com'],
+        country: 'de',
+      });
+
+      const data = {
+        registrationIds: [registration.id],
+        subject:
+          'Hi, {{ registration.data.first_name  }}, welcome to {{ camp.name }}',
+        body:
+          'Hello {{ registration.data.first_name  }}, {{ camp.organizer }} ' +
+          '{{ camp.location }} {{ camp.maxParticipants }}',
+        attachmentIds: [file1.id, file2.id],
+      };
+
+      const { body } = await request()
+        .post(`/api/v1/camps/${camp.id}/messages`)
+        .send(data)
+        .setSessionId(sessionId)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data).toHaveProperty('attachments');
+      expect(body.data.attachments).toHaveLength(2);
+
+      const files = await prisma.file.findMany({
+        where: { messageTemplateId: body.data.id },
+      });
+
+      expect(files.length).toBe(2);
+    });
+
+    it('should respond with `400` status code with invalid attachments', async () => {
+      const sessionId = crypto.randomUUID();
+      const { camp, accessToken } = await crateCampWithManager({
+        countries: ['de', 'fr'],
+        name: { de: 'Test Camp DE', fr: 'Test Camp FR' },
+        organizer: { de: 'Organizer DE', fr: 'Organizer FR' },
+        location: { de: 'Location DE', fr: 'Location FR' },
+        contactEmail: { de: 'de@email.com', fr: 'fr@email.com' },
+        maxParticipants: { de: 8, fr: 9 },
+      });
+
+      const file1 = await FileFactory.create({
+        field: crypto.randomUUID(),
+      });
+      const file2 = await FileFactory.create({
+        field: sessionId,
+      });
+
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          first_name: 'Max',
+        },
+        emails: ['test@example.com'],
+        country: 'de',
+      });
+
+      const data = {
+        registrationIds: [registration.id],
+        subject:
+          'Hi, {{ registration.data.first_name  }}, welcome to {{ camp.name }}',
+        body:
+          'Hello {{ registration.data.first_name  }}, {{ camp.organizer }} ' +
+          '{{ camp.location }} {{ camp.maxParticipants }}',
+        attachmentIds: [file1.id, file2.id],
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/messages`)
+        .send(data)
+        .setSessionId(sessionId)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
 
     it.each(messageCreateBody)(
       'should respond with `$expected` status code when $name',

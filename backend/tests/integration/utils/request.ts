@@ -4,6 +4,7 @@ import { app } from '../setup.js';
 declare module 'supertest' {
   interface Test {
     expectOrPrint: (statusCode: number) => Test;
+    setSessionId: (sessionId: string) => Test;
   }
 }
 
@@ -18,6 +19,16 @@ declare module 'supertest' {
     }
   });
   this.expect(statusCode);
+  return this;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(supertest as any).Test.prototype.setSessionId = function (
+  this: supertest.Test,
+  sessionId: string,
+) {
+  this.set('Cookie', ['session=' + sessionId, '__Host-session=' + sessionId]);
+
   return this;
 };
 

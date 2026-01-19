@@ -62,7 +62,7 @@ export class MessageTemplateController extends BaseController {
   async store(req: Request, res: Response) {
     const {
       params: { campId },
-      body: { event, subject, body, priority },
+      body: { event, subject, body, priority, attachmentIds },
     } = await req.validate(validator.store);
 
     // Duplicate events for the same camp are not allowed
@@ -80,12 +80,11 @@ export class MessageTemplateController extends BaseController {
       }
     }
 
-    const template = await this.messageTemplateService.createTemplate(campId, {
-      event,
-      subject,
-      body,
-      priority,
-    });
+    const template = await this.messageTemplateService.createTemplate(
+      campId,
+      { event, subject, body, priority, attachmentIds },
+      req.sessionId,
+    );
 
     res
       .status(httpStatus.CREATED)
@@ -95,17 +94,14 @@ export class MessageTemplateController extends BaseController {
   async update(req: Request, res: Response) {
     const {
       params: { campId, messageTemplateId },
-      body: { subject, body, priority },
+      body: { subject, body, priority, attachmentIds },
     } = await req.validate(validator.update);
 
     const template = await this.messageTemplateService.updateMessageTemplate(
       messageTemplateId,
       campId,
-      {
-        subject,
-        body,
-        priority,
-      },
+      { subject, body, priority, attachmentIds },
+      req.sessionId,
     );
 
     res.status(httpStatus.OK).resource(new MessageTemplateResource(template));

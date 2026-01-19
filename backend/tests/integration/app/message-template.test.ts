@@ -391,6 +391,139 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         .send(data)
         .expect(401);
     });
+
+    describe('files', () => {
+      it('should respond with 201 status code when attachments are provided', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const file1 = await FileFactory.create({
+          field: sessionId,
+        });
+        const file2 = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          event: 'some-event',
+          subject: { en: 'Test Subject' },
+          body: { en: 'Test body content' },
+          priority: 'high',
+          attachmentIds: [file1.id, file2.id],
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body.data).toHaveProperty('attachments');
+        expect(body.data.attachments).toHaveLength(2);
+
+        const files = await prisma.file.findMany({
+          where: { messageTemplateId: body.data.id },
+        });
+
+        expect(files.length).toBe(2);
+      });
+
+      it('should respond with 201 status code when attachments are empty', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const data = {
+          event: 'some-event',
+          subject: { en: 'Test Subject' },
+          body: { en: 'Test body content' },
+          priority: 'high',
+          attachmentIds: [],
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+      });
+
+      it('should respond with 400 status code when attachments are invalid', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          event: 'some-event',
+          subject: { en: 'Test Subject' },
+          body: { en: 'Test body content' },
+          priority: 'high',
+          attachmentIds: [crypto.randomUUID()],
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with 400 status code when attachments session id missmatch', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const file1 = await FileFactory.create({
+          field: crypto.randomUUID(),
+        });
+        const file2 = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          event: 'some-event',
+          subject: { en: 'Test Subject' },
+          body: { en: 'Test body content' },
+          priority: 'high',
+          attachmentIds: [file1.id, file2.id],
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with 400 status code when attachments are already assigned', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+        const file1 = await FileFactory.create({
+          messageTemplate: { connect: { id: messageTemplate.id } },
+          field: sessionId,
+        });
+        const file2 = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          event: 'some-event',
+          subject: { en: 'Test Subject' },
+          body: { en: 'Test body content' },
+          priority: 'high',
+          attachmentIds: [file1.id, file2.id],
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+    });
   });
 
   describe('PATCH /api/v1/camps/:campId/message-templates/:messageTemplateId', () => {
@@ -573,6 +706,201 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         )
         .send(updateData)
         .expect(401);
+    });
+
+    describe('files', () => {
+      it('should respond with 200 status code when attachments are added', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+
+        const file1 = await FileFactory.create({
+          field: sessionId,
+        });
+        const file2 = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          priority: 'low',
+          attachmentIds: [file1.id, file2.id],
+        };
+
+        const { body } = await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data).toHaveProperty('attachments');
+        expect(body.data.attachments).toHaveLength(2);
+
+        const files = await prisma.file.findMany({
+          where: { messageTemplateId: body.data.id },
+        });
+
+        expect(files.length).toBe(2);
+      });
+
+      it('should respond with 200 status code when attachments are removed', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+        await FileFactory.create({
+          field: sessionId,
+          messageTemplate: { connect: { id: messageTemplate.id } },
+        });
+        await FileFactory.create({
+          messageTemplate: { connect: { id: messageTemplate.id } },
+        });
+        const file = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          attachmentIds: [file.id],
+        };
+
+        const { body } = await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data).toHaveProperty('attachments');
+        expect(body.data.attachments).toHaveLength(1);
+        expect(body.data.attachments[0]).toHaveProperty('id', file.id);
+
+        const files = await prisma.file.findMany({
+          where: { messageTemplateId: body.data.id },
+        });
+
+        expect(files.length).toBe(1);
+        expect(files[0].id).toBe(file.id);
+      });
+
+      it('should respond with 200 status code when attachments are replaced', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+
+        const data = {
+          attachmentIds: [],
+        };
+
+        const { body } = await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data).toHaveProperty('attachments');
+        expect(body.data.attachments).toHaveLength(0);
+
+        const files = await prisma.file.findMany({
+          where: { messageTemplateId: body.data.id },
+        });
+
+        expect(files.length).toBe(0);
+      });
+
+      it('should respond with 400 status code when attachments are invalid', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+        await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          attachmentIds: [crypto.randomUUID()],
+        };
+
+        await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with 400 status code when attachments session id missmatch', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+        const file1 = await FileFactory.create({
+          field: crypto.randomUUID(),
+        });
+        const file2 = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          attachmentIds: [file1.id, file2.id],
+        };
+
+        await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with 400 status code when attachments are already assigned', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const messageTemplate = await MessageTemplateFactory.create({
+          camp: { connect: { id: camp.id } },
+        });
+        const file1 = await FileFactory.create({
+          messageTemplate: { connect: { id: messageTemplate.id } },
+          field: sessionId,
+        });
+        await MessageTemplateFactory.create({
+          attachments: { connect: { id: file1.id } },
+          camp: { connect: { id: camp.id } },
+        });
+        const file2 = await FileFactory.create({
+          field: sessionId,
+        });
+
+        const data = {
+          attachmentIds: [file1.id, file2.id],
+        };
+
+        await request()
+          .patch(
+            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          )
+          .send(data)
+          .setSessionId(sessionId)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
     });
   });
 

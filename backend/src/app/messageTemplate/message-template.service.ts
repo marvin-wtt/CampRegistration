@@ -1,9 +1,14 @@
 import type { Prisma } from '@prisma/client';
 import { BaseService } from '#core/base/BaseService';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { FileService } from '#app/file/file.service';
 
 @injectable()
 export class MessageTemplateService extends BaseService {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
+    super();
+  }
+
   async getMessageTemplateById(campId: string, id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {
@@ -51,12 +56,24 @@ export class MessageTemplateService extends BaseService {
 
   async createTemplate(
     campId: string,
-    data: Omit<Prisma.MessageTemplateCreateInput, 'camp'>,
+    data: Omit<Prisma.MessageTemplateCreateInput, 'camp'> & {
+      attachmentIds?: string[] | undefined;
+    },
+    fileFieldId: string,
   ) {
     return this.prisma.messageTemplate.create({
       data: {
+        event: data.event,
+        subject: data.subject,
+        body: data.body,
+        priority: data.priority,
         campId,
-        ...data,
+        attachments: data.attachmentIds
+          ? this.fileService.getFileConnectInput(
+              data.attachmentIds,
+              fileFieldId,
+            )
+          : undefined,
       },
       include: {
         attachments: true,
@@ -67,17 +84,37 @@ export class MessageTemplateService extends BaseService {
   async updateMessageTemplate(
     id: string,
     campId: string,
-    data: Prisma.MessageTemplateUpdateInput,
+    data: Prisma.MessageTemplateUpdateInput & {
+      attachmentIds?: string[] | undefined;
+    },
+    sessionId: string,
   ) {
-    return this.prisma.messageTemplate.update({
-      where: {
+    const fileIds = data.attachmentIds ?? [];
+
+    return this.prisma.$transaction(async (tx) => {
+      const attachments = await this.fileService.syncFilesForOwner(
+        tx,
+        'messageTemplateId',
         id,
-        campId,
-      },
-      data,
-      include: {
-        attachments: true,
-      },
+        fileIds,
+        sessionId,
+      );
+
+      return tx.messageTemplate.update({
+        where: {
+          id,
+          campId,
+        },
+        data: {
+          subject: data.subject,
+          body: data.body,
+          priority: data.priority,
+          attachments,
+        },
+        include: {
+          attachments: true,
+        },
+      });
     });
   }
 

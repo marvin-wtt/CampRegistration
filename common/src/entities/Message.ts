@@ -19,5 +19,5 @@ export interface MessageCreateData {
   subject: string;
   body: string;
   priority?: string | undefined;
-  attachments?: string[] | undefined;
+  attachmentIds?: string[] | undefined;
 }

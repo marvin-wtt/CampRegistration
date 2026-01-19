@@ -1,4 +1,4 @@
-import type { File, Prisma } from '@prisma/client';
+import { type File, Prisma, PrismaClient } from '@prisma/client';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -20,6 +20,25 @@ interface ModelData {
   id: string;
   name: string;
 }
+
+type PrismaTransaction = Parameters<
+  Parameters<PrismaClient['$transaction']>[0]
+>[0];
+
+type PickIds<T> = {
+  [K in keyof T as K extends `${string}Id` ? K : never]: T[K];
+};
+
+type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
+
+const fileRelationIdFields = Prisma.dmmf.datamodel.models
+  .find((value) => value.name === 'File')
+  ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
+  .reduce<Record<string, null>>((acc, val) => {
+    const fieldName = val.name;
+    acc[fieldName] = null;
+    return acc;
+  }, {}) as PickIds<Prisma.FileWhereInput>;
 
 @injectable()
 export class FileService extends BaseService {
@@ -73,8 +92,59 @@ export class FileService extends BaseService {
     });
   }
 
-  public async uploadFile(filename: string) {
+  private async uploadFile(filename: string) {
     await this.storageRegistry.getStorage().moveToStorage(filename);
+  }
+
+  public getFileConnectInput(
+    files: Pick<File, 'id'>[] | string[],
+    field: string,
+  ) {
+    return {
+      connect: files
+        .map((file) => (typeof file === 'string' ? file : file.id))
+        .map((id) => ({
+          ...this.getUnreferencedModelArgs(),
+          id,
+          field,
+        })),
+    };
+  }
+
+  public getUnreferencedModelArgs() {
+    return fileRelationIdFields;
+  }
+
+  async syncFilesForOwner(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    fileIds: string[],
+    sessionId: string,
+  ) {
+    // 1) Detach removed ones
+    await tx.file.updateMany({
+      where: {
+        [ownerKey]: ownerId,
+        id: { notIn: fileIds.length ? fileIds : ['__none__'] }, // avoid `notIn: []` edge cases
+      },
+      data: {
+        [ownerKey]: null,
+        field: null,
+      },
+    });
+
+    // 2) Build connect filter
+    // Allow connecting if already connected to this owner OR unreferenced temp with matching field
+    const connect = fileIds.map((id) => ({
+      id,
+      OR: [
+        { [ownerKey]: ownerId },
+        { ...this.getUnreferencedModelArgs(), field: sessionId },
+      ],
+    }));
+
+    return { connect };
   }
 
   async saveModelFile(
@@ -84,10 +154,10 @@ export class FileService extends BaseService {
     field?: string,
     accessLevel?: string,
   ) {
-    const fileName = name
+    const originalFileName = name
       ? name + fileNameExtension(file.filename)
       : file.filename;
-    const fileData = this.mapFields(file, fileName, field, accessLevel);
+    const fileData = this.mapFields(file, originalFileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
     await this.queue.add('upload', file.filename);
@@ -238,10 +308,7 @@ export class FileService extends BaseService {
 
     const files = await this.prisma.file.findMany({
       where: {
-        campId: null,
-        registrationId: null,
-        messageId: null,
-        messageTemplateId: null,
+        ...fileRelationIdFields,
         createdAt: { lt: minAge },
       },
       select: {

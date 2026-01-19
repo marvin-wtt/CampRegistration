@@ -1294,7 +1294,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             },
           })
           .auth(accessToken, { type: 'bearer' })
-          .expectOrPrint(200);
+          .expect(200);
 
         expect(body.data.data).toHaveProperty('some_field', 'Test');
         expect(body.data.data).toHaveProperty('some_file', file.id);

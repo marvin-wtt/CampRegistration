@@ -4,10 +4,15 @@ import { type Camp, Prisma, type Registration } from '@prisma/client';
 import { formUtils } from '#utils/form';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { FileService } from '#app/file/file.service';
 
 @injectable()
 export class RegistrationService extends BaseService {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
+    super();
+  }
+
   async getRegistrationById(campId: string, id: string) {
     return this.prisma.registration.findFirst({
       where: { id, campId },
@@ -72,7 +77,7 @@ export class RegistrationService extends BaseService {
   async createRegistration(
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
-    fileField: string | undefined,
+    fileField: string,
   ) {
     const form = formUtils(camp, data.data);
 
@@ -83,13 +88,7 @@ export class RegistrationService extends BaseService {
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 
-    const fileConnects: Prisma.FileWhereUniqueInput[] = form
-      .getFileIds()
-      .map((id) => ({
-        id,
-        field: fileField,
-        registrationId: null,
-      }));
+    const fileIds = form.getFileIds();
 
     const isWaitingList = async (
       transaction: Prisma.TransactionClient,
@@ -145,7 +144,7 @@ export class RegistrationService extends BaseService {
             data: formData,
             waitingList,
             camp: { connect: { id: camp.id } },
-            files: { connect: fileConnects },
+            files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
       },
@@ -160,7 +159,7 @@ export class RegistrationService extends BaseService {
       Prisma.RegistrationUpdateInput,
       'waitingList' | 'data' | 'customData'
     >,
-    fileField: string | undefined,
+    sessionId: string,
   ) {
     if (!data.data) {
       return this.prisma.registration.update({
@@ -182,17 +181,13 @@ export class RegistrationService extends BaseService {
     const fileIds = form.getFileIds();
 
     return this.prisma.$transaction(async (tx) => {
-      // Unreferenced unused files - do not delete
-      await tx.file.updateMany({
-        where: {
-          registrationId,
-          id: { notIn: fileIds },
-        },
-        data: {
-          registrationId: null,
-          field: null,
-        },
-      });
+      const files = await this.fileService.syncFilesForOwner(
+        tx,
+        'registrationId',
+        registrationId,
+        fileIds,
+        sessionId,
+      );
 
       return tx.registration.update({
         where: { id: registrationId },
@@ -201,20 +196,7 @@ export class RegistrationService extends BaseService {
           data: data.data,
           customData: data.customData,
           waitingList: data.waitingList,
-          files: {
-            connect: fileIds.map((id) => ({
-              id,
-              OR: [
-                // Already connected to this registration
-                { registrationId },
-                // Not connected to any registration yet
-                {
-                  registrationId: null,
-                  field: fileField,
-                },
-              ],
-            })),
-          },
+          files,
         },
         include: {
           bed: { include: { room: true } },

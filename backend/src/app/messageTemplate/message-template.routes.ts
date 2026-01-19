@@ -1,4 +1,4 @@
-import { auth, guard } from '#middlewares/index';
+import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
 import { MessageTemplateController } from './message-template.controller.js';
 import { controller } from '#utils/bindController';
@@ -40,6 +40,7 @@ export class MessageTemplateRouter extends ModuleRouter {
     this.router.post(
       '/',
       guard(campManager('camp.message_templates.create')),
+      multipart({ name: 'attachments' }),
       controller(this.messageTemplateController, 'store'),
     );
     this.router.patch(

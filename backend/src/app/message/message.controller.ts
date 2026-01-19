@@ -30,16 +30,25 @@ export class MessageController extends BaseController {
 
   async store(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
-    const { body } = await req.validate(validator.store);
+    const {
+      body: {
+        subject,
+        body,
+        priority,
+        replyTo,
+        registrationIds,
+        attachmentIds,
+      },
+    } = await req.validate(validator.store);
 
     const registrations = await this.registrationService.getRegistrationsByIds(
       camp.id,
-      body.registrationIds,
+      registrationIds,
     );
 
     // Throw error if not all ids were found
-    if (registrations.length !== body.registrationIds.length) {
-      const missingIds = body.registrationIds.filter(
+    if (registrations.length !== registrationIds.length) {
+      const missingIds = registrationIds.filter(
         (id) => !registrations.some((registration) => registration.id === id),
       );
 
@@ -49,12 +58,11 @@ export class MessageController extends BaseController {
       );
     }
 
-    const template = await this.messageTemplateService.createTemplate(camp.id, {
-      subject: body.subject,
-      body: body.body,
-      priority: body.priority,
-      replyTo: body.replyTo,
-    });
+    const template = await this.messageTemplateService.createTemplate(
+      camp.id,
+      { subject, body, priority, replyTo, attachmentIds },
+      req.sessionId,
+    );
 
     await Promise.all(
       registrations.map((registration) =>
