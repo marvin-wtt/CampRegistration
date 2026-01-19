@@ -1,15 +1,26 @@
 import { auth, guard } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import programPlannerService from './program-event.service.js';
-import programEventController from './program-event.controller.js';
+import { ProgramEventService } from './program-event.service.js';
+import { ProgramEventController } from './program-event.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController.js';
+import { controller } from '#utils/bindController';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class ProgramEventRouter extends ModuleRouter {
+  constructor(
+    @inject(ProgramEventService)
+    private readonly programPlannerService: ProgramEventService,
+    @inject(ProgramEventController)
+    private readonly programEventController: ProgramEventController,
+  ) {
+    super();
+  }
+
   protected registerBindings() {
     this.bindModel('programEvent', (req, id) => {
       const camp = req.modelOrFail('camp');
-      return programPlannerService.getProgramEventById(camp.id, id);
+      return this.programPlannerService.getProgramEventById(camp.id, id);
     });
   }
 
@@ -19,27 +30,27 @@ export class ProgramEventRouter extends ModuleRouter {
     this.router.get(
       '/',
       guard(campManager('camp.program_events.view')),
-      controller(programEventController, 'index'),
+      controller(this.programEventController, 'index'),
     );
     this.router.get(
       '/:programEventId',
       guard(campManager('camp.program_events.view')),
-      controller(programEventController, 'show'),
+      controller(this.programEventController, 'show'),
     );
     this.router.post(
       '/',
       guard(campManager('camp.program_events.create')),
-      controller(programEventController, 'store'),
+      controller(this.programEventController, 'store'),
     );
     this.router.put(
       '/:programEventId',
       guard(campManager('camp.program_events.update')),
-      controller(programEventController, 'update'),
+      controller(this.programEventController, 'update'),
     );
     this.router.delete(
       '/:programEventId',
       guard(campManager('camp.program_events.delete')),
-      controller(programEventController, 'destroy'),
+      controller(this.programEventController, 'destroy'),
     );
   }
 }

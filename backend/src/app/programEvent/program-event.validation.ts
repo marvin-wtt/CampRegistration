@@ -1,25 +1,25 @@
 import { z } from 'zod';
-import { translatedValue } from '#core/validation/helper.js';
+import { translatedValue } from '#core/validation/helper';
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
 const dateSchema = z.string(); // TODO Should be raw string YYYY-MM-DD
 
 const show = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    programEventId: z.string().ulid(),
+    campId: z.ulid(),
+    programEventId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.string().ulid(),
+    campId: z.ulid(),
   }),
   body: z.object({
     title: translatedValue(z.string()),
@@ -35,8 +35,8 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    programEventId: z.string().ulid(),
+    campId: z.ulid(),
+    programEventId: z.ulid(),
   }),
   body: z
     .object({
@@ -54,8 +54,8 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.string().ulid(),
-    programEventId: z.string().ulid(),
+    campId: z.ulid(),
+    programEventId: z.ulid(),
   }),
 });
 

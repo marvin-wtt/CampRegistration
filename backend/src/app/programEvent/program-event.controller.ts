@@ -1,11 +1,20 @@
 import httpStatus from 'http-status';
-import programEventService from './program-event.service.js';
+import { ProgramEventService } from './program-event.service.js';
 import { ProgramEventResource } from './program-event.resource.js';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/programEvent/program-event.validation';
+import { inject, injectable } from 'inversify';
 
-class ProgramEventController extends BaseController {
+@injectable()
+export class ProgramEventController extends BaseController {
+  constructor(
+    @inject(ProgramEventService)
+    private readonly programEventService: ProgramEventService,
+  ) {
+    super();
+  }
+
   async show(req: Request, res: Response) {
     await req.validate(validator.show);
     const event = req.modelOrFail('programEvent');
@@ -18,7 +27,7 @@ class ProgramEventController extends BaseController {
       params: { campId },
     } = await req.validate(validator.index);
 
-    const events = await programEventService.queryProgramEvent(campId);
+    const events = await this.programEventService.queryProgramEvent(campId);
 
     res.resource(ProgramEventResource.collection(events));
   }
@@ -29,7 +38,7 @@ class ProgramEventController extends BaseController {
       body,
     } = await req.validate(validator.store);
 
-    const event = await programEventService.createProgramEvent(campId, {
+    const event = await this.programEventService.createProgramEvent(campId, {
       title: body.title,
       details: body.details ?? undefined,
       location: body.location ?? undefined,
@@ -49,7 +58,7 @@ class ProgramEventController extends BaseController {
       body,
     } = await req.validate(validator.update);
 
-    const event = await programEventService.updateProgramEventById(id, {
+    const event = await this.programEventService.updateProgramEventById(id, {
       title: body.title,
       details: body.details,
       location: body.location,
@@ -68,10 +77,8 @@ class ProgramEventController extends BaseController {
       params: { programEventId: id },
     } = await req.validate(validator.destroy);
 
-    await programEventService.deleteProgramEventById(id);
+    await this.programEventService.deleteProgramEventById(id);
 
     res.status(httpStatus.NO_CONTENT).send();
   }
 }
-
-export default new ProgramEventController();
