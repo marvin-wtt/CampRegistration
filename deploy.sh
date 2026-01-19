@@ -7,7 +7,7 @@ export MAINTENANCE_MODE=true
 
 npm run clean --workspaces --if-present
 npm ci
-npm run build --workspaces --if-presentAd
+npm run build --workspaces --if-present
 npm run db:migrate -w backend
 
 # Restart Node.JS on Plesk
