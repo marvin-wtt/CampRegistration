@@ -1,5 +1,5 @@
 import type { Cron } from 'croner';
-import logger from '#core/logger';
+import logger from '#core/logger.js';
 import moment from 'moment';
 
 export const errorHandler = (error: unknown, job: Cron) => {

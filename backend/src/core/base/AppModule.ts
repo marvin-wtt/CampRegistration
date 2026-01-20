@@ -5,6 +5,7 @@ import type {
 } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
 import type { ContainerModuleLoadOptions } from 'inversify';
+import type { AppJob } from '#core/base/AppJob';
 
 export type AppRouter = Router & {
   useRouter: (path: string, router: ModuleRouter) => void;
@@ -19,10 +20,16 @@ export type RoleToPermissions<T extends Permission> = Partial<
   Record<ManagerRole, T[]>
 >;
 
+export interface JobScheduler {
+  schedule: (job: AppJob) => void;
+}
+
 export interface AppModule {
   configure?(options: ModuleOptions): Promise<void> | void;
 
   bindContainers?(options: BindOptions): void;
+
+  registerJobs?(options: JobScheduler): void;
 
   registerRoutes?(router?: Router): void;
 

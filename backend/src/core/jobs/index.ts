@@ -1,10 +1,4 @@
-import { removeExpiredTokens } from '#jobs/tokens.job';
-import {
-  deleteTemporaryFiles,
-  deleteUnassignedFiles,
-  deleteUnusedFiles,
-} from '#jobs/files.job';
-import { deleteOldQueueJobs } from '#jobs/queue.job';
+import { QueueCleanupJob } from '#core/jobs/queue.job';
 import { type CronOptions, Cron, scheduledJobs } from 'croner';
 import {
   errorHandler,
@@ -13,13 +7,11 @@ import {
   protectionHandler,
   terminationHandler,
 } from './handler.js';
+import logger from '#core/logger';
+import type { AppJob } from '#core/base/AppJob';
 
-const startJobs = () => {
-  scheduleJob('expired-token-cleanup', '0 3 * * *', removeExpiredTokens);
-  scheduleJob('tmp-file-cleanup', '0 4 * * *', deleteTemporaryFiles);
-  scheduleJob('unused-file-cleanup', '15 4 * * *', deleteUnusedFiles);
-  scheduleJob('unassigned-file-cleanup', '30 4 * * *', deleteUnassignedFiles);
-  scheduleJob('queue-job-cleanup', '45 4 * * *', deleteOldQueueJobs);
+export const startJobs = () => {
+  scheduledJobs.forEach((job) => job.resume());
 };
 
 const scheduleJob = (
@@ -29,12 +21,14 @@ const scheduleJob = (
   options: CronOptions = {},
 ) => {
   if (findJob(name)) {
+    logger.warn(`Job with name '${name}' already scheduled`);
     return;
   }
 
   const jobOptions: CronOptions = {
     ...options,
     name,
+    paused: true, // TODO Set paused based on if jobs are running
     protect: protectionHandler,
     catch: errorHandler,
   };
@@ -47,6 +41,10 @@ const scheduleJob = (
     return;
   }
 };
+
+export function schedule(job: AppJob) {
+  scheduleJob(job.name, job.pattern, job.run.bind(job));
+}
 
 const runJob = (
   fn: () => void | Promise<void>,
@@ -66,15 +64,20 @@ const runJob = (
 
 const stopJobs = () => {
   for (const job of scheduledJobs) {
-    job.stop();
+    job.pause();
   }
-
-  // Clear all jobs
-  scheduledJobs.length = 0;
 };
 
-const findJob = (name: string): Cron | undefined => {
+export const findJob = (name: string): Cron | undefined => {
   return scheduledJobs.find((job) => job.name === name);
 };
 
-export { startJobs, stopJobs, findJob };
+// TODO Find a better place the schedule this
+schedule(new QueueCleanupJob());
+
+export const jobScheduler = {
+  schedule,
+  find: findJob,
+  start: startJobs,
+  stop: stopJobs,
+};

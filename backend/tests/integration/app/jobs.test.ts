@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   CampFactory,
   FileFactory,
@@ -12,14 +12,10 @@ import path from 'path';
 import { ulid } from 'ulidx';
 import moment from 'moment';
 import prisma from '../utils/prisma.js';
-import { findJob, startJobs } from '#jobs/index';
+import { findJob } from '../utils/job.js';
 import { JobStatus } from '@prisma/client';
 
 describe('jobs', () => {
-  beforeEach(() => {
-    startJobs();
-  });
-
   describe('unused-file-cleanup', () => {
     it('should be scheduled', async () => {
       const job = findJob('unused-file-cleanup');

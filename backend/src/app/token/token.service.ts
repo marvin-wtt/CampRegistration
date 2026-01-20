@@ -8,6 +8,7 @@ import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
+import logger from '#core/logger';
 
 @injectable()
 export class TokenService extends BaseService {
@@ -244,13 +245,15 @@ export class TokenService extends BaseService {
   async deleteExpiredTokens() {
     const refDate = moment().subtract(1, 'hour').toDate();
 
-    return this.prisma.token.deleteMany({
+    const { count } = await this.prisma.token.deleteMany({
       where: {
         expiresAt: {
           lte: refDate,
         },
       },
     });
+
+    logger.info(`Removed ${count.toString()} token(s).`);
   }
 
   deleteTokenById = async (id: number) => {

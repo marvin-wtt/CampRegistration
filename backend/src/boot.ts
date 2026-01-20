@@ -19,7 +19,7 @@ import { HealthModule } from '#app/health/health.module';
 import { MailModule } from '#app/mail/mail.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
-import { startJobs, stopJobs } from '#jobs/index';
+import { jobScheduler } from '#core/jobs/index';
 import { connectDatabase, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container } from '#core/ioc/container';
@@ -57,11 +57,11 @@ export async function boot() {
 
   await bootModules();
 
-  startJobs();
+  jobScheduler.start();
 }
 
 export async function shutdown() {
-  stopJobs();
+  jobScheduler.stop();
 
   await shutdownModules();
 
@@ -98,6 +98,13 @@ async function bootModules() {
   for (const module of modules) {
     if (module.registerRoutes) {
       module.registerRoutes(apiRouter);
+    }
+  }
+
+  // Register jobs
+  for (const module of modules) {
+    if (module.registerJobs) {
+      module.registerJobs(jobScheduler);
     }
   }
 }
