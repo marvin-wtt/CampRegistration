@@ -25,6 +25,17 @@ export class ManagerService extends BaseService {
       .then((value) => value !== null);
   }
 
+  async countPermanentDirectors(campId: string) {
+    return this.prisma.campManager.count({
+      where: {
+        campId,
+        role: 'DIRECTOR',
+        userId: { not: null },
+        expiresAt: null,
+      },
+    });
+  }
+
   async getManagers(campId: string) {
     return this.prisma.campManager.findMany({
       where: { campId },

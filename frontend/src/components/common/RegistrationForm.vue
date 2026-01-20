@@ -11,7 +11,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { marked } from 'marked';
+import { createMarkdownConverter } from 'src/utils/markdown';
 import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
@@ -23,6 +23,8 @@ import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
+
+const mdConverter = createMarkdownConverter();
 
 const { locale } = useI18n();
 
@@ -133,14 +135,12 @@ function createModel(campId: string, form: object): SurveyModel {
     options.callback('success');
   });
   // Convert markdown to html
-  survey.onTextMarkdown.add((survey, options) => {
+  survey.onTextMarkdown.add((_, options) => {
     // Remove root paragraphs <p></p>
-    options.html = marked.parseInline(options.text, {
-      async: false,
-    });
+    options.html = mdConverter.renderInline(options.text);
   });
   // Workaround for date input for Safari < 4.1
-  survey.onAfterRenderPage.add((survey, options) => {
+  survey.onAfterRenderPage.add((_, options) => {
     const dateInputs: NodeListOf<HTMLInputElement> =
       options.htmlElement.querySelectorAll('input[type=date]');
     dateInputs.forEach((input) => {

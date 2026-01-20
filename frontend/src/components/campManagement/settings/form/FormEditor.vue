@@ -41,7 +41,7 @@ import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
 import { registerSurveyTheme } from 'survey-creator-core';
 import { surveyLocalization } from 'survey-core';
-import { marked } from 'marked';
+import { createMarkdownConverter } from 'src/utils/markdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -93,10 +93,7 @@ const creatorOptions: ICreatorOptions = {
   showJSONEditorTab: !props.restrictedAccess,
 };
 
-marked.use({
-  gfm: false,
-  async: false,
-});
+const mdConverter = createMarkdownConverter();
 
 registerSurveyTheme(SurveyTheme);
 registerCreatorTheme(SurveyCreatorTheme);
@@ -222,9 +219,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     // Convert markdown to html
     survey.onTextMarkdown.add((_, options) => {
-      options.html = marked.parseInline(options.text, {
-        async: false,
-      });
+      options.html = mdConverter.renderInline(options.text);
     });
   }
 
