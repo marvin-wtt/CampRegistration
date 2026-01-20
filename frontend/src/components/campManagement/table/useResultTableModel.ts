@@ -1,5 +1,5 @@
 import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import { computed, ref, watch } from 'vue';
+import { computed, type Ref, ref, watch } from 'vue';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
 import { objectValueByPath } from 'src/utils/objectValueByPath';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
@@ -20,10 +20,10 @@ import type {
 type Pagination = Exclude<QTable['pagination'], undefined>;
 
 export interface ResultTableModelInput {
-  questions: TableColumnTemplate[];
-  registrations: Registration[];
-  templates: TableTemplate[];
-  camp: CampDetails;
+  questions: Ref<TableColumnTemplate[]>;
+  registrations: Ref<Registration[]>;
+  templates: Ref<TableTemplate[]>;
+  camp: Ref<CampDetails>;
 }
 
 export interface ResultTableModelOptions {
@@ -43,10 +43,10 @@ export function useResultTableModel(
 
   const countryFilter = ref<string[] | undefined>([]);
 
-  const countries = computed(() => input.camp.countries);
+  const countries = computed(() => input.camp.value.countries);
 
   const templateOptions = computed<CTableTemplate[]>(() => {
-    const mapped: CTableTemplate[] = input.templates.map((template) => ({
+    const mapped: CTableTemplate[] = input.templates.value.map((template) => ({
       ...template,
       columns: template.columns.map((column) => ({
         ...column,
@@ -59,7 +59,7 @@ export function useResultTableModel(
     mapped.push({
       id: '-1',
       title: 'Original (Plain)',
-      columns: input.questions.map((column) => ({
+      columns: input.questions.value.map((column) => ({
         ...column,
         field: (row: unknown) => objectValueByPath('data.' + column.field, row),
         fieldName: 'data.' + column.field,
@@ -96,7 +96,7 @@ export function useResultTableModel(
   });
 
   const rows = computed<Registration[]>(() => {
-    let r = input.registrations;
+    let r = [...input.registrations.value];
 
     // Preset filter
     if (template.value.filter !== undefined) {
