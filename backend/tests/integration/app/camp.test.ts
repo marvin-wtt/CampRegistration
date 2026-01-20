@@ -1271,7 +1271,7 @@ describe('/api/v1/camps/:campId/files', () => {
         .get(`/api/v1/camps/${camp.id}/files/`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expect(200);
+        .expect(403);
     });
   });
 
