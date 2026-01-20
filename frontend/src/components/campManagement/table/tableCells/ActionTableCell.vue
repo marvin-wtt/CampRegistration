@@ -73,10 +73,12 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { usePermissions } from 'src/composables/permissions';
 import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
+import { useAPIService } from 'src/services/APIService';
 
 const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 const quasar = useQuasar();
 const { t } = useI18n();
+const apiService = useAPIService();
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
 const { data: campData } = storeToRefs(campDetailStore);
@@ -147,7 +149,7 @@ function editItem(): void {
 }
 
 async function uploadFile(file: File): Promise<string> {
-  const serviceFile = await registrationStore.storeFile(file);
+  const serviceFile = await apiService.createTemporaryFile({ file });
 
   return serviceFile.id;
 }
