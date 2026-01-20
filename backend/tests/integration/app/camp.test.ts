@@ -1246,7 +1246,39 @@ describe('/api/v1/camps', () => {
   });
 });
 
-describe.todo('/api/v1/camps/:campId/files');
+describe('/api/v1/camps/:campId/files', () => {
+  describe('GET /api/v1/camps/:campId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { file, camp, accessToken } = await createCampWithFileAndToken();
+      await FileFactory.create();
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/files/`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toBeDefined();
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toHaveProperty('id', file.id);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { camp } = await createCampWithFileAndToken();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/files/`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+  });
+
+  describe.todo('POST /api/v1/camps/:campId');
+
+  describe.todo('DELETE /api/v1/camps/:campId');
+});
 
 describe('/api/v1/files/', () => {
   describe('GET /api/v1/files/:fileId', () => {
