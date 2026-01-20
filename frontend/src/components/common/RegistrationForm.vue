@@ -52,6 +52,7 @@ const model = createModel(
 model.validationEnabled = !props.moderation;
 if (props.data) {
   model.data = props.data;
+  mapFileIdToFileContent(model);
 }
 
 const bgColor = ref<string>();
@@ -174,6 +175,37 @@ function readFile(file: File) {
     };
     fileReader.onerror = reject;
     fileReader.readAsDataURL(file);
+  });
+}
+
+function mapFileIdToFileContent(survey: SurveyModel) {
+  const questions = survey.getAllQuestions(false, undefined, true);
+  questions.forEach((question) => {
+    if (question.getType() !== 'file') {
+      return;
+    }
+
+    const mapToContent = (file: unknown) => {
+      if (typeof file !== 'string') {
+        return file;
+      }
+
+      const url = file.match(/^https?:\/\//)
+        ? file
+        : `${window.origin}/api/v1/files/${file}`;
+
+      return {
+        name: file,
+        type: '',
+        content: url,
+      };
+    };
+
+    if (Array.isArray(question.value)) {
+      question.value = question.value.map(mapToContent);
+    } else {
+      question.value = mapToContent(question.value);
+    }
   });
 }
 
