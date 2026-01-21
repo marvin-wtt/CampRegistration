@@ -3,14 +3,14 @@ import { computed } from 'vue';
 
 const countryLangMap: Record<string, string> = {
   cz: 'cs',
-} as const;
+};
 
-function normalizeLocale(loc: string): string {
-  if (loc.length === 5 && loc.charAt(2) === '-') {
-    return loc.slice(0, 2);
+function normalizeLocale(locale: string): string {
+  if (locale.length === 5 && locale.charAt(2) === '-') {
+    return locale.slice(0, 2);
   }
 
-  return countryLangMap[loc] ?? loc;
+  return countryLangMap[locale] ?? locale;
 }
 
 function pickTranslation(
@@ -18,10 +18,14 @@ function pickTranslation(
   locale: string,
   fallbackLocale: string,
 ): string {
-  const tryLoc = (loc: string) => value[loc] ?? value[normalizeLocale(loc)];
+  const tryLocale = (locale: string) =>
+    value[locale] ?? value[normalizeLocale(locale)];
 
   return (
-    tryLoc(locale) ?? tryLoc(fallbackLocale) ?? Object.values(value)[0] ?? ''
+    tryLocale(locale) ??
+    tryLocale(fallbackLocale) ??
+    Object.values(value)[0] ??
+    ''
   );
 }
 
@@ -31,7 +35,7 @@ export function useObjectTranslation() {
   });
 
   function to(value: string | Record<string, string> | undefined): string {
-    if (value === undefined || value == null) {
+    if (value == null) {
       return '';
     }
 
