@@ -54,22 +54,17 @@
             :style="{ minHeight: '100px' }"
           />
 
-          <q-file
+          <file-input
             v-model="files"
             :label="t('field.attachment.label')"
-            type="file"
-            use-chips
-            multiple
-            append
             outlined
             rounded
             dense
-            clearable
           >
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
-          </q-file>
+          </file-input>
         </q-card-section>
 
         <q-card-actions
@@ -105,6 +100,7 @@ import type {
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { deepToRaw } from 'src/utils/deepToRaw';
+import FileInput from 'components/common/inputs/FileInput.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -117,7 +113,7 @@ const { name, subject, body, form, country, attachments, saveFn } =
     name: string;
     subject: string;
     body: string;
-    attachments: ServiceFile[];
+    attachments: ServiceFile[] | null;
     form: CampDetails['form'];
     country: string;
 
@@ -128,17 +124,7 @@ const { name, subject, body, form, country, attachments, saveFn } =
     }) => Promise<void>;
   }>();
 
-const files = ref<File[] | null>(
-  attachments
-    ? attachments.map(
-        (value) =>
-          new File([], value.name, {
-            type: value.type,
-            lastModified: new Date(value.createdAt).getTime(),
-          }),
-      )
-    : null,
-);
+const files = ref<ServiceFile[]>([...(attachments ?? [])]);
 
 const message = reactive({
   subject: structuredClone(deepToRaw(subject)),
@@ -148,10 +134,10 @@ const message = reactive({
 async function onSave() {
   await saveFn({
     ...message,
-    attachmentIds: [], // TODO
+    attachmentIds: files.value.filter((f) => !!f.id).map((f) => f.id),
   });
 
-  onDialogOK(message);
+  onDialogOK();
 }
 </script>
 
@@ -174,9 +160,11 @@ field:
     placeholder: 'Type your messages here...'
     rule:
       required: 'The message is required'
+  attachment:
+    label: 'Attachments'
 
 page:
-  title: 'Edit template'
+  title: 'Edit email template'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -196,9 +184,11 @@ field:
     placeholder: 'Geben Sie hier Ihre Nachricht ein...'
     rule:
       required: 'Die Nachricht ist erforderlich'
+  attachment:
+    label: 'Anhänge'
 
 page:
-  title: 'Vorlage bearbeiten'
+  title: 'E-Mail-Vorlage bearbeiten'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -218,9 +208,11 @@ field:
     placeholder: 'Tapez votre message ici...'
     rule:
       required: 'Le message est requis'
+  attachment:
+    label: 'Pièces jointes'
 
 page:
-  title: 'Modifier modèle'
+  title: "Modifier le modèle d'e-mail"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -240,9 +232,11 @@ field:
     placeholder: 'Wpisz tutaj swoją wiadomość...'
     rule:
       required: 'Wiadomość jest wymagana'
+  attachment:
+    label: 'Załączniki'
 
 page:
-  title: 'Edytuj szablon'
+  title: 'Edytuj szablon wiadomości e-mail'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -262,7 +256,9 @@ field:
     placeholder: 'Zadejte zde svou zprávu...'
     rule:
       required: 'Zpráva je povinná'
+  attachment:
+    label: 'Přílohy'
 
 page:
-  title: 'Upravit šablonu'
+  title: 'Upravit šablonu e-mailu'
 </i18n>

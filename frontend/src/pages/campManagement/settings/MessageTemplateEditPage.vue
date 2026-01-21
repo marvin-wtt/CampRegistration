@@ -91,7 +91,8 @@
               </q-item-section>
 
               <q-item-section>
-                {{ country }}
+                {{ t(`template.${eventName ?? 'default'}.label`) }}
+                ({{ country }})
               </q-item-section>
 
               <q-item-section side>
@@ -229,7 +230,6 @@ const loading = computed<boolean>(() => {
 async function loadData() {
   await forceFetch(async () => {
     return api.fetchMessageTemplates(queryParam('camp'), {
-      includeDefaults: true,
       hasEvent: true,
     });
   });
@@ -327,6 +327,7 @@ function editTemplate(template: MessageTemplate | undefined) {
         form: camp.form,
         subject: template.subject,
         body: template.body,
+        attachments: template.attachments,
 
         saveFn: async (message: {
           subject: string;
@@ -337,6 +338,7 @@ function editTemplate(template: MessageTemplate | undefined) {
             return api.updateMessageTemplate(camp.id, template.id, {
               subject: message.subject,
               body: message.body,
+              attachmentIds: message.attachmentIds ?? undefined,
             });
           });
         },

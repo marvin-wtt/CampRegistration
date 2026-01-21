@@ -88,7 +88,7 @@
       />
 
       <div class="row q-gutter-sm justify-between">
-        <q-file
+        <file-input
           v-model="attachments"
           :label="t('input.attachments')"
           :disable="sendInProgress"
@@ -107,7 +107,7 @@
           <template #prepend>
             <q-icon name="attach_file" />
           </template>
-        </q-file>
+        </file-input>
 
         <q-btn
           :label="t('action.send')"
@@ -129,7 +129,10 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type { Registration } from '@camp-registration/common/entities';
+import type {
+  Registration,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import type { Contact } from 'components/campManagement/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
@@ -138,6 +141,7 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import { useServiceNotifications } from 'src/composables/serviceHandler';
 import { useAPIService } from 'src/services/APIService';
+import FileInput from 'components/common/inputs/FileInput.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -158,7 +162,7 @@ const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
 const replyTo = ref<string>();
 const subject = ref<string>('');
-const attachments = ref<File[]>();
+const attachments = ref<ServiceFile[]>([]);
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 const text = ref<string>('');
 const sendInProgress = ref<boolean>(false);
@@ -223,6 +227,14 @@ async function send() {
     return;
   }
 
+  if (attachments.value?.find((value) => value.id == undefined)) {
+    quasar.notify({
+      type: 'warning',
+      message: t('error.attachment.ongoing'),
+    });
+    return;
+  }
+
   sendInProgress.value = true;
   try {
     // TODO Add error messages
@@ -237,6 +249,7 @@ async function send() {
         subject: subject.value,
         body: text.value,
         priority: priority.value,
+        attachmentIds: attachments.value?.map((file) => file.id),
       });
     });
 
@@ -255,6 +268,8 @@ function reset() {
 
   formRef.value?.resetValidation();
 }
+
+// TODO Add pl and cs translations
 </script>
 
 <style scoped></style>
@@ -265,6 +280,7 @@ action:
 
 error:
   attachment:
+    ongoing: 'Waiting for file uploads to finish. Please try again later.'
     default: 'File not allowed'
     duplicate: 'File already exists'
     filter: 'File type not allowed'
@@ -303,6 +319,7 @@ request:
 <i18n lang="yaml" locale="de">
 error:
   attachment:
+    ongoing: 'Warten auf den Abschluss des Datei-Uploads. Bitte später erneut versuchen.'
     default: 'Datei nicht erlaubt'
     duplicate: 'Datei existiert bereits'
     filter: 'Dateityp nicht erlaubt'
@@ -341,6 +358,7 @@ request:
 <i18n lang="yaml" locale="fr">
 error:
   attachment:
+    ongoing: 'En attente de la fin du téléchargement des fichiers. Veuillez réessayer plus tard.'
     default: 'Fichier non autorisé'
     duplicate: 'Fichier déjà existant'
     filter: 'Type de fichier non autorisé'
