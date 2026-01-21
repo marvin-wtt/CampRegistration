@@ -3,9 +3,9 @@ import type { SimpleJob } from '#core/queue/Queue';
 
 const registry = new Map<string, MailableCtor<unknown>>();
 
-export function registerMailable(ctor: MailableCtor<unknown>) {
+export function registerMailable<P>(ctor: MailableCtor<P>) {
   if (!registry.has(ctor.type)) {
-    registry.set(ctor.type, ctor);
+    registry.set(ctor.type, ctor as MailableCtor<unknown>);
     return;
   }
 
@@ -24,3 +24,9 @@ export function createMailableFromJob(
 
   return new ctor(job.payload);
 }
+
+export const mailRegistry = {
+  register: registerMailable,
+};
+
+export default mailRegistry;
