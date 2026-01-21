@@ -31,6 +31,7 @@ type PickIds<T> = {
 
 type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
+// Relational fields for where input fields
 const fileRelationIdFieldsNull = Prisma.dmmf.datamodel.models
   .find((value) => value.name === 'File')
   ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
@@ -40,6 +41,7 @@ const fileRelationIdFieldsNull = Prisma.dmmf.datamodel.models
     return acc;
   }, {}) as PickIds<Prisma.FileWhereInput>;
 
+// Relational fields for create input fields
 const fileRelationIdFieldsUndefined = Prisma.dmmf.datamodel.models
   .find((value) => value.name === 'File')
   ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))

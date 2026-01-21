@@ -24,9 +24,3 @@ export function createMailableFromJob(
 
   return new ctor(job.payload);
 }
-
-export const mailRegistry = {
-  register: registerMailable,
-};
-
-export default mailRegistry;

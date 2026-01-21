@@ -18,7 +18,7 @@ import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 
 function dateToString(date: Date | string | null): string | null {
-  if (!date) {
+  if (date === null) {
     return date;
   }
   return typeof date === 'string' ? date : date.toISOString();
@@ -224,8 +224,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         locale: this.payload.registration.locale,
         room: null,
         // Use snake case because form keys should be snake case too
-        updatedAt: this.payload.registration.updatedAt ?? null,
-        createdAt: this.payload.registration.createdAt,
+        updatedAt: dateToString(this.payload.registration.updatedAt),
+        createdAt: dateToString(this.payload.registration.createdAt),
       },
     };
   }
