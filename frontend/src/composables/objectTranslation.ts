@@ -1,13 +1,37 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 
+const countryLangMap: Record<string, string> = {
+  cz: 'cs',
+} as const;
+
+function normalizeLocale(loc: string): string {
+  if (loc.length === 5 && loc.charAt(2) === '-') {
+    return loc.slice(0, 2);
+  }
+
+  return countryLangMap[loc] ?? loc;
+}
+
+function pickTranslation(
+  value: Record<string, string>,
+  locale: string,
+  fallbackLocale: string,
+): string {
+  const tryLoc = (loc: string) => value[loc] ?? value[normalizeLocale(loc)];
+
+  return (
+    tryLoc(locale) ?? tryLoc(fallbackLocale) ?? Object.values(value)[0] ?? ''
+  );
+}
+
 export function useObjectTranslation() {
   const { locale, fallbackLocale } = useI18n({
     useScope: 'global',
   });
 
   function to(value: string | Record<string, string> | undefined): string {
-    if (value === undefined) {
+    if (value === undefined || value == null) {
       return '';
     }
 
@@ -16,26 +40,10 @@ export function useObjectTranslation() {
     }
 
     return computed<string>(() => {
-      if (locale.value in value) {
-        return value[locale.value]!;
-      }
+      const fallback =
+        typeof fallbackLocale.value === 'string' ? fallbackLocale.value : 'en';
 
-      const shortLocale = locale.value.split('-')[0]!;
-      if (shortLocale in value) {
-        return value[shortLocale]!;
-      }
-
-      const fallback = fallbackLocale.value as string;
-      if (fallback in value) {
-        return value[fallback]!;
-      }
-
-      const shortFallback = fallback.split('-')[0]!;
-      if (shortFallback in value) {
-        return value[shortFallback]!;
-      }
-
-      return Object.values(value)[0]!;
+      return pickTranslation(value, locale.value, fallback);
     }).value;
   }
 
