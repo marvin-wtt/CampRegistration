@@ -127,8 +127,6 @@ export class CampService extends BaseService {
     const fileIdMap = new Map<string, string>();
     const form = this.replaceFormFileUrls(data.form, fileIds, fileIdMap);
 
-    // TODO Create message-templates, table-templates and files in separate steps in transaction and move code to their service
-
     // Copy files from reference camp with new id
     const fileData = files.map((file) => ({
       ...file,
@@ -139,10 +137,19 @@ export class CampService extends BaseService {
       createdAt: undefined,
     }));
 
-    // TODO Copy entry instead
     const messageTemplateData = messageTemplates.map((template) => ({
       ...template,
-      attachments: undefined,
+      attachments: {
+        createMany: {
+          data:
+            template.attachments?.map((file) => ({
+              ...file,
+              id: undefined,
+              messageTemplateId: undefined,
+              createdAt: undefined,
+            })) ?? [],
+        },
+      },
     }));
 
     const camp = await this.prisma.camp.create({
