@@ -156,7 +156,8 @@ export class FileService extends BaseService {
   ) {
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
-      : file.filename;
+      : file.originalname;
+
     const fileData = this.mapFields(file, originalFileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
