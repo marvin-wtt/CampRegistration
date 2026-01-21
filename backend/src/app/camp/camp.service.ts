@@ -4,8 +4,6 @@ import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import type { AppConfig } from '#config/index';
 import { BaseService } from '#core/base/BaseService';
-import { filterByKeys } from '#utils/object';
-import { type TCountryCode, getCountryData } from 'countries-list';
 import { injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 
@@ -141,19 +139,7 @@ export class CampService extends BaseService {
       createdAt: undefined,
     }));
 
-    const languages = data.countries
-      .map((code): TCountryCode => code.toUpperCase() as TCountryCode)
-      .map(getCountryData)
-      .flatMap((country) => country.languages);
-
-    // Only keep message templates for the countries of the camp
-    // Other languages can't be edited by the user
-    messageTemplates = messageTemplates.map((template) => ({
-      ...template,
-      subject: filterByKeys(template.subject, languages),
-      body: filterByKeys(template.body, languages),
-    }));
-
+    // TODO Copy entry instead
     const messageTemplateData = messageTemplates.map((template) => ({
       ...template,
       attachments: undefined,

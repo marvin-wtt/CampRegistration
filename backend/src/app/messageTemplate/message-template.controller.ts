@@ -3,14 +3,8 @@ import validator from './message-template.validation.js';
 import { MessageTemplateService } from './message-template.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import {
-  MessageTemplateCollection,
-  type MessageTemplateDefault,
-  MessageTemplateDefaultResource,
-  MessageTemplateResource,
-} from '#app/messageTemplate/message-template.resource';
+import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
 import { BaseController } from '#core/base/BaseController';
-import defaultTemplates from '#assets/camp/messageTemplates';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -32,7 +26,7 @@ export class MessageTemplateController extends BaseController {
   async index(req: Request, res: Response) {
     const {
       params: { campId },
-      query: { includeDefaults, hasEvent },
+      query: { hasEvent },
     } = await req.validate(validator.index);
 
     let templates =
@@ -42,47 +36,34 @@ export class MessageTemplateController extends BaseController {
       templates = templates.filter((template) => !!template.event === hasEvent);
     }
 
-    const defaults: MessageTemplateDefault[] =
-      includeDefaults === true
-        ? defaultTemplates.filter(
-            ({ event }) => !templates.find((t) => t.event === event),
-          )
-        : [];
-
     res
       .status(httpStatus.OK)
-      .resource(
-        new MessageTemplateCollection([
-          ...MessageTemplateResource.collection(templates).entries(),
-          ...MessageTemplateDefaultResource.collection(defaults).entries(),
-        ]),
-      );
+      .resource(MessageTemplateResource.collection(templates));
   }
 
   async store(req: Request, res: Response) {
     const {
       params: { campId },
-      body: { event, subject, body, priority, attachmentIds },
+      body: { country, event, subject, body, priority, attachmentIds },
     } = await req.validate(validator.store);
 
     // Duplicate events for the same camp are not allowed
-    if (event) {
-      const existing =
-        await this.messageTemplateService.getMessageTemplateByName(
-          event,
-          campId,
-        );
-      if (existing) {
-        throw new ApiError(
-          httpStatus.CONFLICT,
-          'Message template already exists',
-        );
-      }
+    const existing = await this.messageTemplateService.getMessageTemplateByName(
+      campId,
+      event,
+      country,
+    );
+
+    if (existing) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'Message template already exists',
+      );
     }
 
     const template = await this.messageTemplateService.createTemplate(
       campId,
-      { event, subject, body, priority, attachmentIds },
+      { event, country, subject, body, priority, attachmentIds },
       req.sessionId,
     );
 

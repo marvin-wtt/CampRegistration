@@ -1,4 +1,4 @@
-import { JsonResource, ResourceCollection } from '#core/resource/JsonResource';
+import { JsonResource } from '#core/resource/JsonResource';
 import type { MessageTemplate, File } from '@prisma/client';
 import type { MessageTemplate as MessageTemplateData } from '@camp-registration/common/entities';
 import { FileResource } from '#app/file/file.resource';
@@ -14,6 +14,7 @@ export class MessageTemplateResource extends JsonResource<
   transform(): MessageTemplateData {
     return {
       id: this.data.id,
+      country: this.data.country ?? null,
       event: this.data.event ?? null,
       subject: this.data.subject,
       body: this.data.body,
@@ -25,36 +26,3 @@ export class MessageTemplateResource extends JsonResource<
     };
   }
 }
-
-export type MessageTemplateDefault = Pick<
-  MessageTemplate,
-  'body' | 'subject'
-> & {
-  event: string;
-};
-
-export class MessageTemplateDefaultResource extends JsonResource<
-  MessageTemplateDefault,
-  MessageTemplateData
-> {
-  transform(): MessageTemplateData {
-    return {
-      id: null,
-      event: this.data.event,
-      subject: this.data.subject,
-      body: this.data.body,
-      priority: 'normal',
-      replyTo: null,
-      attachments: null,
-      updatedAt: null,
-      createdAt: null,
-    };
-  }
-}
-
-// Common resource as generic types somehow don't work with the collect method
-export class MessageTemplateCollection extends ResourceCollection<
-  MessageTemplate | MessageTemplateDefault,
-  MessageTemplateData,
-  MessageTemplateResource | MessageTemplateDefaultResource
-> {}

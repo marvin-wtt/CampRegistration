@@ -1,3 +1,5 @@
+import { getCountryData, type TCountryCode } from 'countries-list';
+
 const messageTemplatesObj = {
   registration_submitted: {
     includeOnCreate: true,
@@ -188,12 +190,37 @@ const messageTemplatesObj = {
   },
 };
 
-export const messageTemplates = Object.entries(messageTemplatesObj).map(
-  ([event, { subject, body }]) => ({
-    subject,
-    body,
+const languageCodes = ['en', 'de', 'fr', 'pl', 'cs'] as const;
+type Code = (typeof languageCodes)[number];
+
+export function defaultMessageTemplatesForCountries(countries: string[]) {
+  return countries.flatMap((country) => {
+    let code = getCountryData(country as TCountryCode).languages.find(
+      (code): code is Code => {
+        return languageCodes.includes(code as Code);
+      },
+    );
+
+    // Always fall back to English
+    code ??= 'en';
+
+    return Object.entries(messageTemplatesObj).map(
+      ([event, { subject, body }]) => ({
+        event,
+        country,
+        subject: subject[code],
+        body: body[code],
+      }),
+    );
+  });
+}
+
+export const messageTemplates = languageCodes.map((code) =>
+  Object.entries(messageTemplatesObj).map(([event, { subject, body }]) => ({
     event,
-  }),
+    subject: subject[code],
+    body: body[code],
+  })),
 );
 
 export default messageTemplates;

@@ -98,7 +98,7 @@ const mdConverter = createMarkdownConverter();
 registerSurveyTheme(SurveyTheme);
 registerCreatorTheme(SurveyCreatorTheme);
 
-surveyLocalization.supportedLocales = ['en', ...props.camp.countries];
+surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
 const creator = new SurveyCreatorModel(creatorOptions);
 

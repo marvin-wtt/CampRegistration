@@ -42,11 +42,16 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
-  async getMessageTemplateByName(event: string, campId: string) {
+  async getMessageTemplateByName(
+    campId: string,
+    event: string,
+    country?: string,
+  ) {
     return this.prisma.messageTemplate.findFirst({
       where: {
         campId,
         event,
+        country,
       },
       include: {
         attachments: true,
@@ -64,6 +69,7 @@ export class MessageTemplateService extends BaseService {
     return this.prisma.messageTemplate.create({
       data: {
         event: data.event,
+        country: data.country,
         subject: data.subject,
         body: data.body,
         priority: data.priority,

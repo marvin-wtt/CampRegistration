@@ -11,6 +11,10 @@ if (!packageDir) {
   throw new Error('Could not determine the root path of the package.');
 }
 
+export function rootPath(...paths: string[]) {
+  return path.resolve(projectRoot, '..', ...paths);
+}
+
 export function appPath(...paths: string[]) {
   return path.resolve(projectRoot, ...paths);
 }
@@ -21,5 +25,3 @@ export function appBuildPath(...paths: string[]) {
 
 // Ensure that the type is string only
 const projectRoot = packageDir;
-
-export default projectRoot;

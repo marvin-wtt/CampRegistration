@@ -240,13 +240,12 @@ model Message {
 model MessageTemplate {
   id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
   campId    String    @map("camp_id") @db.Char(26)
+  country   String?
   event     String?
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
-  /// ![string | Record<string, string>]
-  subject   Json
-  /// ![string | Record<string, string>]
-  body      Json
+  subject   String
+  body      String    @db.MediumText
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
@@ -254,6 +253,8 @@ model MessageTemplate {
   messages    Message[]
   attachments File[]
 
+
+  @@unique([country, event, campId], map: "message_templates_country_event_camp_id_unique")
   @@map("message_templates")
 }
 

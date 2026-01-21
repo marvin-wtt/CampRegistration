@@ -301,10 +301,16 @@ type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
 async function loadMessageTemplate(
   campId: string,
   event: string,
+  country?: string | null,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
-    return await messageTemplateService.getMessageTemplateByName(event, campId);
+
+    return await messageTemplateService.getMessageTemplateByName(
+      campId,
+      event,
+      country ?? undefined,
+    );
   } catch (error) {
     logger.error(error);
     return null;
@@ -320,7 +326,11 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     camp: Camp,
     registration: Registration,
   ): Promise<void> {
-    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    const messageTemplate = await loadMessageTemplate(
+      camp.id,
+      this.event,
+      registration.country,
+    );
     if (!messageTemplate) {
       logger.debug(
         `No message template for event ${this.event} and camp ${camp.id}`,
