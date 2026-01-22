@@ -1071,7 +1071,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail,
+          replyTo: camp.contactEmail as string,
           subject: 'Registration confirmed',
         });
       });
@@ -1092,12 +1092,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail,
+          replyTo: camp.contactEmail as string,
         });
 
         expectEmailWith({
           to: data.emailGuardian,
-          replyTo: camp.contactEmail,
+          replyTo: camp.contactEmail as string,
         });
       });
 
@@ -1116,7 +1116,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // TODO Assert correct language
         expectEmailWith({
-          to: camp.contactEmail,
+          to: camp.contactEmail as string,
           replyTo: expect.arrayContaining([data.email]),
         });
       });
@@ -1541,7 +1541,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail,
+          replyTo: camp.contactEmail as string,
           subject: 'Registration updated',
         });
       });
@@ -1607,7 +1607,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expectEmailCount(1);
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail,
+          replyTo: camp.contactEmail as string,
           subject: 'Registration accepted',
         });
       });
