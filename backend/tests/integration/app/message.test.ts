@@ -15,6 +15,7 @@ import { messageCreateBody } from './fixtures/message.fixture.js';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
+import { Registration } from '@prisma/client';
 
 const crateCampWithManager = async (
   campCreateData?: Parameters<(typeof CampFactory)['create']>[0],
@@ -71,7 +72,7 @@ describe('/api/v1/camps/:campId/messages', () => {
       expected: {
         body: string;
         subject: string;
-        priority: 'high' | 'normal' | 'low';
+        priority: string;
         emails: string[];
         replyTo: string | string[];
       }[],
@@ -107,7 +108,7 @@ describe('/api/v1/camps/:campId/messages', () => {
             subject: expect.stringContaining(entry.subject),
             html: expect.stringContaining(entry.body),
             replyTo: entry.replyTo,
-            priority: entry.priority,
+            priority: entry.priority as 'high' | 'normal' | 'low',
           });
         }
       }
@@ -160,8 +161,8 @@ describe('/api/v1/camps/:campId/messages', () => {
             `Hello ${registrationA.data.first_name}, the min age is ${camp.minAge}. ` +
             `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
           priority: 'high',
-          replyTo: camp.contactEmail,
-          emails: registrationA.emails,
+          replyTo: camp.contactEmail as string,
+          emails: registrationA.emails!,
         },
         {
           subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name}`,
@@ -169,8 +170,8 @@ describe('/api/v1/camps/:campId/messages', () => {
             `Hello ${registrationB.data.first_name}, the min age is ${camp.minAge}. ` +
             `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
           priority: 'high',
-          replyTo: camp.contactEmail,
-          emails: registrationB.emails,
+          replyTo: camp.contactEmail as string,
+          emails: registrationB.emails!,
         },
       ]);
     });
@@ -227,28 +228,31 @@ describe('/api/v1/camps/:campId/messages', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
+      const campAttribute = <T extends string | number>(
+        attr: T | Record<string, T> | null,
+        locale: string,
+      ): T => {
+        if (typeof attr !== 'object' || attr === null) {
+          throw new Error('Expected attribute to be an object');
+        }
+        return attr[locale];
+      };
+
+      const createExpectedResult = (
+        registration: Registration,
+        locale: string,
+      ) => ({
+        subject: `Hi, ${registration.data.first_name}, welcome to ${campAttribute(camp.name, locale)}`,
+        body: `Hello ${registration.data.first_name}, ${campAttribute(camp.organizer, locale)} ${campAttribute(camp.location, locale)} ${campAttribute(camp.maxParticipants, locale).toString()}`,
+        priority: 'normal',
+        replyTo: campAttribute(camp.contactEmail, locale),
+        emails: registration.emails!,
+      });
+
       await assertMessages(body.data.id, [
-        {
-          subject: `Hi, ${registrationA.data.first_name}, welcome to ${camp.name['de']}`,
-          body: `Hello ${registrationA.data.first_name}, ${camp.organizer['de']} ${camp.location['de']} ${camp.maxParticipants['de']}`,
-          priority: 'normal',
-          replyTo: camp.contactEmail['de'],
-          emails: registrationA.emails,
-        },
-        {
-          subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name['fr']}`,
-          body: `Hello ${registrationB.data.first_name}, ${camp.organizer['fr']} ${camp.location['fr']} ${camp.maxParticipants['fr']}`,
-          priority: 'normal',
-          replyTo: camp.contactEmail['fr'],
-          emails: registrationB.emails,
-        },
-        {
-          subject: `Hi, ${registrationC.data.first_name}, welcome to ${camp.name['de']}`,
-          body: `Hello ${registrationC.data.first_name}, ${camp.organizer['de']} ${camp.location['de']} ${camp.maxParticipants['de']}`,
-          priority: 'normal',
-          replyTo: camp.contactEmail['de'],
-          emails: registrationC.emails,
-        },
+        createExpectedResult(registrationA, 'de'),
+        createExpectedResult(registrationB, 'fr'),
+        createExpectedResult(registrationC, 'de'),
       ]);
     });
 
@@ -300,10 +304,18 @@ describe('/api/v1/camps/:campId/messages', () => {
       expect(body.data.attachments).toHaveLength(2);
 
       const files = await prisma.file.findMany({
-        where: { messageTemplateId: body.data.id },
+        where: {
+          message: {
+            templateId: body.data.id,
+          },
+        },
       });
 
       expect(files.length).toBe(2);
+
+      expectEmailWith({
+        to: 'test@example.com',
+      });
     });
 
     it('should respond with `400` status code with invalid attachments', async () => {
