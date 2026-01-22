@@ -22,7 +22,7 @@ const store = z.object({
   }),
   body: z.object({
     data: RegistrationDataSchema,
-    locale: LocaleSchema.optional(),
+    locale: LocaleSchema.nullable().optional(),
   }),
 });
 
