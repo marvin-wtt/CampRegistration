@@ -1,5 +1,4 @@
 import { create, type ExpressHandlebars } from 'express-handlebars';
-import i18n from '#core/i18n';
 import path from 'path';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
@@ -24,7 +23,7 @@ export class MailRenderer {
   private readonly viewEngine: ExpressHandlebars;
   private readonly viewsPath: string;
 
-  constructor(t: Translator = i18n.t, tg: Translator = i18n.t) {
+  constructor(t: Translator, tg: Translator) {
     this.viewsPath = appBuildPath('views', 'emails');
 
     this.viewEngine = create({

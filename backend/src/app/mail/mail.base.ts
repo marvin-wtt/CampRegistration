@@ -130,7 +130,7 @@ export abstract class MailBase<P> {
     envelope: Envelope,
     content: Content,
   ): Promise<string | undefined> {
-    const renderer = new MailRenderer(this.getT());
+    const renderer = new MailRenderer(this.getT(), this.getTg());
 
     if ('html' in content) {
       return renderer.renderContent({
