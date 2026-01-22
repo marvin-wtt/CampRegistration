@@ -16,7 +16,7 @@ import { MailRenderer } from '#app/mail/mail.renderer';
 import { MailService } from '#app/mail/mail.service';
 import { htmlToText } from 'html-to-text';
 import logger from '#core/logger';
-import { registerMailable } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#app/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
 
 export interface MailableCtor<P> {
@@ -174,7 +174,13 @@ export abstract class MailBase<P> {
   }
 
   static async enqueue<P>(this: MailableCtor<P>, payload: P): Promise<void> {
-    registerMailable(this as MailableCtor<unknown>);
+    const mailableRegistry = resolve(MailableRegistry);
+    if (!mailableRegistry.has(this)) {
+      logger.error(
+        `Mailable ${this.type} not manually registered. Using auto-registration.`,
+      );
+      mailableRegistry.register(this);
+    }
 
     const mailService = resolve(MailService);
 

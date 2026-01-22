@@ -5,7 +5,7 @@ import type { IMailer } from '#app/mail/mailer.types';
 import type { MailableCtor, MailBase } from '#app/mail/mail.base';
 import type { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
-import { createMailableFromJob } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#app/mail/mail.registry';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -13,7 +13,10 @@ export class MailService {
   private mailer: IMailer;
   private queue: Queue<unknown>;
 
-  constructor(@inject(QueueManager) queueManager: QueueManager) {
+  constructor(
+    @inject(MailableRegistry) mailableRegistry: MailableRegistry,
+    @inject(QueueManager) queueManager: QueueManager,
+  ) {
     // Use the noop mailer as default to support operation without mail server
     this.mailer = new NoOpMailer();
 
@@ -26,7 +29,7 @@ export class MailService {
     });
 
     this.queue.process(async (job) => {
-      await this.sendMail(createMailableFromJob(job));
+      await this.sendMail(mailableRegistry.createFromJob(job));
     });
   }
 
