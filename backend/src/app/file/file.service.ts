@@ -128,6 +128,7 @@ export class FileService extends BaseService {
         data: files.map((file) => ({
           ...file,
           ...this.getUnassignedModelArgs(),
+          id: undefined,
         })),
       },
     };
