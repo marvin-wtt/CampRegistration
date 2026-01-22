@@ -50,6 +50,7 @@ export class MailRenderer {
       context: {
         body: options.body,
         footer: options.reason,
+        reason: options.reason,
       },
     });
   }
