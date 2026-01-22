@@ -4,12 +4,12 @@ import path from 'path';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
 import type { Envelope, Translator } from '#app/mail/mail.types';
-import { addressLikeToString } from '#app/mail/mail.utils';
+import { addressLikeToString } from '#app/mail/mail.utils.js';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;
   body: string;
-  footer?: string | undefined;
+  reason?: string | undefined;
 }
 
 interface RenderFileOptions {
@@ -24,14 +24,14 @@ export class MailRenderer {
   private readonly viewEngine: ExpressHandlebars;
   private readonly viewsPath: string;
 
-  constructor(t: Translator = i18n.t) {
+  constructor(t: Translator = i18n.t, tg: Translator = i18n.t) {
     this.viewsPath = appBuildPath('views', 'emails');
 
     this.viewEngine = create({
       partialsDir: this.getViewDirectory('partials'),
       layoutsDir: this.getViewDirectory('layouts'),
       defaultLayout: undefined,
-      helpers: { t },
+      helpers: { t, tg },
     });
   }
 
@@ -49,8 +49,7 @@ export class MailRenderer {
       envelope: options.envelope,
       context: {
         body: options.body,
-        footer: options.footer,
-        email: addressLikeToString(options.envelope.to),
+        footer: options.reason,
       },
     });
   }
@@ -68,6 +67,17 @@ export class MailRenderer {
       subject: options.envelope.subject,
       ...options.context,
       ...globalContext,
+      envelope: simplifyEnvelope(options.envelope),
     });
   }
+}
+
+function simplifyEnvelope(envelope: Envelope): {
+  to: string;
+  subject: string;
+} {
+  return {
+    to: addressLikeToString(envelope.to),
+    subject: envelope.subject,
+  };
 }

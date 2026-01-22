@@ -38,6 +38,11 @@ abstract class RegistrationMessage<
     return this.payload.registration.locale;
   }
 
+  protected reason(): string {
+    // Use global namespace as the keyPrefix might be overwritten by implementation
+    return this.getTg()('registration:email.reason');
+  }
+
   static async enqueueMany<P>(
     this: MailableCtor<P>,
     payloads: Iterable<P> | Promise<Iterable<P>>,

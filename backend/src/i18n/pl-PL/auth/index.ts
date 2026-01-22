@@ -11,7 +11,7 @@ export default {
         accidental:
           'Jeśli nie prosiłeś(-aś) o reset hasła, zignoruj tę wiadomość.',
         greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół $t(appName)',
+        teamName: 'Zespół {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) poproszono o ustawienie nowego hasła.',
@@ -29,7 +29,7 @@ export default {
         accidental:
           'Jeśli nie zakładałeś(-aś) konta, nie klikaj w link i skontaktuj się z nami.',
         greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół $t(appName)',
+        teamName: 'Zespół {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) utworzono konto.',

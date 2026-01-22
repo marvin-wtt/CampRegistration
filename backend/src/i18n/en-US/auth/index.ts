@@ -11,7 +11,7 @@ export default {
         accidental:
           'If you did not request a password reset, you can ignore this email.',
         greeting: 'Best regards,',
-        teamName: '$t(appName) team',
+        teamName: '{{ appName }} team',
       },
       footer: {
         cause: '$t(email:footer.cause) you have requested a new password.',
@@ -29,7 +29,7 @@ export default {
         accidental:
           'If you did not create an account, please do not click the link and contact us.',
         greeting: 'Best regards,',
-        teamName: '$t(appName) team',
+        teamName: '{{ appName }} team',
       },
       footer: {
         cause: '$t(email:footer.cause) you created an account.',

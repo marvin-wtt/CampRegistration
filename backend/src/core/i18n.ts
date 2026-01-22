@@ -6,6 +6,7 @@ export const initI18n = async () => {
     resources,
     debug: false,
     fallbackLng: 'en',
+    ns: ['email'],
   });
 
   await i18next.changeLanguage('en');

@@ -11,7 +11,7 @@ export default {
           'Andernfalls erstelle bitte zuerst ein kostenloses Konto.',
         button: 'Camp verwalten',
         greeting: 'Viele Grüße,',
-        teamName: '$t(appName) Team',
+        teamName: '{{ appName }} Team',
       },
       footer: {
         cause:

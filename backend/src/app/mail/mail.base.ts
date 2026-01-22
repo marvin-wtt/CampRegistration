@@ -30,6 +30,7 @@ export interface MailableCtor<P> {
 
 export abstract class MailBase<P> {
   private t?: Translator;
+  private tg?: Translator;
   private config: AppConfig;
 
   constructor(protected readonly payload: P) {
@@ -52,6 +53,16 @@ export abstract class MailBase<P> {
       this.t = i18n.getFixedT(locale, namespace, keyPrefix);
     }
     return this.t;
+  }
+
+  public getTg(): Translator {
+    if (!this.tg) {
+      const locale = this.locale() ?? i18n.language;
+
+      this.tg = i18n.getFixedT(locale);
+    }
+
+    return this.tg;
   }
 
   protected abstract to(): AddressLike; // required
@@ -111,17 +122,21 @@ export abstract class MailBase<P> {
 
   protected abstract content(): Content | Promise<Content>;
 
+  protected reason(): string {
+    return '';
+  }
+
   private async render(
     envelope: Envelope,
     content: Content,
   ): Promise<string | undefined> {
-    const renderer = new MailRenderer(this.t);
+    const renderer = new MailRenderer(this.getT());
 
     if ('html' in content) {
       return renderer.renderContent({
         body: content.html,
         envelope,
-        footer: '', // TODO Where should this come from?
+        reason: this.reason(),
       });
     }
 
