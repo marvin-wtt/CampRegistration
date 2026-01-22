@@ -31,7 +31,8 @@ type PickIds<T> = {
 
 type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
-const fileRelationIdFields = Prisma.dmmf.datamodel.models
+// Relational fields for where input fields
+const fileRelationIdFieldsNull = Prisma.dmmf.datamodel.models
   .find((value) => value.name === 'File')
   ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
   .reduce<Record<string, null>>((acc, val) => {
@@ -39,6 +40,16 @@ const fileRelationIdFields = Prisma.dmmf.datamodel.models
     acc[fieldName] = null;
     return acc;
   }, {}) as PickIds<Prisma.FileWhereInput>;
+
+// Relational fields for create input fields
+const fileRelationIdFieldsUndefined = Prisma.dmmf.datamodel.models
+  .find((value) => value.name === 'File')
+  ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
+  .reduce<Record<string, undefined>>((acc, val) => {
+    const fieldName = val.name;
+    acc[fieldName] = undefined;
+    return acc;
+  }, {}) as PickIds<Prisma.FileCreateManyInput>;
 
 @injectable()
 export class FileService extends BaseService {
@@ -111,8 +122,23 @@ export class FileService extends BaseService {
     };
   }
 
+  public getFileCreateManyInput(files: File[]) {
+    return {
+      createMany: {
+        data: files.map((file) => ({
+          ...file,
+          ...this.getUnassignedModelArgs(),
+        })),
+      },
+    };
+  }
+
   public getUnreferencedModelArgs() {
-    return fileRelationIdFields;
+    return fileRelationIdFieldsNull;
+  }
+
+  public getUnassignedModelArgs() {
+    return fileRelationIdFieldsUndefined;
   }
 
   async syncFilesForOwner(
@@ -308,7 +334,7 @@ export class FileService extends BaseService {
 
     const files = await this.prisma.file.findMany({
       where: {
-        ...fileRelationIdFields,
+        ...fileRelationIdFieldsNull,
         createdAt: { lt: minAge },
       },
       select: {

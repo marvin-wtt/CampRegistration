@@ -54,6 +54,8 @@ class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
       await new Promise((resolve) => setTimeout(resolve, options.delay));
     }
 
+    payload = JSON.parse(JSON.stringify(payload));
+
     await this.handler({ name, payload });
   }
 
