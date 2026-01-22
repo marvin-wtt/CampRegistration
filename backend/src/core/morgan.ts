@@ -28,7 +28,7 @@ export const successHandler = morgan(successResponseFormat, {
   stream: { write: (message) => logger.info(message.trim()) },
 });
 
-export const clientErrorHandler = morgan(successResponseFormat, {
+export const clientErrorHandler = morgan(errorResponseFormat, {
   skip: (_req, res) => isTest || res.statusCode < 400 || res.statusCode >= 500,
   stream: { write: (message) => logger.warn(message.trim()) },
 });
