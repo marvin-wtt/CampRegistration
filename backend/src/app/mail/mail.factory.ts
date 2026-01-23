@@ -3,7 +3,7 @@ import type { IMailer } from '#app/mail/mailer.types';
 import { NoOpMailer } from '#app/mail/noop.mailer';
 
 export class MailFactory {
-  // Mailers that are used in descending order
+  // Available mailer drivers
   private mailers: Record<string, new () => IMailer> = {
     smtp: NodeMailer,
     noop: NoOpMailer,
