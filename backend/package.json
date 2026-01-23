@@ -8,6 +8,7 @@
     "clean": "rimraf ./build/ && rimraf ./node_modules/",
     "build": "prisma generate && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
     "build:views": "mkdirp ./build/views/emails/ && mjml src/views/emails/**/*.mjml -o ./build/views/emails/",
+    "data-miration:message-templates": "tsx prisma/migrations/20260121175357_update_message_templates_add_country_column/migration.ts",
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
     "db:reset": "npx prisma db push --force-reset --accept-data-loss",
