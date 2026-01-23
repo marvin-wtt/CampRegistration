@@ -17,7 +17,7 @@ export class MailService {
     @inject(MailableRegistry) mailableRegistry: MailableRegistry,
     @inject(QueueManager) queueManager: QueueManager,
   ) {
-    // Use the noop mailer as default to support operation without mail server
+    // Create mailer based on configured driver (defaults to 'smtp' per config schema)
     const factory = new MailFactory();
     this.mailer = factory.createMailer(config.email.driver);
     logger.info(`Using mailer: ${this.mailer.name()}`);
