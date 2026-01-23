@@ -35,6 +35,8 @@ import {
   campWithAddress,
   campWithMultipleFilesRequired,
   campWithAddressCampDataTypes,
+  campWithEmailAndCountry,
+  campWithEmailSingleCountry,
 } from './fixtures/registration.fixtures.js';
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
@@ -1026,16 +1028,23 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
-      it('should respond with 201 status code when message template is missing', async () => {
+      it('should not send a message when message template for group is missing', async () => {
         const camp = await CampFactory.create({
-          ...campWithEmail,
-          messageTemplates: {},
+          ...campWithEmailAndCountry,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_confirmed',
+              subject: 'Registration confirmed',
+              country: 'de',
+            }),
+          },
         });
 
         const data = {
           email: 'test@example.com',
           first_name: 'Jhon',
           last_name: 'Doe',
+          country: 'fr',
         };
 
         await request()
@@ -1044,16 +1053,45 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(201);
       });
 
-      it('should send a confirmation email to the user', async () => {
+      it('should send a confirmation email to the user with country', async () => {
         const camp = await CampFactory.create({
-          ...campWithEmail,
+          ...campWithEmailAndCountry,
           messageTemplates: {
             create: MessageTemplateFactory.build({
               event: 'registration_confirmed',
-              subject: {
-                en: 'Registration confirmed',
-                es: 'Something in spanish',
-              },
+              subject: 'Registration confirmed',
+              country: 'fr',
+            }),
+          },
+        });
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+          country: 'fr',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail as string,
+          subject: 'Registration confirmed',
+        });
+      });
+
+      it('should send a confirmation email to the user without country in national camp', async () => {
+        const camp = await CampFactory.create({
+          ...campWithEmailSingleCountry,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_confirmed',
+              subject: 'Registration confirmed',
+              country: 'fr',
             }),
           },
         });
@@ -1168,10 +1206,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               event: 'registration_waitlisted',
-              subject: {
-                en: 'Registration on waiting list',
-                es: 'Something in spanish',
-              },
+              subject: 'Registration on waiting list',
             }),
           },
         });
@@ -1552,11 +1587,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               event: 'registration_updated',
+              country: 'fr',
               subject: 'Registration updated',
             }),
           },
         });
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(camp, {
+          country: 'bg',
+        });
 
         const data = {
           email: 'test@example.com',
@@ -1581,12 +1619,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               event: 'registration_waitlist_accepted',
+              country: 'fr',
               subject: 'Registration accepted',
             }),
           },
         });
         const registration = await createRegistration(camp, {
           waitingList: true,
+          country: 'fr',
         });
 
         const data = {
@@ -1863,15 +1903,26 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const { camp, accessToken } = await createCampWithManagerAndToken({
           ...campWithEmail,
           messageTemplates: {
-            create: MessageTemplateFactory.build({
-              event: 'registration_canceled',
-              subject: 'Registration canceled',
-            }),
+            createMany: {
+              data: [
+                MessageTemplateFactory.build({
+                  event: 'registration_canceled',
+                  country: 'us',
+                  subject: 'Oops',
+                }),
+                MessageTemplateFactory.build({
+                  event: 'registration_canceled',
+                  country: 'fr',
+                  subject: 'Registration canceled',
+                }),
+              ],
+            },
           },
         });
         const registration = await RegistrationFactory.create({
           camp: { connect: { id: camp.id } },
           emails: ['test@email.com'],
+          country: 'fr',
         });
         await request()
           .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
@@ -1895,12 +1946,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
             create: MessageTemplateFactory.build({
               event: 'registration_canceled',
               subject: 'Registration canceled',
+              country: 'fr',
             }),
           },
         });
         const registration = await RegistrationFactory.create({
           camp: { connect: { id: camp.id } },
           emails: ['test@email.com'],
+          country: 'fr',
         });
         await request()
           .delete(
