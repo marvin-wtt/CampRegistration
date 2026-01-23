@@ -14,6 +14,7 @@ const config = {
     verifyEmailExpirationMinutes: env.TOKEN_EXPIRATION_VERIFY_EMAIL,
   },
   email: {
+    driver: 'smtp',
     from: env.EMAIL_FROM,
     replyTo: env.EMAIL_REPLY_TO,
     admin: env.EMAIL_ADMIN,
