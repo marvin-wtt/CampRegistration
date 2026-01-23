@@ -195,11 +195,11 @@ type Code = (typeof languageCodes)[number];
 
 export function defaultMessageTemplatesForCountries(countries: string[]) {
   return countries.flatMap((country) => {
-    let code = getCountryData(country as TCountryCode).languages.find(
-      (code): code is Code => {
-        return languageCodes.includes(code.toLocaleLowerCase() as Code);
-      },
-    );
+    let code = getCountryData(
+      country.toUpperCase() as TCountryCode,
+    ).languages.find((code): code is Code => {
+      return languageCodes.includes(code.toLocaleLowerCase() as Code);
+    });
 
     // Always fall back to English
     code ??= 'en';
