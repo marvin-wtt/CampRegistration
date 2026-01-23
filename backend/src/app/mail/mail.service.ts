@@ -21,7 +21,7 @@ export class MailService {
       retryDelay: 1000 * 30,
       limit: {
         max: 49,
-        duration: 1000 * 60 * 30, // 5 minutes
+        duration: 1000 * 60 * 30, // 30 minutes
       },
     });
 

@@ -35,6 +35,7 @@ import {
   type PanelModel,
   type SurveyElement,
   type SurveyModel,
+  Serializer,
 } from 'survey-core';
 import SurveyCreatorTheme from 'survey-creator-core/themes';
 import { registerCreatorTheme } from 'survey-creator-core';
@@ -67,6 +68,23 @@ const { locale } = useI18n();
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
 
+function hideProperty(className: string, propertyName: string) {
+  const property = Serializer.getProperty(className, propertyName);
+  if (!property) {
+    // eslint-disable-next-line no-console
+    console.warn(`SurveyJS property not found: ${className}.${propertyName}`);
+    return;
+  }
+
+  property.visible = false;
+}
+
+hideProperty('survey', 'cookieName');
+hideProperty('survey', 'completedBeforeHtml');
+hideProperty('survey', 'readOnly');
+hideProperty('survey', 'partialSendEnabled');
+hideProperty('survey', 'questionOrder');
+
 // Add localization
 for (const [locale, sections] of Object.entries(
   surveyCreatorCustomLocaleConfig,
@@ -98,6 +116,7 @@ const mdConverter = createMarkdownConverter();
 registerSurveyTheme(SurveyTheme);
 registerCreatorTheme(SurveyCreatorTheme);
 
+// TODO Use translations instead if countries
 surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
 const creator = new SurveyCreatorModel(creatorOptions);

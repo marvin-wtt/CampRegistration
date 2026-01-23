@@ -11,7 +11,7 @@ export default {
         accidental:
           'Pokud jste nepožádali o obnovení hesla, tuto e-mailovou zprávu ignorujte.',
         greeting: 'S pozdravem,',
-        teamName: 'Tým $t(appName)',
+        teamName: 'Tým {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) požádali jste o nové heslo.',
@@ -29,7 +29,7 @@ export default {
         accidental:
           'Pokud jste si účet nevytvořili, na odkaz neklikejte a kontaktujte nás.',
         greeting: 'S pozdravem,',
-        teamName: 'Tým $t(appName)',
+        teamName: 'Tým {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) vytvořili jste účet.',

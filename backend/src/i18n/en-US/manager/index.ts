@@ -11,7 +11,7 @@ export default {
           'Otherwise, please create a free account first.',
         button: 'Manage Camp',
         greeting: 'Best regards,',
-        teamName: '$t(appName) team',
+        teamName: '{{ appName }} team',
       },
       footer: {
         cause: '$t(email:footer.cause) you were invited by another user.',
