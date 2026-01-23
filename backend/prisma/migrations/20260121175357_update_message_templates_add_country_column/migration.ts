@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.$transaction(async (tx) => {
     const templates = await tx.messageTemplate.findMany({
-      where: { campId: { not: null } },
       include: {
         camp: true,
         messages: {
@@ -24,6 +23,13 @@ async function main() {
         const subject = getTranslations(parseObject(template.subject), country);
         const body = getTranslations(parseObject(template.body), country);
 
+        if (!subject || !body) {
+          if (!!subject || !!body) {
+            throw new Error('Missing translations for country ' + country);
+          }
+          continue;
+        }
+
         const newTemplate = await tx.messageTemplate.create({
           data: {
             country,
@@ -34,6 +40,7 @@ async function main() {
             replyTo: template.replyTo,
             camp: { connect: { id: template.campId } },
             createdAt: template.createdAt,
+            updatedAt: template.updatedAt,
           },
         });
 
@@ -76,7 +83,7 @@ function parseObject(str: string): string | Record<string, string> {
 function getTranslations(
   obj: string | Record<string, string>,
   country: string,
-) {
+): string | undefined {
   if (typeof obj === 'string') {
     return obj;
   }
