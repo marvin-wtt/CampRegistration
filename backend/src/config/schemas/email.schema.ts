@@ -26,6 +26,6 @@ export const EmailEnvSchema = z.object({
     .stringbool()
     .describe('Encrypt the connection to the server')
     .default(true),
-  SMTP_USERNAME: z.string().describe('Username for email server'),
-  SMTP_PASSWORD: z.string().describe('Password for email server'),
+  SMTP_USERNAME: z.string().optional().describe('Username for email server'),
+  SMTP_PASSWORD: z.string().optional().describe('Password for email server'),
 });
