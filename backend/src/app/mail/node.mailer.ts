@@ -56,8 +56,8 @@ export class NodeMailer implements IMailer {
     });
   }
 
-  async isAvailable(): Promise<boolean> {
-    return this.transport.verify();
+  async verify(): Promise<void> {
+    await this.transport.verify();
   }
 
   close() {

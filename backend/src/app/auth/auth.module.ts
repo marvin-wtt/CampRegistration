@@ -7,11 +7,12 @@ import type {
 import { AuthRouter } from '#app/auth/auth.routes';
 import { AuthController } from '#app/auth/auth.controller';
 import { AuthService } from '#app/auth/auth.service';
-import { registerMailable } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#app/mail/mail.registry';
 import {
   ResetPasswordMessage,
   VerifyEmailMessage,
 } from '#app/auth/auth.messages';
+import { resolve } from '#core/ioc/container';
 
 export class AuthModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -20,8 +21,8 @@ export class AuthModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
-    registerMailable(VerifyEmailMessage);
-    registerMailable(ResetPasswordMessage);
+    resolve(MailableRegistry).register(VerifyEmailMessage);
+    resolve(MailableRegistry).register(ResetPasswordMessage);
   }
 
   registerRoutes(router: AppRouter): void {

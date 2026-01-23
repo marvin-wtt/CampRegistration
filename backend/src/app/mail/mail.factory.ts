@@ -1,24 +1,23 @@
 import { NodeMailer } from '#app/mail/node.mailer';
 import type { IMailer } from '#app/mail/mailer.types';
-import logger from '#core/logger';
+import { NoOpMailer } from '#app/mail/noop.mailer';
 
 export class MailFactory {
-  // Mailers that are used in descending order
-  private mailers: IMailer[] = [new NodeMailer()];
+  // Available mailer drivers
+  private mailers: Record<string, new () => IMailer> = {
+    smtp: NodeMailer,
+    noop: NoOpMailer,
+  };
 
-  async createMailer(): Promise<IMailer> {
-    for (const mailer of this.mailers) {
-      try {
-        if (await mailer.isAvailable()) {
-          return mailer;
-        }
-      } catch (error) {
-        logger.warn(
-          `Mailer ${mailer.name()} is not available: ${(error as Error).message}`,
-        );
-      }
+  createMailer(driver: string): IMailer {
+    if (driver in this.mailers) {
+      const cls = this.mailers[driver];
+
+      return new cls();
     }
 
-    throw new Error('No available mailer found');
+    throw new Error(
+      `Invalid mailer driver '${driver}'. Available: ${Object.keys(this.mailers).join(',')}`,
+    );
   }
 }

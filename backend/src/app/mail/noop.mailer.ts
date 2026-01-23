@@ -20,8 +20,8 @@ export class NoOpMailer implements IMailer {
       : converter(mails);
   }
 
-  public isAvailable(): boolean {
-    return true;
+  public verify(): void {
+    return;
   }
 
   public name(): string {

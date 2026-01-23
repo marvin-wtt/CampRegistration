@@ -1,10 +1,12 @@
-import type { AppModule } from '#core/base/AppModule';
+import type { AppModule, BindOptions } from '#core/base/AppModule';
 import { MailService } from '#app/mail/mail.service';
-import { container, resolve } from '#core/ioc/container';
+import { resolve } from '#core/ioc/container';
+import { MailableRegistry } from '#app/mail/mail.registry';
 
 export class MailModule implements AppModule {
-  bindContainers() {
-    container.bind(MailService).toSelf().inSingletonScope();
+  bindContainers(options: BindOptions) {
+    options.bind(MailableRegistry).toSelf().inSingletonScope();
+    options.bind(MailService).toSelf().inSingletonScope();
   }
 
   async configure() {

@@ -9,8 +9,9 @@ import { ManagerRouter } from '#app/manager/manager.routes';
 import type { ManagerPermission } from '@camp-registration/common/permissions';
 import { ManagerController } from '#app/manager/manager.controller';
 import { ManagerService } from '#app/manager/manager.service';
-import { registerMailable } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#app/mail/mail.registry';
 import { ManagerInvitationMessage } from '#app/manager/manager.messages';
+import { resolve } from '#core/ioc/container';
 
 export class ManagerModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -19,7 +20,7 @@ export class ManagerModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
-    registerMailable(ManagerInvitationMessage);
+    resolve(MailableRegistry).register(ManagerInvitationMessage);
   }
 
   registerRoutes(router: AppRouter): void {
