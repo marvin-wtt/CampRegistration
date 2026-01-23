@@ -244,15 +244,14 @@ model MessageTemplate {
   event     String?
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
-  subject   String
-  body      String    @db.MediumText
+  subject   String    @db.Text
+  body      String    @db.LongText
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
   camp        Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
   messages    Message[]
   attachments File[]
-
 
   @@unique([country, event, campId], map: "message_templates_country_event_camp_id_unique")
   @@map("message_templates")

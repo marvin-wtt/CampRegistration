@@ -6,8 +6,8 @@
 */
 -- AlterTable
 ALTER TABLE `message_templates` ADD COLUMN `country` VARCHAR(191) NULL,
-    MODIFY `subject` VARCHAR(191) NOT NULL,
-    MODIFY `body` MEDIUMTEXT NOT NULL;
+    MODIFY `subject` TEXT NOT NULL,
+    MODIFY `body` LONGTEXT NOT NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX `message_templates_country_event_camp_id_unique` ON `message_templates`(`country`, `event`, `camp_id`);
