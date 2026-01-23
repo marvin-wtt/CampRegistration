@@ -32,7 +32,11 @@ interface Props {
   data?: object;
   campDetails: CampDetails;
   files?: ServiceFile[];
-  submitFn: (id: string, formData: Record<string, unknown>) => Promise<void>;
+  submitFn: (
+    id: string,
+    formData: Record<string, unknown>,
+    locale: string,
+  ) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
   moderation?: boolean;
 }
@@ -156,7 +160,7 @@ function createModel(campId: string, form: object): SurveyModel {
     const registration = sender.data ?? {};
 
     try {
-      await props.submitFn(campId, registration);
+      await props.submitFn(campId, registration, sender.locale);
       options.showSaveSuccess();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e: unknown) {

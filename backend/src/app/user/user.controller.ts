@@ -69,7 +69,10 @@ export class UserController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const { userId } = req.params;
+    const {
+      params: { userId },
+    } = await req.validate(validator.destroy);
+
     await this.userService.deleteUserById(userId);
 
     res.sendStatus(httpStatus.NO_CONTENT);

@@ -11,12 +11,18 @@ import type {
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
 import Handlebars from 'handlebars';
-import { RegistrationResource } from '#app/registration/registration.resource';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
 import { MessageService } from '#app/message/message.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
+
+function dateToString(date: Date | string | null): string | null {
+  if (date === null) {
+    return date;
+  }
+  return typeof date === 'string' ? date : date.toISOString();
+}
 
 abstract class RegistrationMessage<
   T extends {
@@ -30,6 +36,11 @@ abstract class RegistrationMessage<
 
   protected locale(): string {
     return this.payload.registration.locale;
+  }
+
+  protected reason(): string {
+    // Use global namespace as the keyPrefix might be overwritten by implementation
+    return this.getTg()('registration:email.reason');
   }
 
   static async enqueueMany<P>(
@@ -140,7 +151,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   protected subject(): string | Promise<string> {
     let template = translateObject(
       this.payload.messageTemplate.subject,
-      this.locale(),
+      this.payload.registration.country ?? this.locale(),
     );
 
     template = template.trim();
@@ -194,9 +205,33 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         maxParticipants: translateObject(camp.maxParticipants, locale),
         location: translateObject(camp.location, locale),
       },
-      registration: new RegistrationResource(
-        this.payload.registration,
-      ).transform(),
+      registration: {
+        id: this.payload.registration.id,
+        waitingList: this.payload.registration.waitingList,
+        data: this.payload.registration.data,
+        computedData: {
+          firstName: this.payload.registration.firstName,
+          lastName: this.payload.registration.lastName,
+          dateOfBirth: dateToString(
+            this.payload.registration.dateOfBirth,
+          )?.split('T')[0],
+          gender: this.payload.registration.gender,
+          address: {
+            street: this.payload.registration.street,
+            city: this.payload.registration.city,
+            zipCode: this.payload.registration.zipCode,
+            country: this.payload.registration.country,
+          },
+          role: this.payload.registration.role,
+          emails: this.payload.registration.emails,
+        },
+        customData: this.payload.registration.customData ?? {},
+        locale: this.payload.registration.locale,
+        room: null,
+        // Use snake case because form keys should be snake case too
+        updatedAt: dateToString(this.payload.registration.updatedAt),
+        createdAt: dateToString(this.payload.registration.createdAt),
+      },
     };
   }
 
@@ -224,7 +259,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   protected content(): Content | Promise<Content> {
     const template = translateObject(
       this.payload.messageTemplate.body,
-      this.locale(),
+      this.payload.registration.country ?? this.locale(),
     );
 
     const compile = Handlebars.compile(template, {

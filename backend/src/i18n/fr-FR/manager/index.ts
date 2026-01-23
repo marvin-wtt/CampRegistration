@@ -11,7 +11,7 @@ export default {
           "Sinon, crée d'abord un compte gratuit.",
         button: 'Gérer le camp',
         greeting: 'Bien à toi,',
-        teamName: 'Équipe $t(appName)',
+        teamName: 'Équipe {{ appName }}',
       },
       footer: {
         cause:
