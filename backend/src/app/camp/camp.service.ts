@@ -4,8 +4,9 @@ import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import type { AppConfig } from '#config/index';
 import { BaseService } from '#core/base/BaseService';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
+import { FileService } from '#app/file/file.service.js';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: number | Record<string, number>;
@@ -23,7 +24,10 @@ type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 @injectable()
 export class CampService extends BaseService {
-  constructor(@Config() private readonly config: AppConfig) {
+  constructor(
+    @Config() private readonly config: AppConfig,
+    @inject(FileService) private readonly fileService: FileService,
+  ) {
     super();
   }
 
@@ -139,17 +143,10 @@ export class CampService extends BaseService {
 
     const messageTemplateData = messageTemplates.map((template) => ({
       ...template,
-      attachments: {
-        createMany: {
-          data:
-            template.attachments?.map((file) => ({
-              ...file,
-              id: undefined,
-              messageTemplateId: undefined,
-              createdAt: undefined,
-            })) ?? [],
-        },
-      },
+      attachments:
+        template.attachments && template.attachments.length > 0
+          ? this.fileService.getFileCreateManyInput(template.attachments)
+          : undefined,
     }));
 
     const camp = await this.prisma.camp.create({
@@ -193,6 +190,7 @@ export class CampService extends BaseService {
       id: undefined,
       campId: undefined,
       createdAt: undefined,
+      updatedAt: undefined,
     }));
   }
 
