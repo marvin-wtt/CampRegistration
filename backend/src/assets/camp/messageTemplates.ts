@@ -197,7 +197,7 @@ export function defaultMessageTemplatesForCountries(countries: string[]) {
   return countries.flatMap((country) => {
     let code = getCountryData(country as TCountryCode).languages.find(
       (code): code is Code => {
-        return languageCodes.includes(code as Code);
+        return languageCodes.includes(code.toLocaleLowerCase() as Code);
       },
     );
 

@@ -325,7 +325,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       registration,
       messageTemplate,
     );
-    if (!payloads) return;
+    if (!payloads) {
+      return;
+    }
 
     await this.sendMany(payloads);
   }
@@ -336,7 +338,7 @@ type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
 async function loadMessageTemplate(
   campId: string,
   event: string,
-  country?: string | null,
+  country: string | null,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
@@ -391,7 +393,11 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     camp: Camp,
     registration: Registration,
   ): Promise<void> {
-    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    const messageTemplate = await loadMessageTemplate(
+      camp.id,
+      this.event,
+      registration.country,
+    );
     if (!messageTemplate) {
       return;
     }

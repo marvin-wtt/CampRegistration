@@ -46,7 +46,7 @@ const api = useAPIService();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
 
-type Model =
+export type FileInputModel =
   | ServiceFile
   | {
       id?: undefined;
@@ -54,7 +54,7 @@ type Model =
       progressId: string;
     };
 
-const model = defineModel<Model[] | null | undefined>();
+const model = defineModel<FileInputModel[] | null | undefined>();
 
 const files = ref<File[]>([]);
 
@@ -83,7 +83,7 @@ function updateFiles(updatedFiles: File[]) {
     files.value = [];
   }
 
-  // No nothing when the model does not update due to missing reactivity
+  // Do nothing when the model does not update due to missing reactivity
   if (!model.value || !files.value) {
     // eslint-disable-next-line no-console
     console.error('Model or files not initialized');

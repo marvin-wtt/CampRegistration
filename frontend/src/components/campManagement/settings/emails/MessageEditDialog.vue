@@ -100,7 +100,9 @@ import type {
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { deepToRaw } from 'src/utils/deepToRaw';
-import FileInput from 'components/common/inputs/FileInput.vue';
+import FileInput, {
+  type FileInputModel,
+} from 'components/common/inputs/FileInput.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -124,7 +126,7 @@ const { name, subject, body, form, country, attachments, saveFn } =
     }) => Promise<void>;
   }>();
 
-const files = ref<ServiceFile[]>([...(attachments ?? [])]);
+const files = ref<FileInputModel[]>([...(attachments ?? [])]);
 
 const message = reactive({
   subject: structuredClone(deepToRaw(subject)),
@@ -134,7 +136,9 @@ const message = reactive({
 async function onSave() {
   await saveFn({
     ...message,
-    attachmentIds: files.value.filter((f) => !!f.id).map((f) => f.id),
+    attachmentIds: files.value
+      .filter((f) => f.id !== undefined)
+      .map((f) => f.id),
   });
 
   onDialogOK();

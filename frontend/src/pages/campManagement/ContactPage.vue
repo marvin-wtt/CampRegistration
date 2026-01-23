@@ -129,10 +129,7 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type {
-  Registration,
-  ServiceFile,
-} from '@camp-registration/common/entities';
+import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from 'components/campManagement/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
@@ -141,7 +138,9 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import { useServiceNotifications } from 'src/composables/serviceHandler';
 import { useAPIService } from 'src/services/APIService';
-import FileInput from 'components/common/inputs/FileInput.vue';
+import FileInput, {
+  type FileInputModel,
+} from 'components/common/inputs/FileInput.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -162,7 +161,7 @@ const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
 const replyTo = ref<string>();
 const subject = ref<string>('');
-const attachments = ref<ServiceFile[]>([]);
+const attachments = ref<FileInputModel[]>([]);
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 const text = ref<string>('');
 const sendInProgress = ref<boolean>(false);
@@ -237,7 +236,6 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    // TODO Add error messages
     await withResultNotification('send', async () => {
       return apiService.createMessage(campId, {
         registrationIds: to.value.flatMap((contact) => {
@@ -249,7 +247,9 @@ async function send() {
         subject: subject.value,
         body: text.value,
         priority: priority.value,
-        attachmentIds: attachments.value?.map((file) => file.id),
+        attachmentIds: attachments.value
+          ?.filter((v) => v.id !== undefined)
+          .map((file) => file.id),
       });
     });
 

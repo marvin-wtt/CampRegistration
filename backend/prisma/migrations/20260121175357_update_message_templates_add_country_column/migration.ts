@@ -46,20 +46,20 @@ async function main() {
             continue;
           }
 
-          await prisma.message.update({
+          await tx.message.update({
             where: { id: message.id },
             data: { templateId: newTemplate.id },
           });
         }
       }
 
-      if (template.attachments) {
+      if (template.attachments.length > 0) {
         throw new Error('Attachments are not supported yet');
       }
     }
 
     // Delete the old templates
-    await prisma.messageTemplate.deleteMany({
+    await tx.messageTemplate.deleteMany({
       where: { id: { in: templates.map((t) => t.id) } },
     });
   });
