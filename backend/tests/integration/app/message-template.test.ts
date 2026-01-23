@@ -468,7 +468,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           .expect(400);
       });
 
-      it('should respond with 400 status code when attachments session id missmatch', async () => {
+      it('should respond with 400 status code when attachments session id mismatch', async () => {
         const sessionId = crypto.randomUUID();
         const { camp, accessToken } = await createCampWithManagerAndToken();
         const file1 = await FileFactory.create({
@@ -843,7 +843,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           .expect(400);
       });
 
-      it('should respond with 400 status code when attachments session id missmatch', async () => {
+      it('should respond with 400 status code when attachments session id mismatch', async () => {
         const sessionId = crypto.randomUUID();
         const { camp, accessToken } = await createCampWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({

@@ -22,15 +22,15 @@ export interface MessageTemplate extends Identifiable {
 export interface MessageTemplateCreateData {
   event: string;
   country: string | null;
-  subject: Translatable;
-  body: Translatable;
+  subject: string;
+  body: string;
   priority?: string | undefined;
   attachmentIds?: string[] | undefined;
 }
 
 export interface MessageTemplateUpdateData {
-  subject?: Translatable | undefined;
-  body?: Translatable | undefined;
+  subject?: string | undefined;
+  body?: string | undefined;
   priority?: string | undefined | null;
   attachmentIds?: string[] | undefined | null;
 }

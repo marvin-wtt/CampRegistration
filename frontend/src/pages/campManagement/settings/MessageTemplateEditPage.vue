@@ -271,6 +271,7 @@ function addTemplate(event: string, country: string) {
     throw new Error('No camp details loaded!');
   }
 
+  // Search for existing template for same event bit different country
   const template = data.value?.find((template) => template.event === event);
 
   quasar

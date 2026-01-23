@@ -227,7 +227,7 @@ async function send() {
     return;
   }
 
-  if (attachments.value?.find((value) => value.id == undefined)) {
+  if (attachments.value?.find((value) => value.id === undefined)) {
     quasar.notify({
       type: 'warning',
       message: t('error.attachment.ongoing'),
@@ -268,8 +268,6 @@ function reset() {
 
   formRef.value?.resetValidation();
 }
-
-// TODO Add pl and cs translations
 </script>
 
 <style scoped></style>
@@ -392,4 +390,88 @@ request:
   send:
     error: "Échec de l'envoi du message"
     success: 'Message envoyé avec succès'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  send: 'Wyślij'
+
+error:
+  attachment:
+    ongoing: 'Oczekiwanie na zakończenie przesyłania plików. Spróbuj ponownie później.'
+    default: 'Plik niedozwolony'
+    duplicate: 'Plik już istnieje'
+    filter: 'Niedozwolony typ pliku'
+    maxFiles: 'Zbyt wiele plików'
+    maxFileSize: 'Plik(i) są zbyt duże. Maksymalny rozmiar pliku to 20 MB'
+
+input:
+  attachments: 'Załączniki:'
+  message:
+    label: 'Wiadomość:'
+    required: 'Wiadomość jest wymagana'
+  priority: 'Priorytet:'
+  replyTo:
+    label: 'Odpowiedź do:'
+    required: 'Adres do odpowiedzi jest wymagany'
+  subject:
+    label: 'Temat:'
+    rule:
+      required: 'Temat jest wymagany'
+  to:
+    label: 'Do:'
+    rule:
+      required: 'Wymagany jest co najmniej jeden kontakt'
+
+priority:
+  high: 'Wysoki'
+  low: 'Niski'
+  normal: 'Normalny'
+
+request:
+  send:
+    error: 'Nie udało się wysłać wiadomości'
+    success: 'Wiadomość została wysłana pomyślnie'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  send: 'Odeslat'
+
+error:
+  attachment:
+    ongoing: 'Čeká se na dokončení nahrávání souborů. Zkuste to prosím později.'
+    default: 'Soubor není povolen'
+    duplicate: 'Soubor již existuje'
+    filter: 'Nepovolený typ souboru'
+    maxFiles: 'Příliš mnoho souborů'
+    maxFileSize: 'Soubor(y) jsou příliš velké. Maximální velikost souboru je 20 MB'
+
+input:
+  attachments: 'Přílohy:'
+  message:
+    label: 'Zpráva:'
+    required: 'Zpráva je povinná'
+  priority: 'Priorita:'
+  replyTo:
+    label: 'Odpovědět na:'
+    required: 'Adresa pro odpověď je povinná'
+  subject:
+    label: 'Předmět:'
+    rule:
+      required: 'Předmět je povinný'
+  to:
+    label: 'Komu:'
+    rule:
+      required: 'Je vyžadován alespoň jeden kontakt'
+
+priority:
+  high: 'Vysoká'
+  low: 'Nízká'
+  normal: 'Normální'
+
+request:
+  send:
+    error: 'Odeslání zprávy se nezdařilo'
+    success: 'Zpráva byla úspěšně odeslána'
 </i18n>

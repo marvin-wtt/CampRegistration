@@ -83,7 +83,10 @@ function updateFiles(updatedFiles: File[]) {
     files.value = [];
   }
 
+  // No nothing when the model does not update due to missing reactivity
   if (!model.value || !files.value) {
+    // eslint-disable-next-line no-console
+    console.error('Model or files not initialized');
     return;
   }
 
@@ -146,7 +149,7 @@ function findIndexByProgressId(progressId: string): number {
 
 function assertModelMatch() {
   if (model.value?.length !== files.value.length) {
-    throw Error('Model length missmatch');
+    throw Error('Model length mismatch');
   }
 }
 </script>

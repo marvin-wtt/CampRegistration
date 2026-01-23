@@ -11,10 +11,6 @@ if (!packageDir) {
   throw new Error('Could not determine the root path of the package.');
 }
 
-export function rootPath(...paths: string[]) {
-  return path.resolve(projectRoot, '..', ...paths);
-}
-
 export function appPath(...paths: string[]) {
   return path.resolve(projectRoot, ...paths);
 }

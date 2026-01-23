@@ -214,13 +214,3 @@ export function defaultMessageTemplatesForCountries(countries: string[]) {
     );
   });
 }
-
-export const messageTemplates = languageCodes.map((code) =>
-  Object.entries(messageTemplatesObj).map(([event, { subject, body }]) => ({
-    event,
-    subject: subject[code],
-    body: body[code],
-  })),
-);
-
-export default messageTemplates;
