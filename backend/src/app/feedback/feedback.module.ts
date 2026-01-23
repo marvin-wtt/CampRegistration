@@ -7,7 +7,7 @@ import type {
 import { FeedbackRouter } from '#app/feedback/feedback.routes';
 import { resolve } from '#core/ioc/container';
 import { FeedbackController } from '#app/feedback/feedback.controller';
-import { registerMailable } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#app/mail/mail.registry';
 import { FeedbackMessage } from '#app/feedback/feedback.messages';
 
 export class FeedbackModule implements AppModule {
@@ -17,7 +17,7 @@ export class FeedbackModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
-    registerMailable(FeedbackMessage);
+    resolve(MailableRegistry).register(FeedbackMessage);
   }
 
   registerRoutes(router: AppRouter): void {

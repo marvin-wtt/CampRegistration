@@ -21,7 +21,8 @@ import {
   RegistrationUpdatedMessage,
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
-import { registerMailable } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#app/mail/mail.registry';
+import { resolve } from '#core/ioc/container';
 
 export class RegistrationModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -31,15 +32,15 @@ export class RegistrationModule implements AppModule {
 
   configure(_options: ModuleOptions): Promise<void> | void {
     // Manual -> Registration
-    registerMailable(RegistrationTemplateMessage);
+    resolve(MailableRegistry).register(RegistrationTemplateMessage);
     // Event -> Camp Contact
-    registerMailable(RegistrationNotifyMessage);
+    resolve(MailableRegistry).register(RegistrationNotifyMessage);
     // Event -> Registration
-    registerMailable(RegistrationConfirmedMessage);
-    registerMailable(RegistrationWaitlistedMessage);
-    registerMailable(RegistrationUpdatedMessage);
-    registerMailable(RegistrationDeletedMessage);
-    registerMailable(RegistrationAcceptedMessage);
+    resolve(MailableRegistry).register(RegistrationConfirmedMessage);
+    resolve(MailableRegistry).register(RegistrationWaitlistedMessage);
+    resolve(MailableRegistry).register(RegistrationUpdatedMessage);
+    resolve(MailableRegistry).register(RegistrationDeletedMessage);
+    resolve(MailableRegistry).register(RegistrationAcceptedMessage);
   }
 
   registerRoutes(router: AppRouter): void {
