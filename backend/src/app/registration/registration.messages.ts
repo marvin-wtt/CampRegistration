@@ -336,17 +336,22 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
 
 async function loadMessageTemplate(
-  campId: string,
+  camp: Camp,
   event: string,
-  country: string | null,
+  country: string | null | undefined,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
 
+    // When the camp has only one group, we can assume the person is in that group
+    if (country === null && camp.countries.length === 1) {
+      country = camp.countries[0];
+    }
+
     return await messageTemplateService.getMessageTemplateByName(
-      campId,
+      camp.id,
       event,
-      country ?? undefined,
+      country,
     );
   } catch (error) {
     logger.error(error);
@@ -364,7 +369,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     registration: Registration,
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
-      camp.id,
+      camp,
       this.event,
       registration.country,
     );
@@ -394,7 +399,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     registration: Registration,
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
-      camp.id,
+      camp,
       this.event,
       registration.country,
     );

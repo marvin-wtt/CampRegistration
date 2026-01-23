@@ -45,7 +45,7 @@ export class MessageTemplateService extends BaseService {
   async getMessageTemplateByName(
     campId: string,
     event: string,
-    country?: string,
+    country?: string | null,
   ) {
     return this.prisma.messageTemplate.findFirst({
       where: {
