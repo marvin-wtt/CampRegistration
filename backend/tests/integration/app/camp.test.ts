@@ -66,7 +66,10 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const assertCampResponseBody = (data: CampCreateData, body: any) => {
+const assertCampResponseBody = (
+  data: CampCreateData & { locales: string[] },
+  body: any,
+) => {
   expect(body).toHaveProperty('data');
 
   expect(body.data).toEqual({
@@ -74,6 +77,7 @@ const assertCampResponseBody = (data: CampCreateData, body: any) => {
     active: data.active,
     public: data.public,
     countries: data.countries,
+    locales: data.locales,
     name: data.name,
     organizer: data.organizer,
     contactEmail: data.contactEmail,
@@ -317,6 +321,7 @@ describe('/api/v1/camps', () => {
       const camp = await CampFactory.create({
         active: true,
         public: true,
+        countries: ['de', 'cz'],
       });
 
       const { body } = await request()
@@ -330,6 +335,7 @@ describe('/api/v1/camps', () => {
         active: camp.active,
         public: camp.public,
         countries: camp.countries,
+        locales: ['de', 'cs'],
         name: camp.name,
         organizer: camp.organizer,
         contactEmail: camp.contactEmail,
@@ -516,14 +522,21 @@ describe('/api/v1/camps', () => {
 
   describe('POST /api/v1/camps', () => {
     const assertCampCreated = async (
-      expected: CampCreateData,
+      data: CampCreateData,
+      locales: string[],
       actual: unknown,
     ) => {
       // Test response
-      assertCampResponseBody(expected, actual);
+      assertCampResponseBody(
+        {
+          ...data,
+          locales,
+        },
+        actual,
+      );
 
       const id = (actual as { data: { id: string } }).data.id;
-      await assertCampModel(id, expected);
+      await assertCampModel(id, data);
     };
 
     it('should respond with `201` status code when user is authenticated', async () => {
@@ -537,7 +550,7 @@ describe('/api/v1/camps', () => {
         .expect(201);
 
       // Test response
-      await assertCampCreated(data, body);
+      await assertCampCreated(data, ['de'], body);
     });
 
     it('should respond with `201` status code with international camp', async () => {
@@ -552,7 +565,7 @@ describe('/api/v1/camps', () => {
         .expect(201);
 
       // Test response
-      await assertCampCreated(data, body);
+      await assertCampCreated(data, ['de', 'fr'], body);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
@@ -674,14 +687,9 @@ describe('/api/v1/camps', () => {
 
           expect(templates.length).not.toBe(0);
 
-          const template = templates[0];
-
-          expect(Object.keys(template.subject).sort()).toEqual(
-            ['de', 'cs'].sort(),
-          );
-          expect(Object.keys(template.body).sort()).toEqual(
-            ['de', 'cs'].sort(),
-          );
+          for (const template of templates) {
+            expect(template.country).toBeOneOf(['de', 'cz']);
+          }
         });
       });
 
@@ -721,7 +729,7 @@ describe('/api/v1/camps', () => {
           .post(`/api/v1/camps/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
-          .expect(201);
+          .expectOrPrint(201);
 
         expect(body.data.form).toStrictEqual(referenceForm);
       });
@@ -1015,7 +1023,13 @@ describe('/api/v1/camps', () => {
 
         if (expectedStatus === 200) {
           // Test response
-          assertCampResponseBody(data, response.body);
+          assertCampResponseBody(
+            {
+              ...data,
+              locales: ['de'],
+            },
+            response.body,
+          );
 
           // Test model
           await assertCampModel(camp.id, data);

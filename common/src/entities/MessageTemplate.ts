@@ -1,6 +1,5 @@
 import type { Identifiable } from './Identifiable.js';
 import { ServiceFile } from './ServiceFile.js';
-import { Translatable } from './Translatable.js';
 
 export interface MessageTemplateQuery {
   includeDefaults?: boolean | undefined;

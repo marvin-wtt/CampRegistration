@@ -333,8 +333,8 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       {
         name: 'country is invalid',
         data: {
-          event: 'usa',
-          country: 'gb',
+          event: 'some-event',
+          country: 'usa',
           subject: 'Test Subject',
           body: 'Test body content',
         },

@@ -452,11 +452,17 @@ export const campWithContactEmailInternational = {
 export const campWithEmailAndMaxParticipants = {
   ...campPublic,
   maxParticipants: 0,
+  countries: ['de', 'fr'],
   form: createForm([
     {
       name: 'email',
       type: 'text',
       campDataType: 'email',
+    },
+    {
+      name: 'country',
+      type: 'text',
+      campDataType: 'country',
     },
   ]),
 };

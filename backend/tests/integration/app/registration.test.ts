@@ -1139,7 +1139,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
       });
 
-      it('should send a copy to the contact email for national camp', async () => {
+      it('should send a notification to the contact email for national camp', async () => {
         const camp = await CampFactory.create(campWithEmail);
 
         const data = {
@@ -1205,6 +1205,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           ...campWithEmailAndMaxParticipants,
           messageTemplates: {
             create: MessageTemplateFactory.build({
+              country: 'fr',
               event: 'registration_waitlisted',
               subject: 'Registration on waiting list',
             }),
@@ -1213,6 +1214,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         const data = {
           email: 'test@example.com',
+          country: 'fr',
         };
 
         await request()
@@ -1615,7 +1617,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should send waiting list confirmation', async () => {
         const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+          ...campWithEmailAndCountry,
           messageTemplates: {
             create: MessageTemplateFactory.build({
               event: 'registration_waitlist_accepted',
@@ -1633,6 +1635,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           email: 'test@example.com',
           first_name: 'Jhon',
           last_name: 'Doe',
+          country: 'fr',
         };
 
         await request()
