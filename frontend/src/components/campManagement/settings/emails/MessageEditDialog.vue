@@ -11,127 +11,60 @@
         @submit="onSave"
         @reset="onDialogCancel"
       >
-        <q-card-section class="text-h5">
-          {{ t('page.title', { name }) }}
+        <q-card-section>
+          <div class="text-h5">
+            {{ t('page.title') }}
+          </div>
+          <div class="text-subtitle2">
+            {{ name }}
+            <template v-if="country"> ({{ country }}) </template>
+          </div>
         </q-card-section>
 
-        <q-card-section class="row no-wrap">
-          <q-list
-            v-if="!isString(message.subject) && !isString(message.body)"
-            bordered
+        <q-card-section class="column q-gutter-sm no-wrap">
+          <registration-email-editor
+            v-model="message.subject"
+            :label="t('field.subject.label')"
+            :placeholder="t('field.subject.placeholder')"
+            :rules="[
+              (val?: string) => !!val || t('field.subject.rule.required'),
+              (val: string) =>
+                val.trim() !== '<p></p>' || t('field.subject.rule.required'),
+            ]"
+            hide-bottom-space
+            :form
+            single-line
             outlined
-            separator
+            rounded
+          />
+
+          <registration-email-editor
+            v-model="message.body"
+            :label="t('field.body.label')"
+            :placeholder="t('field.body.placeholder')"
+            :rules="[
+              (val?: string) => !!val || t('field.body.rule.required'),
+              (val: string) =>
+                val.trim() !== '<p></p>' || t('field.body.rule.required'),
+            ]"
+            hide-bottom-space
+            :form
+            outlined
+            rounded
+            :style="{ minHeight: '100px' }"
+          />
+
+          <file-input
+            v-model="files"
+            :label="t('field.attachment.label')"
+            outlined
+            rounded
             dense
-            class="col"
           >
-            <q-expansion-item
-              v-for="(country, i) in countries"
-              :key="country"
-              group="country"
-              :default-opened="i === 0"
-            >
-              <template #header>
-                <q-item-section avatar>
-                  <country-icon
-                    :country
-                    size="sm"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  {{ t('country.' + country) }}
-                </q-item-section>
-              </template>
-
-              <template #default>
-                <q-card class="column no-wrap">
-                  <q-card-section class="col">
-                    <registration-email-editor
-                      v-model="message.subject[country]!"
-                      :label="t('field.subject.label')"
-                      :placeholder="t('field.subject.placeholder')"
-                      :rules="[
-                        (val?: string) =>
-                          !!val || t('field.subject.rule.required'),
-                        (val: string) =>
-                          val.trim() !== '<p></p>' ||
-                          t('field.subject.rule.required'),
-                      ]"
-                      hide-bottom-space
-                      :form
-                      single-line
-                      outlined
-                      rounded
-                    />
-                  </q-card-section>
-
-                  <q-card-section class="col-grow">
-                    <registration-email-editor
-                      v-model="message.body[country]!"
-                      :label="t('field.body.label')"
-                      :placeholder="t('field.body.placeholder')"
-                      :rules="[
-                        (val?: string) =>
-                          !!val || t('field.body.rule.required'),
-                        (val: string) =>
-                          val.trim() !== '<p></p>' ||
-                          t('field.body.rule.required'),
-                      ]"
-                      hide-bottom-space
-                      :form
-                      outlined
-                      rounded
-                    />
-                  </q-card-section>
-                </q-card>
-              </template>
-            </q-expansion-item>
-          </q-list>
-
-          <div
-            v-if="isString(message.subject) && isString(message.body)"
-            class="col-grow column no-wrap q-gutter-sm"
-          >
-            <registration-email-editor
-              v-model="message.subject"
-              :label="t('field.subject.label')"
-              :placeholder="t('field.subject.placeholder')"
-              :rules="[
-                (val?: string) => !!val || t('field.subject.rule.required'),
-                (val: string) =>
-                  val.trim() !== '<p></p>' || t('field.subject.rule.required'),
-              ]"
-              hide-bottom-space
-              :form
-              single-line
-              outlined
-              rounded
-            />
-
-            <registration-email-editor
-              v-model="message.body"
-              :label="t('field.body.label')"
-              :placeholder="t('field.body.placeholder')"
-              :rules="[
-                (val?: string) => !!val || t('field.body.rule.required'),
-                (val: string) =>
-                  val.trim() !== '<p></p>' || t('field.body.rule.required'),
-              ]"
-              hide-bottom-space
-              :form
-              outlined
-              rounded
-            />
-          </div>
-
-          <div
-            v-if="countries.length > 1"
-            class="col-shrink self-center q-ml-sm"
-          >
-            <translation-toggle-btn
-              :model-value="translated"
-              @click="toggleTranslations"
-            />
-          </div>
+            <template v-slot:prepend>
+              <q-icon name="attach_file" />
+            </template>
+          </file-input>
         </q-card-section>
 
         <q-card-actions
@@ -160,12 +93,16 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
-import type { CampDetails } from '@camp-registration/common/entities';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
+import type {
+  CampDetails,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import { deepToRaw } from 'src/utils/deepToRaw';
+import FileInput, {
+  type FileInputModel,
+} from 'components/common/inputs/FileInput.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -173,79 +110,38 @@ const { t } = useI18n();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { name, subject, body, form, countries } = defineProps<{
-  name: string;
-  subject: string | Record<string, string>;
-  body: string | Record<string, string>;
-  form: CampDetails['form'];
-  countries: string[];
-}>();
+const { name, subject, body, form, country, attachments, saveFn } =
+  defineProps<{
+    name: string;
+    subject: string;
+    body: string;
+    attachments: ServiceFile[] | null;
+    form: CampDetails['form'];
+    country: string;
+
+    saveFn: (data: {
+      subject: string;
+      body: string;
+      attachmentIds: string[] | null;
+    }) => Promise<void>;
+  }>();
+
+const files = ref<FileInputModel[]>([...(attachments ?? [])]);
 
 const message = reactive({
-  subject: structuredClone(deepToRaw(dropUnsupportedLangs(subject))),
-  body: structuredClone(deepToRaw(dropUnsupportedLangs(body))),
+  subject: structuredClone(deepToRaw(subject)),
+  body: structuredClone(deepToRaw(body)),
 });
 
-const translated = computed<boolean>(() => {
-  return !isString(message.subject) || !isString(message.body);
-});
+async function onSave() {
+  await saveFn({
+    ...message,
+    attachmentIds: files.value
+      .filter((f) => f.id !== undefined)
+      .map((f) => f.id),
+  });
 
-function isString(value: string | Record<string, string>): value is string {
-  return typeof value === 'string';
-}
-
-function dropUnsupportedLangs(input: string | Record<string, string>) {
-  return typeof input === 'string' ? input : buildTranslationObject(input);
-}
-
-function buildTranslationObject(
-  object: Record<string, string>,
-): Record<string, string> {
-  return Object.fromEntries(
-    countries.map((country) => [
-      country,
-      // if no value for country, take the first available value or empty string
-      object[country] ?? Object.values(object)[0] ?? '',
-    ]),
-  );
-}
-
-function toggleTranslations() {
-  if (translated.value) {
-    message.subject = defaultString(subject);
-    message.body = defaultString(body);
-  } else {
-    message.subject = defaultObject(subject);
-    message.body = defaultObject(body);
-
-    // Set empty string as default value
-    for (const country of countries) {
-      message.subject[country] ??= '';
-      message.body[country] ??= '';
-    }
-  }
-}
-
-function defaultObject(
-  value: string | Record<string, string>,
-): Record<string, string> {
-  if (typeof value === 'string') {
-    return Object.fromEntries(countries.map((country) => [country, value]));
-  }
-
-  return buildTranslationObject(value);
-}
-
-function defaultString(value: string | Record<string, string>): string {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  return Object.values(value)[0] ?? '';
-}
-
-function onSave() {
-  onDialogOK(message);
+  onDialogOK();
 }
 </script>
 
@@ -268,9 +164,11 @@ field:
     placeholder: 'Type your messages here...'
     rule:
       required: 'The message is required'
+  attachment:
+    label: 'Attachments'
 
 page:
-  title: 'Edit template "{ name }"'
+  title: 'Edit email template'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -290,9 +188,11 @@ field:
     placeholder: 'Geben Sie hier Ihre Nachricht ein...'
     rule:
       required: 'Die Nachricht ist erforderlich'
+  attachment:
+    label: 'Anhänge'
 
 page:
-  title: 'Vorlage "{ name }" bearbeiten'
+  title: 'E-Mail-Vorlage bearbeiten'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -312,9 +212,11 @@ field:
     placeholder: 'Tapez votre message ici...'
     rule:
       required: 'Le message est requis'
+  attachment:
+    label: 'Pièces jointes'
 
 page:
-  title: 'Modifier le modèle "{ name }"'
+  title: "Modifier le modèle d'e-mail"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -334,9 +236,11 @@ field:
     placeholder: 'Wpisz tutaj swoją wiadomość...'
     rule:
       required: 'Wiadomość jest wymagana'
+  attachment:
+    label: 'Załączniki'
 
 page:
-  title: 'Edytuj szablon „{ name }”'
+  title: 'Edytuj szablon wiadomości e-mail'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -356,7 +260,9 @@ field:
     placeholder: 'Zadejte zde svou zprávu...'
     rule:
       required: 'Zpráva je povinná'
+  attachment:
+    label: 'Přílohy'
 
 page:
-  title: 'Upravit šablonu „{ name }”'
+  title: 'Upravit šablonu e-mailu'
 </i18n>

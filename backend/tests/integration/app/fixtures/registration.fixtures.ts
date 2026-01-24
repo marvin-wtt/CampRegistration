@@ -343,6 +343,7 @@ export const campWithoutCountryData = {
 
 export const campWithEmail = {
   ...campPrivate,
+  countries: ['de', 'fr'],
   form: createForm([
     {
       name: 'email',
@@ -358,6 +359,55 @@ export const campWithEmail = {
       name: 'last_name',
       type: 'text',
       campDataType: 'last_name',
+    },
+  ]),
+};
+
+export const campWithEmailSingleCountry = {
+  ...campPrivate,
+  countries: ['fr'],
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+    },
+    {
+      name: 'last_name',
+      type: 'text',
+      campDataType: 'last_name',
+    },
+  ]),
+};
+
+export const campWithEmailAndCountry = {
+  ...campPrivate,
+  countries: ['de', 'fr'],
+  form: createForm([
+    {
+      name: 'email',
+      type: 'text',
+      campDataType: 'email',
+    },
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+    },
+    {
+      name: 'last_name',
+      type: 'text',
+      campDataType: 'last_name',
+    },
+    {
+      name: 'country',
+      type: 'text',
+      campDataType: 'country',
     },
   ]),
 };
@@ -402,11 +452,17 @@ export const campWithContactEmailInternational = {
 export const campWithEmailAndMaxParticipants = {
   ...campPublic,
   maxParticipants: 0,
+  countries: ['de', 'fr'],
   form: createForm([
     {
       name: 'email',
       type: 'text',
       campDataType: 'email',
+    },
+    {
+      name: 'country',
+      type: 'text',
+      campDataType: 'country',
     },
   ]),
 };

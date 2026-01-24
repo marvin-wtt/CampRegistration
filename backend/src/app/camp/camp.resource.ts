@@ -4,6 +4,7 @@ import type {
   CampDetails as CampDetailsResourceData,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
+import { countriesToLocales } from '#utils/countriesToLocales';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: Record<string, number> | number;
@@ -19,6 +20,7 @@ export class CampResource extends JsonResource<
       public: this.data.public,
       active: this.data.active,
       countries: this.data.countries,
+      locales: countriesToLocales(this.data.countries),
       name: this.data.name,
       organizer: this.data.organizer,
       contactEmail: this.data.contactEmail,

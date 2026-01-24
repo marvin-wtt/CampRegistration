@@ -13,7 +13,7 @@
         <translated-input
           v-model="column.label"
           :label="t('field.label.label')"
-          :locales="props.camp.countries"
+          :locales="camp.locales"
           outlined
           rounded
         />

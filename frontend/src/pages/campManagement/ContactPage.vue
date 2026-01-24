@@ -88,7 +88,7 @@
       />
 
       <div class="row q-gutter-sm justify-between">
-        <q-file
+        <file-input
           v-model="attachments"
           :label="t('input.attachments')"
           :disable="sendInProgress"
@@ -107,7 +107,7 @@
           <template #prepend>
             <q-icon name="attach_file" />
           </template>
-        </q-file>
+        </file-input>
 
         <q-btn
           :label="t('action.send')"
@@ -138,6 +138,9 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import { useServiceNotifications } from 'src/composables/serviceHandler';
 import { useAPIService } from 'src/services/APIService';
+import FileInput, {
+  type FileInputModel,
+} from 'components/common/inputs/FileInput.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -158,7 +161,7 @@ const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
 const replyTo = ref<string>();
 const subject = ref<string>('');
-const attachments = ref<File[]>();
+const attachments = ref<FileInputModel[]>([]);
 const priority = ref<'high' | 'normal' | 'low'>('normal');
 const text = ref<string>('');
 const sendInProgress = ref<boolean>(false);
@@ -223,9 +226,16 @@ async function send() {
     return;
   }
 
+  if (attachments.value?.find((value) => value.id === undefined)) {
+    quasar.notify({
+      type: 'warning',
+      message: t('error.attachment.ongoing'),
+    });
+    return;
+  }
+
   sendInProgress.value = true;
   try {
-    // TODO Add error messages
     await withResultNotification('send', async () => {
       return apiService.createMessage(campId, {
         registrationIds: to.value.flatMap((contact) => {
@@ -237,6 +247,9 @@ async function send() {
         subject: subject.value,
         body: text.value,
         priority: priority.value,
+        attachmentIds: attachments.value
+          ?.filter((v) => v.id !== undefined)
+          .map((file) => file.id),
       });
     });
 
@@ -265,6 +278,7 @@ action:
 
 error:
   attachment:
+    ongoing: 'Waiting for file uploads to finish. Please try again later.'
     default: 'File not allowed'
     duplicate: 'File already exists'
     filter: 'File type not allowed'
@@ -303,6 +317,7 @@ request:
 <i18n lang="yaml" locale="de">
 error:
   attachment:
+    ongoing: 'Warten auf den Abschluss des Datei-Uploads. Bitte später erneut versuchen.'
     default: 'Datei nicht erlaubt'
     duplicate: 'Datei existiert bereits'
     filter: 'Dateityp nicht erlaubt'
@@ -341,6 +356,7 @@ request:
 <i18n lang="yaml" locale="fr">
 error:
   attachment:
+    ongoing: 'En attente de la fin du téléchargement des fichiers. Veuillez réessayer plus tard.'
     default: 'Fichier non autorisé'
     duplicate: 'Fichier déjà existant'
     filter: 'Type de fichier non autorisé'
@@ -374,4 +390,88 @@ request:
   send:
     error: "Échec de l'envoi du message"
     success: 'Message envoyé avec succès'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  send: 'Wyślij'
+
+error:
+  attachment:
+    ongoing: 'Oczekiwanie na zakończenie przesyłania plików. Spróbuj ponownie później.'
+    default: 'Plik niedozwolony'
+    duplicate: 'Plik już istnieje'
+    filter: 'Niedozwolony typ pliku'
+    maxFiles: 'Zbyt wiele plików'
+    maxFileSize: 'Plik(i) są zbyt duże. Maksymalny rozmiar pliku to 20 MB'
+
+input:
+  attachments: 'Załączniki:'
+  message:
+    label: 'Wiadomość:'
+    required: 'Wiadomość jest wymagana'
+  priority: 'Priorytet:'
+  replyTo:
+    label: 'Odpowiedź do:'
+    required: 'Adres do odpowiedzi jest wymagany'
+  subject:
+    label: 'Temat:'
+    rule:
+      required: 'Temat jest wymagany'
+  to:
+    label: 'Do:'
+    rule:
+      required: 'Wymagany jest co najmniej jeden kontakt'
+
+priority:
+  high: 'Wysoki'
+  low: 'Niski'
+  normal: 'Normalny'
+
+request:
+  send:
+    error: 'Nie udało się wysłać wiadomości'
+    success: 'Wiadomość została wysłana pomyślnie'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  send: 'Odeslat'
+
+error:
+  attachment:
+    ongoing: 'Čeká se na dokončení nahrávání souborů. Zkuste to prosím později.'
+    default: 'Soubor není povolen'
+    duplicate: 'Soubor již existuje'
+    filter: 'Nepovolený typ souboru'
+    maxFiles: 'Příliš mnoho souborů'
+    maxFileSize: 'Soubor(y) jsou příliš velké. Maximální velikost souboru je 20 MB'
+
+input:
+  attachments: 'Přílohy:'
+  message:
+    label: 'Zpráva:'
+    required: 'Zpráva je povinná'
+  priority: 'Priorita:'
+  replyTo:
+    label: 'Odpovědět na:'
+    required: 'Adresa pro odpověď je povinná'
+  subject:
+    label: 'Předmět:'
+    rule:
+      required: 'Předmět je povinný'
+  to:
+    label: 'Komu:'
+    rule:
+      required: 'Je vyžadován alespoň jeden kontakt'
+
+priority:
+  high: 'Vysoká'
+  low: 'Nízká'
+  normal: 'Normální'
+
+request:
+  send:
+    error: 'Odeslání zprávy se nezdařilo'
+    success: 'Zpráva byla úspěšně odeslána'
 </i18n>

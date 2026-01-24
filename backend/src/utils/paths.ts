@@ -21,5 +21,3 @@ export function appBuildPath(...paths: string[]) {
 
 // Ensure that the type is string only
 const projectRoot = packageDir;
-
-export default projectRoot;

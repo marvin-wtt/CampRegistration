@@ -7,7 +7,7 @@ import httpStatus from 'http-status';
 import defaultForm from '#assets/camp/form';
 import defaultThemes from '#assets/camp/themes';
 import defaultTableTemplates from '#assets/camp/tableTemplates';
-import defaultMessageTemplates from '#assets/camp/messageTemplates';
+import { defaultMessageTemplatesForCountries } from '#assets/camp/messageTemplates';
 import defaultFiles from '#assets/camp/files';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
@@ -108,7 +108,7 @@ export class CampController extends BaseController {
       ? await this.messageTemplateService.queryMessageTemplates(
           body.referenceCampId,
         )
-      : defaultMessageTemplates;
+      : defaultMessageTemplatesForCountries(body.countries);
 
     const camp = await this.campService.createCamp(
       userId,
