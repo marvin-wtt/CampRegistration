@@ -72,6 +72,7 @@ model Camp {
   tableTemplates   TableTemplate[]
   messageTemplates MessageTemplate[]
   files            File[]
+  programEvent     ProgramEvent[]
 
   @@map("camps")
 }
@@ -290,4 +291,23 @@ model JobRateLimit {
   refilledAt DateTime @map("refilled_at") @db.DateTime(3)
 
   @@map("job_rate_limits")
+}
+
+model ProgramEvent {
+  id       String  @id @unique(map: "program_event_id_unique") @default(ulid()) @db.Char(26)
+  campId   String  @map("camp_id") @db.Char(36) // Prisma does not support morth
+  /// ![string | Record<string, string>]
+  title    Json
+  /// ![string | Record<string, string>]
+  details  Json?
+  /// ![string | Record<string, string>]
+  location Json?
+  date     String?
+  duration Int?
+  time     String?
+  color    String? @map("color")
+  side     String?
+  camp     Camp?   @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  @@map("program_events")
 }

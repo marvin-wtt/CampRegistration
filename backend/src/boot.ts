@@ -16,6 +16,7 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
+import { ProgramEventModule } from '#app/programEvent/program-event.module';
 import { MailModule } from '#app/mail/mail.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
@@ -45,6 +46,7 @@ const loadModules = () =>
     new MessageTemplateModule(),
     new RoomModule(),
     new BedModule(),
+    new ProgramEventModule(),
     new FeedbackModule(),
   ]);
 
