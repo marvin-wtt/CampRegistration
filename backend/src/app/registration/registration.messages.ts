@@ -325,7 +325,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       registration,
       messageTemplate,
     );
-    if (!payloads) return;
+    if (!payloads) {
+      return;
+    }
 
     await this.sendMany(payloads);
   }
@@ -334,12 +336,23 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
 
 async function loadMessageTemplate(
-  campId: string,
+  camp: Camp,
   event: string,
+  country: string | null | undefined,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
-    return await messageTemplateService.getMessageTemplateByName(event, campId);
+
+    // When the camp has only one group, we can assume the person is in that group
+    if (country === null && camp.countries.length === 1) {
+      country = camp.countries[0];
+    }
+
+    return await messageTemplateService.getMessageTemplateByName(
+      camp.id,
+      event,
+      country,
+    );
   } catch (error) {
     logger.error(error);
     return null;
@@ -355,7 +368,11 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     camp: Camp,
     registration: Registration,
   ): Promise<void> {
-    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    const messageTemplate = await loadMessageTemplate(
+      camp,
+      this.event,
+      registration.country,
+    );
     if (!messageTemplate) {
       logger.debug(
         `No message template for event ${this.event} and camp ${camp.id}`,
@@ -381,7 +398,11 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     camp: Camp,
     registration: Registration,
   ): Promise<void> {
-    const messageTemplate = await loadMessageTemplate(camp.id, this.event);
+    const messageTemplate = await loadMessageTemplate(
+      camp,
+      this.event,
+      registration.country,
+    );
     if (!messageTemplate) {
       return;
     }

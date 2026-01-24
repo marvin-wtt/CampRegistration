@@ -4,10 +4,9 @@ import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
 import type { AppConfig } from '#config/index';
 import { BaseService } from '#core/base/BaseService';
-import { filterByKeys } from '#utils/object';
-import { type TCountryCode, getCountryData } from 'countries-list';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
+import { FileService } from '#app/file/file.service.js';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: number | Record<string, number>;
@@ -25,7 +24,10 @@ type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 @injectable()
 export class CampService extends BaseService {
-  constructor(@Config() private readonly config: AppConfig) {
+  constructor(
+    @Config() private readonly config: AppConfig,
+    @inject(FileService) private readonly fileService: FileService,
+  ) {
     super();
   }
 
@@ -129,8 +131,6 @@ export class CampService extends BaseService {
     const fileIdMap = new Map<string, string>();
     const form = this.replaceFormFileUrls(data.form, fileIds, fileIdMap);
 
-    // TODO Create message-templates, table-templates and files in separate steps in transaction and move code to their service
-
     // Copy files from reference camp with new id
     const fileData = files.map((file) => ({
       ...file,
@@ -141,22 +141,12 @@ export class CampService extends BaseService {
       createdAt: undefined,
     }));
 
-    const languages = data.countries
-      .map((code): TCountryCode => code.toUpperCase() as TCountryCode)
-      .map(getCountryData)
-      .flatMap((country) => country.languages);
-
-    // Only keep message templates for the countries of the camp
-    // Other languages can't be edited by the user
-    messageTemplates = messageTemplates.map((template) => ({
-      ...template,
-      subject: filterByKeys(template.subject, languages),
-      body: filterByKeys(template.body, languages),
-    }));
-
     const messageTemplateData = messageTemplates.map((template) => ({
       ...template,
-      attachments: undefined,
+      attachments:
+        template.attachments && template.attachments.length > 0
+          ? this.fileService.getFileCreateManyInput(template.attachments)
+          : undefined,
     }));
 
     const camp = await this.prisma.camp.create({
@@ -200,6 +190,7 @@ export class CampService extends BaseService {
       id: undefined,
       campId: undefined,
       createdAt: undefined,
+      updatedAt: undefined,
     }));
   }
 

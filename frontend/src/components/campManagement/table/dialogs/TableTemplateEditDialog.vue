@@ -20,7 +20,7 @@
           hide-bottom-space
           outlined
           rounded
-          :locales="props.camp.countries"
+          :locales="camp.locales"
         />
 
         <a class="text-h6">

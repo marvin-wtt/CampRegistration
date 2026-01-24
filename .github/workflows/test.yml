@@ -99,11 +99,7 @@ jobs:
       STORAGE_LOCATION: local
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
-      SMTP_HOST: localhost
-      SMTP_PORT: 587
-      SMTP_SECURE: false
-      SMTP_USERNAME: user
-      SMTP_PASSWORD: password
+      EMAIL_DRIVER: noop
       EMAIL_FROM: noreply@yourapp.com
       EMAIL_REPLY_TO: noreply@yourapp.com
       EMAIL_ADMIN: admin@yourapp.com

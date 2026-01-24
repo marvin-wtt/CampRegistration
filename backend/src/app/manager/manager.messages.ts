@@ -2,6 +2,7 @@ import type { Camp, CampManager, Invitation, User } from '@prisma/client';
 import { translateObject } from '#utils/translateObject';
 import { MailBase } from '#app/mail/mail.base';
 import { generateUrl } from '#utils/url';
+import { countriesToLocales } from '#utils/countriesToLocales.js';
 
 type CampManagerWithUserOrInvitation = CampManager & { user: User | null } & {
   invitation: Invitation | null;
@@ -55,12 +56,16 @@ export class ManagerInvitationMessage extends ManagerMessage<{
   }
 
   protected locale(): string | undefined {
-    return (
-      this.payload.manager.user?.locale ??
-      (this.payload.camp.countries.length === 1
-        ? this.payload.camp.countries[0]
-        : undefined)
-    );
+    const superLocale = super.locale();
+    if (superLocale) {
+      return superLocale;
+    }
+
+    if (this.payload.camp.countries.length === 1) {
+      return countriesToLocales(this.payload.camp.countries)[0];
+    }
+
+    return undefined;
   }
 
   protected content() {

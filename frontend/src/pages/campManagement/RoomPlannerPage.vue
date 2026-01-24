@@ -151,7 +151,7 @@ const updateInProgress = computed<boolean>(() => {
 });
 
 const locales = computed<string[] | undefined>(() => {
-  return campDetailsStore.data?.countries;
+  return campDetailsStore.data?.locales;
 });
 
 const rooms = computed<RoomWithRoommates[]>(() => {

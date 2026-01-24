@@ -53,6 +53,20 @@ services:
       - "1080:1080" # Web UI
       - "1025:1025" # SMTP
 
+  phpmyadmin:
+    image: phpmyadmin
+    profiles: ["dev"]
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db_dev
+    environment:
+      - PMA_HOST=db_dev
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+
 volumes:
   db:
     driver: local

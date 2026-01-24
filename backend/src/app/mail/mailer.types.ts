@@ -1,27 +1,9 @@
-import type {
-  AddressLike,
-  BuiltMail,
-  MailPriority,
-} from '#app/mail/mail.types';
-
-export interface MailPayload {
-  to: AddressLike;
-  replyTo?: AddressLike | undefined;
-  priority?: MailPriority | undefined;
-  subject: string;
-  body: string; // The compiled text/HTML
-  attachments?: { filename: string; content: Buffer | string }[] | undefined;
-}
-
-export interface TemplateMailData extends Omit<MailPayload, 'body'> {
-  template: string;
-  context: Record<string, unknown>;
-}
+import type { BuiltMail } from '#app/mail/mail.types';
 
 export interface IMailer {
   sendMail(payload: BuiltMail): Promise<void> | void;
 
-  isAvailable(): Promise<boolean> | boolean;
+  verify(): Promise<void> | void;
 
   name(): string;
 

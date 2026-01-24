@@ -1,26 +1,36 @@
 import type { MailableCtor, MailBase } from '#app/mail/mail.base';
 import type { SimpleJob } from '#core/queue/Queue';
+import { injectable } from 'inversify';
 
-const registry = new Map<string, MailableCtor<unknown>>();
+@injectable()
+export class MailableRegistry {
+  private registry = new Map<string, MailableCtor<unknown>>();
 
-export function registerMailable<P>(ctor: MailableCtor<P>) {
-  if (!registry.has(ctor.type)) {
-    registry.set(ctor.type, ctor as MailableCtor<unknown>);
-    return;
+  has<P>(ctor: MailableCtor<P>): boolean {
+    if (!this.registry.has(ctor.type)) {
+      return false;
+    }
+
+    return this.registry.get(ctor.type) === ctor;
   }
 
-  if (registry.get(ctor.type) !== ctor) {
-    throw new Error(`Duplicate mailable type: "${ctor.type}"`);
-  }
-}
+  register<P>(ctor: MailableCtor<P>): void {
+    if (!this.registry.has(ctor.type)) {
+      this.registry.set(ctor.type, ctor as MailableCtor<unknown>);
+      return;
+    }
 
-export function createMailableFromJob(
-  job: SimpleJob<unknown>,
-): MailBase<unknown> {
-  const ctor = registry.get(job.name);
-  if (!ctor) {
-    throw new Error(`Unknown mailable: "${job.name}"`);
+    if (this.registry.get(ctor.type) !== ctor) {
+      throw new Error(`Duplicate mailable type: "${ctor.type}"`);
+    }
   }
 
-  return new ctor(job.payload);
+  createFromJob(job: SimpleJob<unknown>): MailBase<unknown> {
+    const ctor = this.registry.get(job.name);
+    if (!ctor) {
+      throw new Error(`Unknown mailable: "${job.name}"`);
+    }
+
+    return new ctor(job.payload);
+  }
 }

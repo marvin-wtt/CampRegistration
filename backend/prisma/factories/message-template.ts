@@ -16,30 +16,26 @@ export const MessageTemplateFactory = {
   ): Prisma.MessageTemplateCreateInput => {
     return {
       camp: data.camp! ?? undefined,
-      subject: data.subject ?? {
-        en: faker.lorem.sentence(),
-        de: faker.lorem.sentence(),
-        fr: faker.lorem.sentence(),
-      },
-      body: data.body ?? {
-        en: faker.lorem.paragraphs(3),
-        de: faker.lorem.paragraphs(3),
-        fr: faker.lorem.paragraphs(3),
-      },
+      subject: data.subject ?? faker.lorem.sentence(),
+      body: data.body ?? faker.lorem.paragraphs(1),
       ...data,
     };
   },
 
   buildDefaults: (
+    countries: string[],
     builder?: (
       event: string,
     ) => Omit<Partial<Prisma.MessageTemplateCreateInput>, 'event'>,
   ) => {
-    return defaultEvents.map((event) =>
-      MessageTemplateFactory.build({
-        event,
-        ...builder?.(event),
-      }),
+    return countries.flatMap((country) =>
+      defaultEvents.map((event) =>
+        MessageTemplateFactory.build({
+          country,
+          event,
+          ...builder?.(event),
+        }),
+      ),
     );
   },
 
