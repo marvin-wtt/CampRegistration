@@ -285,6 +285,11 @@
               <q-icon name="add" />
             </template>
           </q-input>
+
+          <q-toggle
+            v-model="data.autoAcceptRegistrations"
+            :label="t('field.auto_accept_registrations')"
+          />
         </camp-edit-step>
 
         <!-- Camp Details -->
@@ -376,7 +381,9 @@ const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
 const step = ref<number>(0);
 const loading = ref<boolean>(false);
-const data = ref<CampCreateData>({} as CampCreateData);
+const data = ref<CampCreateData>({
+  autoAcceptRegistrations: true,
+} as CampCreateData);
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
@@ -439,6 +446,7 @@ field:
   endTime: 'End time'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
+  auto_accept_registrations: 'Automatically accept registrations'
   location: 'Location'
   price: 'Price'
   public: 'Show camp on main page'
@@ -506,6 +514,7 @@ field:
   endTime: 'Endzeit'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
+  auto_accept_registrations: 'Anmeldungen automatisch akzeptieren'
   location: 'Ort'
   price: 'Preis'
   public: 'Camp auf Startseite anzeigen'
@@ -573,6 +582,7 @@ field:
   endTime: 'Heure de fin'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
+  auto_accept_registrations: 'Accepter automatiquement les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
   public: "Afficher le camp sur la page d'accueil"
@@ -640,6 +650,7 @@ field:
   endTime: 'Godzina zakończenia'
   minAge: 'Minimalny wiek'
   maxAge: 'Maksymalny wiek'
+  auto_accept_registrations: 'Automatycznie akceptuj rejestracje'
   location: 'Miejsce'
   price: 'Cena'
   public: 'Pokaż obóz na stronie głównej'
@@ -707,6 +718,7 @@ field:
   endTime: 'Čas konce'
   minAge: 'Minimální věk'
   maxAge: 'Maximální věk'
+  auto_accept_registrations: 'Automaticky přijímat registrace'
   location: 'Místo'
   price: 'Cena'
   public: 'Zobrazit tábor na úvodní stránce'
