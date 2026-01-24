@@ -162,7 +162,11 @@ const options = computed<Contact[]>(() => {
 function getRegistrationType(
   registration: Registration,
 ): Exclude<Contact['type'], 'group' | 'external'> {
-  if (registration.waitingList) {
+  if (registration.status === 'PENDING') {
+    throw new Error('Pending registrations should be filtered out beforehand.');
+  }
+
+  if (registration.status === 'WAITLISTED') {
     return 'waitingList';
   }
 
@@ -195,15 +199,15 @@ const sortItems = (items: Contact[]) => {
 };
 
 function createGroups(registrations: Registration[]): Contact[] {
-  const dataArray = registrations.map((registration) => {
-    return {
+  const dataArray = registrations
+    .filter((registration) => registration.status === 'PENDING')
+    .map((registration) => ({
       name: fullName(registration),
       country: country(registration),
       role: role(registration),
-      waitingList: registration.waitingList,
+      waitingList: registration.status === 'WAITLISTED',
       registration,
-    };
-  });
+    }));
 
   const groups = dataArray.reduce(
     (groups, data) => {

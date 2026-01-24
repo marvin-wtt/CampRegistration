@@ -105,9 +105,9 @@
           </q-select>
 
           <q-select
-            v-model="template.filterWaitingList"
+            v-model="template.filterStatus"
             :label="t('fields.filter_waiting_list.label')"
-            :options="waitingListOptions"
+            :options="statusOptions"
             emit-value
             map-options
             outlined
@@ -252,18 +252,18 @@ const advanced = ref<boolean>(false);
 const roleOptions: (string | QSelectOption)[] = ['participant', 'counselor'];
 const roleFilteredOptions = ref<(string | QSelectOption)[]>(roleOptions);
 
-const waitingListOptions: QSelectOption[] = [
+const statusOptions: QSelectOption[] = [
   {
-    value: 'include',
-    label: t('fields.filter_waiting_list.options.include'),
+    value: 'ACCEPTED',
+    label: t('fields.filter_status.options.accepted'),
   },
   {
-    value: 'exclude',
-    label: t('fields.filter_waiting_list.options.exclude'),
+    value: 'WAITLISTED',
+    label: t('fields.filter_status.options.waitlisted'),
   },
   {
-    value: 'only',
-    label: t('fields.filter_waiting_list.options.only'),
+    value: 'PENDING',
+    label: t('fields.filter_status.options.pending'),
   },
 ];
 
@@ -401,13 +401,13 @@ fields:
   filter_roles:
     label: 'Hide registrations with role'
     hint: ''
-  filter_waiting_list:
-    label: 'Waiting list'
+  filter_status:
+    label: 'Status'
     hint: ''
     options:
-      exclude: 'Exclude Waiting List'
-      include: 'Show all registrations'
-      only: 'Show Only Waiting List'
+      accepted: 'Accepted'
+      pending: 'Pending'
+      waitlisted: 'Waitlisted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -445,13 +445,13 @@ fields:
   filter_roles:
     label: 'Registrierungen mit Rolle ausblenden'
     hint: ''
-  filter_waiting_list:
-    label: 'Warteliste'
+  filter_status:
+    label: 'Status'
     hint: ''
     options:
-      exclude: 'Warteliste ausschließen'
-      include: 'Alle Registrierungen anzeigen'
-      only: 'Nur Warteliste anzeigen'
+      accepted: 'Akzeptiert'
+      pending: 'Ausstehend'
+      waitlisted: 'Auf der Warteliste'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -489,13 +489,13 @@ fields:
   filter_roles:
     label: 'Masquer les inscriptions avec rôle'
     hint: ''
-  filter_waiting_list:
-    label: 'Liste d’attente'
+  filter_status:
+    label: 'Statut'
     hint: ''
     options:
-      exclude: 'Exclure la liste d’attente'
-      include: 'Afficher toutes les inscriptions'
-      only: 'Afficher uniquement la liste d’attente'
+      accepted: 'Accepté'
+      pending: 'En attente'
+      waitlisted: "Sur liste d'attente"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -533,13 +533,13 @@ fields:
   filter_roles:
     label: 'Ukryj rejestracje z rolą'
     hint: ''
-  filter_waiting_list:
-    label: 'Lista oczekujących'
+  filter_status:
+    label: 'Status'
     hint: ''
     options:
-      exclude: 'Wyklucz listę oczekujących'
-      include: 'Pokaż wszystkie rejestracje'
-      only: 'Pokaż tylko listę oczekujących'
+      accepted: 'Zaakceptowane'
+      pending: 'Oczekujące'
+      waitlisted: 'Na liście oczekujących'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -577,11 +577,11 @@ fields:
   filter_roles:
     label: 'Skrýt registrace s rolí'
     hint: ''
-  filter_waiting_list:
-    label: 'Čekací seznam'
+  filter_status:
+    label: 'Stav'
     hint: ''
     options:
-      exclude: 'Vyloučit čekací seznam'
-      include: 'Zobrazit všechny registrace'
-      only: 'Zobrazit pouze čekací seznam'
+      accepted: 'Přijato'
+      pending: 'Čeká na vyřízení'
+      waitlisted: 'Na čekací listině'
 </i18n>

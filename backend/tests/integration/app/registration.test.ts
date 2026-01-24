@@ -204,7 +204,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const data = body.data;
 
       expect(data).toHaveProperty('id');
-      expect(data).toHaveProperty('waitingList');
+      expect(data).toHaveProperty('status');
       expect(data).toHaveProperty('data');
       expect(data).toHaveProperty('computedData');
       expect(data).toHaveProperty('computedData.firstName');
@@ -310,7 +310,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       expect(body).toHaveProperty('data');
       expect(body).toHaveProperty('data.id');
-      expect(body).toHaveProperty('data.waitingList');
+      expect(body).toHaveProperty('data.status');
       expect(body).toHaveProperty('data.data');
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
@@ -730,14 +730,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const assertRegistration = async (
         campId: string,
         data: unknown,
-        expected: boolean,
+        expected: string,
       ) => {
         const { body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data })
           .expect(201);
 
-        expect(body).toHaveProperty('data.waitingList', expected);
+        expect(body).toHaveProperty('data.status', expected);
       };
 
       it('should set waiting list for national camps', async () => {
@@ -750,7 +750,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             {
               first_name: `Jhon ${i}`,
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -760,7 +760,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           {
             first_name: `Jhon`,
           },
-          true,
+          'WAITLISTED',
         );
       });
 
@@ -777,7 +777,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               first_name: `Jhon ${i}`,
               country: 'de',
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -788,7 +788,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Jhon`,
             country: 'de',
           },
-          true,
+          'WAITLISTED',
         );
 
         // Other nation should not be on waiting list
@@ -798,7 +798,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Jhon`,
             country: 'fr',
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -814,7 +814,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Tom`,
             role: 'counselor',
           },
-          false,
+          'ACCEPTED',
         );
 
         // Fill camp
@@ -825,7 +825,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               first_name: `Jhon ${i}`,
               role: 'participant',
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -836,7 +836,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Jhon`,
             role: 'participant',
           },
-          true,
+          'WAITLISTED',
         );
 
         // Check another counselor
@@ -846,7 +846,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Mary`,
             role: 'counselor',
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -863,7 +863,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'counselor',
             country: 'de',
           },
-          false,
+          'ACCEPTED',
         );
 
         // Fill camp
@@ -875,7 +875,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               role: 'participant',
               country: 'de',
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -887,7 +887,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'participant',
             country: 'de',
           },
-          true,
+          'WAITLISTED',
         );
 
         // Check another counselor
@@ -898,7 +898,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'counselor',
             country: 'de',
           },
-          false,
+          'ACCEPTED',
         );
 
         // Check participant from other nation
@@ -909,7 +909,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'participant',
             country: 'fr',
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -926,7 +926,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
                 country: 'de',
               },
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -939,7 +939,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               country: 'de',
             },
           },
-          true,
+          'WAITLISTED',
         );
 
         // Other nation should not be on waiting list
@@ -951,7 +951,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               country: 'fr',
             },
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -964,7 +964,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             .post(`/api/v1/camps/${camp.id}/registrations`)
             .send({
               data: { first_name: `Jhon ${i}` },
-              waitingList: false,
+              status: 'ACCEPTED',
             })
             .expect(201);
         }
@@ -975,7 +975,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           {
             first_name: `Jhon`,
           },
-          true,
+          'WAITLISTED',
         );
       });
 
@@ -1248,7 +1248,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
           .send({
-            waitingList: false,
+            status: 'ACCEPTED',
           })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -1627,7 +1627,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           },
         });
         const registration = await createRegistration(camp, {
-          waitingList: true,
+          status: 'WAITLISTED',
           country: 'fr',
         });
 
@@ -1641,7 +1641,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
           .send({
-            waitingList: false,
+            status: 'ACCEPTED',
             data,
           })
           .auth(accessToken, { type: 'bearer' })

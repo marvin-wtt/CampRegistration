@@ -28,7 +28,9 @@ const TableTemplateBodySchema = z.object({
   ),
   order: z.number(),
   filter: z.string().nullable().optional(),
-  filterWaitingList: z.enum(['include', 'exclude', 'only']).optional(),
+  filterStatus: z
+    .array(z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']))
+    .optional(),
   filterRoles: z.array(z.string()).optional(),
   printOptions: z
     .object({

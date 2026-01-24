@@ -207,7 +207,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       },
       registration: {
         id: this.payload.registration.id,
-        waitingList: this.payload.registration.waitingList,
+        status: this.payload.registration.status,
         data: this.payload.registration.data,
         computedData: {
           firstName: this.payload.registration.firstName,
@@ -418,6 +418,17 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     }
 
     await this.sendMany(payload);
+  }
+}
+
+export class RegistrationSubmittedMessage extends RegistrationEventMessage {
+  static readonly event = 'registration_submitted';
+  static readonly type = 'registration:template:submitted';
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [
+      // Attach registration data PDF here
+    ];
   }
 }
 

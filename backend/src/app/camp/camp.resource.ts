@@ -19,6 +19,7 @@ export class CampResource extends JsonResource<
       id: this.data.id,
       public: this.data.public,
       active: this.data.active,
+      autoAcceptRegistrations: this.data.autoAcceptRegistrations,
       countries: this.data.countries,
       locales: countriesToLocales(this.data.countries),
       name: this.data.name,

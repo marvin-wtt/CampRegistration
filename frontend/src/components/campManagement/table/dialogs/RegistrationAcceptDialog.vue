@@ -102,7 +102,7 @@ function onConfirm() {
 <i18n locale="en" lang="yaml">
 title: 'Accept Registration'
 
-text: 'Are you sure you want to accept the registration of {name} from the waiting list? This action cannot be undone.'
+text: 'Are you sure you want to accept the registration of {name}? This action cannot be undone.'
 
 field:
   sendAutomatedMessage:
@@ -116,7 +116,7 @@ action:
 <i18n locale="de" lang="yaml">
 title: 'Anmeldung Akzeptieren'
 
-text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} von der Warteliste akzeptieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} akzeptieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
 
 field:
   sendAutomatedMessage:
@@ -130,7 +130,7 @@ action:
 <i18n locale="fr" lang="yaml">
 title: "Accepter l'inscription"
 
-text: "Êtes-vous sûr de vouloir accepter l'inscription de {name} sur la liste d'attente ? Cette action est irréversible."
+text: "Êtes-vous sûr de vouloir accepter l'inscription de {name} ? Cette action est irréversible."
 
 field:
   sendAutomatedMessage:
@@ -144,7 +144,7 @@ action:
 <i18n locale="pl" lang="yaml">
 title: 'Zaakceptuj rejestrację'
 
-text: 'Czy na pewno chcesz zaakceptować rejestrację {name} z listy oczekujących? Tej akcji nie można cofnąć.'
+text: 'Czy na pewno chcesz zaakceptować rejestrację {name}? Tej akcji nie można cofnąć.'
 
 field:
   sendAutomatedMessage:
@@ -158,7 +158,7 @@ action:
 <i18n locale="cs" lang="yaml">
 title: 'Přijmout registraci'
 
-text: 'Opravdu chcete přijmout registraci {name} ze seznamu čekatelů? Tuto akci nelze vrátit zpět.'
+text: 'Opravdu chcete přijmout registraci {name}? Tuto akci nelze vrátit zpět.'
 
 field:
   sendAutomatedMessage:
