@@ -110,6 +110,8 @@
             :options="statusOptions"
             emit-value
             map-options
+            multiple
+            use-chips
             outlined
             rounded
           >
