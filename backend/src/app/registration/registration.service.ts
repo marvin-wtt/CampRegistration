@@ -136,13 +136,19 @@ export class RegistrationService extends BaseService {
       async (transaction) => {
         const waitingList = await isWaitingList(transaction);
 
+        const status = waitingList
+          ? 'WAITLISTED'
+          : camp.autoAcceptRegistrations
+            ? 'ACCEPTED'
+            : 'PENDING';
+
         return transaction.registration.create({
           data: {
             ...data,
             ...computedData,
             id: undefined, // Force new ID generation
             data: formData,
-            waitingList,
+            status,
             camp: { connect: { id: camp.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
@@ -157,7 +163,7 @@ export class RegistrationService extends BaseService {
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
-      'waitingList' | 'data' | 'customData'
+      'status' | 'data' | 'customData'
     >,
     sessionId: string,
   ) {
@@ -166,7 +172,7 @@ export class RegistrationService extends BaseService {
         where: { id: registrationId },
         data: {
           customData: data.customData,
-          waitingList: data.waitingList,
+          status: data.status,
         },
         include: {
           bed: { include: { room: true } },
@@ -195,7 +201,7 @@ export class RegistrationService extends BaseService {
           ...computedData,
           data: data.data,
           customData: data.customData,
-          waitingList: data.waitingList,
+          status: data.status,
           files,
         },
         include: {

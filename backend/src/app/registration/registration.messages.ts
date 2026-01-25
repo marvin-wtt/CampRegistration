@@ -78,6 +78,11 @@ export class RegistrationNotifyMessage extends MailBase<{
     return objectValueOrAll(camp.contactEmail, country ?? 'unknown');
   }
 
+  protected locale(): string {
+    // The locale of the contact mail is unknown, so we use se users locale
+    return this.payload.registration.locale;
+  }
+
   protected replyTo(): AddressLike | undefined {
     return uniqueLowerCase(this.payload.registration.emails ?? []);
   }
@@ -92,7 +97,7 @@ export class RegistrationNotifyMessage extends MailBase<{
   protected content(): Content {
     const camp = this.payload.camp;
     const registration = this.payload.registration;
-    // TODO Use handlebars helper instead of generating url manually
+
     const url = generateUrl(['management', camp.id]);
 
     return {
@@ -207,7 +212,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       },
       registration: {
         id: this.payload.registration.id,
-        waitingList: this.payload.registration.waitingList,
+        status: this.payload.registration.status,
         data: this.payload.registration.data,
         computedData: {
           firstName: this.payload.registration.firstName,
@@ -418,6 +423,17 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     }
 
     await this.sendMany(payload);
+  }
+}
+
+export class RegistrationSubmittedMessage extends RegistrationEventMessage {
+  static readonly event = 'registration_submitted';
+  static readonly type = 'registration:template:submitted';
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [
+      // Attach registration data PDF here
+    ];
   }
 }
 

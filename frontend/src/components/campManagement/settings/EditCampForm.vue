@@ -198,6 +198,12 @@
       </template>
     </q-input>
 
+    <!-- Auto accept registrations -->
+    <q-toggle
+      v-model="data.autoAcceptRegistrations"
+      :label="t('field.auto_accept_registrations')"
+    />
+
     <!-- location -->
     <translated-input
       v-model="data.location"
@@ -340,6 +346,7 @@ field:
   endTime: 'End time'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
+  auto_accept_registrations: 'Automatically accept registrations'
   location: 'Location'
   price: 'Price'
   public: 'Show camp on main page'
@@ -401,6 +408,7 @@ field:
   endTime: 'Endzeit'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
+  auto_accept_registrations: 'Anmeldungen automatisch akzeptieren'
   location: 'Ort'
   price: 'Preis'
   public: 'Camp auf Startseite anzeigen'
@@ -462,6 +470,7 @@ field:
   endTime: 'Heure de fin'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
+  auto_accept_registrations: 'Accepter automatiquement les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
   public: "Afficher le camp sur la page d'accueil"
@@ -523,6 +532,7 @@ field:
   endTime: 'Czas zakończenia'
   minAge: 'Minimalny wiek'
   maxAge: 'Maksymalny wiek'
+  auto_accept_registrations: 'Automatycznie zaakceptuj rejestracje'
   location: 'Miejsce'
   price: 'Cena'
   public: 'Pokaż obóz na stronie głównej'
@@ -584,6 +594,7 @@ field:
   endTime: 'Čas konce'
   minAge: 'Minimální věk'
   maxAge: 'Maximální věk'
+  auto_accept_registrations: 'Automaticky přijímat registrace'
   location: 'Místo'
   price: 'Cena'
   public: 'Zobrazit tábor na úvodní stránce'

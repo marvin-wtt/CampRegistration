@@ -5,7 +5,7 @@ export interface TableTemplate extends Identifiable {
   columns: TableColumnTemplate[];
   order: number;
   filter?: string | undefined;
-  filterWaitingList?: 'include' | 'exclude' | 'only';
+  filterStatus?: ('PENDING' | 'WAITLISTED' | 'ACCEPTED')[];
   filterRoles?: string[] | undefined;
   printOptions?: {
     orientation?: 'portrait' | 'landscape';

@@ -11,6 +11,7 @@ import {
   RegistrationConfirmedMessage,
   RegistrationDeletedMessage,
   RegistrationNotifyMessage,
+  RegistrationSubmittedMessage,
   RegistrationUpdatedMessage,
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
@@ -61,10 +62,12 @@ export class RegistrationController extends BaseController {
     );
 
     // Notify participant
-    if (registration.waitingList) {
+    if (registration.status === 'ACCEPTED') {
+      await RegistrationConfirmedMessage.enqueueFor(camp, registration);
+    } else if (registration.status === 'WAITLISTED') {
       await RegistrationWaitlistedMessage.enqueueFor(camp, registration);
     } else {
-      await RegistrationConfirmedMessage.enqueueFor(camp, registration);
+      await RegistrationSubmittedMessage.enqueueFor(camp, registration);
     }
 
     // Notify contact email
@@ -77,7 +80,7 @@ export class RegistrationController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      body: { data, customData, waitingList },
+      body: { data, customData, status },
       params: { registrationId },
       query: { suppressMessage },
     } = await req.validate(validator.update);
@@ -87,7 +90,7 @@ export class RegistrationController extends BaseController {
     const updateData = {
       data,
       customData,
-      waitingList,
+      status,
     };
 
     const registration = await this.registrationService.updateRegistrationById(
@@ -102,7 +105,10 @@ export class RegistrationController extends BaseController {
         await RegistrationUpdatedMessage.enqueueFor(camp, registration);
       }
 
-      if (previousRegistration.waitingList && !registration.waitingList) {
+      if (
+        previousRegistration.status !== 'ACCEPTED' &&
+        registration.status === 'ACCEPTED'
+      ) {
         await RegistrationAcceptedMessage.enqueueFor(camp, registration);
       }
     }

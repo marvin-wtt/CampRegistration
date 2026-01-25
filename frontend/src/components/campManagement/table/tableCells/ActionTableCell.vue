@@ -30,7 +30,7 @@
         </q-item-section>
       </q-item>
       <q-item
-        v-if="waitingList && !readonly && can('camp.registrations.edit')"
+        v-if="!accepted && !readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="accept"
@@ -92,8 +92,8 @@ const registration = computed<Registration>(() => {
   return cellProps.row;
 });
 
-const waitingList = computed<boolean>(() => {
-  return cellProps.row.waitingList;
+const accepted = computed<boolean>(() => {
+  return cellProps.row.status === 'ACCEPTED';
 });
 
 function deleteItem(): void {
@@ -125,7 +125,7 @@ function accept(): void {
       void registrationStore.updateData(
         id,
         {
-          waitingList: false,
+          status: 'ACCEPTED',
         },
         params,
       );

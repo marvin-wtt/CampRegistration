@@ -21,7 +21,7 @@ export const RegistrationFactory = {
       city: faker.location.city(),
       zipCode: faker.location.zipCode(),
       country: faker.helpers.arrayElement(['de', 'fr']),
-      waitingList: false,
+      status: 'ACCEPTED',
       data: {},
       camp: {},
       ...data,

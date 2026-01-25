@@ -39,32 +39,33 @@ enum Role {
 }
 
 model Camp {
-  id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
-  active          Boolean
-  public          Boolean
+  id                      String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  active                  Boolean
+  public                  Boolean
+  autoAcceptRegistrations Boolean   @map("auto_accept_registrations") @default(true)
   /// ![Array<string>]
-  countries       Json      @db.Json
+  countries               Json      @db.Json
   /// ![string | Record<string, string>]
-  name            Json      @db.Json
+  name                    Json      @db.Json
   /// ![string | Record<string, string>]
-  organizer       Json      @db.Json
+  organizer               Json      @db.Json
   /// ![string | Record<string, string>]
-  contactEmail    Json      @map("contact_email") @db.Json
+  contactEmail            Json      @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
-  maxParticipants Json      @map("max_participants") @db.Json
-  minAge          Int       @map("min_age") @db.UnsignedInt
-  maxAge          Int       @map("max_age") @db.UnsignedInt
-  startAt         DateTime  @map("start_at") @db.DateTime(0)
-  endAt           DateTime  @map("end_at") @db.DateTime(0)
-  price           Float
+  maxParticipants         Json      @map("max_participants") @db.Json
+  minAge                  Int       @map("min_age") @db.UnsignedInt
+  maxAge                  Int       @map("max_age") @db.UnsignedInt
+  startAt                 DateTime  @map("start_at") @db.DateTime(0)
+  endAt                   DateTime  @map("end_at") @db.DateTime(0)
+  price                   Float
   /// ![string | Record<string, string>]
-  location        Json?     @db.Json
+  location                Json?     @db.Json
   /// ![Record<string, unknown>]
-  form            Json      @db.Json
+  form                    Json      @db.Json
   /// ![Record<string, unknown>]
-  themes          Json      @default("{}") @db.Json
-  createdAt       DateTime? @default(now()) @map("created_at")
-  updatedAt       DateTime? @updatedAt @map("updated_at")
+  themes                  Json      @default("{}") @db.Json
+  createdAt               DateTime? @default(now()) @map("created_at")
+  updatedAt               DateTime? @updatedAt @map("updated_at")
 
   campManager      CampManager[]
   registrations    Registration[]
@@ -102,6 +103,12 @@ model Invitation {
   @@map("camp_manager_invitations")
 }
 
+enum RegistrationStatus {
+  ACCEPTED
+  PENDING
+  WAITLISTED
+}
+
 model Registration {
   id          String    @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
   campId      String    @map("camp_id") @db.Char(26)
@@ -123,7 +130,7 @@ model Registration {
   country     String?
   locale      String    @default("en-US") @db.VarChar(5)
   //
-  waitingList Boolean   @default(true) @map("waiting_list")
+  status      RegistrationStatus @default(PENDING)
   deletedAt   DateTime?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")

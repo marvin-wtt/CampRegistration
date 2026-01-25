@@ -6,6 +6,7 @@ import { Translatable } from './Translatable.js';
 export interface Camp extends Identifiable {
   public: boolean;
   active: boolean;
+  autoAcceptRegistrations: boolean;
   countries: string[];
   locales: string[];
   name: Translatable;

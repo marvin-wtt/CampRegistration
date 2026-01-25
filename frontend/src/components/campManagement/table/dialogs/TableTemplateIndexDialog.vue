@@ -93,7 +93,7 @@ function addTemplate() {
     indexed: true,
     actions: true,
     sortBy: 'first_name',
-    filterWaitingList: 'exclude',
+    filterStatus: ['ACCEPTED'],
     columns: [
       {
         label: {
