@@ -397,13 +397,13 @@ template:
     description: 'Triggered when a user submits a new registration.'
   registration_confirmed:
     label: 'Registration Confirmed'
-    description: 'Triggered when a registration is directly confirmed and not on the waitlist.'
+    description: 'Triggered when a registration is accepted.'
   registration_waitlisted:
     label: 'Registration Waitlisted'
-    description: 'Triggered when a registration is placed on the waitlist because the limit for this country has been reached.'
+    description: 'Triggered when a registration is placed on the waitlist because the limit for this group has been reached.'
   registration_waitlist_accepted:
     label: 'Waitlist Registration Accepted'
-    description: 'Triggered when a registration from the waitlist is confirmed.'
+    description: 'Triggered when a registration from the waitlist is accepted.'
   registration_updated:
     label: 'Registration Updated'
     description: 'Triggered when any details of a registration are updated after submission.'
@@ -439,13 +439,13 @@ template:
     description: 'Wird ausgelöst, wenn ein Benutzer eine neue Anmeldung einreicht.'
   registration_confirmed:
     label: 'Anmeldung Bestätigt'
-    description: 'Wird ausgelöst, wenn eine Anmeldung direkt bestätigt wird und nicht auf der Warteliste steht.'
+    description: 'Wird ausgelöst, wenn eine Anmeldung bestätigt wird.'
   registration_waitlisted:
     label: 'Anmeldung auf Warteliste'
-    description: 'Wird ausgelöst, wenn eine Anmeldung auf die Warteliste gesetzt wird, weil das Limit für dieses Land erreicht wurde.'
+    description: 'Wird ausgelöst, wenn eine Registrierung auf die Warteliste gesetzt wird, weil das Limit für diese Gruppe erreicht ist.'
   registration_waitlist_accepted:
     label: 'Wartelistenanmeldung Akzeptiert'
-    description: 'Wird ausgelöst, wenn eine Anmeldung von der Warteliste bestätigt wird.'
+    description: 'Wird ausgelöst, wenn eine Registrierung von der Warteliste akzeptiert wird.'
   registration_updated:
     label: 'Anmeldung Aktualisiert'
     description: 'Wird ausgelöst, wenn nach der Einreichung einer Anmeldung Details aktualisiert werden.'
@@ -481,13 +481,13 @@ template:
     description: "Déclenché lorsqu'un utilisateur soumet une nouvelle inscription."
   registration_confirmed:
     label: 'Inscription Confirmée'
-    description: "Déclenché lorsque l'inscription est confirmée directement et n'est pas en liste d'attente."
+    description: "Déclenché lorsqu'une inscription est acceptée."
   registration_waitlisted:
     label: "Inscription en Liste d'Attente"
-    description: "Déclenché lorsqu'une inscription est placée en liste d'attente parce que la limite pour ce pays a été atteinte."
+    description: "Déclenché lorsqu'une inscription est placée sur la liste d'attente parce que la limite pour ce groupe a été atteinte."
   registration_waitlist_accepted:
     label: "Inscription Acceptée depuis la Liste d'Attente"
-    description: "Déclenché lorsqu'une inscription en liste d'attente est confirmée."
+    description: "Déclenché lorsqu'une inscription provenant de la liste d'attente est acceptée."
   registration_updated:
     label: 'Inscription Mise à Jour'
     description: "Déclenché lorsque des détails d'une inscription sont mis à jour après sa soumission."
@@ -523,13 +523,13 @@ template:
     description: 'Wyzwalane, gdy użytkownik przesyła nową rejestrację.'
   registration_confirmed:
     label: 'Rejestracja potwierdzona'
-    description: 'Wyzwalane, gdy rejestracja zostaje potwierdzona bez umieszczania na liście oczekujących.'
+    description: 'Wyzwalane po zaakceptowaniu rejestracji.'
   registration_waitlisted:
     label: 'Rejestracja na liście oczekujących'
-    description: 'Wyzwalane, gdy rejestracja zostaje umieszczona na liście oczekujących, ponieważ limit dla tego kraju został osiągnięty.'
+    description: 'Wyzwalane, gdy rejestracja zostaje umieszczona na liście oczekujących, ponieważ limit dla tej grupy został osiągnięty.'
   registration_waitlist_accepted:
     label: 'Rejestracja z listy oczekujących zaakceptowana'
-    description: 'Wyzwalane, gdy rejestracja z listy oczekujących zostaje potwierdzona.'
+    description: 'Wyzwalane, gdy rejestracja z listy oczekujących zostanie zaakceptowana.'
   registration_updated:
     label: 'Rejestracja zaktualizowana'
     description: 'Wyzwalane, gdy szczegóły rejestracji zostają zaktualizowane po jej przesłaniu.'
@@ -565,13 +565,13 @@ template:
     description: 'Spouští se, když uživatel odešle novou registraci.'
   registration_confirmed:
     label: 'Registrace potvrzena'
-    description: 'Spouští se, když je registrace potvrzena přímo a není na čekací listině.'
+    description: 'Spustí se, když je registrace přijata.'
   registration_waitlisted:
     label: 'Registrace na čekací listině'
-    description: 'Spouští se, když je registrace zařazena na čekací listinu, protože byl dosažen limit pro tuto zemi.'
+    description: 'Spustí se, když je registrace zařazena na čekací listinu, protože byl dosažen limit pro tuto skupinu.'
   registration_waitlist_accepted:
     label: 'Registrace z čekací listiny přijata'
-    description: 'Spouští se, když je registrace z čekací listiny potvrzena.'
+    description: 'Spustí se, když je přijata registrace z čekací listiny.'
   registration_updated:
     label: 'Registrace aktualizována'
     description: 'Spouští se, když jsou po odeslání registrace aktualizovány její údaje.'
