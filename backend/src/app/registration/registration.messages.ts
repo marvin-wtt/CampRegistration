@@ -78,6 +78,11 @@ export class RegistrationNotifyMessage extends MailBase<{
     return objectValueOrAll(camp.contactEmail, country ?? 'unknown');
   }
 
+  protected locale(): string {
+    // The locale of the contact mail is unknown, so we use se users locale
+    return this.payload.registration.locale;
+  }
+
   protected replyTo(): AddressLike | undefined {
     return uniqueLowerCase(this.payload.registration.emails ?? []);
   }
@@ -92,7 +97,7 @@ export class RegistrationNotifyMessage extends MailBase<{
   protected content(): Content {
     const camp = this.payload.camp;
     const registration = this.payload.registration;
-    // TODO Use handlebars helper instead of generating url manually
+
     const url = generateUrl(['management', camp.id]);
 
     return {
