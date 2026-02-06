@@ -36,7 +36,6 @@ import {
   campWithMultipleFilesRequired,
   campWithAddressCampDataTypes,
   campWithEmailAndCountry,
-  campWithEmailSingleCountry,
 } from './fixtures/registration.fixtures.js';
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
@@ -310,16 +309,37 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       expect(body).toHaveProperty('data');
       expect(body).toHaveProperty('data.id');
-      expect(body).toHaveProperty('data.status');
-      expect(body).toHaveProperty('data.data');
+      expect(body).toHaveProperty('data.status', 'ACCEPTED');
+      expect(body).toHaveProperty('data.data', data);
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
-      expect(body).toHaveProperty('data.computedData');
-      expect(body).toHaveProperty('data.customData');
+      expect(body).toHaveProperty('data.computedData', {});
+      expect(body).toHaveProperty('data.customData', {});
       expect(body).toHaveProperty('data.locale');
       expect(body).toHaveProperty('data.room');
       expect(body).toHaveProperty('data.createdAt');
       expect(body).toHaveProperty('data.updatedAt');
+    });
+
+    it('set the registration status to pending without auto-accept', async () => {
+      const camp = await CampFactory.create({
+        ...campPublic,
+        autoAcceptRegistrations: false,
+      });
+
+      const data = {
+        data: {
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        },
+      };
+
+      const { body } = await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send(data)
+        .expect(201);
+
+      expect(body).toHaveProperty('data.status', 'PENDING');
     });
 
     it('should respond with `201` status code for private camps', async () => {
@@ -333,68 +353,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data })
         .expect(201);
-    });
-
-    it('should respond with `201` status code when form has custom questions', async () => {
-      const camp = await CampFactory.create(campWithCustomFields);
-
-      const data = {
-        first_name: 'Jhon',
-        role: 'participant',
-      };
-
-      const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data })
-        .expect(201);
-
-      expect(body).toHaveProperty('data.data.role', data.role);
-    });
-
-    it('should respond with `201` status code when form has camp variables', async () => {
-      const camp = await CampFactory.create(campWithCampVariable);
-
-      const validData = {
-        first_name: 'Jhon',
-        age: 11,
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: validData })
-        .expect(201);
-
-      const invalidData = {
-        first_name: 'Jhon',
-        age: 5,
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: invalidData })
-        .expect(400);
-    });
-
-    it('should respond with `201` status code when form has custom functions', async () => {
-      const camp = await CampFactory.create(campWithFormFunctions);
-
-      const validData = {
-        date: '2000-01-01',
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: validData })
-        .expect(201);
-
-      const invalidData = {
-        date: '2001-01-01',
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: invalidData })
-        .expect(400);
     });
 
     it('should respond with `401` status code when camp is not active', async () => {
@@ -438,6 +396,70 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send(data)
         .expect(400);
+    });
+
+    describe('from', () => {
+      it('should respond with `201` status code when form has custom questions', async () => {
+        const camp = await CampFactory.create(campWithCustomFields);
+
+        const data = {
+          first_name: 'Jhon',
+          role: 'participant',
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(body).toHaveProperty('data.data.role', data.role);
+      });
+
+      it('should respond with `201` status code when form has camp variables', async () => {
+        const camp = await CampFactory.create(campWithCampVariable);
+
+        const validData = {
+          first_name: 'Jhon',
+          age: 11,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: validData })
+          .expect(201);
+
+        const invalidData = {
+          first_name: 'Jhon',
+          age: 5,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: invalidData })
+          .expect(400);
+      });
+
+      it('should respond with `201` status code when form has custom functions', async () => {
+        const camp = await CampFactory.create(campWithFormFunctions);
+
+        const validData = {
+          date: '2000-01-01',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: validData })
+          .expect(201);
+
+        const invalidData = {
+          date: '2001-01-01',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: invalidData })
+          .expect(400);
+      });
     });
 
     describe('locale', () => {
@@ -1028,6 +1050,43 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
+      const createCampWithTemplates = async () => {
+        return CampFactory.create({
+          ...campWithEmailAndMaxParticipants,
+          messageTemplates: {
+            createMany: {
+              data: [
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_submitted',
+                  subject: 'Registration received',
+                }),
+                MessageTemplateFactory.build({
+                  event: 'registration_confirmed',
+                  subject: 'Registration confirmed',
+                  country: 'fr',
+                }),
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_waitlisted',
+                  subject: 'Registration on waiting list',
+                }),
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_updated',
+                  subject: 'Registration updated',
+                }),
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_canceled',
+                  subject: 'Registration canceled',
+                }),
+              ],
+            },
+          },
+        });
+      };
+
       it('should not send a message when message template for group is missing', async () => {
         const camp = await CampFactory.create({
           ...campWithEmailAndCountry,
@@ -1054,16 +1113,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user with country', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailAndCountry,
-          messageTemplates: {
-            create: MessageTemplateFactory.build({
-              event: 'registration_confirmed',
-              subject: 'Registration confirmed',
-              country: 'fr',
-            }),
-          },
-        });
+        const camp = await createCampWithTemplates();
 
         const data = {
           email: 'test@example.com',
@@ -1080,21 +1130,18 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expectEmailWith({
           to: data.email,
           replyTo: camp.contactEmail as string,
+          subject: 'Registration received',
+        });
+
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail as string,
           subject: 'Registration confirmed',
         });
       });
 
       it('should send a confirmation email to the user without country in national camp', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailSingleCountry,
-          messageTemplates: {
-            create: MessageTemplateFactory.build({
-              event: 'registration_confirmed',
-              subject: 'Registration confirmed',
-              country: 'fr',
-            }),
-          },
-        });
+        const camp = await createCampWithTemplates();
 
         const data = {
           email: 'test@example.com',
@@ -1106,6 +1153,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
           .expect(201);
+
+        expectEmailWith({
+          to: data.email,
+          replyTo: camp.contactEmail as string,
+          subject: 'Registration received',
+        });
 
         expectEmailWith({
           to: data.email,
@@ -1201,16 +1254,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a waiting list information to the user', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailAndMaxParticipants,
-          messageTemplates: {
-            create: MessageTemplateFactory.build({
-              country: 'fr',
-              event: 'registration_waitlisted',
-              subject: 'Registration on waiting list',
-            }),
-          },
-        });
+        const camp = await createCampWithTemplates();
 
         const data = {
           email: 'test@example.com',
@@ -1221,6 +1265,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
           .expect(201);
+
+        expectEmailWith({
+          to: data.email,
+          subject: 'Registration received',
+        });
 
         expectEmailWith({
           to: data.email,

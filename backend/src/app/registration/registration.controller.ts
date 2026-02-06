@@ -106,7 +106,14 @@ export class RegistrationController extends BaseController {
       }
 
       if (
-        previousRegistration.status !== 'ACCEPTED' &&
+        previousRegistration.status === 'PENDING' &&
+        registration.status === 'ACCEPTED'
+      ) {
+        await RegistrationConfirmedMessage.enqueueFor(camp, registration);
+      }
+
+      if (
+        previousRegistration.status === 'WAITLISTED' &&
         registration.status === 'ACCEPTED'
       ) {
         await RegistrationAcceptedMessage.enqueueFor(camp, registration);
