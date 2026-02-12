@@ -43,7 +43,6 @@
     "html-to-image": "^1.11.13",
     "http-status": "^2.1.0",
     "jsep": "^1.4.0",
-    "jspdf": "^4.0.0",
     "libphonenumber-js": "^1.12.17",
     "markdown-it": "^14.1.0",
     "pinia": "^3.0.2",
