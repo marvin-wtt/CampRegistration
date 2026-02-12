@@ -398,7 +398,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(400);
     });
 
-    describe('from', () => {
+    describe('form', () => {
       it('should respond with `201` status code when form has custom questions', async () => {
         const camp = await CampFactory.create(campWithCustomFields);
 

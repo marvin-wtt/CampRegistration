@@ -60,7 +60,7 @@ async function main() {
       if (modified) {
         await tx.tableTemplate.update({
           where: { id: tableTemplate.id },
-          data: tableTemplate.data,
+          data: { data: tableTemplate.data },
         });
       }
     }

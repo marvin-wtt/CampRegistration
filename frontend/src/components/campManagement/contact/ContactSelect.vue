@@ -146,13 +146,15 @@ const filteredOptions = computed<Contact[]>(() => {
 });
 
 const options = computed<Contact[]>(() => {
-  const registrationOptions = props.registrations.map(
-    (registration): Contact => ({
-      registration,
-      name: formatPersonName(fullName(registration)),
-      type: getRegistrationType(registration),
-    }),
-  );
+  const registrationOptions = props.registrations
+    .filter((registration) => registration.status !== 'PENDING')
+    .map(
+      (registration): Contact => ({
+        registration,
+        name: formatPersonName(fullName(registration)),
+        type: getRegistrationType(registration),
+      }),
+    );
 
   const groupOptions = createGroups(props.registrations);
 

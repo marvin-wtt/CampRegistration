@@ -3,14 +3,14 @@
     v-if="status === 'WAITLISTED'"
     :size
     color="warning"
-    name="schedule"
+    name="hourglass_top"
   />
 
   <q-icon
     v-else-if="status === 'PENDING'"
     :size
     color="warning"
-    name="hourglass_top"
+    name="schedule"
   />
 
   <q-icon

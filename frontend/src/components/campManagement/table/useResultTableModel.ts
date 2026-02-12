@@ -107,7 +107,7 @@ export function useResultTableModel(
     // Waiting list
     if (
       template.value.filterStatus !== undefined &&
-      template.value.filterStatus.length < 0
+      template.value.filterStatus.length > 0
     ) {
       r = r.filter((row) => template.value.filterStatus?.includes(row.status));
     }
