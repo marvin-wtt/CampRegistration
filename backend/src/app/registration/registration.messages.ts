@@ -79,7 +79,7 @@ export class RegistrationNotifyMessage extends MailBase<{
   }
 
   protected locale(): string {
-    // The locale of the contact mail is unknown, so we use se users locale
+    // The locale of the contact mail is unknown, so we use the users locale
     return this.payload.registration.locale;
   }
 

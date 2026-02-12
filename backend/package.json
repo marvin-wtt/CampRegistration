@@ -9,6 +9,7 @@
     "build": "prisma generate && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
     "build:views": "mkdirp ./build/views/emails/ && mjml src/views/emails/**/*.mjml -o ./build/views/emails/",
     "data-miration:message-templates": "tsx prisma/migrations/20260121175357_update_message_templates_add_country_column/migration.ts",
+    "data-miration:registration-status": "tsx prisma/migrations/20260124022616_update_registrations_replace_waitinglist_with_status/migration.ts",
     "migrate": "npm run db:migrate",
     "db:migrate": "prisma migrate deploy",
     "db:reset": "npx prisma db push --force-reset --accept-data-loss",

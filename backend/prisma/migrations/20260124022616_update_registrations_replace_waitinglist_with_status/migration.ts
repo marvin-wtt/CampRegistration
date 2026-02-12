@@ -13,20 +13,23 @@ async function main() {
         modified = true;
 
         const val = tableTemplate.data.filterWaitingList;
-        if (val === 'include') {
-          tableTemplate.data.filterStatus = ['ACCEPTED', 'WAITLISTED'];
-        } else if (val === 'only') {
+        if (val === 'only') {
           tableTemplate.data.filterStatus = ['WAITLISTED'];
         } else if (val === 'exclude') {
           tableTemplate.data.filterStatus = ['ACCEPTED'];
+        } else {
+          tableTemplate.data.filterStatus = undefined;
         }
 
         delete tableTemplate.data.filterWaitingList;
       }
 
-      if ('columns' in tableTemplate && Array.isArray(tableTemplate.columns)) {
+      if (
+        'columns' in tableTemplate.data &&
+        Array.isArray(tableTemplate.data.columns)
+      ) {
         // Replace the waiting list column
-        for (const column of tableTemplate.columns) {
+        for (const column of tableTemplate.data.columns) {
           if (
             column.name !== 'waiting_list' ||
             column.field !== 'waitingList' ||
@@ -57,7 +60,7 @@ async function main() {
       if (modified) {
         await tx.tableTemplate.update({
           where: { id: tableTemplate.id },
-          data: tableTemplate,
+          data: tableTemplate.data,
         });
       }
     }

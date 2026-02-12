@@ -200,7 +200,7 @@ const sortItems = (items: Contact[]) => {
 
 function createGroups(registrations: Registration[]): Contact[] {
   const dataArray = registrations
-    .filter((registration) => registration.status === 'PENDING')
+    .filter((registration) => registration.status !== 'PENDING')
     .map((registration) => ({
       name: fullName(registration),
       country: country(registration),

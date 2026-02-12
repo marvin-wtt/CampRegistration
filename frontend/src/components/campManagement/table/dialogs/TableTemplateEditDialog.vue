@@ -106,7 +106,7 @@
 
           <q-select
             v-model="template.filterStatus"
-            :label="t('fields.filter_waiting_list.label')"
+            :label="t('fields.filter_status.label')"
             :options="statusOptions"
             emit-value
             map-options
