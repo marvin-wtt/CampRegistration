@@ -1,6 +1,6 @@
 -- AlterTable
 ALTER TABLE `camps`
-  ADD COLUMN `auto_accept_registrations` BOOLEAN NOT NULL DEFAULT true;
+  ADD COLUMN `confirmation_mode` ENUM('AUTOMATIC', 'MANUAL') NOT NULL DEFAULT 'AUTOMATIC';
 
 -- AlterTable
 ALTER TABLE `registrations`

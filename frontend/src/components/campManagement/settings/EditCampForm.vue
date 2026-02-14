@@ -198,10 +198,13 @@
       </template>
     </q-input>
 
-    <!-- Auto accept registrations -->
-    <q-toggle
-      v-model="data.autoAcceptRegistrations"
-      :label="t('field.auto_accept_registrations')"
+    <!-- Admission mode -->
+    <q-select
+      v-model="data.confirmationMode"
+      :label="t('field.confirmation_model')"
+      :options="confirmationModeOptions"
+      outlined
+      rounded
     />
 
     <!-- location -->
@@ -275,13 +278,14 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import type { Camp } from '@camp-registration/common/entities';
+import type { Camp, CampDetails } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useI18n } from 'vue-i18n';
 import CountrySelect from 'components/common/CountrySelect.vue';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
 import { deepToRaw } from 'src/utils/deepToRaw';
+import type { QSelectOption } from 'quasar';
 
 const { t } = useI18n();
 
@@ -312,6 +316,21 @@ const submitLabel = computed<string>(() => {
   return props.mode === 'create'
     ? t('action.submit.create')
     : t('action.submit.edit');
+});
+
+const confirmationModeOptions = computed<
+  QSelectOption<CampDetails['confirmationMode']>[]
+>(() => {
+  return [
+    {
+      label: t('confirmation_mode.automatic'),
+      value: 'AUTOMATIC',
+    },
+    {
+      label: t('confirmation_mode.manual'),
+      value: 'MANUAL',
+    },
+  ];
 });
 
 function initialValue(): Partial<Camp> {
@@ -346,7 +365,7 @@ field:
   endTime: 'End time'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
-  auto_accept_registrations: 'Automatically accept registrations'
+  confirmation_mode: 'Accept registrations'
   location: 'Location'
   price: 'Price'
   public: 'Show camp on main page'
@@ -385,6 +404,10 @@ validation:
     empty: 'Please enter a price greater than or equal to 0'
     positive: 'Price must be a positive number'
 
+confirmation_mode:
+  automatic: 'Automatic'
+  manual: 'Manual'
+
 action:
   reset: 'Reset'
   submit:
@@ -408,7 +431,7 @@ field:
   endTime: 'Endzeit'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
-  auto_accept_registrations: 'Anmeldungen automatisch akzeptieren'
+  confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
   public: 'Camp auf Startseite anzeigen'
@@ -447,6 +470,10 @@ validation:
     empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
     positive: 'Der Preis muss eine positive Zahl sein'
 
+confirmation_mode:
+  automatic: 'Automatisch'
+  manual: 'Manuell'
+
 action:
   reset: 'Reset'
   submit:
@@ -470,7 +497,7 @@ field:
   endTime: 'Heure de fin'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
-  auto_accept_registrations: 'Accepter automatiquement les inscriptions'
+  confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
   public: "Afficher le camp sur la page d'accueil"
@@ -509,6 +536,10 @@ validation:
     empty: 'Veuillez entrer un prix supérieur ou égal à 0'
     positive: 'Le prix doit être un nombre positif'
 
+confirmation_mode:
+  automatic: 'Automatique'
+  manual: 'Manuel'
+
 action:
   reset: 'Réinitialiser'
   submit:
@@ -532,7 +563,7 @@ field:
   endTime: 'Czas zakończenia'
   minAge: 'Minimalny wiek'
   maxAge: 'Maksymalny wiek'
-  auto_accept_registrations: 'Automatycznie zaakceptuj rejestracje'
+  confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
   public: 'Pokaż obóz na stronie głównej'
@@ -571,6 +602,10 @@ validation:
     empty: 'Podaj cenę większą lub równą 0'
     positive: 'Cena musi być liczbą dodatnią'
 
+confirmation_mode:
+  automatic: 'Automatyczny'
+  manual: 'Ręczny'
+
 action:
   reset: 'Resetuj'
   submit:
@@ -594,7 +629,7 @@ field:
   endTime: 'Čas konce'
   minAge: 'Minimální věk'
   maxAge: 'Maximální věk'
-  auto_accept_registrations: 'Automaticky přijímat registrace'
+  confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
   public: 'Zobrazit tábor na úvodní stránce'
@@ -632,6 +667,10 @@ validation:
   price:
     empty: 'Zadejte cenu větší nebo rovnu 0'
     positive: 'Cena musí být kladné číslo'
+
+confirmation_mode:
+  automatic: 'Automatický'
+  manual: 'Manuální'
 
 action:
   reset: 'Resetovat'

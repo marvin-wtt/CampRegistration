@@ -15,7 +15,7 @@ export const campPrivate = {
 export const campPublic = {
   active: true,
   public: false,
-  autoAcceptRegistrations: true,
+  confirmationMode: 'AUTOMATIC',
   form: createForm([
     {
       name: 'first_name',

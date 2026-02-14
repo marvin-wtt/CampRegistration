@@ -324,7 +324,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
     it('set the registration status to pending without auto-accept', async () => {
       const camp = await CampFactory.create({
         ...campPublic,
-        autoAcceptRegistrations: false,
+        confirmationMode: 'MANUAL',
       });
 
       const data = {

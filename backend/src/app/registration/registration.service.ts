@@ -138,7 +138,7 @@ export class RegistrationService extends BaseService {
 
         const status = waitingList
           ? 'WAITLISTED'
-          : camp.autoAcceptRegistrations
+          : camp.confirmationMode === 'AUTOMATIC'
             ? 'ACCEPTED'
             : 'PENDING';
 
