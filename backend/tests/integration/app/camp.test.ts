@@ -47,6 +47,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     id: data.id ?? expect.anything(),
     active: data.active,
     public: data.public,
+    confirmationMode: data.confirmationMode,
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,

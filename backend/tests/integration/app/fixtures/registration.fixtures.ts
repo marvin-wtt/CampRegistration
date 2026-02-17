@@ -1,4 +1,5 @@
 import { createForm } from '../utils/form.js';
+import { Prisma } from '@prisma/client';
 
 export const campPrivate = {
   active: true,
@@ -12,7 +13,7 @@ export const campPrivate = {
   ]),
 };
 
-export const campPublic = {
+export const campPublic: Partial<Prisma.CampCreateInput> = {
   active: true,
   public: false,
   confirmationMode: 'AUTOMATIC',
@@ -459,6 +460,16 @@ export const campWithEmailAndMaxParticipants = {
       name: 'email',
       type: 'text',
       campDataType: 'email',
+    },
+    {
+      name: 'first_name',
+      type: 'text',
+      campDataType: 'first_name',
+    },
+    {
+      name: 'last_name',
+      type: 'text',
+      campDataType: 'last_name',
     },
     {
       name: 'country',

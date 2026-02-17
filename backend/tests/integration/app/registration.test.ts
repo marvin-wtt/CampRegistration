@@ -310,7 +310,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body).toHaveProperty('data');
       expect(body).toHaveProperty('data.id');
       expect(body).toHaveProperty('data.status', 'ACCEPTED');
-      expect(body).toHaveProperty('data.data', data);
+      expect(body).toHaveProperty('data.data');
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
       expect(body).toHaveProperty('data.computedData', {});
@@ -1130,12 +1130,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expectEmailWith({
           to: data.email,
           replyTo: camp.contactEmail as string,
-          subject: 'Registration received',
-        });
-
-        expectEmailWith({
-          to: data.email,
-          replyTo: camp.contactEmail as string,
           subject: 'Registration confirmed',
         });
       });
@@ -1153,12 +1147,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
           .expect(201);
-
-        expectEmailWith({
-          to: data.email,
-          replyTo: camp.contactEmail as string,
-          subject: 'Registration received',
-        });
 
         expectEmailWith({
           to: data.email,

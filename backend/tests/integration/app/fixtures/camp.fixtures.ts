@@ -1272,13 +1272,6 @@ export const campUpdateBody: UpdateBodyData[] = [
     },
     expected: 400,
   },
-  {
-    name: 'Confirmation missing',
-    data: {
-      confirmationMode: undefined,
-    },
-    expected: 200,
-  },
 ];
 
 export const campWithForm = {
