@@ -76,6 +76,7 @@ const assertCampResponseBody = (
     id: data.id ?? expect.anything(),
     active: data.active,
     public: data.public,
+    confirmationMode: data.confirmationMode,
     countries: data.countries,
     locales: data.locales,
     name: data.name,

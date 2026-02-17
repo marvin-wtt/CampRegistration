@@ -19,6 +19,7 @@ export const campInactive = {
 export const campCreateNational = {
   active: false,
   public: false,
+  confirmationMode: 'AUTOMATIC',
   countries: ['de'],
   name: 'Test Camp',
   organizer: 'Test Org',
@@ -485,6 +486,39 @@ export const campCreatedBody: CreateBodyData[] = [
       },
     },
     expected: 400,
+  },
+  // Confirmation mode
+  {
+    name: 'Confirmation mode automatic',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: 'AUTOMATIC',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Confirmation mode manual',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: 'MANUAL',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Confirmation mode invalid',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: 'SEMI-AUTOMATIC',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Confirmation missing',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: undefined,
+    },
+    expected: 201,
   },
 ];
 
@@ -1215,6 +1249,35 @@ export const campUpdateBody: UpdateBodyData[] = [
       countries: ['de'],
     },
     expected: 400,
+  },
+  // Confirmation mode
+  {
+    name: 'Confirmation mode automatic',
+    data: {
+      confirmationMode: 'AUTOMATIC',
+    },
+    expected: 200,
+  },
+  {
+    name: 'Confirmation mode manual',
+    data: {
+      confirmationMode: 'MANUAL',
+    },
+    expected: 200,
+  },
+  {
+    name: 'Confirmation mode invalid',
+    data: {
+      confirmationMode: 'SEMI-AUTOMATIC',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Confirmation missing',
+    data: {
+      confirmationMode: undefined,
+    },
+    expected: 200,
   },
 ];
 
