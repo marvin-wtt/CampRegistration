@@ -365,28 +365,6 @@ export const campWithEmail = {
   ]),
 };
 
-export const campWithEmailSingleCountry = {
-  ...campPrivate,
-  countries: ['fr'],
-  form: createForm([
-    {
-      name: 'email',
-      type: 'text',
-      campDataType: 'email',
-    },
-    {
-      name: 'first_name',
-      type: 'text',
-      campDataType: 'first_name',
-    },
-    {
-      name: 'last_name',
-      type: 'text',
-      campDataType: 'last_name',
-    },
-  ]),
-};
-
 export const campWithEmailAndCountry = {
   ...campPrivate,
   countries: ['de', 'fr'],

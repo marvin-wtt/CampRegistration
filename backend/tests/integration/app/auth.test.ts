@@ -980,7 +980,7 @@ describe('/api/v1/auth', async () => {
         .send({
           email: 'test@email.net',
         })
-        .expect(204);
+        .expectOrPrint(204);
     });
 
     it('should respond with `204` status code when provided with invalid email', async () => {

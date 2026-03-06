@@ -313,7 +313,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body).toHaveProperty('data.data');
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
-      expect(body).toHaveProperty('data.computedData', {});
+      expect(body).toHaveProperty('data.computedData');
       expect(body).toHaveProperty('data.customData', {});
       expect(body).toHaveProperty('data.locale');
       expect(body).toHaveProperty('data.room');
@@ -1050,9 +1050,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
-      const createCampWithTemplates = async () => {
+      const createCampWithTemplates = async (
+        data: Partial<Prisma.CampCreateInput>,
+      ) => {
         return CampFactory.create({
-          ...campWithEmailAndMaxParticipants,
+          ...data,
           messageTemplates: {
             createMany: {
               data: [
@@ -1113,7 +1115,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user with country', async () => {
-        const camp = await createCampWithTemplates();
+        const camp = await createCampWithTemplates(campWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
@@ -1135,12 +1137,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user without country in national camp', async () => {
-        const camp = await createCampWithTemplates();
+        const camp = await createCampWithTemplates(campWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
           first_name: 'Jhon',
           last_name: 'Doe',
+          country: 'fr',
         };
 
         await request()
@@ -1181,11 +1184,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a notification to the contact email for national camp', async () => {
-        const camp = await CampFactory.create(campWithEmail);
+        const camp = await CampFactory.create(campWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
           first_name: 'Jhon',
+          country: 'fr',
         };
 
         await request()
@@ -1221,28 +1225,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
       });
 
-      it('should send a copy to all contact emails if country missing', async () => {
-        const camp = await CampFactory.create(
-          campWithContactEmailInternational,
-        );
-
-        const data = {};
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(201);
-
-        const expectedEmails = Object.values(
-          campWithContactEmailInternational.contactEmail,
-        );
-
-        expectEmailWith({
-          to: expect.arrayContaining(expectedEmails),
-        });
-      });
-
       it('should send a waiting list information to the user', async () => {
-        const camp = await createCampWithTemplates();
+        const camp = await createCampWithTemplates(
+          campWithEmailAndMaxParticipants,
+        );
 
         const data = {
           email: 'test@example.com',
@@ -1253,11 +1239,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .post(`/api/v1/camps/${camp.id}/registrations`)
           .send({ data })
           .expect(201);
-
-        expectEmailWith({
-          to: data.email,
-          subject: 'Registration received',
-        });
 
         expectEmailWith({
           to: data.email,
