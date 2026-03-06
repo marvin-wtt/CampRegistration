@@ -201,7 +201,7 @@ function toggleDarkMode() {
 }
 
 function logout() {
-  authStore.logout();
+  void authStore.logout();
 }
 </script>
 

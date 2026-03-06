@@ -1,4 +1,8 @@
-import type { AppModule } from '#core/base/AppModule';
+import type { AppModule, BindOptions } from '#core/base/AppModule';
+import { TokenService } from '#app/token/token.service';
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class TokenModule implements AppModule {}
+export class TokenModule implements AppModule {
+  bindContainers(options: BindOptions) {
+    options.bind(TokenService).toSelf().inSingletonScope();
+  }
+}

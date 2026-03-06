@@ -5,6 +5,8 @@ import { EmailEnvSchema } from './email.schema.js';
 import { StorageEnvSchema } from './storage.schema.js';
 import { CsrfEnvSchema } from './csrf.schema.js';
 import { DatabaseSchema } from './database.schema.js';
+import { RedisSchema } from './redis.schema.js';
+import { QueueSchema } from './queue.schema.js';
 
 export const EnvSchema = z
   .object({
@@ -14,5 +16,7 @@ export const EnvSchema = z
     ...EmailEnvSchema.shape,
     ...StorageEnvSchema.shape,
     ...CsrfEnvSchema.shape,
+    ...RedisSchema.shape,
+    ...QueueSchema.shape,
   })
   .readonly();

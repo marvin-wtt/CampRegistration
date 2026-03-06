@@ -1,5 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
+@injectable()
 export class BedService extends BaseService {
   async getBedById(id: string, roomId: string) {
     return this.prisma.bed.findFirst({
@@ -36,5 +38,3 @@ export class BedService extends BaseService {
     });
   }
 }
-
-export default new BedService();

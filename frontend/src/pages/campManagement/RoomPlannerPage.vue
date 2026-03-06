@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
@@ -133,8 +133,10 @@ const {
 
 // TODO Inform camp bus go update or update registrations
 
-registrationsStore.fetchData();
-fetchRooms();
+onMounted(async () => {
+  await registrationsStore.fetchData();
+  await fetchRooms();
+});
 
 const loading = computed<boolean>(() => {
   return registrationsStore.isLoading || isLoading.value;
@@ -149,7 +151,7 @@ const updateInProgress = computed<boolean>(() => {
 });
 
 const locales = computed<string[] | undefined>(() => {
-  return campDetailsStore.data?.countries;
+  return campDetailsStore.data?.locales;
 });
 
 const rooms = computed<RoomWithRoommates[]>(() => {
@@ -170,12 +172,12 @@ const availablePeople = computed<Roommate[]>(() => {
     return [];
   }
 
-  const waitingListFilter = (registration: Registration): boolean => {
-    return !registration.waitingList;
+  const filterStatusAccepted = (registration: Registration): boolean => {
+    return registration.status === 'ACCEPTED';
   };
 
   // Filter out people who are already in a group
-  const alreadyAssignedFilter = (registration: Registration): boolean => {
+  const filterUnassigned = (registration: Registration): boolean => {
     return !localRooms.some((room) => {
       return room.beds.some((value) => value?.person?.id === registration.id);
     });
@@ -183,8 +185,8 @@ const availablePeople = computed<Roommate[]>(() => {
 
   // Map to roommate type and sort by age
   return registrations
-    .filter(waitingListFilter)
-    .filter(alreadyAssignedFilter)
+    .filter(filterStatusAccepted)
+    .filter(filterUnassigned)
     .map(mapRegistrationRoommate)
     .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });
@@ -205,7 +207,7 @@ function addRoom() {
       },
     })
     .onOk((payload: RoomCreateData) => {
-      createRoom(payload);
+      void createRoom(payload);
     });
 }
 
@@ -223,7 +225,7 @@ function editRoom(room: RoomWithRoommates): void {
       },
     })
     .onOk((payload: RoomUpdateData) => {
-      updateRoom(room.id, payload);
+      void updateRoom(room.id, payload);
     });
 }
 
@@ -237,7 +239,7 @@ function orderRooms() {
       persistent: true,
     })
     .onOk((payload: RoomWithRoommates[]) => {
-      bulkUpdateRooms(payload);
+      void bulkUpdateRooms(payload);
     });
 }
 
@@ -246,7 +248,7 @@ function onBedUpdate(
   position: number,
   roommate: Roommate | null,
 ) {
-  updateBed(room, position, roommate);
+  void updateBed(room, position, roommate);
 }
 
 async function createRoom(
@@ -325,7 +327,7 @@ async function updateBed(
     return;
   }
 
-  asyncUpdate(() => {
+  await asyncUpdate(() => {
     return withErrorNotification('update-bed', () => {
       const updatedBed = apiService.updateBed(
         campId,

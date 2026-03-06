@@ -326,7 +326,7 @@ import { type QTableColumn } from 'quasar';
 import type { Camp, CampUpdateData } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -354,7 +354,13 @@ const pagination = ref({
   rowsPerPage: 0,
 });
 
-fetchAll();
+onMounted(async () => {
+  await forceFetch(() =>
+    api.fetchCamps({
+      showAll: true,
+    }),
+  );
+});
 
 const rows = computed<Camp[]>(() => {
   if (!camps.value) {
@@ -571,7 +577,7 @@ function onDeleteCamp(camp: Camp) {
       },
     })
     .onOk(() => {
-      deleteCamp(camp.id);
+      void deleteCamp(camp.id);
     });
 }
 
@@ -593,7 +599,7 @@ function onActivateCamp(camp: Camp) {
       },
     })
     .onOk(() => {
-      updateCamp(camp.id, {
+      void updateCamp(camp.id, {
         active: true,
       });
     });
@@ -617,7 +623,7 @@ function onDeactivateCamp(camp: Camp) {
       },
     })
     .onOk(() => {
-      updateCamp(camp.id, {
+      void updateCamp(camp.id, {
         active: false,
       });
     });
@@ -641,7 +647,7 @@ function onPublishCamp(camp: Camp) {
       },
     })
     .onOk(() => {
-      updateCamp(camp.id, {
+      void updateCamp(camp.id, {
         public: true,
       });
     });
@@ -665,18 +671,10 @@ function onUnpublishCamp(camp: Camp) {
       },
     })
     .onOk(() => {
-      updateCamp(camp.id, {
+      void updateCamp(camp.id, {
         public: false,
       });
     });
-}
-
-async function fetchAll() {
-  return forceFetch(() =>
-    api.fetchCamps({
-      showAll: true,
-    }),
-  );
 }
 
 async function updateCamp(id: string, data: CampUpdateData) {

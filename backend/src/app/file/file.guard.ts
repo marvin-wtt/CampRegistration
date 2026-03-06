@@ -23,6 +23,13 @@ export function registerFileGuard(
   guardRegistry[modelId] = resolver;
 }
 
+export function unregisterAllFileGuards(): void {
+  Object.keys(guardRegistry).forEach((key) => {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete guardRegistry[key];
+  });
+}
+
 const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
 
@@ -33,7 +40,14 @@ const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
   });
 
   if (guardModels.length === 0) {
-    // We can assume that is file is a tmp file. It should never be accessed
+    // We can assume that is file is a tmp file.
+
+    // Temporary files are only accessible by the session that created them
+    if (file.field !== null && file.field === req.sessionId) {
+      return () => true;
+    }
+
+    // It should never be accessed
     throw new ApiError(httpStatus.LOCKED, 'File is not linked to any model.');
   }
 

@@ -30,7 +30,7 @@ const createCellProps = (
     data: {} as Registration['data'],
     computedData: {} as Registration['computedData'],
     customData: {} as Registration['customData'],
-    waitingList: false,
+    status: 'ACCEPTED',
     createdAt: '2023-01-01T00:00:00Z',
   },
   rowIndex: 0,
@@ -56,6 +56,7 @@ const createCamp = (
   active: true,
   public: true,
   countries: [],
+  locales: [],
   organizer: 'Organizer Name',
   contactEmail: '',
   maxParticipants: 100,
@@ -146,8 +147,6 @@ describe('TimeAgoTableCell', () => {
         props: createCellProps({ value: fourMonthAgo }),
       },
     });
-
-    console.log(wrapper.text());
 
     expect(wrapper.text()).toBe('4 month');
   });

@@ -1,0 +1,197 @@
+import type {
+  BuiltMail,
+  Content,
+  Envelope,
+  MailAttachment,
+  AddressLike,
+  Translator,
+  TranslationOptions,
+  MailPriority,
+  Address,
+} from './mail.types.js';
+import type { AppConfig } from '#config/index';
+import { config } from '#core/ioc/facades';
+import i18n from '#core/i18n';
+import { MailRenderer } from '#app/mail/mail.renderer';
+import { MailService } from '#app/mail/mail.service';
+import { htmlToText } from 'html-to-text';
+import logger from '#core/logger';
+import { MailableRegistry } from '#app/mail/mail.registry';
+import { resolve } from '#core/ioc/container';
+
+export interface MailableCtor<P> {
+  new (payload: P): MailBase<P>;
+  readonly type: string;
+
+  // static methods provided by MailBase
+  enqueue(payload: P): Promise<void>;
+  send(payload: P): Promise<void>;
+}
+
+export abstract class MailBase<P> {
+  private t?: Translator;
+  private tg?: Translator;
+  private config: AppConfig;
+
+  constructor(protected readonly payload: P) {
+    this.config = config();
+  }
+
+  protected getTranslationOptions(): TranslationOptions {
+    return {};
+  }
+
+  protected locale(): string | undefined {
+    return undefined;
+  }
+
+  public getT(): Translator {
+    if (!this.t) {
+      const { namespace, keyPrefix } = this.getTranslationOptions();
+      const locale = this.locale() ?? i18n.language;
+
+      this.t = i18n.getFixedT(locale, namespace, keyPrefix);
+    }
+    return this.t;
+  }
+
+  public getTg(): Translator {
+    if (!this.tg) {
+      const locale = this.locale() ?? i18n.language;
+
+      this.tg = i18n.getFixedT(locale);
+    }
+
+    return this.tg;
+  }
+
+  protected abstract to(): AddressLike; // required
+  protected abstract subject(): string | Promise<string>; // required
+
+  protected from(): Address | undefined {
+    return {
+      name: this.config.appName,
+      address: this.config.email.from,
+    };
+  }
+
+  protected replyTo(): AddressLike | undefined {
+    return this.config.email.replyTo;
+  }
+
+  protected cc(): AddressLike | undefined {
+    return undefined;
+  }
+
+  protected bcc(): AddressLike | undefined {
+    return undefined;
+  }
+
+  protected headers(): Record<string, string> | undefined {
+    return undefined;
+  }
+
+  protected priority(): MailPriority {
+    return 'normal';
+  }
+
+  protected async envelope(): Promise<Envelope> {
+    const [to, from, replyTo, cc, bcc, subject, priority, headers] =
+      await Promise.all([
+        Promise.resolve(this.to()),
+        Promise.resolve(this.from()),
+        Promise.resolve(this.replyTo()),
+        Promise.resolve(this.cc()),
+        Promise.resolve(this.bcc()),
+        Promise.resolve(this.subject()),
+        Promise.resolve(this.priority()),
+        Promise.resolve(this.headers()),
+      ]);
+
+    return {
+      to,
+      subject,
+      from,
+      replyTo,
+      cc,
+      bcc,
+      priority,
+      headers,
+    };
+  }
+
+  protected abstract content(): Content | Promise<Content>;
+
+  protected reason(): string {
+    return '';
+  }
+
+  private async render(
+    envelope: Envelope,
+    content: Content,
+  ): Promise<string | undefined> {
+    const renderer = new MailRenderer(this.getT(), this.getTg());
+
+    if ('html' in content) {
+      return renderer.renderContent({
+        body: content.html,
+        envelope,
+        reason: this.reason(),
+      });
+    }
+
+    if ('template' in content) {
+      return renderer.renderFile({
+        template: content.template,
+        context: content.context,
+        envelope,
+      });
+    }
+
+    return undefined;
+  }
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    return [];
+  }
+
+  public async build(): Promise<BuiltMail> {
+    const [envelop, content, attachments] = await Promise.all([
+      Promise.resolve(this.envelope()),
+      Promise.resolve(this.content()),
+      Promise.resolve(this.attachments()),
+    ]);
+
+    const html = await this.render(envelop, content);
+    const text = content.text ?? htmlToText(html ?? '');
+
+    return {
+      ...envelop,
+      html,
+      text,
+      attachments: attachments.length ? attachments : undefined,
+    };
+  }
+
+  static async enqueue<P>(this: MailableCtor<P>, payload: P): Promise<void> {
+    const mailableRegistry = resolve(MailableRegistry);
+    if (!mailableRegistry.has(this)) {
+      logger.error(
+        `Mailable ${this.type} not manually registered. Using auto-registration.`,
+      );
+      mailableRegistry.register(this);
+    }
+
+    const mailService = resolve(MailService);
+
+    await mailService.dispatchMail(this, payload).catch((error: unknown) => {
+      logger.error('Failed to enqueue mail job:', error);
+    });
+  }
+
+  static async send<P>(this: MailableCtor<P>, payload: P): Promise<void> {
+    const mailService = resolve(MailService);
+
+    await mailService.sendMail(new this(payload));
+  }
+}

@@ -34,7 +34,7 @@ const profileStore = useProfileStore();
 const { user } = storeToRefs(profileStore);
 
 function updateProfile(data: ProfileUpdateData) {
-  profileStore.updateProfile(data);
+  void profileStore.updateProfile(data);
 }
 </script>
 

@@ -17,7 +17,7 @@ export class RegistrationResource extends JsonResource<
   transform(): RegistrationData {
     return {
       id: this.data.id,
-      waitingList: this.data.waitingList,
+      status: this.data.status,
       data: this.data.data,
       computedData: {
         firstName: this.data.firstName,

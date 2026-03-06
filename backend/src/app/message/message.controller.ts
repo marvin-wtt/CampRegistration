@@ -1,14 +1,25 @@
-import messageService from './message.service.js';
 import httpStatus from 'http-status';
-import { MessageResource, type MessageWithFiles } from './message.resource.js';
-import registrationService from '#app/registration/registration.service';
+import { RegistrationService } from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import ApiError from '#utils/ApiError';
+import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
+import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
+import { inject, injectable } from 'inversify';
 
-class MessageController extends BaseController {
+@injectable()
+export class MessageController extends BaseController {
+  constructor(
+    @inject(RegistrationService)
+    private readonly registrationService: RegistrationService,
+    @inject(MessageTemplateService)
+    private readonly messageTemplateService: MessageTemplateService,
+  ) {
+    super();
+  }
+
   index(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
@@ -19,16 +30,25 @@ class MessageController extends BaseController {
 
   async store(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
-    const { body } = await req.validate(validator.store);
+    const {
+      body: {
+        subject,
+        body,
+        priority,
+        replyTo,
+        registrationIds,
+        attachmentIds,
+      },
+    } = await req.validate(validator.store);
 
-    const registrations = await registrationService.getRegistrationsByIds(
+    const registrations = await this.registrationService.getRegistrationsByIds(
       camp.id,
-      body.registrationIds,
+      registrationIds,
     );
 
     // Throw error if not all ids were found
-    if (registrations.length !== body.registrationIds.length) {
-      const missingIds = body.registrationIds.filter(
+    if (registrations.length !== registrationIds.length) {
+      const missingIds = registrationIds.filter(
         (id) => !registrations.some((registration) => registration.id === id),
       );
 
@@ -38,41 +58,32 @@ class MessageController extends BaseController {
       );
     }
 
-    const template = await messageTemplateService.createTemplate(camp.id, {
-      subject: body.subject,
-      body: body.body,
-      priority: body.priority,
-      replyTo: body.replyTo,
-    });
+    const template = await this.messageTemplateService.createTemplate(
+      camp.id,
+      { subject, body, priority, replyTo, attachmentIds },
+      req.sessionId,
+    );
 
-    const messageResults = await Promise.allSettled(
+    await Promise.all(
       registrations.map((registration) =>
-        messageService.sendTemplateMessage(template, camp, registration),
+        RegistrationTemplateMessage.enqueueFor(camp, registration, template),
       ),
     );
 
-    const messages: MessageWithFiles[] = messageResults
-      .filter((value) => value.status === 'fulfilled')
-      .map(({ value }) => value);
-
     res
       .status(httpStatus.CREATED)
-      .resource(MessageResource.collection(messages));
+      .resource(new MessageTemplateResource(template));
   }
 
   async resend(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
-    const requestMessage = req.modelOrFail('message');
     await req.validate(validator.resend);
 
-    const message = await messageService.resendMessage(camp, requestMessage);
+    // TODO Create and enqueue new message
 
-    res.status(httpStatus.CREATED).resource(new MessageResource(message));
+    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
   destroy(_req: Request, res: Response) {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 }
-
-export default new MessageController();

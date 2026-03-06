@@ -1,5 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
+import { injectable } from 'inversify';
 
+@injectable()
 export class RoomService extends BaseService {
   async getRoomById(campId: string, id: string) {
     return this.prisma.room.findFirst({
@@ -75,5 +77,3 @@ export class RoomService extends BaseService {
     await this.prisma.room.delete({ where: { id: roomId } });
   }
 }
-
-export default new RoomService();

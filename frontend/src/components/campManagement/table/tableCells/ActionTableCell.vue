@@ -30,7 +30,7 @@
         </q-item-section>
       </q-item>
       <q-item
-        v-if="waitingList && !readonly && can('camp.registrations.edit')"
+        v-if="!accepted && !readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="accept"
@@ -73,13 +73,15 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { usePermissions } from 'src/composables/permissions';
 import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
+import { useAPIService } from 'src/services/APIService';
 
 const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 const quasar = useQuasar();
 const { t } = useI18n();
+const apiService = useAPIService();
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
-const camp = storeToRefs(campDetailStore);
+const { data: campData } = storeToRefs(campDetailStore);
 const { can } = usePermissions();
 
 const size = computed<string>(() => {
@@ -90,8 +92,8 @@ const registration = computed<Registration>(() => {
   return cellProps.row;
 });
 
-const waitingList = computed<boolean>(() => {
-  return cellProps.row.waitingList;
+const accepted = computed<boolean>(() => {
+  return cellProps.row.status === 'ACCEPTED';
 });
 
 function deleteItem(): void {
@@ -100,12 +102,12 @@ function deleteItem(): void {
       component: RegistrationDeleteDialog,
       componentProps: {
         registration: registration.value,
-        camp: camp.data.value,
+        camp: campData.value,
       },
     })
-    .onOk(async (params: RegistrationDeleteQuery) => {
+    .onOk((params: RegistrationDeleteQuery) => {
       const id = cellProps.row.id;
-      await registrationStore.deleteData(id, params);
+      void registrationStore.deleteData(id, params);
     });
 }
 
@@ -115,15 +117,15 @@ function accept(): void {
       component: RegistrationAcceptDialog,
       componentProps: {
         registration: registration.value,
-        camp: camp.data.value,
+        camp: campData.value,
       },
     })
-    .onOk(async (params: RegistrationUpdateQuery) => {
+    .onOk((params: RegistrationUpdateQuery) => {
       const id = cellProps.row.id;
-      await registrationStore.updateData(
+      void registrationStore.updateData(
         id,
         {
-          waitingList: false,
+          status: 'ACCEPTED',
         },
         params,
       );
@@ -135,23 +137,19 @@ function editItem(): void {
     .dialog({
       component: EditResultComponent,
       componentProps: {
-        camp: camp.data.value,
+        camp: campData.value,
         data: cellProps.row.data,
         uploadFileFn: uploadFile,
       },
     })
     .onOk((payload) => {
       const id = cellProps.row.id;
-      registrationStore.updateData(id, { data: payload });
+      void registrationStore.updateData(id, { data: payload });
     });
 }
 
 async function uploadFile(file: File): Promise<string> {
-  const serviceFile = await registrationStore.storeFile(file);
-
-  if (serviceFile.field) {
-    return `${serviceFile.id}#${serviceFile.field}`;
-  }
+  const serviceFile = await apiService.createTemporaryFile({ file });
 
   return serviceFile.id;
 }

@@ -43,7 +43,7 @@ function deleteProfile() {
       },
     })
     .onOk(() => {
-      profileStore.deleteProfile();
+      void profileStore.deleteProfile();
     });
 }
 

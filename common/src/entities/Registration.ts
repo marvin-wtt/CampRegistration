@@ -19,7 +19,7 @@ export interface Registration extends Identifiable, Timestamps {
     };
   };
   customData: Record<string, unknown>;
-  waitingList: boolean;
+  status: 'PENDING' | 'WAITLISTED' | 'ACCEPTED';
   locale: string;
   room?: Translatable | null;
   files?: Record<string, string>;
@@ -29,7 +29,7 @@ export type RegistrationCreateData = Pick<Registration, 'data'> &
   Pick<Partial<Registration>, 'locale'>;
 
 export type RegistrationUpdateData = Partial<
-  Pick<Registration, 'data' | 'customData' | 'waitingList'>
+  Pick<Registration, 'data' | 'customData' | 'status'>
 >;
 
 export interface RegistrationUpdateQuery {

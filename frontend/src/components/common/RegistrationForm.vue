@@ -11,8 +11,8 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { marked } from 'marked';
-import { computed, ref, toRef, watchEffect } from 'vue';
+import { createMarkdownConverter } from 'src/utils/markdown';
+import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import {
@@ -24,13 +24,19 @@ import type {
   ServiceFile,
 } from '@camp-registration/common/entities';
 
+const mdConverter = createMarkdownConverter();
+
 const { locale } = useI18n();
 
 interface Props {
   data?: object;
   campDetails: CampDetails;
   files?: ServiceFile[];
-  submitFn: (id: string, formData: Record<string, unknown>) => Promise<void>;
+  submitFn: (
+    id: string,
+    formData: Record<string, unknown>,
+    locale: string,
+  ) => Promise<void>;
   uploadFileFn: (file: File) => Promise<string>;
   moderation?: boolean;
 }
@@ -52,6 +58,7 @@ const model = createModel(
 model.validationEnabled = !props.moderation;
 if (props.data) {
   model.data = props.data;
+  mapFileIdToFileContent(model);
 }
 
 const bgColor = ref<string>();
@@ -66,9 +73,11 @@ const files = computed<ServiceFile[] | undefined>(() => {
   return props.files;
 });
 
-// Auto variables update on locale change
-startAutoDataUpdate(model, campData, files);
-startAutoThemeUpdate(model, campData, bgColor);
+onMounted(() => {
+  // Auto variables update on locale change
+  startAutoDataUpdate(model, campData, files);
+  startAutoThemeUpdate(model, campData, bgColor);
+});
 
 function createModerationForm(form: object) {
   return {
@@ -86,6 +95,10 @@ function createModerationForm(form: object) {
 function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
+
+  if (props.moderation) {
+    survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(true);
+  }
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
@@ -126,14 +139,12 @@ function createModel(campId: string, form: object): SurveyModel {
     options.callback('success');
   });
   // Convert markdown to html
-  survey.onTextMarkdown.add((survey, options) => {
+  survey.onTextMarkdown.add((_, options) => {
     // Remove root paragraphs <p></p>
-    options.html = marked.parseInline(options.text, {
-      async: false,
-    }) as string;
+    options.html = mdConverter.renderInline(options.text);
   });
   // Workaround for date input for Safari < 4.1
-  survey.onAfterRenderPage.add((survey, options) => {
+  survey.onAfterRenderPage.add((_, options) => {
     const dateInputs: NodeListOf<HTMLInputElement> =
       options.htmlElement.querySelectorAll('input[type=date]');
     dateInputs.forEach((input) => {
@@ -152,7 +163,7 @@ function createModel(campId: string, form: object): SurveyModel {
     const registration = sender.data ?? {};
 
     try {
-      await props.submitFn(campId, registration);
+      await props.submitFn(campId, registration, sender.locale);
       options.showSaveSuccess();
       sender.showCompletePage = showCompletePage;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -172,6 +183,37 @@ function readFile(file: File) {
     };
     fileReader.onerror = reject;
     fileReader.readAsDataURL(file);
+  });
+}
+
+function mapFileIdToFileContent(survey: SurveyModel) {
+  const questions = survey.getAllQuestions(false, undefined, true);
+  questions.forEach((question) => {
+    if (question.getType() !== 'file') {
+      return;
+    }
+
+    const mapToContent = (file: unknown) => {
+      if (typeof file !== 'string') {
+        return file;
+      }
+
+      const url = file.match(/^https?:\/\//)
+        ? file
+        : `${window.origin}/api/v1/files/${file}`;
+
+      return {
+        name: file,
+        type: '',
+        content: url,
+      };
+    };
+
+    if (Array.isArray(question.value)) {
+      question.value = question.value.map(mapToContent);
+    } else {
+      question.value = mapToContent(question.value);
+    }
   });
 }
 

@@ -7,7 +7,6 @@ import type {
   RegistrationDeleteQuery,
   RegistrationUpdateData,
   RegistrationUpdateQuery,
-  ServiceFile,
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
@@ -15,7 +14,6 @@ import {
   useCampBus,
   useRegistrationBus,
 } from 'src/composables/bus';
-import { v7 as uuid } from 'uuid';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -59,16 +57,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     checkNotNullWithError(campId);
 
     await apiService.createRegistration(campId, registration);
-  }
-
-  async function storeFile(file: File): Promise<ServiceFile> {
-    const campId = route.params.camp as string;
-    checkNotNullWithError(campId);
-
-    return apiService.createTemporaryFile({
-      file,
-      field: uuid(),
-    });
   }
 
   async function updateData(
@@ -124,7 +112,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     error,
     fetchData,
     storeData,
-    storeFile,
     updateData,
     deleteData,
     invalidate,

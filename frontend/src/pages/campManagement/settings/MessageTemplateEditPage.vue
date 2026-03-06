@@ -14,7 +14,7 @@
         </p>
       </div>
 
-      <q-list v-if="loading">
+      <q-list v-if="loading || !camp">
         <q-item
           v-for="i in 6"
           :key="i"
@@ -49,98 +49,123 @@
       </q-list>
 
       <q-list v-else>
-        <q-item
-          v-for="{ id, event: name, loading } in templates"
-          :key="name"
-          :clickable="!!id && !loading"
-          :aria-label="!!id ? t('action.edit') : undefined"
-          @click="editTemplate(id)"
+        <q-expansion-item
+          v-for="{ event: eventName, templates: eventTemplates } in templates"
+          :key="eventName"
+          :content-inset-level="1"
+          expand-separator
+          group="templates"
         >
-          <q-item-section avatar>
-            <q-icon
-              :name="TEMPLATE_ICONS[name] ?? 'mail_outline'"
-              color="primary"
-            />
-          </q-item-section>
-
-          <q-item-section>
-            <q-item-label>
-              {{ t(`template.${name ?? 'default'}.label`) }}
-            </q-item-label>
-            <q-item-label caption>
-              {{ t(`template.${name ?? 'default'}.description`) }}
-            </q-item-label>
-          </q-item-section>
-
-          <q-item-section side>
-            <template v-if="id">
-              <q-btn
-                v-if="
-                  can('camp.message_templates.edit') ||
-                  can('camp.message_templates.delete')
-                "
-                icon="more_vert"
-                round
-                dense
-                unelevated
-                :loading
-                :disable="loading"
-                @click.stop
-              >
-                <q-menu>
-                  <q-list style="min-width: 200px">
-                    <q-item
-                      v-if="can('camp.message_templates.edit')"
-                      clickable
-                      v-close-popup
-                      @click="editTemplate(id)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>
-                        <q-item-label>
-                          {{ t('action.edit') }}
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="can('camp.message_templates.delete')"
-                      clickable
-                      v-close-popup
-                      @click="deleteTemplate(id)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon
-                          name="delete"
-                          color="negative"
-                        />
-                      </q-item-section>
-                      <q-item-section>
-                        <q-item-label class="text-negative">
-                          {{ t('action.delete') }}
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
-            </template>
-
-            <template v-else>
-              <q-btn
-                v-if="can('camp.message_templates.create')"
-                :aria-label="t('action.add')"
-                icon="add"
+          <template #header>
+            <q-item-section avatar>
+              <q-icon
+                :name="TEMPLATE_ICONS[eventName] ?? 'mail_outline'"
                 color="primary"
-                round
-                dense
-                unelevated
-                @click="addTemplate(name)"
               />
-            </template>
-          </q-item-section>
-        </q-item>
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>
+                {{ t(`template.${eventName ?? 'default'}.label`) }}
+              </q-item-label>
+              <q-item-label caption>
+                {{ t(`template.${eventName ?? 'default'}.description`) }}
+              </q-item-label>
+            </q-item-section>
+          </template>
+
+          <q-list>
+            <q-item
+              v-for="{
+                country,
+                template,
+                loading: templateLoading,
+              } in eventTemplates"
+              :key="country"
+              :clickable="!!template && !templateLoading"
+              :aria-label="!!template ? t('action.edit') : undefined"
+              @click="editTemplate(template)"
+            >
+              <q-item-section avatar>
+                <country-icon :country />
+              </q-item-section>
+
+              <q-item-section>
+                {{ t(`template.${eventName ?? 'default'}.label`) }}
+                ({{ country }})
+              </q-item-section>
+
+              <q-item-section side>
+                <template v-if="template?.id">
+                  <q-btn
+                    v-if="
+                      can('camp.message_templates.edit') ||
+                      can('camp.message_templates.delete')
+                    "
+                    icon="more_vert"
+                    round
+                    dense
+                    unelevated
+                    :loading
+                    :disable="loading"
+                    @click.stop
+                  >
+                    <q-menu>
+                      <q-list style="min-width: 200px">
+                        <q-item
+                          v-if="can('camp.message_templates.edit')"
+                          clickable
+                          v-close-popup
+                          @click="editTemplate(template)"
+                        >
+                          <q-item-section avatar>
+                            <q-icon name="edit" />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>
+                              {{ t('action.edit') }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                        <q-item
+                          v-if="can('camp.message_templates.delete')"
+                          clickable
+                          v-close-popup
+                          @click="deleteTemplate(template.id)"
+                        >
+                          <q-item-section avatar>
+                            <q-icon
+                              name="delete"
+                              color="negative"
+                            />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label class="text-negative">
+                              {{ t('action.delete') }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </q-btn>
+                </template>
+
+                <template v-else>
+                  <q-btn
+                    v-if="can('camp.message_templates.create')"
+                    :aria-label="t('action.add')"
+                    icon="add"
+                    color="primary"
+                    round
+                    dense
+                    unelevated
+                    @click="addTemplate(eventName, country)"
+                  />
+                </template>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-expansion-item>
       </q-list>
     </div>
   </page-state-handler>
@@ -148,7 +173,7 @@
 
 <script setup lang="ts">
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onBeforeMount } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import MessageEditDialog from 'components/campManagement/settings/emails/MessageEditDialog.vue';
@@ -157,6 +182,8 @@ import type { MessageTemplate } from '@camp-registration/common/entities';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { usePermissions } from 'src/composables/permissions';
+import { storeToRefs } from 'pinia';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
 
 const {
   queryParam,
@@ -171,11 +198,11 @@ const api = useAPIService();
 const quasar = useQuasar();
 const { t } = useI18n();
 const campDetailsStore = useCampDetailsStore();
+const { data: camp } = storeToRefs(campDetailsStore);
 const { can } = usePermissions();
 
-onBeforeMount(() => {
-  campDetailsStore.fetchData();
-  loadData();
+onMounted(async () => {
+  await Promise.allSettled([campDetailsStore.fetchData(), loadData()]);
 });
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -196,142 +223,148 @@ const TEMPLATE_ORDER: string[] = [
   'registration_canceled',
 ];
 
-interface CMessageTemplate extends MessageTemplate {
-  event: string;
-  loading: boolean;
-}
-
 const loading = computed<boolean>(() => {
   return isLoading.value;
 });
 
-function loadData() {
-  forceFetch(async () => {
+async function loadData() {
+  await forceFetch(async () => {
     return api.fetchMessageTemplates(queryParam('camp'), {
-      includeDefaults: true,
       hasEvent: true,
     });
   });
 }
 
-const templates = computed<CMessageTemplate[]>(() => {
-  if (!data.value) {
+interface MappedTemplate {
+  event: string;
+  templates: {
+    country: string;
+    loading: boolean;
+    template: MessageTemplate | undefined;
+  }[];
+}
+
+const templates = computed<MappedTemplate[]>(() => {
+  const values = data.value;
+  const countries = camp.value?.countries;
+  if (!values || !countries) {
     return [];
   }
 
-  return data.value
-    .filter(templateHasEvent)
-    .map((template): CMessageTemplate => {
+  return TEMPLATE_ORDER.map((event) => ({
+    event,
+    templates: countries.map((country) => {
       return {
-        ...template,
+        country,
+        template: values.find(
+          (t) => t.event === event && t.country === country,
+        ),
         loading: false,
       };
-    })
-    .toSorted(
-      (a, b) =>
-        TEMPLATE_ORDER.indexOf(a.event) - TEMPLATE_ORDER.indexOf(b.event),
-    );
-  //
+    }),
+  }));
 });
 
-function templateHasEvent(
-  template: MessageTemplate,
-): template is MessageTemplate & { event: string } {
-  return template.event !== null;
-}
-
-function findTemplateByEvent(event: string): CMessageTemplate {
-  const template = templates.value.find((template) => template.event === event);
-  if (!template) {
-    throw new Error('No message template found for event: ' + event);
-  }
-
-  return template;
-}
-
-function findTemplateById(id: string): CMessageTemplate {
-  const template = templates.value.find((template) => template.id === id);
-  if (!template) {
-    throw new Error('No message template found with id: ' + id);
-  }
-
-  return template;
-}
-
-function addTemplate(event: string) {
+function addTemplate(event: string, country: string) {
   const camp = campDetailsStore.data;
   if (!camp) {
     throw new Error('No camp details loaded!');
   }
 
-  const template = findTemplateByEvent(event);
+  // Search for existing template for same event but different country
+  const template = data.value?.find((template) => template.event === event);
 
   quasar
     .dialog({
       component: MessageEditDialog,
       componentProps: {
-        name: t(`template.${template.event}.label`),
+        name: t(`template.${event}.label`),
+        event,
+        country,
         form: camp.form,
-        countries: camp.countries,
-        subject: template.subject,
-        body: template.body,
+        subject: template?.subject ?? '',
+        body: template?.body ?? '',
+        attachments: template?.attachments,
+
+        saveFn: async (message: {
+          subject: string;
+          body: string;
+          attachmentIds: string[] | null;
+        }) => {
+          await withResultNotification('create', async () => {
+            return api.createMessageTemplate(camp.id, {
+              event,
+              country,
+              subject: message.subject,
+              body: message.body,
+              attachmentIds: message.attachmentIds ?? undefined,
+            });
+          });
+        },
       },
     })
-    .onOk(async (message) => {
-      await withResultNotification('create', async () => {
-        return api.createMessageTemplate(camp.id, {
-          event,
-          subject: message.subject,
-          body: message.body,
-        });
-      });
-
-      loadData();
+    .onOk(() => {
+      void loadData();
     });
 }
 
-function editTemplate(id: string | undefined | null) {
-  if (!id) return;
+function editTemplate(template: MessageTemplate | undefined) {
+  if (!template) {
+    return;
+  }
 
   const camp = campDetailsStore.data;
-  if (!camp) return;
-
-  const template = findTemplateById(id);
+  if (!camp) {
+    return;
+  }
 
   quasar
     .dialog({
       component: MessageEditDialog,
       componentProps: {
         name: t(`template.${template.event}.label`),
+        event: template.event,
+        country: template.country,
         form: camp.form,
-        countries: camp.countries,
         subject: template.subject,
         body: template.body,
+        attachments: template.attachments,
+
+        saveFn: async (message: {
+          subject: string;
+          body: string;
+          attachmentIds: string[] | null;
+        }) => {
+          await withResultNotification('update', async () => {
+            return api.updateMessageTemplate(camp.id, template.id, {
+              subject: message.subject,
+              body: message.body,
+              attachmentIds: message.attachmentIds ?? undefined,
+            });
+          });
+        },
       },
     })
-    .onOk(async (message) => {
-      await withResultNotification('update', async () => {
-        return api.updateMessageTemplate(camp.id, id, {
-          subject: message.subject,
-          body: message.body,
-        });
-      });
-
-      loadData();
+    .onOk(() => {
+      void loadData();
     });
 }
 
 async function deleteTemplate(id: string | undefined) {
-  if (!id) return;
+  if (!id) {
+    return;
+  }
 
   const camp = campDetailsStore.data;
-  if (!camp) return;
+  if (!camp) {
+    return;
+  }
 
   await withResultNotification('delete', async () => {
     return api.deleteMessageTemplate(camp.id, id);
+  }).then(async () => {
+    await loadData();
   });
-
-  loadData();
 }
 </script>
 
@@ -364,13 +397,13 @@ template:
     description: 'Triggered when a user submits a new registration.'
   registration_confirmed:
     label: 'Registration Confirmed'
-    description: 'Triggered when a registration is directly confirmed and not on the waitlist.'
+    description: 'Triggered when a registration is accepted.'
   registration_waitlisted:
     label: 'Registration Waitlisted'
-    description: 'Triggered when a registration is placed on the waitlist because the limit for this country has been reached.'
+    description: 'Triggered when a registration is placed on the waitlist because the limit for this group has been reached.'
   registration_waitlist_accepted:
     label: 'Waitlist Registration Accepted'
-    description: 'Triggered when a registration from the waitlist is confirmed.'
+    description: 'Triggered when a registration from the waitlist is accepted.'
   registration_updated:
     label: 'Registration Updated'
     description: 'Triggered when any details of a registration are updated after submission.'
@@ -406,13 +439,13 @@ template:
     description: 'Wird ausgelöst, wenn ein Benutzer eine neue Anmeldung einreicht.'
   registration_confirmed:
     label: 'Anmeldung Bestätigt'
-    description: 'Wird ausgelöst, wenn eine Anmeldung direkt bestätigt wird und nicht auf der Warteliste steht.'
+    description: 'Wird ausgelöst, wenn eine Anmeldung bestätigt wird.'
   registration_waitlisted:
     label: 'Anmeldung auf Warteliste'
-    description: 'Wird ausgelöst, wenn eine Anmeldung auf die Warteliste gesetzt wird, weil das Limit für dieses Land erreicht wurde.'
+    description: 'Wird ausgelöst, wenn eine Registrierung auf die Warteliste gesetzt wird, weil das Limit für diese Gruppe erreicht ist.'
   registration_waitlist_accepted:
     label: 'Wartelistenanmeldung Akzeptiert'
-    description: 'Wird ausgelöst, wenn eine Anmeldung von der Warteliste bestätigt wird.'
+    description: 'Wird ausgelöst, wenn eine Registrierung von der Warteliste akzeptiert wird.'
   registration_updated:
     label: 'Anmeldung Aktualisiert'
     description: 'Wird ausgelöst, wenn nach der Einreichung einer Anmeldung Details aktualisiert werden.'
@@ -448,13 +481,13 @@ template:
     description: "Déclenché lorsqu'un utilisateur soumet une nouvelle inscription."
   registration_confirmed:
     label: 'Inscription Confirmée'
-    description: "Déclenché lorsque l'inscription est confirmée directement et n'est pas en liste d'attente."
+    description: "Déclenché lorsqu'une inscription est acceptée."
   registration_waitlisted:
     label: "Inscription en Liste d'Attente"
-    description: "Déclenché lorsqu'une inscription est placée en liste d'attente parce que la limite pour ce pays a été atteinte."
+    description: "Déclenché lorsqu'une inscription est placée sur la liste d'attente parce que la limite pour ce groupe a été atteinte."
   registration_waitlist_accepted:
     label: "Inscription Acceptée depuis la Liste d'Attente"
-    description: "Déclenché lorsqu'une inscription en liste d'attente est confirmée."
+    description: "Déclenché lorsqu'une inscription provenant de la liste d'attente est acceptée."
   registration_updated:
     label: 'Inscription Mise à Jour'
     description: "Déclenché lorsque des détails d'une inscription sont mis à jour après sa soumission."
@@ -490,13 +523,13 @@ template:
     description: 'Wyzwalane, gdy użytkownik przesyła nową rejestrację.'
   registration_confirmed:
     label: 'Rejestracja potwierdzona'
-    description: 'Wyzwalane, gdy rejestracja zostaje potwierdzona bez umieszczania na liście oczekujących.'
+    description: 'Wyzwalane po zaakceptowaniu rejestracji.'
   registration_waitlisted:
     label: 'Rejestracja na liście oczekujących'
-    description: 'Wyzwalane, gdy rejestracja zostaje umieszczona na liście oczekujących, ponieważ limit dla tego kraju został osiągnięty.'
+    description: 'Wyzwalane, gdy rejestracja zostaje umieszczona na liście oczekujących, ponieważ limit dla tej grupy został osiągnięty.'
   registration_waitlist_accepted:
     label: 'Rejestracja z listy oczekujących zaakceptowana'
-    description: 'Wyzwalane, gdy rejestracja z listy oczekujących zostaje potwierdzona.'
+    description: 'Wyzwalane, gdy rejestracja z listy oczekujących zostanie zaakceptowana.'
   registration_updated:
     label: 'Rejestracja zaktualizowana'
     description: 'Wyzwalane, gdy szczegóły rejestracji zostają zaktualizowane po jej przesłaniu.'
@@ -532,13 +565,13 @@ template:
     description: 'Spouští se, když uživatel odešle novou registraci.'
   registration_confirmed:
     label: 'Registrace potvrzena'
-    description: 'Spouští se, když je registrace potvrzena přímo a není na čekací listině.'
+    description: 'Spustí se, když je registrace přijata.'
   registration_waitlisted:
     label: 'Registrace na čekací listině'
-    description: 'Spouští se, když je registrace zařazena na čekací listinu, protože byl dosažen limit pro tuto zemi.'
+    description: 'Spustí se, když je registrace zařazena na čekací listinu, protože byl dosažen limit pro tuto skupinu.'
   registration_waitlist_accepted:
     label: 'Registrace z čekací listiny přijata'
-    description: 'Spouští se, když je registrace z čekací listiny potvrzena.'
+    description: 'Spustí se, když je přijata registrace z čekací listiny.'
   registration_updated:
     label: 'Registrace aktualizována'
     description: 'Spouští se, když jsou po odeslání registrace aktualizovány její údaje.'

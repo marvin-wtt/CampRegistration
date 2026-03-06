@@ -122,7 +122,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -148,16 +148,13 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
-async function init() {
-  if (!profileStore.user) {
-    // Fetch user instead of init to force redirect on error
-    await authStore.init();
-  }
+onMounted(async () => {
+  await authStore.init();
+
   if (route.params.camp) {
     await campDetailStore.fetchData();
   }
-}
-init();
+});
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
@@ -287,7 +284,7 @@ function toggleDrawer() {
 }
 
 function navigateHome() {
-  router.push({ name: 'management' });
+  void router.push({ name: 'management' });
 }
 </script>
 

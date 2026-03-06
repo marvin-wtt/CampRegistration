@@ -49,14 +49,13 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { isAPIServiceError, useAPIService } from 'src/services/APIService';
 import { useRoute } from 'vue-router';
-import { v7 as uuid } from 'uuid';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from 'src/composables/serviceHandler';
 
@@ -72,7 +71,7 @@ const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
 
-onBeforeMount(async () => {
+onMounted(async () => {
   await init();
 });
 
@@ -135,19 +134,18 @@ const knownErrorText = computed<string>(() => {
   return 'Unknown error occurred';
 });
 
-async function submit(campId: string, formData: Record<string, unknown>) {
-  await api.createRegistration(campId, { data: formData });
+async function submit(
+  campId: string,
+  formData: Record<string, unknown>,
+  locale: string,
+) {
+  await api.createRegistration(campId, { data: formData, locale });
 }
 
 async function uploadFile(file: File): Promise<string> {
   const serviceFile = await api.createTemporaryFile({
     file,
-    field: uuid(),
   });
-
-  if (serviceFile.field) {
-    return `${serviceFile.id}#${serviceFile.field}`;
-  }
 
   return serviceFile.id;
 }

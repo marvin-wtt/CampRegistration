@@ -53,6 +53,12 @@ export class ExpressionEvaluator {
         return this.evaluateLiteral(expression as jsep.Literal);
       case 'UnaryExpression':
         return this.evaluateUnaryExpression(expression as jsep.UnaryExpression);
+      case 'Compound':
+        return this.evaluateCompound(expression as jsep.Compound);
+      case 'SequenceExpression':
+        return this.evaluateSequenceExpression(
+          expression as jsep.SequenceExpression,
+        );
     }
 
     throw new Error(`Unsupported expression type: ${expression.type}`);
@@ -316,7 +322,7 @@ export class ExpressionEvaluator {
             `Unsupported expression unary operator as suffix: ${expression.operator}`,
           );
         }
-        if (!isNotNullOrUndefined(argument)) {
+        if (!isNumber(argument)) {
           throw new Error(
             `Unsupported expression value for unary operator: ${expression.operator}`,
           );
@@ -327,6 +333,21 @@ export class ExpressionEvaluator {
     throw new Error(
       `Unsupported expression unary operator: ${expression.operator}`,
     );
+  }
+
+  private evaluateCompound(expression: jsep.Compound): jsep.baseTypes {
+    expression.body.forEach((statement) => this.evaluateAny(statement));
+
+    return undefined;
+  }
+
+  private evaluateSequenceExpression(
+    expression: jsep.SequenceExpression,
+  ): jsep.baseTypes {
+    return expression.expressions.reduce<jsep.baseTypes>((_last, value) => {
+      // Always return the last value
+      return this.evaluateAny(value);
+    }, undefined);
   }
 }
 

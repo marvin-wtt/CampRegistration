@@ -48,19 +48,19 @@ const enabled = computed<boolean>(() => {
 });
 
 function updateProfile(data: ProfileUpdateData) {
-  profileStore.updateProfile(data);
+  void profileStore.updateProfile(data);
 }
 
 function disableTotp(password: string, otp: string) {
-  totpStore.disableTotp(password, otp);
+  void totpStore.disableTotp(password, otp);
 }
 
 function enableTotp(otp: string) {
-  totpStore.enableTotp(otp);
+  void totpStore.enableTotp(otp);
 }
 
 function onSetup(password: string) {
-  totpStore.setupTotp(password);
+  void totpStore.setupTotp(password);
 }
 </script>
 

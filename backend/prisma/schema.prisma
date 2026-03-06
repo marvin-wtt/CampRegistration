@@ -38,33 +38,39 @@ enum Role {
   ADMIN
 }
 
+enum ConfirmationMode {
+  AUTOMATIC
+  MANUAL
+}
+
 model Camp {
-  id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
-  active          Boolean
-  public          Boolean
+  id               String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  active           Boolean
+  public           Boolean
+  confirmationMode ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
   /// ![Array<string>]
-  countries       Json      @db.Json
+  countries        Json             @db.Json
   /// ![string | Record<string, string>]
-  name            Json      @db.Json
+  name             Json             @db.Json
   /// ![string | Record<string, string>]
-  organizer       Json      @db.Json
+  organizer        Json             @db.Json
   /// ![string | Record<string, string>]
-  contactEmail    Json      @map("contact_email") @db.Json
+  contactEmail     Json             @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
-  maxParticipants Json      @map("max_participants") @db.Json
-  minAge          Int       @map("min_age") @db.UnsignedInt
-  maxAge          Int       @map("max_age") @db.UnsignedInt
-  startAt         DateTime  @map("start_at") @db.DateTime(0)
-  endAt           DateTime  @map("end_at") @db.DateTime(0)
-  price           Float
+  maxParticipants  Json             @map("max_participants") @db.Json
+  minAge           Int              @map("min_age") @db.UnsignedInt
+  maxAge           Int              @map("max_age") @db.UnsignedInt
+  startAt          DateTime         @map("start_at") @db.DateTime(0)
+  endAt            DateTime         @map("end_at") @db.DateTime(0)
+  price            Float
   /// ![string | Record<string, string>]
-  location        Json?     @db.Json
+  location         Json?            @db.Json
   /// ![Record<string, unknown>]
-  form            Json      @db.Json
+  form             Json             @db.Json
   /// ![Record<string, unknown>]
-  themes          Json      @default("{}") @db.Json
-  createdAt       DateTime? @default(now()) @map("created_at")
-  updatedAt       DateTime? @updatedAt @map("updated_at")
+  themes           Json             @default("{}") @db.Json
+  createdAt        DateTime?        @default(now()) @map("created_at")
+  updatedAt        DateTime?        @updatedAt @map("updated_at")
 
   campManager      CampManager[]
   registrations    Registration[]
@@ -102,31 +108,37 @@ model Invitation {
   @@map("camp_manager_invitations")
 }
 
+enum RegistrationStatus {
+  ACCEPTED
+  PENDING
+  WAITLISTED
+}
+
 model Registration {
-  id          String    @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
-  campId      String    @map("camp_id") @db.Char(26)
+  id          String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
+  campId      String             @map("camp_id") @db.Char(26)
   /// ![Record<string, unknown>]
-  data        Json      @db.Json
+  data        Json               @db.Json
   /// ![Record<string, unknown>]
-  customData  Json?     @map("custom_data") @db.Json
+  customData  Json?              @map("custom_data") @db.Json
   // Computed fields
-  firstName   String?   @map("first_name")
-  lastName    String?   @map("last_name")
+  firstName   String?            @map("first_name")
+  lastName    String?            @map("last_name")
   role        String?
   gender      String?
-  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  dateOfBirth DateTime?          @map("date_of_birth") @db.Date
   /// ![Array<string>]
   emails      Json?
   street      String?
   city        String?
-  zipCode     String?   @map("zip_code")
+  zipCode     String?            @map("zip_code")
   country     String?
-  locale      String    @default("en-US") @db.VarChar(5)
+  locale      String             @default("en-US") @db.VarChar(5)
   //
-  waitingList Boolean   @default(true) @map("waiting_list")
+  status      RegistrationStatus @default(PENDING)
   deletedAt   DateTime?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime?          @updatedAt @map("updated_at")
 
   camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed      Bed?
@@ -196,10 +208,10 @@ enum TokenType {
 
 model File {
   id                String   @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
-  campId            String?  @map("camp_id") @db.Char(36) // Prisma does not support morth
-  registrationId    String?  @map("registration_id") @db.Char(36) // Prisma does not support morth
-  messageId         String?  @map("message_id") @db.Char(36) // Prisma does not support morth
-  messageTemplateId String?  @map("message_template_id") @db.Char(36) // Prisma does not support morth
+  campId            String?  @map("camp_id") @db.Char(26) // Prisma does not support morth
+  registrationId    String?  @map("registration_id") @db.Char(26) // Prisma does not support morth
+  messageId         String?  @map("message_id") @db.Char(26) // Prisma does not support morth
+  messageTemplateId String?  @map("message_template_id") @db.Char(26) // Prisma does not support morth
   name              String
   originalName      String   @map("original_name")
   field             String?
@@ -209,18 +221,21 @@ model File {
   storageLocation   String   @map("storage_location")
   createdAt         DateTime @default(now()) @map("created_at")
 
-  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: Cascade)
-  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  message         Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: Cascade)
+  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: SetNull)
+  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  message         Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
 
   @@map("files")
 }
 
 model Message {
   id             String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  templateId     String?  @map("message_template_id") @db.Char(36)
-  registrationId String?  @map("registration_id") @db.Char(36)
+  templateId     String?  @map("message_template_id") @db.Char(26)
+  registrationId String?  @map("registration_id") @db.Char(26)
+  to             String?  @db.TinyText
+  cc             String?  @db.TinyText
+  bcc            String?  @db.TinyText
   replyTo        String?  @map("reply_to")
   subject        String   @db.MediumText
   body           String   @db.MediumText
@@ -236,14 +251,13 @@ model Message {
 
 model MessageTemplate {
   id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
-  campId    String    @map("camp_id") @db.Char(36)
+  campId    String    @map("camp_id") @db.Char(26)
+  country   String?
   event     String?
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
-  /// ![string | Record<string, string>]
-  subject   Json
-  /// ![string | Record<string, string>]
-  body      Json
+  subject   String    @db.Text
+  body      String    @db.LongText
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
@@ -251,5 +265,41 @@ model MessageTemplate {
   messages    Message[]
   attachments File[]
 
+  @@unique([country, event, campId], map: "message_templates_country_event_camp_id_unique")
   @@map("message_templates")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Job {
+  id         String    @id @unique(map: "jobs_id_unique") @default(ulid()) @db.Char(26)
+  name       String    @db.VarChar(255)
+  queue      String    @db.VarChar(255)
+  payload    Json      @db.Json
+  status     JobStatus @default(PENDING)
+  priority   Int       @default(1) @db.UnsignedTinyInt
+  attempts   Int       @default(0)
+  error      String?   @db.Text
+  runAt      DateTime? @map("run_at") @db.DateTime(3)
+  reservedAt DateTime? @map("reserved_at") @db.DateTime(3)
+  finishedAt DateTime? @map("finished_at") @db.DateTime(3)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@index([status, runAt], map: "jobs_status_run_at_index")
+  @@map("jobs")
+}
+
+model JobRateLimit {
+  queue      String   @id @unique(map: "queue_unique") @db.VarChar(255)
+  tokens     Float
+  refilledAt DateTime @map("refilled_at") @db.DateTime(3)
+
+  @@map("job_rate_limits")
 }

@@ -24,8 +24,8 @@ const store = z.object({
     body: z.string().trim().min(1),
     priority: z.enum(['high', 'normal', 'low']).optional(),
     replyTo: z.email().optional(),
+    attachmentIds: z.array(z.ulid()).optional(),
   }),
-  files: z.array(z.custom<Express.Multer.File>()).optional(),
 });
 
 const resend = z.object({

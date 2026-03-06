@@ -53,7 +53,7 @@ const isTruncated = computed<boolean>(() => {
   return typeof value === 'string' && value.trim().length > limit.value;
 });
 
-const truncatedText = computed<string | unknown>(() => {
+const truncatedText = computed<unknown>(() => {
   const value = cellProps.value;
 
   if (typeof value !== 'string') {

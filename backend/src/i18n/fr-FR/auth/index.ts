@@ -12,7 +12,7 @@ export default {
         accidental:
           "Si vous n'avez pas demandé de réinitialisation de mot de passe, vous pouvez ignorer cet e-mail.",
         greeting: 'Cordialement,',
-        teamName: 'Équipe $t(appName)',
+        teamName: 'Équipe {{ appName }}',
       },
       footer: {
         cause:
@@ -31,7 +31,7 @@ export default {
         accidental:
           "Si vous n'avez pas créé de compte, veuillez ne pas cliquer sur le lien et nous contacter.",
         greeting: 'Cordialement,',
-        teamName: 'Équipe $t(appName)',
+        teamName: 'Équipe {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) vous avez créé un compte.',

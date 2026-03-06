@@ -135,7 +135,7 @@ function getDefaultValue(): string {
     return cellProps.value;
   }
 
-  return String(cellProps.value);
+  return 'Invalid value';
 }
 
 function onCancel() {
@@ -150,19 +150,21 @@ function onSave() {
   }
 
   loading.value = true;
-  try {
-    registrationsStore.updateData(registrationId.value, {
+
+  void registrationsStore
+    .updateData(registrationId.value, {
       customData: updateObjectAtPath(
         getExistingCustomData(),
         fieldName.value,
         modelValue.value,
       ),
+    })
+    .then(() => {
+      popupState.value = false;
+    })
+    .finally(() => {
+      loading.value = false;
     });
-
-    popupState.value = false;
-  } finally {
-    loading.value = false;
-  }
 }
 
 function getExistingCustomData(): Record<string, unknown> {
@@ -171,7 +173,7 @@ function getExistingCustomData(): Record<string, unknown> {
     cellProps.row.customData != null &&
     typeof cellProps.row.customData === 'object'
   ) {
-    return cellProps.row.customData as Record<string, unknown>;
+    return cellProps.row.customData;
   }
 
   return {};

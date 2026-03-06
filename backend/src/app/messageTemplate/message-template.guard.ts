@@ -2,8 +2,9 @@ import type { Request } from 'express';
 import { campManager, type GuardFn } from '#guards/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import campService from '#app/camp/camp.service';
-import messageTemplateService from '#app/messageTemplate/message-template.service';
+import { CampService } from '#app/camp/camp.service';
+import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
+import { resolve } from '#core/ioc/container';
 
 export const messageTemplateFileGuard = async (
   req: Request,
@@ -17,6 +18,7 @@ export const messageTemplateFileGuard = async (
   }
 
   // Load models for guard
+  const messageTemplateService = resolve(MessageTemplateService);
   const messageTemplate =
     await messageTemplateService.getMessageTemplateWithCamp(
       file.messageTemplateId,
@@ -28,6 +30,7 @@ export const messageTemplateFileGuard = async (
     );
   }
 
+  const campService = resolve(CampService);
   const camp = await campService.getCampById(messageTemplate.camp.id);
   req.setModelOrFail('camp', camp);
 

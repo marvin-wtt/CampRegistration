@@ -11,7 +11,7 @@ export default {
           'V opačném případě si nejprve vytvořte bezplatný účet.',
         button: 'Spravovat tábor',
         greeting: 'S pozdravem,',
-        teamName: 'Tým $t(appName)',
+        teamName: 'Tým {{ appName }}',
       },
       footer: {
         cause: '$t(email:footer.cause) vás pozval jiný uživatel.',

@@ -128,7 +128,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { useCampManagerStore } from 'stores/camp-manager-store';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type {
   CampManager,
   CampManagerCreateData,
@@ -151,8 +151,12 @@ const profileStore = useProfileStore();
 const campDetailsStore = useCampDetailsStore();
 const { can } = usePermissions();
 
-campManagerStore.fetchData();
-campDetailsStore.fetchData();
+onMounted(async () => {
+  await Promise.allSettled([
+    campManagerStore.fetchData(),
+    campDetailsStore.fetchData(),
+  ]);
+});
 
 const error = computed<string | null>(() => {
   return campManagerStore.error ?? campDetailsStore.error;
@@ -247,7 +251,7 @@ function showAddDialog() {
       },
     })
     .onOk((data: CampManagerCreateData) => {
-      campManagerStore.createData(data);
+      void campManagerStore.createData(data);
     });
 }
 
@@ -261,7 +265,7 @@ function showEditDialog(manager: CampManager) {
       },
     })
     .onOk((payload: CampManagerUpdateData) => {
-      campManagerStore.updateData(manager.id, payload);
+      void campManagerStore.updateData(manager.id, payload);
     });
 }
 
@@ -277,7 +281,7 @@ function showDeleteDialog(manager: CampManager) {
       },
     })
     .onOk(() => {
-      campManagerStore.deleteData(manager.id);
+      void campManagerStore.deleteData(manager.id);
     });
 }
 </script>

@@ -1,7 +1,8 @@
 import multer, { type Field } from 'multer';
 import config from '#config/index';
 import type { NextFunction, Request, Response } from 'express';
-import fileService from '#app/file/file.service';
+import { FileService } from '#app/file/file.service';
+import { resolve } from '#core/ioc/container';
 
 type ParameterType = string | Field | readonly Field[] | null | undefined;
 
@@ -19,6 +20,7 @@ const multiPart = (fields: ParameterType) => {
 };
 
 const upload = (fields: ParameterType) => {
+  const fileService = resolve(FileService);
   const tmpDir = config.storage.tmpDir;
 
   const tmpStorage = multer.diskStorage({

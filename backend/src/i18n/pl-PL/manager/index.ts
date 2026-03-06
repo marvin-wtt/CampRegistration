@@ -12,7 +12,7 @@ export default {
           'W przeciwnym razie utwórz najpierw bezpłatne konto.',
         button: 'Zarządzaj obozem',
         greeting: 'Pozdrawiamy,',
-        teamName: 'Zespół $t(appName)',
+        teamName: 'Zespół {{ appName }}',
       },
       footer: {
         cause:

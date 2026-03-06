@@ -1,21 +1,29 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import userService from '#app/user/user.service';
-import managerService from '#app/manager/manager.service';
+import { UserService } from '#app/user/user.service';
+import { ManagerService } from '#app/manager/manager.service';
 import { ManagerResource } from '#app/manager/manager.resource';
-import { catchAndResolve } from '#utils/promiseUtils';
 import validator from '#app/manager/manager.validation';
 import { type Request, type Response } from 'express';
-import managerMessages from '#app/manager/manager.messages';
+import { ManagerInvitationMessage } from '#app/manager/manager.messages';
 import { BaseController } from '#core/base/BaseController';
+import { inject, injectable } from 'inversify';
 
-class ManagerController extends BaseController {
+@injectable()
+export class ManagerController extends BaseController {
+  constructor(
+    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(UserService) private readonly userService: UserService,
+  ) {
+    super();
+  }
+
   async index(req: Request, res: Response) {
     const {
       params: { campId },
     } = await req.validate(validator.index);
 
-    const managers = await managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(campId);
 
     res.resource(ManagerResource.collection(managers));
   }
@@ -26,7 +34,7 @@ class ManagerController extends BaseController {
       body: { email, role, expiresAt },
     } = await req.validate(validator.store);
 
-    const existingCampManager = await managerService.getManagerByEmail(
+    const existingCampManager = await this.managerService.getManagerByEmail(
       camp.id,
       email,
     );
@@ -37,7 +45,7 @@ class ManagerController extends BaseController {
       );
     }
 
-    const user = await userService.getUserByEmail(email);
+    const user = await this.userService.getUserByEmail(email);
 
     const data = {
       role,
@@ -46,10 +54,13 @@ class ManagerController extends BaseController {
 
     const manager =
       user === null
-        ? await managerService.inviteManager(camp.id, email, data)
-        : await managerService.addManager(camp.id, user.id, data);
+        ? await this.managerService.inviteManager(camp.id, email, data)
+        : await this.managerService.addManager(camp.id, user.id, data);
 
-    await catchAndResolve(managerMessages.sendManagerInvitation(camp, manager));
+    await ManagerInvitationMessage.enqueue({
+      camp,
+      manager,
+    });
 
     res.status(httpStatus.CREATED).resource(new ManagerResource(manager));
   }
@@ -60,10 +71,13 @@ class ManagerController extends BaseController {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
 
-    const updatedManager = await managerService.updateManagerById(manager.id, {
-      role,
-      expiresAt,
-    });
+    const updatedManager = await this.managerService.updateManagerById(
+      manager.id,
+      {
+        role,
+        expiresAt,
+      },
+    );
 
     res.resource(new ManagerResource(updatedManager));
   }
@@ -73,7 +87,7 @@ class ManagerController extends BaseController {
       params: { campId, managerId },
     } = await req.validate(validator.destroy);
 
-    const managers = await managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(campId);
     if (managers.length <= 1) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -81,10 +95,8 @@ class ManagerController extends BaseController {
       );
     }
 
-    await managerService.removeManager(managerId);
+    await this.managerService.removeManager(managerId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 }
-
-export default new ManagerController();

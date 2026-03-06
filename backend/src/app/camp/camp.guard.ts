@@ -1,14 +1,9 @@
 import type { Request } from 'express';
-import {
-  type GuardFn,
-  and,
-  campActive,
-  campManager,
-  or,
-} from '#guards/index.js';
-import ApiError from '#utils/ApiError.js';
+import { type GuardFn, and, campActive, campManager, or } from '#guards/index';
+import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import campService from '#app/camp/camp.service.js';
+import { CampService } from '#app/camp/camp.service';
+import { resolve } from '#core/ioc/container';
 
 export const campFileGuard = async (req: Request): Promise<GuardFn> => {
   const file = req.modelOrFail('file');
@@ -21,6 +16,7 @@ export const campFileGuard = async (req: Request): Promise<GuardFn> => {
   }
 
   // Load models for guard
+  const campService = resolve(CampService);
   const camp = await campService.getCampById(file.campId);
   req.setModelOrFail('camp', camp);
 

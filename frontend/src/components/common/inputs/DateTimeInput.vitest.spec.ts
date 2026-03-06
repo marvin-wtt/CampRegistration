@@ -25,13 +25,13 @@ describe('DateTimeInput', () => {
     return wrapper;
   }
 
-  it('should mount', async () => {
+  it('should mount', () => {
     const wrapper = mountComponent('2025-12-24T15:30:00.000Z'); // 15:30Z -> 16:30 local in Berlin (Dec)
 
     expect(wrapper.exists()).toBeTruthy();
   });
 
-  it('shows local time', async () => {
+  it('shows local time', () => {
     const wrapper = mountComponent('2025-12-24T15:30:00.000Z'); // 15:30Z -> 16:30 local in Berlin (Dec)
 
     const input = wrapper.find('input');

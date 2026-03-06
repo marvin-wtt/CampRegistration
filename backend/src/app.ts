@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import config from '#config/index';
-import morgan from '#core/morgan';
+import { serverErrorHandler } from '#core/morgan';
 import { errorConverter, errorHandler } from '#middlewares/error.middleware';
 import cookieParser from 'cookie-parser';
 import ApiError from '#utils/ApiError';
@@ -15,7 +15,7 @@ export function createApp() {
   const app = express();
 
   // Errors are always logged. Successful requests are logged inside the routers if required
-  app.use(morgan.errorHandler);
+  app.use(serverErrorHandler);
 
   // set security HTTP headers
   app.use(helmet());

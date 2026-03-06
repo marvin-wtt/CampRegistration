@@ -1,12 +1,14 @@
 import { auth, guard, multipart } from '#middlewares/index';
 import { campManager } from '#guards/index';
-import messageController from './message.controller.js';
+import { MessageController } from './message.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import messageService from '#app/message/message.service';
+import { MessageService } from '#app/message/message.service';
+import { resolve } from '#core/ioc/container';
 
 export class MessageRouter extends ModuleRouter {
   protected registerBindings() {
+    const messageService = resolve(MessageService);
     this.bindModel('message', (req, id) => {
       const camp = req.modelOrFail('camp');
       return messageService.getMessageById(camp.id, id);
@@ -14,6 +16,8 @@ export class MessageRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
+    const messageController = resolve(MessageController);
+
     this.router.use(auth());
 
     this.router.get(
