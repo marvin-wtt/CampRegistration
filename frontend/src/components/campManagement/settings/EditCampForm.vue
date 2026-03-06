@@ -201,11 +201,17 @@
     <!-- Admission mode -->
     <q-select
       v-model="data.confirmationMode"
-      :label="t('field.confirmation_model')"
+      :label="t('field.confirmation_mode')"
       :options="confirmationModeOptions"
+      map-options
+      emit-value
       outlined
       rounded
-    />
+    >
+      <template #before>
+        <q-icon name="how_to_reg" />
+      </template>
+    </q-select>
 
     <!-- location -->
     <translated-input

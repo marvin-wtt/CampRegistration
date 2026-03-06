@@ -288,11 +288,18 @@
 
           <q-select
             v-model="data.confirmationMode"
-            :label="t('field.confirmation_model')"
+            :label="t('field.confirmation_mode')"
             :options="confirmationModeOptions"
+            hide-bottom-space
+            emit-value
+            map-options
             outlined
             rounded
-          />
+          >
+            <template #before>
+              <q-icon name="how_to_reg" />
+            </template>
+          </q-select>
         </camp-edit-step>
 
         <!-- Camp Details -->
