@@ -88,6 +88,13 @@ export class RegistrationService extends BaseService {
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 
+    if (camp.countries.length > 1 && !computedData.country) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Country data is required for camps with multiple countries. This is likely due to an invalid registration form',
+      );
+    }
+
     const fileIds = form.getFileIds();
 
     const isWaitingList = async (
