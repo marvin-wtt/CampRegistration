@@ -86,7 +86,7 @@ const {
 
   bordered = false,
   dense = false,
-  padding = true,
+  padding = false,
   separator = false,
 } = defineProps<{
   keyName?: string;

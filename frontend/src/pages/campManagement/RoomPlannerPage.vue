@@ -172,12 +172,12 @@ const availablePeople = computed<Roommate[]>(() => {
     return [];
   }
 
-  const waitingListFilter = (registration: Registration): boolean => {
-    return !registration.waitingList;
+  const filterStatusAccepted = (registration: Registration): boolean => {
+    return registration.status === 'ACCEPTED';
   };
 
   // Filter out people who are already in a group
-  const alreadyAssignedFilter = (registration: Registration): boolean => {
+  const filterUnassigned = (registration: Registration): boolean => {
     return !localRooms.some((room) => {
       return room.beds.some((value) => value?.person?.id === registration.id);
     });
@@ -185,8 +185,8 @@ const availablePeople = computed<Roommate[]>(() => {
 
   // Map to roommate type and sort by age
   return registrations
-    .filter(waitingListFilter)
-    .filter(alreadyAssignedFilter)
+    .filter(filterStatusAccepted)
+    .filter(filterUnassigned)
     .map(mapRegistrationRoommate)
     .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });

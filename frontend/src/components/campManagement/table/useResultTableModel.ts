@@ -106,11 +106,10 @@ export function useResultTableModel(
 
     // Waiting list
     if (
-      template.value.filterWaitingList &&
-      template.value.filterWaitingList !== 'include'
+      template.value.filterStatus !== undefined &&
+      template.value.filterStatus.length > 0
     ) {
-      const filterValue = template.value.filterWaitingList === 'only';
-      r = r.filter((row) => row.waitingList == filterValue);
+      r = r.filter((row) => template.value.filterStatus?.includes(row.status));
     }
 
     // Role

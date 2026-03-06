@@ -12,24 +12,33 @@ const messageTemplatesObj = {
     },
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
-           <p>Thank you for registering for camp <strong>{{ camp.name }}</strong>. We have received your registration and are excited to have you join us. We'll be in touch soon with more details – so stay tuned!</p>
+           <p>Thank you for registering for camp <strong>{{ camp.name }}</strong>. We have received your registration.</p>
+           <p>We will review your registration and get back to you soon with further information.</p>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Camp Team</p>`,
+
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
-           <p>Vielen Dank für deine Anmeldung zum Camp <strong>{{ camp.name }}</strong>. Wir haben deine Anmeldung erhalten und freuen uns, dass du dabei bist. In Kürze erhältst du weitere Informationen – bleib gespannt!</p>
+           <p>vielen Dank für deine Anmeldung zum Camp <strong>{{ camp.name }}</strong>. Wir haben deine Anmeldung erhalten.</p>
+           <p>Wir prüfen deine Anmeldung und melden uns in Kürze mit weiteren Informationen bei dir.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Camp Team</p>`,
+
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
-           <p>Merci pour ton inscription au camp <strong>{{ camp.name }}</strong>. Nous avons bien reçu ton inscription et sommes ravis de te compter parmi nous. Nous te contacterons bientôt avec plus de détails – reste à l'écoute !</p>
-           <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
+           <p>merci pour ton inscription au camp <strong>{{ camp.name }}</strong>. Nous avons bien reçu ton inscription.</p>
+           <p>Nous allons examiner ton inscription et te recontacterons prochainement avec plus d’informations.</p>
+           <p>Si tu as des questions, n’hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe du camp</p>`,
+
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Dziękujemy za zgłoszenie na obóz <strong>{{ camp.name }}</strong>. Otrzymaliśmy Twoje zgłoszenie i cieszymy się, że do nas dołączasz. Wkrótce prześlemy więcej informacji – bądź czujny!</p>
+           <p>dziękujemy za zgłoszenie na obóz <strong>{{ camp.name }}</strong>. Otrzymaliśmy Twoje zgłoszenie.</p>
+           <p>Obecnie je sprawdzamy i wkrótce odezwiemy się z dodatkowymi informacjami.</p>
            <p>W razie pytań możesz po prostu odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Děkujeme za registraci na tábor <strong>{{ camp.name }}</strong>. Tvou registraci jsme obdrželi a těšíme se, že se k nám připojíš. Brzy ti zašleme další podrobnosti – zůstaň naladěn!</p>
-           <p>Pokud máš nějaké otázky, neváhej odpovědět na tento e-mail.</p>
+           <p>děkujeme za registraci na tábor <strong>{{ camp.name }}</strong>. Tvou registraci jsme obdrželi.</p>
+           <p>Registraci nyní kontrolujeme a brzy se ti ozveme s dalšími informacemi.</p>
+           <p>Pokud máš jakékoli dotazy, neváhej odpovědět na tento e-mail.</p>
            <p>S pozdravem,<br>Tým tábora</p>`,
     },
   },
@@ -76,23 +85,23 @@ const messageTemplatesObj = {
     },
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
-           <p>Your registration for camp <strong>{{ camp.name }}</strong> has been placed on the waitlist because the limit for your country has been reached. We'll keep you updated and let you know as soon as a spot becomes available.</p>
+           <p>Your registration for camp <strong>{{ camp.name }}</strong> has been placed on the waitlist because the limit for your group has been reached. We'll keep you updated and let you know as soon as a spot becomes available.</p>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Camp Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
-           <p>Deine Anmeldung für das Camp <strong>{{ camp.name }}</strong> wurde auf die Warteliste gesetzt, da das Länderkontingent erreicht wurde. Wir halten dich auf dem Laufenden und informieren dich, sobald ein Platz frei wird.</p>
+           <p>Deine Anmeldung für das Camp <strong>{{ camp.name }}</strong> wurde auf die Warteliste gesetzt, da das Gruppenkontingent erreicht wurde. Wir halten dich auf dem Laufenden und informieren dich, sobald ein Platz frei wird.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
-           <p>Ton inscription au camp <strong>{{ camp.name }}</strong> a été placée sur la liste d'attente car la limite pour ton pays a été atteinte. Nous te tiendrons informé(e) et te contacterons dès qu'une place sera disponible.</p>
-           <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
+           <p>Ton inscription au camp <strong>{{ camp.name }}</strong> a été placée sur la liste d’attente car la limite pour ton groupe a été atteinte. Nous te tiendrons informé(e) et te contacterons dès qu’une place sera disponible.</p>
+           <p>Si tu as des questions, n’hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe du camp</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Twoje zgłoszenie na obóz <strong>{{ camp.name }}</strong> zostało umieszczone na liście oczekujących, ponieważ limit dla Twojego kraju został osiągnięty. Będziemy Cię informować, gdy tylko zwolni się miejsce.</p>
+           <p>Twoje zgłoszenie na obóz <strong>{{ camp.name }}</strong> zostało umieszczone na liście oczekujących, ponieważ limit dla Twojej grupy został osiągnięty. Będziemy Cię informować, gdy tylko zwolni się miejsce.</p>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Tvoje registrace na tábor <strong>{{ camp.name }}</strong> byla zařazena na čekací listinu, protože byl dosažen limit pro tvou zemi. Dáme ti vědět, jakmile se uvolní místo.</p>
+           <p>Tvoje registrace na tábor <strong>{{ camp.name }}</strong> byla zařazena na čekací listinu, protože byl dosažen limit pro tvou skupinu. Dáme ti vědět, jakmile se uvolní místo.</p>
            <p>Pokud máš dotazy, neváhej odpovědět na tento e-mail.</p>
            <p>S pozdravem,<br>Tým tábora</p>`,
     },

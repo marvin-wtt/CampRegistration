@@ -35,7 +35,7 @@ const update = z.object({
     .object({
       data: RegistrationDataSchema,
       customData: z.record(z.string(), z.unknown()),
-      waitingList: z.boolean(),
+      status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
     })
     .partial(),
   query: z

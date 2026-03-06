@@ -285,6 +285,21 @@
               <q-icon name="add" />
             </template>
           </q-input>
+
+          <q-select
+            v-model="data.confirmationMode"
+            :label="t('field.confirmation_mode')"
+            :options="confirmationModeOptions"
+            hide-bottom-space
+            emit-value
+            map-options
+            outlined
+            rounded
+          >
+            <template #before>
+              <q-icon name="how_to_reg" />
+            </template>
+          </q-select>
         </camp-edit-step>
 
         <!-- Camp Details -->
@@ -364,7 +379,10 @@ import CountrySelect from 'components/common/CountrySelect.vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
 import { computed, ref } from 'vue';
-import type { CampCreateData } from '@camp-registration/common/entities';
+import type {
+  CampCreateData,
+  CampDetails,
+} from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useProfileStore } from 'stores/profile-store';
@@ -376,7 +394,9 @@ const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
 const step = ref<number>(0);
 const loading = ref<boolean>(false);
-const data = ref<CampCreateData>({} as CampCreateData);
+const data = ref<CampCreateData>({
+  confirmationMode: 'AUTOMATIC',
+} as CampCreateData);
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
@@ -394,6 +414,21 @@ const referenceCampOptions = computed<ReferenceCampOptions>(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 
   return camps ?? [];
+});
+
+const confirmationModeOptions = computed<
+  QSelectOption<CampDetails['confirmationMode']>[]
+>(() => {
+  return [
+    {
+      label: t('confirmation_mode.automatic'),
+      value: 'AUTOMATIC',
+    },
+    {
+      label: t('confirmation_mode.manual'),
+      value: 'MANUAL',
+    },
+  ];
 });
 
 async function onComplete() {
@@ -439,6 +474,7 @@ field:
   endTime: 'End time'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
+  confirmation_mode: 'Accept registrations'
   location: 'Location'
   price: 'Price'
   public: 'Show camp on main page'
@@ -478,6 +514,10 @@ validation:
   price:
     empty: 'Please enter a price greater than or equal to 0'
     nonNegative: 'Price must not be negative'
+
+confirmation_mode:
+  automatic: 'Automatic'
+  manual: 'Manual'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -506,6 +546,7 @@ field:
   endTime: 'Endzeit'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
+  confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
   public: 'Camp auf Startseite anzeigen'
@@ -545,6 +586,10 @@ validation:
   price:
     empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
     nonNegative: 'Der Preis darf nicht negativ sein'
+
+confirmation_mode:
+  automatic: 'Automatisch'
+  manual: 'Manuell'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -573,6 +618,7 @@ field:
   endTime: 'Heure de fin'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
+  confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
   public: "Afficher le camp sur la page d'accueil"
@@ -612,6 +658,10 @@ validation:
   price:
     empty: 'Veuillez entrer un prix supérieur ou égal à 0'
     nonNegative: 'Le prix ne doit pas être négatif'
+
+confirmation_mode:
+  automatic: 'Automatique'
+  manual: 'Manuel'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -640,6 +690,7 @@ field:
   endTime: 'Godzina zakończenia'
   minAge: 'Minimalny wiek'
   maxAge: 'Maksymalny wiek'
+  confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
   public: 'Pokaż obóz na stronie głównej'
@@ -679,6 +730,10 @@ validation:
   price:
     empty: 'Podaj cenę większą lub równą 0'
     nonNegative: 'Cena nie może być ujemna'
+
+confirmation_mode:
+  automatic: 'Automatyczny'
+  manual: 'Ręczny'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -707,6 +762,7 @@ field:
   endTime: 'Čas konce'
   minAge: 'Minimální věk'
   maxAge: 'Maximální věk'
+  confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
   public: 'Zobrazit tábor na úvodní stránce'
@@ -746,4 +802,8 @@ validation:
   price:
     empty: 'Zadejte cenu větší nebo rovnou 0'
     nonNegative: 'Cena nesmí být záporná'
+
+confirmation_mode:
+  automatic: 'Automatický'
+  manual: 'Manuální'
 </i18n>

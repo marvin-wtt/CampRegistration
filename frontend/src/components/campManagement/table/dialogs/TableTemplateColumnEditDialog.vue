@@ -334,8 +334,8 @@ const fieldOptions = computed<QSelectOption[]>(() => {
       value: 'createdAt',
     },
     {
-      label: t('field.field.options.waitingList'),
-      value: 'waitingList',
+      label: t('field.field.options.status'),
+      value: 'status',
     },
     {
       label: t('field.field.options.room'),
@@ -417,7 +417,7 @@ field:
     options:
       createdAt: 'Creation date'
       room: 'Room'
-      waitingList: 'Waiting list'
+      status: 'Status'
   isArray:
     label: 'Multiple values'
     hint: 'Values are split into multiple sub-rows'
@@ -483,7 +483,7 @@ field:
     options:
       createdAt: 'Erstellungsdatum'
       room: 'Raum'
-      waitingList: 'Warteliste'
+      status: 'Status'
   isArray:
     label: 'Mehrere Werte'
     hint: 'Werte sind in mehrere Unterzeilen aufgeteilt'
@@ -549,7 +549,7 @@ field:
     options:
       createdAt: 'Date de création'
       room: 'Salle'
-      waitingList: "Liste d'attente"
+      status: 'Statut'
   isArray:
     label: 'Valeurs multiples'
     hint: 'Les valeurs sont réparties dans plusieurs sous-lignes'
@@ -615,7 +615,7 @@ field:
     options:
       createdAt: 'Data utworzenia'
       room: 'Pokój'
-      waitingList: 'Lista oczekujących'
+      status: 'Status'
   isArray:
     label: 'Wiele wartości'
     hint: 'Wartości są podzielone na kilka wierszy'
@@ -681,7 +681,7 @@ field:
     options:
       createdAt: 'Datum vytvoření'
       room: 'Pokoj'
-      waitingList: 'Čekací seznam'
+      status: 'Stav'
   isArray:
     label: 'Více hodnot'
     hint: 'Hodnoty jsou rozděleny do více řádků'

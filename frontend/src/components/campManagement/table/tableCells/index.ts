@@ -20,14 +20,23 @@ import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgo
 import TranslatedValueTableCell from 'components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
 import EditorTableCell from 'components/campManagement/table/tableCells/EditorTableCell.vue';
 import FormSelectTableCell from 'components/campManagement/table/tableCells/FormSelectTableCell.vue';
+import StatusTableCell from 'components/campManagement/table/tableCells/StatusTableCell.vue';
 
 // TODO Add custom config options
+// TODO Add translations for pl and cs
 const components = () => {
   TableComponentRegistry.register('editor', EditorTableCell, {
     internal: true,
   });
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,
+  });
+  TableComponentRegistry.register('status', StatusTableCell, {
+    label: {
+      en: 'Status',
+      de: 'Status',
+      fr: 'Status',
+    },
   });
   TableComponentRegistry.register('address', AddressTableCell, {
     label: {

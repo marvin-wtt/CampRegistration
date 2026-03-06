@@ -88,6 +88,13 @@ export class RegistrationService extends BaseService {
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 
+    if (camp.countries.length > 1 && !computedData.country) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Country data is required for camps with multiple countries. This is likely due to an invalid registration form',
+      );
+    }
+
     const fileIds = form.getFileIds();
 
     const isWaitingList = async (
@@ -136,13 +143,19 @@ export class RegistrationService extends BaseService {
       async (transaction) => {
         const waitingList = await isWaitingList(transaction);
 
+        const status = waitingList
+          ? 'WAITLISTED'
+          : camp.confirmationMode === 'AUTOMATIC'
+            ? 'ACCEPTED'
+            : 'PENDING';
+
         return transaction.registration.create({
           data: {
             ...data,
             ...computedData,
             id: undefined, // Force new ID generation
             data: formData,
-            waitingList,
+            status,
             camp: { connect: { id: camp.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
@@ -157,7 +170,7 @@ export class RegistrationService extends BaseService {
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
-      'waitingList' | 'data' | 'customData'
+      'status' | 'data' | 'customData'
     >,
     sessionId: string,
   ) {
@@ -166,7 +179,7 @@ export class RegistrationService extends BaseService {
         where: { id: registrationId },
         data: {
           customData: data.customData,
-          waitingList: data.waitingList,
+          status: data.status,
         },
         include: {
           bed: { include: { room: true } },
@@ -195,7 +208,7 @@ export class RegistrationService extends BaseService {
           ...computedData,
           data: data.data,
           customData: data.customData,
-          waitingList: data.waitingList,
+          status: data.status,
           files,
         },
         include: {

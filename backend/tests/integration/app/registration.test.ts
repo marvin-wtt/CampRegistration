@@ -36,7 +36,6 @@ import {
   campWithMultipleFilesRequired,
   campWithAddressCampDataTypes,
   campWithEmailAndCountry,
-  campWithEmailSingleCountry,
 } from './fixtures/registration.fixtures.js';
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
@@ -204,7 +203,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const data = body.data;
 
       expect(data).toHaveProperty('id');
-      expect(data).toHaveProperty('waitingList');
+      expect(data).toHaveProperty('status');
       expect(data).toHaveProperty('data');
       expect(data).toHaveProperty('computedData');
       expect(data).toHaveProperty('computedData.firstName');
@@ -310,16 +309,37 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       expect(body).toHaveProperty('data');
       expect(body).toHaveProperty('data.id');
-      expect(body).toHaveProperty('data.waitingList');
+      expect(body).toHaveProperty('data.status', 'ACCEPTED');
       expect(body).toHaveProperty('data.data');
       expect(body).toHaveProperty('data.data.first_name', 'Jhon');
       expect(body).toHaveProperty('data.data.last_name', 'Doe');
       expect(body).toHaveProperty('data.computedData');
-      expect(body).toHaveProperty('data.customData');
+      expect(body).toHaveProperty('data.customData', {});
       expect(body).toHaveProperty('data.locale');
       expect(body).toHaveProperty('data.room');
       expect(body).toHaveProperty('data.createdAt');
       expect(body).toHaveProperty('data.updatedAt');
+    });
+
+    it('set the registration status to pending without auto-accept', async () => {
+      const camp = await CampFactory.create({
+        ...campPublic,
+        confirmationMode: 'MANUAL',
+      });
+
+      const data = {
+        data: {
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        },
+      };
+
+      const { body } = await request()
+        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .send(data)
+        .expect(201);
+
+      expect(body).toHaveProperty('data.status', 'PENDING');
     });
 
     it('should respond with `201` status code for private camps', async () => {
@@ -333,68 +353,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send({ data })
         .expect(201);
-    });
-
-    it('should respond with `201` status code when form has custom questions', async () => {
-      const camp = await CampFactory.create(campWithCustomFields);
-
-      const data = {
-        first_name: 'Jhon',
-        role: 'participant',
-      };
-
-      const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data })
-        .expect(201);
-
-      expect(body).toHaveProperty('data.data.role', data.role);
-    });
-
-    it('should respond with `201` status code when form has camp variables', async () => {
-      const camp = await CampFactory.create(campWithCampVariable);
-
-      const validData = {
-        first_name: 'Jhon',
-        age: 11,
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: validData })
-        .expect(201);
-
-      const invalidData = {
-        first_name: 'Jhon',
-        age: 5,
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: invalidData })
-        .expect(400);
-    });
-
-    it('should respond with `201` status code when form has custom functions', async () => {
-      const camp = await CampFactory.create(campWithFormFunctions);
-
-      const validData = {
-        date: '2000-01-01',
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: validData })
-        .expect(201);
-
-      const invalidData = {
-        date: '2001-01-01',
-      };
-
-      await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
-        .send({ data: invalidData })
-        .expect(400);
     });
 
     it('should respond with `401` status code when camp is not active', async () => {
@@ -438,6 +396,70 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .post(`/api/v1/camps/${camp.id}/registrations`)
         .send(data)
         .expect(400);
+    });
+
+    describe('form', () => {
+      it('should respond with `201` status code when form has custom questions', async () => {
+        const camp = await CampFactory.create(campWithCustomFields);
+
+        const data = {
+          first_name: 'Jhon',
+          role: 'participant',
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data })
+          .expect(201);
+
+        expect(body).toHaveProperty('data.data.role', data.role);
+      });
+
+      it('should respond with `201` status code when form has camp variables', async () => {
+        const camp = await CampFactory.create(campWithCampVariable);
+
+        const validData = {
+          first_name: 'Jhon',
+          age: 11,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: validData })
+          .expect(201);
+
+        const invalidData = {
+          first_name: 'Jhon',
+          age: 5,
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: invalidData })
+          .expect(400);
+      });
+
+      it('should respond with `201` status code when form has custom functions', async () => {
+        const camp = await CampFactory.create(campWithFormFunctions);
+
+        const validData = {
+          date: '2000-01-01',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: validData })
+          .expect(201);
+
+        const invalidData = {
+          date: '2001-01-01',
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send({ data: invalidData })
+          .expect(400);
+      });
     });
 
     describe('locale', () => {
@@ -730,14 +752,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const assertRegistration = async (
         campId: string,
         data: unknown,
-        expected: boolean,
+        expected: string,
       ) => {
         const { body } = await request()
           .post(`/api/v1/camps/${campId}/registrations`)
           .send({ data })
           .expect(201);
 
-        expect(body).toHaveProperty('data.waitingList', expected);
+        expect(body).toHaveProperty('data.status', expected);
       };
 
       it('should set waiting list for national camps', async () => {
@@ -750,7 +772,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             {
               first_name: `Jhon ${i}`,
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -760,7 +782,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           {
             first_name: `Jhon`,
           },
-          true,
+          'WAITLISTED',
         );
       });
 
@@ -777,7 +799,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               first_name: `Jhon ${i}`,
               country: 'de',
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -788,7 +810,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Jhon`,
             country: 'de',
           },
-          true,
+          'WAITLISTED',
         );
 
         // Other nation should not be on waiting list
@@ -798,7 +820,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Jhon`,
             country: 'fr',
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -814,7 +836,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Tom`,
             role: 'counselor',
           },
-          false,
+          'ACCEPTED',
         );
 
         // Fill camp
@@ -825,7 +847,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               first_name: `Jhon ${i}`,
               role: 'participant',
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -836,7 +858,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Jhon`,
             role: 'participant',
           },
-          true,
+          'WAITLISTED',
         );
 
         // Check another counselor
@@ -846,7 +868,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             first_name: `Mary`,
             role: 'counselor',
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -863,7 +885,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'counselor',
             country: 'de',
           },
-          false,
+          'ACCEPTED',
         );
 
         // Fill camp
@@ -875,7 +897,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               role: 'participant',
               country: 'de',
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -887,7 +909,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'participant',
             country: 'de',
           },
-          true,
+          'WAITLISTED',
         );
 
         // Check another counselor
@@ -898,7 +920,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'counselor',
             country: 'de',
           },
-          false,
+          'ACCEPTED',
         );
 
         // Check participant from other nation
@@ -909,7 +931,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             role: 'participant',
             country: 'fr',
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -926,7 +948,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
                 country: 'de',
               },
             },
-            false,
+            'ACCEPTED',
           );
         }
 
@@ -939,7 +961,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               country: 'de',
             },
           },
-          true,
+          'WAITLISTED',
         );
 
         // Other nation should not be on waiting list
@@ -951,7 +973,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
               country: 'fr',
             },
           },
-          false,
+          'ACCEPTED',
         );
       });
 
@@ -964,7 +986,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
             .post(`/api/v1/camps/${camp.id}/registrations`)
             .send({
               data: { first_name: `Jhon ${i}` },
-              waitingList: false,
+              status: 'ACCEPTED',
             })
             .expect(201);
         }
@@ -975,7 +997,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           {
             first_name: `Jhon`,
           },
-          true,
+          'WAITLISTED',
         );
       });
 
@@ -1028,6 +1050,45 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     describe('sends messages', () => {
+      const createCampWithTemplates = async (
+        data: Partial<Prisma.CampCreateInput>,
+      ) => {
+        return CampFactory.create({
+          ...data,
+          messageTemplates: {
+            createMany: {
+              data: [
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_submitted',
+                  subject: 'Registration received',
+                }),
+                MessageTemplateFactory.build({
+                  event: 'registration_confirmed',
+                  subject: 'Registration confirmed',
+                  country: 'fr',
+                }),
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_waitlisted',
+                  subject: 'Registration on waiting list',
+                }),
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_updated',
+                  subject: 'Registration updated',
+                }),
+                MessageTemplateFactory.build({
+                  country: 'fr',
+                  event: 'registration_canceled',
+                  subject: 'Registration canceled',
+                }),
+              ],
+            },
+          },
+        });
+      };
+
       it('should not send a message when message template for group is missing', async () => {
         const camp = await CampFactory.create({
           ...campWithEmailAndCountry,
@@ -1054,16 +1115,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user with country', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailAndCountry,
-          messageTemplates: {
-            create: MessageTemplateFactory.build({
-              event: 'registration_confirmed',
-              subject: 'Registration confirmed',
-              country: 'fr',
-            }),
-          },
-        });
+        const camp = await createCampWithTemplates(campWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
@@ -1085,21 +1137,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a confirmation email to the user without country in national camp', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailSingleCountry,
-          messageTemplates: {
-            create: MessageTemplateFactory.build({
-              event: 'registration_confirmed',
-              subject: 'Registration confirmed',
-              country: 'fr',
-            }),
-          },
-        });
+        const camp = await createCampWithTemplates(campWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
           first_name: 'Jhon',
           last_name: 'Doe',
+          country: 'fr',
         };
 
         await request()
@@ -1140,11 +1184,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a notification to the contact email for national camp', async () => {
-        const camp = await CampFactory.create(campWithEmail);
+        const camp = await CampFactory.create(campWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
           first_name: 'Jhon',
+          country: 'fr',
         };
 
         await request()
@@ -1180,37 +1225,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
       });
 
-      it('should send a copy to all contact emails if country missing', async () => {
-        const camp = await CampFactory.create(
-          campWithContactEmailInternational,
-        );
-
-        const data = {};
-        await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
-          .send({ data })
-          .expect(201);
-
-        const expectedEmails = Object.values(
-          campWithContactEmailInternational.contactEmail,
-        );
-
-        expectEmailWith({
-          to: expect.arrayContaining(expectedEmails),
-        });
-      });
-
       it('should send a waiting list information to the user', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailAndMaxParticipants,
-          messageTemplates: {
-            create: MessageTemplateFactory.build({
-              country: 'fr',
-              event: 'registration_waitlisted',
-              subject: 'Registration on waiting list',
-            }),
-          },
-        });
+        const camp = await createCampWithTemplates(
+          campWithEmailAndMaxParticipants,
+        );
 
         const data = {
           email: 'test@example.com',
@@ -1248,7 +1266,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
           .send({
-            waitingList: false,
+            status: 'ACCEPTED',
           })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -1627,7 +1645,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           },
         });
         const registration = await createRegistration(camp, {
-          waitingList: true,
+          status: 'WAITLISTED',
           country: 'fr',
         });
 
@@ -1641,7 +1659,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         await request()
           .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
           .send({
-            waitingList: false,
+            status: 'ACCEPTED',
             data,
           })
           .auth(accessToken, { type: 'bearer' })

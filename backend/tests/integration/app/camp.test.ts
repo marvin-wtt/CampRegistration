@@ -47,6 +47,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     id: data.id ?? expect.anything(),
     active: data.active,
     public: data.public,
+    confirmationMode: data.confirmationMode,
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,
@@ -76,6 +77,7 @@ const assertCampResponseBody = (
     id: data.id ?? expect.anything(),
     active: data.active,
     public: data.public,
+    confirmationMode: data.confirmationMode,
     countries: data.countries,
     locales: data.locales,
     name: data.name,
@@ -333,6 +335,7 @@ describe('/api/v1/camps', () => {
       expect(body.data).toEqual({
         id: camp.id,
         active: camp.active,
+        confirmationMode: camp.confirmationMode,
         public: camp.public,
         countries: camp.countries,
         locales: ['de', 'cs'],
@@ -1016,6 +1019,7 @@ describe('/api/v1/camps', () => {
 
         const data = {
           active: true,
+          confirmationMode: 'AUTOMATIC' as CampCreateData['confirmationMode'],
           public: false,
           countries: ['de'],
           name: 'Test Camp',

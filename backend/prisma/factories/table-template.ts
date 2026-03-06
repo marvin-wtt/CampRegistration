@@ -39,7 +39,7 @@ export const TableTemplateFactory = {
         })),
         order: faker.number.int({ min: 1, max: 10 }),
         filter: undefined,
-        filterWaitingList: undefined,
+        filterStatus: undefined,
         filterRoles: undefined,
         printOptions: undefined,
         indexed: faker.datatype.boolean(),
