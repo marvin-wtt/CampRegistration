@@ -82,10 +82,12 @@ const interval = setInterval(() => {
 }, 1000);
 
 const personName = computed<string>(() => {
-  const firstName = registration.computedData.firstName?.trim();
-  const lastName = registration.computedData.lastName?.trim();
+  const firstName = registration.computedData.firstName?.trim() ?? '';
+  const lastName = registration.computedData.lastName?.trim() ?? '';
 
-  return `${firstName} ${lastName}`;
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  return fullName.length > 0 ? fullName : '?';
 });
 
 const confirmationMessage = ref<boolean>(true);
