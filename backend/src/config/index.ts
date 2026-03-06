@@ -7,7 +7,11 @@ const config = {
   port: env.APP_PORT,
   origin: env.APP_URL,
   database: {
-    // TODO Import options
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+    name: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
   },
   jwt: {
     secret: env.JWT_SECRET,
