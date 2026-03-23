@@ -4,7 +4,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 export default defineConfig({
   plugins: [tsconfigPaths({ projects: ['./tsconfig.test.json'] })],
   test: {
-    include: ['tests/integration/**/registration.test.ts'],
+    include: ['tests/integration/**/*.test.ts'],
     maxWorkers: 1,
     setupFiles: ['tests/integration/setup.ts'],
     coverage: {
