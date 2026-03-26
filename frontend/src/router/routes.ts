@@ -238,6 +238,40 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/newsletters',
+    component: () => import('layouts/CampManagementLayout.vue'),
+    meta: {
+      auth: true,
+      hideDrawer: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'newsletters',
+        component: () =>
+          import('pages/newsletter/NewsletterIndexPage.vue'),
+      },
+      {
+        path: ':newsletterId',
+        name: 'newsletter',
+        component: () =>
+          import('pages/newsletter/NewsletterPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/newsletters/unsubscribe/:token',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'newsletter-unsubscribe',
+        component: () =>
+          import('pages/newsletter/NewsletterUnsubscribePage.vue'),
+      },
+    ],
+  },
+  {
     path: '/print',
     component: () => import('layouts/PrintLayout.vue'),
     children: [

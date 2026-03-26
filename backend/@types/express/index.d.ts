@@ -10,6 +10,9 @@ import type {
   Bed,
   Room,
   File,
+  Newsletter,
+  NewsletterManager,
+  NewsletterSubscriber,
 } from '@prisma/client';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
@@ -27,6 +30,9 @@ declare global {
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
+      newsletter?: Newsletter;
+      newsletterManager?: NewsletterManager;
+      subscriber?: NewsletterSubscriber;
     }
 
     interface AuthUser {

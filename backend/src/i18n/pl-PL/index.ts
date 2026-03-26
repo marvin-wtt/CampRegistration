@@ -2,6 +2,7 @@ import auth from './auth/index.js';
 import camp from './camp/index.js';
 import email from './email/index.js';
 import manager from './manager/index.js';
+import newsletter from './newsletter/index.js';
 import registration from './registration/index.js';
 
 export default {
@@ -13,5 +14,6 @@ export default {
   camp,
   email,
   manager,
+  newsletter,
   registration,
 };

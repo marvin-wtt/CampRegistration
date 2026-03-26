@@ -17,6 +17,7 @@ import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { MailModule } from '#app/mail/mail.module';
+import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
 import { startJobs, stopJobs } from '#jobs/index';
@@ -46,6 +47,7 @@ const loadModules = () =>
     new RoomModule(),
     new BedModule(),
     new FeedbackModule(),
+    new NewsletterModule(),
   ]);
 
 export async function boot() {
