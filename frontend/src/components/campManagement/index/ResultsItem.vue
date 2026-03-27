@@ -148,7 +148,7 @@ function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
 function resultsAction() {
   void withLoading(resultLoading, async () => {
     await router.push({
-      name: 'participants',
+      name: 'management.camp.participants',
       params: {
         campId: camp.id,
       },
@@ -185,7 +185,7 @@ function shareAction() {
 function editAction() {
   void withLoading(editLoading, async () => {
     await router.push({
-      name: 'edit-camp',
+      name: 'management.camp.settings.edit',
       params: {
         campId: camp.id,
       },

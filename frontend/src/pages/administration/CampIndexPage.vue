@@ -531,7 +531,7 @@ function formatDateTime(dateTime: string): string {
 
 function editCamp(camp: Camp) {
   const routeData = router.resolve({
-    name: 'edit-camp',
+    name: 'management.camp.settings.edit',
     params: {
       campId: camp.id,
     },
@@ -553,7 +553,7 @@ function showCampForm(camp: Camp) {
 
 function showCampResults(camp: Camp) {
   const routeData = router.resolve({
-    name: 'dashboard',
+    name: 'management.camp',
     params: {
       campId: camp.id,
     },

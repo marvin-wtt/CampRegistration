@@ -27,7 +27,7 @@
           :key="newsletter.id"
           clickable
           :to="{
-            name: 'newsletter',
+            name: 'management.newsletter',
             params: { newsletterId: newsletter.id },
           }"
         >

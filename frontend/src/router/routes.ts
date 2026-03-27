@@ -117,13 +117,13 @@ const routes: RouteRecordRaw[] = [
         children: [
           {
             path: '',
-            name: 'newsletters',
+            name: 'management.newsletters',
             component: () =>
               import('pages/newsletter/NewsletterIndexPage.vue'),
           },
           {
             path: ':newsletterId',
-            name: 'newsletter',
+            name: 'management.newsletter',
             component: () =>
               import('pages/newsletter/NewsletterPage.vue'),
           },
@@ -131,14 +131,14 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'camps/:campId',
-        name: 'dashboard',
+        name: 'management.camp',
         redirect: {
-          name: 'participants',
+          name: 'management.camp.participants',
         },
         children: [
           {
             path: 'participants',
-            name: 'participants',
+            name: 'management.camp.participants',
             component: () =>
               import('pages/campManagement/ParticipantsIndexPage.vue'),
           },
@@ -149,42 +149,42 @@ const routes: RouteRecordRaw[] = [
           },
           {
             path: 'room-planner',
-            name: 'room-planner',
+            name: 'management.camp.room-planner',
             component: () => import('pages/campManagement/RoomPlannerPage.vue'),
           },
           {
             path: 'settings',
-            name: 'management.settings',
+            name: 'management.camp.settings',
             component: () =>
               import('pages/campManagement/settings/SettingsPage.vue'),
             children: [
               {
                 path: 'access',
-                name: 'access',
+                name: 'management.camp.settings.access',
                 component: () =>
                   import('pages/campManagement/settings/AccessPage.vue'),
               },
               {
                 path: 'edit',
-                name: 'edit-camp',
+                name: 'management.camp.settings.edit',
                 component: () =>
                   import('pages/campManagement/settings/EditCampPage.vue'),
               },
               {
                 path: 'emails',
-                name: 'edit-email-templates',
+                name: 'management.camp.settings.emails',
                 component: () =>
                   import('pages/campManagement/settings/MessageTemplateEditPage.vue'),
               },
               {
                 path: 'files',
-                name: 'edit-files',
+                name: 'management.camp.settings.files',
                 component: () =>
                   import('pages/campManagement/settings/FileSettingsPage.vue'),
               },
               {
                 path: 'form',
-                name: 'edit-form',
+                name: 'management.camp.settings.form',
                 component: () =>
                   import('pages/campManagement/settings/FormEditPage.vue'),
               },
@@ -263,7 +263,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'newsletter-unsubscribe',
+        name: 'newsletter.unsubscribe',
         component: () =>
           import('pages/newsletter/NewsletterUnsubscribePage.vue'),
       },

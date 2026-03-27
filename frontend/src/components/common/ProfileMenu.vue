@@ -41,7 +41,7 @@
         <q-item
           v-close-popup
           clickable
-          :to="{ name: 'newsletters' }"
+          :to="{ name: 'management.newsletters' }"
           active-class=""
           exact-active-class=""
         >

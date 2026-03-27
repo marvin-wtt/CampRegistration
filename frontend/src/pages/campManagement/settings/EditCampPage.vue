@@ -58,7 +58,7 @@ async function onSubmit() {
   }
 
   return router.push({
-    name: 'dashboard',
+    name: 'management.camp',
     params: { campId: route.params.campId },
   });
 }

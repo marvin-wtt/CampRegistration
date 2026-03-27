@@ -9,7 +9,7 @@
   />
   <q-btn
     :label="t('newsletters')"
-    :to="{ name: 'newsletters' }"
+    :to="{ name: 'management.newsletters' }"
     class="gt-sm"
     flat
     rounded
