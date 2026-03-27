@@ -42,7 +42,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   });
 
   async function fetchData(campId?: string) {
-    const cid: string = campId ?? (route.params.camp as string);
+    const cid: string = campId ?? (route.params.campId as string);
     checkNotNullWithError(cid);
 
     await lazyFetch(async () => {
@@ -64,7 +64,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     updateData: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
   ) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(registrationId);
@@ -89,7 +89,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     registrationId?: string,
     params?: RegistrationDeleteQuery,
   ) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(registrationId);

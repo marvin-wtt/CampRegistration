@@ -71,7 +71,7 @@ export class CampManagerInvitationMessage extends CampManagerMessage<{
   protected content() {
     const camp = this.payload.camp;
     const campName = translateObject(camp.name, this.locale());
-    const url = generateUrl(['management', camp.id]);
+    const url = generateUrl(['management', 'camps', camp.id]);
 
     return {
       template: 'manager-invitation',

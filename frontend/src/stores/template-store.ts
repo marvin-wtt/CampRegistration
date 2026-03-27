@@ -41,7 +41,7 @@ export const useTemplateStore = defineStore('templates', () => {
   }
 
   async function fetchData(campId?: string) {
-    campId = campId ?? (route.params.camp as string | undefined);
+    campId = campId ?? (route.params.campId as string | undefined);
 
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => {
@@ -55,7 +55,7 @@ export const useTemplateStore = defineStore('templates', () => {
   async function updateCollection(templates: TableTemplate[]) {
     const currentTemplates = data.value;
 
-    const campId = route.params.camp as string | undefined;
+    const campId = route.params.campId as string | undefined;
 
     const cid = checkNotNullWithError(campId);
 
@@ -116,7 +116,7 @@ export const useTemplateStore = defineStore('templates', () => {
     template: TableTemplateCreateData,
     campId?: string,
   ) {
-    campId = campId ?? (route.params.camp as string | undefined);
+    campId = campId ?? (route.params.campId as string | undefined);
     const cid = checkNotNullWithError(campId);
 
     return await withProgressNotification('create', async () => {
@@ -133,7 +133,7 @@ export const useTemplateStore = defineStore('templates', () => {
     templateId: string,
     template: TableTemplateUpdateData,
   ) {
-    const campId = route.params.camp as string | undefined;
+    const campId = route.params.campId as string | undefined;
 
     const cid = checkNotNullWithError(campId);
     return await withProgressNotification('update', async () => {
@@ -153,7 +153,7 @@ export const useTemplateStore = defineStore('templates', () => {
   }
 
   async function deleteEntry(id: string) {
-    const campId = route.params.camp as string | undefined;
+    const campId = route.params.campId as string | undefined;
 
     const cid = checkNotNullWithError(campId);
     const tid = checkNotNullWithNotification(id);

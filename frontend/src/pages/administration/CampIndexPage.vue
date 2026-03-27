@@ -533,7 +533,7 @@ function editCamp(camp: Camp) {
   const routeData = router.resolve({
     name: 'edit-camp',
     params: {
-      camp: camp.id,
+      campId: camp.id,
     },
   });
 
@@ -555,7 +555,7 @@ function showCampResults(camp: Camp) {
   const routeData = router.resolve({
     name: 'dashboard',
     params: {
-      camp: camp.id,
+      campId: camp.id,
     },
   });
 

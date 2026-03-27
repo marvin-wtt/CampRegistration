@@ -130,18 +130,12 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       {
-        path: ':camp',
+        path: 'camps/:campId',
+        name: 'dashboard',
         redirect: {
-          name: 'dashboard',
+          name: 'participants',
         },
         children: [
-          {
-            path: 'dashboard',
-            name: 'dashboard',
-            redirect: {
-              name: 'participants',
-            },
-          },
           {
             path: 'participants',
             name: 'participants',

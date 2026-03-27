@@ -150,7 +150,7 @@ function resultsAction() {
     await router.push({
       name: 'participants',
       params: {
-        camp: camp.id,
+        campId: camp.id,
       },
     });
   });
@@ -162,7 +162,7 @@ function shareAction() {
     router.resolve({
       name: 'camp',
       params: {
-        camp: camp.id,
+        campId: camp.id,
       },
     }).href;
 
@@ -187,7 +187,7 @@ function editAction() {
     await router.push({
       name: 'edit-camp',
       params: {
-        camp: camp.id,
+        campId: camp.id,
       },
     });
   });

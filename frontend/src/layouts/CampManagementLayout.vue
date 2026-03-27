@@ -151,7 +151,7 @@ const campDetailStore = useCampDetailsStore();
 onMounted(async () => {
   await authStore.init();
 
-  if (route.params.camp) {
+  if (route.params.campId) {
     await campDetailStore.fetchData();
   }
 });
