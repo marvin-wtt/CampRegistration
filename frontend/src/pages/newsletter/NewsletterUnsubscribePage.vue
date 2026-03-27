@@ -91,4 +91,22 @@ error:
   message: 'Le lien de désinscription est invalide ou a déjà été utilisé. Vous êtes peut-être déjà désinscrit(e).'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+success:
+  title: 'Pomyślnie wypisano'
+  message: 'Zostałeś/-aś pomyślnie wypisany/-a z newslettera. Nie będziesz już otrzymywać wiadomości z tego newslettera.'
+error:
+  title: 'Wypisanie nie powiodło się'
+  message: 'Link do wypisania jest nieprawidłowy lub został już użyty. Możliwe, że jesteś już wypisany/-a.'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+success:
+  title: 'Odhlášení proběhlo úspěšně'
+  message: 'Byli jste úspěšně odhlášeni z odběru newsletteru. Již nebudete dostávat e-maily z tohoto newsletteru.'
+error:
+  title: 'Odhlášení se nezdařilo'
+  message: 'Odkaz pro odhlášení je neplatný nebo již byl použit. Možná jste již odhlášeni.'
+</i18n>
+
 <style scoped></style>

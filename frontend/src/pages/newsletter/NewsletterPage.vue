@@ -455,4 +455,121 @@ managers:
       message: 'Möchten Sie diesen Verwalter wirklich entfernen?'
 </i18n>
 
+<i18n lang="yaml" locale="fr">
+tab:
+  subscribers: 'Abonnés'
+  send: 'Envoyer'
+  managers: 'Gestionnaires'
+
+subscribers:
+  title: 'Abonnés'
+  action:
+    add: 'Ajouter un abonné'
+    import: 'Importer depuis un camp'
+  importResult: '{added} nouveaux abonnés importés, {skipped} déjà abonnés.'
+  dialog:
+    delete:
+      title: 'Supprimer un abonné'
+      message: 'Voulez-vous vraiment supprimer cet abonné ?'
+
+send:
+  title: 'Envoyer la newsletter'
+  subject: 'Sujet'
+  body: 'Corps du message (HTML pris en charge)'
+  action: 'Envoyer à {count} abonnés'
+  gdprNotice: 'Chaque e-mail contiendra un lien de désinscription conformément à la législation européenne (RGPD). Les abonnés peuvent se désabonner à tout moment.'
+  success: 'Newsletter mise en file d''attente pour {count} destinataires.'
+  error: 'Échec de l''envoi de la newsletter.'
+  dialog:
+    title: 'Confirmer l''envoi'
+    message: 'Voulez-vous vraiment envoyer cette newsletter à {count} abonnés ?'
+
+managers:
+  title: 'Gestionnaires'
+  action:
+    add: 'Ajouter un gestionnaire'
+  dialog:
+    delete:
+      title: 'Supprimer un gestionnaire'
+      message: 'Voulez-vous vraiment supprimer ce gestionnaire ?'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+tab:
+  subscribers: 'Subskrybenci'
+  send: 'Wyślij'
+  managers: 'Zarządzający'
+
+subscribers:
+  title: 'Subskrybenci'
+  action:
+    add: 'Dodaj subskrybenta'
+    import: 'Importuj z obozu'
+  importResult: 'Zaimportowano {added} nowych subskrybentów, {skipped} już zapisanych.'
+  dialog:
+    delete:
+      title: 'Usuń subskrybenta'
+      message: 'Czy na pewno chcesz usunąć tego subskrybenta?'
+
+send:
+  title: 'Wyślij newsletter'
+  subject: 'Temat'
+  body: 'Treść wiadomości (obsługiwany HTML)'
+  action: 'Wyślij do {count} subskrybentów'
+  gdprNotice: 'Każda wiadomość e-mail będzie zawierać link do rezygnacji z subskrypcji zgodnie z prawem UE (RODO). Subskrybenci mogą zrezygnować w dowolnym momencie.'
+  success: 'Newsletter dodany do kolejki dla {count} odbiorców.'
+  error: 'Nie udało się wysłać newslettera.'
+  dialog:
+    title: 'Potwierdź wysyłkę'
+    message: 'Czy na pewno chcesz wysłać ten newsletter do {count} subskrybentów?'
+
+managers:
+  title: 'Zarządzający'
+  action:
+    add: 'Dodaj zarządzającego'
+  dialog:
+    delete:
+      title: 'Usuń zarządzającego'
+      message: 'Czy na pewno chcesz usunąć tego zarządzającego?'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+tab:
+  subscribers: 'Odběratelé'
+  send: 'Odeslat'
+  managers: 'Správci'
+
+subscribers:
+  title: 'Odběratelé'
+  action:
+    add: 'Přidat odběratele'
+    import: 'Importovat z tábora'
+  importResult: 'Importováno {added} nových odběratelů, {skipped} již přihlášených.'
+  dialog:
+    delete:
+      title: 'Odstranit odběratele'
+      message: 'Opravdu chcete odstranit tohoto odběratele?'
+
+send:
+  title: 'Odeslat newsletter'
+  subject: 'Předmět'
+  body: 'Tělo zprávy (podporuje HTML)'
+  action: 'Odeslat {count} odběratelům'
+  gdprNotice: 'Každý e-mail bude obsahovat odkaz pro odhlášení v souladu s právem EU (GDPR). Odběratelé se mohou kdykoli odhlásit.'
+  success: 'Newsletter zařazen do fronty pro {count} příjemců.'
+  error: 'Odeslání newsletteru se nezdařilo.'
+  dialog:
+    title: 'Potvrdit odeslání'
+    message: 'Opravdu chcete odeslat tento newsletter {count} odběratelům?'
+
+managers:
+  title: 'Správci'
+  action:
+    add: 'Přidat správce'
+  dialog:
+    delete:
+      title: 'Odstranit správce'
+      message: 'Opravdu chcete odstranit tohoto správce?'
+</i18n>
+
 <style scoped></style>

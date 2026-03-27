@@ -151,4 +151,28 @@ dialog:
     label: 'Nom de la newsletter'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Newslettery'
+empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
+action:
+  create: 'Utwórz newsletter'
+dialog:
+  delete:
+    title: 'Usuń newsletter'
+    message: 'Czy na pewno chcesz usunąć ten newsletter? Wszyscy subskrybenci zostaną usunięci.'
+    label: 'Nazwa newslettera'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Newslettery'
+empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
+action:
+  create: 'Vytvořit newsletter'
+dialog:
+  delete:
+    title: 'Smazat newsletter'
+    message: 'Opravdu chcete smazat tento newsletter? Všichni odběratelé budou odstraněni.'
+    label: 'Název newsletteru'
+</i18n>
+
 <style scoped></style>

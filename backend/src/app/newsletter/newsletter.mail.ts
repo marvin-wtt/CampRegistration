@@ -39,6 +39,13 @@ export class NewsletterMail extends MailBase<NewsletterMailPayload> {
     };
   }
 
+  protected getTranslationOptions() {
+    return {
+      namespace: 'newsletter',
+      keyPrefix: 'email',
+    };
+  }
+
   protected content() {
     return {
       html: this.payload.body,
@@ -46,7 +53,10 @@ export class NewsletterMail extends MailBase<NewsletterMailPayload> {
   }
 
   protected reason(): string {
+    const tg = this.getTg();
     const unsubscribeUrl = this.getUnsubscribeUrl();
-    return `You received this email because you subscribed to our newsletter. <a href="${unsubscribeUrl}">Unsubscribe</a>`;
+    const text = tg('newsletter:email.reason');
+    const linkText = tg('newsletter:email.unsubscribe');
+    return `${text} <a href="${unsubscribeUrl}">${linkText}</a>`;
   }
 }

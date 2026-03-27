@@ -121,4 +121,55 @@ action:
   cancel: 'Abbrechen'
 </i18n>
 
+<i18n lang="yaml" locale="fr">
+title: 'Ajouter un abonné'
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'L''e-mail est requis'
+  name:
+    label: 'Nom (optionnel)'
+  country:
+    label: 'Code pays (optionnel)'
+    hint: 'ex. DE, FR, PL'
+action:
+  add: 'Ajouter'
+  cancel: 'Annuler'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Dodaj subskrybenta'
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail jest wymagany'
+  name:
+    label: 'Imię i nazwisko (opcjonalne)'
+  country:
+    label: 'Kod kraju (opcjonalny)'
+    hint: 'np. DE, FR, PL'
+action:
+  add: 'Dodaj'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Přidat odběratele'
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail je povinný'
+  name:
+    label: 'Jméno (volitelné)'
+  country:
+    label: 'Kód země (volitelný)'
+    hint: 'např. DE, FR, PL'
+action:
+  add: 'Přidat'
+  cancel: 'Zrušit'
+</i18n>
+
 <style scoped></style>
