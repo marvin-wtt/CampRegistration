@@ -129,4 +129,55 @@ action:
   cancel: 'Abbrechen'
 </i18n>
 
+<i18n lang="yaml" locale="fr">
+title: 'Importer des abonnés depuis un camp'
+input:
+  campId:
+    label: 'ID du camp'
+    hint: 'L''identifiant du camp depuis lequel importer les abonnés'
+    rule:
+      required: 'L''ID du camp est requis'
+  country:
+    label: 'Filtrer par pays (optionnel)'
+    hint: 'Laisser vide pour tout importer, ou saisir un code pays (ex. DE, FR)'
+notice: 'Seules les inscriptions avec une adresse e-mail seront importées. Les abonnés existants seront ignorés.'
+action:
+  import: 'Importer'
+  cancel: 'Annuler'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Importuj subskrybentów z obozu'
+input:
+  campId:
+    label: 'ID obozu'
+    hint: 'Identyfikator obozu, z którego mają być importowani subskrybenci'
+    rule:
+      required: 'ID obozu jest wymagane'
+  country:
+    label: 'Filtruj według kraju (opcjonalnie)'
+    hint: 'Pozostaw puste, aby importować wszystkich, lub wprowadź kod kraju (np. DE, FR)'
+notice: 'Importowane będą tylko zgłoszenia z adresem e-mail. Istniejący subskrybenci zostaną pominięci.'
+action:
+  import: 'Importuj'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Importovat odběratele z tábora'
+input:
+  campId:
+    label: 'ID tábora'
+    hint: 'Identifikátor tábora, ze kterého se mají importovat odběratelé'
+    rule:
+      required: 'ID tábora je povinné'
+  country:
+    label: 'Filtrovat podle země (volitelné)'
+    hint: 'Nechte prázdné pro import všech, nebo zadejte kód země (např. DE, FR)'
+notice: 'Importovány budou pouze registrace s e-mailovou adresou. Stávající odběratelé budou přeskočeni.'
+action:
+  import: 'Importovat'
+  cancel: 'Zrušit'
+</i18n>
+
 <style scoped></style>

@@ -93,4 +93,40 @@ action:
   cancel: 'Abbrechen'
 </i18n>
 
+<i18n lang="yaml" locale="fr">
+title: 'Ajouter un gestionnaire'
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'L''e-mail est requis'
+action:
+  add: 'Ajouter'
+  cancel: 'Annuler'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Dodaj zarządzającego'
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail jest wymagany'
+action:
+  add: 'Dodaj'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Přidat správce'
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail je povinný'
+action:
+  add: 'Přidat'
+  cancel: 'Zrušit'
+</i18n>
+
 <style scoped></style>

@@ -111,4 +111,46 @@ action:
   cancel: 'Abbrechen'
 </i18n>
 
+<i18n lang="yaml" locale="fr">
+title: 'Modifier la newsletter'
+input:
+  name:
+    label: 'Nom'
+    rule:
+      required: 'Le nom est requis'
+  description:
+    label: 'Description (optionnel)'
+action:
+  save: 'Enregistrer'
+  cancel: 'Annuler'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj newsletter'
+input:
+  name:
+    label: 'Nazwa'
+    rule:
+      required: 'Nazwa jest wymagana'
+  description:
+    label: 'Opis (opcjonalny)'
+action:
+  save: 'Zapisz'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit newsletter'
+input:
+  name:
+    label: 'Název'
+    rule:
+      required: 'Název je povinný'
+  description:
+    label: 'Popis (volitelný)'
+action:
+  save: 'Uložit'
+  cancel: 'Zrušit'
+</i18n>
+
 <style scoped></style>

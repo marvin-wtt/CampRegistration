@@ -106,4 +106,46 @@ action:
   cancel: 'Abbrechen'
 </i18n>
 
+<i18n lang="yaml" locale="fr">
+title: 'Créer une newsletter'
+input:
+  name:
+    label: 'Nom'
+    rule:
+      required: 'Le nom est requis'
+  description:
+    label: 'Description (optionnel)'
+action:
+  create: 'Créer'
+  cancel: 'Annuler'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Utwórz newsletter'
+input:
+  name:
+    label: 'Nazwa'
+    rule:
+      required: 'Nazwa jest wymagana'
+  description:
+    label: 'Opis (opcjonalny)'
+action:
+  create: 'Utwórz'
+  cancel: 'Anuluj'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Vytvořit newsletter'
+input:
+  name:
+    label: 'Název'
+    rule:
+      required: 'Název je povinný'
+  description:
+    label: 'Popis (volitelný)'
+action:
+  create: 'Vytvořit'
+  cancel: 'Zrušit'
+</i18n>
+
 <style scoped></style>
