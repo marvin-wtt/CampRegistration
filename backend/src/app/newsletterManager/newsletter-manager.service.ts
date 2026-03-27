@@ -3,10 +3,15 @@ import { injectable } from 'inversify';
 
 @injectable()
 export class NewsletterManagerService extends BaseService {
-  async isNewsletterManager(newsletterId: string, userId: string) {
-    return this.prisma.newsletterManager
-      .findFirst({ where: { newsletterId, userId } })
-      .then((v) => v !== null);
+  async isNewsletterManager(
+    newsletterId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const manager = await this.prisma.newsletterManager.findFirst({
+      where: { newsletterId, userId },
+    });
+
+    return manager != null;
   }
 
   async getManagers(newsletterId: string) {

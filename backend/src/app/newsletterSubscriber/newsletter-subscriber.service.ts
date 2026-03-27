@@ -70,11 +70,6 @@ export class NewsletterSubscriberService extends BaseService {
     campId: string,
     country: string | null | undefined,
   ): Promise<{ added: number; skipped: number }> {
-    const where: Record<string, unknown> = { campId };
-    if (country) {
-      where['country'] = country;
-    }
-
     const registrations = await this.prisma.registration.findMany({
       where: {
         campId,
@@ -88,7 +83,7 @@ export class NewsletterSubscriberService extends BaseService {
     let skipped = 0;
 
     for (const registration of registrations) {
-      const emails = registration.emails as string[] | null;
+      const emails = registration.emails;
       if (!emails || emails.length === 0) continue;
 
       const name =

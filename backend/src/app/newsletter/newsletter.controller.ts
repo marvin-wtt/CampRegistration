@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import { NewsletterService } from './newsletter.service.js';
 import { NewsletterResource } from './newsletter.resource.js';
-import { NewsletterSubscriberService } from './newsletter-subscriber.service.js';
+import { NewsletterSubscriberService } from '#app/newsletterSubscriber/newsletter-subscriber.service';
 import { NewsletterMail } from './newsletter.mail.js';
 import validator from './newsletter.validation.js';
 import { type Request, type Response } from 'express';
@@ -23,9 +23,8 @@ export class NewsletterController extends BaseController {
     await req.validate(validator.index);
     const userId = req.authUserId();
 
-    const newsletters = await this.newsletterService.getNewslettersByUserId(
-      userId,
-    );
+    const newsletters =
+      await this.newsletterService.getNewslettersByUserId(userId);
 
     res.resource(NewsletterResource.collection(newsletters));
   }

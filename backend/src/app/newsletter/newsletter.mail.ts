@@ -15,9 +15,11 @@ export class NewsletterMail extends MailBase<NewsletterMailPayload> {
 
   protected to() {
     const { to, name } = this.payload;
+
     if (name) {
       return { name, address: to };
     }
+
     return to;
   }
 
@@ -33,6 +35,7 @@ export class NewsletterMail extends MailBase<NewsletterMailPayload> {
 
   protected headers(): Record<string, string> {
     const unsubscribeUrl = this.getUnsubscribeUrl();
+
     return {
       'List-Unsubscribe': `<${unsubscribeUrl}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
