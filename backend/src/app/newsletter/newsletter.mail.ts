@@ -48,15 +48,11 @@ export class NewsletterMail extends MailBase<NewsletterMailPayload> {
 
   protected content() {
     return {
-      html: this.payload.body,
+      template: 'newsletter',
+      context: {
+        body: this.payload.body,
+        unsubscribeUrl: this.getUnsubscribeUrl(),
+      },
     };
-  }
-
-  protected reason(): string {
-    const tg = this.getTg();
-    const unsubscribeUrl = this.getUnsubscribeUrl();
-    const text = tg('newsletter:email.reason');
-    const linkText = tg('newsletter:email.unsubscribe');
-    return `${text} <a href="${unsubscribeUrl}">${linkText}</a>`;
   }
 }
