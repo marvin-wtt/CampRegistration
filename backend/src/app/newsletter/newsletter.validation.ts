@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-const index = z.object({});
+const index = z.object({
+  query: z
+    .object({
+      showAll: z.coerce.boolean().optional(),
+    })
+    .optional(),
+});
 
 const show = z.object({
   params: z.object({

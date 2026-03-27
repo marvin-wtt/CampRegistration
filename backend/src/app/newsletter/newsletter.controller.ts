@@ -20,11 +20,12 @@ export class NewsletterController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    await req.validate(validator.index);
+    const { query } = await req.validate(validator.index);
     const userId = req.authUserId();
 
-    const newsletters =
-      await this.newsletterService.getNewslettersByUserId(userId);
+    const newsletters = query?.showAll
+      ? await this.newsletterService.getAllNewsletters()
+      : await this.newsletterService.getNewslettersByUserId(userId);
 
     res.resource(NewsletterResource.collection(newsletters));
   }

@@ -143,6 +143,12 @@ const items: NavigationItemProps[] = [
     to: { name: 'administration.camps' },
   },
   {
+    name: 'newsletters',
+    label: t('newsletters'),
+    icon: 'mail',
+    to: { name: 'administration.newsletters' },
+  },
+  {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
@@ -175,6 +181,7 @@ const dev = computed<boolean>(() => {
 title: 'Administration'
 
 camps: 'Camps'
+newsletters: 'Newsletters'
 users: 'Users'
 settings: 'Settings'
 </i18n>
@@ -183,6 +190,7 @@ settings: 'Settings'
 title: 'Verwaltung'
 
 camps: 'Camps'
+newsletters: 'Newsletter'
 users: 'Benutzer'
 settings: 'Einstellungen'
 </i18n>
@@ -191,8 +199,27 @@ settings: 'Einstellungen'
 title: 'Administration'
 
 camps: 'Camps'
+newsletters: 'Newsletters'
 users: 'Utilisateurs'
 settings: 'Paramètres'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Administracja'
+
+camps: 'Obozy'
+newsletters: 'Newslettery'
+users: 'Użytkownicy'
+settings: 'Ustawienia'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Administrace'
+
+camps: 'Tábory'
+newsletters: 'Newslettery'
+users: 'Uživatelé'
+settings: 'Nastavení'
 </i18n>
 
 <style>

@@ -13,16 +13,23 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-md">
-          <q-input
+          <q-select
             v-model="campId"
-            :label="t('input.campId.label')"
-            :hint="t('input.campId.hint')"
-            :rules="[(val?: string) => !!val || t('input.campId.rule.required')]"
+            :label="t('input.camp.label')"
+            :hint="t('input.camp.hint')"
+            :options="campOptions"
+            :rules="[(val?: string) => !!val || t('input.camp.rule.required')]"
+            emit-value
+            map-options
             hide-bottom-space
             autofocus
             rounded
             outlined
-          />
+          >
+            <template #before>
+              <q-icon name="home" />
+            </template>
+          </q-select>
           <q-input
             v-model="country"
             :label="t('input.country.label')"
@@ -75,16 +82,28 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
+import { useProfileStore } from 'stores/profile-store';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
+const { to } = useObjectTranslation();
+const profileStore = useProfileStore();
+
 defineEmits([...useDialogPluginComponent.emits]);
 
-const campId = ref('');
+const campId = ref<string>('');
 const country = ref('');
+
+const campOptions = computed(() => {
+  return (profileStore.user?.camps ?? []).map((camp) => ({
+    label: to(camp.name),
+    value: camp.id,
+  }));
+});
 
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
@@ -98,11 +117,11 @@ function onSubmit() {
 <i18n lang="yaml" locale="en">
 title: 'Import Subscribers from Camp'
 input:
-  campId:
-    label: 'Camp ID'
-    hint: 'The ID of the camp to import subscribers from'
+  camp:
+    label: 'Camp'
+    hint: 'Select the camp to import subscribers from'
     rule:
-      required: 'Camp ID is required'
+      required: 'Camp is required'
   country:
     label: 'Filter by Country (optional)'
     hint: 'Leave empty to import all, or enter a country code (e.g. DE, FR)'
@@ -115,11 +134,11 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Abonnenten aus Lager importieren'
 input:
-  campId:
-    label: 'Lager-ID'
-    hint: 'Die ID des Lagers, aus dem Abonnenten importiert werden sollen'
+  camp:
+    label: 'Lager'
+    hint: 'Wählen Sie das Lager aus, aus dem Abonnenten importiert werden sollen'
     rule:
-      required: 'Lager-ID ist erforderlich'
+      required: 'Lager ist erforderlich'
   country:
     label: 'Nach Land filtern (optional)'
     hint: 'Leer lassen für alle, oder Ländercode eingeben (z.B. DE, FR)'
@@ -132,11 +151,11 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Importer des abonnés depuis un camp'
 input:
-  campId:
-    label: 'ID du camp'
-    hint: 'L''identifiant du camp depuis lequel importer les abonnés'
+  camp:
+    label: 'Camp'
+    hint: 'Sélectionnez le camp depuis lequel importer les abonnés'
     rule:
-      required: 'L''ID du camp est requis'
+      required: 'Le camp est requis'
   country:
     label: 'Filtrer par pays (optionnel)'
     hint: 'Laisser vide pour tout importer, ou saisir un code pays (ex. DE, FR)'
@@ -149,11 +168,11 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Importuj subskrybentów z obozu'
 input:
-  campId:
-    label: 'ID obozu'
-    hint: 'Identyfikator obozu, z którego mają być importowani subskrybenci'
+  camp:
+    label: 'Obóz'
+    hint: 'Wybierz obóz, z którego mają być importowani subskrybenci'
     rule:
-      required: 'ID obozu jest wymagane'
+      required: 'Obóz jest wymagany'
   country:
     label: 'Filtruj według kraju (opcjonalnie)'
     hint: 'Pozostaw puste, aby importować wszystkich, lub wprowadź kod kraju (np. DE, FR)'
@@ -166,11 +185,11 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Importovat odběratele z tábora'
 input:
-  campId:
-    label: 'ID tábora'
-    hint: 'Identifikátor tábora, ze kterého se mají importovat odběratelé'
+  camp:
+    label: 'Tábor'
+    hint: 'Vyberte tábor, ze kterého se mají importovat odběratelé'
     rule:
-      required: 'ID tábora je povinné'
+      required: 'Tábor je povinný'
   country:
     label: 'Filtrovat podle země (volitelné)'
     hint: 'Nechte prázdné pro import všech, nebo zadejte kód země (např. DE, FR)'

@@ -7,8 +7,11 @@ import type {
 } from '@camp-registration/common/entities';
 
 export function useNewsletterService() {
-  async function fetchNewsletters(): Promise<Newsletter[]> {
-    const response = await api.get('newsletters/');
+  async function fetchNewsletters(options?: {
+    showAll?: boolean;
+  }): Promise<Newsletter[]> {
+    const params = options?.showAll ? { showAll: true } : undefined;
+    const response = await api.get('newsletters/', { params });
     return response?.data?.data;
   }
 

@@ -17,7 +17,12 @@ export class NewsletterRouter extends ModuleRouter {
   protected defineRoutes() {
     const newsletterController = resolve(NewsletterController);
 
-    this.router.get('/', auth(), controller(newsletterController, 'index'));
+    this.router.get(
+      '/',
+      auth(),
+      guard((req) => (req.query as { showAll?: string }).showAll === undefined),
+      controller(newsletterController, 'index'),
+    );
     this.router.post('/', auth(), controller(newsletterController, 'store'));
 
     this.router.get(

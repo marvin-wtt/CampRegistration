@@ -110,6 +110,26 @@ const routes: RouteRecordRaw[] = [
           import('pages/campManagement/CampManagementIndexPage.vue'),
       },
       {
+        path: 'newsletters',
+        meta: {
+          hideDrawer: true,
+        },
+        children: [
+          {
+            path: '',
+            name: 'newsletters',
+            component: () =>
+              import('pages/newsletter/NewsletterIndexPage.vue'),
+          },
+          {
+            path: ':newsletterId',
+            name: 'newsletter',
+            component: () =>
+              import('pages/newsletter/NewsletterPage.vue'),
+          },
+        ],
+      },
+      {
         path: ':camp',
         redirect: {
           name: 'dashboard',
@@ -202,6 +222,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/administration/CampIndexPage.vue'),
       },
       {
+        path: 'newsletters',
+        name: 'administration.newsletters',
+        component: () =>
+          import('pages/administration/NewsletterIndexPage.vue'),
+      },
+      {
         path: 'users',
         name: 'administration.users',
         component: () => import('pages/administration/UserIndexPage.vue'),
@@ -234,28 +260,6 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/settings/SecuritySettingsPage.vue'),
           },
         ],
-      },
-    ],
-  },
-  {
-    path: '/newsletters',
-    component: () => import('layouts/CampManagementLayout.vue'),
-    meta: {
-      auth: true,
-      hideDrawer: true,
-    },
-    children: [
-      {
-        path: '',
-        name: 'newsletters',
-        component: () =>
-          import('pages/newsletter/NewsletterIndexPage.vue'),
-      },
-      {
-        path: ':newsletterId',
-        name: 'newsletter',
-        component: () =>
-          import('pages/newsletter/NewsletterPage.vue'),
       },
     ],
   },
