@@ -5,26 +5,26 @@ import type {
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
-import { ManagerRouter } from '#app/manager/manager.routes';
+import { CampManagerRouter } from '#app/campManager/camp-manager.routes';
 import type { ManagerPermission } from '@camp-registration/common/permissions';
-import { ManagerController } from '#app/manager/manager.controller';
-import { ManagerService } from '#app/manager/manager.service';
+import { CampManagerController } from '#app/campManager/camp-manager.controller';
+import { CampManagerService } from '#app/campManager/camp-manager.service';
 import { MailableRegistry } from '#app/mail/mail.registry';
-import { ManagerInvitationMessage } from '#app/manager/manager.messages';
+import { CampManagerInvitationMessage } from '#app/campManager/camp-manager.messages';
 import { resolve } from '#core/ioc/container';
 
-export class ManagerModule implements AppModule {
+export class CampManagerModule implements AppModule {
   bindContainers(options: BindOptions) {
-    options.bind(ManagerController).toSelf().inSingletonScope();
-    options.bind(ManagerService).toSelf().inSingletonScope();
+    options.bind(CampManagerController).toSelf().inSingletonScope();
+    options.bind(CampManagerService).toSelf().inSingletonScope();
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
-    resolve(MailableRegistry).register(ManagerInvitationMessage);
+    resolve(MailableRegistry).register(CampManagerInvitationMessage);
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/managers', new ManagerRouter());
+    router.useRouter('/camps/:campId/managers', new CampManagerRouter());
   }
 
   registerPermissions(): RoleToPermissions<ManagerPermission> {

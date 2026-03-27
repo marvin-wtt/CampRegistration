@@ -8,7 +8,7 @@ type CampManagerWithUserOrInvitation = CampManager & { user: User | null } & {
   invitation: Invitation | null;
 };
 
-abstract class ManagerMessage<
+abstract class CampManagerMessage<
   T extends { manager: CampManagerWithUserOrInvitation },
 > extends MailBase<T> {
   protected to() {
@@ -36,7 +36,7 @@ abstract class ManagerMessage<
   }
 }
 
-export class ManagerInvitationMessage extends ManagerMessage<{
+export class CampManagerInvitationMessage extends CampManagerMessage<{
   manager: CampManagerWithUserOrInvitation;
   camp: Camp;
 }> {

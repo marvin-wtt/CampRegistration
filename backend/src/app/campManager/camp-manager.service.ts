@@ -13,7 +13,7 @@ type ManagerUpdateData = Pick<
 >;
 
 @injectable()
-export class ManagerService extends BaseService {
+export class CampManagerService extends BaseService {
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {
     return this.prisma.campManager
       .findFirst({

@@ -6,7 +6,7 @@ import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config/index';
 import ApiError from '#utils/ApiError';
-import { ManagerService } from '#app/manager/manager.service';
+import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
@@ -24,7 +24,8 @@ export class AuthController extends BaseController {
     @Config() private readonly config: AppConfig,
     @inject(AuthService) private readonly authService: AuthService,
     @inject(UserService) private readonly userService: UserService,
-    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(CampManagerService)
+    private readonly managerService: CampManagerService,
     @inject(TokenService) private readonly tokenService: TokenService,
     @inject(TotpService) private readonly totpService: TotpService,
   ) {

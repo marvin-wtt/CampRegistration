@@ -3,7 +3,7 @@ import { CampManagerFactory } from '../factories';
 
 class CampManagerSeeder extends BaseSeeder {
   name(): string {
-    return 'manager';
+    return 'camp-manager';
   }
 
   async run(): Promise<void> {

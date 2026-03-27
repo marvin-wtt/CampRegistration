@@ -4,7 +4,7 @@ import { AuthModule } from '#app/auth/auth.module';
 import { CampModule } from '#app/camp/camp.module';
 import { RegistrationModule } from '#app/registration/registration.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
-import { ManagerModule } from '#app/manager/manager.module';
+import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
 import { MessageTemplateModule } from '#app/messageTemplate/message-template.module';
 import { MessageModule } from '#app/message/message.module';
 import { RoomModule } from '#app/room/room.module';
@@ -41,7 +41,7 @@ const loadModules = () =>
     new UserModule(),
     new RegistrationModule(),
     new TableTemplateModule(),
-    new ManagerModule(),
+    new CampManagerModule(),
     new MessageModule(),
     new MessageTemplateModule(),
     new RoomModule(),

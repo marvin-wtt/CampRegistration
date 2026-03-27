@@ -26,7 +26,7 @@ declare global {
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
       messageTemplate?: MessageTemplate & { attachments: File[] };
-      manager?: CampManager;
+      campManager?: CampManager;
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;

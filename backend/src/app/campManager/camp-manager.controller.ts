@@ -1,18 +1,19 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { UserService } from '#app/user/user.service';
-import { ManagerService } from '#app/manager/manager.service';
-import { ManagerResource } from '#app/manager/manager.resource';
-import validator from '#app/manager/manager.validation';
+import { CampManagerService } from '#app/campManager/camp-manager.service.js';
+import { CampManagerResource } from '#app/campManager/camp-manager.resource.js';
+import validator from '#app/campManager/camp-manager.validation';
 import { type Request, type Response } from 'express';
-import { ManagerInvitationMessage } from '#app/manager/manager.messages';
+import { CampManagerInvitationMessage } from '#app/campManager/camp-manager.messages';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 
 @injectable()
-export class ManagerController extends BaseController {
+export class CampManagerController extends BaseController {
   constructor(
-    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(CampManagerService)
+    private readonly managerService: CampManagerService,
     @inject(UserService) private readonly userService: UserService,
   ) {
     super();
@@ -25,7 +26,7 @@ export class ManagerController extends BaseController {
 
     const managers = await this.managerService.getManagers(campId);
 
-    res.resource(ManagerResource.collection(managers));
+    res.resource(CampManagerResource.collection(managers));
   }
 
   async store(req: Request, res: Response) {
@@ -57,16 +58,16 @@ export class ManagerController extends BaseController {
         ? await this.managerService.inviteManager(camp.id, email, data)
         : await this.managerService.addManager(camp.id, user.id, data);
 
-    await ManagerInvitationMessage.enqueue({
+    await CampManagerInvitationMessage.enqueue({
       camp,
       manager,
     });
 
-    res.status(httpStatus.CREATED).resource(new ManagerResource(manager));
+    res.status(httpStatus.CREATED).resource(new CampManagerResource(manager));
   }
 
   async update(req: Request, res: Response) {
-    const manager = req.modelOrFail('manager');
+    const manager = req.modelOrFail('message');
     const {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
@@ -79,7 +80,7 @@ export class ManagerController extends BaseController {
       },
     );
 
-    res.resource(new ManagerResource(updatedManager));
+    res.resource(new CampManagerResource(updatedManager));
   }
 
   async destroy(req: Request, res: Response) {
