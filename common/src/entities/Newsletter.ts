@@ -21,3 +21,7 @@ export interface NewsletterSendData {
   subject: string;
   body: string;
 }
+
+export interface NewsLetterQuery {
+  view?: 'all' | 'assigned';
+}

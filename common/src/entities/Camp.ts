@@ -48,5 +48,5 @@ export interface CampQuery {
   startAt?: string;
   endAt?: string;
 
-  showAll?: boolean;
+  view?: 'all' | 'assigned';
 }

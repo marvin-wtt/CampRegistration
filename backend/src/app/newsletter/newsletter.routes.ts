@@ -5,6 +5,7 @@ import { NewsletterService } from './newsletter.service.js';
 import { controller } from '#utils/bindController';
 import { newsletterManager } from './newsletter.guard.js';
 import { resolve } from '#core/ioc/container';
+import type { NewsLetterQuery } from '@camp-registration/common/entities';
 
 export class NewsletterRouter extends ModuleRouter {
   protected registerBindings() {
@@ -20,7 +21,7 @@ export class NewsletterRouter extends ModuleRouter {
     this.router.get(
       '/',
       auth(),
-      guard((req) => (req.query as { showAll?: string }).showAll === undefined),
+      guard((req) => (req.query as NewsLetterQuery).view !== 'all'),
       controller(newsletterController, 'index'),
     );
     this.router.post('/', auth(), controller(newsletterController, 'store'));

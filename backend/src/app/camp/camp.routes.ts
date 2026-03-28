@@ -18,7 +18,7 @@ export class CampRouter extends ModuleRouter {
 
     this.router.get(
       '/',
-      guard((req) => (req.query as CampQuery).showAll === undefined),
+      guard((req) => (req.query as CampQuery).view !== 'all'),
       controller(campController, 'index'),
     );
 

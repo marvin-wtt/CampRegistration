@@ -10,10 +10,6 @@ export class NewsletterSubscriberModule implements AppModule {
     options.bind(NewsletterSubscriberController).toSelf().inSingletonScope();
   }
 
-  configure() {
-    // TODO
-  }
-
   registerRoutes(router: AppRouter): void {
     router.useRouter(
       '/newsletters/unsubscribe',

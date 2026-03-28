@@ -65,7 +65,7 @@ const {
 } = useServiceHandler<Newsletter[]>('newsletter');
 
 onMounted(async () => {
-  await forceFetch(() => api.fetchNewsletters({ showAll: true }));
+  await forceFetch(() => api.fetchNewsletters({ view: 'all' }));
 });
 
 const filterQuery = ref<string>('');
@@ -132,7 +132,7 @@ function showDeleteDialog(newsletter: Newsletter) {
     .onOk(() => {
       void withProgressNotification('delete', () =>
         api.deleteNewsletter(newsletter.id),
-      ).then(() => forceFetch(() => api.fetchNewsletters({ showAll: true })));
+      ).then(() => forceFetch(() => api.fetchNewsletters({ view: 'all' })));
     });
 }
 </script>

@@ -4,13 +4,13 @@ import type {
   NewsletterCreateData,
   NewsletterSendData,
   NewsletterUpdateData,
+  NewsLetterQuery,
 } from '@camp-registration/common/entities';
 
 export function useNewsletterService() {
-  async function fetchNewsletters(options?: {
-    showAll?: boolean;
-  }): Promise<Newsletter[]> {
-    const params = options?.showAll ? { showAll: true } : undefined;
+  async function fetchNewsletters(
+    params?: NewsLetterQuery,
+  ): Promise<Newsletter[]> {
     const response = await api.get('newsletters/', { params });
     return response?.data?.data;
   }

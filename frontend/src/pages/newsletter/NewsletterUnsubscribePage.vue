@@ -1,5 +1,8 @@
 <template>
-  <div class="row justify-center q-pa-xl">
+  <q-page
+    class="row justify-center q-pa-xl"
+    padding
+  >
     <div class="column col-sm-6 col-md-5 col-lg-4 col-12 items-center">
       <template v-if="loading">
         <q-spinner
@@ -34,7 +37,7 @@
         </div>
       </template>
     </div>
-  </div>
+  </q-page>
 </template>
 
 <script lang="ts" setup>
@@ -85,7 +88,7 @@ error:
 <i18n lang="yaml" locale="fr">
 success:
   title: 'Désinscription réussie'
-  message: 'Vous avez été désinscrit(e) avec succès de la newsletter. Vous ne recevrez plus d''e-mails de cette newsletter.'
+  message: "Vous avez été désinscrit(e) avec succès de la newsletter. Vous ne recevrez plus d'e-mails de cette newsletter."
 error:
   title: 'Échec de la désinscription'
   message: 'Le lien de désinscription est invalide ou a déjà été utilisé. Vous êtes peut-être déjà désinscrit(e).'

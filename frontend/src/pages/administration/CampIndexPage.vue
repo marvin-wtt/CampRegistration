@@ -357,7 +357,7 @@ const pagination = ref({
 onMounted(async () => {
   await forceFetch(() =>
     api.fetchCamps({
-      showAll: true,
+      view: 'administration',
     }),
   );
 });

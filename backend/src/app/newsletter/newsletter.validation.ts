@@ -3,7 +3,7 @@ import { z } from 'zod';
 const index = z.object({
   query: z
     .object({
-      showAll: z.coerce.boolean().optional(),
+      view: z.enum(['all', 'assigned']).optional(),
     })
     .optional(),
 });
