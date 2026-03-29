@@ -35,17 +35,8 @@
       "@types/express": "^5.0.0",
       "@types/express-serve-static-core": "^5.0.0"
     },
-    "@quasar/quasar-app-extension-testing-unit-vitest": {
-      "vitest": "^4.0.8",
-      "@vitest/coverage-v8": "^4.0.8",
-      "@vitest/ui": "^4.0.8",
-      "happy-dom": "^20.8.8"
-    },
-    "mailparser": {
-      "nodemailer": "^7.0.11"
-    },
-    "smtp-tester": {
-      "nodemailer": "^7.0.11"
+    "nodemailer-mock": {
+      "nodemailer": "^8.0.4"
     }
   },
   "dependencies": {
