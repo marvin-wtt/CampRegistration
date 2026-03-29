@@ -282,13 +282,13 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     };
   }
 
-  static prepareForRegistration(
+  protected static prepareForRegistration(
     camp: Camp,
     registration: Registration,
     messageTemplate: MessageTemplateWithFiles,
   ): RegistrationTemplatePayload[] | null {
-    const emails = registration.emails;
-    if (!emails?.length) {
+    const emails = Array.from(new Set(registration.emails));
+    if (emails.length === 0) {
       logger.warn(`Registration ${registration.id} has no emails defined.`);
       return null;
     }
