@@ -28,7 +28,7 @@ export const useNewsletterManagerStore = defineStore(
       reset();
     });
 
-    async function fetchData(newsletterId: string) {
+    async function fetchData(newsletterId?: string) {
       const nid = checkNotNullWithError(newsletterId);
       await lazyFetch(async () => {
         return await api.fetchNewsletterManagers(nid);

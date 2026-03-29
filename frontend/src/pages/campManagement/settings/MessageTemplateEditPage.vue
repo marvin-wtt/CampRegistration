@@ -229,7 +229,7 @@ const loading = computed<boolean>(() => {
 
 async function loadData() {
   await forceFetch(async () => {
-    return api.fetchMessageTemplates(queryParam('camp'), {
+    return api.fetchMessageTemplates(queryParam('campId'), {
       hasEvent: true,
     });
   });

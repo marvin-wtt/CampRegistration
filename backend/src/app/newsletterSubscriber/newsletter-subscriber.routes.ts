@@ -7,10 +7,6 @@ import { newsletterManager } from '#app/newsletter/newsletter.guard';
 import { resolve } from '#core/ioc/container';
 
 export class NewsletterSubscriberRouter extends ModuleRouter {
-  constructor() {
-    super(false);
-  }
-
   protected registerBindings() {
     const subscriberService = resolve(NewsletterSubscriberService);
     this.bindModel('subscriber', (req, id) => {

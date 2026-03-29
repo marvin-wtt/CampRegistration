@@ -40,7 +40,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   });
 
   async function fetchData() {
-    const campId = queryParam('camp');
+    const campId = queryParam('campId');
 
     await lazyFetch(async () => {
       return await apiService.fetchCampFiles(campId);
@@ -51,7 +51,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     createData: ServiceFileCreateData,
     options?: { withoutNotifications: boolean },
   ): Promise<ServiceFile> {
-    const campId = queryParam('camp');
+    const campId = queryParam('campId');
 
     const createFn = async () => {
       const file = await apiService.createCampFile(campId, createData);
@@ -67,7 +67,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   }
 
   async function deleteEntry(id: string) {
-    const campId = queryParam('camp');
+    const campId = queryParam('campId');
 
     await withProgressNotification('delete', async () => {
       await apiService.deleteCampFile(campId, id);
