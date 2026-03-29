@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as OTPAuth from 'otpauth';
 import { UserFactory } from '../../../prisma/factories/index.js';
-import { User } from '#prisma/client.js';
+import { User } from '#/generated/prisma/client.js';
 import { request } from '../utils/request.js';
 import { generateAccessToken } from './utils/token.js';
 import prisma from '../utils/prisma.js';

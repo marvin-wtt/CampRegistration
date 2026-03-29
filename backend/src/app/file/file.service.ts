@@ -1,4 +1,4 @@
-import { type File, Prisma, PrismaClient } from '#prisma/client.js';
+import { type File, Prisma, PrismaClient } from '#/generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -10,7 +10,7 @@ import { BaseService } from '#core/base/BaseService';
 import { fileNameExtension } from '#utils/file';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
-import type { AppConfig } from '#config';
+import type { AppConfig } from '#config/index';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 

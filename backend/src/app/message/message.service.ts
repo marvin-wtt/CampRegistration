@@ -3,7 +3,7 @@ import type {
   Registration,
   MessageTemplate,
   File,
-} from '#prisma/client.js';
+} from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';

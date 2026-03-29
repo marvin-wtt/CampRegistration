@@ -1,6 +1,10 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { type Camp, Prisma, type Registration } from '#prisma/client.js';
+import {
+  type Camp,
+  Prisma,
+  type Registration,
+} from '#/generated/prisma/client.js';
 import { formUtils } from '#utils/form';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';

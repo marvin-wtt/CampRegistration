@@ -1,9 +1,4 @@
-import type {
-  Camp,
-  File,
-  MessageTemplate,
-  Registration,
-} from '#prisma/client.js';
+import type { Camp, File, MessageTemplate, Registration } from '#/generated/prisma/client.js';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
 import { type MailableCtor, MailBase } from '#app/mail/mail.base';
 import type {

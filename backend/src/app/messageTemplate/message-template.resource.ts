@@ -1,5 +1,5 @@
 import { JsonResource } from '#core/resource/JsonResource';
-import type { MessageTemplate, File } from '#prisma/client.js';
+import type { MessageTemplate, File } from '#/generated/prisma/client.js';
 import type { MessageTemplate as MessageTemplateData } from '@camp-registration/common/entities';
 import { FileResource } from '#app/file/file.resource';
 

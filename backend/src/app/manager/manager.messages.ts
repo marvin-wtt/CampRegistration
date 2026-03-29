@@ -1,4 +1,9 @@
-import type { Camp, CampManager, Invitation, User } from '#prisma/client.js';
+import type {
+  Camp,
+  CampManager,
+  Invitation,
+  User,
+} from '#/generated/prisma/client.js';
 import { translateObject } from '#utils/translateObject';
 import { MailBase } from '#app/mail/mail.base';
 import { generateUrl } from '#utils/url';
