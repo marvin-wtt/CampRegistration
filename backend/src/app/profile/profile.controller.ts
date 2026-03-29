@@ -1,7 +1,6 @@
 import { TokenService } from '#app/token/token.service';
 import { UserService } from '#app/user/user.service';
 import { AuthService } from '#app/auth/auth.service';
-import { CampService } from '#app/camp/camp.service';
 import httpStatus from 'http-status';
 import { ProfileResource } from './profile.resource.js';
 import validator from './profile.validation.js';
@@ -16,7 +15,6 @@ import { inject, injectable } from 'inversify';
 export class ProfileController extends BaseController {
   constructor(
     @inject(UserService) private readonly userService: UserService,
-    @inject(CampService) private readonly campService: CampService,
     @inject(AuthService) private readonly authService: AuthService,
     @inject(TokenService) private readonly tokenService: TokenService,
   ) {
@@ -25,7 +23,7 @@ export class ProfileController extends BaseController {
 
   async show(req: Request, res: Response) {
     const userId = req.authUserId();
-    const user = await this.userService.getUserByIdWithCamps(userId);
+    const user = await this.userService.getUserByIdWithCampRoles(userId);
 
     res.resource(new ProfileResource(user));
   }
@@ -72,9 +70,9 @@ export class ProfileController extends BaseController {
       });
     }
 
-    const camps = await this.campService.getCampsByUserId(userId);
+    const userWithCampRoles = await this.userService.getUserByIdWithCampRoles(userId);
 
-    res.resource(new ProfileResource({ ...user, camps }));
+    res.resource(new ProfileResource(userWithCampRoles));
   }
 
   async destroy(req: Request, res: Response) {

@@ -50,18 +50,11 @@ export class UserService extends BaseService {
     });
   }
 
-  async getUserByIdWithCamps(id: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({
+  async getUserByIdWithCampRoles(id: string) {
+    return this.prisma.user.findUniqueOrThrow({
       where: { id },
       include: { campRoles: true },
     });
-
-    const camps = await this.campService.getCampsByUserId(id);
-
-    return {
-      ...user,
-      camps,
-    };
   }
 
   async getUserById(id: string): Promise<User | null> {

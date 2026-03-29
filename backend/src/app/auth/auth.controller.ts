@@ -213,7 +213,7 @@ export class AuthController extends BaseController {
     } = await req.validate(validator.sendEmailVerification);
 
     const { userId } = this.tokenService.verifySendVerifyEmailToken(token);
-    const user = await this.userService.getUserByIdWithCamps(userId);
+    const user = await this.userService.getUserByIdOrFail(userId);
 
     if (user.emailVerified) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');

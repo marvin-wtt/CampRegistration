@@ -385,10 +385,10 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useProfileStore } from 'stores/profile-store';
+import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useCampsStore } from 'stores/camps-store';
 
-const profileStore = useProfileStore();
+const assignedCampsStore = useAssignedCampsStore();
 const campStore = useCampsStore();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
@@ -404,16 +404,12 @@ const isUsingTemplate = ref<boolean>(false);
 
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
-  const camps = profileStore.user?.camps
-    .map((camp): QSelectOption => {
-      return {
-        value: camp.id,
-        label: to(camp.name),
-      };
-    })
+  return (assignedCampsStore.data ?? [])
+    .map((camp): QSelectOption => ({
+      value: camp.id,
+      label: to(camp.name),
+    }))
     .sort((a, b) => a.label.localeCompare(b.label));
-
-  return camps ?? [];
 });
 
 const confirmationModeOptions = computed<

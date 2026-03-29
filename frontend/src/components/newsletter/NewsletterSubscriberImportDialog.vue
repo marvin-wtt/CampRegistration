@@ -84,14 +84,14 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store';
+import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const profileStore = useProfileStore();
+const assignedCampsStore = useAssignedCampsStore();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -99,7 +99,7 @@ const campId = ref<string>('');
 const country = ref('');
 
 const campOptions = computed(() => {
-  return (profileStore.user?.camps ?? []).map((camp) => ({
+  return (assignedCampsStore.data ?? []).map((camp) => ({
     label: to(camp.name),
     value: camp.id,
   }));

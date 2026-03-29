@@ -25,34 +25,26 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store';
+import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { storeToRefs } from 'pinia';
 import ResultsList from 'components/campManagement/index/ResultsList.vue';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 
 const { t } = useI18n();
-const profileStore = useProfileStore();
+const assignedCampsStore = useAssignedCampsStore();
 
-const { user, loading, error } = storeToRefs(profileStore);
+const { data: camps, isLoading: loading, error } = storeToRefs(assignedCampsStore);
+
+onMounted(() => void assignedCampsStore.fetchData());
 
 const activeCamps = computed<Camp[]>(() => {
-  if (user.value == undefined) {
-    return [];
-  }
-
-  const camps = user.value.camps;
-  return camps.filter((value) => value.active).toSorted(sortCamps);
+  return (camps.value ?? []).filter((value) => value.active).toSorted(sortCamps);
 });
 
 const inactiveCamps = computed<Camp[]>(() => {
-  if (user.value == undefined) {
-    return [];
-  }
-
-  const camps = user.value.camps;
-  return camps.filter((value) => !value.active).toSorted(sortCamps);
+  return (camps.value ?? []).filter((value) => !value.active).toSorted(sortCamps);
 });
 
 function sortCamps(a: Camp, b: Camp) {
