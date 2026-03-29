@@ -44,12 +44,12 @@
         <q-card-section class="q-pt-none">
           <q-banner
             rounded
-            class="bg-blue-1"
+            :class="$q.dark.isActive ? 'bg-blue-10 text-blue-2' : 'bg-blue-1 text-blue-10'"
           >
             <template #avatar>
               <q-icon
                 name="info"
-                color="info"
+                :color="$q.dark.isActive ? 'blue-3' : 'info'"
               />
             </template>
             {{ t('notice') }}

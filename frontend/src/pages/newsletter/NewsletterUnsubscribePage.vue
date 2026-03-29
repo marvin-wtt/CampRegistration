@@ -1,42 +1,42 @@
 <template>
-  <q-page
-    class="row justify-center q-pa-xl"
-    padding
-  >
-    <div class="column col-sm-6 col-md-5 col-lg-4 col-12 items-center">
-      <template v-if="loading">
-        <q-spinner
-          color="primary"
-          size="3em"
-        />
-      </template>
+  <q-page class="row justify-center items-center q-pa-md">
+    <q-card
+      flat
+      bordered
+      class="col-12 unsubscribe-card"
+      style="max-width: 440px"
+    >
+      <q-card-section class="text-center q-pa-xl">
+        <template v-if="loading">
+          <q-spinner
+            color="primary"
+            size="3em"
+          />
+        </template>
 
-      <template v-else-if="success">
-        <q-icon
-          name="check_circle"
-          color="positive"
-          size="5rem"
-          class="q-mb-md"
-        />
-        <div class="text-h6 text-center">{{ t('success.title') }}</div>
-        <div class="text-body2 text-grey text-center q-mt-sm">
-          {{ t('success.message') }}
-        </div>
-      </template>
+        <template v-else-if="success">
+          <q-icon
+            name="check_circle_outline"
+            color="positive"
+            size="4rem"
+            class="q-mb-md"
+          />
+          <div class="text-h6 text-weight-medium q-mb-sm">{{ t('success.title') }}</div>
+          <div class="text-body2 text-grey">{{ t('success.message') }}</div>
+        </template>
 
-      <template v-else-if="error">
-        <q-icon
-          name="error"
-          color="negative"
-          size="5rem"
-          class="q-mb-md"
-        />
-        <div class="text-h6 text-center">{{ t('error.title') }}</div>
-        <div class="text-body2 text-grey text-center q-mt-sm">
-          {{ t('error.message') }}
-        </div>
-      </template>
-    </div>
+        <template v-else-if="error">
+          <q-icon
+            name="error_outline"
+            color="negative"
+            size="4rem"
+            class="q-mb-md"
+          />
+          <div class="text-h6 text-weight-medium q-mb-sm">{{ t('error.title') }}</div>
+          <div class="text-body2 text-grey">{{ t('error.message') }}</div>
+        </template>
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 
@@ -112,4 +112,8 @@ error:
   message: 'Odkaz pro odhlášení je neplatný nebo již byl použit. Možná jste již odhlášeni.'
 </i18n>
 
-<style scoped></style>
+<style scoped>
+.unsubscribe-card {
+  width: 100%;
+}
+</style>

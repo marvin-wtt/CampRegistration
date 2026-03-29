@@ -5,59 +5,88 @@
     class="row justify-center"
   >
     <div class="column col-sm-10 col-md-9 col-lg-8 col-12">
-      <div class="row justify-between items-center q-mb-md">
-        <div class="text-h5">{{ t('title') }}</div>
+      <div class="row justify-between items-center q-mb-lg">
+        <div class="text-h5 text-weight-medium">{{ t('title') }}</div>
         <q-btn
           color="primary"
           icon="add"
           :label="t('action.create')"
           rounded
+          unelevated
           @click="showCreateDialog"
         />
       </div>
 
-      <q-list
+      <div
         v-if="newsletters.length > 0"
-        bordered
-        separator
-        class="rounded-borders"
+        class="row q-col-gutter-md"
       >
-        <q-item
+        <div
           v-for="newsletter in newsletters"
           :key="newsletter.id"
-          clickable
-          :to="{
-            name: 'management.newsletter',
-            params: { newsletterId: newsletter.id },
-          }"
+          class="col-12 col-sm-6 col-md-4"
         >
-          <q-item-section>
-            <q-item-label>{{ newsletter.name }}</q-item-label>
-            <q-item-label
-              v-if="newsletter.description"
-              caption
+          <q-card
+            flat
+            bordered
+            class="newsletter-card full-height"
+          >
+            <q-card-section
+              class="cursor-pointer"
+              @click="$router.push({ name: 'management.newsletter', params: { newsletterId: newsletter.id } })"
             >
-              {{ newsletter.description }}
-            </q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-btn
-              flat
-              round
-              icon="delete"
-              color="negative"
-              size="sm"
-              @click.prevent="showDeleteDialog(newsletter)"
-            />
-          </q-item-section>
-        </q-item>
-      </q-list>
+              <div class="text-subtitle1 text-weight-medium">{{ newsletter.name }}</div>
+              <div
+                v-if="newsletter.description"
+                class="text-body2 text-grey q-mt-xs description-clamp"
+              >
+                {{ newsletter.description }}
+              </div>
+            </q-card-section>
+
+            <q-separator />
+
+            <q-card-actions>
+              <q-btn
+                flat
+                :label="t('action.manage')"
+                color="primary"
+                icon-right="arrow_forward"
+                :to="{ name: 'management.newsletter', params: { newsletterId: newsletter.id } }"
+                no-caps
+              />
+              <q-space />
+              <q-btn
+                flat
+                round
+                icon="delete"
+                color="negative"
+                size="sm"
+                @click.prevent="showDeleteDialog(newsletter)"
+              />
+            </q-card-actions>
+          </q-card>
+        </div>
+      </div>
 
       <div
         v-else-if="!isLoading"
-        class="text-grey text-center q-pa-xl"
+        class="column items-center q-pa-xl q-gutter-md"
       >
-        {{ t('empty') }}
+        <q-icon
+          name="mail_outline"
+          size="5rem"
+          color="grey-4"
+        />
+        <div class="text-subtitle1 text-grey-6 text-center">{{ t('empty') }}</div>
+        <q-btn
+          color="primary"
+          icon="add"
+          :label="t('action.create')"
+          rounded
+          unelevated
+          @click="showCreateDialog"
+        />
       </div>
     </div>
   </page-state-handler>
@@ -120,6 +149,7 @@ title: 'Newsletters'
 empty: 'No newsletters yet. Create one to get started.'
 action:
   create: 'Create Newsletter'
+  manage: 'Manage'
 dialog:
   delete:
     title: 'Delete Newsletter'
@@ -132,6 +162,7 @@ title: 'Newsletter'
 empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
 action:
   create: 'Newsletter erstellen'
+  manage: 'Verwalten'
 dialog:
   delete:
     title: 'Newsletter löschen'
@@ -144,6 +175,7 @@ title: 'Newsletters'
 empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
 action:
   create: 'Créer une newsletter'
+  manage: 'Gérer'
 dialog:
   delete:
     title: 'Supprimer la newsletter'
@@ -156,6 +188,7 @@ title: 'Newslettery'
 empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
 action:
   create: 'Utwórz newsletter'
+  manage: 'Zarządzaj'
 dialog:
   delete:
     title: 'Usuń newsletter'
@@ -168,6 +201,7 @@ title: 'Newslettery'
 empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
 action:
   create: 'Vytvořit newsletter'
+  manage: 'Spravovat'
 dialog:
   delete:
     title: 'Smazat newsletter'
@@ -175,4 +209,20 @@ dialog:
     label: 'Název newsletteru'
 </i18n>
 
-<style scoped></style>
+<style scoped>
+.newsletter-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.newsletter-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.description-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

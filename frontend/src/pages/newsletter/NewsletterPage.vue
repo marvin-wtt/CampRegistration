@@ -7,7 +7,15 @@
     <div class="column col-sm-11 col-md-10 col-lg-9 col-12">
       <!-- Header -->
       <div class="row justify-between items-center q-mb-md">
-        <div class="text-h5">{{ newsletter?.name }}</div>
+        <div>
+          <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
+          <div
+            v-if="newsletter?.description"
+            class="text-body2 text-grey q-mt-xs"
+          >
+            {{ newsletter.description }}
+          </div>
+        </div>
         <q-btn
           flat
           round
@@ -21,6 +29,7 @@
         v-model="tab"
         align="left"
         class="q-mb-md"
+        no-caps
       >
         <q-tab
           name="subscribers"
@@ -44,16 +53,23 @@
         animated
       >
         <!-- Subscribers Tab -->
-        <q-tab-panel name="subscribers">
-          <div class="row justify-between items-center q-mb-sm">
-            <div class="text-subtitle1">
-              {{ t('subscribers.title') }}
-              <q-badge
-                v-if="subscribers.length > 0"
-                color="primary"
-                :label="subscribers.length"
-                class="q-ml-sm"
-              />
+        <q-tab-panel
+          name="subscribers"
+          class="q-pa-none"
+        >
+          <div class="row justify-between items-center q-mb-md">
+            <q-badge
+              v-if="subscribers.length > 0"
+              color="primary"
+              :label="t('subscribers.count', { count: subscribers.length })"
+              rounded
+              class="text-body2 q-pa-sm"
+            />
+            <div
+              v-else
+              class="text-body2 text-grey"
+            >
+              {{ t('subscribers.empty') }}
             </div>
             <div class="row q-gutter-sm">
               <q-btn
@@ -61,30 +77,51 @@
                 color="primary"
                 icon="file_upload"
                 :label="t('subscribers.action.import')"
+                rounded
+                no-caps
                 @click="showImportDialog"
               />
               <q-btn
                 color="primary"
                 icon="person_add"
                 :label="t('subscribers.action.add')"
+                rounded
+                unelevated
+                no-caps
                 @click="showAddSubscriberDialog"
               />
             </div>
           </div>
 
           <q-table
+            v-model:filter="subscriberFilter"
             :columns="subscriberColumns"
             :rows="subscribers"
             :loading="subscriberStore.isLoading"
             flat
             bordered
           >
+            <template #top-right>
+              <q-input
+                v-model="subscriberFilter"
+                :placeholder="t('subscribers.search')"
+                dense
+                outlined
+                rounded
+                clearable
+              >
+                <template #append>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+            </template>
+
             <template #body-cell-action="props">
               <q-td :props>
                 <q-btn
                   flat
                   round
-                  icon="delete"
+                  icon="person_remove"
                   color="negative"
                   size="sm"
                   @click="showDeleteSubscriberDialog(props.row)"
@@ -96,15 +133,15 @@
 
         <!-- Send Tab -->
         <q-tab-panel name="send">
-          <div class="text-subtitle1 q-mb-md">{{ t('send.title') }}</div>
           <q-banner
-            class="bg-blue-1 q-mb-md"
+            :class="$q.dark.isActive ? 'bg-blue-10 text-blue-2' : 'bg-blue-1 text-blue-10'"
             rounded
+            class="q-mb-lg"
           >
             <template #avatar>
               <q-icon
                 name="info"
-                color="info"
+                :color="$q.dark.isActive ? 'blue-3' : 'info'"
               />
             </template>
             {{ t('send.gdprNotice') }}
@@ -114,6 +151,7 @@
             v-model="sendSubject"
             :label="t('send.subject')"
             outlined
+            rounded
             class="q-mb-md"
           />
           <q-input
@@ -130,19 +168,27 @@
               icon="send"
               :label="t('send.action', { count: subscribers.length })"
               :disable="!sendSubject || !sendBody || subscribers.length === 0"
+              rounded
+              unelevated
+              no-caps
               @click="confirmSend"
             />
           </div>
         </q-tab-panel>
 
         <!-- Managers Tab -->
-        <q-tab-panel name="managers">
-          <div class="row justify-between items-center q-mb-sm">
-            <div class="text-subtitle1">{{ t('managers.title') }}</div>
+        <q-tab-panel
+          name="managers"
+          class="q-pa-none"
+        >
+          <div class="row justify-end q-mb-md">
             <q-btn
               color="primary"
               icon="person_add"
               :label="t('managers.action.add')"
+              rounded
+              unelevated
+              no-caps
               @click="showAddManagerDialog"
             />
           </div>
@@ -160,8 +206,9 @@
                 <q-avatar
                   color="primary"
                   text-color="white"
+                  size="36px"
                 >
-                  {{ manager.name?.charAt(0) ?? manager.email.charAt(0) }}
+                  {{ manager.name?.charAt(0).toUpperCase() ?? manager.email.charAt(0).toUpperCase() }}
                 </q-avatar>
               </q-item-section>
               <q-item-section>
@@ -177,7 +224,7 @@
                 <q-btn
                   flat
                   round
-                  icon="remove_circle"
+                  icon="person_remove"
                   color="negative"
                   size="sm"
                   :disable="managers.length <= 1"
@@ -227,6 +274,7 @@ const subscriberStore = useNewsletterSubscriberStore();
 const tab = ref('subscribers');
 const sendSubject = ref('');
 const sendBody = ref('');
+const subscriberFilter = ref('');
 
 const newsletterId = computed(() => route.params.newsletterId as string);
 
@@ -249,13 +297,28 @@ const subscribers = computed<NewsletterSubscriber[]>(
 
 const error = computed<string | null>(
   () =>
-    newsletterStore.error ?? managerStore.error ?? subscriberStore.error ?? null,
+    newsletterStore.error ??
+    managerStore.error ??
+    subscriberStore.error ??
+    null,
 );
 
 const subscriberColumns: QTableColumn[] = [
-  { name: 'email', label: 'Email', field: 'email', align: 'left', sortable: true },
+  {
+    name: 'email',
+    label: 'Email',
+    field: 'email',
+    align: 'left',
+    sortable: true,
+  },
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'country', label: 'Country', field: 'country', align: 'center', sortable: true },
+  {
+    name: 'country',
+    label: 'Country',
+    field: 'country',
+    align: 'center',
+    sortable: true,
+  },
   {
     name: 'subscribedAt',
     label: 'Subscribed',
@@ -384,7 +447,9 @@ tab:
   managers: 'Managers'
 
 subscribers:
-  title: 'Subscribers'
+  count: '{count} subscribers'
+  empty: 'No subscribers yet'
+  search: 'Search subscribers...'
   action:
     add: 'Add Subscriber'
     import: 'Import from Camp'
@@ -395,7 +460,6 @@ subscribers:
       message: 'Are you sure you want to remove this subscriber?'
 
 send:
-  title: 'Send Newsletter'
   subject: 'Subject'
   body: 'Message Body (HTML supported)'
   action: 'Send to {count} Subscribers'
@@ -407,7 +471,6 @@ send:
     message: 'Are you sure you want to send this newsletter to {count} subscribers?'
 
 managers:
-  title: 'Managers'
   action:
     add: 'Add Manager'
   dialog:
@@ -423,7 +486,9 @@ tab:
   managers: 'Verwalter'
 
 subscribers:
-  title: 'Abonnenten'
+  count: '{count} Abonnenten'
+  empty: 'Noch keine Abonnenten'
+  search: 'Abonnenten suchen...'
   action:
     add: 'Abonnent hinzufügen'
     import: 'Aus Lager importieren'
@@ -434,7 +499,6 @@ subscribers:
       message: 'Möchten Sie diesen Abonnenten wirklich entfernen?'
 
 send:
-  title: 'Newsletter versenden'
   subject: 'Betreff'
   body: 'Nachrichtentext (HTML unterstützt)'
   action: 'An {count} Abonnenten senden'
@@ -446,7 +510,6 @@ send:
     message: 'Möchten Sie diesen Newsletter wirklich an {count} Abonnenten senden?'
 
 managers:
-  title: 'Verwalter'
   action:
     add: 'Verwalter hinzufügen'
   dialog:
@@ -462,7 +525,9 @@ tab:
   managers: 'Gestionnaires'
 
 subscribers:
-  title: 'Abonnés'
+  count: '{count} abonnés'
+  empty: 'Aucun abonné pour le moment'
+  search: 'Rechercher des abonnés...'
   action:
     add: 'Ajouter un abonné'
     import: 'Importer depuis un camp'
@@ -473,19 +538,17 @@ subscribers:
       message: 'Voulez-vous vraiment supprimer cet abonné ?'
 
 send:
-  title: 'Envoyer la newsletter'
   subject: 'Sujet'
   body: 'Corps du message (HTML pris en charge)'
   action: 'Envoyer à {count} abonnés'
   gdprNotice: 'Chaque e-mail contiendra un lien de désinscription conformément à la législation européenne (RGPD). Les abonnés peuvent se désabonner à tout moment.'
-  success: 'Newsletter mise en file d''attente pour {count} destinataires.'
-  error: 'Échec de l''envoi de la newsletter.'
+  success: "Newsletter mise en file d'attente pour {count} destinataires."
+  error: "Échec de l'envoi de la newsletter."
   dialog:
-    title: 'Confirmer l''envoi'
+    title: "Confirmer l'envoi"
     message: 'Voulez-vous vraiment envoyer cette newsletter à {count} abonnés ?'
 
 managers:
-  title: 'Gestionnaires'
   action:
     add: 'Ajouter un gestionnaire'
   dialog:
@@ -501,7 +564,9 @@ tab:
   managers: 'Zarządzający'
 
 subscribers:
-  title: 'Subskrybenci'
+  count: '{count} subskrybentów'
+  empty: 'Brak subskrybentów'
+  search: 'Szukaj subskrybentów...'
   action:
     add: 'Dodaj subskrybenta'
     import: 'Importuj z obozu'
@@ -512,7 +577,6 @@ subscribers:
       message: 'Czy na pewno chcesz usunąć tego subskrybenta?'
 
 send:
-  title: 'Wyślij newsletter'
   subject: 'Temat'
   body: 'Treść wiadomości (obsługiwany HTML)'
   action: 'Wyślij do {count} subskrybentów'
@@ -524,7 +588,6 @@ send:
     message: 'Czy na pewno chcesz wysłać ten newsletter do {count} subskrybentów?'
 
 managers:
-  title: 'Zarządzający'
   action:
     add: 'Dodaj zarządzającego'
   dialog:
@@ -540,7 +603,9 @@ tab:
   managers: 'Správci'
 
 subscribers:
-  title: 'Odběratelé'
+  count: '{count} odběratelů'
+  empty: 'Zatím žádní odběratelé'
+  search: 'Hledat odběratele...'
   action:
     add: 'Přidat odběratele'
     import: 'Importovat z tábora'
@@ -551,7 +616,6 @@ subscribers:
       message: 'Opravdu chcete odstranit tohoto odběratele?'
 
 send:
-  title: 'Odeslat newsletter'
   subject: 'Předmět'
   body: 'Tělo zprávy (podporuje HTML)'
   action: 'Odeslat {count} odběratelům'
@@ -563,7 +627,6 @@ send:
     message: 'Opravdu chcete odeslat tento newsletter {count} odběratelům?'
 
 managers:
-  title: 'Správci'
   action:
     add: 'Přidat správce'
   dialog:
