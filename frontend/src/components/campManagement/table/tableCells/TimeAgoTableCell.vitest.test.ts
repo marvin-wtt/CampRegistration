@@ -2,7 +2,7 @@ import { describe, it, vi, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest';
+import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
 import type {
   CampDetails,
   Registration,
@@ -53,6 +53,7 @@ const createCamp = (
 ): TableCellProps['camp'] => ({
   id: crypto.randomUUID(),
   name: 'Test Camp',
+  confirmationMode: 'AUTOMATIC' as const,
   active: true,
   public: true,
   countries: [],

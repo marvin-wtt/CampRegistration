@@ -1,4 +1,4 @@
-import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest';
+import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
 import { describe, expect, it } from 'vitest';
 import { Dialog, QDialog } from 'quasar';
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
