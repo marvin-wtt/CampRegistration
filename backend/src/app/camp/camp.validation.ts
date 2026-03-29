@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { translatedValue } from '#core/validation/helper';
-import type { Camp } from '#/generated/prisma/client.js';
+import type { Camp } from '#prisma/client.js';
 
 const show = z.object({
   params: z.object({

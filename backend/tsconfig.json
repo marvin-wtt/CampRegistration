@@ -29,7 +29,8 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "#*": ["src/*"]
+      "#*": ["src/*"],
+      "#prisma/*": ["./prisma/generated/*"]
     }
   },
   "tsc-alias": {

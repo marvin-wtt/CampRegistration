@@ -1,4 +1,4 @@
-import type { Camp, File, Prisma } from '#/generated/prisma/client.js';
+import type { Camp, File, Prisma } from '#prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
@@ -258,7 +258,7 @@ const enrichFreePlaces = (
 
   return {
     ...camp,
-    freePlaces: camp.registrations.reduce<Record<string, number>>(
+    freePlaces: camp.registrations.reduce(
       (acc, { country }) => {
         // Skip invalid registrations
         if (country === null || !(country in acc)) {

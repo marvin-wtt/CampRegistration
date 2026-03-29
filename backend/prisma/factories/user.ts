@@ -1,5 +1,5 @@
 import { fakerDE as faker } from '@faker-js/faker';
-import { Prisma } from '#/generated/prisma/client.js';
+import { Prisma } from '#prisma/client.js';
 import prisma from './prisma.js';
 import bcrypt from 'bcryptjs';
 

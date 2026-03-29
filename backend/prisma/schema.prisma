@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "./generated"
 }
 
 // TODO This is a workaround due to https://github.com/prisma/prisma/issues/3219
