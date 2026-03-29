@@ -55,7 +55,9 @@ export class NewsletterManagerController extends BaseController {
       user.id,
     );
 
-    res.status(httpStatus.CREATED).resource(new NewsletterManagerResource(manager));
+    res
+      .status(httpStatus.CREATED)
+      .resource(new NewsletterManagerResource(manager));
   }
 
   async destroy(req: Request, res: Response) {

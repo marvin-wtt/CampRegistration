@@ -1,4 +1,4 @@
-import { NewsletterManagerService } from './newsletter-manager.service.js';
+import { NewsletterManagerService } from '#app/newsletterManager/newsletter-manager.service.js';
 import type { Request } from 'express';
 import { resolve } from '#core/ioc/container';
 

@@ -3,14 +3,10 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterManagerController } from './newsletter-manager.controller.js';
 import { NewsletterManagerService } from './newsletter-manager.service.js';
 import { controller } from '#utils/bindController';
-import { newsletterManager } from './newsletter.guard.js';
+import { newsletterManager } from '#app/newsletter/newsletter.guard';
 import { resolve } from '#core/ioc/container';
 
 export class NewsletterManagerRouter extends ModuleRouter {
-  constructor() {
-    super(false);
-  }
-
   protected registerBindings() {
     const managerService = resolve(NewsletterManagerService);
     this.bindModel('newsletterManager', (req, id) => {
