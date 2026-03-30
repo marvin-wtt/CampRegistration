@@ -1,7 +1,7 @@
 import { RegistrationFactory } from '../factories';
-import { Camp } from '@prisma/client';
+import { Camp } from '../../src/generated/prisma/client';
 import { faker } from '@faker-js/faker/locale/en';
-import moment from 'moment';
+import * as moment from 'moment';
 
 type Data = Parameters<(typeof RegistrationFactory)['create']>[0];
 

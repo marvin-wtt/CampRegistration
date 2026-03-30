@@ -2,9 +2,9 @@ import { PrismaClient } from '#/generated/prisma/client.js';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { createSoftDeleteExtension } from 'prisma-extension-soft-delete';
 import logger from '#core/logger';
-import config from '#config/index';
+import config from '#config';
 
-function createClient(): PrismaClient {
+export function createPrismaClient(): PrismaClient {
   const adapter = new PrismaMariaDb({
     host: config.database.host,
     port: config.database.port,
@@ -28,7 +28,7 @@ function createClient(): PrismaClient {
   ) as PrismaClient;
 }
 
-export const prisma: PrismaClient = createClient();
+export const prisma: PrismaClient = createPrismaClient();
 
 export async function connectDatabase() {
   await prisma.$connect();
