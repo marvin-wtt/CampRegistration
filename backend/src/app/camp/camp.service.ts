@@ -258,7 +258,7 @@ const enrichFreePlaces = (
 
   return {
     ...camp,
-    freePlaces: camp.registrations.reduce<Record<string, number>>(
+    freePlaces: camp.registrations.reduce(
       (acc, { country }) => {
         // Skip invalid registrations
         if (country === null || !(country in acc)) {

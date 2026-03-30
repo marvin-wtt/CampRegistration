@@ -35,4 +35,5 @@ export default tseslint.config(
     files: ['**/*.js', '**/*.cjs'],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  { ignores: ['src/generated/**'] },
 );
