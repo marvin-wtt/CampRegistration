@@ -5,13 +5,7 @@ import logger from '#core/logger';
 import config from '#config';
 
 export function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaMariaDb({
-    host: config.database.host,
-    port: config.database.port,
-    database: config.database.name,
-    user: config.database.user,
-    password: config.database.password,
-  });
+  const adapter = new PrismaMariaDb(config.database.url);
 
   return new PrismaClient({ adapter }).$extends(
     createSoftDeleteExtension({

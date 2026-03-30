@@ -7,11 +7,7 @@ const config = {
   port: env.APP_PORT,
   origin: env.APP_URL,
   database: {
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    name: env.DB_NAME,
-    user: env.DB_USER,
-    password: env.DB_PASSWORD,
+    url: env.DATABASE_URL,
   },
   jwt: {
     secret: env.JWT_SECRET,

@@ -7,6 +7,6 @@ export default defineConfig({
     seed: 'tsx prisma/seeder/index.ts',
   },
   datasource: {
-    url: 'mysql://root:@localhost:3306/camp_registration',
+    url: env('DATABASE_URL'),
   },
 });
