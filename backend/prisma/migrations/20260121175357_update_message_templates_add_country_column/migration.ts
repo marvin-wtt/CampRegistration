@@ -1,6 +1,9 @@
-import { createPrismaClient } from '../../../src/core/database';
+import { PrismaClient } from '#generated/prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const prisma = createPrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
+});
 
 async function main() {
   await prisma.$transaction(async (tx) => {
@@ -47,7 +50,7 @@ async function main() {
         // Assign messages to the correct template
         for (const message of template.messages) {
           if (
-            message.registration.country !== country &&
+            message.registration?.country !== country &&
             countries.length > 1
           ) {
             continue;

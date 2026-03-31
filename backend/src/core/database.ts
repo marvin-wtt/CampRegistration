@@ -4,7 +4,7 @@ import { createSoftDeleteExtension } from '@candoimage/prisma-extension-soft-del
 import logger from '#core/logger';
 import config from '#config';
 
-export function createPrismaClient(): PrismaClient {
+function createClient(): PrismaClient {
   const adapter = new PrismaMariaDb(config.database.url);
 
   return new PrismaClient({ adapter }).$extends(
@@ -22,7 +22,7 @@ export function createPrismaClient(): PrismaClient {
   ) as PrismaClient;
 }
 
-export const prisma: PrismaClient = createPrismaClient();
+export const prisma: PrismaClient = createClient();
 
 export async function connectDatabase() {
   await prisma.$connect();
