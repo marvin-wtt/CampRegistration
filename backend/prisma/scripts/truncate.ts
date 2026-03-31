@@ -1,10 +1,16 @@
-import { PrismaClient, PrismaPromise } from '#/generated/prisma/client.js';
+import {
+  PrismaClient,
+  type Prisma,
+} from '../../src/generated/prisma/client.js';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
+});
 
 export async function main() {
   // https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries
-  const transactions: PrismaPromise<any>[] = [];
+  const transactions: Prisma.PrismaPromise<any>[] = [];
   transactions.push(prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`);
 
   const tableNames = await prisma.$queryRaw<
