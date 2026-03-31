@@ -36,7 +36,7 @@ jobs:
           - 3306:3306
 
     env:
-      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
 
     steps:
       - name: Checkout code
@@ -93,6 +93,7 @@ jobs:
       APP_URL: http://localhost:3000
       APP_NAME: Test App
       DATABASE_URL: mysql://root:admin123@mariadb:3306/test_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
@@ -189,6 +190,7 @@ jobs:
       APP_URL: http://localhost:3001
       APP_NAME: Test App
       DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
