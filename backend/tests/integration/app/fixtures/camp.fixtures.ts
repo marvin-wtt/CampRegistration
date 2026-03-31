@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { Prisma } from '#/generated/prisma/client.js';
+import { Prisma } from '#generated/prisma/client.js';
 import { createForm } from '../utils/form.js';
 
 export const campActivePublic = {

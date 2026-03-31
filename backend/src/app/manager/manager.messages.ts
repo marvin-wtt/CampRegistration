@@ -3,7 +3,7 @@ import type {
   CampManager,
   Invitation,
   User,
-} from '#/generated/prisma/client.js';
+} from '#generated/prisma/client.js';
 import { translateObject } from '#utils/translateObject';
 import { MailBase } from '#app/mail/mail.base';
 import { generateUrl } from '#utils/url';

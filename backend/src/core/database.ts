@@ -1,4 +1,4 @@
-import { PrismaClient } from '#/generated/prisma/client.js';
+import { PrismaClient } from '#generated/prisma/client.js';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { createSoftDeleteExtension } from '@candoimage/prisma-extension-soft-delete';
 import logger from '#core/logger';

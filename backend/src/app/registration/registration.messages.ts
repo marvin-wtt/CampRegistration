@@ -3,7 +3,7 @@ import type {
   File,
   MessageTemplate,
   Registration,
-} from '#/generated/prisma/client.js';
+} from '#generated/prisma/client.js';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
 import { type MailableCtor, MailBase } from '#app/mail/mail.base';
 import type {

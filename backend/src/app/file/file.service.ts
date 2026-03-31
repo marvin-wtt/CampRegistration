@@ -1,4 +1,4 @@
-import { type File, Prisma, PrismaClient } from '#/generated/prisma/client.js';
+import { type File, Prisma, PrismaClient } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';

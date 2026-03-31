@@ -1,4 +1,4 @@
-import type { Prisma, User } from '#/generated/prisma/client.js';
+import type { Prisma, User } from '#generated/prisma/client.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';

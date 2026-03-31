@@ -2,7 +2,7 @@ import type {
   CampManager,
   Invitation,
   User,
-} from '#/generated/prisma/client.js';
+} from '#generated/prisma/client.js';
 import type { CampManager as CampManagerData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
