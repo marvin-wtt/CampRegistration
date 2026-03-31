@@ -12,8 +12,8 @@ import path from 'path';
 import { ulid } from 'ulidx';
 import moment from 'moment';
 import prisma from '../utils/prisma.js';
-import { findJob, startJobs } from '#jobs/index';
-import { JobStatus } from '@prisma/client';
+import { findJob, startJobs } from '#jobs';
+import { JobStatus } from '#generated/prisma/client';
 
 describe('jobs', () => {
   beforeEach(() => {

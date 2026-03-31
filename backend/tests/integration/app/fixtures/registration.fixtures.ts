@@ -1,5 +1,5 @@
 import { createForm } from '../utils/form.js';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#generated/prisma/client';
 
 export const campPrivate = {
   active: true,

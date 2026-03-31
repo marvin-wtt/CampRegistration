@@ -1,5 +1,5 @@
 import { RegistrationFactory } from '../factories';
-import { Camp } from '@prisma/client';
+import { Camp } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 

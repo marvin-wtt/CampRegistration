@@ -2,7 +2,8 @@
   "include": ["src/**/*.ts"],
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "typeRoots": ["./@types", "./node_modules/@types"],
     "resolveJsonModule": true,
     "rootDir": "./src",

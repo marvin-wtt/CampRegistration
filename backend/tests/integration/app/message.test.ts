@@ -15,7 +15,7 @@ import { messageCreateBody } from './fixtures/message.fixture.js';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
-import { Registration } from '@prisma/client';
+import { Registration } from '#generated/prisma/client';
 
 const crateCampWithManager = async (
   campCreateData?: Parameters<(typeof CampFactory)['create']>[0],

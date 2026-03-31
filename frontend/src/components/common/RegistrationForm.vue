@@ -155,6 +155,9 @@ function createModel(campId: string, form: object): SurveyModel {
   survey.onComplete.add(async (sender, options) => {
     options.showSaveInProgress();
 
+    const showCompletePage = sender.showCompletePage;
+    sender.showCompletePage = false;
+
     mapFileQuestionValues(sender);
 
     const registration = sender.data ?? {};
@@ -162,6 +165,7 @@ function createModel(campId: string, form: object): SurveyModel {
     try {
       await props.submitFn(campId, registration, sender.locale);
       options.showSaveSuccess();
+      sender.showCompletePage = showCompletePage;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e: unknown) {
       options.showSaveError('Error');

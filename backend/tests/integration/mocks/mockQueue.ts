@@ -10,7 +10,7 @@ import { container } from '#core/ioc/container';
 import { QueueManager } from '#core/queue/QueueManager';
 
 export function mockQueue() {
-  container.rebindSync(QueueManager).to(TestQueueManager);
+  container.rebind(QueueManager).to(TestQueueManager);
 }
 
 class TestQueueManager extends QueueManager {

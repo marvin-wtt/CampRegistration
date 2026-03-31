@@ -331,7 +331,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
       }
 
       const rows = await tx.$queryRaw<
-        { id: string; name: string; payload: string }[]
+        { id: string; name: string; payload: string | object }[]
       >`
         SELECT id, name, payload
         FROM jobs
@@ -374,7 +374,9 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
       return {
         id: job.id,
         name: job.name,
-        payload: JSON.parse(job.payload) as P,
+        payload: (typeof job.payload === 'string'
+          ? JSON.parse(job.payload)
+          : job.payload) as P,
       };
     });
   }

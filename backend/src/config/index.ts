@@ -6,6 +6,9 @@ const config = {
   appName: env.APP_NAME,
   port: env.APP_PORT,
   origin: env.APP_URL,
+  database: {
+    url: env.DATABASE_URL,
+  },
   jwt: {
     secret: env.JWT_SECRET,
     accessExpirationMinutes: env.TOKEN_EXPIRATION_ACCESS,
