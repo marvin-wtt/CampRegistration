@@ -4,7 +4,7 @@ import { defineConfig } from 'prisma/config';
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
-    path: 'backend/prisma/migrations',
+    path: 'prisma/migrations',
     seed: 'tsx prisma/seeder/index.ts',
   },
   datasource: {
