@@ -1,4 +1,4 @@
-import { packageDirectorySync } from 'pkg-dir';
+import { packageDirectorySync } from 'package-directory';
 import path from 'path';
 
 const dirname = import.meta.dirname;
