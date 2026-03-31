@@ -9,5 +9,11 @@
     // add test env types
     "types": ["vitest/globals", "node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "**/*.test.ts", "**/*.spec.ts"]
+  "include": [
+    "src/**/*.ts",
+    "prisma/**/*.ts",
+    "tests/**/*.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

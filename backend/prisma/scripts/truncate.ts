@@ -1,7 +1,4 @@
-import {
-  PrismaClient,
-  type Prisma,
-} from '../../src/generated/prisma/client.js';
+import { PrismaClient, type Prisma } from '#generated/prisma/client.js';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
 const prisma = new PrismaClient({
