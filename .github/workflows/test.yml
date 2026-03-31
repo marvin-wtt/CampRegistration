@@ -48,15 +48,14 @@ jobs:
           node-version: 24
 
       - name: Install prisma
-        run: npm i prisma@6
+        run: npm i prisma@7
 
       - name: Verify migrations
         run: >
           npx prisma migrate diff \
             --exit-code \
             --from-migrations backend/prisma/migrations \
-            --to-schema-datamodel backend/prisma/schema.prisma \
-            --shadow-database-url $DATABASE_URL
+            --to-schema backend/prisma/schema.prisma
 
   test-backend:
     runs-on: ubuntu-24.04
