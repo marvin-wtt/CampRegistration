@@ -22,7 +22,7 @@ import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
-import { startJobs, stopJobs } from '#jobs/index';
+import { startJobs, stopJobs } from '#jobs';
 import { connectDatabase, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container } from '#core/ioc/container';
@@ -76,7 +76,7 @@ export async function shutdown() {
 
 async function bootModules() {
   // Bind module services
-  await container.load(
+  container.load(
     ...modules.map(
       (module) =>
         new ContainerModule((options) => {

@@ -13,7 +13,7 @@ import type {
   Newsletter,
   NewsletterManager,
   NewsletterSubscriber,
-} from '@prisma/client';
+} from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 

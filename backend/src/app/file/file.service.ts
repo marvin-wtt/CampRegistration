@@ -1,4 +1,4 @@
-import { type File, Prisma, PrismaClient } from '@prisma/client';
+import { type File, Prisma, PrismaClient } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -29,27 +29,24 @@ type PickIds<T> = {
   [K in keyof T as K extends `${string}Id` ? K : never]: T[K];
 };
 
+type RequireIdKeys<TSource, TValue> = {
+  [K in keyof TSource as K extends `${string}Id` ? K : never]-?: TValue;
+};
+
 type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
 // Relational fields for where input fields
-const fileRelationIdFieldsNull = Prisma.dmmf.datamodel.models
-  .find((value) => value.name === 'File')
-  ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
-  .reduce<Record<string, null>>((acc, val) => {
-    const fieldName = val.name;
-    acc[fieldName] = null;
-    return acc;
-  }, {}) as PickIds<Prisma.FileWhereInput>;
+const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
+  campId: null,
+  registrationId: null,
+  messageId: null,
+  messageTemplateId: null,
+};
 
 // Relational fields for create input fields
-const fileRelationIdFieldsUndefined = Prisma.dmmf.datamodel.models
-  .find((value) => value.name === 'File')
-  ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
-  .reduce<Record<string, undefined>>((acc, val) => {
-    const fieldName = val.name;
-    acc[fieldName] = undefined;
-    return acc;
-  }, {}) as PickIds<Prisma.FileCreateManyInput>;
+const fileRelationIdFieldsUndefined = Object.keys(
+  fileRelationIdFieldsNull,
+).reduce((acc, key) => ({ ...acc, [key]: undefined }), {});
 
 @injectable()
 export class FileService extends BaseService {
