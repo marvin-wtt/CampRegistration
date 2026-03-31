@@ -121,7 +121,7 @@ jobs:
         run: npm run build --workspace common
 
       - name: Build backend
-        run: npm run build -workspace backend
+        run: npm run build --workspace backend
 
       - name: Migrate test database
         run: npm run migrate --workspace backend
