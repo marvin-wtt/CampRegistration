@@ -9,7 +9,7 @@ const index = z.object({
 const destroy = z.object({
   params: z.object({
     newsletterId: z.ulid(),
-    messageId: z.ulid(),
+    newsletterMessageId: z.ulid(),
   }),
 });
 

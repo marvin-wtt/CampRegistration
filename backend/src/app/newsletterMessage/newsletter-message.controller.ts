@@ -26,7 +26,7 @@ export class NewsletterMessageController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     await req.validate(validator.destroy);
-    const message = req.modelOrFail('message');
+    const message = req.modelOrFail('newsletterMessage');
 
     await this.messageService.deleteMessage(message.id);
 
