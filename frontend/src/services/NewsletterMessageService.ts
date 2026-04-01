@@ -8,7 +8,7 @@ export function useNewsletterMessageService() {
   async function sendNewsletterMessage(
     id: string,
     data: NewsletterMessageCreateData,
-  ): Promise<void> {
+  ): Promise<NewsletterMessage> {
     const response = await api.post(`newsletters/${id}/messages/`, data);
     return response?.data?.data;
   }

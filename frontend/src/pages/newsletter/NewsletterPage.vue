@@ -220,7 +220,7 @@
                     <q-item-label caption>
                       {{ d(message.sentAt, 'dateTime') }}
                       <span v-if="message.sentBy">
-                        &middot; {{ message.sentBy.name ?? message.sentBy.id }}
+                        &middot; {{ message.sentBy.name }}
                       </span>
                     </q-item-label>
                   </q-item-section>
@@ -726,7 +726,7 @@ function confirmSend() {
           await messageStore.fetchData(newsletterId.value);
           quasar.notify({
             type: 'positive',
-            message: t('compose.success', { count: result.queued }),
+            message: t('compose.success', { count: result.recipientCount }),
           });
           sendSubject.value = '';
           sendBody.value = '';

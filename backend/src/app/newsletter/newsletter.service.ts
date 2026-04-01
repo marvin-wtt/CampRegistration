@@ -26,7 +26,11 @@ export class NewsletterService extends BaseService {
 
   async createNewsletter(
     userId: string,
-    data: { name: string; description?: string | null; replyTo?: string | null },
+    data: {
+      name: string;
+      description?: string | null;
+      replyTo?: string | null;
+    },
   ) {
     return this.prisma.newsletter.create({
       data: {
@@ -42,7 +46,11 @@ export class NewsletterService extends BaseService {
 
   async updateNewsletter(
     id: string,
-    data: { name?: string; description?: string | null; replyTo?: string | null },
+    data: {
+      name?: string;
+      description?: string | null;
+      replyTo?: string | null;
+    },
   ) {
     return this.prisma.newsletter.update({
       where: { id },

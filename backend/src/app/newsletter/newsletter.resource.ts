@@ -2,7 +2,10 @@ import type { Newsletter } from '#generated/prisma/client';
 import type { Newsletter as NewsletterData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
-export class NewsletterResource extends JsonResource<Newsletter, NewsletterData> {
+export class NewsletterResource extends JsonResource<
+  Newsletter,
+  NewsletterData
+> {
   transform(): NewsletterData {
     return {
       id: this.data.id,

@@ -70,7 +70,8 @@ export class ProfileController extends BaseController {
       });
     }
 
-    const userWithCampRoles = await this.userService.getUserByIdWithCampRoles(userId);
+    const userWithCampRoles =
+      await this.userService.getUserByIdWithCampRoles(userId);
 
     res.resource(new ProfileResource(userWithCampRoles));
   }
