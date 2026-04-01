@@ -103,11 +103,9 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'management',
-        meta: {
-          hideDrawer: true,
+        redirect: {
+          name: 'management.camps',
         },
-        component: () =>
-          import('pages/campManagement/CampManagementIndexPage.vue'),
       },
       {
         path: 'newsletters',
@@ -118,75 +116,88 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'management.newsletters',
-            component: () =>
-              import('pages/newsletter/NewsletterIndexPage.vue'),
+            component: () => import('pages/newsletter/NewsletterIndexPage.vue'),
           },
           {
             path: ':newsletterId',
             name: 'management.newsletter',
-            component: () =>
-              import('pages/newsletter/NewsletterPage.vue'),
+            component: () => import('pages/newsletter/NewsletterPage.vue'),
           },
         ],
       },
       {
-        path: 'camps/:campId',
-        name: 'management.camp',
-        redirect: {
-          name: 'management.camp.participants',
-        },
+        path: 'camps',
         children: [
           {
-            path: 'participants',
-            name: 'management.camp.participants',
+            path: '',
             component: () =>
-              import('pages/campManagement/ParticipantsIndexPage.vue'),
+              import('pages/campManagement/CampManagementIndexPage.vue'),
+            name: 'management.camps',
+            meta: {
+              hideDrawer: true,
+            },
           },
           {
-            path: 'contact',
-            name: 'management.camp.contact',
-            component: () => import('pages/campManagement/ContactPage.vue'),
-          },
-          {
-            path: 'room-planner',
-            name: 'management.camp.room-planner',
-            component: () => import('pages/campManagement/RoomPlannerPage.vue'),
-          },
-          {
-            path: 'settings',
-            name: 'management.camp.settings',
-            component: () =>
-              import('pages/campManagement/settings/SettingsPage.vue'),
+            path: ':campId',
+            name: 'management.camp',
+            redirect: {
+              name: 'management.camp.participants',
+            },
             children: [
               {
-                path: 'access',
-                name: 'management.camp.settings.access',
+                path: 'participants',
+                name: 'management.camp.participants',
                 component: () =>
-                  import('pages/campManagement/settings/AccessPage.vue'),
+                  import('pages/campManagement/ParticipantsIndexPage.vue'),
               },
               {
-                path: 'edit',
-                name: 'management.camp.settings.edit',
-                component: () =>
-                  import('pages/campManagement/settings/EditCampPage.vue'),
+                path: 'contact',
+                name: 'management.camp.contact',
+                component: () => import('pages/campManagement/ContactPage.vue'),
               },
               {
-                path: 'emails',
-                name: 'management.camp.settings.emails',
+                path: 'room-planner',
+                name: 'management.camp.room-planner',
                 component: () =>
-                  import('pages/campManagement/settings/MessageTemplateEditPage.vue'),
+                  import('pages/campManagement/RoomPlannerPage.vue'),
               },
               {
-                path: 'files',
-                name: 'management.camp.settings.files',
+                path: 'settings',
+                name: 'management.camp.settings',
                 component: () =>
-                  import('pages/campManagement/settings/FileSettingsPage.vue'),
-              },
-              {
-                path: 'form',
-                name: 'management.camp.settings.form',
-                component: () =>
-                  import('pages/campManagement/settings/FormEditPage.vue'),
+                  import('pages/campManagement/settings/SettingsPage.vue'),
+                children: [
+                  {
+                    path: 'access',
+                    name: 'management.camp.settings.access',
+                    component: () =>
+                      import('pages/campManagement/settings/AccessPage.vue'),
+                  },
+                  {
+                    path: 'edit',
+                    name: 'management.camp.settings.edit',
+                    component: () =>
+                      import('pages/campManagement/settings/EditCampPage.vue'),
+                  },
+                  {
+                    path: 'emails',
+                    name: 'management.camp.settings.emails',
+                    component: () =>
+                      import('pages/campManagement/settings/MessageTemplateEditPage.vue'),
+                  },
+                  {
+                    path: 'files',
+                    name: 'management.camp.settings.files',
+                    component: () =>
+                      import('pages/campManagement/settings/FileSettingsPage.vue'),
+                  },
+                  {
+                    path: 'form',
+                    name: 'management.camp.settings.form',
+                    component: () =>
+                      import('pages/campManagement/settings/FormEditPage.vue'),
+                  },
+                ],
               },
             ],
           },
@@ -218,8 +229,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'newsletters',
         name: 'administration.newsletters',
-        component: () =>
-          import('pages/administration/NewsletterIndexPage.vue'),
+        component: () => import('pages/administration/NewsletterIndexPage.vue'),
       },
       {
         path: 'users',

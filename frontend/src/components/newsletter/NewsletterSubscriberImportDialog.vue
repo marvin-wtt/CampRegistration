@@ -44,12 +44,16 @@
         <q-card-section class="q-pt-none">
           <q-banner
             rounded
-            :class="$q.dark.isActive ? 'bg-blue-10 text-blue-2' : 'bg-blue-1 text-blue-10'"
+            :class="
+              quasar.dark.isActive
+                ? 'bg-blue-10 text-blue-2'
+                : 'bg-blue-1 text-blue-10'
+            "
           >
             <template #avatar>
               <q-icon
                 name="info"
-                :color="$q.dark.isActive ? 'blue-3' : 'info'"
+                :color="quasar.dark.isActive ? 'blue-3' : 'info'"
               />
             </template>
             {{ t('notice') }}
@@ -80,20 +84,25 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
 import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
+const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const assignedCampsStore = useAssignedCampsStore();
 
 defineEmits([...useDialogPluginComponent.emits]);
+
+onMounted(async () => {
+  await assignedCampsStore.fetchData();
+});
 
 const campId = ref<string>('');
 const country = ref('');
