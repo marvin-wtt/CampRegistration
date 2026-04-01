@@ -22,6 +22,7 @@ export class NewsletterMessageRouter extends ModuleRouter {
     this.router.use(guard(newsletterManager));
 
     this.router.get('/', controller(messageController, 'index'));
+    this.router.post('/', controller(messageController, 'store'));
     this.router.delete(
       '/:newsletterMessageId',
       controller(messageController, 'destroy'),

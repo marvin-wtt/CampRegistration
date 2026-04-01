@@ -1,9 +1,13 @@
-import type { NewsletterMessage } from '#generated/prisma/client';
+import type { NewsletterMessage, User } from '#generated/prisma/client';
 import type { NewsletterMessage as NewsletterMessageData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
+type NewsletterMessageWithSentBy = NewsletterMessage & {
+  sentBy: Pick<User, 'id' | 'name'> | null;
+};
+
 export class NewsletterMessageResource extends JsonResource<
-  NewsletterMessage,
+  NewsletterMessageWithSentBy,
   NewsletterMessageData
 > {
   transform(): NewsletterMessageData {
@@ -13,6 +17,9 @@ export class NewsletterMessageResource extends JsonResource<
       body: this.data.body,
       recipientCount: this.data.recipientCount,
       sentAt: this.data.sentAt.toISOString(),
+      sentBy: this.data.sentBy
+        ? { id: this.data.sentBy.id, name: this.data.sentBy.name }
+        : null,
     };
   }
 }

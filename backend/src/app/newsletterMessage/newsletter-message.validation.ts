@@ -6,6 +6,16 @@ const index = z.object({
   }),
 });
 
+const store = z.object({
+  params: z.object({
+    newsletterId: z.ulid(),
+  }),
+  body: z.object({
+    subject: z.string().min(1).max(255),
+    body: z.string().min(1),
+  }),
+});
+
 const destroy = z.object({
   params: z.object({
     newsletterId: z.ulid(),
@@ -15,5 +25,6 @@ const destroy = z.object({
 
 export default {
   index,
+  store,
   destroy,
 };

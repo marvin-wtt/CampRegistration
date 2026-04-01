@@ -1,9 +1,6 @@
 import httpStatus from 'http-status';
 import { NewsletterService } from './newsletter.service.js';
 import { NewsletterResource } from './newsletter.resource.js';
-import { NewsletterMessageService } from '#app/newsletterMessage/newsletter-message.service';
-import { NewsletterSubscriberService } from '#app/newsletterSubscriber/newsletter-subscriber.service';
-import { NewsletterMail } from './newsletter.mail.js';
 import validator from './newsletter.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
@@ -14,10 +11,6 @@ export class NewsletterController extends BaseController {
   constructor(
     @inject(NewsletterService)
     private readonly newsletterService: NewsletterService,
-    @inject(NewsletterSubscriberService)
-    private readonly subscriberService: NewsletterSubscriberService,
-    @inject(NewsletterMessageService)
-    private readonly messageService: NewsletterMessageService,
   ) {
     super();
   }
@@ -48,6 +41,7 @@ export class NewsletterController extends BaseController {
     const newsletter = await this.newsletterService.createNewsletter(userId, {
       name: body.name,
       description: body.description,
+      replyTo: body.replyTo,
     });
 
     res.status(httpStatus.CREATED).resource(new NewsletterResource(newsletter));
@@ -62,6 +56,7 @@ export class NewsletterController extends BaseController {
       {
         name: body.name,
         description: body.description,
+        replyTo: body.replyTo,
       },
     );
 
@@ -75,33 +70,5 @@ export class NewsletterController extends BaseController {
     await this.newsletterService.deleteNewsletter(newsletter.id);
 
     res.sendStatus(httpStatus.NO_CONTENT);
-  }
-
-  async send(req: Request, res: Response) {
-    const newsletter = req.modelOrFail('newsletter');
-    const { body } = await req.validate(validator.send);
-
-    const subscribers = await this.subscriberService.getSubscribers(
-      newsletter.id,
-    );
-
-    for (const subscriber of subscribers) {
-      await NewsletterMail.enqueue({
-        to: subscriber.email,
-        name: subscriber.name,
-        subject: body.subject,
-        body: body.body,
-        newsletterId: newsletter.id,
-        unsubscribeToken: subscriber.unsubscribeToken,
-      });
-    }
-
-    await this.messageService.recordMessage(newsletter.id, {
-      subject: body.subject,
-      body: body.body,
-      recipientCount: subscribers.length,
-    });
-
-    res.json({ data: { queued: subscribers.length } });
   }
 }

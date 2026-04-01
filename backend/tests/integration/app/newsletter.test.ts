@@ -21,9 +21,6 @@ const createNewsletterWithManager = async () => {
 };
 
 describe(BASE, () => {
-  // ---------------------------------------------------------------------------
-  // GET /api/v1/newsletters
-  // ---------------------------------------------------------------------------
   describe(`GET ${BASE}`, () => {
     it('should respond with `200` and only the newsletters managed by the user', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
@@ -66,9 +63,6 @@ describe(BASE, () => {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // POST /api/v1/newsletters
-  // ---------------------------------------------------------------------------
   describe(`POST ${BASE}`, () => {
     it('should respond with `201` and the created newsletter', async () => {
       const user = await UserFactory.create();
@@ -134,9 +128,6 @@ describe(BASE, () => {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // GET /api/v1/newsletters/:newsletterId
-  // ---------------------------------------------------------------------------
   describe(`GET ${BASE}/:newsletterId`, () => {
     it('should respond with `200` and the newsletter data', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
@@ -191,9 +182,6 @@ describe(BASE, () => {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // PATCH /api/v1/newsletters/:newsletterId
-  // ---------------------------------------------------------------------------
   describe(`PATCH ${BASE}/:newsletterId`, () => {
     it('should respond with `200` and the updated newsletter', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
@@ -268,9 +256,6 @@ describe(BASE, () => {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // DELETE /api/v1/newsletters/:newsletterId
-  // ---------------------------------------------------------------------------
   describe(`DELETE ${BASE}/:newsletterId`, () => {
     it('should respond with `204` and delete the newsletter', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
@@ -330,114 +315,6 @@ describe(BASE, () => {
 
       await request()
         .delete(`${BASE}/${ulid()}`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // POST /api/v1/newsletters/:newsletterId/send
-  // ---------------------------------------------------------------------------
-  describe(`POST ${BASE}/:newsletterId/send`, () => {
-    it('should respond with `200` and the queued recipient count', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      await NewsletterSubscriberFactory.create({
-        newsletter: { connect: { id: newsletter.id } },
-      });
-      await NewsletterSubscriberFactory.create({
-        newsletter: { connect: { id: newsletter.id } },
-      });
-
-      const { body } = await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ subject: 'Hello', body: '<p>World</p>' })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      expect(body.data).toEqual({ queued: 2 });
-    });
-
-    it('should record a message in the newsletter history', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      await NewsletterSubscriberFactory.create({
-        newsletter: { connect: { id: newsletter.id } },
-      });
-
-      await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ subject: 'Test Subject', body: '<p>Test Body</p>' })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      const message = await prisma.newsletterMessage.findFirst({
-        where: { newsletterId: newsletter.id },
-      });
-      expect(message).not.toBeNull();
-      expect(message?.subject).toBe('Test Subject');
-      expect(message?.body).toBe('<p>Test Body</p>');
-      expect(message?.recipientCount).toBe(1);
-    });
-
-    it('should respond with `200` and queued=0 when there are no subscribers', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-
-      const { body } = await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ subject: 'Hello', body: '<p>World</p>' })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      expect(body.data).toEqual({ queued: 0 });
-    });
-
-    it('should respond with `422` when subject is missing', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-
-      await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ body: '<p>No subject</p>' })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(422);
-    });
-
-    it('should respond with `422` when body is missing', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-
-      await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ subject: 'No body' })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(422);
-    });
-
-    it('should respond with `401` when unauthenticated', async () => {
-      const newsletter = await NewsletterFactory.create();
-
-      await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ subject: 'Hello', body: '<p>World</p>' })
-        .expect(401);
-    });
-
-    it('should respond with `403` when user is not a manager', async () => {
-      const newsletter = await NewsletterFactory.create();
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
-
-      await request()
-        .post(`${BASE}/${newsletter.id}/send`)
-        .send({ subject: 'Hello', body: '<p>World</p>' })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(403);
-    });
-
-    it('should respond with `404` when newsletter does not exist', async () => {
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
-
-      await request()
-        .post(`${BASE}/${ulid()}/send`)
-        .send({ subject: 'Hello', body: '<p>World</p>' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });

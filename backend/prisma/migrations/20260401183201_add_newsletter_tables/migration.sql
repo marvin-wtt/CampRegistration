@@ -3,6 +3,7 @@ CREATE TABLE `newsletters` (
     `id` CHAR(26) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
     `description` TEXT NULL,
+    `reply_to` CHAR(255) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,
 
@@ -44,6 +45,7 @@ CREATE TABLE `newsletter_subscribers` (
 CREATE TABLE `newsletter_messages` (
     `id` CHAR(26) NOT NULL,
     `newsletter_id` CHAR(26) NOT NULL,
+    `sent_by_user_id` CHAR(26) NULL,
     `subject` VARCHAR(255) NOT NULL,
     `body` TEXT NOT NULL,
     `recipient_count` INTEGER NOT NULL,
@@ -65,3 +67,6 @@ ALTER TABLE `newsletter_subscribers` ADD CONSTRAINT `newsletter_subscribers_news
 
 -- AddForeignKey
 ALTER TABLE `newsletter_messages` ADD CONSTRAINT `newsletter_messages_newsletter_id_foreign` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `newsletter_messages` ADD CONSTRAINT `newsletter_messages_sent_by_user_id_foreign` FOREIGN KEY (`sent_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

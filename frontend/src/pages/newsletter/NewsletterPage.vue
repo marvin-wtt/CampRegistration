@@ -21,6 +21,16 @@
             {{ newsletter.description }}
           </div>
           <div
+            v-if="newsletter?.replyTo"
+            class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
+          >
+            <q-icon
+              name="reply"
+              size="xs"
+            />
+            <span>{{ newsletter.replyTo }}</span>
+          </div>
+          <div
             class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
           >
             <div class="row items-center q-gutter-x-xs">
@@ -209,6 +219,9 @@
                     </q-item-label>
                     <q-item-label caption>
                       {{ d(message.sentAt, 'dateTime') }}
+                      <span v-if="message.sentBy">
+                        &middot; {{ message.sentBy.name ?? message.sentBy.id }}
+                      </span>
                     </q-item-label>
                   </q-item-section>
                   <q-item-section side>
@@ -278,7 +291,11 @@
                 outline
                 color="primary"
                 icon="file_upload"
-                :label="quasar.screen.gt.sm ? t('subscribers.action.import') : undefined"
+                :label="
+                  quasar.screen.gt.sm
+                    ? t('subscribers.action.import')
+                    : undefined
+                "
                 rounded
                 no-caps
                 @click="showImportDialog"
@@ -290,7 +307,9 @@
               <q-btn
                 color="primary"
                 icon="person_add"
-                :label="quasar.screen.gt.sm ? t('subscribers.action.add') : undefined"
+                :label="
+                  quasar.screen.gt.sm ? t('subscribers.action.add') : undefined
+                "
                 rounded
                 unelevated
                 no-caps
@@ -699,7 +718,7 @@ function confirmSend() {
     .onOk(() => {
       void (async () => {
         try {
-          const result = await api.sendNewsletter(newsletterId.value, {
+          const result = await api.sendNewsletterMessage(newsletterId.value, {
             subject: sendSubject.value,
             body: sendBody.value,
           });

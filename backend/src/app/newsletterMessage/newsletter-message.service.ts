@@ -6,6 +6,7 @@ export class NewsletterMessageService extends BaseService {
   async getMessages(newsletterId: string) {
     return this.prisma.newsletterMessage.findMany({
       where: { newsletterId },
+      include: { sentBy: { select: { id: true, name: true } } },
       orderBy: { sentAt: 'desc' },
     });
   }
@@ -13,12 +14,18 @@ export class NewsletterMessageService extends BaseService {
   async getMessageById(newsletterId: string, id: string) {
     return this.prisma.newsletterMessage.findFirst({
       where: { id, newsletterId },
+      include: { sentBy: { select: { id: true, name: true } } },
     });
   }
 
-  async recordMessage(
+  async storeMessage(
     newsletterId: string,
-    data: { subject: string; body: string; recipientCount: number },
+    data: {
+      subject: string;
+      body: string;
+      recipientCount: number;
+      sentByUserId?: string;
+    },
   ) {
     return this.prisma.newsletterMessage.create({
       data: {
@@ -26,7 +33,9 @@ export class NewsletterMessageService extends BaseService {
         subject: data.subject,
         body: data.body,
         recipientCount: data.recipientCount,
+        sentByUserId: data.sentByUserId,
       },
+      include: { sentBy: { select: { id: true, name: true } } },
     });
   }
 

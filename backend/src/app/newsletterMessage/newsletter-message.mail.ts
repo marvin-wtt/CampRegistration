@@ -8,11 +8,12 @@ export interface NewsletterMailPayload {
   name: string | null;
   subject: string;
   body: string;
+  replyTo?: string;
   newsletterId: string;
   unsubscribeToken: string;
 }
 
-export class NewsletterMail extends MailBase<NewsletterMailPayload> {
+export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
   static readonly type = 'newsletter:send';
 
   static jobOptions(): JobOptions {
@@ -21,6 +22,10 @@ export class NewsletterMail extends MailBase<NewsletterMailPayload> {
 
   protected priority(): MailPriority {
     return 'low';
+  }
+
+  protected replyTo(): string | undefined {
+    return this.payload.replyTo;
   }
 
   protected to() {

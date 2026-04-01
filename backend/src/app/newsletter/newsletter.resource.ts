@@ -8,6 +8,7 @@ export class NewsletterResource extends JsonResource<Newsletter, NewsletterData>
       id: this.data.id,
       name: this.data.name,
       description: this.data.description ?? null,
+      replyTo: this.data.replyTo ?? null,
       createdAt: this.data.createdAt.toISOString(),
       updatedAt: this.data.updatedAt?.toISOString() ?? null,
     };

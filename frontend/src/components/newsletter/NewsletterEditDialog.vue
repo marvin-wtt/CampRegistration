@@ -30,6 +30,14 @@
             rounded
             outlined
           />
+          <q-input
+            v-model="replyTo"
+            :label="t('input.replyTo.label')"
+            type="email"
+            rounded
+            outlined
+            clearable
+          />
         </q-card-section>
 
         <q-card-actions
@@ -73,11 +81,13 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const name = ref(newsletter?.name ?? '');
 const description = ref(newsletter?.description ?? '');
+const replyTo = ref(newsletter?.replyTo ?? '');
 
 function onSubmit() {
   const data: NewsletterUpdateData = {
     name: name.value,
     description: description.value || null,
+    replyTo: replyTo.value || null,
   };
   onDialogOK(data);
 }
@@ -92,6 +102,8 @@ input:
       required: 'Name is required'
   description:
     label: 'Description (optional)'
+  replyTo:
+    label: 'Reply-To address (optional)'
 action:
   save: 'Save'
   cancel: 'Cancel'
@@ -106,6 +118,8 @@ input:
       required: 'Name ist erforderlich'
   description:
     label: 'Beschreibung (optional)'
+  replyTo:
+    label: 'Reply-To-Adresse (optional)'
 action:
   save: 'Speichern'
   cancel: 'Abbrechen'
@@ -120,6 +134,8 @@ input:
       required: 'Le nom est requis'
   description:
     label: 'Description (optionnel)'
+  replyTo:
+    label: 'Adresse de réponse (optionnel)'
 action:
   save: 'Enregistrer'
   cancel: 'Annuler'
@@ -134,6 +150,8 @@ input:
       required: 'Nazwa jest wymagana'
   description:
     label: 'Opis (opcjonalny)'
+  replyTo:
+    label: 'Adres odpowiedzi (opcjonalny)'
 action:
   save: 'Zapisz'
   cancel: 'Anuluj'
@@ -148,6 +166,8 @@ input:
       required: 'Název je povinný'
   description:
     label: 'Popis (volitelný)'
+  replyTo:
+    label: 'Adresa pro odpověď (volitelná)'
 action:
   save: 'Uložit'
   cancel: 'Zrušit'

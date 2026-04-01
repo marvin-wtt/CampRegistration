@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NewsletterFactory,
   NewsletterMessageFactory,
+  NewsletterSubscriberFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
@@ -57,6 +58,7 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         body: '<p>Hello</p>',
         recipientCount: 5,
         sentAt: message.sentAt.toISOString(),
+        sentBy: null,
       });
     });
 
@@ -136,6 +138,119 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .get(`${BASE}/not-a-ulid/messages`)
         .auth(accessToken, { type: 'bearer' })
         .expect(422);
+    });
+  });
+
+  describe(`POST ${BASE}/:newsletterId/messages`, () => {
+    it('should respond with `200` and the queued recipient count', async () => {
+      const { user, accessToken, newsletter } =
+        await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data).toEqual({
+        id: expect.any(String),
+        subject: 'Hello',
+        body: '<p>World</p>',
+        recipientCount: 2,
+        sentAt: expect.any(String),
+        sentBy: { id: user.id, name: user.name },
+      });
+    });
+
+    it('should record a message in the newsletter history', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Test Subject', body: '<p>Test Body</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      const message = await prisma.newsletterMessage.findFirst({
+        where: { newsletterId: newsletter.id },
+      });
+      expect(message).not.toBeNull();
+      expect(message?.subject).toBe('Test Subject');
+      expect(message?.body).toBe('<p>Test Body</p>');
+      expect(message?.recipientCount).toBe(1);
+    });
+
+    it('should respond with `200` and queued=0 when there are no subscribers', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data).toHaveProperty('recipientCount', 0);
+    });
+
+    it('should respond with `422` when subject is missing', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ body: '<p>No subject</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+
+    it('should respond with `422` when body is missing', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'No body' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+
+    it('should respond with `401` when unauthenticated', async () => {
+      const newsletter = await NewsletterFactory.create();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .expect(401);
+    });
+
+    it('should respond with `403` when user is not a manager', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `404` when newsletter does not exist', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post(`${BASE}/${ulid()}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
     });
   });
 

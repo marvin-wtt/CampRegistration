@@ -9,6 +9,7 @@ export const NewsletterFactory = {
     return {
       name: faker.lorem.words(3),
       description: faker.lorem.sentence(),
+      replyTo: faker.internet.email(),
       ...data,
     };
   },

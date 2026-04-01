@@ -21,6 +21,7 @@ export * from './MessageTemplate.js';
 export * from './Newsletter.js';
 export * from './NewsletterManager.js';
 export * from './NewsletterSubscriber.js';
+export * from './NewsletterMessage.js';
 
 // Types
 export * from './AuthTokens.js';
