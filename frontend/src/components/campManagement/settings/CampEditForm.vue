@@ -1,285 +1,316 @@
 <template>
-  <q-form
-    class="q-gutter-y-md column q-pa-md"
-    greedy
-    style="width: 400px"
-    @reset="onReset"
-    @submit="onSubmit"
+  <q-card
+    flat
+    bordered
+    style="width: 100%; max-width: 520px"
   >
-    <a class="text-h4">
-      {{ title }}
-    </a>
+    <q-card-section class="q-pb-none">
+      <div class="text-h5">
+        {{ title }}
+      </div>
+    </q-card-section>
 
-    <!-- Countries -->
-    <country-select
-      v-model="data.countries"
-      :disable="loading"
-      :label="t('field.countries')"
-      :countries="['de', 'fr', 'pl', 'cz']"
-      :rules="[
-        (val?: string[]) =>
-          (val && val.length > 0) || t('validation.countries.empty'),
-      ]"
-      hide-bottom-space
-      outlined
-      rounded
-      multiple
+    <q-form
+      greedy
+      @reset="onReset"
+      @submit="onSubmit"
     >
-      <template #before>
-        <q-icon name="language" />
-      </template>
-    </country-select>
+      <!-- Basic Information -->
+      <q-card-section class="q-gutter-y-md column">
+        <div class="text-overline text-grey-7">{{ t('section.basic') }}</div>
 
-    <!-- name -->
-    <translated-input
-      v-model="data.name"
-      :disable="loading"
-      :label="t('field.name')"
-      :locales="data.countries"
-      :rules="[
-        (val?: string) => !!val || t('validation.name.empty'),
-        (val: string) => val.length <= 255 || t('validation.name.length'),
-      ]"
-      hide-bottom-space
-      outlined
-      rounded
-    >
-      <template #before>
-        <q-icon name="title" />
-      </template>
-    </translated-input>
+        <!-- Countries -->
+        <country-select
+          v-model="data.countries"
+          :disable="loading"
+          :label="t('field.countries')"
+          :countries="['de', 'fr', 'pl', 'cz']"
+          :rules="[
+            (val?: string[]) =>
+              (val && val.length > 0) || t('validation.countries.empty'),
+          ]"
+          hide-bottom-space
+          outlined
+          rounded
+          multiple
+        >
+          <template #before>
+            <q-icon name="language" />
+          </template>
+        </country-select>
 
-    <!-- organizer -->
-    <translated-input
-      v-model="data.organizer"
-      :disable="loading"
-      :label="t('field.organizer')"
-      :locales="data.countries"
-      :rules="[
-        (val?: string) => !!val || t('validation.organizer.empty'),
-        (val: string) => val.length <= 255 || t('validation.organizer.length'),
-      ]"
-      hide-bottom-space
-      outlined
-      rounded
-    >
-      <template #before>
-        <q-icon name="corporate_fare" />
-      </template>
-    </translated-input>
+        <!-- name -->
+        <translated-input
+          v-model="data.name"
+          :disable="loading"
+          :label="t('field.name')"
+          :locales="data.countries"
+          :rules="[
+            (val?: string) => !!val || t('validation.name.empty'),
+            (val: string) => val.length <= 255 || t('validation.name.length'),
+          ]"
+          hide-bottom-space
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="title" />
+          </template>
+        </translated-input>
 
-    <!-- contact email -->
-    <translated-input
-      v-model="data.contactEmail"
-      :disable="loading"
-      :label="t('field.contactEmail')"
-      :locales="data.countries"
-      :rules="[(val?: string) => !!val || t('validation.contactEmail.empty')]"
-      type="email"
-      hide-bottom-space
-      outlined
-      rounded
-    >
-      <template #before>
-        <q-icon name="email" />
-      </template>
-    </translated-input>
+        <!-- organizer -->
+        <translated-input
+          v-model="data.organizer"
+          :disable="loading"
+          :label="t('field.organizer')"
+          :locales="data.countries"
+          :rules="[
+            (val?: string) => !!val || t('validation.organizer.empty'),
+            (val: string) =>
+              val.length <= 255 || t('validation.organizer.length'),
+          ]"
+          hide-bottom-space
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="corporate_fare" />
+          </template>
+        </translated-input>
 
-    <!-- dates -->
-    <date-range-input
-      v-model:from="data.startAt"
-      v-model:to="data.endAt"
-      :disable="loading"
-      :label="t('field.dateRange')"
-      :rules="[(val?: string) => !!val || t('validation.dateRange.empty')]"
-      hide-bottom-space
-      outlined
-      rounded
-    >
-      <template #before>
-        <q-icon name="event" />
-      </template>
-    </date-range-input>
+        <!-- contact email -->
+        <translated-input
+          v-model="data.contactEmail"
+          :disable="loading"
+          :label="t('field.contactEmail')"
+          :locales="data.countries"
+          :rules="[
+            (val?: string) => !!val || t('validation.contactEmail.empty'),
+          ]"
+          type="email"
+          hide-bottom-space
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="email" />
+          </template>
+        </translated-input>
+      </q-card-section>
 
-    <!-- Times -->
-    <div class="row">
-      <time-input
-        v-model="data.startAt"
-        :disable="loading"
-        :label="t('field.startTime')"
-        :rules="[(val?: string) => !!val || t('validation.startAt.empty')]"
-        class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-xl-6"
-        hide-bottom-space
-        outlined
-        rounded
+      <q-separator />
+
+      <!-- Schedule -->
+      <q-card-section class="q-gutter-y-md column">
+        <div class="text-overline text-grey-7">
+          {{ t('section.schedule') }}
+        </div>
+
+        <!-- dates -->
+        <date-range-input
+          v-model:from="data.startAt"
+          v-model:to="data.endAt"
+          :disable="loading"
+          :label="t('field.dateRange')"
+          :rules="[(val?: string) => !!val || t('validation.dateRange.empty')]"
+          hide-bottom-space
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="event" />
+          </template>
+        </date-range-input>
+
+        <!-- Times -->
+        <div class="row q-col-gutter-x-md">
+          <time-input
+            v-model="data.startAt"
+            :disable="loading"
+            :label="t('field.startTime')"
+            :rules="[(val?: string) => !!val || t('validation.startAt.empty')]"
+            class="col-12 col-sm-6"
+            hide-bottom-space
+            outlined
+            rounded
+          />
+          <time-input
+            v-model="data.endAt"
+            :disable="loading"
+            :label="t('field.endTime')"
+            :rules="[(val?: string) => !!val || t('validation.endAt.empty')]"
+            class="col-12 col-sm-6"
+            hide-bottom-space
+            outlined
+            rounded
+          />
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <!-- Participants -->
+      <q-card-section class="q-gutter-y-md column">
+        <div class="text-overline text-grey-7">
+          {{ t('section.participants') }}
+        </div>
+
+        <!-- max participants -->
+        <translated-input
+          v-model.number="data.maxParticipants"
+          :disable="loading"
+          :label="t('field.maxParticipants')"
+          :locales="data.countries"
+          :rules="[
+            (val?: number) => !!val || t('validation.maxParticipants.empty'),
+            (val: number) =>
+              val >= 0 || t('validation.maxParticipants.positive'),
+          ]"
+          always
+          hide-bottom-space
+          outlined
+          rounded
+          type="number"
+        >
+          <template #before>
+            <q-icon name="group" />
+          </template>
+        </translated-input>
+
+        <!-- age range -->
+        <div class="row q-col-gutter-x-md">
+          <q-input
+            v-model.number="data.minAge"
+            :disable="loading"
+            :label="t('field.minAge')"
+            :rules="[
+              (val?: number) => !!val || t('validation.minAge.empty'),
+              (val: number) => val > 0 || t('validation.minAge.positive'),
+              (val: number) => val < 100 || t('validation.minAge.max'),
+            ]"
+            class="col-12 col-sm-6"
+            hide-bottom-space
+            outlined
+            rounded
+            type="number"
+          />
+          <q-input
+            v-model.number="data.maxAge"
+            :disable="loading"
+            :label="t('field.maxAge')"
+            :rules="[
+              (val?: number) => !!val || t('validation.maxAge.empty'),
+              (val: number) =>
+                (data.minAge && val >= data.minAge) ||
+                t('validation.maxAge.min'),
+              (val: number) => val < 100 || t('validation.minAge.max'),
+            ]"
+            class="col-12 col-sm-6"
+            hide-bottom-space
+            outlined
+            rounded
+            type="number"
+          />
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <!-- Details -->
+      <q-card-section class="q-gutter-y-md column">
+        <div class="text-overline text-grey-7">
+          {{ t('section.details') }}
+        </div>
+
+        <!-- location -->
+        <translated-input
+          v-model="data.location"
+          :disable="loading"
+          :label="t('field.location')"
+          :locales="data.countries"
+          :rules="[
+            (val?: string) => !!val || t('validation.location.empty'),
+            (val: string) =>
+              val.length < 255 || t('validation.location.length'),
+          ]"
+          hide-bottom-space
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="map" />
+          </template>
+        </translated-input>
+
+        <!-- price -->
+        <q-input
+          v-model.number="data.price"
+          :disable="loading"
+          :label="t('field.price')"
+          :rules="[
+            (val?: number) => !!val || val === 0 || t('validation.price.empty'),
+            (val: number) => val >= 0 || t('validation.price.positive'),
+          ]"
+          hide-bottom-space
+          input-class="text-right"
+          outlined
+          rounded
+          suffix="€"
+          type="number"
+        >
+          <template #before>
+            <q-icon name="euro" />
+          </template>
+        </q-input>
+
+        <!-- Admission mode -->
+        <q-select
+          v-model="data.confirmationMode"
+          :label="t('field.confirmation_mode')"
+          :options="confirmationModeOptions"
+          map-options
+          emit-value
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="how_to_reg" />
+          </template>
+        </q-select>
+
+        <!-- Public -->
+        <q-toggle
+          v-model="data.public"
+          :label="t('field.public')"
+        />
+      </q-card-section>
+
+      <q-separator />
+
+      <!-- Actions -->
+      <q-card-actions
+        align="right"
+        class="q-px-md q-py-sm"
       >
-        <template #before>
-          <q-icon name="schedule" />
-        </template>
-      </time-input>
-
-      <time-input
-        v-model="data.endAt"
-        :disable="loading"
-        :label="t('field.endTime')"
-        :rules="[(val?: string) => !!val || t('validation.endAt.empty')]"
-        class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-xl-6"
-        hide-bottom-space
-        outlined
-        rounded
-      >
-        <template #before>
-          <!-- Invalid name for spacing -->
-          <q-icon name="none" />
-        </template>
-      </time-input>
-    </div>
-
-    <!-- participants -->
-    <translated-input
-      v-model.number="data.maxParticipants"
-      :disable="loading"
-      :label="t('field.maxParticipants')"
-      :locales="data.countries"
-      :rules="[
-        (val?: number) => !!val || t('validation.maxParticipants.empty'),
-        (val: number) => val >= 0 || t('validation.maxParticipants.positive'),
-      ]"
-      always
-      hide-bottom-space
-      outlined
-      rounded
-      type="number"
-    >
-      <template #before>
-        <q-icon name="group" />
-      </template>
-    </translated-input>
-
-    <!-- age -->
-    <!-- minAge -->
-    <q-input
-      v-model.number="data.minAge"
-      :disable="loading"
-      :label="t('field.minAge')"
-      :rules="[
-        (val?: number) => !!val || t('validation.minAge.empty'),
-        (val: number) => val > 0 || t('validation.minAge.positive'),
-        (val: number) => val < 100 || t('validation.minAge.max'),
-      ]"
-      hide-bottom-space
-      outlined
-      rounded
-      type="number"
-    >
-      <template #before>
-        <q-icon name="remove" />
-      </template>
-    </q-input>
-
-    <!-- maxAge -->
-    <q-input
-      v-model.number="data.maxAge"
-      :disable="loading"
-      :label="t('field.maxAge')"
-      :rules="[
-        (val?: number) => !!val || t('validation.maxAge.empty'),
-        (val: number) =>
-          (data.minAge && val >= data.minAge) || t('validation.maxAge.min'),
-        (val: number) => val < 100 || t('validation.minAge.max'),
-      ]"
-      hide-bottom-space
-      outlined
-      rounded
-      type="number"
-    >
-      <template #before>
-        <q-icon name="add" />
-      </template>
-    </q-input>
-
-    <!-- Admission mode -->
-    <q-select
-      v-model="data.confirmationMode"
-      :label="t('field.confirmation_mode')"
-      :options="confirmationModeOptions"
-      map-options
-      emit-value
-      outlined
-      rounded
-    >
-      <template #before>
-        <q-icon name="how_to_reg" />
-      </template>
-    </q-select>
-
-    <!-- location -->
-    <translated-input
-      v-model="data.location"
-      :disable="loading"
-      :label="t('field.location')"
-      :locales="data.countries"
-      :rules="[
-        (val?: string) => !!val || t('validation.location.empty'),
-        (val: string) => val.length < 255 || t('validation.location.length'),
-      ]"
-      hide-bottom-space
-      outlined
-      rounded
-    >
-      <template #before>
-        <q-icon name="map" />
-      </template>
-    </translated-input>
-
-    <!-- price -->
-    <q-input
-      v-model.number="data.price"
-      :disable="loading"
-      :label="t('field.price')"
-      :rules="[
-        (val?: number) => !!val || val === 0 || t('validation.price.empty'),
-        (val: number) => val >= 0 || t('validation.price.positive'),
-      ]"
-      hide-bottom-space
-      input-class="text-right"
-      outlined
-      rounded
-      suffix="€"
-      type="number"
-    >
-      <template #before>
-        <q-icon name="euro" />
-      </template>
-    </q-input>
-
-    <!-- Public -->
-    <q-toggle
-      v-model="data.public"
-      :label="t('field.public')"
-    />
-
-    <!-- action -->
-    <div class="row justify-end">
-      <q-btn
-        v-if="props.mode === 'edit'"
-        :disable="loading"
-        :label="t('action.reset')"
-        class="q-ml-sm"
-        color="primary"
-        flat
-        rounded
-        type="reset"
-      />
-      <q-btn
-        :label="submitLabel"
-        :loading="loading"
-        color="primary"
-        rounded
-        type="submit"
-      />
-    </div>
-  </q-form>
+        <q-btn
+          v-if="props.mode === 'edit'"
+          :disable="loading"
+          :label="t('action.reset')"
+          color="primary"
+          flat
+          rounded
+          type="reset"
+        />
+        <q-btn
+          :label="submitLabel"
+          :loading="loading"
+          color="primary"
+          rounded
+          type="submit"
+        />
+      </q-card-actions>
+    </q-form>
+  </q-card>
 </template>
 
 <script lang="ts" setup>
@@ -360,6 +391,12 @@ title:
   create: 'Create new camp'
   edit: 'Edit camp'
 
+section:
+  basic: 'Basic Information'
+  schedule: 'Schedule'
+  participants: 'Participants'
+  details: 'Details'
+
 field:
   countries: 'Countries'
   name: 'Camp name'
@@ -425,6 +462,12 @@ action:
 title:
   create: 'Neues Camp erstellen'
   edit: 'Camp bearbeiten'
+
+section:
+  basic: 'Grundlegende Informationen'
+  schedule: 'Zeitplan'
+  participants: 'Teilnehmer'
+  details: 'Details'
 
 field:
   countries: 'Länder'
@@ -492,6 +535,12 @@ title:
   create: 'Créer un nouveau camp'
   edit: 'Modifier le camp'
 
+section:
+  basic: 'Informations de base'
+  schedule: 'Calendrier'
+  participants: 'Participants'
+  details: 'Détails'
+
 field:
   countries: 'Pays'
   name: 'Nom du camp'
@@ -558,6 +607,12 @@ title:
   create: 'Utwórz nowy obóz'
   edit: 'Edytuj obóz'
 
+section:
+  basic: 'Informacje podstawowe'
+  schedule: 'Harmonogram'
+  participants: 'Uczestnicy'
+  details: 'Szczegóły'
+
 field:
   countries: 'Kraje'
   name: 'Nazwa obozu'
@@ -623,6 +678,12 @@ action:
 title:
   create: 'Vytvořit nový tábor'
   edit: 'Upravit tábor'
+
+section:
+  basic: 'Základní informace'
+  schedule: 'Harmonogram'
+  participants: 'Účastníci'
+  details: 'Podrobnosti'
 
 field:
   countries: 'Země'

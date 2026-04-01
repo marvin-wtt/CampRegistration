@@ -2,9 +2,9 @@
   <page-state-handler
     :error="error"
     :loading="isLoading"
-    class="flex justify-center"
+    class="flex justify-center q-pa-md"
   >
-    <edit-camp-form
+    <camp-edit-form
       v-if="camp"
       v-model="camp"
       :loading="loading"
@@ -18,7 +18,7 @@
 import { onMounted, ref, watch } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { useRouter } from 'vue-router';
-import EditCampForm from 'components/campManagement/settings/EditCampForm.vue';
+import CampEditForm from 'components/campManagement/settings/CampEditForm.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
