@@ -9,6 +9,7 @@ import type {
   MailPriority,
   Address,
 } from './mail.types.js';
+import type { JobOptions } from '#core/queue/Queue';
 import type { AppConfig } from '#config/index';
 import { config } from '#core/ioc/facades';
 import i18n from '#core/i18n';
@@ -26,6 +27,7 @@ export interface MailableCtor<P> {
   // static methods provided by MailBase
   enqueue(payload: P): Promise<void>;
   send(payload: P): Promise<void>;
+  jobOptions(): JobOptions | undefined;
 }
 
 export abstract class MailBase<P> {
@@ -171,6 +173,10 @@ export abstract class MailBase<P> {
       text,
       attachments: attachments.length ? attachments : undefined,
     };
+  }
+
+  static jobOptions(): JobOptions | undefined {
+    return undefined;
   }
 
   static async enqueue<P>(this: MailableCtor<P>, payload: P): Promise<void> {

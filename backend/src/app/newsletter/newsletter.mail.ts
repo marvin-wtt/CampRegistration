@@ -1,4 +1,6 @@
 import { MailBase } from '#app/mail/mail.base';
+import type { JobOptions } from '#core/queue/Queue';
+import type { MailPriority } from '#app/mail/mail.types';
 import { generateUrl } from '#utils/url';
 
 export interface NewsletterMailPayload {
@@ -12,6 +14,14 @@ export interface NewsletterMailPayload {
 
 export class NewsletterMail extends MailBase<NewsletterMailPayload> {
   static readonly type = 'newsletter:send';
+
+  static jobOptions(): JobOptions {
+    return { priority: 10 };
+  }
+
+  protected priority(): MailPriority {
+    return 'low';
+  }
 
   protected to() {
     const { to, name } = this.payload;

@@ -61,6 +61,6 @@ export class MailService {
     mailable: MailableCtor<P>,
     payload: P,
   ): Promise<void> {
-    await this.queue.add(mailable.type, payload);
+    await this.queue.add(mailable.type, payload, mailable.jobOptions());
   }
 }
