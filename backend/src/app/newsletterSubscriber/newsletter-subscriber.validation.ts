@@ -30,7 +30,7 @@ const importFromCamp = z.object({
 const destroy = z.object({
   params: z.object({
     newsletterId: z.ulid(),
-    subscriberId: z.ulid(),
+    newsLetterSubscriberId: z.ulid(),
   }),
 });
 

@@ -71,16 +71,10 @@ export class NewsletterSubscriberController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { subscriberId },
-    } = await req.validate(validator.destroy);
-
+    await req.validate(validator.destroy);
     const subscriber = req.modelOrFail('newsLetterSubscriber');
-    if (subscriber.id !== subscriberId) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Subscriber not found.');
-    }
 
-    await this.subscriberService.removeSubscriber(subscriberId);
+    await this.subscriberService.removeSubscriber(subscriber.id);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
