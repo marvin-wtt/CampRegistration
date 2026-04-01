@@ -30,6 +30,18 @@
         />
       </q-card-section>
 
+      <q-card-section>
+        <q-input
+          v-model="note"
+          :label="t('field.note.label')"
+          :hint="t('field.note.hint')"
+          autogrow
+          dense
+          outlined
+          type="textarea"
+        />
+      </q-card-section>
+
       <q-card-actions align="right">
         <q-btn
           :label="t('action.cancel')"
@@ -89,10 +101,12 @@ const personName = computed<string>(() => {
 });
 
 const confirmationMessage = ref<boolean>(true);
+const note = ref<string>('');
 
 function onConfirm() {
   onDialogOK({
     suppressMessage: !confirmationMessage.value,
+    note: note.value || undefined,
   });
 }
 </script>
@@ -107,6 +121,9 @@ text: 'Are you sure you want to delete the registration of {name}? This action c
 field:
   sendAutomatedMessage:
     label: 'Send automated confirmation message'
+  note:
+    label: 'Note (optional)'
+    hint: 'Add a short note about why this registration is being deleted'
 
 action:
   delete: 'Delete'
@@ -121,6 +138,9 @@ text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} löschen möchten? Die
 field:
   sendAutomatedMessage:
     label: 'Automatische Bestätigungsnachricht senden'
+  note:
+    label: 'Notiz (optional)'
+    hint: 'Fügen Sie eine kurze Notiz hinzu, warum diese Anmeldung gelöscht wird'
 
 action:
   delete: 'Löschen'
@@ -135,6 +155,9 @@ text: "Êtes-vous sûr de vouloir supprimer l'inscription de {name} ? Cette acti
 field:
   sendAutomatedMessage:
     label: 'Envoyer un message de confirmation automatisé'
+  note:
+    label: 'Note (optionnelle)'
+    hint: 'Ajoutez une courte note expliquant pourquoi cette inscription est supprimée'
 
 action:
   delete: 'Supprimer'
@@ -149,6 +172,9 @@ text: 'Czy na pewno chcesz usunąć rejestrację {name}? Tej akcji nie można co
 field:
   sendAutomatedMessage:
     label: 'Wyślij zautomatyzowaną wiadomość potwierdzającą'
+  note:
+    label: 'Notatka (opcjonalna)'
+    hint: 'Dodaj krótką notatkę, dlaczego ta rejestracja jest usuwana'
 
 action:
   delete: 'Usuń'
@@ -162,6 +188,9 @@ text: 'Opravdu chcete smazat registraci {name}? Tuto akci nelze vrátit zpět.'
 field:
   sendAutomatedMessage:
     label: 'Odeslat automatickou potvrzovací zprávu'
+  note:
+    label: 'Poznámka (volitelná)'
+    hint: 'Přidejte krátkou poznámku, proč je tato registrace mazána'
 
 action:
   delete: 'Smazat'

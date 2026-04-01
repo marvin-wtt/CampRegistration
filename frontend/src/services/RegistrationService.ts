@@ -1,7 +1,9 @@
 import type {
   Registration,
   RegistrationCreateData,
+  RegistrationDeleteData,
   RegistrationDeleteQuery,
+  RegistrationLog,
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
@@ -20,6 +22,17 @@ export function useRegistrationService() {
   ): Promise<Registration> {
     const response = await api.get(
       `camps/${campId}/registrations/${registrationId}/`,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function fetchRegistrationLogs(
+    campId: string,
+    registrationId: string,
+  ): Promise<RegistrationLog[]> {
+    const response = await api.get(
+      `camps/${campId}/registrations/${registrationId}/logs`,
     );
 
     return response?.data?.data;
@@ -53,15 +66,18 @@ export function useRegistrationService() {
     campId: string,
     registrationId: string,
     params?: RegistrationDeleteQuery,
+    data?: RegistrationDeleteData,
   ): Promise<void> {
     await api.delete(`camps/${campId}/registrations/${registrationId}/`, {
       params,
+      data,
     });
   }
 
   return {
     fetchRegistrations,
     fetchRegistration,
+    fetchRegistrationLogs,
     createRegistration,
     updateRegistration,
     deleteRegistration,

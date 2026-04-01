@@ -102,6 +102,7 @@ function showDetails(): void {
     component: RegistrationDetailsDialog,
     componentProps: {
       registration: registration.value,
+      campId: campData.value?.id,
     },
   });
 }
@@ -115,9 +116,10 @@ function deleteItem(): void {
         camp: campData.value,
       },
     })
-    .onOk((params: RegistrationDeleteQuery) => {
+    .onOk((params: RegistrationDeleteQuery & { note?: string }) => {
       const id = cellProps.row.id;
-      void registrationStore.deleteData(id, params);
+      const { note, ...queryParams } = params;
+      void registrationStore.deleteData(id, queryParams, { note });
     });
 }
 
@@ -130,16 +132,17 @@ function accept(): void {
         camp: campData.value,
       },
     })
-    .onOk((params: RegistrationUpdateQuery) => {
-      const id = cellProps.row.id;
-      void registrationStore.updateData(
-        id,
-        {
-          status: 'ACCEPTED',
-        },
-        params,
-      );
-    });
+    .onOk(
+      (params: RegistrationUpdateQuery & { note?: string }) => {
+        const id = cellProps.row.id;
+        const { note, ...queryParams } = params;
+        void registrationStore.updateData(
+          id,
+          { status: 'ACCEPTED', note },
+          queryParams,
+        );
+      },
+    );
 }
 
 function editItem(): void {
@@ -152,9 +155,12 @@ function editItem(): void {
         uploadFileFn: uploadFile,
       },
     })
-    .onOk((payload) => {
+    .onOk((payload: { data: Registration['data']; note?: string }) => {
       const id = cellProps.row.id;
-      void registrationStore.updateData(id, { data: payload });
+      void registrationStore.updateData(id, {
+        data: payload.data,
+        note: payload.note,
+      });
     });
 }
 

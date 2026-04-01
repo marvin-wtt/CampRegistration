@@ -4,6 +4,7 @@ import {
   RegistrationResource,
   type RegistrationWithBed,
 } from './registration.resource.js';
+import { RegistrationLogResource } from './registration-log.resource.js';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
 import {
@@ -17,11 +18,14 @@ import {
 } from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
 import { inject } from 'inversify';
+import { RegistrationLogService } from '#app/registration/registration-log.service';
 
 export class RegistrationController extends BaseController {
   constructor(
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService = registrationService,
+    @inject(RegistrationLogService)
+    private readonly registrationLogService: RegistrationLogService,
   ) {
     super();
   }
@@ -59,6 +63,7 @@ export class RegistrationController extends BaseController {
         locale,
       },
       req.sessionId,
+      null,
     );
 
     // Notify participant
@@ -80,12 +85,13 @@ export class RegistrationController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      body: { data, customData, status },
+      body: { data, customData, status, note },
       params: { registrationId },
       query: { suppressMessage },
     } = await req.validate(validator.update);
     const camp = req.modelOrFail('camp');
     const previousRegistration = req.modelOrFail('registration');
+    const userId = req.authUserId();
 
     const updateData = {
       data,
@@ -98,6 +104,8 @@ export class RegistrationController extends BaseController {
       registrationId,
       updateData,
       req.sessionId,
+      userId,
+      note,
     );
 
     if (!suppressMessage) {
@@ -125,17 +133,32 @@ export class RegistrationController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const {
+      body: { note },
       query: { suppressMessage },
     } = await req.validate(validator.destroy);
     const camp = req.modelOrFail('camp');
     const registration = req.modelOrFail('registration');
+    const userId = req.authUserId();
 
-    await this.registrationService.deleteRegistration(registration);
+    await this.registrationService.deleteRegistration(registration, userId, note);
 
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(camp, registration);
     }
 
     res.status(httpStatus.NO_CONTENT).send();
+  }
+
+  async logs(req: Request, res: Response) {
+    const {
+      params: { campId, registrationId },
+    } = await req.validate(validator.logs);
+
+    const logEntries = await this.registrationLogService.getLogsByRegistrationId(
+      campId,
+      registrationId,
+    );
+
+    res.resource(RegistrationLogResource.collection(logEntries));
   }
 }

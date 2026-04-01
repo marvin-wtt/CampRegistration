@@ -47,5 +47,11 @@ export class RegistrationRouter extends ModuleRouter {
       guard(campManager('camp.registrations.delete')),
       controller(registrationController, 'destroy'),
     );
+    this.router.get(
+      '/:registrationId/logs',
+      auth(),
+      guard(campManager('camp.registrations.view')),
+      controller(registrationController, 'logs'),
+    );
   }
 }

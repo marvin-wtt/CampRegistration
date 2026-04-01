@@ -27,8 +27,9 @@ model User {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime? @updatedAt @map("updated_at")
 
-  campRoles CampManager[]
-  tokens    Token[]
+  campRoles        CampManager[]
+  tokens           Token[]
+  registrationLogs RegistrationLog[]
 
   @@map("users")
 }
@@ -140,12 +141,39 @@ model Registration {
   createdAt   DateTime           @default(now()) @map("created_at")
   updatedAt   DateTime?          @updatedAt @map("updated_at")
 
-  camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  camp     Camp              @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed      Bed?
   files    File[]
   messages Message[]
+  logs     RegistrationLog[]
 
   @@map("registrations")
+}
+
+enum RegistrationLogAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model RegistrationLog {
+  id             String                @id @unique @default(ulid()) @db.Char(26)
+  registrationId String                @map("registration_id") @db.Char(26)
+  campId         String                @map("camp_id") @db.Char(26)
+  action         RegistrationLogAction
+  /// ![Record<string, unknown> | null]
+  before         Json?                 @db.Json
+  /// ![Record<string, unknown> | null]
+  after          Json?                 @db.Json
+  note           String?               @db.Text
+  userId         String?               @map("user_id") @db.Char(26)
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([registrationId], map: "registration_logs_registration_id_index")
+  @@map("registration_logs")
 }
 
 model Room {
