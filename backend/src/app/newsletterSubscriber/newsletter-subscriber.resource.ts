@@ -1,4 +1,4 @@
-import type { NewsletterSubscriber } from '@prisma/client';
+import type { NewsletterSubscriber } from '#generated/prisma/client';
 import type { NewsletterSubscriber as NewsletterSubscriberData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
