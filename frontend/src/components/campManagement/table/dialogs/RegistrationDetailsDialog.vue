@@ -3,264 +3,268 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card style="min-width: min(580px, 95vw); max-width: 640px">
-      <q-bar class="text-white">
-        <q-icon name="person" />
-        <div class="q-ml-sm text-subtitle1 text-weight-medium ellipsis">
+    <q-card style="min-width: min(580px, 95vw); max-width: min(900px, 95vw)">
+      <!-- Header -->
+      <q-card-section class="row items-center no-wrap q-py-sm">
+        <q-icon
+          color="primary"
+          name="person"
+          size="sm"
+        />
+        <div class="col-grow q-ml-sm text-h6 ellipsis">
           {{ personName }}
         </div>
 
-        <q-space />
-
-        <q-badge
+        <q-chip
           :color="statusColor"
-          :label="t(`status.${registration.status.toLowerCase()}`)"
-          class="q-mr-sm"
-          rounded
-        />
+          class="q-ml-sm q-mr-xs"
+          dense
+          size="sm"
+          text-color="white"
+        >
+          {{ t(`status.${registration.status.toLowerCase()}`) }}
+        </q-chip>
 
         <q-btn
           v-close-popup
           dense
           flat
           icon="close"
+          round
           @click="onDialogCancel"
         >
           <q-tooltip>
             {{ t('action.close') }}
           </q-tooltip>
         </q-btn>
-      </q-bar>
+      </q-card-section>
+
+      <q-separator />
 
       <q-scroll-area style="height: min(520px, 65vh)">
-        <!-- Personal Information -->
-        <q-list>
-          <q-item-label header>
-            {{ t('section.personalInfo') }}
-          </q-item-label>
-
-          <q-item>
-            <q-item-section
-              avatar
-              top
-            >
-              <q-icon
-                color="primary"
-                name="badge"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label overline>
-                {{ t('field.name') }}
+        <div class="row">
+          <!-- Left column: personal info, contact, address -->
+          <div class="col-12 col-md-6">
+            <!-- Personal Information -->
+            <q-list>
+              <q-item-label header>
+                {{ t('section.personalInfo') }}
               </q-item-label>
-              <q-item-label>
-                {{ personName }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
 
-          <q-item v-if="registration.computedData.dateOfBirth">
-            <q-item-section
-              avatar
-              top
-            >
-              <q-icon
-                color="primary"
-                name="cake"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label overline>
-                {{ t('field.dateOfBirth') }}
-              </q-item-label>
-              <q-item-label>{{ formattedDateOfBirth }}</q-item-label>
-            </q-item-section>
-          </q-item>
-
-          <q-item v-if="registration.computedData.gender">
-            <q-item-section
-              avatar
-              top
-            >
-              <q-icon
-                color="primary"
-                name="wc"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label overline>
-                {{ t('field.gender') }}
-              </q-item-label>
-              <q-item-label>
-                {{ registration.computedData.gender }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-
-          <q-item v-if="registration.computedData.role">
-            <q-item-section
-              avatar
-              top
-            >
-              <q-icon
-                color="primary"
-                name="work"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label overline>
-                {{ t('field.role') }}
-              </q-item-label>
-              <q-item-label>{{ registration.computedData.role }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-
-        <!-- Contact -->
-        <template v-if="registration.computedData.emails?.length">
-          <q-separator inset />
-          <q-list>
-            <q-item-label header>
-              {{ t('section.contact') }}
-            </q-item-label>
-
-            <q-item>
-              <q-item-section
-                avatar
-                top
-              >
-                <q-icon
-                  color="primary"
-                  name="email"
-                />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label overline>
-                  {{ t('field.email') }}
-                </q-item-label>
-                <q-item-label
-                  v-for="email in registration.computedData.emails"
-                  :key="email"
+              <q-item>
+                <q-item-section
+                  avatar
+                  top
                 >
-                  {{ email }}
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </template>
+                  <q-icon
+                    color="primary"
+                    name="badge"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label overline>
+                    {{ t('field.name') }}
+                  </q-item-label>
+                  <q-item-label>
+                    {{ personName }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
 
-        <!-- Address -->
-        <template v-if="hasAddress">
-          <q-separator inset />
-          <q-list>
-            <q-item-label header>
-              {{ t('section.address') }}
-            </q-item-label>
-
-            <q-item>
-              <q-item-section
-                avatar
-                top
-              >
-                <q-icon
-                  color="primary"
-                  name="home"
-                />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label v-if="registration.computedData.address.street">
-                  {{ registration.computedData.address.street }}
-                </q-item-label>
-                <q-item-label
-                  v-if="
-                    registration.computedData.address.zipCode ||
-                    registration.computedData.address.city
-                  "
+              <q-item v-if="registration.computedData.dateOfBirth">
+                <q-item-section
+                  avatar
+                  top
                 >
-                  {{
-                    [
-                      registration.computedData.address.zipCode,
-                      registration.computedData.address.city,
-                    ]
-                      .filter(Boolean)
-                      .join(' ')
-                  }}
+                  <q-icon
+                    color="primary"
+                    name="cake"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label overline>
+                    {{ t('field.dateOfBirth') }}
+                  </q-item-label>
+                  <q-item-label>{{ formattedDateOfBirth }}</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-item v-if="registration.computedData.gender">
+                <q-item-section
+                  avatar
+                  top
+                >
+                  <q-icon
+                    color="primary"
+                    name="wc"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label overline>
+                    {{ t('field.gender') }}
+                  </q-item-label>
+                  <q-item-label>
+                    {{ translatedGender }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-item v-if="registration.computedData.role">
+                <q-item-section
+                  avatar
+                  top
+                >
+                  <q-icon
+                    color="primary"
+                    name="work"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label overline>
+                    {{ t('field.role') }}
+                  </q-item-label>
+                  <q-item-label>{{ translatedRole }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+
+            <!-- Contact -->
+            <template v-if="registration.computedData.emails?.length">
+              <q-separator inset />
+              <q-list>
+                <q-item-label header>
+                  {{ t('section.contact') }}
                 </q-item-label>
-                <q-item-label v-if="registration.computedData.address.country">
-                  {{ registration.computedData.address.country }}
+
+                <q-item>
+                  <q-item-section
+                    avatar
+                    top
+                  >
+                    <q-icon
+                      color="primary"
+                      name="email"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label overline>
+                      {{ t('field.email') }}
+                    </q-item-label>
+                    <q-item-label
+                      v-for="email in registration.computedData.emails"
+                      :key="email"
+                    >
+                      {{ email }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+
+            <!-- Address -->
+            <template v-if="hasAddress">
+              <q-separator inset />
+              <q-list>
+                <q-item-label header>
+                  {{ t('section.address') }}
                 </q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </template>
 
-        <!-- Registration Metadata -->
-        <q-separator inset />
-        <q-list>
-          <q-item-label header>
-            {{ t('section.registration') }}
-          </q-item-label>
+                <q-item>
+                  <q-item-section
+                    avatar
+                    top
+                  >
+                    <q-icon
+                      color="primary"
+                      name="home"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label v-if="registration.computedData.address.street">
+                      {{ registration.computedData.address.street }}
+                    </q-item-label>
+                    <q-item-label
+                      v-if="
+                        registration.computedData.address.zipCode ||
+                        registration.computedData.address.city
+                      "
+                    >
+                      {{
+                        [
+                          registration.computedData.address.zipCode,
+                          registration.computedData.address.city,
+                        ]
+                          .filter(Boolean)
+                          .join(' ')
+                      }}
+                    </q-item-label>
+                    <q-item-label v-if="registration.computedData.address.country">
+                      {{ registration.computedData.address.country }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+          </div>
 
-          <q-item>
-            <q-item-section
-              avatar
-              top
+          <!-- Right column: room + timeline -->
+          <div class="col-12 col-md-6 timeline-column">
+            <!-- Room (registration metadata) -->
+            <template v-if="registration.room">
+              <q-list>
+                <q-item-label header>
+                  {{ t('section.registration') }}
+                </q-item-label>
+
+                <q-item>
+                  <q-item-section
+                    avatar
+                    top
+                  >
+                    <q-icon
+                      color="primary"
+                      name="hotel"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label overline>
+                      {{ t('field.room') }}
+                    </q-item-label>
+                    <q-item-label>
+                      {{ to(registration.room) }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <q-separator inset />
+            </template>
+
+            <!-- Timeline -->
+            <q-list>
+              <q-item-label header>
+                {{ t('section.timeline') }}
+              </q-item-label>
+            </q-list>
+
+            <q-timeline
+              class="q-px-md"
+              color="primary"
+              layout="comfortable"
             >
-              <q-icon
-                color="primary"
-                name="schedule"
+              <q-timeline-entry
+                :subtitle="formattedCreatedAt"
+                :title="t('timeline.registered')"
+                color="positive"
+                icon="how_to_reg"
               />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label overline>
-                {{ t('field.createdAt') }}
-              </q-item-label>
-              <q-item-label>
-                {{ formattedCreatedAt }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
+            </q-timeline>
 
-          <q-item v-if="registration.room">
-            <q-item-section
-              avatar
-              top
-            >
-              <q-icon
-                color="primary"
-                name="hotel"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label overline>
-                {{ t('field.room') }}
-              </q-item-label>
-              <q-item-label>
-                {{ to(registration.room) }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-
-        <!-- Timeline (placeholder for future events) -->
-        <q-separator inset />
-        <q-list>
-          <q-item-label header>
-            {{ t('section.timeline') }}
-          </q-item-label>
-
-          <q-item class="justify-center q-py-md">
-            <q-item-section class="items-center text-grey-6">
-              <q-icon
-                name="timeline"
-                size="2rem"
-              />
-              <q-item-label class="q-mt-sm">
-                {{ t('timeline.empty') }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
+            <p class="text-caption text-grey-6 text-center q-px-md q-pb-md">
+              {{ t('timeline.moreComingSoon') }}
+            </p>
+          </div>
+        </div>
       </q-scroll-area>
     </q-card>
   </q-dialog>
@@ -294,8 +298,8 @@ const statusColor = computed<string>(() => {
   switch (registration.status) {
     case 'ACCEPTED':
       return 'positive';
+    case 'PENDING':
     case 'WAITLISTED':
-      return 'info';
     default:
       return 'warning';
   }
@@ -304,6 +308,22 @@ const statusColor = computed<string>(() => {
 const hasAddress = computed<boolean>(() => {
   const addr = registration.computedData.address;
   return !!(addr.street || addr.city || addr.zipCode || addr.country);
+});
+
+const translatedGender = computed<string>(() => {
+  const g = registration.computedData.gender;
+  if (!g) return '';
+  const key = `gender.${g}`;
+  const result = t(key);
+  return result === key ? g : result;
+});
+
+const translatedRole = computed<string>(() => {
+  const r = registration.computedData.role;
+  if (!r) return '';
+  const key = `role.${r}`;
+  const result = t(key);
+  return result === key ? r : result;
 });
 
 const formattedDateOfBirth = computed<string>(() => {
@@ -348,11 +368,20 @@ field:
   gender: 'Gender'
   role: 'Role'
   email: 'Email'
-  createdAt: 'Registered On'
   room: 'Room'
 
+gender:
+  m: 'Male'
+  f: 'Female'
+  d: 'Diverse'
+
+role:
+  participant: 'Participant'
+  counselor: 'Counselor'
+
 timeline:
-  empty: 'No timeline events yet.'
+  registered: 'Registered'
+  moreComingSoon: 'More timeline events will be available in a future update.'
 
 action:
   close: 'Close'
@@ -377,11 +406,20 @@ field:
   gender: 'Geschlecht'
   role: 'Rolle'
   email: 'E-Mail'
-  createdAt: 'Angemeldet am'
   room: 'Zimmer'
 
+gender:
+  m: 'Männlich'
+  f: 'Weiblich'
+  d: 'Divers'
+
+role:
+  participant: 'Teilnehmer'
+  counselor: 'Betreuer'
+
 timeline:
-  empty: 'Noch keine Ereignisse.'
+  registered: 'Angemeldet'
+  moreComingSoon: 'Weitere Zeitstrahl-Einträge werden in einem zukünftigen Update verfügbar sein.'
 
 action:
   close: 'Schließen'
@@ -406,11 +444,20 @@ field:
   gender: 'Genre'
   role: 'Rôle'
   email: 'E-mail'
-  createdAt: 'Inscrit le'
   room: 'Chambre'
 
+gender:
+  m: 'Masculin'
+  f: 'Féminin'
+  d: 'Divers'
+
+role:
+  participant: 'Participant'
+  counselor: 'Conseiller'
+
 timeline:
-  empty: "Aucun événement pour l'instant."
+  registered: 'Inscrit'
+  moreComingSoon: "D'autres événements seront disponibles dans une future mise à jour."
 
 action:
   close: 'Fermer'
@@ -435,11 +482,20 @@ field:
   gender: 'Płeć'
   role: 'Rola'
   email: 'E-mail'
-  createdAt: 'Zarejestrowano'
   room: 'Pokój'
 
+gender:
+  m: 'Mężczyzna'
+  f: 'Kobieta'
+  d: 'Inna'
+
+role:
+  participant: 'Uczestnik'
+  counselor: 'Opiekun'
+
 timeline:
-  empty: 'Brak wydarzeń w historii.'
+  registered: 'Zarejestrowano'
+  moreComingSoon: 'Więcej wpisów będzie dostępnych w przyszłej aktualizacji.'
 
 action:
   close: 'Zamknij'
@@ -464,14 +520,29 @@ field:
   gender: 'Pohlaví'
   role: 'Role'
   email: 'E-mail'
-  createdAt: 'Zaregistrováno'
   room: 'Pokoj'
 
+gender:
+  m: 'Muž'
+  f: 'Žena'
+  d: 'Jiné'
+
+role:
+  participant: 'Účastník'
+  counselor: 'Pečovatel'
+
 timeline:
-  empty: 'Zatím žádné události.'
+  registered: 'Zaregistrováno'
+  moreComingSoon: 'Další záznamy budou dostupné v budoucí aktualizaci.'
 
 action:
   close: 'Zavřít'
 </i18n>
 
-<style scoped></style>
+<style scoped>
+@media (min-width: 1024px) {
+  .timeline-column {
+    border-left: 1px solid rgba(0, 0, 0, 0.12);
+  }
+}
+</style>
