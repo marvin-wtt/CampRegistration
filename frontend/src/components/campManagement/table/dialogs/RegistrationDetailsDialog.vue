@@ -4,7 +4,7 @@
     @hide="onDialogHide"
   >
     <q-card style="min-width: min(580px, 95vw); max-width: 640px">
-      <q-bar class="bg-primary text-white">
+      <q-bar class="text-white">
         <q-icon name="person" />
         <div class="q-ml-sm text-subtitle1 text-weight-medium ellipsis">
           {{ personName }}
@@ -26,7 +26,9 @@
           icon="close"
           @click="onDialogCancel"
         >
-          <q-tooltip>{{ t('action.close') }}</q-tooltip>
+          <q-tooltip>
+            {{ t('action.close') }}
+          </q-tooltip>
         </q-btn>
       </q-bar>
 
@@ -51,7 +53,9 @@
               <q-item-label overline>
                 {{ t('field.name') }}
               </q-item-label>
-              <q-item-label>{{ personName }}</q-item-label>
+              <q-item-label>
+                {{ personName }}
+              </q-item-label>
             </q-item-section>
           </q-item>
 
@@ -87,7 +91,9 @@
               <q-item-label overline>
                 {{ t('field.gender') }}
               </q-item-label>
-              <q-item-label>{{ registration.computedData.gender }}</q-item-label>
+              <q-item-label>
+                {{ registration.computedData.gender }}
+              </q-item-label>
             </q-item-section>
           </q-item>
 
@@ -112,7 +118,7 @@
 
         <!-- Contact -->
         <template v-if="registration.computedData.emails?.length">
-          <q-separator inset="item" />
+          <q-separator inset />
           <q-list>
             <q-item-label header>
               {{ t('section.contact') }}
@@ -145,7 +151,7 @@
 
         <!-- Address -->
         <template v-if="hasAddress">
-          <q-separator inset="item" />
+          <q-separator inset />
           <q-list>
             <q-item-label header>
               {{ t('section.address') }}
@@ -162,9 +168,7 @@
                 />
               </q-item-section>
               <q-item-section>
-                <q-item-label
-                  v-if="registration.computedData.address.street"
-                >
+                <q-item-label v-if="registration.computedData.address.street">
                   {{ registration.computedData.address.street }}
                 </q-item-label>
                 <q-item-label
@@ -182,9 +186,7 @@
                       .join(' ')
                   }}
                 </q-item-label>
-                <q-item-label
-                  v-if="registration.computedData.address.country"
-                >
+                <q-item-label v-if="registration.computedData.address.country">
                   {{ registration.computedData.address.country }}
                 </q-item-label>
               </q-item-section>
@@ -193,7 +195,7 @@
         </template>
 
         <!-- Registration Metadata -->
-        <q-separator inset="item" />
+        <q-separator inset />
         <q-list>
           <q-item-label header>
             {{ t('section.registration') }}
@@ -213,11 +215,13 @@
               <q-item-label overline>
                 {{ t('field.createdAt') }}
               </q-item-label>
-              <q-item-label>{{ formattedCreatedAt }}</q-item-label>
+              <q-item-label>
+                {{ formattedCreatedAt }}
+              </q-item-label>
             </q-item-section>
           </q-item>
 
-          <q-item v-if="roomName">
+          <q-item v-if="registration.room">
             <q-item-section
               avatar
               top
@@ -231,13 +235,15 @@
               <q-item-label overline>
                 {{ t('field.room') }}
               </q-item-label>
-              <q-item-label>{{ roomName }}</q-item-label>
+              <q-item-label>
+                {{ to(registration.room) }}
+              </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
 
         <!-- Timeline (placeholder for future events) -->
-        <q-separator />
+        <q-separator inset />
         <q-list>
           <q-item-label header>
             {{ t('section.timeline') }}
@@ -256,17 +262,6 @@
           </q-item>
         </q-list>
       </q-scroll-area>
-
-      <q-separator />
-      <q-card-actions align="right">
-        <q-btn
-          :label="t('action.close')"
-          color="primary"
-          outline
-          rounded
-          @click="onDialogCancel"
-        />
-      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
@@ -275,14 +270,13 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
-import type {
-  Registration,
-  Translatable,
-} from '@camp-registration/common/entities';
+import type { Registration } from '@camp-registration/common/entities';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t, locale } = useI18n();
+const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 
 const { registration } = defineProps<{
@@ -332,15 +326,6 @@ const formattedCreatedAt = computed<string>(() => {
     hour: '2-digit',
     minute: '2-digit',
   });
-});
-
-const roomName = computed<string | null>(() => {
-  const room = registration.room as Translatable | null | undefined;
-  if (!room) return null;
-  if (typeof room === 'string') return room;
-  const roomRecord = room as Record<string, string>;
-  const lang = locale.value.split('-').at(0) ?? locale.value;
-  return roomRecord[lang] ?? Object.values(roomRecord)[0] ?? null;
 });
 </script>
 
@@ -407,12 +392,12 @@ section:
   personalInfo: 'Informations personnelles'
   contact: 'Contact'
   address: 'Adresse'
-  registration: "Inscription"
+  registration: 'Inscription'
   timeline: 'Historique'
 
 status:
   pending: 'En attente'
-  waitlisted: 'Liste d'attente'
+  waitlisted: "Liste d'attente"
   accepted: 'Accepté'
 
 field:
