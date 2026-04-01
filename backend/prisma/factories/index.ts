@@ -10,3 +10,6 @@ export * from './bed.js';
 export * from './table-template.js';
 export * from './message.js';
 export * from './message-template.js';
+export * from './newsletter.js';
+export * from './newsletter-subscriber.js';
+export * from './newsletter-message.js';
