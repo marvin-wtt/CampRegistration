@@ -13,6 +13,7 @@ import type {
   Newsletter,
   NewsletterManager,
   NewsletterSubscriber,
+  NewsletterMessage,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
@@ -32,7 +33,8 @@ declare global {
       file?: File;
       newsletter?: Newsletter;
       newsletterManager?: NewsletterManager;
-      subscriber?: NewsletterSubscriber;
+      newsletterMessage?: NewsletterMessage;
+      newsLetterSubscriber?: NewsletterSubscriber;
     }
 
     interface AuthUser {

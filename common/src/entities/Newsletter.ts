@@ -25,3 +25,11 @@ export interface NewsletterSendData {
 export interface NewsLetterQuery {
   view?: 'all' | 'assigned';
 }
+
+export interface NewsletterMessage {
+  id: string;
+  subject: string;
+  body: string;
+  recipientCount: number;
+  sentAt: string;
+}

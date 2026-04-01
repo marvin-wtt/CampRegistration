@@ -2,6 +2,7 @@ import { api } from 'boot/axios';
 import type {
   Newsletter,
   NewsletterCreateData,
+  NewsletterMessage,
   NewsletterSendData,
   NewsletterUpdateData,
   NewsLetterQuery,
@@ -47,6 +48,20 @@ export function useNewsletterService() {
     return response?.data?.data;
   }
 
+  async function fetchNewsletterMessages(
+    newsletterId: string,
+  ): Promise<NewsletterMessage[]> {
+    const response = await api.get(`newsletters/${newsletterId}/messages/`);
+    return response?.data?.data;
+  }
+
+  async function deleteNewsletterMessage(
+    newsletterId: string,
+    messageId: string,
+  ): Promise<void> {
+    await api.delete(`newsletters/${newsletterId}/messages/${messageId}/`);
+  }
+
   return {
     fetchNewsletters,
     fetchNewsletter,
@@ -54,5 +69,7 @@ export function useNewsletterService() {
     updateNewsletter,
     deleteNewsletter,
     sendNewsletter,
+    fetchNewsletterMessages,
+    deleteNewsletterMessage,
   };
 }

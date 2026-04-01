@@ -6,13 +6,16 @@
   >
     <div class="column col-sm-10 col-md-9 col-lg-8 col-12">
       <div class="row justify-between items-center q-mb-lg">
-        <div class="text-h5 text-weight-medium">{{ t('title') }}</div>
+        <div class="text-h5 text-weight-medium">
+          {{ t('title') }}
+        </div>
         <q-btn
           color="primary"
           icon="add"
           :label="t('action.create')"
           rounded
           unelevated
+          no-caps
           @click="showCreateDialog"
         />
       </div>
@@ -29,42 +32,62 @@
           <q-card
             flat
             bordered
-            class="newsletter-card full-height"
+            class="newsletter-card cursor-pointer full-height"
+            @click="
+              router.push({
+                name: 'management.newsletter',
+                params: { newsletterId: newsletter.id },
+              })
+            "
           >
-            <q-card-section
-              class="cursor-pointer"
-              @click="$router.push({ name: 'management.newsletter', params: { newsletterId: newsletter.id } })"
-            >
-              <div class="text-subtitle1 text-weight-medium">{{ newsletter.name }}</div>
-              <div
-                v-if="newsletter.description"
-                class="text-body2 text-grey q-mt-xs description-clamp"
-              >
-                {{ newsletter.description }}
+            <q-card-section class="q-pa-md">
+              <div class="row items-start no-wrap">
+                <div class="col">
+                  <div class="text-subtitle1 text-weight-medium ellipsis">
+                    {{ newsletter.name }}
+                  </div>
+                  <div
+                    v-if="newsletter.description"
+                    class="text-body2 text-grey-6 q-mt-xs description-clamp"
+                  >
+                    {{ newsletter.description }}
+                  </div>
+                </div>
+                <q-btn
+                  flat
+                  round
+                  icon="more_vert"
+                  color="grey-6"
+                  size="sm"
+                  class="q-ml-xs"
+                  @click.stop
+                >
+                  <q-menu
+                    anchor="bottom right"
+                    self="top right"
+                  >
+                    <q-list style="min-width: 140px">
+                      <q-item
+                        v-close-popup
+                        clickable
+                        @click="showDeleteDialog(newsletter)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="delete_outline"
+                            color="negative"
+                            size="xs"
+                          />
+                        </q-item-section>
+                        <q-item-section class="text-negative">
+                          {{ t('action.delete') }}
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
               </div>
             </q-card-section>
-
-            <q-separator />
-
-            <q-card-actions>
-              <q-btn
-                flat
-                :label="t('action.manage')"
-                color="primary"
-                icon-right="arrow_forward"
-                :to="{ name: 'management.newsletter', params: { newsletterId: newsletter.id } }"
-                no-caps
-              />
-              <q-space />
-              <q-btn
-                flat
-                round
-                icon="delete"
-                color="negative"
-                size="sm"
-                @click.prevent="showDeleteDialog(newsletter)"
-              />
-            </q-card-actions>
           </q-card>
         </div>
       </div>
@@ -78,13 +101,16 @@
           size="5rem"
           color="grey-4"
         />
-        <div class="text-subtitle1 text-grey-6 text-center">{{ t('empty') }}</div>
+        <div class="text-subtitle1 text-grey-6 text-center">
+          {{ t('empty') }}
+        </div>
         <q-btn
           color="primary"
           icon="add"
           :label="t('action.create')"
           rounded
           unelevated
+          no-caps
           @click="showCreateDialog"
         />
       </div>
@@ -99,10 +125,15 @@ import { useNewsletterStore } from 'stores/newsletter-store';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import type { Newsletter, NewsletterCreateData } from '@camp-registration/common/entities';
+import type {
+  Newsletter,
+  NewsletterCreateData,
+} from '@camp-registration/common/entities';
 import NewsletterCreateDialog from 'components/newsletter/NewsletterCreateDialog.vue';
+import { useRouter } from 'vue-router';
 
 const { t } = useI18n();
+const router = useRouter();
 const quasar = useQuasar();
 const newsletterStore = useNewsletterStore();
 
@@ -110,18 +141,13 @@ onMounted(async () => {
   await newsletterStore.fetchData();
 });
 
-const newsletters = computed<Newsletter[]>(() => {
-  return newsletterStore.data ?? [];
-});
-
+const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
 const isLoading = computed<boolean>(() => newsletterStore.isLoading);
 const error = computed<string | null>(() => newsletterStore.error);
 
 function showCreateDialog() {
   quasar
-    .dialog({
-      component: NewsletterCreateDialog,
-    })
+    .dialog({ component: NewsletterCreateDialog })
     .onOk((data: NewsletterCreateData) => {
       void newsletterStore.createData(data);
     });
@@ -148,8 +174,8 @@ function showDeleteDialog(newsletter: Newsletter) {
 title: 'Newsletters'
 empty: 'No newsletters yet. Create one to get started.'
 action:
-  create: 'Create Newsletter'
-  manage: 'Manage'
+  create: 'New Newsletter'
+  delete: 'Delete'
 dialog:
   delete:
     title: 'Delete Newsletter'
@@ -161,8 +187,8 @@ dialog:
 title: 'Newsletter'
 empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
 action:
-  create: 'Newsletter erstellen'
-  manage: 'Verwalten'
+  create: 'Neuer Newsletter'
+  delete: 'Löschen'
 dialog:
   delete:
     title: 'Newsletter löschen'
@@ -174,8 +200,8 @@ dialog:
 title: 'Newsletters'
 empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
 action:
-  create: 'Créer une newsletter'
-  manage: 'Gérer'
+  create: 'Nouvelle newsletter'
+  delete: 'Supprimer'
 dialog:
   delete:
     title: 'Supprimer la newsletter'
@@ -187,8 +213,8 @@ dialog:
 title: 'Newslettery'
 empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
 action:
-  create: 'Utwórz newsletter'
-  manage: 'Zarządzaj'
+  create: 'Nowy newsletter'
+  delete: 'Usuń'
 dialog:
   delete:
     title: 'Usuń newsletter'
@@ -200,8 +226,8 @@ dialog:
 title: 'Newslettery'
 empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
 action:
-  create: 'Vytvořit newsletter'
-  manage: 'Spravovat'
+  create: 'Nový newsletter'
+  delete: 'Smazat'
 dialog:
   delete:
     title: 'Smazat newsletter'
@@ -211,17 +237,19 @@ dialog:
 
 <style scoped>
 .newsletter-card {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 .newsletter-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-2px);
 }
 
 .description-clamp {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

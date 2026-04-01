@@ -75,7 +75,7 @@ export class NewsletterSubscriberController extends BaseController {
       params: { subscriberId },
     } = await req.validate(validator.destroy);
 
-    const subscriber = req.modelOrFail('subscriber');
+    const subscriber = req.modelOrFail('newsLetterSubscriber');
     if (subscriber.id !== subscriberId) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Subscriber not found.');
     }

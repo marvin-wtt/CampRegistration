@@ -1,6 +1,7 @@
 import httpStatus from 'http-status';
 import { NewsletterService } from './newsletter.service.js';
 import { NewsletterResource } from './newsletter.resource.js';
+import { NewsletterMessageService } from '#app/newsletterMessage/newsletter-message.service';
 import { NewsletterSubscriberService } from '#app/newsletterSubscriber/newsletter-subscriber.service';
 import { NewsletterMail } from './newsletter.mail.js';
 import validator from './newsletter.validation.js';
@@ -15,6 +16,8 @@ export class NewsletterController extends BaseController {
     private readonly newsletterService: NewsletterService,
     @inject(NewsletterSubscriberService)
     private readonly subscriberService: NewsletterSubscriberService,
+    @inject(NewsletterMessageService)
+    private readonly messageService: NewsletterMessageService,
   ) {
     super();
   }
@@ -92,6 +95,12 @@ export class NewsletterController extends BaseController {
         unsubscribeToken: subscriber.unsubscribeToken,
       });
     }
+
+    await this.messageService.recordMessage(newsletter.id, {
+      subject: body.subject,
+      body: body.body,
+      recipientCount: subscribers.length,
+    });
 
     res.json({ data: { queued: subscribers.length } });
   }
