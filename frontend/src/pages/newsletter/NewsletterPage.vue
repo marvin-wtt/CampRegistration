@@ -6,8 +6,13 @@
   >
     <div class="column col-sm-11 col-md-10 col-lg-9 col-12 q-gutter-y-lg">
       <!-- Header -->
-      <div class="row items-start justify-between">
+      <div class="row items-start justify-between no-wrap">
         <div class="col">
+          <div
+            class="text-overline text-grey-6 text-uppercase letter-spacing-1"
+          >
+            {{ t('header.label') }}
+          </div>
           <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
           <div
             v-if="newsletter?.description"
@@ -15,21 +20,25 @@
           >
             {{ newsletter.description }}
           </div>
-          <div class="row q-gutter-sm q-mt-sm">
-            <q-chip
-              dense
-              icon="people"
-              color="primary"
-              text-color="white"
-              :label="t('header.subscribers', { count: subscribers.length })"
-            />
-            <q-chip
-              dense
-              icon="send"
-              color="grey-7"
-              text-color="white"
-              :label="t('header.sent', { count: messages.length })"
-            />
+          <div
+            class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
+          >
+            <div class="row items-center q-gutter-x-xs">
+              <q-icon
+                name="people"
+                size="xs"
+              />
+              <span>{{
+                t('header.subscribers', { count: subscribers.length })
+              }}</span>
+            </div>
+            <div class="row items-center q-gutter-x-xs">
+              <q-icon
+                name="send"
+                size="xs"
+              />
+              <span>{{ t('header.sent', { count: messages.length }) }}</span>
+            </div>
           </div>
         </div>
         <q-btn
@@ -37,6 +46,7 @@
           round
           icon="edit"
           color="grey-7"
+          class="q-mt-sm"
           @click="showEditDialog"
         >
           <q-tooltip>{{ t('header.edit') }}</q-tooltip>
@@ -108,6 +118,7 @@
                   :placeholder="t('compose.bodyPlaceholder')"
                   outlined
                   rounded
+                  style="min-height: 200px"
                 />
               </div>
 
@@ -204,11 +215,21 @@
                     <div class="row items-center q-gutter-xs no-wrap">
                       <q-chip
                         dense
+                        outline
                         icon="people"
                         :label="String(message.recipientCount)"
-                        color="grey-2"
-                        text-color="grey-8"
+                        color="grey-6"
                       />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="forward"
+                        size="sm"
+                        @click.stop="useAsTemplate(message)"
+                      >
+                        <q-tooltip>{{ t('history.useAsTemplate') }}</q-tooltip>
+                      </q-btn>
                       <q-btn
                         flat
                         round
@@ -217,7 +238,9 @@
                         color="negative"
                         size="sm"
                         @click.stop="deleteMessage(message)"
-                      />
+                      >
+                        <q-tooltip>{{ t('history.delete') }}</q-tooltip>
+                      </q-btn>
                     </div>
                   </q-item-section>
                 </template>
@@ -236,8 +259,8 @@
             name="subscribers"
             class="q-pa-none q-pt-lg"
           >
-            <div class="row justify-between items-center q-mb-md">
-              <div class="text-body2 text-grey-6">
+            <div class="row justify-between items-center q-mb-md q-gutter-y-sm">
+              <div class="text-body2 text-grey-6 self-center">
                 <span v-if="subscribers.length > 0">
                   {{ t('subscribers.count', { count: subscribers.length }) }}
                 </span>
@@ -248,46 +271,63 @@
                   outline
                   color="primary"
                   icon="file_upload"
-                  :label="t('subscribers.action.import')"
+                  :label="
+                    quasar.screen.gt.xs
+                      ? t('subscribers.action.import')
+                      : undefined
+                  "
                   rounded
                   no-caps
                   @click="showImportDialog"
-                />
+                >
+                  <q-tooltip v-if="quasar.screen.xs">
+                    {{ t('subscribers.action.import') }}
+                  </q-tooltip>
+                </q-btn>
                 <q-btn
                   color="primary"
                   icon="person_add"
-                  :label="t('subscribers.action.add')"
+                  :label="
+                    quasar.screen.gt.xs
+                      ? t('subscribers.action.add')
+                      : undefined
+                  "
                   rounded
                   unelevated
                   no-caps
                   @click="showAddSubscriberDialog"
-                />
+                >
+                  <q-tooltip v-if="quasar.screen.xs">
+                    {{ t('subscribers.action.add') }}
+                  </q-tooltip>
+                </q-btn>
               </div>
             </div>
+
+            <q-input
+              v-model="subscriberFilter"
+              :placeholder="t('subscribers.search')"
+              dense
+              outlined
+              rounded
+              clearable
+              class="q-mb-md"
+            >
+              <template #prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
 
             <q-table
               v-model:filter="subscriberFilter"
               :columns="subscriberColumns"
               :rows="subscribers"
               :loading="subscriberStore.isLoading"
+              :grid="quasar.screen.xs"
               flat
               bordered
+              wrap-cells
             >
-              <template #top-right>
-                <q-input
-                  v-model="subscriberFilter"
-                  :placeholder="t('subscribers.search')"
-                  dense
-                  outlined
-                  rounded
-                  clearable
-                >
-                  <template #append>
-                    <q-icon name="search" />
-                  </template>
-                </q-input>
-              </template>
-
               <template #body-cell-action="props">
                 <q-td :props>
                   <q-btn
@@ -299,6 +339,41 @@
                     @click="showDeleteSubscriberDialog(props.row)"
                   />
                 </q-td>
+              </template>
+
+              <template #item="props">
+                <div class="col-12">
+                  <q-item
+                    dense
+                    class="q-py-sm"
+                  >
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">
+                        {{ props.row.email }}
+                      </q-item-label>
+                      <q-item-label
+                        v-if="props.row.name"
+                        caption
+                      >
+                        {{ props.row.name }}
+                      </q-item-label>
+                      <q-item-label caption>
+                        {{ d(props.row.subscribedAt, 'dateTime') }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-btn
+                        flat
+                        round
+                        icon="person_remove"
+                        color="negative"
+                        size="sm"
+                        @click="showDeleteSubscriberDialog(props.row)"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-separator />
+                </div>
               </template>
             </q-table>
           </q-tab-panel>
@@ -342,9 +417,9 @@
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{
-                    manager.name ?? manager.email
-                  }}</q-item-label>
+                  <q-item-label>
+                    {{ manager.name ?? manager.email }}
+                  </q-item-label>
                   <q-item-label
                     v-if="manager.name"
                     caption
@@ -352,20 +427,18 @@
                     {{ manager.email }}
                   </q-item-label>
                 </q-item-section>
-                <q-item-section side>
+                <q-item-section
+                  v-if="manager.email !== userEmail"
+                  side
+                >
                   <q-btn
                     flat
                     round
                     icon="person_remove"
                     color="negative"
                     size="sm"
-                    :disable="managers.length <= 1"
                     @click="showDeleteManagerDialog(manager)"
-                  >
-                    <q-tooltip v-if="managers.length <= 1">
-                      {{ t('managers.removeDisabledHint') }}
-                    </q-tooltip>
-                  </q-btn>
+                  />
                 </q-item-section>
               </q-item>
             </q-list>
@@ -401,12 +474,14 @@ import NewsletterSubscriberAddDialog from 'components/newsletter/NewsletterSubsc
 import NewsletterSubscriberImportDialog from 'components/newsletter/NewsletterSubscriberImportDialog.vue';
 import NewsletterManagerAddDialog from 'components/newsletter/NewsletterManagerAddDialog.vue';
 import { useAPIService } from 'src/services/APIService';
+import { useProfileStore } from 'stores/profile-store';
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
 const api = useAPIService();
 
+const profileStore = useProfileStore();
 const newsletterStore = useNewsletterStore();
 const managerStore = useNewsletterManagerStore();
 const subscriberStore = useNewsletterSubscriberStore();
@@ -426,6 +501,10 @@ onMounted(async () => {
     subscriberStore.fetchData(newsletterId.value),
     messageStore.fetchData(newsletterId.value),
   ]);
+});
+
+const userEmail = computed<string | undefined>(() => {
+  return profileStore.user?.email;
 });
 
 const newsletter = computed(() =>
@@ -450,33 +529,33 @@ const error = computed<string | null>(
 const subscriberColumns: QTableColumn[] = [
   {
     name: 'email',
-    label: 'Email',
+    label: t('subscribers.column.email'),
     field: 'email',
     align: 'left',
     sortable: true,
   },
   {
     name: 'name',
-    label: 'Name',
+    label: t('subscribers.column.name'),
     field: 'name',
     align: 'left',
     sortable: true,
   },
   {
-    name: 'country',
-    label: 'Country',
-    field: 'country',
-    align: 'center',
+    name: 'subscribedAt',
+    label: t('subscribers.column.subscribedAt'),
+    field: (row: NewsletterSubscriber) => d(row.subscribedAt, 'dateTime'),
+    align: 'left',
     sortable: true,
+    style: 'white-space: nowrap',
   },
   {
-    name: 'subscribedAt',
-    label: 'Subscribed',
-    field: (row: NewsletterSubscriber) => d(row.subscribedAt, 'dateTime'),
+    name: 'action',
+    label: '',
+    field: '',
     align: 'center',
-    sortable: true,
+    style: 'width: 48px',
   },
-  { name: 'action', label: '', field: '', align: 'center' },
 ];
 
 function showEditDialog() {
@@ -556,12 +635,27 @@ function showDeleteManagerDialog(manager: NewsletterManager) {
     });
 }
 
+function useAsTemplate(message: NewsletterMessage) {
+  sendSubject.value = message.subject;
+  sendBody.value = message.body;
+  tab.value = 'compose';
+}
+
 function deleteMessage(message: NewsletterMessage) {
   quasar
     .dialog({
       title: t('history.dialog.delete.title'),
       message: t('history.dialog.delete.message'),
-      cancel: true,
+      ok: {
+        label: t('history.delete'),
+        color: 'negative',
+        rounded: true,
+      },
+      cancel: {
+        color: 'primary',
+        flat: true,
+        rounded: true,
+      },
       persistent: true,
     })
     .onOk(() => {
@@ -574,7 +668,15 @@ function confirmSend() {
     .dialog({
       title: t('compose.dialog.title'),
       message: t('compose.dialog.message', { count: subscribers.value.length }),
-      cancel: true,
+      ok: {
+        color: 'primary',
+        rounded: true,
+      },
+      cancel: {
+        color: 'primary',
+        flat: true,
+        rounded: true,
+      },
       persistent: true,
     })
     .onOk(() => {
@@ -612,6 +714,7 @@ tab:
   managers: 'Managers'
 
 header:
+  label: 'Newsletter'
   subscribers: '{count} subscribers'
   sent: '{count} sent'
   edit: 'Edit newsletter'
@@ -631,6 +734,8 @@ compose:
 history:
   empty: 'No newsletters sent yet'
   emptyHint: 'Your sent newsletters will appear here.'
+  useAsTemplate: 'Use as template'
+  delete: 'Delete'
   dialog:
     delete:
       title: 'Delete Message'
@@ -640,6 +745,10 @@ subscribers:
   count: '{count} subscribers'
   empty: 'No subscribers yet'
   search: 'Search subscribers...'
+  column:
+    email: 'Email'
+    name: 'Name'
+    subscribedAt: 'Subscribed'
   action:
     add: 'Add Subscriber'
     import: 'Import from Camp'
@@ -667,6 +776,7 @@ tab:
   managers: 'Verwalter'
 
 header:
+  label: 'Newsletter'
   subscribers: '{count} Abonnenten'
   sent: '{count} gesendet'
   edit: 'Newsletter bearbeiten'
@@ -686,6 +796,8 @@ compose:
 history:
   empty: 'Noch keine Newsletter gesendet'
   emptyHint: 'Ihre gesendeten Newsletter erscheinen hier.'
+  useAsTemplate: 'Als Vorlage verwenden'
+  delete: 'Löschen'
   dialog:
     delete:
       title: 'Nachricht löschen'
@@ -695,9 +807,13 @@ subscribers:
   count: '{count} Abonnenten'
   empty: 'Noch keine Abonnenten'
   search: 'Abonnenten suchen...'
+  column:
+    email: 'E-Mail'
+    name: 'Name'
+    subscribedAt: 'Abonniert am'
   action:
     add: 'Abonnent hinzufügen'
-    import: 'Aus Lager importieren'
+    import: 'Aus Camp importieren'
   importResult: '{added} neue Abonnenten importiert, {skipped} bereits abonniert.'
   dialog:
     delete:
@@ -722,6 +838,7 @@ tab:
   managers: 'Gestionnaires'
 
 header:
+  label: 'Newsletter'
   subscribers: '{count} abonnés'
   sent: '{count} envoyés'
   edit: 'Modifier la newsletter'
@@ -741,6 +858,8 @@ compose:
 history:
   empty: 'Aucune newsletter envoyée pour le moment'
   emptyHint: 'Vos newsletters envoyées apparaîtront ici.'
+  useAsTemplate: 'Utiliser comme modèle'
+  delete: 'Supprimer'
   dialog:
     delete:
       title: 'Supprimer le message'
@@ -750,6 +869,10 @@ subscribers:
   count: '{count} abonnés'
   empty: 'Aucun abonné pour le moment'
   search: 'Rechercher des abonnés...'
+  column:
+    email: 'E-mail'
+    name: 'Nom'
+    subscribedAt: 'Abonné le'
   action:
     add: 'Ajouter un abonné'
     import: 'Importer depuis un camp'
@@ -777,6 +900,7 @@ tab:
   managers: 'Zarządzający'
 
 header:
+  label: 'Newsletter'
   subscribers: '{count} subskrybentów'
   sent: '{count} wysłanych'
   edit: 'Edytuj newsletter'
@@ -796,6 +920,8 @@ compose:
 history:
   empty: 'Nie wysłano jeszcze żadnych newsletterów'
   emptyHint: 'Twoje wysłane newslettery pojawią się tutaj.'
+  useAsTemplate: 'Użyj jako szablon'
+  delete: 'Usuń'
   dialog:
     delete:
       title: 'Usuń wiadomość'
@@ -805,6 +931,10 @@ subscribers:
   count: '{count} subskrybentów'
   empty: 'Brak subskrybentów'
   search: 'Szukaj subskrybentów...'
+  column:
+    email: 'E-mail'
+    name: 'Imię i nazwisko'
+    subscribedAt: 'Data subskrypcji'
   action:
     add: 'Dodaj subskrybenta'
     import: 'Importuj z obozu'
@@ -832,6 +962,7 @@ tab:
   managers: 'Správci'
 
 header:
+  label: 'Newsletter'
   subscribers: '{count} odběratelů'
   sent: '{count} odesláno'
   edit: 'Upravit newsletter'
@@ -851,6 +982,8 @@ compose:
 history:
   empty: 'Zatím nebyl odeslán žádný newsletter'
   emptyHint: 'Vaše odeslané newslettery se zobrazí zde.'
+  useAsTemplate: 'Použít jako šablonu'
+  delete: 'Smazat'
   dialog:
     delete:
       title: 'Smazat zprávu'
@@ -860,6 +993,10 @@ subscribers:
   count: '{count} odběratelů'
   empty: 'Zatím žádní odběratelé'
   search: 'Hledat odběratele...'
+  column:
+    email: 'E-mail'
+    name: 'Jméno'
+    subscribedAt: 'Datum přihlášení'
   action:
     add: 'Přidat odběratele'
     import: 'Importovat z tábora'

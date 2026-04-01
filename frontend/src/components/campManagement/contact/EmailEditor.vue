@@ -209,21 +209,23 @@
             v-if="focused"
             class="col-shrink row q-gutter-xs"
           >
-            <q-btn
-              :label="t('token.label')"
-              icon="add"
-              size="xs"
-              unelevated
-              outline
-              rounded
-              @click="onAddToken"
-            >
-              <q-tooltip :delay="200">
-                {{ t('tooltip.addToken') }}
-              </q-tooltip>
-            </q-btn>
+            <template v-if="tokens.length > 0">
+              <q-btn
+                :label="t('token.label')"
+                icon="add"
+                size="xs"
+                unelevated
+                outline
+                rounded
+                @click="onAddToken"
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.addToken') }}
+                </q-tooltip>
+              </q-btn>
 
-            <q-separator vertical />
+              <q-separator vertical />
+            </template>
 
             <q-btn
               icon="undo"

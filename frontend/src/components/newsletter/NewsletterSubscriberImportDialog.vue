@@ -30,14 +30,15 @@
               <q-icon name="home" />
             </template>
           </q-select>
-          <q-input
+          <q-select
+            v-if="selectedCampCountries.length > 0"
             v-model="country"
             :label="t('input.country.label')"
             :hint="t('input.country.hint')"
-            maxlength="5"
+            :options="selectedCampCountries"
+            clearable
             rounded
             outlined
-            clearable
           />
         </q-card-section>
 
@@ -86,7 +87,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
 import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -105,13 +106,24 @@ onMounted(async () => {
 });
 
 const campId = ref<string>('');
-const country = ref('');
+const country = ref<string | null>(null);
 
 const campOptions = computed(() => {
   return (assignedCampsStore.data ?? []).map((camp) => ({
     label: to(camp.name),
     value: camp.id,
   }));
+});
+
+const selectedCampCountries = computed<string[]>(() => {
+  if (!campId.value) return [];
+  return (
+    assignedCampsStore.data?.find((c) => c.id === campId.value)?.countries ?? []
+  );
+});
+
+watch(campId, () => {
+  country.value = null;
 });
 
 function onSubmit() {
@@ -133,7 +145,7 @@ input:
       required: 'Camp is required'
   country:
     label: 'Filter by Country (optional)'
-    hint: 'Leave empty to import all, or enter a country code (e.g. DE, FR)'
+    hint: 'Leave empty to import all countries'
 notice: 'Only registrations with an email address will be imported. Existing subscribers will be skipped.'
 action:
   import: 'Import'
@@ -141,16 +153,16 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Abonnenten aus Lager importieren'
+title: 'Abonnenten aus Camp importieren'
 input:
   camp:
-    label: 'Lager'
-    hint: 'Wählen Sie das Lager aus, aus dem Abonnenten importiert werden sollen'
+    label: 'Camp'
+    hint: 'Wählen Sie das Camp aus, aus dem Abonnenten importiert werden sollen'
     rule:
-      required: 'Lager ist erforderlich'
+      required: 'Camp ist erforderlich'
   country:
     label: 'Nach Land filtern (optional)'
-    hint: 'Leer lassen für alle, oder Ländercode eingeben (z.B. DE, FR)'
+    hint: 'Leer lassen, um alle Länder zu importieren'
 notice: 'Es werden nur Anmeldungen mit E-Mail-Adresse importiert. Bestehende Abonnenten werden übersprungen.'
 action:
   import: 'Importieren'
@@ -167,7 +179,7 @@ input:
       required: 'Le camp est requis'
   country:
     label: 'Filtrer par pays (optionnel)'
-    hint: 'Laisser vide pour tout importer, ou saisir un code pays (ex. DE, FR)'
+    hint: 'Laisser vide pour importer tous les pays'
 notice: 'Seules les inscriptions avec une adresse e-mail seront importées. Les abonnés existants seront ignorés.'
 action:
   import: 'Importer'
@@ -184,7 +196,7 @@ input:
       required: 'Obóz jest wymagany'
   country:
     label: 'Filtruj według kraju (opcjonalnie)'
-    hint: 'Pozostaw puste, aby importować wszystkich, lub wprowadź kod kraju (np. DE, FR)'
+    hint: 'Pozostaw puste, aby importować wszystkie kraje'
 notice: 'Importowane będą tylko zgłoszenia z adresem e-mail. Istniejący subskrybenci zostaną pominięci.'
 action:
   import: 'Importuj'
@@ -201,7 +213,7 @@ input:
       required: 'Tábor je povinný'
   country:
     label: 'Filtrovat podle země (volitelné)'
-    hint: 'Nechte prázdné pro import všech, nebo zadejte kód země (např. DE, FR)'
+    hint: 'Nechte prázdné pro import všech zemí'
 notice: 'Importovány budou pouze registrace s e-mailovou adresou. Stávající odběratelé budou přeskočeni.'
 action:
   import: 'Importovat'

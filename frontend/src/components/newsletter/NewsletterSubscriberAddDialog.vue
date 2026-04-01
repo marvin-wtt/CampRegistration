@@ -29,14 +29,6 @@
             rounded
             outlined
           />
-          <q-input
-            v-model="country"
-            :label="t('input.country.label')"
-            :hint="t('input.country.hint')"
-            maxlength="5"
-            rounded
-            outlined
-          />
         </q-card-section>
 
         <q-card-actions
@@ -75,13 +67,11 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref('');
 const name = ref('');
-const country = ref('');
 
 function onSubmit() {
   const data: NewsletterSubscriberCreateData = {
     email: email.value,
     name: name.value || null,
-    country: country.value || null,
   };
   onDialogOK(data);
 }
@@ -96,9 +86,6 @@ input:
       required: 'Email is required'
   name:
     label: 'Name (optional)'
-  country:
-    label: 'Country Code (optional)'
-    hint: 'e.g. DE, FR, PL'
 action:
   add: 'Add'
   cancel: 'Cancel'
@@ -113,9 +100,6 @@ input:
       required: 'E-Mail ist erforderlich'
   name:
     label: 'Name (optional)'
-  country:
-    label: 'Ländercode (optional)'
-    hint: 'z.B. DE, FR, PL'
 action:
   add: 'Hinzufügen'
   cancel: 'Abbrechen'
@@ -130,9 +114,6 @@ input:
       required: 'L''e-mail est requis'
   name:
     label: 'Nom (optionnel)'
-  country:
-    label: 'Code pays (optionnel)'
-    hint: 'ex. DE, FR, PL'
 action:
   add: 'Ajouter'
   cancel: 'Annuler'
@@ -147,9 +128,6 @@ input:
       required: 'E-mail jest wymagany'
   name:
     label: 'Imię i nazwisko (opcjonalne)'
-  country:
-    label: 'Kod kraju (opcjonalny)'
-    hint: 'np. DE, FR, PL'
 action:
   add: 'Dodaj'
   cancel: 'Anuluj'
@@ -164,9 +142,6 @@ input:
       required: 'E-mail je povinný'
   name:
     label: 'Jméno (volitelné)'
-  country:
-    label: 'Kód země (volitelný)'
-    hint: 'např. DE, FR, PL'
 action:
   add: 'Přidat'
   cancel: 'Zrušit'

@@ -70,6 +70,21 @@
                       <q-item
                         v-close-popup
                         clickable
+                        @click="showEditDialog(newsletter)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="edit"
+                            size="xs"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.edit') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-close-popup
+                        clickable
                         @click="showDeleteDialog(newsletter)"
                       >
                         <q-item-section avatar>
@@ -128,8 +143,10 @@ import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import type {
   Newsletter,
   NewsletterCreateData,
+  NewsletterUpdateData,
 } from '@camp-registration/common/entities';
 import NewsletterCreateDialog from 'components/newsletter/NewsletterCreateDialog.vue';
+import NewsletterEditDialog from 'components/newsletter/NewsletterEditDialog.vue';
 import { useRouter } from 'vue-router';
 
 const { t } = useI18n();
@@ -150,6 +167,17 @@ function showCreateDialog() {
     .dialog({ component: NewsletterCreateDialog })
     .onOk((data: NewsletterCreateData) => {
       void newsletterStore.createData(data);
+    });
+}
+
+function showEditDialog(newsletter: Newsletter) {
+  quasar
+    .dialog({
+      component: NewsletterEditDialog,
+      componentProps: { newsletter },
+    })
+    .onOk((data: NewsletterUpdateData) => {
+      void newsletterStore.updateData(newsletter.id, data);
     });
 }
 
@@ -175,6 +203,7 @@ title: 'Newsletters'
 empty: 'No newsletters yet. Create one to get started.'
 action:
   create: 'New Newsletter'
+  edit: 'Edit'
   delete: 'Delete'
 dialog:
   delete:
@@ -188,6 +217,7 @@ title: 'Newsletter'
 empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
 action:
   create: 'Neuer Newsletter'
+  edit: 'Bearbeiten'
   delete: 'Löschen'
 dialog:
   delete:
@@ -201,6 +231,7 @@ title: 'Newsletters'
 empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
 action:
   create: 'Nouvelle newsletter'
+  edit: 'Modifier'
   delete: 'Supprimer'
 dialog:
   delete:
@@ -214,6 +245,7 @@ title: 'Newslettery'
 empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
 action:
   create: 'Nowy newsletter'
+  edit: 'Edytuj'
   delete: 'Usuń'
 dialog:
   delete:
@@ -227,6 +259,7 @@ title: 'Newslettery'
 empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
 action:
   create: 'Nový newsletter'
+  edit: 'Upravit'
   delete: 'Smazat'
 dialog:
   delete:
