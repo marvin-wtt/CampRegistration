@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card style="min-width: min(580px, 95vw); max-width: min(900px, 95vw)">
+    <q-card style="width: min(700px, 95vw); max-width: min(900px, 95vw)">
       <!-- Header -->
       <q-card-section class="row items-center no-wrap q-py-sm">
         <q-icon
@@ -11,15 +11,17 @@
           name="person"
           size="sm"
         />
-        <div class="col-grow q-ml-sm text-h6 ellipsis">
+        <div class="col-shrink q-ml-sm text-h6 ellipsis">
           {{ personName }}
         </div>
+
+        <q-space />
 
         <q-chip
           :color="statusColor"
           class="q-ml-sm q-mr-xs"
           dense
-          size="sm"
+          size="md"
           text-color="white"
         >
           {{ t(`status.${registration.status.toLowerCase()}`) }}
@@ -44,7 +46,7 @@
       <q-scroll-area style="height: min(520px, 65vh)">
         <div class="row">
           <!-- Left column: personal info, contact, address -->
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-sm-6">
             <!-- Personal Information -->
             <q-list>
               <q-item-label header>
@@ -154,7 +156,12 @@
                       v-for="email in registration.computedData.emails"
                       :key="email"
                     >
-                      {{ email }}
+                      <a
+                        :href="`mailto:${email}`"
+                        style="all: unset; cursor: pointer"
+                      >
+                        {{ email }}
+                      </a>
                     </q-item-label>
                   </q-item-section>
                 </q-item>
@@ -180,7 +187,9 @@
                     />
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label v-if="registration.computedData.address.street">
+                    <q-item-label
+                      v-if="registration.computedData.address.street"
+                    >
                       {{ registration.computedData.address.street }}
                     </q-item-label>
                     <q-item-label
@@ -198,19 +207,20 @@
                           .join(' ')
                       }}
                     </q-item-label>
-                    <q-item-label v-if="registration.computedData.address.country">
+                    <q-item-label
+                      v-if="registration.computedData.address.country"
+                    >
                       {{ registration.computedData.address.country }}
                     </q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
             </template>
-          </div>
 
-          <!-- Right column: room + timeline -->
-          <div class="col-12 col-md-6 timeline-column">
             <!-- Room (registration metadata) -->
             <template v-if="registration.room">
+              <q-separator inset />
+
               <q-list>
                 <q-item-label header>
                   {{ t('section.registration') }}
@@ -236,9 +246,15 @@
                   </q-item-section>
                 </q-item>
               </q-list>
-
-              <q-separator inset />
             </template>
+          </div>
+
+          <!-- Right column: room + timeline -->
+          <div class="col-12 col-sm-6 timeline-column">
+            <q-separator
+              class="lt-sm"
+              inset
+            />
 
             <!-- Timeline -->
             <q-list>
@@ -248,9 +264,8 @@
             </q-list>
 
             <q-timeline
-              class="q-px-md"
+              class="q-px-lg"
               color="primary"
-              layout="comfortable"
             >
               <q-timeline-entry
                 :subtitle="formattedCreatedAt"
@@ -299,6 +314,7 @@ const statusColor = computed<string>(() => {
     case 'ACCEPTED':
       return 'positive';
     case 'PENDING':
+      return 'info';
     case 'WAITLISTED':
     default:
       return 'warning';
@@ -341,7 +357,7 @@ const formattedCreatedAt = computed<string>(() => {
   const date = new Date(registration.createdAt);
   return date.toLocaleString(locale.value, {
     year: 'numeric',
-    month: 'long',
+    month: '2-digit',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
@@ -540,7 +556,7 @@ action:
 </i18n>
 
 <style scoped>
-@media (min-width: 1024px) {
+@media (min-width: 600px) {
   .timeline-column {
     border-left: 1px solid rgba(0, 0, 0, 0.12);
   }
