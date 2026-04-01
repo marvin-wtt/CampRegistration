@@ -1,0 +1,247 @@
+import { describe, expect, it } from 'vitest';
+import {
+  NewsletterFactory,
+  NewsletterMessageFactory,
+  UserFactory,
+} from '../../../prisma/factories/index.js';
+import { generateAccessToken } from './utils/token.js';
+import { request } from '../utils/request.js';
+import prisma from '../utils/prisma.js';
+import { ulid } from 'ulidx';
+
+const BASE = '/api/v1/newsletters';
+
+const createNewsletterWithManager = async () => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+
+  const newsletter = await NewsletterFactory.create({
+    managers: { create: { userId: user.id } },
+  });
+
+  return { user, accessToken, newsletter };
+};
+
+describe(`${BASE}/:newsletterId/messages`, () => {
+  describe(`GET ${BASE}/:newsletterId/messages`, () => {
+    it('should respond with `200` and an empty array when there are no messages', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toEqual([]);
+    });
+
+    it('should respond with `200` and the list of messages', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const message = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        subject: 'Test Subject',
+        body: '<p>Hello</p>',
+        recipientCount: 5,
+      });
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toEqual({
+        id: message.id,
+        subject: 'Test Subject',
+        body: '<p>Hello</p>',
+        recipientCount: 5,
+        sentAt: message.sentAt.toISOString(),
+      });
+    });
+
+    it('should return messages ordered by sentAt descending', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const first = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        sentAt: new Date('2024-01-01T10:00:00Z'),
+      });
+      const second = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        sentAt: new Date('2024-06-01T10:00:00Z'),
+      });
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data[0].id).toBe(second.id);
+      expect(body.data[1].id).toBe(first.id);
+    });
+
+    it('should only return messages belonging to the requested newsletter', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const otherNewsletter = await NewsletterFactory.create();
+      await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: otherNewsletter.id } },
+      });
+      const ownMessage = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].id).toBe(ownMessage.id);
+    });
+
+    it('should respond with `401` when unauthenticated', async () => {
+      const newsletter = await NewsletterFactory.create();
+
+      await request().get(`${BASE}/${newsletter.id}/messages`).expect(401);
+    });
+
+    it('should respond with `403` when user is not a manager of the newsletter', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .get(`${BASE}/${newsletter.id}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `404` when newsletter does not exist', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .get(`${BASE}/${ulid()}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `422` when newsletterId is not a valid ULID', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .get(`${BASE}/not-a-ulid/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+  });
+
+  describe(`DELETE ${BASE}/:newsletterId/messages/:newsletterMessageId`, () => {
+    it('should respond with `204` and delete the message', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const message = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/${message.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      const deleted = await prisma.newsletterMessage.findUnique({
+        where: { id: message.id },
+      });
+      expect(deleted).toBeNull();
+    });
+
+    it('should not delete messages belonging to other newsletters', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const otherNewsletter = await NewsletterFactory.create({
+        managers: {
+          create: { userId: (await UserFactory.create()).id },
+        },
+      });
+      const otherMessage = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: otherNewsletter.id } },
+      });
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/${otherMessage.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+
+      const still = await prisma.newsletterMessage.findUnique({
+        where: { id: otherMessage.id },
+      });
+      expect(still).not.toBeNull();
+    });
+
+    it('should respond with `401` when unauthenticated', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const message = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/${message.id}`)
+        .expect(401);
+    });
+
+    it('should respond with `403` when user is not a manager of the newsletter', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const message = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/${message.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `404` when newsletter does not exist', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .delete(`${BASE}/${ulid()}/messages/${ulid()}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `404` when message does not exist', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/${ulid()}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `422` when newsletterId is not a valid ULID', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .delete(`${BASE}/not-a-ulid/messages/${ulid()}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+
+    it('should respond with `422` when newsletterMessageId is not a valid ULID', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/not-a-ulid`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+  });
+});
