@@ -10,6 +10,7 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
+import { Prisma } from '#generated/prisma/client';
 
 const BASE = '/api/v1/newsletters';
 
@@ -42,7 +43,6 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         newsletter: { connect: { id: newsletter.id } },
         email: 'test@example.com',
         name: 'Test User',
-        country: 'de',
       });
 
       const { body } = await request()
@@ -55,9 +55,25 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         id: subscriber.id,
         email: 'test@example.com',
         name: 'Test User',
-        country: 'de',
         subscribedAt: expect.any(String),
       });
+    });
+
+    it('should return subscriber with null name when name is not set', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        email: 'noname@example.com',
+        name: null,
+      });
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}/subscribers`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data[0].name).toBeNull();
     });
 
     it('should return subscribers ordered by subscribedAt descending', async () => {
@@ -153,6 +169,18 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
         .send({ email: 'noname@example.com' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data.name).toBeNull();
+    });
+
+    it('should accept a subscriber with explicit null name', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/subscribers`)
+        .send({ email: 'nullname@example.com', name: null })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -268,7 +296,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(count).toBe(2);
     });
 
-    it('should skip registrations without an email', async () => {
+    it('should skip registrations without an email (empty array)', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
       const camp = await CampFactory.create();
       await RegistrationFactory.create({
@@ -283,6 +311,69 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .expect(200);
 
       expect(body.data).toEqual({ added: 0, skipped: 0 });
+    });
+
+    it('should skip registrations where emails field is null', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: Prisma.DbNull,
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toEqual({ added: 0, skipped: 0 });
+    });
+
+    it('should skip null/empty individual emails within an emails array', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      // emails array contains a falsy value
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['', 'valid@example.com'],
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      // The empty string is skipped, only valid email is added
+      expect(body.data).toEqual({ added: 1, skipped: 0 });
+    });
+
+    it('should deduplicate emails that appear in multiple registrations', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['shared@example.com'],
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['shared@example.com'],
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      // shared@example.com is deduplicated in candidates, so added=1, skipped=0
+      expect(body.data).toEqual({ added: 1, skipped: 0 });
+
+      const count = await prisma.newsletterSubscriber.count({
+        where: { newsletterId: newsletter.id },
+      });
+      expect(count).toBe(1);
     });
 
     it('should skip already-subscribed emails and report them as skipped', async () => {
@@ -332,6 +423,152 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         where: { newsletterId: newsletter.id },
       });
       expect(subscriber?.email).toBe('de@example.com');
+    });
+
+    it('should import all registrations regardless of consent when requireConsent is false', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['consent-true@example.com'],
+        newsletterConsent: true,
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['consent-null@example.com'],
+        newsletterConsent: null,
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id, requireConsent: false })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      // requireConsent=false uses `{ not: false }`, so true and null both pass
+      expect(body.data.added).toBe(2);
+    });
+
+    it('should only import registrations with explicit consent when requireConsent is true', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['consent-true@example.com'],
+        newsletterConsent: true,
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['consent-false@example.com'],
+        newsletterConsent: false,
+      });
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['consent-null@example.com'],
+        newsletterConsent: null,
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id, requireConsent: true })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      // requireConsent=true uses `newsletterConsent: true`, so only the explicit true passes
+      expect(body.data.added).toBe(1);
+
+      const subscriber = await prisma.newsletterSubscriber.findFirst({
+        where: { newsletterId: newsletter.id },
+      });
+      expect(subscriber?.email).toBe('consent-true@example.com');
+    });
+
+    it('should set subscriber name from firstName and lastName', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['named@example.com'],
+        firstName: 'Alice',
+        lastName: 'Smith',
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const subscriber = await prisma.newsletterSubscriber.findFirst({
+        where: { newsletterId: newsletter.id, email: 'named@example.com' },
+      });
+      expect(subscriber?.name).toBe('Alice Smith');
+    });
+
+    it('should set subscriber name from firstName only when lastName is missing', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['firstonly@example.com'],
+        firstName: 'Bob',
+        lastName: null,
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const subscriber = await prisma.newsletterSubscriber.findFirst({
+        where: { newsletterId: newsletter.id, email: 'firstonly@example.com' },
+      });
+      expect(subscriber?.name).toBe('Bob');
+    });
+
+    it('should set subscriber name from lastName only when firstName is missing', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['lastonly@example.com'],
+        firstName: null,
+        lastName: 'Jones',
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const subscriber = await prisma.newsletterSubscriber.findFirst({
+        where: { newsletterId: newsletter.id, email: 'lastonly@example.com' },
+      });
+      expect(subscriber?.name).toBe('Jones');
+    });
+
+    it('should set subscriber name to null when both firstName and lastName are missing', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+      await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+        emails: ['noname@example.com'],
+        firstName: null,
+        lastName: null,
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const subscriber = await prisma.newsletterSubscriber.findFirst({
+        where: { newsletterId: newsletter.id, email: 'noname@example.com' },
+      });
+      expect(subscriber?.name).toBeNull();
     });
 
     it('should respond with `422` when campId is missing', async () => {
@@ -442,6 +679,42 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       await request()
         .delete(`${BASE}/${newsletter.id}/subscribers/not-a-ulid`)
         .auth(accessToken, { type: 'bearer' })
+        .expect(422);
+    });
+  });
+});
+
+describe('/api/v1/newsletters/unsubscribe', () => {
+  describe('DELETE /api/v1/newsletters/unsubscribe/:token', () => {
+    it('should respond with `204` and remove the subscriber when token is valid', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const token = 'a'.repeat(64);
+      const subscriber = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        unsubscribeToken: token,
+      });
+
+      await request()
+        .delete(`/api/v1/newsletters/unsubscribe/${token}`)
+        .expect(204);
+
+      const deleted = await prisma.newsletterSubscriber.findUnique({
+        where: { id: subscriber.id },
+      });
+      expect(deleted).toBeNull();
+    });
+
+    it('should respond with `404` when the token does not match any subscriber', async () => {
+      const token = 'b'.repeat(64);
+
+      await request()
+        .delete(`/api/v1/newsletters/unsubscribe/${token}`)
+        .expect(404);
+    });
+
+    it('should respond with `422` when the token length is not 64 characters', async () => {
+      await request()
+        .delete('/api/v1/newsletters/unsubscribe/short-token')
         .expect(422);
     });
   });

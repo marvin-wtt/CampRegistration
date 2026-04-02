@@ -201,6 +201,42 @@ describe(`${BASE}/:newsletterId/messages`, () => {
       expect(body.data).toHaveProperty('recipientCount', 0);
     });
 
+    it('should send to subscribers with null name without error', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        name: null,
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data.recipientCount).toBe(1);
+    });
+
+    it('should send newsletter message when newsletter has no replyTo', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const newsletter = await NewsletterFactory.create({
+        replyTo: null,
+        managers: { create: { userId: user.id } },
+      });
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'No Reply', body: '<p>Content</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data.recipientCount).toBe(1);
+    });
+
     it('should respond with `422` when subject is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 

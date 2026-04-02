@@ -81,6 +81,21 @@ describe(BASE, () => {
         createdAt: expect.any(String),
         updatedAt: null,
       });
+      // replyTo is null when not provided
+      expect(body.data.replyTo).toBeNull();
+    });
+
+    it('should respond with `201` and include replyTo when provided', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      const { body } = await request()
+        .post(BASE)
+        .send({ name: 'Newsletter With Reply', replyTo: 'reply@example.com' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data.replyTo).toBe('reply@example.com');
     });
 
     it('should automatically add the creating user as manager', async () => {
@@ -209,6 +224,43 @@ describe(BASE, () => {
         .expect(200);
 
       expect(body.data.name).toBe('Partial Update');
+    });
+
+    it('should return non-null updatedAt after update', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const { body } = await request()
+        .patch(`${BASE}/${newsletter.id}`)
+        .send({ name: 'Updated For Timestamp' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.updatedAt).not.toBeNull();
+      expect(body.data.updatedAt).toEqual(expect.any(String));
+    });
+
+    it('should allow updating replyTo to a non-null value', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const { body } = await request()
+        .patch(`${BASE}/${newsletter.id}`)
+        .send({ replyTo: 'updated-reply@example.com' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.replyTo).toBe('updated-reply@example.com');
+    });
+
+    it('should allow clearing replyTo to null', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      const { body } = await request()
+        .patch(`${BASE}/${newsletter.id}`)
+        .send({ replyTo: null })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.replyTo).toBeNull();
     });
 
     it('should allow clearing description to null', async () => {
