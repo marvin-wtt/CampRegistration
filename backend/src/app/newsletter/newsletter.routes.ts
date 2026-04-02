@@ -18,26 +18,28 @@ export class NewsletterRouter extends ModuleRouter {
   protected defineRoutes() {
     const newsletterController = resolve(NewsletterController);
 
-    this.router.use(auth());
-
     this.router.get(
       '/',
+      auth(),
       guard((req) => (req.query as NewsletterQuery).view !== 'all'),
       controller(newsletterController, 'index'),
     );
     this.router.get(
       '/:newsletterId',
+      auth(),
       guard(newsletterManager),
       controller(newsletterController, 'show'),
     );
-    this.router.post('/', controller(newsletterController, 'store'));
+    this.router.post('/', auth(), controller(newsletterController, 'store'));
     this.router.patch(
       '/:newsletterId',
+      auth(),
       guard(newsletterManager),
       controller(newsletterController, 'update'),
     );
     this.router.delete(
       '/:newsletterId',
+      auth(),
       guard(newsletterManager),
       controller(newsletterController, 'destroy'),
     );

@@ -18,13 +18,22 @@ export class NewsletterMessageRouter extends ModuleRouter {
   protected defineRoutes() {
     const messageController = resolve(NewsletterMessageController);
 
-    this.router.use(auth());
-    this.router.use(guard(newsletterManager));
-
-    this.router.get('/', controller(messageController, 'index'));
-    this.router.post('/', controller(messageController, 'store'));
+    this.router.get(
+      '/',
+      auth(),
+      guard(newsletterManager),
+      controller(messageController, 'index'),
+    );
+    this.router.post(
+      '/',
+      auth(),
+      guard(newsletterManager),
+      controller(messageController, 'store'),
+    );
     this.router.delete(
       '/:newsletterMessageId',
+      auth(),
+      guard(newsletterManager),
       controller(messageController, 'destroy'),
     );
   }

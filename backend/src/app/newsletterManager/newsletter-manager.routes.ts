@@ -18,13 +18,17 @@ export class NewsletterManagerRouter extends ModuleRouter {
   protected defineRoutes() {
     const managerController = resolve(NewsletterManagerController);
 
-    this.router.use(auth());
-    this.router.use(guard(newsletterManager));
-
-    this.router.get('/', controller(managerController, 'index'));
+    this.router.get(
+      '/',
+      auth(),
+      guard(newsletterManager),
+      controller(managerController, 'index'),
+    );
     this.router.post('/', controller(managerController, 'store'));
     this.router.delete(
       '/:newsletterManagerId',
+      auth(),
+      guard(newsletterManager),
       controller(managerController, 'destroy'),
     );
   }
