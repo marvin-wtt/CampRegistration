@@ -43,12 +43,12 @@ export class CampController extends BaseController {
   async index(req: Request, res: Response) {
     const { query } = await req.validate(validator.index);
 
-    const userId = req.authUserId();
     const showPrivate = query.view === 'all' || query.view === 'assigned';
 
     const camps = await this.campService.queryCamps(
       {
-        managerUserId: query.view === 'assigned' ? userId : undefined,
+        managerUserId:
+          query.view === 'assigned' ? req.authUserId() : undefined,
         public: showPrivate ? undefined : true,
         active: showPrivate ? undefined : true,
         name: query.name,
