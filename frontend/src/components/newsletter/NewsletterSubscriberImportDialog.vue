@@ -39,7 +39,20 @@
             clearable
             rounded
             outlined
-          />
+          >
+            <template #before>
+              <q-icon name="group" />
+            </template>
+          </q-select>
+          <div>
+            <q-toggle
+              v-model="requireConsent"
+              :label="t('input.consent.label')"
+            />
+            <div class="text-caption text-grey-6 q-ml-sm">
+              {{ t('input.consent.hint') }}
+            </div>
+          </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -107,6 +120,7 @@ onMounted(async () => {
 
 const campId = ref<string>('');
 const country = ref<string | null>(null);
+const requireConsent = ref(true);
 
 const campOptions = computed(() => {
   return (assignedCampsStore.data ?? []).map((camp) => ({
@@ -124,12 +138,14 @@ const selectedCampCountries = computed<string[]>(() => {
 
 watch(campId, () => {
   country.value = null;
+  requireConsent.value = true;
 });
 
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
     campId: campId.value,
     country: country.value || null,
+    requireConsent: requireConsent.value || undefined,
   };
   onDialogOK(data);
 }
@@ -146,6 +162,9 @@ input:
   country:
     label: 'Filter by Country (optional)'
     hint: 'Leave empty to import all countries'
+  consent:
+    label: 'Require explicit newsletter consent'
+    hint: 'Registrations that declined are always excluded.'
 notice: 'Only registrations with an email address will be imported. Existing subscribers will be skipped.'
 action:
   import: 'Import'
@@ -163,6 +182,9 @@ input:
   country:
     label: 'Nach Land filtern (optional)'
     hint: 'Leer lassen, um alle Länder zu importieren'
+  consent:
+    label: 'Ausdrückliche Newsletter-Einwilligung erforderlich'
+    hint: 'Anmeldungen, die abgelehnt haben, werden immer ausgeschlossen.'
 notice: 'Es werden nur Anmeldungen mit E-Mail-Adresse importiert. Bestehende Abonnenten werden übersprungen.'
 action:
   import: 'Importieren'
@@ -180,6 +202,9 @@ input:
   country:
     label: 'Filtrer par pays (optionnel)'
     hint: 'Laisser vide pour importer tous les pays'
+  consent:
+    label: 'Exiger un consentement explicite à la newsletter'
+    hint: 'Les inscriptions ayant refusé sont toujours exclues.'
 notice: 'Seules les inscriptions avec une adresse e-mail seront importées. Les abonnés existants seront ignorés.'
 action:
   import: 'Importer'
@@ -197,6 +222,9 @@ input:
   country:
     label: 'Filtruj według kraju (opcjonalnie)'
     hint: 'Pozostaw puste, aby importować wszystkie kraje'
+  consent:
+    label: 'Wymagaj wyraźnej zgody na newsletter'
+    hint: 'Zgłoszenia, które odmówiły, są zawsze wykluczone.'
 notice: 'Importowane będą tylko zgłoszenia z adresem e-mail. Istniejący subskrybenci zostaną pominięci.'
 action:
   import: 'Importuj'
@@ -214,6 +242,9 @@ input:
   country:
     label: 'Filtrovat podle země (volitelné)'
     hint: 'Nechte prázdné pro import všech zemí'
+  consent:
+    label: 'Vyžadovat výslovný souhlas s newsletterem'
+    hint: 'Registrace, které odmítly, jsou vždy vyloučeny.'
 notice: 'Importovány budou pouze registrace s e-mailovou adresou. Stávající odběratelé budou přeskočeni.'
 action:
   import: 'Importovat'

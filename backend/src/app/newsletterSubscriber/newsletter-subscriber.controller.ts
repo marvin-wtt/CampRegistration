@@ -48,7 +48,6 @@ export class NewsletterSubscriberController extends BaseController {
       {
         email: body.email,
         name: body.name,
-        country: body.country,
       },
     );
 
@@ -65,6 +64,7 @@ export class NewsletterSubscriberController extends BaseController {
       newsletter.id,
       body.campId,
       body.country,
+      body.requireConsent,
     );
 
     res.json({ data: result });

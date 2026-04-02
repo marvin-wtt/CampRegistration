@@ -13,7 +13,6 @@ const store = z.object({
   body: z.object({
     email: z.email(),
     name: z.string().max(255).nullable().optional(),
-    country: z.string().max(5).nullable().optional(),
   }),
 });
 
@@ -24,6 +23,7 @@ const importFromCamp = z.object({
   body: z.object({
     campId: z.ulid(),
     country: z.string().max(5).nullable().optional(),
+    requireConsent: z.boolean().optional(),
   }),
 });
 

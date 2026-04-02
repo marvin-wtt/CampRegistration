@@ -35,48 +35,36 @@ export class NewsletterSubscriberService extends BaseService {
 
   async addSubscriber(
     newsletterId: string,
-    data: { email: string; name?: string | null; country?: string | null },
+    data: { email: string; name?: string | null },
   ) {
     return this.prisma.newsletterSubscriber.create({
       data: {
         newsletterId,
         email: data.email,
         name: data.name ?? null,
-        country: data.country ?? null,
         unsubscribeToken: generateUnsubscribeToken(),
       },
     });
-  }
-
-  async upsertSubscriber(
-    newsletterId: string,
-    data: { email: string; name?: string | null; country?: string | null },
-  ) {
-    const existing = await this.prisma.newsletterSubscriber.findUnique({
-      where: {
-        newsletterId_email: { newsletterId, email: data.email },
-      },
-    });
-
-    if (existing) {
-      return existing;
-    }
-
-    return this.addSubscriber(newsletterId, data);
   }
 
   async importSubscribersFromCamp(
     newsletterId: string,
     campId: string,
     country: string | null | undefined,
+    requireConsent: boolean | undefined,
   ): Promise<{ added: number; skipped: number }> {
     const registrations = await this.prisma.registration.findMany({
       where: {
         campId,
-        ...(country ? { country } : {}),
+        country: country ?? undefined,
+        newsletterConsent: requireConsent ? true : { not: false },
         deletedAt: null,
       },
-      select: { emails: true, firstName: true, lastName: true, country: true },
+      select: {
+        emails: true,
+        firstName: true,
+        lastName: true,
+      },
     });
 
     let added = 0;
@@ -84,7 +72,9 @@ export class NewsletterSubscriberService extends BaseService {
 
     for (const registration of registrations) {
       const emails = registration.emails;
-      if (!emails || emails.length === 0) continue;
+      if (!emails || emails.length === 0) {
+        continue;
+      }
 
       const name =
         [registration.firstName, registration.lastName]
@@ -92,7 +82,9 @@ export class NewsletterSubscriberService extends BaseService {
           .join(' ') || null;
 
       for (const email of emails) {
-        if (!email) continue;
+        if (!email) {
+          continue;
+        }
         const existing = await this.prisma.newsletterSubscriber.findUnique({
           where: {
             newsletterId_email: { newsletterId, email },
@@ -109,7 +101,6 @@ export class NewsletterSubscriberService extends BaseService {
             newsletterId,
             email,
             name,
-            country: registration.country ?? null,
             unsubscribeToken: generateUnsubscribeToken(),
           },
         });

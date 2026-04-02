@@ -1,3 +1,6 @@
+-- AlterTable
+ALTER TABLE `registrations` ADD COLUMN `newsletter_consent` BOOLEAN NULL;
+
 -- CreateTable
 CREATE TABLE `newsletters` (
     `id` CHAR(26) NOT NULL,
@@ -30,7 +33,6 @@ CREATE TABLE `newsletter_subscribers` (
     `newsletter_id` CHAR(26) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `name` VARCHAR(255) NULL,
-    `country` VARCHAR(5) NULL,
     `unsubscribe_token` CHAR(64) NOT NULL,
     `subscribed_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 

@@ -11,7 +11,6 @@ export class NewsletterSubscriberResource extends JsonResource<
       id: this.data.id,
       email: this.data.email,
       name: this.data.name ?? null,
-      country: this.data.country ?? null,
       subscribedAt: this.data.subscribedAt.toISOString(),
     };
   }

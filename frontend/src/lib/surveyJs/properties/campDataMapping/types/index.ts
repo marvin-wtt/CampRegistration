@@ -136,3 +136,19 @@ export const waitingList: CampDataType = {
     return obj.getType() === 'checkbox';
   },
 };
+
+export const newsletterConsent: CampDataType = {
+  element: {
+    value: 'newsletter_consent',
+    text: {
+      en: 'Newsletter Consent',
+      de: 'Newsletter-Einwilligung',
+      fr: 'Consentement newsletter',
+      pl: 'Zgoda na newsletter',
+      cs: 'Souhlas s newsletterem',
+    },
+  },
+  fit: (obj) => {
+    return obj.getType() === 'boolean';
+  },
+};

@@ -31,6 +31,7 @@ class NewsletterSeeder extends BaseSeeder {
     for (let i = 0; i < 3; i++) {
       await NewsletterMessageFactory.create({
         newsletter: { connect: { id: newsletter1.id } },
+        sentBy: { connect: { id: '01H4BK7J4WV75DZNAQBHMM99MA' } },
       });
     }
 

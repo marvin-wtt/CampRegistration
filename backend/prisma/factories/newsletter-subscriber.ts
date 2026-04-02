@@ -11,7 +11,6 @@ export const NewsletterSubscriberFactory = {
       newsletter: {},
       email: faker.internet.email(),
       name: faker.person.fullName(),
-      country: faker.helpers.arrayElement(['de', 'fr', 'pl', 'cz']),
       unsubscribeToken: crypto.randomBytes(32).toString('hex'),
       ...data,
     };
