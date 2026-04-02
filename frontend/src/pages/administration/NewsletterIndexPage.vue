@@ -30,6 +30,15 @@
           <q-btn
             flat
             round
+            icon="open_in_new"
+            size="sm"
+            @click="showNewsletterManagement(props.row)"
+          >
+            <q-tooltip>{{ t('action.manage') }}</q-tooltip>
+          </q-btn>
+          <q-btn
+            flat
+            round
             icon="delete"
             color="negative"
             size="sm"
@@ -51,9 +60,11 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useRouter } from 'vue-router';
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
+const router = useRouter();
 const api = useAPIService();
 
 const {
@@ -118,6 +129,17 @@ const columns = computed<QTableColumn[]>(() => [
   },
 ]);
 
+function showNewsletterManagement(newsletter: Newsletter) {
+  const routeData = router.resolve({
+    name: 'management.newsletter',
+    params: {
+      newsletterId: newsletter.id,
+    },
+  });
+
+  window.open(routeData.href, '_blank');
+}
+
 function showDeleteDialog(newsletter: Newsletter) {
   quasar
     .dialog({
@@ -139,6 +161,8 @@ function showDeleteDialog(newsletter: Newsletter) {
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
+action:
+  manage: 'Manage'
 filter:
   search: 'Search'
 column:
@@ -155,6 +179,8 @@ dialog:
 
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
+action:
+  manage: 'Verwalten'
 filter:
   search: 'Suchen'
 column:
@@ -171,6 +197,8 @@ dialog:
 
 <i18n lang="yaml" locale="fr">
 title: 'Newsletters'
+action:
+  manage: 'Gérer'
 filter:
   search: 'Rechercher'
 column:
@@ -187,6 +215,8 @@ dialog:
 
 <i18n lang="yaml" locale="pl">
 title: 'Newslettery'
+action:
+  manage: 'Zarządzaj'
 filter:
   search: 'Szukaj'
 column:
@@ -203,6 +233,8 @@ dialog:
 
 <i18n lang="yaml" locale="cs">
 title: 'Newslettery'
+action:
+  manage: 'Spravovat'
 filter:
   search: 'Hledat'
 column:
