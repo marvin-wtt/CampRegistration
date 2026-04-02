@@ -31,12 +31,12 @@ export class CampManagerRouter extends ModuleRouter {
       controller(managerController, 'store'),
     );
     this.router.patch(
-      '/:managerId',
+      '/:campManagerId',
       guard(campManager('camp.managers.edit')),
       controller(managerController, 'update'),
     );
     this.router.delete(
-      '/:managerId',
+      '/:campManagerId',
       guard(campManager('camp.managers.delete')),
       controller(managerController, 'destroy'),
     );
