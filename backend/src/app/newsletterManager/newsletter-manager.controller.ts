@@ -64,10 +64,9 @@ export class NewsletterManagerController extends BaseController {
     const {
       params: { newsletterManagerId },
     } = await req.validate(validator.destroy);
+    const newsletter = req.modelOrFail('newsletter');
 
-    const count = await this.managerService.countManagers(
-      req.modelOrFail('newsletter').id,
-    );
+    const count = await this.managerService.countManagers(newsletter.id);
     if (count <= 1) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
