@@ -67,7 +67,7 @@ export class CampManagerController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const manager = req.modelOrFail('message');
+    const manager = req.modelOrFail('campManager');
     const {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
