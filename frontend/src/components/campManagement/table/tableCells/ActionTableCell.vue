@@ -12,7 +12,7 @@
       <q-item
         v-close-popup
         clickable
-        disable
+        @click="showDetails"
       >
         <q-item-section>
           {{ t('option.details') }}
@@ -73,6 +73,7 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { usePermissions } from 'src/composables/permissions';
 import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
+import RegistrationDetailsDialog from 'components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
 import { useAPIService } from 'src/services/APIService';
 
 const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
@@ -95,6 +96,15 @@ const registration = computed<Registration>(() => {
 const accepted = computed<boolean>(() => {
   return cellProps.row.status === 'ACCEPTED';
 });
+
+function showDetails(): void {
+  quasar.dialog({
+    component: RegistrationDetailsDialog,
+    componentProps: {
+      registration: registration.value,
+    },
+  });
+}
 
 function deleteItem(): void {
   quasar
