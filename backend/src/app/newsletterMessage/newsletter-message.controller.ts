@@ -6,7 +6,7 @@ import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { NewsletterSubscriberService } from '#app/newsletterSubscriber/newsletter-subscriber.service';
-import { NewsletterMessageMail } from './newsletter-message.mail';
+import { NewsletterMessageMail } from './newsletter-message.mail.js';
 
 @injectable()
 export class NewsletterMessageController extends BaseController {

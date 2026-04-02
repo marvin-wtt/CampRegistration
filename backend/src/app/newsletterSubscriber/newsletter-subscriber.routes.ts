@@ -9,7 +9,7 @@ import { resolve } from '#core/ioc/container';
 export class NewsletterSubscriberRouter extends ModuleRouter {
   protected registerBindings() {
     const subscriberService = resolve(NewsletterSubscriberService);
-    this.bindModel('newsLetterSubscriber', (req, id) => {
+    this.bindModel('newsletterSubscriber', (req, id) => {
       const newsletter = req.modelOrFail('newsletter');
       return subscriberService.getSubscriberById(newsletter.id, id);
     });
@@ -28,7 +28,7 @@ export class NewsletterSubscriberRouter extends ModuleRouter {
       controller(subscriberController, 'importFromCamp'),
     );
     this.router.delete(
-      '/:newsLetterSubscriberId',
+      '/:newsletterSubscriberId',
       controller(subscriberController, 'destroy'),
     );
   }

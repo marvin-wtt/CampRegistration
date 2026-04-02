@@ -1,4 +1,4 @@
-import { Identifiable } from './Identifiable.js';
+import type { Identifiable } from './Identifiable.js';
 
 export interface NewsletterMessage extends Identifiable {
   subject: string;

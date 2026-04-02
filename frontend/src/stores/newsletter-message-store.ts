@@ -4,34 +4,46 @@ import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus } from 'src/composables/bus';
 import type { NewsletterMessage } from '@camp-registration/common/entities';
 
-export const useNewsletterMessageStore = defineStore('newsletterMessage', () => {
-  const api = useAPIService();
-  const authBus = useAuthBus();
-  const { data, isLoading, error, reset, invalidate, lazyFetch } =
-    useServiceHandler<NewsletterMessage[]>('newsletterMessage');
+export const useNewsletterMessageStore = defineStore(
+  'newsletterMessage',
+  () => {
+    const api = useAPIService();
+    const authBus = useAuthBus();
+    const {
+      data,
+      isLoading,
+      error,
+      reset,
+      invalidate,
+      lazyFetch,
+      withProgressNotification,
+    } = useServiceHandler<NewsletterMessage[]>('newsletterMessage');
 
-  authBus.on('logout', () => {
-    reset();
-  });
-
-  async function fetchData(newsletterId: string) {
-    await lazyFetch(async () => {
-      return await api.fetchNewsletterMessages(newsletterId);
+    authBus.on('logout', () => {
+      reset();
     });
-  }
 
-  async function deleteData(newsletterId: string, messageId: string) {
-    await api.deleteNewsletterMessage(newsletterId, messageId);
-    data.value = data.value?.filter((m) => m.id !== messageId);
-  }
+    async function fetchData(newsletterId: string) {
+      await lazyFetch(async () => {
+        return await api.fetchNewsletterMessages(newsletterId);
+      });
+    }
 
-  return {
-    reset,
-    invalidate,
-    data,
-    isLoading,
-    error,
-    fetchData,
-    deleteData,
-  };
-});
+    async function deleteData(newsletterId: string, messageId: string) {
+      await withProgressNotification('delete', async () => {
+        await api.deleteNewsletterMessage(newsletterId, messageId);
+        data.value = data.value?.filter((m) => m.id !== messageId);
+      });
+    }
+
+    return {
+      reset,
+      invalidate,
+      data,
+      isLoading,
+      error,
+      fetchData,
+      deleteData,
+    };
+  },
+);

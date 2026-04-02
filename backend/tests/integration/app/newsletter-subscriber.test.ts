@@ -603,7 +603,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
   });
 
-  describe(`DELETE ${BASE}/:newsletterId/subscribers/:newsLetterSubscriberId`, () => {
+  describe(`DELETE ${BASE}/:newsletterId/subscribers/:newsletterSubscriberId`, () => {
     it('should respond with `204` and delete the subscriber', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
       const subscriber = await NewsletterSubscriberFactory.create({
@@ -673,7 +673,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .expect(403);
     });
 
-    it('should respond with `422` when newsLetterSubscriberId is not a valid ULID', async () => {
+    it('should respond with `422` when newsletterSubscriberId is not a valid ULID', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()

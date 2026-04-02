@@ -34,7 +34,7 @@ declare global {
       newsletter?: Newsletter;
       newsletterManager?: NewsletterManager;
       newsletterMessage?: NewsletterMessage;
-      newsLetterSubscriber?: NewsletterSubscriber;
+      newsletterSubscriber?: NewsletterSubscriber;
     }
 
     interface AuthUser {

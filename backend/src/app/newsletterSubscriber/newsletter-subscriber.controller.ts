@@ -72,7 +72,7 @@ export class NewsletterSubscriberController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     await req.validate(validator.destroy);
-    const subscriber = req.modelOrFail('newsLetterSubscriber');
+    const subscriber = req.modelOrFail('newsletterSubscriber');
 
     await this.subscriberService.removeSubscriber(subscriber.id);
 

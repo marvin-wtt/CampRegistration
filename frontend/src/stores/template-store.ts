@@ -161,7 +161,7 @@ export const useTemplateStore = defineStore('templates', () => {
       const result = apiService.deleteTableTemplate(cid, tid);
 
       // Remove item from data
-      data.value = data.value?.filter((value) => value.id === id);
+      data.value = data.value?.filter((value) => value.id !== id);
 
       return result;
     });
