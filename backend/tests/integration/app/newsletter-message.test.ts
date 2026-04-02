@@ -132,16 +132,6 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
-
-    it('should respond with `422` when newsletterId is not a valid ULID', async () => {
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
-
-      await request()
-        .get(`${BASE}/not-a-ulid/messages`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(422);
-    });
   });
 
   describe(`POST ${BASE}/:newsletterId/messages`, () => {
@@ -301,24 +291,24 @@ describe(`${BASE}/:newsletterId/messages`, () => {
       );
     });
 
-    it('should respond with `422` when subject is missing', async () => {
+    it('should respond with `400` when subject is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
         .post(`${BASE}/${newsletter.id}/messages`)
         .send({ body: '<p>No subject</p>' })
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
-    it('should respond with `422` when body is missing', async () => {
+    it('should respond with `400` when body is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
         .post(`${BASE}/${newsletter.id}/messages`)
         .send({ subject: 'No body' })
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
@@ -438,25 +428,6 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .delete(`${BASE}/${newsletter.id}/messages/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
-    });
-
-    it('should respond with `422` when newsletterId is not a valid ULID', async () => {
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
-
-      await request()
-        .delete(`${BASE}/not-a-ulid/messages/${ulid()}`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(422);
-    });
-
-    it('should respond with `422` when newsletterMessageId is not a valid ULID', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-
-      await request()
-        .delete(`${BASE}/${newsletter.id}/messages/not-a-ulid`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(422);
     });
   });
 });

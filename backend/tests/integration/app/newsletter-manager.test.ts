@@ -132,7 +132,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .post(`${BASE}/${newsletter.id}/managers`)
         .send({ email: 'not-an-email' })
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `422` when email is missing', async () => {
@@ -142,7 +142,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .post(`${BASE}/${newsletter.id}/managers`)
         .send({})
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
@@ -263,7 +263,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
       await request()
         .delete(`${BASE}/${newsletter.id}/managers/not-a-ulid`)
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
   });
 });

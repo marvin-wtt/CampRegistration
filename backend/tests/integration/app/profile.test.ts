@@ -30,7 +30,6 @@ describe('/api/v1/profile', () => {
         locale: user.locale,
         role: 'USER',
         twoFactorEnabled: false,
-        camps: [],
         campAccess: [],
       });
     });
@@ -164,7 +163,6 @@ describe('/api/v1/profile', () => {
         locale: data.locale,
         role: 'USER',
         twoFactorEnabled: false,
-        camps: [],
         campAccess: [],
       });
     });

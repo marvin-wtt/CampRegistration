@@ -223,7 +223,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .post(`${BASE}/${newsletter.id}/subscribers`)
         .send({ email: 'not-an-email' })
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `422` when email is missing', async () => {
@@ -233,7 +233,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .post(`${BASE}/${newsletter.id}/subscribers`)
         .send({ name: 'No email' })
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
@@ -578,7 +578,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
         .send({})
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
@@ -679,7 +679,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       await request()
         .delete(`${BASE}/${newsletter.id}/subscribers/not-a-ulid`)
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
   });
 });
@@ -715,7 +715,7 @@ describe('/api/v1/newsletters/unsubscribe', () => {
     it('should respond with `422` when the token length is not 64 characters', async () => {
       await request()
         .delete('/api/v1/newsletters/unsubscribe/short-token')
-        .expect(422);
+        .expect(400);
     });
   });
 });

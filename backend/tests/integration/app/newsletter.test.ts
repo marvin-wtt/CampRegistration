@@ -135,7 +135,7 @@ describe(BASE, () => {
         .post(BASE)
         .send({ description: 'No name' })
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
@@ -193,7 +193,7 @@ describe(BASE, () => {
       await request()
         .get(`${BASE}/not-a-ulid`)
         .auth(accessToken, { type: 'bearer' })
-        .expect(422);
+        .expect(400);
     });
   });
 

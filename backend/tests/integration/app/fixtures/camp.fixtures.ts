@@ -19,7 +19,7 @@ export const campInactive = {
 export const campCreateNational = {
   active: false,
   public: false,
-  confirmationMode: 'AUTOMATIC',
+  confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],
   name: 'Test Camp',
   organizer: 'Test Org',

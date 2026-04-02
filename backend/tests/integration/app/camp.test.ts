@@ -316,8 +316,12 @@ describe('/api/v1/camps', () => {
           .expect(200);
 
         expect(body.data).toHaveLength(2);
-        expect(body.data).toContain(expect.objectContaining({ id: camp1.id }));
-        expect(body.data).toContain(expect.objectContaining({ id: camp2.id }));
+        expect(body.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: camp1.id }),
+            expect.objectContaining({ id: camp2.id }),
+          ]),
+        );
       });
 
       it.skip('should filter by name', async () => {
@@ -574,21 +578,23 @@ describe('/api/v1/camps', () => {
 
   describe('POST /api/v1/camps', () => {
     const assertCampCreated = async (
-      data: CampCreateData & { confirmationMode?: string },
+      data: Omit<CampCreateData, 'confirmationMode'> & {
+        confirmationMode?: string;
+      },
       locales: string[],
       actual: unknown,
     ) => {
       // Test response
       assertCampResponseBody(
         {
-          ...data,
+          ...(data as CampCreateData),
           locales,
         },
         actual,
       );
 
       const id = (actual as { data: { id: string } }).data.id;
-      await assertCampModel(id, data);
+      await assertCampModel(id, data as CampCreateData);
     };
 
     it('should respond with `201` status code when user is authenticated', async () => {
