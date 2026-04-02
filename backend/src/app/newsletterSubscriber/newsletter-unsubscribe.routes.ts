@@ -15,7 +15,13 @@ export class NewsletterUnsubscribeRouter extends ModuleRouter {
   protected defineRoutes() {
     const subscriberController = resolve(NewsletterSubscriberController);
 
-    // Public endpoint - no authentication required
+    // RFC 8058 one-click unsubscribe (used by email clients)
+    this.router.post(
+      '/:token',
+      controller(subscriberController, 'unsubscribe'),
+    );
+
+    // User-initiated unsubscribe (used by the frontend)
     this.router.delete(
       '/:token',
       controller(subscriberController, 'unsubscribe'),

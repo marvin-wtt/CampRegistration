@@ -1,7 +1,7 @@
 import { MailBase } from '#app/mail/mail.base';
 import type { JobOptions } from '#core/queue/Queue';
 import type { MailPriority } from '#app/mail/mail.types';
-import { generateUrl } from '#utils/url';
+import { generateApiUrl, generateUrl } from '#utils/url';
 
 export interface NewsletterMailPayload {
   to: string;
@@ -48,11 +48,15 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
     );
   }
 
-  protected headers(): Record<string, string> {
-    const unsubscribeUrl = this.getUnsubscribeUrl();
+  private getOneClickUnsubscribeUrl(): string {
+    return generateApiUrl(
+      `newsletters/unsubscribe/${this.payload.unsubscribeToken}`,
+    );
+  }
 
+  protected headers(): Record<string, string> {
     return {
-      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe': `<${this.getOneClickUnsubscribeUrl()}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     };
   }

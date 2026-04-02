@@ -11,3 +11,10 @@ export function generateUrl(
 
   return `${origin}/${path}?${query}`;
 }
+
+export function generateApiUrl(path: string | string[]): string {
+  const { origin } = config;
+  path = Array.isArray(path) ? path.join('/') : path;
+
+  return `${origin}/api/v1/${path}`;
+}
