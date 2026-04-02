@@ -108,24 +108,6 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'newsletters',
-        meta: {
-          hideDrawer: true,
-        },
-        children: [
-          {
-            path: '',
-            name: 'management.newsletters',
-            component: () => import('pages/newsletter/NewsletterIndexPage.vue'),
-          },
-          {
-            path: ':newsletterId',
-            name: 'management.newsletter',
-            component: () => import('pages/newsletter/NewsletterPage.vue'),
-          },
-        ],
-      },
-      {
         path: 'camps',
         children: [
           {
@@ -202,6 +184,25 @@ const routes: RouteRecordRaw[] = [
             ],
           },
         ],
+      },
+    ],
+  },
+  {
+    path: '/management/newsletters',
+    component: () => import('layouts/NewsletterLayout.vue'),
+    meta: {
+      auth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'management.newsletters',
+        component: () => import('pages/newsletter/NewsletterIndexPage.vue'),
+      },
+      {
+        path: ':newsletterId',
+        name: 'management.newsletter',
+        component: () => import('pages/newsletter/NewsletterPage.vue'),
       },
     ],
   },
