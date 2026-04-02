@@ -33,7 +33,7 @@ export class NewsletterSubscriberService extends BaseService {
     });
   }
 
-  async addSubscriber(
+  async createSubscriber(
     newsletterId: string,
     data: { email: string; name?: string | null },
   ) {
@@ -67,8 +67,13 @@ export class NewsletterSubscriberService extends BaseService {
       },
     });
 
-    let added = 0;
-    let skipped = 0;
+    const seen = new Set<string>();
+    const candidates: {
+      newsletterId: string;
+      email: string;
+      name: string | null;
+      unsubscribeToken: string;
+    }[] = [];
 
     for (const registration of registrations) {
       const emails = registration.emails;
@@ -82,33 +87,25 @@ export class NewsletterSubscriberService extends BaseService {
           .join(' ') || null;
 
       for (const email of emails) {
-        if (!email) {
+        if (!email || seen.has(email)) {
           continue;
         }
-        const existing = await this.prisma.newsletterSubscriber.findUnique({
-          where: {
-            newsletterId_email: { newsletterId, email },
-          },
+        seen.add(email);
+        candidates.push({
+          newsletterId,
+          email,
+          name,
+          unsubscribeToken: generateUnsubscribeToken(),
         });
-
-        if (existing) {
-          skipped++;
-          continue;
-        }
-
-        await this.prisma.newsletterSubscriber.create({
-          data: {
-            newsletterId,
-            email,
-            name,
-            unsubscribeToken: generateUnsubscribeToken(),
-          },
-        });
-        added++;
       }
     }
 
-    return { added, skipped };
+    const result = await this.prisma.newsletterSubscriber.createMany({
+      data: candidates,
+      skipDuplicates: true,
+    });
+
+    return { added: result.count, skipped: candidates.length - result.count };
   }
 
   async removeSubscriber(id: string) {

@@ -43,7 +43,7 @@ export class NewsletterSubscriberController extends BaseController {
       );
     }
 
-    const subscriber = await this.subscriberService.addSubscriber(
+    const subscriber = await this.subscriberService.createSubscriber(
       newsletter.id,
       {
         email: body.email,
