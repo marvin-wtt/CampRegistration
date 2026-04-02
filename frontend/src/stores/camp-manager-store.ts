@@ -64,7 +64,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
     checkNotNullWithError(campId);
     checkNotNullWithNotification(managerId);
 
-    await withProgressNotification('delete', async () => {
+    await withProgressNotification('update', async () => {
       const manager = await api.updateCampManager(
         campId,
         managerId,
