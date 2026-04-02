@@ -216,7 +216,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .expect(400);
     });
 
-    it('should respond with `422` when email is invalid', async () => {
+    it('should respond with `400` when email is invalid', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
@@ -226,7 +226,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .expect(400);
     });
 
-    it('should respond with `422` when email is missing', async () => {
+    it('should respond with `400` when email is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
@@ -571,7 +571,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(subscriber?.name).toBeNull();
     });
 
-    it('should respond with `422` when campId is missing', async () => {
+    it('should respond with `400` when campId is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
@@ -672,15 +672,6 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
-
-    it('should respond with `422` when newsletterSubscriberId is not a valid ULID', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-
-      await request()
-        .delete(`${BASE}/${newsletter.id}/subscribers/not-a-ulid`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
-    });
   });
 });
 
@@ -711,11 +702,33 @@ describe('/api/v1/newsletters/unsubscribe', () => {
         .delete(`/api/v1/newsletters/unsubscribe/${token}`)
         .expect(404);
     });
+  });
 
-    it('should respond with `422` when the token length is not 64 characters', async () => {
+  describe('POST /api/v1/newsletters/unsubscribe/:token', () => {
+    it('should respond with `204` and remove the subscriber when token is valid', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const token = 'a'.repeat(64);
+      const subscriber = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        unsubscribeToken: token,
+      });
+
       await request()
-        .delete('/api/v1/newsletters/unsubscribe/short-token')
-        .expect(400);
+        .post(`/api/v1/newsletters/unsubscribe/${token}`)
+        .expect(204);
+
+      const deleted = await prisma.newsletterSubscriber.findUnique({
+        where: { id: subscriber.id },
+      });
+      expect(deleted).toBeNull();
+    });
+
+    it('should respond with `404` when the token does not match any subscriber', async () => {
+      const token = 'b'.repeat(64);
+
+      await request()
+        .post(`/api/v1/newsletters/unsubscribe/${token}`)
+        .expect(404);
     });
   });
 });

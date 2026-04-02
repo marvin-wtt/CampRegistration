@@ -183,7 +183,7 @@ export abstract class MailBase<P> {
   static async enqueue<P>(this: MailableCtor<P>, payload: P): Promise<void> {
     const mailableRegistry = resolve(MailableRegistry);
     if (!mailableRegistry.has(this)) {
-      logger.error(
+      logger.warn(
         `Mailable ${this.type} not manually registered. Using auto-registration.`,
       );
       mailableRegistry.register(this);
@@ -206,7 +206,7 @@ export abstract class MailBase<P> {
 
     const mailableRegistry = resolve(MailableRegistry);
     if (!mailableRegistry.has(this)) {
-      logger.error(
+      logger.warn(
         `Mailable ${this.type} not manually registered. Using auto-registration.`,
       );
       mailableRegistry.register(this);

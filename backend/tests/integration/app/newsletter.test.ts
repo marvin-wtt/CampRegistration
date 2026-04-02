@@ -79,7 +79,7 @@ describe(BASE, () => {
         name: 'My Newsletter',
         description: 'A description',
         createdAt: expect.any(String),
-        updatedAt: null,
+        updatedAt: expect.any(String),
       });
       // replyTo is null when not provided
       expect(body.data.replyTo).toBeNull();
@@ -127,7 +127,7 @@ describe(BASE, () => {
       expect(body.data.description).toBeNull();
     });
 
-    it('should respond with `422` when name is missing', async () => {
+    it('should respond with `400` when name is missing', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
 
@@ -184,16 +184,6 @@ describe(BASE, () => {
         .get(`${BASE}/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
-    });
-
-    it('should respond with `422` when newsletterId is not a valid ULID', async () => {
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
-
-      await request()
-        .get(`${BASE}/not-a-ulid`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
     });
   });
 

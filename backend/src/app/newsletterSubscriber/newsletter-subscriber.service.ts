@@ -53,12 +53,17 @@ export class NewsletterSubscriberService extends BaseService {
     country: string | null | undefined,
     requireConsent: boolean | undefined,
   ): Promise<{ added: number; skipped: number }> {
+    const newsletterConsentWhere = requireConsent
+      ? { newsletterConsent: true }
+      : {
+          OR: [{ newsletterConsent: true }, { newsletterConsent: null }],
+        };
+
     const registrations = await this.prisma.registration.findMany({
       where: {
         campId,
-        country: country ?? undefined,
-        newsletterConsent: requireConsent ? true : { not: false },
-        deletedAt: null,
+        country,
+        ...newsletterConsentWhere,
       },
       select: {
         emails: true,

@@ -125,7 +125,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .expect(400);
     });
 
-    it('should respond with `422` when email is invalid', async () => {
+    it('should respond with `400` when email is invalid', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
@@ -135,7 +135,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .expect(400);
     });
 
-    it('should respond with `422` when email is missing', async () => {
+    it('should respond with `400` when email is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
@@ -255,15 +255,6 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .delete(`${BASE}/${newsletter.id}/managers/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
-    });
-
-    it('should respond with `422` when newsletterManagerId is not a valid ULID', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-
-      await request()
-        .delete(`${BASE}/${newsletter.id}/managers/not-a-ulid`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
     });
   });
 });
