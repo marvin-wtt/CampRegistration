@@ -91,6 +91,15 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     return Promise.resolve();
   }
 
+  public addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    for (const j of jobs) {
+      void this.add(j.name, j.payload, j.options);
+    }
+    return Promise.resolve();
+  }
+
   public close(): void {
     if (this.closed) {
       return;

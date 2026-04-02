@@ -63,4 +63,18 @@ export class MailService {
   ): Promise<void> {
     await this.queue.add(mailable.type, payload, mailable.jobOptions());
   }
+
+  public async dispatchMailBulk<P>(
+    mailable: MailableCtor<P>,
+    payloads: P[],
+  ): Promise<void> {
+    const options = mailable.jobOptions();
+    await this.queue.addBulk(
+      payloads.map((payload) => ({
+        name: mailable.type,
+        payload,
+        options,
+      })),
+    );
+  }
 }

@@ -44,18 +44,16 @@ export class NewsletterMessageController extends BaseController {
       sentByUserId: userId,
     });
 
-    await Promise.all(
-      subscribers.map((subscriber) =>
-        NewsletterMessageMail.enqueue({
-          to: subscriber.email,
-          name: subscriber.name,
-          subject: body.subject,
-          body: body.body,
-          replyTo: newsletter.replyTo ?? undefined,
-          newsletterId: newsletter.id,
-          unsubscribeToken: subscriber.unsubscribeToken,
-        }),
-      ),
+    await NewsletterMessageMail.enqueueBulk(
+      subscribers.map((subscriber) => ({
+        to: subscriber.email,
+        name: subscriber.name,
+        subject: body.subject,
+        body: body.body,
+        replyTo: newsletter.replyTo ?? undefined,
+        newsletterId: newsletter.id,
+        unsubscribeToken: subscriber.unsubscribeToken,
+      })),
     );
 
     res

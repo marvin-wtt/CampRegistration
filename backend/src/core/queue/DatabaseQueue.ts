@@ -106,6 +106,31 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     this.wake();
   }
 
+  public async addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    if (jobs.length === 0) {
+      return;
+    }
+
+    this.assertOpen();
+
+    const now = new Date();
+
+    await prisma.job.createMany({
+      data: jobs.map((j) => ({
+        name: j.name,
+        queue: this.queue,
+        status: 'PENDING' as const,
+        priority: j.options?.priority,
+        runAt: j.options?.delay ? new Date(now.getTime() + j.options.delay) : now,
+        payload: j.payload,
+      })),
+    });
+
+    this.wake();
+  }
+
   private async workerLoop() {
     let sleepMs = 0;
     let errorSleepMs = 0;

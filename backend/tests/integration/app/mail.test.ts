@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { MailBase } from '#app/mail/mail.base.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
+import { resolve } from '#core/ioc/container.js';
+import { MailService } from '#app/mail/mail.service.js';
+import { MailableRegistry } from '#app/mail/mail.registry.js';
 
 const mailer = NoOpMailer.prototype;
 
@@ -29,6 +32,80 @@ describe('Mail', () => {
     await TestMail.enqueue('value 123');
 
     expect(mailer.sendMail).toBeCalledTimes(1);
+  });
+
+  describe('enqueueBulk', () => {
+    it('should not send any email when payloads array is empty', async () => {
+      await TestMail.enqueueBulk([]);
+
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('should send a single email when one payload is provided', async () => {
+      await TestMail.enqueueBulk(['value A']);
+
+      expect(mailer.sendMail).toBeCalledTimes(1);
+      expect(mailer.sendMail).toBeCalledWith(
+        expect.objectContaining({
+          to: 'to@email.com',
+          subject: 'Test Mail',
+          text: 'This is a test mail with payload: value A',
+        }),
+      );
+    });
+
+    it('should send one email per payload when multiple payloads are provided', async () => {
+      await TestMail.enqueueBulk(['value A', 'value B', 'value C']);
+
+      expect(mailer.sendMail).toBeCalledTimes(3);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'This is a test mail with payload: value A',
+        }),
+      );
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'This is a test mail with payload: value B',
+        }),
+      );
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'This is a test mail with payload: value C',
+        }),
+      );
+    });
+  });
+
+  describe('MailService.dispatchMailBulk', () => {
+    it('should not enqueue any jobs when payloads array is empty', async () => {
+      const mailableRegistry = resolve(MailableRegistry);
+      mailableRegistry.register(TestMail);
+      const mailService = resolve(MailService);
+
+      await mailService.dispatchMailBulk(TestMail, []);
+
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('should enqueue one job per payload', async () => {
+      const mailableRegistry = resolve(MailableRegistry);
+      mailableRegistry.register(TestMail);
+      const mailService = resolve(MailService);
+
+      await mailService.dispatchMailBulk(TestMail, ['payload 1', 'payload 2']);
+
+      expect(mailer.sendMail).toBeCalledTimes(2);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'This is a test mail with payload: payload 1',
+        }),
+      );
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'This is a test mail with payload: payload 2',
+        }),
+      );
+    });
   });
 });
 

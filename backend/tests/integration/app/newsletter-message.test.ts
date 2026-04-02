@@ -9,6 +9,9 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
+import { NoOpMailer } from '../../../src/app/mail/noop.mailer.js';
+
+const mailer = NoOpMailer.prototype;
 
 const BASE = '/api/v1/newsletters';
 
@@ -235,6 +238,63 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .expect(201);
 
       expect(body.data.recipientCount).toBe(1);
+    });
+
+    it('should send a mail to each subscriber', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const sub1 = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        email: 'alice@example.com',
+        name: 'Alice',
+      });
+      const sub2 = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        email: 'bob@example.com',
+        name: 'Bob',
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(mailer.sendMail).toBeCalledTimes(2);
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: { name: sub1.name, address: sub1.email } }),
+      );
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: { name: sub2.name, address: sub2.email } }),
+      );
+    });
+
+    it('should not send any mails when there are no subscribers', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('should send mails with the correct subject', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'My Subject', body: '<p>Content</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({ subject: 'My Subject' }),
+      );
     });
 
     it('should respond with `422` when subject is missing', async () => {

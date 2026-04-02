@@ -250,6 +250,153 @@ describe('Queue', () => {
           expect(e).toBeDefined();
         }
       });
+
+      it('addBulk: empty array is a no-op', async () => {
+        const q = createQueue<{ n: number }, string, 'test'>(
+          uniqueName(`q-bulk-empty-${name}`),
+          DEFAULTS,
+        );
+
+        const seen: any[] = [];
+        q.process(async (p) => {
+          seen.push(p.payload);
+          return 'ok';
+        });
+
+        await q.addBulk([]);
+
+        // give the worker a moment to pick up anything (there should be nothing)
+        await wait(200);
+        expect(seen).toHaveLength(0);
+
+        await q.close();
+      });
+
+      it('addBulk: single item is processed', async () => {
+        const q = createQueue<{ n: number }, string, 'test'>(
+          uniqueName(`q-bulk-single-${name}`),
+          DEFAULTS,
+        );
+
+        const seen: any[] = [];
+        q.process(async (p) => {
+          seen.push(p.payload);
+          return 'ok';
+        });
+
+        await q.addBulk([{ name: 'test', payload: { n: 7 } }]);
+
+        await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+          timeout: 5_000,
+        });
+        expect(seen).toEqual([{ n: 7 }]);
+
+        await q.close();
+      });
+
+      it('addBulk: multiple items are all enqueued and processed', async () => {
+        const q = createQueue<{ n: number }, string, 'test'>(
+          uniqueName(`q-bulk-multi-${name}`),
+          DEFAULTS,
+        );
+
+        const seen: number[] = [];
+        q.process(async (p) => {
+          seen.push(p.payload.n);
+          return 'ok';
+        });
+
+        await q.addBulk([
+          { name: 'test', payload: { n: 1 } },
+          { name: 'test', payload: { n: 2 } },
+          { name: 'test', payload: { n: 3 } },
+        ]);
+
+        await waitUntil(async () => (await q.all('COMPLETED')).length === 3, {
+          timeout: 8_000,
+        });
+        expect(seen.sort((a, b) => a - b)).toEqual([1, 2, 3]);
+
+        await q.close();
+      });
+
+      it('addBulk: items with delay option are not processed immediately', async () => {
+        const q = createQueue<{ n: number }, string, 'test'>(
+          uniqueName(`q-bulk-delay-${name}`),
+          DEFAULTS,
+        );
+
+        let ran = false;
+        q.process(async () => {
+          ran = true;
+          return 'ok';
+        });
+
+        await q.addBulk([
+          { name: 'test', payload: { n: 1 }, options: { delay: 400 } },
+        ]);
+
+        await wait(150);
+        expect(ran).toBe(false);
+
+        await waitUntil(() => ran, { timeout: 5_000 });
+
+        await q.close();
+      });
+
+      it('addBulk: items with priority option are accepted without error', async () => {
+        const q = createQueue<{ n: number }, string, 'test'>(
+          uniqueName(`q-bulk-priority-${name}`),
+          DEFAULTS,
+        );
+
+        const seen: number[] = [];
+        q.process(async (p) => {
+          seen.push(p.payload.n);
+          return 'ok';
+        });
+
+        await q.addBulk([
+          { name: 'test', payload: { n: 1 }, options: { priority: 2 } },
+          { name: 'test', payload: { n: 2 }, options: { priority: 1 } },
+        ]);
+
+        await waitUntil(async () => (await q.all('COMPLETED')).length === 2, {
+          timeout: 5_000,
+        });
+        expect(seen).toHaveLength(2);
+
+        await q.close();
+      });
+
+      it('addBulk: throws when queue is closed (database driver)', async () => {
+        if (name !== 'database') {
+          // Only the database implementation guarantees a synchronous throw
+          // from addBulk when the queue is closed; other drivers may no-op or
+          // reject asynchronously.
+          return;
+        }
+
+        const q = createQueue<{ n: number }, string, 'test'>(
+          uniqueName(`q-bulk-closed-${name}`),
+          DEFAULTS,
+        );
+
+        // Give connections time to settle before closing
+        await wait(100);
+
+        await q.close();
+
+        try {
+          await Promise.resolve(
+            q.addBulk([{ name: 'test', payload: { n: 1 } }]),
+          );
+
+          expect.fail('addBulk should throw when queue is closed');
+        } catch (e) {
+          expect(e).toBeDefined();
+        }
+      });
     },
   );
 });

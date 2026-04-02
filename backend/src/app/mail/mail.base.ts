@@ -26,6 +26,7 @@ export interface MailableCtor<P> {
 
   // static methods provided by MailBase
   enqueue(payload: P): Promise<void>;
+  enqueueBulk(payloads: P[]): Promise<void>;
   send(payload: P): Promise<void>;
   jobOptions(): JobOptions | undefined;
 }
@@ -193,6 +194,31 @@ export abstract class MailBase<P> {
     await mailService.dispatchMail(this, payload).catch((error: unknown) => {
       logger.error('Failed to enqueue mail job:', error);
     });
+  }
+
+  static async enqueueBulk<P>(
+    this: MailableCtor<P>,
+    payloads: P[],
+  ): Promise<void> {
+    if (payloads.length === 0) {
+      return;
+    }
+
+    const mailableRegistry = resolve(MailableRegistry);
+    if (!mailableRegistry.has(this)) {
+      logger.error(
+        `Mailable ${this.type} not manually registered. Using auto-registration.`,
+      );
+      mailableRegistry.register(this);
+    }
+
+    const mailService = resolve(MailService);
+
+    await mailService
+      .dispatchMailBulk(this, payloads)
+      .catch((error: unknown) => {
+        logger.error('Failed to bulk-enqueue mail jobs:', error);
+      });
   }
 
   static async send<P>(this: MailableCtor<P>, payload: P): Promise<void> {
