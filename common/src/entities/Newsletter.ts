@@ -20,6 +20,6 @@ export interface NewsletterUpdateData {
   replyTo?: string | null;
 }
 
-export interface NewsLetterQuery {
+export interface NewsletterQuery {
   view?: 'all' | 'assigned';
 }

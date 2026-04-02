@@ -28,7 +28,7 @@ interface CampQueryArgs {
   name?: string | undefined;
   age?: number | undefined;
   startAt?: Date | string | undefined;
-  entAt?: Date | string | undefined;
+  endAt?: Date | string | undefined;
   country?: string | undefined;
   managerUserId?: string | undefined;
 }
@@ -108,7 +108,7 @@ export class CampService extends BaseService {
       minAge: { lte: filter.age },
       maxAge: { gte: filter.age },
       startAt: { gte: filter.startAt },
-      endAt: { lte: filter.entAt },
+      endAt: { lte: filter.endAt },
       countries: { array_contains: filter.country },
       // Filter by manager user id if provided
       ...(filter.managerUserId

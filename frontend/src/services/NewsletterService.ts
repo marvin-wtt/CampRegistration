@@ -3,12 +3,12 @@ import type {
   Newsletter,
   NewsletterCreateData,
   NewsletterUpdateData,
-  NewsLetterQuery,
+  NewsletterQuery,
 } from '@camp-registration/common/entities';
 
 export function useNewsletterService() {
   async function fetchNewsletters(
-    params?: NewsLetterQuery,
+    params?: NewsletterQuery,
   ): Promise<Newsletter[]> {
     const response = await api.get('newsletters/', { params });
     return response?.data?.data;

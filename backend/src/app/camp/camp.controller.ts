@@ -55,7 +55,7 @@ export class CampController extends BaseController {
         country: query.country,
         age: query.age,
         startAt: query.startAt,
-        entAt: query.endAt,
+        endAt: query.endAt,
       },
       {
         page: query.page,
