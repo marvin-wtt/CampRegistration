@@ -44,7 +44,9 @@ export const useNewsletterStore = defineStore('newsletter', () => {
     checkNotNullWithError(id);
     await withProgressNotification('update', async () => {
       const newsletter = await api.updateNewsletter(id, updateData);
-      data.value = data.value?.map((n) => (n.id === newsletter.id ? newsletter : n));
+      data.value = data.value?.map((n) =>
+        n.id === newsletter.id ? newsletter : n,
+      );
     });
   }
 

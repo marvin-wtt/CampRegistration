@@ -35,16 +35,24 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 const { t } = useI18n();
 const assignedCampsStore = useAssignedCampsStore();
 
-const { data: camps, isLoading: loading, error } = storeToRefs(assignedCampsStore);
+const {
+  data: camps,
+  isLoading: loading,
+  error,
+} = storeToRefs(assignedCampsStore);
 
 onMounted(() => void assignedCampsStore.fetchData());
 
 const activeCamps = computed<Camp[]>(() => {
-  return (camps.value ?? []).filter((value) => value.active).toSorted(sortCamps);
+  return (camps.value ?? [])
+    .filter((value) => value.active)
+    .toSorted(sortCamps);
 });
 
 const inactiveCamps = computed<Camp[]>(() => {
-  return (camps.value ?? []).filter((value) => !value.active).toSorted(sortCamps);
+  return (camps.value ?? [])
+    .filter((value) => !value.active)
+    .toSorted(sortCamps);
 });
 
 function sortCamps(a: Camp, b: Camp) {

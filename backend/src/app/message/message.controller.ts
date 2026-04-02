@@ -64,7 +64,11 @@ export class MessageController extends BaseController {
       req.sessionId,
     );
 
-    await RegistrationTemplateMessage.enqueueForAll(camp, registrations, template);
+    await RegistrationTemplateMessage.enqueueForAll(
+      camp,
+      registrations,
+      template,
+    );
 
     res
       .status(httpStatus.CREATED)

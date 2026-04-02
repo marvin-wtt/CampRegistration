@@ -123,7 +123,9 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         queue: this.queue,
         status: 'PENDING' as const,
         priority: j.options?.priority,
-        runAt: j.options?.delay ? new Date(now.getTime() + j.options.delay) : now,
+        runAt: j.options?.delay
+          ? new Date(now.getTime() + j.options.delay)
+          : now,
         payload: j.payload,
       })),
     });

@@ -405,10 +405,12 @@ const isUsingTemplate = ref<boolean>(false);
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
   return (assignedCampsStore.data ?? [])
-    .map((camp): QSelectOption => ({
-      value: camp.id,
-      label: to(camp.name),
-    }))
+    .map(
+      (camp): QSelectOption => ({
+        value: camp.id,
+        label: to(camp.name),
+      }),
+    )
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 

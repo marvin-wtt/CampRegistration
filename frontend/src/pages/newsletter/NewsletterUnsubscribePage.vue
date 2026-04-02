@@ -21,7 +21,9 @@
             size="4rem"
             class="q-mb-md"
           />
-          <div class="text-h6 text-weight-medium q-mb-sm">{{ t('success.title') }}</div>
+          <div class="text-h6 text-weight-medium q-mb-sm">
+            {{ t('success.title') }}
+          </div>
           <div class="text-body2 text-grey">{{ t('success.message') }}</div>
         </template>
 
@@ -32,7 +34,9 @@
             size="4rem"
             class="q-mb-md"
           />
-          <div class="text-h6 text-weight-medium q-mb-sm">{{ t('error.title') }}</div>
+          <div class="text-h6 text-weight-medium q-mb-sm">
+            {{ t('error.title') }}
+          </div>
           <div class="text-body2 text-grey">{{ t('error.message') }}</div>
         </template>
       </q-card-section>

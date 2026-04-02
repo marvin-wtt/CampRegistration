@@ -261,10 +261,14 @@ describe(`${BASE}/:newsletterId/messages`, () => {
 
       expect(mailer.sendMail).toBeCalledTimes(2);
       expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({ to: { name: sub1.name, address: sub1.email } }),
+        expect.objectContaining({
+          to: { name: sub1.name, address: sub1.email },
+        }),
       );
       expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({ to: { name: sub2.name, address: sub2.email } }),
+        expect.objectContaining({
+          to: { name: sub2.name, address: sub2.email },
+        }),
       );
     });
 

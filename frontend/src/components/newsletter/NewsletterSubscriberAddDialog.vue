@@ -111,7 +111,7 @@ input:
   email:
     label: 'E-mail'
     rule:
-      required: 'L''e-mail est requis'
+      required: "L'e-mail est requis"
   name:
     label: 'Nom (optionnel)'
 action:
