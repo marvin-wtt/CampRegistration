@@ -85,7 +85,7 @@ export class CampManagerController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const {
-      params: { campId, managerId },
+      params: { campId, campManagerId },
     } = await req.validate(validator.destroy);
 
     const managers = await this.managerService.getManagers(campId);
@@ -96,7 +96,7 @@ export class CampManagerController extends BaseController {
       );
     }
 
-    await this.managerService.removeManager(managerId);
+    await this.managerService.removeManager(campManagerId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

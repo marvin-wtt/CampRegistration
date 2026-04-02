@@ -10,6 +10,7 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import { NoOpMailer } from '../../../src/app/mail/noop.mailer.js';
+import { expectEmailCount, expectEmailWith } from '../utils/mail';
 
 const mailer = NoOpMailer.prototype;
 
@@ -249,17 +250,13 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(mailer.sendMail).toBeCalledTimes(2);
-      expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: { name: sub1.name, address: sub1.email },
-        }),
-      );
-      expect(mailer.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: { name: sub2.name, address: sub2.email },
-        }),
-      );
+      expectEmailCount(2);
+      expectEmailWith({
+        to: { name: sub1.name!, address: sub1.email },
+      });
+      expectEmailWith({
+        to: { name: sub2.name!, address: sub2.email },
+      });
     });
 
     it('should not send any mails when there are no subscribers', async () => {
