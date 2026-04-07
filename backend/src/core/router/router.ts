@@ -24,7 +24,7 @@ const routers: AppRouter[] = [];
 
 /**
  * Returns true when a model binding has been registered for the given key.
- * Used by the controller wrapper to auto-verify route models at runtime.
+ * Used by {@link requireModels} to auto-verify route models at runtime.
  */
 export function isRegisteredModel(key: string): key is ModelKey {
   return Object.prototype.hasOwnProperty.call(handlers, key);
