@@ -83,7 +83,9 @@ export function applyBinding<T extends ModelKey>(
     }
 
     const result = await handler(req, value);
-    req.setModelOrFail(model, result);
+    if (result != null) {
+      req.setModel(model, result as NonNullable<Models[T]>);
+    }
     next();
   });
 }

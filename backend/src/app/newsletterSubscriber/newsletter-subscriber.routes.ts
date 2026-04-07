@@ -10,7 +10,8 @@ export class NewsletterSubscriberRouter extends ModuleRouter {
   protected registerBindings() {
     const subscriberService = resolve(NewsletterSubscriberService);
     this.bindModel('newsletterSubscriber', (req, id) => {
-      const newsletter = req.modelOrFail('newsletter');
+      const newsletter = req.model('newsletter');
+      if (!newsletter) return null;
       return subscriberService.getSubscriberById(newsletter.id, id);
     });
   }

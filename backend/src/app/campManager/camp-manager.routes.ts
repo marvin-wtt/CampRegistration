@@ -10,7 +10,8 @@ export class CampManagerRouter extends ModuleRouter {
   protected registerBindings() {
     const managerService = resolve(CampManagerService);
     this.bindModel('campManager', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return managerService.getManagerById(camp.id, id);
     });
   }
