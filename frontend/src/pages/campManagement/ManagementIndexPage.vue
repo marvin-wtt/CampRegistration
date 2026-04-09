@@ -105,7 +105,7 @@ title: 'Gestion'
 subtitle: 'Sélectionnez une section pour commencer.'
 camps:
   label: 'Camps'
-  description: "Consulter les inscriptions, gérer les participants et configurer les paramètres du camp."
+  description: 'Consulter les inscriptions, gérer les participants et configurer les paramètres du camp.'
 newsletters:
   label: 'Newsletters'
   description: 'Créer des newsletters et envoyer des messages à vos abonnés.'

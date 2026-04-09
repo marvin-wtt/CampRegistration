@@ -125,7 +125,7 @@ camps:
   description: 'Consulter et gérer tous les camps de la plateforme.'
 newsletters:
   label: 'Newsletters'
-  description: 'Gérer les listes de newsletters et les importations d'abonnés.'
+  description: "Gérer les listes de newsletters et les importations d'abonnés."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
