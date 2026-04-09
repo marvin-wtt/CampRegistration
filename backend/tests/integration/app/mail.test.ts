@@ -157,10 +157,7 @@ describe('NoOpMailer', () => {
 
     expect(() =>
       noop.sendMail({
-        to: [
-          'plain@example.com',
-          { name: 'Bob', address: 'bob@example.com' },
-        ],
+        to: ['plain@example.com', { name: 'Bob', address: 'bob@example.com' }],
         subject: 'Test',
         text: 'body',
       } as never),
