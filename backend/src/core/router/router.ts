@@ -22,10 +22,6 @@ type HandlerMap = {
 const handlers: Partial<HandlerMap> = {};
 const routers: AppRouter[] = [];
 
-/**
- * Returns true when a model binding has been registered for the given key.
- * Used by {@link requireModels} to auto-verify route models at runtime.
- */
 export function isRegisteredModel(key: string): key is ModelKey {
   return Object.prototype.hasOwnProperty.call(handlers, key);
 }
@@ -92,7 +88,7 @@ export function applyBinding<T extends ModelKey>(
 
     const result = await handler(req, value);
     if (result != null) {
-      req.setModel(model, result as NonNullable<Models[T]>);
+      req.setModel(model, result);
     }
     next();
   });
