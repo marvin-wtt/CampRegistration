@@ -172,8 +172,8 @@ jobs:
         with:
           name: Backend
           working-directory: backend
-          json-summary-path: tests/coverage/coverage-summary.json
-          json-final-path: tests/coverage/coverage-final.json
+          json-summary-path: tests/integration/coverage/coverage-summary.json
+          json-final-path: tests/integration/coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
