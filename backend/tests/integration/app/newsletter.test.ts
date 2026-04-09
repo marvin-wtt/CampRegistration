@@ -48,6 +48,22 @@ describe(BASE, () => {
       expect(body.data).toEqual([]);
     });
 
+    it('should respond with `200` and all the newsletters for administrator', async () => {
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+      });
+      const accessToken = generateAccessToken(user);
+
+      await NewsletterFactory.create();
+
+      const { body } = await request()
+        .get(`${BASE}?view=all`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+    });
+
     it('should respond with `403` when requesting view=all', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);

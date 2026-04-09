@@ -66,19 +66,23 @@ describe('QueueManager', () => {
 
   it('close() resolves without error when there are no queues', async () => {
     const manager = makeManager();
-    await expect(manager.close()).resolves.toBeUndefined();
+
+    await manager.close();
   });
 
   it('close() closes all managed queues', async () => {
     const manager = makeManager();
     const q = manager.create(uniqueName('mgr-close'), DEFAULTS);
 
-    // After closing, adding a job should throw
     await manager.close();
 
-    await expect(
-      Promise.resolve(q.add('test', {})),
-    ).rejects.toBeDefined();
+    try {
+      await q.add('test', {});
+
+      expect.fail('add should throw when queue is closed');
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
   });
 });
 

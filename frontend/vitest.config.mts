@@ -15,9 +15,13 @@ export default defineConfig({
       'src/**/*.vitest.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
       'test/vitest/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
     ],
+    coverage: {
+      reporter: ['text', 'json-summary', 'json'],
+      reportOnFailure: true,
+    },
   },
   resolve: {
-    alias: (await getTestingConfig()).resolve.alias,
+    alias: (await getTestingConfig()).resolve?.alias as Record<string, string>,
   },
   plugins: [
     vue({
