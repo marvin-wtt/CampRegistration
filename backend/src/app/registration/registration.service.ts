@@ -319,6 +319,7 @@ export class RegistrationService extends BaseService {
       emails: helper.emails() ?? [],
       role: helper.role() ?? null,
       gender: helper.gender() ?? null,
+      newsletterConsent: helper.newsletterConsent() ?? null,
     };
   }
 }

@@ -13,7 +13,7 @@ type CampManagerWithUserOrInvitation = CampManager & { user: User | null } & {
   invitation: Invitation | null;
 };
 
-abstract class ManagerMessage<
+abstract class CampManagerMessage<
   T extends { manager: CampManagerWithUserOrInvitation },
 > extends MailBase<T> {
   protected to() {
@@ -41,7 +41,7 @@ abstract class ManagerMessage<
   }
 }
 
-export class ManagerInvitationMessage extends ManagerMessage<{
+export class CampManagerInvitationMessage extends CampManagerMessage<{
   manager: CampManagerWithUserOrInvitation;
   camp: Camp;
 }> {
@@ -76,7 +76,7 @@ export class ManagerInvitationMessage extends ManagerMessage<{
   protected content() {
     const camp = this.payload.camp;
     const campName = translateObject(camp.name, this.locale());
-    const url = generateUrl(['management', camp.id]);
+    const url = generateUrl(['management', 'camps', camp.id]);
 
     return {
       template: 'manager-invitation',

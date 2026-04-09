@@ -22,6 +22,17 @@ type MessageTemplateCreateData = (OptionalByKeys<
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
+interface CampQueryArgs {
+  active?: boolean | undefined;
+  public?: boolean | undefined;
+  name?: string | undefined;
+  age?: number | undefined;
+  startAt?: Date | string | undefined;
+  endAt?: Date | string | undefined;
+  country?: string | undefined;
+  managerUserId?: string | undefined;
+}
+
 @injectable()
 export class CampService extends BaseService {
   constructor(
@@ -65,15 +76,7 @@ export class CampService extends BaseService {
   }
 
   async queryCamps(
-    filter: {
-      active?: boolean;
-      public?: boolean;
-      name?: string;
-      age?: number;
-      startAt?: Date | string;
-      entAt?: Date | string;
-      country?: string;
-    } = {},
+    filter: CampQueryArgs = {},
     options: {
       limit?: number;
       page?: number;
@@ -105,8 +108,18 @@ export class CampService extends BaseService {
       minAge: { lte: filter.age },
       maxAge: { gte: filter.age },
       startAt: { gte: filter.startAt },
-      endAt: { lte: filter.entAt },
+      endAt: { lte: filter.endAt },
       countries: { array_contains: filter.country },
+      // Filter by manager user id if provided
+      ...(filter.managerUserId
+        ? {
+            campManager: {
+              some: {
+                userId: filter.managerUserId,
+              },
+            },
+          }
+        : {}),
     };
 
     const camps = await this.prisma.camp.findMany({

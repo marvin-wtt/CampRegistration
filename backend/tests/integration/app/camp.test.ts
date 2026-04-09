@@ -216,7 +216,7 @@ describe('/api/v1/camps', () => {
     });
 
     describe('query', () => {
-      it('should respond with all camps if showAll is true and user is admin', async () => {
+      it('should respond with all camps if view is "all" and user is admin', async () => {
         await CampFactory.create(campActivePublic);
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
@@ -229,7 +229,7 @@ describe('/api/v1/camps', () => {
         const { body } = await request()
           .get(`/api/v1/camps/`)
           .query({
-            showAll: true,
+            view: 'all',
           })
           .auth(accessToken, { type: 'bearer' })
           .send()
@@ -239,7 +239,7 @@ describe('/api/v1/camps', () => {
         expect(body.data.length).toBe(3);
       });
 
-      it('should respond with `401` status code when showAll is set and user is unauthenticated', async () => {
+      it('should respond with `401` status code when view is "all" and user is unauthenticated', async () => {
         await CampFactory.create(campActivePublic);
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
@@ -247,13 +247,13 @@ describe('/api/v1/camps', () => {
         await request()
           .get(`/api/v1/camps/`)
           .query({
-            showAll: true,
+            view: 'all',
           })
           .send()
           .expect(401);
       });
 
-      it('should respond with `403` status code when showAll is set and user is not an admin', async () => {
+      it('should respond with `403` status code when view is "all" and user is not an admin', async () => {
         await CampFactory.create(campActivePublic);
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
@@ -264,11 +264,64 @@ describe('/api/v1/camps', () => {
         await request()
           .get(`/api/v1/camps/`)
           .query({
-            showAll: true,
+            view: 'all',
           })
           .auth(accessToken, { type: 'bearer' })
           .send()
           .expect(403);
+      });
+
+      it('should respond with `401` status code when view is "assigned" and user is unauthenticated', async () => {
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            view: 'assigned',
+          })
+          .send()
+          .expect(401);
+      });
+
+      it('should respond with assigned camps when view is "assigned" and user is not an admin', async () => {
+        const camp1 = await CampFactory.create(campActivePrivate);
+        const camp2 = await CampFactory.create(campInactive);
+
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        const user = await UserFactory.create();
+
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp1.id } },
+          user: { connect: { id: user.id } },
+        });
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp2.id } },
+          user: { connect: { id: user.id } },
+        });
+
+        const accessToken = generateAccessToken(user);
+
+        const { body } = await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            view: 'assigned',
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .send()
+          .expect(200);
+
+        expect(body.data).toHaveLength(2);
+        expect(body.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: camp1.id }),
+            expect.objectContaining({ id: camp2.id }),
+          ]),
+        );
       });
 
       it.skip('should filter by name', async () => {
@@ -525,21 +578,23 @@ describe('/api/v1/camps', () => {
 
   describe('POST /api/v1/camps', () => {
     const assertCampCreated = async (
-      data: CampCreateData,
+      data: Omit<CampCreateData, 'confirmationMode'> & {
+        confirmationMode?: string;
+      },
       locales: string[],
       actual: unknown,
     ) => {
       // Test response
       assertCampResponseBody(
         {
-          ...data,
+          ...(data as CampCreateData),
           locales,
         },
         actual,
       );
 
       const id = (actual as { data: { id: string } }).data.id;
-      await assertCampModel(id, data);
+      await assertCampModel(id, data as CampCreateData);
     };
 
     it('should respond with `201` status code when user is authenticated', async () => {

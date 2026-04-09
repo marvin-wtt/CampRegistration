@@ -1,4 +1,4 @@
-import { ManagerService } from '#app/manager/manager.service';
+import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
 import { permissionRegistry } from '#core/permission-registry';
@@ -11,7 +11,7 @@ export const campManager = (
     const userId = req.authUserId();
     const campId = req.modelOrFail('camp').id;
 
-    const managerService = resolve(ManagerService);
+    const managerService = resolve(CampManagerService);
     const manager = await managerService.getManagerByUserId(campId, userId);
     if (manager === null) {
       return false;

@@ -148,9 +148,9 @@ function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
 function resultsAction() {
   void withLoading(resultLoading, async () => {
     await router.push({
-      name: 'participants',
+      name: 'management.camp.participants',
       params: {
-        camp: camp.id,
+        campId: camp.id,
       },
     });
   });
@@ -162,7 +162,7 @@ function shareAction() {
     router.resolve({
       name: 'camp',
       params: {
-        camp: camp.id,
+        campId: camp.id,
       },
     }).href;
 
@@ -185,9 +185,9 @@ function shareAction() {
 function editAction() {
   void withLoading(editLoading, async () => {
     await router.push({
-      name: 'edit-camp',
+      name: 'management.camp.settings.edit',
       params: {
-        camp: camp.id,
+        campId: camp.id,
       },
     });
   });
@@ -275,8 +275,8 @@ action:
 
 dialog:
   delete:
-    title: 'Lager löschen'
-    message: 'Sind Sie sicher, dass Sie dieses Camp löschen möchten? Alle Anmeldungen gehen verloren. Dieses Lager kann nicht als Vorlage für zukünftige Lager verwendet werden.'
+    title: 'Camp löschen'
+    message: 'Sind Sie sicher, dass Sie dieses Camp löschen möchten? Alle Anmeldungen gehen verloren. Dieses Camp kann nicht als Vorlage für zukünftige Lager verwendet werden.'
     label: 'Camp Name'
 
 notification:

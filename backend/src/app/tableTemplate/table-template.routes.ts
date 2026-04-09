@@ -19,7 +19,8 @@ export class TableTemplateRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('tableTemplate', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return this.tableTemplateService.getTemplateById(camp.id, id);
     });
   }

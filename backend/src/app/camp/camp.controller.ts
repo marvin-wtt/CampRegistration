@@ -13,7 +13,7 @@ import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
-import { ManagerService } from '#app/manager/manager.service';
+import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import ApiError from '#utils/ApiError';
 import { inject, injectable } from 'inversify';
 
@@ -22,7 +22,8 @@ export class CampController extends BaseController {
   constructor(
     @inject(CampService) private readonly campService: CampService,
     @inject(FileService) private readonly fileService: FileService,
-    @inject(ManagerService) private readonly managerService: ManagerService,
+    @inject(CampManagerService)
+    private readonly managerService: CampManagerService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
     @inject(TableTemplateService)
@@ -42,15 +43,18 @@ export class CampController extends BaseController {
   async index(req: Request, res: Response) {
     const { query } = await req.validate(validator.index);
 
+    const showPrivate = query.view === 'all' || query.view === 'assigned';
+
     const camps = await this.campService.queryCamps(
       {
-        public: query.showAll ? undefined : true,
-        active: query.showAll ? undefined : true,
+        managerUserId: query.view === 'assigned' ? req.authUserId() : undefined,
+        public: showPrivate ? undefined : true,
+        active: showPrivate ? undefined : true,
         name: query.name,
         country: query.country,
         age: query.age,
         startAt: query.startAt,
-        entAt: query.endAt,
+        endAt: query.endAt,
       },
       {
         page: query.page,

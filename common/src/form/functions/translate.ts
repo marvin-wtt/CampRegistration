@@ -6,16 +6,24 @@ const translate = (params: unknown[]): unknown => {
     return null;
   }
 
+  function getParam(index: number): unknown {
+    if (index >= params.length) {
+      return null;
+    }
+
+    return params[index];
+  }
+
   const value = params[0] as Record<string, unknown> | string | null;
   if (typeof value === 'string') {
     return value;
   }
 
-  if (typeof value !== 'object' || !value || params.length < 2) {
+  if (typeof value !== 'object' || !value) {
     return null;
   }
 
-  const locale = params[1];
+  const locale = getParam(1) ?? defaultFallback;
   if (typeof locale !== 'string') {
     return null;
   }

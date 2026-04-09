@@ -15,9 +15,17 @@ export default defineConfig({
       'src/**/*.vitest.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
       'test/vitest/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
     ],
+    coverage: {
+      enabled: true,
+      reportOnFailure: true,
+      include: ['src/*'],
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'json'],
+      reportsDirectory: './tests/coverage',
+    },
   },
   resolve: {
-    alias: (await getTestingConfig()).resolve.alias,
+    alias: (await getTestingConfig()).resolve?.alias as Record<string, string>,
   },
   plugins: [
     vue({

@@ -11,7 +11,7 @@ export interface ManagerWithRelationships extends CampManager {
   invitation: Invitation | null;
 }
 
-export class ManagerResource extends JsonResource<
+export class CampManagerResource extends JsonResource<
   ManagerWithRelationships,
   CampManagerData
 > {

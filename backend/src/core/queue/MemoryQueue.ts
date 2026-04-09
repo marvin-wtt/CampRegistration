@@ -91,6 +91,12 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     return Promise.resolve();
   }
 
+  public async addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    await Promise.all(jobs.map((j) => this.add(j.name, j.payload, j.options)));
+  }
+
   public close(): void {
     if (this.closed) {
       return;

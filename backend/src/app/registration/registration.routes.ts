@@ -10,7 +10,8 @@ export class RegistrationRouter extends ModuleRouter {
   protected registerBindings() {
     const registrationService = resolve(RegistrationService);
     this.bindModel('registration', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return registrationService.getRegistrationById(camp.id, id);
     });
   }

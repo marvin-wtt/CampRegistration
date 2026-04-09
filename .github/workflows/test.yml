@@ -15,11 +15,12 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   verify-migrations:
     runs-on: ubuntu-24.04
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     services:
       mysql:
@@ -57,13 +58,44 @@ jobs:
             --from-migrations backend/prisma/migrations \
             --to-schema backend/prisma/schema.prisma
 
+
+  test-common:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test common
+        run: npm run test --workspace common
+
+      - name: Report coverage
+        if: always() && github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Common
+          working-directory: common
+          json-summary-path: tests/coverage/coverage-summary.json
+          json-final-path: tests/coverage/coverage-final.json
+          comment-on: pr
+          file-coverage-mode: changes
+
   test-backend:
     runs-on: ubuntu-24.04
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     strategy:
       matrix:
-        node: [ 22, 24 ]
+        node: [22, 24]
 
     container:
       image: node:${{ matrix.node }}-bookworm
@@ -127,12 +159,27 @@ jobs:
       - name: Migrate test database
         run: npm run migrate --workspace backend
 
-      - name: Test workspaces
-        run: npm run test --workspace backend
+      - name: Test backend
+        run: >
+          npm run test --workspace backend --
+          --coverage.enabled=true
+          --coverage.reporter=json-summary
+          --coverage.reporter=json
+
+      - name: Report coverage
+        if: always() && matrix.node == 24 && github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Backend
+          working-directory: backend
+          json-summary-path: tests/integration/coverage/coverage-summary.json
+          json-final-path: tests/integration/coverage/coverage-final.json
+          comment-on: pr
+          file-coverage-mode: changes
 
   test-frontend:
     runs-on: ubuntu-24.04
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     steps:
       - name: Checkout code
@@ -149,12 +196,23 @@ jobs:
       - name: Build common
         run: npm run build --workspace common
 
-      - name: Test workspaces
+      - name: Test frontend
         run: npm run test --workspace frontend
+
+      - name: Report coverage
+        if: always() && github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Frontend
+          working-directory: frontend
+          json-summary-path: tests/coverage/coverage-summary.json
+          json-final-path: tests/coverage/coverage-final.json
+          comment-on: pr
+          file-coverage-mode: changes
 
   test-e2e:
     runs-on: ubuntu-24.04
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     strategy:
       matrix:
@@ -169,11 +227,12 @@ jobs:
           MYSQL_ROOT_PASSWORD: admin123
         options: >-
           --health-cmd "mysqladmin ping"
-          --health-interval 10s 
-          --health-timeout 5s 
+          --health-interval 10s
+          --health-timeout 5s
           --health-retries 3
         ports:
           - 3306:3306
+
       maildev:
         image: maildev/maildev
         env:
@@ -222,13 +281,7 @@ jobs:
           start: npm run production
           wait-on: 'http://localhost:3001'
           browser: ${{ matrix.browser }}
-          # Records to Cypress Cloud
-          # https://docs.cypress.io/guides/cloud/projects#Set-up-a-project-to-record
           record: true
-
         env:
-          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
-          # in GitHub repo → Settings → Secrets → Actions
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          # pass GitHub token to detect new build vs re-run build
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

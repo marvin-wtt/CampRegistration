@@ -2,6 +2,7 @@ import type { CampDataType } from 'src/lib/surveyJs/properties/campDataMapping/C
 import { type IPropertyGridEditor } from 'survey-creator-core';
 import {
   waitingList,
+  newsletterConsent,
   country,
   dateOfBirth,
   email,
@@ -21,6 +22,7 @@ dataTypes.push(email);
 dataTypes.push(firstName);
 dataTypes.push(lastName);
 dataTypes.push(name);
+dataTypes.push(newsletterConsent);
 dataTypes.push(role);
 dataTypes.push(waitingList);
 

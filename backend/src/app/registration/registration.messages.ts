@@ -52,7 +52,7 @@ abstract class RegistrationMessage<
     this: MailableCtor<P>,
     payloads: Iterable<P> | Promise<Iterable<P>>,
   ): Promise<void> {
-    await Promise.all(Array.from(await payloads).map((p) => this.enqueue(p)));
+    await this.enqueueBulk(Array.from(await payloads));
   }
 
   static async sendMany<P>(
@@ -103,7 +103,7 @@ export class RegistrationNotifyMessage extends MailBase<{
     const camp = this.payload.camp;
     const registration = this.payload.registration;
 
-    const url = generateUrl(['management', camp.id]);
+    const url = generateUrl(['management', 'camps', camp.id]);
 
     return {
       template: 'registration-manager-notification',
@@ -322,6 +322,20 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     }
 
     await this.enqueueMany(payloads);
+  }
+
+  static async enqueueForAll(
+    this: typeof RegistrationTemplateMessage,
+    camp: Camp,
+    registrations: Registration[],
+    messageTemplate: MessageTemplateWithFiles,
+  ): Promise<void> {
+    const payloads = registrations.flatMap(
+      (registration) =>
+        this.prepareForRegistration(camp, registration, messageTemplate) ?? [],
+    );
+
+    await this.enqueueBulk(payloads);
   }
 
   static async sendFor(
