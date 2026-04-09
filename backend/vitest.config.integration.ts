@@ -13,7 +13,6 @@ export default defineConfig({
       exclude: ['src/i18n/*', 'entry.js', 'index.ts'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'json-summary', 'clover'],
-      reportsDirectory: './tests/unit/coverage',
       reportOnFailure: true,
     },
     restoreMocks: true,
