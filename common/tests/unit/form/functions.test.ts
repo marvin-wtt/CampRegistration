@@ -697,16 +697,12 @@ describe('functions', () => {
       expect(model.calculatedValues[1].value).toBe(undefined);
     });
 
-    it('should return undefined if the locale is missing', () => {
+    it('should return any value if the locale is missing', () => {
       const model = new SurveyModel({
         calculatedValues: [
           {
             name: 'calc1',
             expression: 'translate({obj})',
-          },
-          {
-            name: 'calc2',
-            expression: 'translate({obj}, {locale})',
           },
         ],
       });
@@ -716,11 +712,30 @@ describe('functions', () => {
         fr: 'Salut',
       });
 
-      expect(model.calculatedValues[0].value).toBe(undefined);
-      expect(model.calculatedValues[1].value).toBe(undefined);
+      const calc1 = model.calculatedValues[0];
+      expect(calc1.name).toBe('calc1');
+      expect(calc1.value).toBe('Hallo');
     });
 
-    it('should return undefined if the locale is invalid', () => {
+    it('should return undefined if the locale is missing', () => {
+      const model = new SurveyModel({
+        calculatedValues: [
+          {
+            name: 'calc1',
+            expression: 'translate({obj}, {locale})',
+          },
+        ],
+      });
+      model.setVariable('obj', {
+        de: 'Hallo',
+        fr: 'Salut',
+      });
+      model.setVariable('locale', undefined);
+
+      expect(model.calculatedValues[0].value).toBe('Hallo');
+    });
+
+    it('should return any value if the locale is invalid', () => {
       const model = new SurveyModel({
         calculatedValues: [
           {
@@ -736,7 +751,7 @@ describe('functions', () => {
         fr: 'Salut',
       });
 
-      expect(model.calculatedValues[0].value).toBe(undefined);
+      expect(model.calculatedValues[0].value).toBe('Hallo');
     });
   });
 
