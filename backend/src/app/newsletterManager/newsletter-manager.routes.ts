@@ -25,7 +25,12 @@ export class NewsletterManagerRouter extends ModuleRouter {
       guard(newsletterManager),
       controller(managerController, 'index'),
     );
-    this.router.post('/', controller(managerController, 'store'));
+    this.router.post(
+      '/',
+      auth(),
+      guard(newsletterManager),
+      controller(managerController, 'store'),
+    );
     this.router.delete(
       '/:newsletterManagerId',
       auth(),

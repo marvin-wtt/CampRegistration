@@ -60,20 +60,12 @@ const router = useRouter();
 
 const items = [
   {
-    name: 'users',
-    label: t('users.label'),
-    description: t('users.description'),
-    icon: 'people',
-    color: 'indigo',
-    to: { name: 'administration.users' },
-  },
-  {
     name: 'camps',
     label: t('camps.label'),
     description: t('camps.description'),
     icon: 'holiday_village',
     color: 'primary',
-    to: { name: 'administration.camps' },
+    to: { name: 'management.camps' },
   },
   {
     name: 'newsletters',
@@ -81,77 +73,62 @@ const items = [
     description: t('newsletters.description'),
     icon: 'mail',
     color: 'teal',
-    to: { name: 'administration.newsletters' },
+    to: { name: 'management.newsletters' },
   },
 ] as const;
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Administration'
-subtitle: 'Select a section to manage.'
-users:
-  label: 'Users'
-  description: 'Manage user accounts, roles, and permissions.'
+title: 'Management'
+subtitle: 'Select a section to get started.'
 camps:
   label: 'Camps'
-  description: 'View and manage all camps across the platform.'
+  description: 'View registrations, manage participants, and configure camp settings.'
 newsletters:
   label: 'Newsletters'
-  description: 'Manage newsletter lists and subscriber imports.'
+  description: 'Create newsletters and send messages to your subscribers.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Administration'
-subtitle: 'Wähle einen Bereich zur Verwaltung.'
-users:
-  label: 'Benutzer'
-  description: 'Benutzerkonten, Rollen und Berechtigungen verwalten.'
+title: 'Verwaltung'
+subtitle: 'Wähle einen Bereich aus, um zu beginnen.'
 camps:
   label: 'Camps'
-  description: 'Alle Camps der Plattform einsehen und verwalten.'
+  description: 'Anmeldungen einsehen, Teilnehmende verwalten und Camp-Einstellungen konfigurieren.'
 newsletters:
   label: 'Newsletter'
-  description: 'Newsletter-Listen und Abonnenten-Importe verwalten.'
+  description: 'Newsletter erstellen und Nachrichten an Abonnenten senden.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Administration'
-subtitle: 'Sélectionnez une section à gérer.'
-users:
-  label: 'Utilisateurs'
-  description: 'Gérer les comptes utilisateurs, les rôles et les permissions.'
+title: 'Gestion'
+subtitle: 'Sélectionnez une section pour commencer.'
 camps:
   label: 'Camps'
-  description: 'Consulter et gérer tous les camps de la plateforme.'
+  description: "Consulter les inscriptions, gérer les participants et configurer les paramètres du camp."
 newsletters:
   label: 'Newsletters'
-  description: 'Gérer les listes de newsletters et les importations d'abonnés.'
+  description: 'Créer des newsletters et envoyer des messages à vos abonnés.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Administracja'
-subtitle: 'Wybierz sekcję do zarządzania.'
-users:
-  label: 'Użytkownicy'
-  description: 'Zarządzaj kontami użytkowników, rolami i uprawnieniami.'
+title: 'Zarządzanie'
+subtitle: 'Wybierz sekcję, aby rozpocząć.'
 camps:
   label: 'Obozy'
-  description: 'Przeglądaj i zarządzaj wszystkimi obozami na platformie.'
+  description: 'Przeglądaj rejestracje, zarządzaj uczestnikami i konfiguruj ustawienia obozu.'
 newsletters:
   label: 'Newslettery'
-  description: 'Zarządzaj listami newsletterów i importami subskrybentów.'
+  description: 'Twórz newslettery i wysyłaj wiadomości do swoich subskrybentów.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Administrace'
-subtitle: 'Vyberte sekci ke správě.'
-users:
-  label: 'Uživatelé'
-  description: 'Spravujte uživatelské účty, role a oprávnění.'
+title: 'Správa'
+subtitle: 'Vyberte sekci pro začátek.'
 camps:
   label: 'Tábory'
-  description: 'Prohlížejte a spravujte všechny tábory na platformě.'
+  description: 'Zobrazit registrace, spravovat účastníky a konfigurovat nastavení tábora.'
 newsletters:
   label: 'Newslettery'
-  description: 'Spravujte seznamy newsletterů a importy odběratelů.'
+  description: 'Vytvářejte newslettery a odesílejte zprávy svým odběratelům.'
 </i18n>

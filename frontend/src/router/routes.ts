@@ -103,9 +103,10 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'management',
-        redirect: {
-          name: 'management.camps',
+        meta: {
+          hideDrawer: true,
         },
+        component: () => import('pages/campManagement/ManagementIndexPage.vue'),
       },
       {
         path: 'camps',
