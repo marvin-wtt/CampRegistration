@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MailBase } from '#app/mail/mail.base.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
+import { MailFactory } from '#app/mail/mail.factory.js';
 import { resolve } from '#core/ioc/container.js';
 import { MailService } from '#app/mail/mail.service.js';
 import { MailableRegistry } from '#app/mail/mail.registry.js';
@@ -106,6 +107,64 @@ describe('Mail', () => {
         }),
       );
     });
+  });
+});
+
+describe('MailFactory', () => {
+  it('should create a noop mailer for the "noop" driver', () => {
+    const factory = new MailFactory();
+    const instance = factory.createMailer('noop');
+
+    expect(instance).toBeInstanceOf(NoOpMailer);
+  });
+
+  it('should throw an error for an unknown driver', () => {
+    const factory = new MailFactory();
+
+    expect(() => factory.createMailer('unknown-driver')).toThrow(
+      "Invalid mailer driver 'unknown-driver'",
+    );
+  });
+});
+
+describe('NoOpMailer', () => {
+  it('should handle a plain string address', () => {
+    const noop = new NoOpMailer();
+
+    expect(() =>
+      noop.sendMail({
+        to: 'plain@example.com',
+        subject: 'Test',
+        text: 'body',
+      } as never),
+    ).not.toThrow();
+  });
+
+  it('should handle an object address with name and address fields', () => {
+    const noop = new NoOpMailer();
+
+    expect(() =>
+      noop.sendMail({
+        to: { name: 'Alice', address: 'alice@example.com' },
+        subject: 'Test',
+        text: 'body',
+      } as never),
+    ).not.toThrow();
+  });
+
+  it('should handle an array of mixed addresses', () => {
+    const noop = new NoOpMailer();
+
+    expect(() =>
+      noop.sendMail({
+        to: [
+          'plain@example.com',
+          { name: 'Bob', address: 'bob@example.com' },
+        ],
+        subject: 'Test',
+        text: 'body',
+      } as never),
+    ).not.toThrow();
   });
 });
 

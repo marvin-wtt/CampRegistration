@@ -28,6 +28,60 @@ function makeTestContainer(appConfig: AppConfig) {
   return c;
 }
 
+describe('QueueManager', () => {
+  const base = config();
+  const appConfig = {
+    ...base,
+    queue: { ...base.queue, driver: 'memory' as const },
+  } satisfies AppConfig;
+
+  function makeManager() {
+    const c = makeTestContainer(appConfig);
+    return c.get(QueueManager);
+  }
+
+  it('all() returns empty array when no queues have been created', () => {
+    const manager = makeManager();
+    expect(manager.all()).toEqual([]);
+  });
+
+  it('all() returns all created queues', () => {
+    const manager = makeManager();
+    const q1 = manager.create(uniqueName('mgr-a'), {});
+    const q2 = manager.create(uniqueName('mgr-b'), {});
+
+    expect(manager.all()).toContain(q1);
+    expect(manager.all()).toContain(q2);
+  });
+
+  it('create() throws when the same name is used twice', () => {
+    const manager = makeManager();
+    const name = uniqueName('mgr-dup');
+    manager.create(name, {});
+
+    expect(() => manager.create(name, {})).toThrow(
+      `Queue ${name} already exists.`,
+    );
+  });
+
+  it('close() resolves without error when there are no queues', async () => {
+    const manager = makeManager();
+    await expect(manager.close()).resolves.toBeUndefined();
+  });
+
+  it('close() closes all managed queues', async () => {
+    const manager = makeManager();
+    const q = manager.create(uniqueName('mgr-close'), DEFAULTS);
+
+    // After closing, adding a job should throw
+    await manager.close();
+
+    await expect(
+      Promise.resolve(q.add('test', {})),
+    ).rejects.toBeDefined();
+  });
+});
+
 describe('Queue', () => {
   describe.each([{ name: 'database' }, { name: 'memory' }, { name: 'redis' }])(
     '$name queue',
