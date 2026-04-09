@@ -17,7 +17,8 @@ export class RoomRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('room', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return this.roomService.getRoomById(camp.id, id);
     });
   }

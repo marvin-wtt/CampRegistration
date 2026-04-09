@@ -10,7 +10,8 @@ export class BedRouter extends ModuleRouter {
   protected registerBindings() {
     const bedService = resolve(BedService);
     this.bindModel('bed', (req, id) => {
-      const room = req.modelOrFail('room');
+      const room = req.model('room');
+      if (!room) return null;
       return bedService.getBedById(id, room.id);
     });
   }

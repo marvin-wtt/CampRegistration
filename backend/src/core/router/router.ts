@@ -22,6 +22,10 @@ type HandlerMap = {
 const handlers: Partial<HandlerMap> = {};
 const routers: AppRouter[] = [];
 
+export function isRegisteredModel(key: string): key is ModelKey {
+  return Object.prototype.hasOwnProperty.call(handlers, key);
+}
+
 /**
  * Creates an express router with all registered models applied to it
  * @param options
@@ -83,7 +87,9 @@ export function applyBinding<T extends ModelKey>(
     }
 
     const result = await handler(req, value);
-    req.setModelOrFail(model, result);
+    if (result != null) {
+      req.setModel(model, result);
+    }
     next();
   });
 }
