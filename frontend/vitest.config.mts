@@ -16,8 +16,12 @@ export default defineConfig({
       'test/vitest/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
     ],
     coverage: {
-      reporter: ['text', 'json-summary', 'json'],
+      enabled: true,
       reportOnFailure: true,
+      include: ['src/*'],
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'json'],
+      reportsDirectory: './tests/coverage',
     },
   },
   resolve: {

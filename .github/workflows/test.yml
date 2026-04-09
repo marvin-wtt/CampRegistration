@@ -84,8 +84,8 @@ jobs:
         with:
           name: Common
           working-directory: common
-          json-summary-path: coverage/coverage-summary.json
-          json-final-path: coverage/coverage-final.json
+          json-summary-path: tests/coverage/coverage-summary.json
+          json-final-path: tests/coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
@@ -172,8 +172,8 @@ jobs:
         with:
           name: Backend
           working-directory: backend
-          json-summary-path: coverage/coverage-summary.json
-          json-final-path: coverage/coverage-final.json
+          json-summary-path: tests/coverage/coverage-summary.json
+          json-final-path: tests/coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
@@ -205,8 +205,8 @@ jobs:
         with:
           name: Frontend
           working-directory: frontend
-          json-summary-path: coverage/coverage-summary.json
-          json-final-path: coverage/coverage-final.json
+          json-summary-path: tests/coverage/coverage-summary.json
+          json-final-path: tests/coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
