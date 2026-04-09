@@ -78,14 +78,14 @@ jobs:
       - name: Test common
         run: npm run test --workspace common
 
-      - name: Report common coverage
+      - name: Report coverage
         if: always() && github.event_name == 'pull_request'
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           name: Common
           working-directory: common
-          json-summary-path: common/coverage/coverage-summary.json
-          json-final-path: common/coverage/coverage-final.json
+          json-summary-path: coverage/coverage-summary.json
+          json-final-path: coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
@@ -166,14 +166,14 @@ jobs:
           --coverage.reporter=json-summary
           --coverage.reporter=json
 
-      - name: Report backend coverage
+      - name: Report coverage
         if: always() && matrix.node == 24 && github.event_name == 'pull_request'
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           name: Backend
           working-directory: backend
-          json-summary-path: backend/coverage/coverage-summary.json
-          json-final-path: backend/coverage/coverage-final.json
+          json-summary-path: coverage/coverage-summary.json
+          json-final-path: coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
@@ -199,14 +199,14 @@ jobs:
       - name: Test frontend
         run: npm run test --workspace frontend
 
-      - name: Report frontend coverage
+      - name: Report coverage
         if: always() && github.event_name == 'pull_request'
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           name: Frontend
           working-directory: frontend
-          json-summary-path: frontend/coverage/coverage-summary.json
-          json-final-path: frontend/coverage/coverage-final.json
+          json-summary-path: coverage/coverage-summary.json
+          json-final-path: coverage/coverage-final.json
           comment-on: pr
           file-coverage-mode: changes
 
