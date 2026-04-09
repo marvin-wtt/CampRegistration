@@ -15,7 +15,8 @@ export class CampFilesRouter extends ModuleRouter {
     const fileService = resolve(FileService);
 
     this.bindModel('file', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return fileService.getModelFile('camp', camp.id, id);
     });
   }

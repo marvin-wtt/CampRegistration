@@ -59,6 +59,14 @@ class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
     await this.handler({ name, payload });
   }
 
+  async addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    for (const j of jobs) {
+      await this.add(j.name, j.payload, j.options);
+    }
+  }
+
   pause(): Promise<void> {
     return Promise.resolve();
   }

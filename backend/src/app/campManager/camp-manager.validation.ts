@@ -20,7 +20,7 @@ const store = z.object({
 const update = z.object({
   params: z.object({
     campId: z.ulid(),
-    managerId: z.ulid(),
+    campManagerId: z.ulid(),
   }),
   body: z
     .object({
@@ -33,13 +33,13 @@ const update = z.object({
 const destroy = z.object({
   params: z.object({
     campId: z.ulid(),
-    managerId: z.ulid(),
+    campManagerId: z.ulid(),
   }),
 });
 
 const accept = z.object({
   params: z.object({
-    managerId: z.ulid(),
+    campManagerId: z.ulid(),
     token: z.ulid(),
   }),
 });

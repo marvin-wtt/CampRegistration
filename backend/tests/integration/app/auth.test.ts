@@ -306,29 +306,6 @@ describe('/api/v1/auth', async () => {
       expect(body).toHaveProperty('profile.name', 'testuser');
     });
 
-    it('should respond with camps when successful', async () => {
-      const user = await UserFactory.create({
-        email: 'manager@email.net',
-        password: 'password',
-      });
-      const camp = await CampFactory.create();
-      await CampManagerFactory.create({
-        camp: { connect: { id: camp.id } },
-        user: { connect: { id: user.id } },
-      });
-
-      const { body } = await request()
-        .post('/api/v1/auth/login')
-        .send({
-          email: 'manager@email.net',
-          password: 'password',
-        })
-        .expect(200);
-
-      expect(body).toHaveProperty('profile.camps');
-      expect(body.profile.camps.length).toBe(1);
-    });
-
     it('should respond with access token', async () => {
       await createUser();
 

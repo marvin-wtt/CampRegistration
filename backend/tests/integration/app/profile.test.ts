@@ -30,29 +30,8 @@ describe('/api/v1/profile', () => {
         locale: user.locale,
         role: 'USER',
         twoFactorEnabled: false,
-        camps: [],
         campAccess: [],
       });
-    });
-
-    it('should respond with all camps', async () => {
-      const user = await UserFactory.create();
-      const accessToken = generateAccessToken(user);
-
-      const camp = await CampFactory.create();
-      await CampManagerFactory.create({
-        camp: { connect: { id: camp.id } },
-        user: { connect: { id: user.id } },
-      });
-
-      const { body } = await request()
-        .get(`/api/v1/profile/`)
-        .auth(accessToken, { type: 'bearer' })
-        .send()
-        .expect(200);
-
-      expect(body.data.camps).toHaveLength(1);
-      expect(body.data).toHaveProperty('camps.0.id', camp.id);
     });
 
     it.each([
@@ -184,7 +163,6 @@ describe('/api/v1/profile', () => {
         locale: data.locale,
         role: 'USER',
         twoFactorEnabled: false,
-        camps: [],
         campAccess: [],
       });
     });

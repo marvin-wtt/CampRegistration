@@ -12,6 +12,10 @@ import { useProfileService } from 'src/services/ProfileService';
 import { useTotpService } from 'src/services/TotpService';
 import { useMessageTemplateService } from 'src/services/MessageTemplateService';
 import { useMessageService } from 'src/services/MessageService';
+import { useNewsletterService } from 'src/services/NewsletterService';
+import { useNewsletterManagerService } from 'src/services/NewsletterManagerService';
+import { useNewsletterSubscriberService } from 'src/services/NewsletterSubscriberService';
+import { useNewsletterMessageService } from 'src/services/NewsletterMessageService';
 
 export function useAPIService() {
   return {
@@ -28,6 +32,10 @@ export function useAPIService() {
     ...useTotpService(),
     ...useMessageService(),
     ...useMessageTemplateService(),
+    ...useNewsletterService(),
+    ...useNewsletterManagerService(),
+    ...useNewsletterSubscriberService(),
+    ...useNewsletterMessageService(),
   };
 }
 

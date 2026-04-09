@@ -1,4 +1,3 @@
-import type { Camp } from './Camp.js';
 import type { Permissions } from '#permissions';
 
 interface CampAccess {
@@ -13,11 +12,10 @@ export interface Profile {
   role: 'USER' | 'ADMIN';
   twoFactorEnabled: boolean;
   locale: string;
-  camps: Camp[];
   campAccess: CampAccess[];
 }
 
-export type ProfileUpdateData = Partial<Omit<Profile, 'role' | 'camps'>> & {
+export type ProfileUpdateData = Partial<Omit<Profile, 'role'>> & {
   password?: string;
   currentPassword?: string;
 };

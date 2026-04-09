@@ -10,7 +10,8 @@ export class MessageRouter extends ModuleRouter {
   protected registerBindings() {
     const messageService = resolve(MessageService);
     this.bindModel('message', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return messageService.getMessageById(camp.id, id);
     });
   }

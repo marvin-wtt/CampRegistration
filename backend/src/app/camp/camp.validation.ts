@@ -17,7 +17,7 @@ const index = z.object({
       endAt: z.iso.datetime(),
       age: z.coerce.number(),
       country: z.string().length(2),
-      showAll: z.coerce.boolean(),
+      view: z.enum(['all', 'assigned']),
       // Options
       page: z.coerce.number().positive(),
       limit: z.coerce.number().int().positive(),

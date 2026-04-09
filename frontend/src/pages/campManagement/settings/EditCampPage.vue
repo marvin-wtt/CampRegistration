@@ -17,12 +17,13 @@
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import EditCampForm from 'components/campManagement/settings/EditCampForm.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 
+const route = useRoute();
 const router = useRouter();
 
 const loading = ref<boolean>(false);
@@ -57,7 +58,8 @@ async function onSubmit() {
   }
 
   return router.push({
-    name: 'dashboard',
+    name: 'management.camp',
+    params: { campId: route.params.campId },
   });
 }
 </script>

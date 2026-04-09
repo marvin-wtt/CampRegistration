@@ -18,6 +18,11 @@ export * from './User.js';
 export * from './Message.js';
 export * from './MessageTemplate.js';
 
+export * from './Newsletter.js';
+export * from './NewsletterManager.js';
+export * from './NewsletterSubscriber.js';
+export * from './NewsletterMessage.js';
+
 // Types
 export * from './AuthTokens.js';
 export * from './Authentication.js';

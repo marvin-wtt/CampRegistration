@@ -5,11 +5,11 @@ import type {
 import type { AuthTokensResponse, TokenResponse } from '#types/response';
 import {
   ProfileResource,
-  type UserWithCamps,
+  type UserWithCampRoles,
 } from '#app/profile/profile.resource';
 
 interface AuthWithData {
-  user: UserWithCamps;
+  user: UserWithCampRoles;
   tokens: AuthTokensResponse;
 }
 

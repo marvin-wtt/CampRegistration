@@ -35,7 +35,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
   });
 
   async function fetchData(campId?: string) {
-    campId ??= route.params.camp as string;
+    campId ??= route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => {
@@ -44,7 +44,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
   }
 
   async function createData(newData: CampManagerCreateData) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     checkNotNullWithError(campId);
 
@@ -59,12 +59,12 @@ export const useCampManagerStore = defineStore('campManager', () => {
     managerId: string,
     updateData: CampManagerUpdateData,
   ) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     checkNotNullWithError(campId);
     checkNotNullWithNotification(managerId);
 
-    await withProgressNotification('delete', async () => {
+    await withProgressNotification('update', async () => {
       const manager = await api.updateCampManager(
         campId,
         managerId,
@@ -78,7 +78,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
   }
 
   async function deleteData(managerId: string) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     checkNotNullWithError(campId);
     checkNotNullWithNotification(managerId);

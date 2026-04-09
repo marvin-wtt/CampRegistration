@@ -96,6 +96,7 @@ export function useServiceHandler<T>(storeName?: string) {
     data.value = undefined;
     isLoading.value = false;
     error.value = null;
+    needsUpdate.value = true;
   }
 
   function queryParam(modelName: string): string | never {

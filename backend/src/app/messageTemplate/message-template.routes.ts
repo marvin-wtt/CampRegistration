@@ -19,7 +19,8 @@ export class MessageTemplateRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('messageTemplate', (req, id) => {
-      const camp = req.modelOrFail('camp');
+      const camp = req.model('camp');
+      if (!camp) return null;
       return this.messageTemplateService.getMessageTemplateById(camp.id, id);
     });
   }

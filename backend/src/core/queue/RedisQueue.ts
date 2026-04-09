@@ -116,6 +116,18 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
   }
 
+  public async addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    await this.bull.addBulk(
+      jobs.map((j) => ({
+        name: j.name,
+        data: j.payload,
+        opts: { priority: j.options?.priority, delay: j.options?.delay },
+      })),
+    );
+  }
+
   public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
     if (this.worker) {
       throw new Error(`Worker for queue ${this.queue} already exists.`);

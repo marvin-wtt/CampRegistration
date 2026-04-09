@@ -256,12 +256,34 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(403);
     });
 
+    it('should respond with `403` status code when user is not camp manager and registration does not exist', async () => {
+      const camp = await CampFactory.create();
+      const accessToken = generateAccessToken(await UserFactory.create());
+      const registrationId = ulid();
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
     it('should respond with `401` status code when unauthenticated', async () => {
       const camp = await CampFactory.create();
       const registration = await createRegistration(camp);
 
       await request()
         .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send()
+        .expect(401);
+    });
+
+    it('should respond with `401` status code when unauthenticated and registration does not exist', async () => {
+      const camp = await CampFactory.create();
+      const registrationId = ulid();
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
         .expect(401);
     });
@@ -1893,14 +1915,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(registrationCount).toBe(1);
     });
 
-    it('should respond with `404` status code when registration id does not exists', async () => {
+    it('should respond with `401` status code when unauthenticated and registration does not exist', async () => {
       const camp = await CampFactory.create();
       const registrationId = ulid();
 
       await request()
         .delete(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
         .send()
-        .expect(404);
+        .expect(401);
     });
 
     describe('sends messages', () => {
