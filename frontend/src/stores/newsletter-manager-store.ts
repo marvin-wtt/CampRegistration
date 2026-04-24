@@ -24,15 +24,18 @@ export const useNewsletterManagerStore = defineStore(
       checkNotNullWithNotification,
     } = useServiceHandler<NewsletterManager[]>('newsletterManager');
 
-    authBus.on('logout', () => {
-      reset();
-    });
+    authBus.on('logout', reset);
 
-    async function fetchData(newsletterId?: string) {
-      const nid = checkNotNullWithError(newsletterId);
+    let lastNewsletterId: string | null = null;
+
+    async function fetchData(newsletterId: string) {
+      if (lastNewsletterId != null && lastNewsletterId !== newsletterId) {
+        invalidate();
+      }
       await lazyFetch(async () => {
-        return await api.fetchNewsletterManagers(nid);
+        return await api.fetchNewsletterManagers(newsletterId);
       });
+      lastNewsletterId = newsletterId;
     }
 
     async function createData(
