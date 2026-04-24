@@ -30,7 +30,12 @@ export class NewsletterRouter extends ModuleRouter {
       guard(newsletterManager),
       controller(newsletterController, 'show'),
     );
-    this.router.post('/', auth(), controller(newsletterController, 'store'));
+    this.router.post(
+      '/',
+      auth(),
+      guard(),
+      controller(newsletterController, 'store'),
+    );
     this.router.patch(
       '/:newsletterId',
       auth(),
