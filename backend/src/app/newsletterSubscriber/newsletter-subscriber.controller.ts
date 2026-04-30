@@ -6,12 +6,15 @@ import validator from './newsletter-subscriber.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
+import { CampManagerService } from '#app/campManager/camp-manager.service';
 
 @injectable()
 export class NewsletterSubscriberController extends BaseController {
   constructor(
     @inject(NewsletterSubscriberService)
     private readonly subscriberService: NewsletterSubscriberService,
+    @inject(CampManagerService)
+    private readonly campManagerService: CampManagerService,
   ) {
     super();
   }
@@ -58,7 +61,20 @@ export class NewsletterSubscriberController extends BaseController {
 
   async importFromCamp(req: Request, res: Response) {
     const newsletter = req.modelOrFail('newsletter');
+    const userId = req.authUserId();
     const { body } = await req.validate(validator.importFromCamp);
+
+    const isCampManager =
+      await this.campManagerService.campManagerExistsWithUserIdAndCampId(
+        body.campId,
+        userId,
+      );
+    if (!isCampManager) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'You are not allowed to import subscribers from this camp.',
+      );
+    }
 
     const result = await this.subscriberService.importSubscribersFromCamp(
       newsletter.id,

@@ -254,17 +254,6 @@ export class FileService extends BaseService {
       },
     });
 
-    const fileCount = await this.prisma.file.count({
-      where: {
-        name: file.name,
-      },
-    });
-
-    // Do not delete file from storage if other references still exist
-    if (fileCount > 0) {
-      return file;
-    }
-
     // Check if other files still reference the file on the disk
     const remainingReferences = await this.prisma.file.count({
       where: {

@@ -6,6 +6,7 @@ import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
+import contentDisposition from 'content-disposition';
 
 interface ModelData {
   id: string;
@@ -37,10 +38,11 @@ export class FileController extends BaseController {
     // Set response headers for image display
     res.contentType(file.type);
 
-    const disposition = download ? 'attachment' : 'inline';
     res.setHeader(
       'Content-disposition',
-      `${disposition}; filename=${file.originalName}`,
+      contentDisposition(file.originalName, {
+        type: download ? 'attachment' : 'inline',
+      }),
     );
 
     fileStream.pipe(res); // Pipe the file stream to the response
