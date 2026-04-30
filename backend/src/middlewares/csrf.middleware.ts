@@ -20,14 +20,7 @@ const { doubleCsrfProtection } = doubleCsrf({
     secure,
   },
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
-  skipCsrfProtection: (req) => {
-    if (req.isUnauthenticated()) {
-      return true;
-    }
-
-    // Ignore for header-based authentication
-    return req.headers.authorization !== undefined;
-  },
+  skipCsrfProtection: (req) => req.isUnauthenticated(),
 });
 
 export const csrfProtection = doubleCsrfProtection;

@@ -42,7 +42,6 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.options('*splat', cors());
 
   // use forwarded ip address from reverse proxy - required for throttling and logging
   app.enable('trust proxy');
