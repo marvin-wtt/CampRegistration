@@ -261,7 +261,7 @@
                 <q-separator />
                 <div
                   class="q-pa-md newsletter-preview"
-                  v-html="message.body"
+                  v-html="sanitize(message.body)"
                 />
               </q-expansion-item>
             </q-list>
@@ -533,6 +533,7 @@ import NewsletterSubscriberImportDialog from 'components/newsletter/NewsletterSu
 import NewsletterManagerAddDialog from 'components/newsletter/NewsletterManagerAddDialog.vue';
 import { useAPIService } from 'src/services/APIService';
 import { useProfileStore } from 'stores/profile-store';
+import DOMPurify from 'dompurify';
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
@@ -583,6 +584,10 @@ const error = computed<string | null>(
     messageStore.error ??
     null,
 );
+
+function sanitize(html: string): string {
+  return DOMPurify.sanitize(html);
+}
 
 const filteredSubscribers = computed<NewsletterSubscriber[]>(() => {
   const query = subscriberFilter.value?.trim().toLowerCase();
