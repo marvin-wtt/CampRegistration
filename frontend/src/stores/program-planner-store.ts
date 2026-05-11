@@ -53,7 +53,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     // Generate a temporary ID and replace it later
     const tmpId = `#${crypto.randomUUID()}`;
 
-    withErrorNotification('create', async () => {
+    return withErrorNotification('create', async () => {
       const result = await apiService.createProgramEvent(campId, event);
 
       // Add item to data
@@ -90,11 +90,11 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
 
     if (isIdOptimistic(id)) {
       return withErrorNotification('update', () => {
-        throw 'Please wait...';
+        throw new Error('Please wait until the event is created');
       });
     }
 
-    withErrorNotification('update', () =>
+    await withErrorNotification('update', () =>
       apiService.updateProgramEvent(campId, id, event),
     );
 
@@ -118,11 +118,11 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
 
     if (isIdOptimistic(id)) {
       return withErrorNotification('update', () => {
-        throw 'Please wait...';
+        throw new Error('Please wait until the event is created');
       });
     }
 
-    withErrorNotification('delete', () =>
+    await withErrorNotification('delete', () =>
       apiService.deleteProgramEvent(campId, id),
     );
 

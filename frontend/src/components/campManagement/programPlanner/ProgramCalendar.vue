@@ -80,7 +80,7 @@
 
 <script lang="ts" setup>
 import '@quasar/quasar-ui-qcalendar/dist/index.css';
-import { QCalendarDay, Timestamp } from '@quasar/quasar-ui-qcalendar';
+import { QCalendarDay, type Timestamp } from '@quasar/quasar-ui-qcalendar';
 import { useI18n } from 'vue-i18n';
 import type {
   CampDetails,
@@ -93,7 +93,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import CalendarNavigationBar from 'components/campManagement/programPlanner/CalendarNavigationBar.vue';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
-import { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
+import type { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
 import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 

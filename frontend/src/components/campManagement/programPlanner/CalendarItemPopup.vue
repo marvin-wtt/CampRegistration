@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ProgramEvent } from '@camp-registration/common/entities';
+import type { ProgramEvent } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -45,16 +45,16 @@ const error = computed(() => {
   return campDetailsStore.error ?? programPlannerStore.error;
 });
 
-function onEventAdd(event: ProgramEventCreateData) {
-  programPlannerStore.createEntry(event);
+async function onEventAdd(event: ProgramEventCreateData) {
+  await programPlannerStore.createEntry(event);
 }
 
-function onEventUpdate(id: string, eventUpdate: ProgramEventUpdateData) {
-  programPlannerStore.updateEntry(id, eventUpdate);
+async function onEventUpdate(id: string, eventUpdate: ProgramEventUpdateData) {
+  await programPlannerStore.updateEntry(id, eventUpdate);
 }
 
-function onEventDelete(id: string) {
-  programPlannerStore.deleteEntry(id);
+async function onEventDelete(id: string) {
+  await programPlannerStore.deleteEntry(id);
 }
 </script>
 

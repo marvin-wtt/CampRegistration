@@ -254,11 +254,15 @@ import {
   parseTimestamp,
 } from '@quasar/quasar-ui-qcalendar';
 
-import { QPopupProxy, QSelectOption, useDialogPluginComponent } from 'quasar';
+import {
+  QPopupProxy,
+  type QSelectOption,
+  useDialogPluginComponent,
+} from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref } from 'vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { ProgramEventCreateData } from '@camp-registration/common/entities';
+import type { ProgramEventCreateData } from '@camp-registration/common/entities';
 
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
