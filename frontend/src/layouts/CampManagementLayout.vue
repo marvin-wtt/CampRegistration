@@ -151,7 +151,7 @@ const campDetailStore = useCampDetailsStore();
 onMounted(async () => {
   await authStore.init();
 
-  if (route.params.camp) {
+  if (route.params.campId) {
     await campDetailStore.fetchData();
   }
 });
@@ -189,7 +189,7 @@ const items: NavigationItemProps[] = [
     label: t('participants'),
     icon: 'groups',
     permission: 'camp.registrations.view',
-    to: { name: 'participants' },
+    to: { name: 'management.camp.participants' },
   },
   {
     name: 'contact',
@@ -211,13 +211,13 @@ const items: NavigationItemProps[] = [
     label: t('room_planner'),
     icon: 'single_bed',
     permission: 'camp.rooms.view',
-    to: { name: 'room-planner' },
+    to: { name: 'management.camp.room-planner' },
   },
   {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
-    to: { name: 'management.settings' },
+    to: { name: 'management.camp.settings' },
     separated: true,
     children: [
       {
@@ -225,35 +225,35 @@ const items: NavigationItemProps[] = [
         label: t('access'),
         icon: 'key',
         permission: 'camp.managers.view',
-        to: { name: 'access' },
+        to: { name: 'management.camp.settings.access' },
       },
       {
         name: 'edit',
         label: t('edit'),
         icon: 'edit',
         permission: 'camp.edit',
-        to: { name: 'edit-camp' },
+        to: { name: 'management.camp.settings.edit' },
       },
       {
         name: 'email-templates',
         label: t('email_templates'),
         icon: 'email',
         permission: 'camp.message_templates.view',
-        to: { name: 'edit-email-templates' },
+        to: { name: 'management.camp.settings.emails' },
       },
       {
         name: 'files',
         label: t('files'),
         icon: 'folder',
         permission: 'camp.files.view',
-        to: { name: 'edit-files' },
+        to: { name: 'management.camp.settings.files' },
       },
       {
         name: 'form',
         label: t('form'),
         icon: 'feed',
         permission: 'camp.edit',
-        to: { name: 'edit-form' },
+        to: { name: 'management.camp.settings.form' },
       },
     ],
   },

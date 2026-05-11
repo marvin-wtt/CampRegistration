@@ -1,9 +1,10 @@
-import type { Camp } from '@prisma/client';
+import type { Camp } from '#generated/prisma/client.js';
 import type {
   Camp as CampResourceData,
   CampDetails as CampDetailsResourceData,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
+import { countriesToLocales } from '#utils/countriesToLocales';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: Record<string, number> | number;
@@ -18,7 +19,9 @@ export class CampResource extends JsonResource<
       id: this.data.id,
       public: this.data.public,
       active: this.data.active,
+      confirmationMode: this.data.confirmationMode,
       countries: this.data.countries,
+      locales: countriesToLocales(this.data.countries),
       name: this.data.name,
       organizer: this.data.organizer,
       contactEmail: this.data.contactEmail,

@@ -12,7 +12,9 @@
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="20px 0 20px 0">
       <mj-column>
-        <mj-text align="center" font-size="20px" font-weight="300">{{{t 'appName' }}}</mj-text>
+        <mj-text align="center" font-size="20px" font-weight="300">
+          {{ appName }}
+        </mj-text>
       </mj-column>
     </mj-section>
     <mj-section background-color="#F2F2F2" padding="0">
@@ -40,7 +42,7 @@
     <mj-section mj-class="bottom-section">
       <mj-column vertical-align="middle" width="70%">
         <mj-text align="center" mj-class="small-text">
-          {{{t 'email:footer.sentTo' this }}}
+          {{{tg 'email:footer.sentTo' this }}}
           <br>
           {{{t 'footer.cause' this }}}
         </mj-text>

@@ -4,7 +4,7 @@ import { AuthModule } from '#app/auth/auth.module';
 import { CampModule } from '#app/camp/camp.module';
 import { RegistrationModule } from '#app/registration/registration.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
-import { ManagerModule } from '#app/manager/manager.module';
+import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
 import { MessageTemplateModule } from '#app/messageTemplate/message-template.module';
 import { MessageModule } from '#app/message/message.module';
 import { RoomModule } from '#app/room/room.module';
@@ -18,9 +18,13 @@ import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
 import { MailModule } from '#app/mail/mail.module';
+import { NewsletterModule } from '#app/newsletter/newsletter.module';
+import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
+import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
+import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
-import { startJobs, stopJobs } from '#jobs/index';
+import { startJobs, stopJobs } from '#jobs';
 import { connectDatabase, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container } from '#core/ioc/container';
@@ -41,13 +45,17 @@ const loadModules = () =>
     new UserModule(),
     new RegistrationModule(),
     new TableTemplateModule(),
-    new ManagerModule(),
+    new CampManagerModule(),
     new MessageModule(),
     new MessageTemplateModule(),
     new RoomModule(),
     new BedModule(),
     new ProgramEventModule(),
     new FeedbackModule(),
+    new NewsletterModule(),
+    new NewsletterSubscriberModule(),
+    new NewsletterManagerModule(),
+    new NewsletterMessageModule(),
   ]);
 
 export async function boot() {
@@ -72,7 +80,7 @@ export async function shutdown() {
 
 async function bootModules() {
   // Bind module services
-  await container.load(
+  container.load(
     ...modules.map(
       (module) =>
         new ContainerModule((options) => {

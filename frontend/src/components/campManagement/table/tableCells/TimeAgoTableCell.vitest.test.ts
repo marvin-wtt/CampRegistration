@@ -2,7 +2,7 @@ import { describe, it, vi, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest';
+import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
 import type {
   CampDetails,
   Registration,
@@ -30,7 +30,7 @@ const createCellProps = (
     data: {} as Registration['data'],
     computedData: {} as Registration['computedData'],
     customData: {} as Registration['customData'],
-    waitingList: false,
+    status: 'ACCEPTED',
     createdAt: '2023-01-01T00:00:00Z',
   },
   rowIndex: 0,
@@ -53,9 +53,11 @@ const createCamp = (
 ): TableCellProps['camp'] => ({
   id: crypto.randomUUID(),
   name: 'Test Camp',
+  confirmationMode: 'AUTOMATIC' as const,
   active: true,
   public: true,
   countries: [],
+  locales: [],
   organizer: 'Organizer Name',
   contactEmail: '',
   maxParticipants: 100,

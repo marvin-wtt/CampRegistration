@@ -24,7 +24,7 @@ export class CampModule implements AppModule {
   registerRoutes(router: AppRouter): void {
     registerFileGuard('camp', campFileGuard);
 
-    router.useRouter('/camps/:campsId/files', new CampFilesRouter());
+    router.useRouter('/camps/:campId/files', new CampFilesRouter());
     router.useRouter('/camps', new CampRouter());
   }
 

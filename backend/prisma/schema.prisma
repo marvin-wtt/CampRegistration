@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 // TODO This is a workaround due to https://github.com/prisma/prisma/issues/3219
@@ -9,7 +10,6 @@ generator json {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -27,8 +27,10 @@ model User {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime? @updatedAt @map("updated_at")
 
-  campRoles CampManager[]
-  tokens    Token[]
+  campRoles          CampManager[]
+  tokens             Token[]
+  newsletterManagers NewsletterManager[]
+  sentMessages       NewsletterMessage[]
 
   @@map("users")
 }
@@ -38,33 +40,39 @@ enum Role {
   ADMIN
 }
 
+enum ConfirmationMode {
+  AUTOMATIC
+  MANUAL
+}
+
 model Camp {
-  id              String    @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
-  active          Boolean
-  public          Boolean
+  id               String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  active           Boolean
+  public           Boolean
+  confirmationMode ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
   /// ![Array<string>]
-  countries       Json      @db.Json
+  countries        Json             @db.Json
   /// ![string | Record<string, string>]
-  name            Json      @db.Json
+  name             Json             @db.Json
   /// ![string | Record<string, string>]
-  organizer       Json      @db.Json
+  organizer        Json             @db.Json
   /// ![string | Record<string, string>]
-  contactEmail    Json      @map("contact_email") @db.Json
+  contactEmail     Json             @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
-  maxParticipants Json      @map("max_participants") @db.Json
-  minAge          Int       @map("min_age") @db.UnsignedInt
-  maxAge          Int       @map("max_age") @db.UnsignedInt
-  startAt         DateTime  @map("start_at") @db.DateTime(0)
-  endAt           DateTime  @map("end_at") @db.DateTime(0)
-  price           Float
+  maxParticipants  Json             @map("max_participants") @db.Json
+  minAge           Int              @map("min_age") @db.UnsignedInt
+  maxAge           Int              @map("max_age") @db.UnsignedInt
+  startAt          DateTime         @map("start_at") @db.DateTime(0)
+  endAt            DateTime         @map("end_at") @db.DateTime(0)
+  price            Float
   /// ![string | Record<string, string>]
-  location        Json?     @db.Json
+  location         Json?            @db.Json
   /// ![Record<string, unknown>]
-  form            Json      @db.Json
+  form             Json             @db.Json
   /// ![Record<string, unknown>]
-  themes          Json      @default("{}") @db.Json
-  createdAt       DateTime? @default(now()) @map("created_at")
-  updatedAt       DateTime? @updatedAt @map("updated_at")
+  themes           Json             @default("{}") @db.Json
+  createdAt        DateTime?        @default(now()) @map("created_at")
+  updatedAt        DateTime?        @updatedAt @map("updated_at")
 
   campManager      CampManager[]
   registrations    Registration[]
@@ -103,31 +111,38 @@ model Invitation {
   @@map("camp_manager_invitations")
 }
 
+enum RegistrationStatus {
+  ACCEPTED
+  PENDING
+  WAITLISTED
+}
+
 model Registration {
-  id          String    @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
-  campId      String    @map("camp_id") @db.Char(26)
+  id                String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
+  campId            String             @map("camp_id") @db.Char(26)
   /// ![Record<string, unknown>]
-  data        Json      @db.Json
+  data              Json               @db.Json
   /// ![Record<string, unknown>]
-  customData  Json?     @map("custom_data") @db.Json
+  customData        Json?              @map("custom_data") @db.Json
   // Computed fields
-  firstName   String?   @map("first_name")
-  lastName    String?   @map("last_name")
-  role        String?
-  gender      String?
-  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  firstName         String?            @map("first_name")
+  lastName          String?            @map("last_name")
+  role              String?
+  gender            String?
+  dateOfBirth       DateTime?          @map("date_of_birth") @db.Date
   /// ![Array<string>]
-  emails      Json?
-  street      String?
-  city        String?
-  zipCode     String?   @map("zip_code")
-  country     String?
-  locale      String    @default("en-US") @db.VarChar(5)
+  emails            Json?
+  street            String?
+  city              String?
+  zipCode           String?            @map("zip_code")
+  country           String?
+  newsletterConsent Boolean?           @map("newsletter_consent")
+  locale            String             @default("en-US") @db.VarChar(5)
   //
-  waitingList Boolean   @default(true) @map("waiting_list")
-  deletedAt   DateTime?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
+  status            RegistrationStatus @default(PENDING)
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime?          @updatedAt @map("updated_at")
 
   camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
   bed      Bed?
@@ -241,13 +256,12 @@ model Message {
 model MessageTemplate {
   id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
   campId    String    @map("camp_id") @db.Char(26)
+  country   String?
   event     String?
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
-  /// ![string | Record<string, string>]
-  subject   Json
-  /// ![string | Record<string, string>]
-  body      Json
+  subject   String    @db.Text
+  body      String    @db.LongText
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
@@ -255,6 +269,7 @@ model MessageTemplate {
   messages    Message[]
   attachments File[]
 
+  @@unique([country, event, campId], map: "message_templates_country_event_camp_id_unique")
   @@map("message_templates")
 }
 
@@ -291,6 +306,66 @@ model JobRateLimit {
   refilledAt DateTime @map("refilled_at") @db.DateTime(3)
 
   @@map("job_rate_limits")
+}
+
+model Newsletter {
+  id          String    @id @unique(map: "newsletters_id_unique") @default(ulid()) @db.Char(26)
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  replyTo     String?   @map("reply_to") @db.Char(255)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+
+  managers    NewsletterManager[]
+  subscribers NewsletterSubscriber[]
+  messages    NewsletterMessage[]
+
+  @@map("newsletters")
+}
+
+model NewsletterManager {
+  id           String @id @unique(map: "newsletter_managers_id_unique") @default(ulid()) @db.Char(26)
+  newsletterId String @map("newsletter_id") @db.Char(26)
+  userId       String @map("user_id") @db.Char(26)
+
+  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_managers_newsletter_id_foreign")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_managers_user_id_foreign")
+
+  @@unique([newsletterId, userId], map: "newsletter_managers_newsletter_id_user_id_unique")
+  @@index([newsletterId], map: "newsletter_managers_newsletter_id_index")
+  @@index([userId], map: "newsletter_managers_user_id_index")
+  @@map("newsletter_managers")
+}
+
+model NewsletterSubscriber {
+  id               String   @id @unique(map: "newsletter_subscribers_id_unique") @default(ulid()) @db.Char(26)
+  newsletterId     String   @map("newsletter_id") @db.Char(26)
+  email            String   @db.VarChar(255)
+  name             String?  @db.VarChar(255)
+  unsubscribeToken String   @unique(map: "newsletter_subscribers_unsubscribe_token_unique") @map("unsubscribe_token") @db.Char(64)
+  subscribedAt     DateTime @default(now()) @map("subscribed_at")
+
+  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_subscribers_newsletter_id_foreign")
+
+  @@unique([newsletterId, email], map: "newsletter_subscribers_newsletter_id_email_unique")
+  @@index([newsletterId], map: "newsletter_subscribers_newsletter_id_index")
+  @@map("newsletter_subscribers")
+}
+
+model NewsletterMessage {
+  id             String   @id @unique(map: "newsletter_messages_id_unique") @default(ulid()) @db.Char(26)
+  newsletterId   String   @map("newsletter_id") @db.Char(26)
+  sentByUserId   String?  @map("sent_by_user_id") @db.Char(26)
+  subject        String   @db.VarChar(255)
+  body           String   @db.Text
+  recipientCount Int      @map("recipient_count")
+  sentAt         DateTime @default(now()) @map("sent_at")
+
+  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_messages_newsletter_id_foreign")
+  sentBy     User?      @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "newsletter_messages_sent_by_user_id_foreign")
+
+  @@index([newsletterId], map: "newsletter_messages_newsletter_id_index")
+  @@map("newsletter_messages")
 }
 
 model ProgramEvent {

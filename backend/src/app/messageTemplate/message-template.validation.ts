@@ -1,5 +1,4 @@
 import { z, type ZodType } from 'zod';
-import { translatedValue } from '#core/validation/helper';
 import type {
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
@@ -19,7 +18,6 @@ const index = z.object({
   }),
   query: z
     .object({
-      includeDefaults: z.coerce.boolean().optional(),
       hasEvent: z.coerce.boolean().optional(),
     })
     .partial() satisfies ZodType<MessageTemplateQuery>,
@@ -30,9 +28,10 @@ const store = z.object({
     campId: z.ulid(),
   }),
   body: z.object({
+    country: z.string().length(2),
     event: z.string(),
-    subject: translatedValue(z.string()),
-    body: translatedValue(z.string()),
+    subject: z.string(),
+    body: z.string(),
     priority: z.enum(['low', 'normal', 'high']).optional(),
     attachmentIds: z.array(z.ulid()).optional(),
   }) satisfies ZodType<MessageTemplateCreateData>,
@@ -45,8 +44,8 @@ const update = z.object({
   }),
   body: z
     .object({
-      subject: translatedValue(z.string()),
-      body: translatedValue(z.string()),
+      subject: z.string(),
+      body: z.string(),
       priority: z.enum(['low', 'normal', 'high']),
       attachmentIds: z.array(z.ulid()),
     })

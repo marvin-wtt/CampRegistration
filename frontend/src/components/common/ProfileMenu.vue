@@ -39,6 +39,21 @@
         </q-item>
 
         <q-item
+          v-close-popup
+          clickable
+          :to="{ name: 'management.newsletters' }"
+          active-class=""
+          exact-active-class=""
+        >
+          <q-item-section avatar>
+            <q-icon name="mail" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('newsletters') }}
+          </q-item-section>
+        </q-item>
+
+        <q-item
           v-if="administrator"
           v-close-popup
           clickable
@@ -211,6 +226,7 @@ function logout() {
 account: 'Account'
 username: 'Signed in as'
 camps: 'My camps'
+newsletters: 'Newsletters'
 administration: 'Administration'
 light_mode: 'Light Mode'
 login: 'Login'
@@ -223,6 +239,7 @@ dark_mode: 'Dark Mode'
 account: 'Konto'
 username: 'Angemeldet als'
 camps: 'Meine Camps'
+newsletters: 'Newsletter'
 administration: 'Verwaltung'
 light_mode: 'Hellmodus'
 login: 'Anmelden'
@@ -235,6 +252,7 @@ dark_mode: 'Dunkelmodus'
 account: 'Compte'
 username: 'Connecté en tant que'
 camps: 'Mes camps'
+newsletters: 'Newsletters'
 administration: 'Administration'
 light_mode: 'Mode lumineux'
 login: 'Connexion'
@@ -247,6 +265,7 @@ dark_mode: 'Mode sombre'
 account: 'Konto'
 username: 'Zalogowany jako'
 camps: 'Moje obozy'
+newsletters: 'Newslettery'
 administration: 'Administracja'
 light_mode: 'Tryb jasny'
 login: 'Zaloguj się'
@@ -259,6 +278,7 @@ dark_mode: 'Tryb ciemny'
 account: 'Účet'
 username: 'Přihlášen jako'
 camps: 'Moje tábory'
+newsletters: 'Newslettery'
 administration: 'Administrace'
 light_mode: 'Světlý režim'
 login: 'Přihlásit se'

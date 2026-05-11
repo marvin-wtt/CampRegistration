@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma.js';
-import { TokenType, User } from '@prisma/client';
+import { TokenType, User } from '#generated/prisma/client.js';
 import {
   CampFactory,
   UserFactory,
@@ -304,29 +304,6 @@ describe('/api/v1/auth', async () => {
 
       expect(body).toHaveProperty('profile.email', 'test@email.net');
       expect(body).toHaveProperty('profile.name', 'testuser');
-    });
-
-    it('should respond with camps when successful', async () => {
-      const user = await UserFactory.create({
-        email: 'manager@email.net',
-        password: 'password',
-      });
-      const camp = await CampFactory.create();
-      await CampManagerFactory.create({
-        camp: { connect: { id: camp.id } },
-        user: { connect: { id: user.id } },
-      });
-
-      const { body } = await request()
-        .post('/api/v1/auth/login')
-        .send({
-          email: 'manager@email.net',
-          password: 'password',
-        })
-        .expect(200);
-
-      expect(body).toHaveProperty('profile.camps');
-      expect(body.profile.camps.length).toBe(1);
     });
 
     it('should respond with access token', async () => {
@@ -980,7 +957,7 @@ describe('/api/v1/auth', async () => {
         .send({
           email: 'test@email.net',
         })
-        .expect(204);
+        .expectOrPrint(204);
     });
 
     it('should respond with `204` status code when provided with invalid email', async () => {

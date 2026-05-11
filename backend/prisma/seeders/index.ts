@@ -1,10 +1,9 @@
 import prisma from '../factories/prisma';
 import userSeeder from './user.seeder';
 import campSeeder from './camp.seeder';
-import messageTemplate from './message-template.seeder';
-import registrationSeeder from './registration.seeder';
 import campManagerSeeder from './camp-manager.seeder';
 import tableTemplate from './table-template.seeder';
+import newsletterSeeder from './newsletter.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
 async function main() {
@@ -13,8 +12,7 @@ async function main() {
     campSeeder,
     tableTemplate,
     campManagerSeeder,
-    messageTemplate,
-    registrationSeeder,
+    newsletterSeeder,
   ];
 
   console.log(`Start seeding ...`);

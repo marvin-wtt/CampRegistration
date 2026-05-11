@@ -50,7 +50,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
   });
 
   router.beforeEach(async (to, from) => {
-    if (to.params.camp === undefined) {
+    if (to.params.campId === undefined) {
       if (data.value !== undefined) {
         reset();
         bus.emit('change', undefined);
@@ -58,15 +58,15 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       return;
     }
 
-    if (data.value === undefined || to.params.camp !== from.params.camp) {
-      const campId = to.params.camp as string;
+    if (data.value === undefined || to.params.campId !== from.params.campId) {
+      const campId = to.params.campId as string;
       invalidate();
       await fetchData(campId);
     }
   });
 
   async function fetchData(id?: string) {
-    const campId = id ?? (route.params.camp as string);
+    const campId = id ?? (route.params.campId as string);
 
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => {
@@ -82,7 +82,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress',
   ): Promise<CampDetails | undefined> {
     const campId =
-      newData.id ?? data.value?.id ?? (route.params.camp as string);
+      newData.id ?? data.value?.id ?? (route.params.campId as string);
 
     checkNotNullWithError(campId);
 

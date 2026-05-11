@@ -8,7 +8,7 @@ import {
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
-import { Camp, Room } from '@prisma/client';
+import { Camp, Room } from '#generated/prisma/client.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
@@ -191,6 +191,28 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       },
     );
 
+    it('should respond with `200` status code when registrationId is null', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const room = await createRoomWithCamp(camp);
+      const bed = await createBedWithRoom(room);
+
+      const data = {
+        registrationId: null,
+      };
+
+      const response = await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body).toHaveProperty('data.registrationId', null);
+
+      const updatedBed = await prisma.bed.findFirst();
+      expect(updatedBed).toBeDefined();
+      expect(updatedBed).toHaveProperty('registrationId', null);
+    });
+
     it('should respond with `400` status code when registration id is invalid', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const room = await createRoomWithCamp(camp);
@@ -219,6 +241,24 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
 
       await request()
         .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `403` status code when user is not camp manager an resource does not exist', async () => {
+      const camp = await CampFactory.create();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      const roomId = ulid();
+      const bedId = ulid();
+
+      const data = {
+        name: 'Updated Room',
+      };
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/rooms/${roomId}/beds/${bedId}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);

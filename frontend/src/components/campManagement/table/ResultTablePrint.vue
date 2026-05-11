@@ -69,6 +69,7 @@ import type {
 import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
+import { toRef } from 'vue';
 
 const { questions, registrations, template, camp, title } = defineProps<{
   questions: TableColumnTemplate[];
@@ -82,10 +83,10 @@ const { to } = useObjectTranslation();
 
 const { pagination, rows, columns, renderers } = useResultTableModel(
   {
-    questions,
-    registrations,
-    templates: [template],
-    camp,
+    questions: toRef(() => questions),
+    registrations: toRef(() => registrations),
+    templates: toRef(() => [template]),
+    camp: toRef(() => camp),
   },
   { initialTemplateId: template.id },
 );

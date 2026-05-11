@@ -10,7 +10,7 @@ import { container } from '#core/ioc/container';
 import { QueueManager } from '#core/queue/QueueManager';
 
 export function mockQueue() {
-  container.rebindSync(QueueManager).to(TestQueueManager);
+  container.rebind(QueueManager).to(TestQueueManager);
 }
 
 class TestQueueManager extends QueueManager {
@@ -54,7 +54,17 @@ class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
       await new Promise((resolve) => setTimeout(resolve, options.delay));
     }
 
+    payload = JSON.parse(JSON.stringify(payload));
+
     await this.handler({ name, payload });
+  }
+
+  async addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    for (const j of jobs) {
+      await this.add(j.name, j.payload, j.options);
+    }
   }
 
   pause(): Promise<void> {

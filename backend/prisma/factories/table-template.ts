@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import prisma from './prisma.js';
 
@@ -39,7 +39,7 @@ export const TableTemplateFactory = {
         })),
         order: faker.number.int({ min: 1, max: 10 }),
         filter: undefined,
-        filterWaitingList: undefined,
+        filterStatus: undefined,
         filterRoles: undefined,
         printOptions: undefined,
         indexed: faker.datatype.boolean(),

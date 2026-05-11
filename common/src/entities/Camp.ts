@@ -6,7 +6,9 @@ import { Translatable } from './Translatable.js';
 export interface Camp extends Identifiable {
   public: boolean;
   active: boolean;
+  confirmationMode: 'AUTOMATIC' | 'MANUAL';
   countries: string[];
+  locales: string[];
   name: Translatable;
   organizer: Translatable;
   contactEmail: Translatable;
@@ -46,5 +48,5 @@ export interface CampQuery {
   startAt?: string;
   endAt?: string;
 
-  showAll?: boolean;
+  view?: 'all' | 'assigned';
 }

@@ -1,4 +1,4 @@
-import type { User } from '@prisma/client';
+import type { User } from '#generated/prisma/client';
 import { MailBase } from '#app/mail/mail.base';
 import type { Content } from '#app/mail/mail.types';
 import { generateUrl } from '#utils/url';

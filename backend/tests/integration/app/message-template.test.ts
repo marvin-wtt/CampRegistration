@@ -214,8 +214,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         );
         const data = {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
         };
 
@@ -232,26 +233,19 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'input is valid',
         data: {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
         },
         expected: 201,
       },
       // Subject
       {
-        name: 'subject is translated',
-        data: {
-          event: 'some-event',
-          subject: { de: 'Test subject de', en: 'Test subject en' },
-          body: 'Test body content',
-        },
-        expected: 201,
-      },
-      {
         name: 'subject is missing',
         data: {
           event: 'some-event',
+          country: 'gb',
           body: 'Test body content',
         },
         expected: 400,
@@ -260,6 +254,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'subject is number',
         data: {
           event: 'some-event',
+          country: 'gb',
           subject: 2,
           body: 'Test body content',
         },
@@ -267,18 +262,10 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       },
       // Body
       {
-        name: 'body is translated',
-        data: {
-          event: 'some-event',
-          subject: 'Test Subject',
-          body: { en: 'Test body en', de: 'Test body de' },
-        },
-        expected: 201,
-      },
-      {
         name: 'body is missing',
         data: {
           event: 'some-event',
+          country: 'gb',
           subject: 'Test Subject',
         },
         expected: 400,
@@ -287,6 +274,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'body is number',
         data: {
           event: 'some-event',
+          country: 'gb',
           subject: 'Test Subject',
           body: 1,
         },
@@ -296,6 +284,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       {
         name: 'event is missing',
         data: {
+          country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -305,6 +294,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'event is null',
         data: {
           event: null,
+          country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -314,6 +304,37 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'event is number',
         data: {
           event: 1,
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
+        },
+        expected: 400,
+      },
+      // Country
+      {
+        name: 'country is missing',
+        data: {
+          event: 'some-event',
+          subject: 'Test Subject',
+          body: 'Test body content',
+        },
+        expected: 400,
+      },
+      {
+        name: 'country is null',
+        data: {
+          event: 'some-event',
+          country: null,
+          subject: 'Test Subject',
+          body: 'Test body content',
+        },
+        expected: 400,
+      },
+      {
+        name: 'country is invalid',
+        data: {
+          event: 'some-event',
+          country: 'usa',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -324,6 +345,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'priority is missing',
         data: {
           event: 'some-event',
+          country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -333,6 +355,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'priority is invalid',
         data: {
           event: 'some-event',
+          country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'urgent',
@@ -343,6 +366,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         name: 'priority is null',
         data: {
           event: 'some-event',
+          country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: null,
@@ -367,8 +391,10 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     it('should respond with 403 status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
       const data = {
-        subject: { en: 'Test Subject' },
-        body: { en: 'Test body content' },
+        event: 'some-event',
+        country: 'gb',
+        subject: 'Test Subject',
+        body: 'Test body content',
       };
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -379,11 +405,35 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         .expect(403);
     });
 
+    it('should respond with 409 status code when event for country already exists', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: 'some-event',
+        country: 'gb',
+      });
+
+      const data = {
+        event: 'some-event',
+        country: 'gb',
+        subject: 'Test Subject',
+        body: 'Test body content',
+      };
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/message-templates/`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(409);
+    });
+
     it('should respond with 401 status code when unauthenticated', async () => {
       const camp = await CampFactory.create();
       const data = {
-        subject: { en: 'Test Subject' },
-        body: { en: 'Test body content' },
+        event: 'some-event',
+        country: 'gb',
+        subject: 'Test Subject',
+        body: 'Test body content',
       };
 
       await request()
@@ -405,8 +455,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const data = {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
           attachmentIds: [file1.id, file2.id],
         };
@@ -432,8 +483,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         const { camp, accessToken } = await createCampWithManagerAndToken();
         const data = {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
           attachmentIds: [],
         };
@@ -454,8 +506,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const data = {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
           attachmentIds: [crypto.randomUUID()],
         };
@@ -468,7 +521,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           .expect(400);
       });
 
-      it('should respond with 400 status code when attachments session id missmatch', async () => {
+      it('should respond with 400 status code when attachments session id mismatch', async () => {
         const sessionId = crypto.randomUUID();
         const { camp, accessToken } = await createCampWithManagerAndToken();
         const file1 = await FileFactory.create({
@@ -480,8 +533,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const data = {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
           attachmentIds: [file1.id, file2.id],
         };
@@ -510,8 +564,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const data = {
           event: 'some-event',
-          subject: { en: 'Test Subject' },
-          body: { en: 'Test body content' },
+          country: 'gb',
+          subject: 'Test Subject',
+          body: 'Test body content',
           priority: 'high',
           attachmentIds: [file1.id, file2.id],
         };
@@ -541,14 +596,14 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         );
         const messageTemplate = await MessageTemplateFactory.create({
           camp: { connect: { id: camp.id } },
-          subject: { en: 'Old Subject' },
-          body: { en: 'Old body' },
+          subject: 'Old subject',
+          body: 'Old body',
           priority: 'normal',
         });
 
         const updateData = {
-          subject: { en: 'Updated Subject' },
-          body: { en: 'Updated body' },
+          subject: 'Updated Subject',
+          body: 'Updated body',
           priority: 'low',
         };
 
@@ -580,9 +635,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     const messageCreateBody = [
       // Subject
       {
-        name: 'subject is translated',
+        name: 'subject is string',
         data: {
-          subject: { de: 'Test subject de', en: 'Test subject en' },
+          subject: 'Test subject',
         },
         expected: 200,
       },
@@ -602,9 +657,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       },
       // Body
       {
-        name: 'body is translated',
+        name: 'body is string',
         data: {
-          body: { en: 'Test body en', de: 'Test body de' },
+          body: 'Test body',
         },
         expected: 200,
       },
@@ -662,7 +717,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const nonExistingId = ulid();
       const updateData = {
-        subject: { en: 'Updated Subject' },
+        subject: 'Updated Subject',
       };
 
       await request()
@@ -678,7 +733,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         camp: { connect: { id: camp.id } },
       });
       const updateData = {
-        subject: { en: 'Updated Subject' },
+        subject: 'Updated Subject',
       };
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -697,7 +752,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         camp: { connect: { id: camp.id } },
       });
       const updateData = {
-        subject: { en: 'Updated Subject' },
+        subject: 'Updated Subject',
       };
 
       await request()
@@ -843,7 +898,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           .expect(400);
       });
 
-      it('should respond with 400 status code when attachments session id missmatch', async () => {
+      it('should respond with 400 status code when attachments session id mismatch', async () => {
         const sessionId = crypto.randomUUID();
         const { camp, accessToken } = await createCampWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({

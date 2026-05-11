@@ -1,4 +1,4 @@
-import { type File, Prisma, PrismaClient } from '@prisma/client';
+import { type File, Prisma, PrismaClient } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -29,16 +29,24 @@ type PickIds<T> = {
   [K in keyof T as K extends `${string}Id` ? K : never]: T[K];
 };
 
+type RequireIdKeys<TSource, TValue> = {
+  [K in keyof TSource as K extends `${string}Id` ? K : never]-?: TValue;
+};
+
 type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
-const fileRelationIdFields = Prisma.dmmf.datamodel.models
-  .find((value) => value.name === 'File')
-  ?.fields.filter((field) => field.name.match(/[A-Za-z]+Id$/g))
-  .reduce<Record<string, null>>((acc, val) => {
-    const fieldName = val.name;
-    acc[fieldName] = null;
-    return acc;
-  }, {}) as PickIds<Prisma.FileWhereInput>;
+// Relational fields for where input fields
+const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
+  campId: null,
+  registrationId: null,
+  messageId: null,
+  messageTemplateId: null,
+};
+
+// Relational fields for create input fields
+const fileRelationIdFieldsUndefined = Object.keys(
+  fileRelationIdFieldsNull,
+).reduce((acc, key) => ({ ...acc, [key]: undefined }), {});
 
 @injectable()
 export class FileService extends BaseService {
@@ -111,8 +119,24 @@ export class FileService extends BaseService {
     };
   }
 
+  public getFileCreateManyInput(files: File[]) {
+    return {
+      createMany: {
+        data: files.map((file) => ({
+          ...file,
+          ...this.getUnassignedModelArgs(),
+          id: undefined,
+        })),
+      },
+    };
+  }
+
   public getUnreferencedModelArgs() {
-    return fileRelationIdFields;
+    return fileRelationIdFieldsNull;
+  }
+
+  public getUnassignedModelArgs() {
+    return fileRelationIdFieldsUndefined;
   }
 
   async syncFilesForOwner(
@@ -156,7 +180,8 @@ export class FileService extends BaseService {
   ) {
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
-      : file.filename;
+      : file.originalname;
+
     const fileData = this.mapFields(file, originalFileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
@@ -308,7 +333,7 @@ export class FileService extends BaseService {
 
     const files = await this.prisma.file.findMany({
       where: {
-        ...fileRelationIdFields,
+        ...fileRelationIdFieldsNull,
         createdAt: { lt: minAge },
       },
       select: {

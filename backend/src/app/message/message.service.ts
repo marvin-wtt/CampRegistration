@@ -3,14 +3,19 @@ import type {
   Registration,
   MessageTemplate,
   File,
-} from '@prisma/client';
+} from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { FileService } from '#app/file/file.service.js';
 
 type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
 
 @injectable()
 export class MessageService extends BaseService {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
+    super();
+  }
+
   async createMessage(
     registration: Registration,
     template: MessageTemplateWithAttachments,
@@ -24,11 +29,9 @@ export class MessageService extends BaseService {
         ...data,
         registration: { connect: { id: registration.id } },
         template: { connect: { id: template.id } },
-        attachments: {
-          connect: template.attachments.map((file) => ({
-            id: file.id,
-          })),
-        },
+        attachments: this.fileService.getFileCreateManyInput(
+          template.attachments,
+        ),
       },
       include: {
         attachments: true,

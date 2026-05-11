@@ -175,6 +175,7 @@ import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.v
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
 import PrintTableDialog from 'components/campManagement/table/dialogs/PrintTableDialog.vue';
+import { toRef } from 'vue';
 
 const { questions, registrations, templates, camp } = defineProps<{
   questions: TableColumnTemplate[];
@@ -207,10 +208,10 @@ const {
   countries,
 } = useResultTableModel(
   {
-    questions,
-    registrations,
-    templates,
-    camp,
+    questions: toRef(() => questions),
+    registrations: toRef(() => registrations),
+    templates: toRef(() => templates),
+    camp: toRef(() => camp),
   },
   {
     initialTemplateId: route.hash.length > 1 ? route.hash.substring(1) : null,

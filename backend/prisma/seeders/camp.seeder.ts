@@ -1,5 +1,6 @@
 import { CampFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
+import { RegistrationSeeder } from './registration.seeder';
 
 class CampSeeder extends BaseSeeder {
   name(): string {
@@ -54,7 +55,7 @@ class CampSeeder extends BaseSeeder {
       },
     });
 
-    await CampFactory.create({
+    const exampleCamp = await CampFactory.create({
       id: '01K9ATF1H9KD1K6H12F3YK8RWR',
       active: true,
       public: true,
@@ -983,6 +984,9 @@ class CampSeeder extends BaseSeeder {
       createdAt: '2025-11-05T20:13:53.577Z',
       updatedAt: '2025-11-05T20:14:01.950Z',
     });
+
+    await new RegistrationSeeder(exampleCamp).seed(25, { country: 'de' });
+    await new RegistrationSeeder(exampleCamp).seed(22, { country: 'fr' });
   }
 }
 

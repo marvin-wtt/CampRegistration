@@ -5,14 +5,13 @@ import type {
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
 import { useRouter } from 'vue-router';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
 export const useProfileStore = defineStore('profile', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const authBus = useAuthBus();
-  const campBus = useCampBus();
   const {
     data,
     isLoading,
@@ -21,17 +20,6 @@ export const useProfileStore = defineStore('profile', () => {
     withProgressNotification,
     errorOnFailure,
   } = useServiceHandler<Profile>('profile');
-
-  campBus.on('create', () => {
-    void fetchProfile();
-  });
-
-  campBus.on('delete', (campId) => {
-    const index = data.value?.camps.findIndex((camp) => camp.id === campId);
-    if (index !== undefined && index >= 0) {
-      data.value?.camps.splice(index);
-    }
-  });
 
   authBus.on('login', (profile) => {
     data.value = profile;

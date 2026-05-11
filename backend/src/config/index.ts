@@ -6,6 +6,9 @@ const config = {
   appName: env.APP_NAME,
   port: env.APP_PORT,
   origin: env.APP_URL,
+  database: {
+    url: env.DATABASE_URL,
+  },
   jwt: {
     secret: env.JWT_SECRET,
     accessExpirationMinutes: env.TOKEN_EXPIRATION_ACCESS,
@@ -14,6 +17,7 @@ const config = {
     verifyEmailExpirationMinutes: env.TOKEN_EXPIRATION_VERIFY_EMAIL,
   },
   email: {
+    driver: env.EMAIL_DRIVER,
     from: env.EMAIL_FROM,
     replyTo: env.EMAIL_REPLY_TO,
     admin: env.EMAIL_ADMIN,

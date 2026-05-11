@@ -7,7 +7,6 @@ import type {
   RegistrationDeleteQuery,
   RegistrationUpdateData,
   RegistrationUpdateQuery,
-  ServiceFile,
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import {
@@ -15,7 +14,6 @@ import {
   useCampBus,
   useRegistrationBus,
 } from 'src/composables/bus';
-import { v7 as uuid } from 'uuid';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -44,7 +42,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   });
 
   async function fetchData(campId?: string) {
-    const cid: string = campId ?? (route.params.camp as string);
+    const cid: string = campId ?? (route.params.campId as string);
     checkNotNullWithError(cid);
 
     await lazyFetch(async () => {
@@ -61,22 +59,12 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     await apiService.createRegistration(campId, registration);
   }
 
-  async function storeFile(file: File): Promise<ServiceFile> {
-    const campId = route.params.camp as string;
-    checkNotNullWithError(campId);
-
-    return apiService.createTemporaryFile({
-      file,
-      field: uuid(),
-    });
-  }
-
   async function updateData(
     registrationId: string | undefined,
     updateData: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
   ) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(registrationId);
@@ -101,7 +89,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     registrationId?: string,
     params?: RegistrationDeleteQuery,
   ) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(registrationId);
@@ -124,7 +112,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     error,
     fetchData,
     storeData,
-    storeFile,
     updateData,
     deleteData,
     invalidate,

@@ -106,6 +106,33 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     this.wake();
   }
 
+  public async addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void> {
+    if (jobs.length === 0) {
+      return;
+    }
+
+    this.assertOpen();
+
+    const now = new Date();
+
+    await prisma.job.createMany({
+      data: jobs.map((j) => ({
+        name: j.name,
+        queue: this.queue,
+        status: 'PENDING' as const,
+        priority: j.options?.priority,
+        runAt: j.options?.delay
+          ? new Date(now.getTime() + j.options.delay)
+          : now,
+        payload: j.payload,
+      })),
+    });
+
+    this.wake();
+  }
+
   private async workerLoop() {
     let sleepMs = 0;
     let errorSleepMs = 0;
@@ -325,12 +352,13 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   async poll(): Promise<(SimpleJob<P> & { id: string }) | null> {
     return prisma.$transaction(async (tx) => {
-      if (await this.isRateLimitExceeded(tx)) {
+      const rate = await this.getAvailableRateLimitTokens(tx);
+      if (rate && rate.available <= 0) {
         return null;
       }
 
       const rows = await tx.$queryRaw<
-        { id: string; name: string; payload: string }[]
+        { id: string; name: string; payload: string | object }[]
       >`
         SELECT id, name, payload
         FROM jobs
@@ -360,59 +388,60 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         },
       });
 
+      if (rate) {
+        await tx.jobRateLimit.update({
+          where: { queue: this.queue },
+          data: {
+            tokens: rate.available - 1,
+            refilledAt: rate.now,
+          },
+        });
+      }
+
       return {
         id: job.id,
         name: job.name,
-        payload: JSON.parse(job.payload) as P,
+        payload: (typeof job.payload === 'string'
+          ? JSON.parse(job.payload)
+          : job.payload) as P,
       };
     });
   }
 
-  private async isRateLimitExceeded(tx: PrismaTransaction): Promise<boolean> {
+  private async getAvailableRateLimitTokens(
+    tx: PrismaTransaction,
+  ): Promise<{ available: number; now: Date } | null> {
     const limit = this.options.limit;
-    if (!limit) {
-      return false;
-    }
+    if (!limit) return null;
 
     const now = new Date();
 
+    // Ensure row exists
     await tx.jobRateLimit.upsert({
       where: { queue: this.queue },
       create: { queue: this.queue, tokens: limit.max, refilledAt: now },
       update: {},
     });
 
+    // Lock row so multiple workers serialize on token consumption
     const rows = await tx.$queryRaw<{ tokens: number; refilled_at: Date }[]>`
-        SELECT tokens, refilled_at
-        FROM job_rate_limits
-        WHERE queue = ${this.queue}
-          FOR UPDATE
-      `;
+      SELECT tokens, refilled_at
+      FROM job_rate_limits
+      WHERE queue = ${this.queue}
+        FOR UPDATE
+    `;
 
     if (rows.length === 0) {
-      return false;
+      return null;
     }
 
     const { tokens, refilled_at: lastRefill } = rows[0];
-
     const elapsedMs = now.getTime() - lastRefill.getTime();
-    const refillRate = limit.max / limit.duration;
+    const refillRate = limit.max / limit.duration; // tokens per ms
     const refillable = Math.floor(tokens + elapsedMs * refillRate);
     const available = Math.min(limit.max, refillable);
 
-    if (available <= 0) {
-      return true;
-    }
-
-    await tx.jobRateLimit.update({
-      where: { queue: this.queue },
-      data: {
-        tokens: available - 1,
-        refilledAt: now,
-      },
-    });
-
-    return false;
+    return { available, now };
   }
 
   private assertOpen(): void {

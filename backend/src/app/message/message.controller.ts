@@ -64,10 +64,10 @@ export class MessageController extends BaseController {
       req.sessionId,
     );
 
-    await Promise.all(
-      registrations.map((registration) =>
-        RegistrationTemplateMessage.enqueueFor(camp, registration, template),
-      ),
+    await RegistrationTemplateMessage.enqueueForAll(
+      camp,
+      registrations,
+      template,
     );
 
     res

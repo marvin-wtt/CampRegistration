@@ -134,8 +134,12 @@ const knownErrorText = computed<string>(() => {
   return 'Unknown error occurred';
 });
 
-async function submit(campId: string, formData: Record<string, unknown>) {
-  await api.createRegistration(campId, { data: formData });
+async function submit(
+  campId: string,
+  formData: Record<string, unknown>,
+  locale: string,
+) {
+  await api.createRegistration(campId, { data: formData, locale });
 }
 
 async function uploadFile(file: File): Promise<string> {

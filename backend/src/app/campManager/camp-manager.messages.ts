@@ -1,0 +1,93 @@
+import type {
+  Camp,
+  CampManager,
+  Invitation,
+  User,
+} from '#generated/prisma/client.js';
+import { translateObject } from '#utils/translateObject';
+import { MailBase } from '#app/mail/mail.base';
+import { generateUrl } from '#utils/url';
+import { countriesToLocales } from '#utils/countriesToLocales.js';
+
+type CampManagerWithUserOrInvitation = CampManager & { user: User | null } & {
+  invitation: Invitation | null;
+};
+
+abstract class CampManagerMessage<
+  T extends { manager: CampManagerWithUserOrInvitation },
+> extends MailBase<T> {
+  protected to() {
+    const email =
+      this.payload.manager.user?.email ??
+      this.payload.manager.invitation?.email;
+
+    if (!email) {
+      throw new Error('No email address available for manager');
+    }
+
+    const name = this.payload.manager.user?.name;
+    if (name) {
+      return {
+        name,
+        address: email,
+      };
+    }
+
+    return email;
+  }
+
+  protected locale(): string | undefined {
+    return this.payload.manager.user?.locale;
+  }
+}
+
+export class CampManagerInvitationMessage extends CampManagerMessage<{
+  manager: CampManagerWithUserOrInvitation;
+  camp: Camp;
+}> {
+  static readonly type = 'manager:invitation';
+
+  protected getTranslationOptions() {
+    return {
+      namespace: 'manager',
+      keyPrefix: 'email.invitation',
+    };
+  }
+
+  protected subject(): string {
+    const t = this.getT();
+
+    return t('subject');
+  }
+
+  protected locale(): string | undefined {
+    const superLocale = super.locale();
+    if (superLocale) {
+      return superLocale;
+    }
+
+    if (this.payload.camp.countries.length === 1) {
+      return countriesToLocales(this.payload.camp.countries)[0];
+    }
+
+    return undefined;
+  }
+
+  protected content() {
+    const camp = this.payload.camp;
+    const campName = translateObject(camp.name, this.locale());
+    const url = generateUrl(['management', 'camps', camp.id]);
+
+    return {
+      template: 'manager-invitation',
+      context: {
+        camp: {
+          ...camp,
+          name: campName,
+        },
+        user: this.payload.manager.user,
+        url,
+      },
+    };
+  }
+}

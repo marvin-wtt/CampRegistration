@@ -1,4 +1,4 @@
-import type { Prisma, User } from '@prisma/client';
+import type { Prisma, User } from '#generated/prisma/client.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
@@ -50,18 +50,11 @@ export class UserService extends BaseService {
     });
   }
 
-  async getUserByIdWithCamps(id: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({
+  async getUserByIdWithCampRoles(id: string) {
+    return this.prisma.user.findUniqueOrThrow({
       where: { id },
       include: { campRoles: true },
     });
-
-    const camps = await this.campService.getCampsByUserId(id);
-
-    return {
-      ...user,
-      camps,
-    };
   }
 
   async getUserById(id: string): Promise<User | null> {

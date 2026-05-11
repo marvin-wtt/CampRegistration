@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#generated/prisma/client.js';
 import { createForm } from '../utils/form.js';
 
 export const campActivePublic = {
@@ -19,6 +19,7 @@ export const campInactive = {
 export const campCreateNational = {
   active: false,
   public: false,
+  confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],
   name: 'Test Camp',
   organizer: 'Test Org',
@@ -485,6 +486,39 @@ export const campCreatedBody: CreateBodyData[] = [
       },
     },
     expected: 400,
+  },
+  // Confirmation mode
+  {
+    name: 'Confirmation mode automatic',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: 'AUTOMATIC',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Confirmation mode manual',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: 'MANUAL',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Confirmation mode invalid',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: 'SEMI-AUTOMATIC',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Confirmation missing',
+    data: {
+      ...campCreateInternational,
+      confirmationMode: undefined,
+    },
+    expected: 201,
   },
 ];
 
@@ -1213,6 +1247,28 @@ export const campUpdateBody: UpdateBodyData[] = [
     },
     data: {
       countries: ['de'],
+    },
+    expected: 400,
+  },
+  // Confirmation mode
+  {
+    name: 'Confirmation mode automatic',
+    data: {
+      confirmationMode: 'AUTOMATIC',
+    },
+    expected: 200,
+  },
+  {
+    name: 'Confirmation mode manual',
+    data: {
+      confirmationMode: 'MANUAL',
+    },
+    expected: 200,
+  },
+  {
+    name: 'Confirmation mode invalid',
+    data: {
+      confirmationMode: 'SEMI-AUTOMATIC',
     },
     expected: 400,
   },

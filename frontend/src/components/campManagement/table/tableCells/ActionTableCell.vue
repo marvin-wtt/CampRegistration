@@ -12,7 +12,7 @@
       <q-item
         v-close-popup
         clickable
-        disable
+        @click="showDetails"
       >
         <q-item-section>
           {{ t('option.details') }}
@@ -30,7 +30,7 @@
         </q-item-section>
       </q-item>
       <q-item
-        v-if="waitingList && !readonly && can('camp.registrations.edit')"
+        v-if="!accepted && !readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
         @click="accept"
@@ -73,10 +73,13 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { usePermissions } from 'src/composables/permissions';
 import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
+import RegistrationDetailsDialog from 'components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
+import { useAPIService } from 'src/services/APIService';
 
 const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 const quasar = useQuasar();
 const { t } = useI18n();
+const apiService = useAPIService();
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
 const { data: campData } = storeToRefs(campDetailStore);
@@ -90,9 +93,18 @@ const registration = computed<Registration>(() => {
   return cellProps.row;
 });
 
-const waitingList = computed<boolean>(() => {
-  return cellProps.row.waitingList;
+const accepted = computed<boolean>(() => {
+  return cellProps.row.status === 'ACCEPTED';
 });
+
+function showDetails(): void {
+  quasar.dialog({
+    component: RegistrationDetailsDialog,
+    componentProps: {
+      registration: registration.value,
+    },
+  });
+}
 
 function deleteItem(): void {
   quasar
@@ -123,7 +135,7 @@ function accept(): void {
       void registrationStore.updateData(
         id,
         {
-          waitingList: false,
+          status: 'ACCEPTED',
         },
         params,
       );
@@ -147,7 +159,7 @@ function editItem(): void {
 }
 
 async function uploadFile(file: File): Promise<string> {
-  const serviceFile = await registrationStore.storeFile(file);
+  const serviceFile = await apiService.createTemporaryFile({ file });
 
   return serviceFile.id;
 }

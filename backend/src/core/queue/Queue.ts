@@ -75,6 +75,10 @@ export abstract class Queue<P, R = void, N extends string = string> {
 
   public abstract add(name: N, payload: P, options?: JobOptions): Promise<void>;
 
+  public abstract addBulk(
+    jobs: { name: N; payload: P; options?: JobOptions }[],
+  ): Promise<void>;
+
   public abstract close(): Promise<void> | void;
 
   public abstract pause(): Promise<void> | void;

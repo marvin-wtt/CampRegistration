@@ -10,7 +10,7 @@ import {
   FileFactory,
   MessageTemplateFactory,
 } from '../../../prisma/factories/index.js';
-import { Camp, Prisma } from '@prisma/client';
+import { Camp, Prisma } from '#generated/prisma/client.js';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -47,6 +47,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     id: data.id ?? expect.anything(),
     active: data.active,
     public: data.public,
+    confirmationMode: data.confirmationMode,
     countries: data.countries,
     name: data.name,
     organizer: data.organizer,
@@ -66,14 +67,19 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const assertCampResponseBody = (data: CampCreateData, body: any) => {
+const assertCampResponseBody = (
+  data: CampCreateData & { locales: string[] },
+  body: any,
+) => {
   expect(body).toHaveProperty('data');
 
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
     active: data.active,
     public: data.public,
+    confirmationMode: data.confirmationMode,
     countries: data.countries,
+    locales: data.locales,
     name: data.name,
     organizer: data.organizer,
     contactEmail: data.contactEmail,
@@ -210,7 +216,7 @@ describe('/api/v1/camps', () => {
     });
 
     describe('query', () => {
-      it('should respond with all camps if showAll is true and user is admin', async () => {
+      it('should respond with all camps if view is "all" and user is admin', async () => {
         await CampFactory.create(campActivePublic);
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
@@ -223,7 +229,7 @@ describe('/api/v1/camps', () => {
         const { body } = await request()
           .get(`/api/v1/camps/`)
           .query({
-            showAll: true,
+            view: 'all',
           })
           .auth(accessToken, { type: 'bearer' })
           .send()
@@ -233,7 +239,7 @@ describe('/api/v1/camps', () => {
         expect(body.data.length).toBe(3);
       });
 
-      it('should respond with `401` status code when showAll is set and user is unauthenticated', async () => {
+      it('should respond with `401` status code when view is "all" and user is unauthenticated', async () => {
         await CampFactory.create(campActivePublic);
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
@@ -241,13 +247,13 @@ describe('/api/v1/camps', () => {
         await request()
           .get(`/api/v1/camps/`)
           .query({
-            showAll: true,
+            view: 'all',
           })
           .send()
           .expect(401);
       });
 
-      it('should respond with `403` status code when showAll is set and user is not an admin', async () => {
+      it('should respond with `403` status code when view is "all" and user is not an admin', async () => {
         await CampFactory.create(campActivePublic);
         await CampFactory.create(campActivePrivate);
         await CampFactory.create(campInactive);
@@ -258,11 +264,64 @@ describe('/api/v1/camps', () => {
         await request()
           .get(`/api/v1/camps/`)
           .query({
-            showAll: true,
+            view: 'all',
           })
           .auth(accessToken, { type: 'bearer' })
           .send()
           .expect(403);
+      });
+
+      it('should respond with `401` status code when view is "assigned" and user is unauthenticated', async () => {
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            view: 'assigned',
+          })
+          .send()
+          .expect(401);
+      });
+
+      it('should respond with assigned camps when view is "assigned" and user is not an admin', async () => {
+        const camp1 = await CampFactory.create(campActivePrivate);
+        const camp2 = await CampFactory.create(campInactive);
+
+        await CampFactory.create(campActivePublic);
+        await CampFactory.create(campActivePrivate);
+        await CampFactory.create(campInactive);
+
+        const user = await UserFactory.create();
+
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp1.id } },
+          user: { connect: { id: user.id } },
+        });
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp2.id } },
+          user: { connect: { id: user.id } },
+        });
+
+        const accessToken = generateAccessToken(user);
+
+        const { body } = await request()
+          .get(`/api/v1/camps/`)
+          .query({
+            view: 'assigned',
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .send()
+          .expect(200);
+
+        expect(body.data).toHaveLength(2);
+        expect(body.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: camp1.id }),
+            expect.objectContaining({ id: camp2.id }),
+          ]),
+        );
       });
 
       it.skip('should filter by name', async () => {
@@ -317,6 +376,7 @@ describe('/api/v1/camps', () => {
       const camp = await CampFactory.create({
         active: true,
         public: true,
+        countries: ['de', 'cz'],
       });
 
       const { body } = await request()
@@ -328,8 +388,10 @@ describe('/api/v1/camps', () => {
       expect(body.data).toEqual({
         id: camp.id,
         active: camp.active,
+        confirmationMode: camp.confirmationMode,
         public: camp.public,
         countries: camp.countries,
+        locales: ['de', 'cs'],
         name: camp.name,
         organizer: camp.organizer,
         contactEmail: camp.contactEmail,
@@ -516,14 +578,23 @@ describe('/api/v1/camps', () => {
 
   describe('POST /api/v1/camps', () => {
     const assertCampCreated = async (
-      expected: CampCreateData,
+      data: Omit<CampCreateData, 'confirmationMode'> & {
+        confirmationMode?: string;
+      },
+      locales: string[],
       actual: unknown,
     ) => {
       // Test response
-      assertCampResponseBody(expected, actual);
+      assertCampResponseBody(
+        {
+          ...(data as CampCreateData),
+          locales,
+        },
+        actual,
+      );
 
       const id = (actual as { data: { id: string } }).data.id;
-      await assertCampModel(id, expected);
+      await assertCampModel(id, data as CampCreateData);
     };
 
     it('should respond with `201` status code when user is authenticated', async () => {
@@ -537,7 +608,7 @@ describe('/api/v1/camps', () => {
         .expect(201);
 
       // Test response
-      await assertCampCreated(data, body);
+      await assertCampCreated(data, ['de'], body);
     });
 
     it('should respond with `201` status code with international camp', async () => {
@@ -552,7 +623,7 @@ describe('/api/v1/camps', () => {
         .expect(201);
 
       // Test response
-      await assertCampCreated(data, body);
+      await assertCampCreated(data, ['de', 'fr'], body);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
@@ -653,6 +724,27 @@ describe('/api/v1/camps', () => {
           expect(templates.length).not.toBe(0);
         });
 
+        it('should create default message templates when country code does not match language', async () => {
+          const accessToken = generateAccessToken(await UserFactory.create());
+
+          const { body } = await request()
+            .post(`/api/v1/camps/`)
+            .send({
+              ...campCreateNational,
+              countries: ['cz'],
+            })
+            .auth(accessToken, { type: 'bearer' })
+            .expect(201);
+
+          const templates = await prisma.messageTemplate.findMany({
+            where: {
+              camp: { id: body.data.id },
+            },
+          });
+
+          expect(templates.length).not.toBe(0);
+        });
+
         it('should filter message template languages based on camp countries', async () => {
           const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -674,14 +766,9 @@ describe('/api/v1/camps', () => {
 
           expect(templates.length).not.toBe(0);
 
-          const template = templates[0];
-
-          expect(Object.keys(template.subject).sort()).toEqual(
-            ['de', 'cs'].sort(),
-          );
-          expect(Object.keys(template.body).sort()).toEqual(
-            ['de', 'cs'].sort(),
-          );
+          for (const template of templates) {
+            expect(template.country).toBeOneOf(['de', 'cz']);
+          }
         });
       });
 
@@ -721,7 +808,7 @@ describe('/api/v1/camps', () => {
           .post(`/api/v1/camps/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
-          .expect(201);
+          .expectOrPrint(201);
 
         expect(body.data.form).toStrictEqual(referenceForm);
       });
@@ -987,6 +1074,7 @@ describe('/api/v1/camps', () => {
 
         const data = {
           active: true,
+          confirmationMode: 'AUTOMATIC' as CampCreateData['confirmationMode'],
           public: false,
           countries: ['de'],
           name: 'Test Camp',
@@ -1015,7 +1103,13 @@ describe('/api/v1/camps', () => {
 
         if (expectedStatus === 200) {
           // Test response
-          assertCampResponseBody(data, response.body);
+          assertCampResponseBody(
+            {
+              ...data,
+              locales: ['de'],
+            },
+            response.body,
+          );
 
           // Test model
           await assertCampModel(camp.id, data);
@@ -1246,7 +1340,39 @@ describe('/api/v1/camps', () => {
   });
 });
 
-describe.todo('/api/v1/camps/:campId/files');
+describe('/api/v1/camps/:campId/files', () => {
+  describe('GET /api/v1/camps/:campId', () => {
+    it('should respond with `200` status code when user is camp manager', async () => {
+      const { file, camp, accessToken } = await createCampWithFileAndToken();
+      await FileFactory.create();
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/files/`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toBeDefined();
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toHaveProperty('id', file.id);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { camp } = await createCampWithFileAndToken();
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/files/`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+  });
+
+  describe.todo('POST /api/v1/camps/:campId');
+
+  describe.todo('DELETE /api/v1/camps/:campId');
+});
 
 describe('/api/v1/files/', () => {
   describe('GET /api/v1/files/:fileId', () => {

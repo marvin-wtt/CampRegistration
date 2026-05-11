@@ -12,7 +12,7 @@ export default {
         accidental:
           'Wenn Sie keine Passwortrücksetzung angefordert haben, können Sie diese E-Mail ignorieren.',
         greeting: 'Viele Grüße,',
-        teamName: '$t(appName) Team',
+        teamName: '{{ appName }} Team',
       },
       footer: {
         cause:
@@ -31,7 +31,7 @@ export default {
         accidental:
           'Wenn Sie kein Konto erstellt haben, klicken Sie bitte nicht auf den Link und kontaktieren Sie uns.',
         greeting: 'Viele Grüße,',
-        teamName: '$t(appName) Team',
+        teamName: '{{ appName }} Team',
       },
       footer: {
         cause: '$t(email:footer.cause) Sie haben ein Konto erstellt.',

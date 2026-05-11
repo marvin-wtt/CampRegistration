@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
+import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
 
 installQuasarPlugin();
 
@@ -9,9 +9,11 @@ describe('RegistrationForm', () => {
   const simpleCampDetails = {
     id: '',
     name: 'Test',
+    confirmationMode: 'AUTOMATIC' as const,
     active: true,
     public: true,
     countries: [],
+    locales: [],
     organizer: '',
     contactEmail: '',
     maxParticipants: 0,

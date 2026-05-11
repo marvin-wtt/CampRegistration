@@ -151,7 +151,7 @@ const updateInProgress = computed<boolean>(() => {
 });
 
 const locales = computed<string[] | undefined>(() => {
-  return campDetailsStore.data?.countries;
+  return campDetailsStore.data?.locales;
 });
 
 const rooms = computed<RoomWithRoommates[]>(() => {
@@ -172,12 +172,12 @@ const availablePeople = computed<Roommate[]>(() => {
     return [];
   }
 
-  const waitingListFilter = (registration: Registration): boolean => {
-    return !registration.waitingList;
+  const filterStatusAccepted = (registration: Registration): boolean => {
+    return registration.status === 'ACCEPTED';
   };
 
   // Filter out people who are already in a group
-  const alreadyAssignedFilter = (registration: Registration): boolean => {
+  const filterUnassigned = (registration: Registration): boolean => {
     return !localRooms.some((room) => {
       return room.beds.some((value) => value?.person?.id === registration.id);
     });
@@ -185,14 +185,14 @@ const availablePeople = computed<Roommate[]>(() => {
 
   // Map to roommate type and sort by age
   return registrations
-    .filter(waitingListFilter)
-    .filter(alreadyAssignedFilter)
+    .filter(filterStatusAccepted)
+    .filter(filterUnassigned)
     .map(mapRegistrationRoommate)
     .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });
 
 async function fetchRooms() {
-  const campId = queryParam('camp');
+  const campId = queryParam('campId');
 
   const cid = checkNotNullWithError(campId);
   await lazyFetch(() => apiService.fetchRooms(cid));
@@ -254,7 +254,7 @@ function onBedUpdate(
 async function createRoom(
   createData: RoomCreateData,
 ): Promise<Room | undefined> {
-  const campId = queryParam('camp');
+  const campId = queryParam('campId');
 
   return withProgressNotification('create', async () => {
     const room = await apiService.createRoom(campId, createData);
@@ -269,7 +269,7 @@ async function updateRoom(
   roomId: string,
   updateData: RoomUpdateData,
 ): Promise<Room | undefined> {
-  const campId = queryParam('camp');
+  const campId = queryParam('campId');
 
   return withProgressNotification('update', async () => {
     const room = await apiService.updateRoom(campId, roomId, updateData);
@@ -286,7 +286,7 @@ async function updateRoom(
 async function bulkUpdateRooms(
   rooms: RoomWithRoommates[],
 ): Promise<Room[] | undefined> {
-  const campId = queryParam('camp');
+  const campId = queryParam('campId');
 
   return withProgressNotification('update', async () => {
     const updatedRooms = await apiService.bulkUpdateRooms(campId, rooms);
@@ -300,7 +300,7 @@ async function bulkUpdateRooms(
 }
 
 async function deleteRoom(roomId: string) {
-  const campId = queryParam('camp');
+  const campId = queryParam('campId');
 
   await withProgressNotification('delete', async () => {
     await apiService.deleteRoom(campId, roomId);
@@ -318,7 +318,7 @@ async function updateBed(
   position: number,
   person: Roommate | null,
 ) {
-  const campId = queryParam('camp');
+  const campId = queryParam('campId');
   const roomId = room.id;
   const bedId = room.beds[position]?.id;
   const registrationId = person?.id ?? null;

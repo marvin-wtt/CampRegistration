@@ -106,4 +106,13 @@ export class RegistrationCampDataHelper {
   lastName(): string | undefined {
     return this.stringValue('last_name');
   }
+
+  newsletterConsent(): boolean | undefined {
+    const key = 'newsletter_consent';
+    if (!(key in this.dataByTags)) {
+      return undefined;
+    }
+
+    return this.dataByTags[key].some((v) => v === true);
+  }
 }

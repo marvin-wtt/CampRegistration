@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { translatedValue } from '#core/validation/helper';
-import type { Camp } from '@prisma/client';
+import type { Camp } from '#generated/prisma/client.js';
 
 const show = z.object({
   params: z.object({
@@ -17,7 +17,7 @@ const index = z.object({
       endAt: z.iso.datetime(),
       age: z.coerce.number(),
       country: z.string().length(2),
-      showAll: z.coerce.boolean(),
+      view: z.enum(['all', 'assigned']),
       // Options
       page: z.coerce.number().positive(),
       limit: z.coerce.number().int().positive(),
@@ -50,6 +50,7 @@ const store = z.object({
       organizer: translatedValue(z.string()),
       contactEmail: translatedValue(z.email()),
       maxParticipants: translatedValue(z.number().int().nonnegative()),
+      confirmationMode: z.enum(['AUTOMATIC', 'MANUAL']).optional(),
       startAt: z.iso.datetime().transform((val) => new Date(val)),
       endAt: z.iso.datetime().transform((val) => new Date(val)),
       minAge: z.number().int().nonnegative(),
@@ -120,6 +121,7 @@ const update = (camp: Camp) =>
         organizer: translatedValue(z.string()),
         contactEmail: translatedValue(z.email()),
         maxParticipants: translatedValue(z.number().int().nonnegative()),
+        confirmationMode: z.enum(['AUTOMATIC', 'MANUAL']),
         startAt: z.iso.datetime().transform((val) => new Date(val)),
         endAt: z.iso.datetime().transform((val) => new Date(val)),
         minAge: z.number().int().nonnegative(),
