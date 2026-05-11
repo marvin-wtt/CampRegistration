@@ -1,4 +1,4 @@
-import type { ProgramEvent } from '@prisma/client';
+import type { ProgramEvent } from '#generated/prisma/client';
 import type { ProgramEvent as ProgramEventResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 

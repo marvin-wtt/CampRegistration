@@ -1,4 +1,4 @@
-import { type Prisma } from '@prisma/client';
+import { type Prisma } from '#generated/prisma/client';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 
