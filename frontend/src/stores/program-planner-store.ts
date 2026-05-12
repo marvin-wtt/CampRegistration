@@ -25,11 +25,6 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     checkNotNullWithError,
   } = useServiceHandler<ProgramEvent[]>('programPlanner');
 
-  // TODO Force fetch on update error after all pending requests finished
-  //  --> Set loading to true while waiting
-
-  // TODO Add translations
-
   authBus.on('logout', () => {
     reset();
   });
@@ -39,45 +34,47 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   });
 
   async function fetchData(id?: string): Promise<void> {
-    const campId = id ?? (route.params.camp as string | undefined);
+    const campId = id ?? (route.params.campId as string | undefined);
 
     const cid = checkNotNullWithError(campId);
     await lazyFetch(async () => await apiService.fetchProgramEvents(cid));
   }
 
   async function createEntry(event: ProgramEventCreateData) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
     checkNotNullWithError(campId);
 
-    // When we do optimistic updates, we do not know the id of the event before the requests finishes.
-    // Generate a temporary ID and replace it later
     const tmpId = `#${crypto.randomUUID()}`;
 
-    return withErrorNotification('create', async () => {
-      const result = await apiService.createProgramEvent(campId, event);
-
-      // Add item to data
-      data.value = data.value?.map((value) =>
-        value.id === tmpId ? result : value,
-      );
-
-      return result;
-    });
-
-    // Optimistic update
+    // Optimistic update: add event immediately so it appears in the calendar
     const tmpEvent: ProgramEvent = {
       id: tmpId,
-      ...event,
+      title: event.title,
       details: event.details ?? null,
       location: event.location ?? null,
       date: event.date ?? null,
       time: event.time ?? null,
       duration: event.duration ?? null,
       color: event.color ?? null,
-      side: event.side ?? null,
+      plan: event.plan ?? 'both',
     };
+    data.value = [...(data.value ?? []), tmpEvent];
 
-    data.value?.push(tmpEvent);
+    const result = await withErrorNotification('create', () =>
+      apiService.createProgramEvent(campId, event),
+    );
+
+    if (result) {
+      // Replace temporary event with server response
+      data.value = data.value?.map((value) =>
+        value.id === tmpId ? result : value,
+      );
+    } else {
+      // Error occurred - remove optimistic event
+      data.value = data.value?.filter((value) => value.id !== tmpId);
+    }
+
+    return result;
   }
 
   function isIdOptimistic(id: string): boolean {
@@ -85,7 +82,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   }
 
   async function updateEntry(id: string, event: ProgramEventUpdateData) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
     checkNotNullWithError(campId);
 
     if (isIdOptimistic(id)) {
@@ -94,26 +91,33 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       });
     }
 
-    await withErrorNotification('update', () =>
+    // Optimistic update: update UI immediately for responsive drag-and-drop
+    const previousData = data.value ? [...data.value] : undefined;
+    const currentEvent = data.value?.find((e) => e.id === id);
+    if (currentEvent) {
+      const optimisticEvent = { ...currentEvent, ...event } as ProgramEvent;
+      data.value = data.value?.map((value) =>
+        value.id === id ? optimisticEvent : value,
+      );
+    }
+
+    const result = await withErrorNotification('update', () =>
       apiService.updateProgramEvent(campId, id, event),
     );
 
-    // Optimistic update
-    const currentEvent = data.value?.find((event) => event.id === id);
-    if (!currentEvent) {
-      return;
+    if (result) {
+      // Reconcile with server response
+      data.value = data.value?.map((value) =>
+        value.id === id ? result : value,
+      );
+    } else {
+      // Error occurred - revert to previous state
+      data.value = previousData;
     }
-    const resultEvent: ProgramEvent = {
-      ...currentEvent,
-      ...event,
-    };
-    data.value = data.value?.map((value) =>
-      value.id === id ? resultEvent : value,
-    );
   }
 
   async function deleteEntry(id: string) {
-    const campId = route.params.camp as string;
+    const campId = route.params.campId as string;
     checkNotNullWithError(campId);
 
     if (isIdOptimistic(id)) {
@@ -122,11 +126,15 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       });
     }
 
-    await withErrorNotification('delete', () =>
-      apiService.deleteProgramEvent(campId, id),
-    );
+    let deleted = false;
+    await withErrorNotification('delete', async () => {
+      await apiService.deleteProgramEvent(campId, id);
+      deleted = true;
+    });
 
-    data.value = data.value?.filter((event) => event.id !== id);
+    if (deleted) {
+      data.value = data.value?.filter((event) => event.id !== id);
+    }
   }
 
   return {

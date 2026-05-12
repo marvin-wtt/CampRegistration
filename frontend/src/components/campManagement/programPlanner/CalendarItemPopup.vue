@@ -28,7 +28,6 @@
           size="sm"
           flat
           rounded
-          @click="onEdit"
         />
       </q-card-actions>
 
@@ -48,6 +47,18 @@
               </q-item-label>
               <q-item-label caption>
                 {{ dateTime }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <!-- plan (only shown when not 'both') -->
+          <q-item v-if="props.event.plan !== 'both'">
+            <q-item-section avatar>
+              <q-icon :name="props.event.plan === 'a' ? 'wb_sunny' : 'water_drop'" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>
+                {{ props.event.plan === 'a' ? t('plan.a') : t('plan.b') }}
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -83,7 +94,7 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const { to } = useObjectTranslation();
 
 const props = defineProps<{
@@ -128,3 +139,21 @@ function onEdit() {
 </script>
 
 <style scoped></style>
+
+<i18n lang="yaml" locale="en">
+plan:
+  a: 'Plan A (good weather)'
+  b: 'Plan B (bad weather)'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+plan:
+  a: 'Plan A (gutes Wetter)'
+  b: 'Plan B (schlechtes Wetter)'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+plan:
+  a: 'Plan A (beau temps)'
+  b: 'Plan B (mauvais temps)'
+</i18n>

@@ -3,9 +3,13 @@
     class="text-center rounded-borders cursor-pointer"
     :style="badgeStyles"
   >
+    <q-icon
+      v-if="viewBoth && event.plan !== 'both'"
+      :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
+      size="xs"
+      class="q-mr-xs"
+    />
     {{ to(event.title) }}
-
-    <calendar-item-popup :event="props.event" />
 
     <calendar-item-popup
       :event="props.event"
@@ -23,6 +27,7 @@ import CalendarItemPopup from 'components/campManagement/programPlanner/Calendar
 
 const props = defineProps<{
   event: ProgramEvent;
+  viewBoth?: boolean;
 }>();
 
 const emit = defineEmits<{

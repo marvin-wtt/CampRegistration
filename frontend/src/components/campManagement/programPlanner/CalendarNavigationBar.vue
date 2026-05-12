@@ -1,13 +1,24 @@
 <template>
-  <div class="row justify-between q-pa-sm">
-    <div>Header</div>
+  <div class="row items-center justify-between q-pa-sm q-gutter-sm">
+    <!-- Plan A/B toggle -->
+    <q-btn-toggle
+      :model-value="plan"
+      :options="planOptions"
+      rounded
+      dense
+      outline
+      toggle-color="primary"
+      @update:model-value="$emit('update:plan', $event)"
+    />
 
-    <div>
+    <!-- Navigation buttons -->
+    <div class="row items-center q-gutter-xs">
       <q-btn
         icon="arrow_back"
         :disable="prevDisabled"
         rounded
         dense
+        flat
         @click="previous"
       />
       <q-btn
@@ -15,29 +26,47 @@
         :disable="nextDisabled"
         rounded
         dense
+        flat
         @click="next"
       />
     </div>
 
-    <q-select
-      v-model="daysRange"
-      :label="t('options.range.label')"
-      :options="dateRangeOptions"
-      rounded
-      outlined
-      dense
-    />
+    <!-- Right controls -->
+    <div class="row items-center q-gutter-xs">
+      <q-select
+        v-model="daysRange"
+        :label="t('options.range.label')"
+        :options="dateRangeOptions"
+        class="gt-xs"
+        rounded
+        outlined
+        dense
+        style="min-width: 80px"
+      />
+
+      <q-btn
+        icon="settings"
+        rounded
+        dense
+        flat
+        @click="$emit('settings')"
+      >
+        <q-tooltip>{{ t('options.settings') }}</q-tooltip>
+      </q-btn>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted } from 'vue';
+import { daysBetweenDates } from 'src/utils/date';
 
 const { t } = useI18n();
 
 interface Props {
   modelValue: number;
+  plan: 'a' | 'b' | 'both';
   start: string;
   end: string;
   current: string;
@@ -47,8 +76,10 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: number): void;
+  (e: 'update:plan', val: 'a' | 'b' | 'both'): void;
   (e: 'next'): void;
   (e: 'previous'): void;
+  (e: 'settings'): void;
 }>();
 
 onMounted(() => {
@@ -57,29 +88,26 @@ onMounted(() => {
   }
 });
 
+const planOptions = computed(() => [
+  { label: t('plan.a'), value: 'a', icon: 'wb_sunny' },
+  { label: t('plan.both'), value: 'both', icon: 'repeat' },
+  { label: t('plan.b'), value: 'b', icon: 'water_drop' },
+]);
+
 const daysRange = computed<number>({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
 });
 
 const prevDisabled = computed<boolean>(() => {
-  const startDate = new Date(props.start);
-  startDate.setHours(0, 0);
-  const currentDate = new Date(props.current);
-
-  return startDate.getTime() >= currentDate.getTime();
+  return props.current <= props.start.substring(0, 10);
 });
 
-const DAY_IN_MY = 24 * 60 * 60 * 1000;
 const nextDisabled = computed<boolean>(() => {
-  const endDate = new Date(props.end);
-  endDate.setHours(0, 0);
-  const currentDate = new Date(props.current);
-
-  return (
-    endDate.getTime() <=
-    currentDate.getTime() + (daysRange.value - 1) * DAY_IN_MY
-  );
+  const [y, m, d] = props.current.split('-').map(Number);
+  const lastDay = new Date(y!, m! - 1, d! + daysRange.value - 1);
+  const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+  return lastDayStr >= props.end.substring(0, 10);
 });
 
 function next() {
@@ -95,16 +123,41 @@ const dateRangeOptions = computed(() =>
 );
 
 const maxDays = computed<number>(() => {
-  return daysBetweenDates(new Date(props.start), new Date(props.end));
+  return daysBetweenDates(new Date(props.start), new Date(props.end)) + 1;
 });
-
-function daysBetweenDates(startDate: Date, endDate: Date): number {
-  // Calculate the time difference in milliseconds
-  const timeDifference = endDate.getTime() - startDate.getTime();
-
-  // Calculate the number of days and round up
-  return Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
-}
 </script>
 
 <style scoped></style>
+
+<i18n lang="yaml" locale="en">
+plan:
+  a: 'Plan A'
+  b: 'Plan B'
+  both: 'Both'
+options:
+  range:
+    label: 'Days'
+  settings: 'Calendar settings'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+plan:
+  a: 'Plan A'
+  b: 'Plan B'
+  both: 'Beide'
+options:
+  range:
+    label: 'Tage'
+  settings: 'Kalendereinstellungen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+plan:
+  a: 'Plan A'
+  b: 'Plan B'
+  both: 'Les deux'
+options:
+  range:
+    label: 'Jours'
+  settings: 'Paramètres du calendrier'
+</i18n>

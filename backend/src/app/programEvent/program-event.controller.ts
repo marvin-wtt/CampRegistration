@@ -46,7 +46,7 @@ export class ProgramEventController extends BaseController {
       time: body.time,
       duration: body.duration,
       color: body.color,
-      side: body.side,
+      plan: body.plan ?? 'both',
     });
 
     res.status(httpStatus.CREATED).resource(new ProgramEventResource(event));
@@ -66,7 +66,7 @@ export class ProgramEventController extends BaseController {
       time: body.time,
       duration: body.duration,
       color: body.color,
-      side: body.side,
+      plan: body.plan,
     });
 
     res.resource(new ProgramEventResource(event));

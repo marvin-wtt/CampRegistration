@@ -8,8 +8,8 @@ CREATE TABLE `program_events` (
     `date` VARCHAR(191) NULL,
     `duration` INTEGER NULL,
     `time` VARCHAR(191) NULL,
-    `background_color` VARCHAR(191) NULL,
-    `side` VARCHAR(191) NULL,
+    `color` VARCHAR(191) NULL,
+    `plan` VARCHAR(191) NOT NULL DEFAULT 'both',
 
     UNIQUE INDEX `program_event_id_unique`(`id`),
     PRIMARY KEY (`id`)

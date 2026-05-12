@@ -26,24 +26,82 @@
           />
 
           <!-- Day start -->
-          <time-input
+          <q-input
             v-model="data.dayStart"
             :label="t('field.dayStart.label')"
-            :hint="t('field.dayStart.hint')"
+            mask="time"
+            :rules="['time']"
             hide-bottom-space
             outlined
             rounded
-          />
+          >
+            <template #append>
+              <q-icon
+                name="access_time"
+                class="cursor-pointer"
+              >
+                <q-popup-proxy
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-time
+                    v-model="data.dayStart"
+                    format24h
+                  >
+                    <div class="row items-center justify-end">
+                      <q-btn
+                        v-close-popup
+                        :label="t('actions.close')"
+                        color="primary"
+                        flat
+                        rounded
+                      />
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
 
           <!-- Day end -->
-          <time-input
+          <q-input
             v-model="data.dayEnd"
             :label="t('field.dayEnd.label')"
-            :hint="t('field.dayEnd.hint')"
+            mask="time"
+            :rules="['time']"
             hide-bottom-space
             outlined
             rounded
-          />
+          >
+            <template #append>
+              <q-icon
+                name="access_time"
+                class="cursor-pointer"
+              >
+                <q-popup-proxy
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-time
+                    v-model="data.dayEnd"
+                    format24h
+                  >
+                    <div class="row items-center justify-end">
+                      <q-btn
+                        v-close-popup
+                        :label="t('actions.close')"
+                        color="primary"
+                        flat
+                        rounded
+                      />
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
         </q-card-section>
 
         <!-- action buttons -->
@@ -68,7 +126,6 @@
 </template>
 
 <script lang="ts" setup>
-import TimeInput from 'components/common/inputs/TimeInput.vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
@@ -118,23 +175,56 @@ function onCancelClick() {
 <i18n lang="yaml" locale="en">
 title: 'Calendar Settings'
 
-fields:
+field:
   dayStart:
     label: 'Day start'
-    hint: ''
   dayEnd:
     label: 'Day end'
-    hint: ''
   timeInterval:
     label: 'Time interval'
-    hint: 'How many minutes should one interval have'
+    hint: 'Minutes per interval'
 
 actions:
   save: 'Save'
   cancel: 'Cancel'
+  close: 'Close'
 </i18n>
 
-<!-- TODO Add translations -->
+<i18n lang="yaml" locale="de">
+title: 'Kalendereinstellungen'
+
+field:
+  dayStart:
+    label: 'Tagesbeginn'
+  dayEnd:
+    label: 'Tagesende'
+  timeInterval:
+    label: 'Zeitintervall'
+    hint: 'Minuten pro Intervall'
+
+actions:
+  save: 'Speichern'
+  cancel: 'Abbrechen'
+  close: 'Schließen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Paramètres du calendrier'
+
+field:
+  dayStart:
+    label: 'Début de journée'
+  dayEnd:
+    label: 'Fin de journée'
+  timeInterval:
+    label: "Intervalle de temps"
+    hint: "Minutes par intervalle"
+
+actions:
+  save: 'Enregistrer'
+  cancel: 'Annuler'
+  close: 'Fermer'
+</i18n>
 
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,

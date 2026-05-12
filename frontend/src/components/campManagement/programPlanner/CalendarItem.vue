@@ -32,6 +32,7 @@ import CalendarItemPopup from 'components/campManagement/programPlanner/Calendar
 
 const props = defineProps<{
   event: ProgramEvent;
+  viewBoth?: boolean;
   timeStartPosition?: (time?: string) => number;
   timeDurationHeight?: (duration?: number) => number;
 }>();
@@ -50,9 +51,6 @@ const backgroundColor = computed<string>(() => {
 const badgeClasses = computed<Record<string, string | boolean>>(() => {
   return {
     [`text-white bg-${props.event.color}`]: true,
-    'full-width': !props.event.side || props.event.side === 'auto',
-    'left-side': props.event.side === 'left',
-    'right-side': props.event.side === 'right',
     'rounded-border': true,
   };
 });
@@ -68,11 +66,23 @@ const badgeStyles = computed<StyleValue>(() => {
       ? props.timeDurationHeight(props.event.duration) + 'px'
       : undefined;
 
+  let left = '0';
+  let width = 'calc(100% - 2px)';
+
+  if (props.viewBoth && props.event.plan !== 'both') {
+    width = 'calc(50% - 2px)';
+    if (props.event.plan === 'b') {
+      left = '50%';
+    }
+  }
+
   return {
     backgroundColor: backgroundColor.value,
     alignItems: 'flex-start',
     top,
     height,
+    left,
+    width,
   };
 });
 
@@ -101,18 +111,6 @@ function onEdit() {
   justify-content: center
   align-items: center
   height: 100%
-
-.full-width
-  left: 0
-  width: calc(100% - 2px)
-
-.left-side
-  left: 0
-  width: calc(50% - 3px)
-
-.right-side
-  left: 50%
-  width: calc(50% - 3px)
 
 .rounded-border
   border-radius: 2px

@@ -381,7 +381,7 @@ model ProgramEvent {
   duration Int?
   time     String?
   color    String? @map("color")
-  side     String?
+  plan     String  @default("both")
   camp     Camp?   @relation(fields: [campId], references: [id], onDelete: Cascade)
 
   @@map("program_events")

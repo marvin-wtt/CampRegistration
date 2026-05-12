@@ -3,18 +3,19 @@
     class="column"
     :class="quasar.platform.is.mobile ? 'reverse' : ''"
   >
+    <q-resize-observer @resize="onResize" />
+
     <calendar-navigation-bar
       v-model="range"
+      v-model:plan="activePlan"
       class="col-shrink"
       :start="props.camp.startAt"
       :end="props.camp.endAt"
       :current="selectedDate"
       @next="onNextNavigation"
       @previous="onPreciousNavigation"
+      @settings="onSettingsOpen"
     />
-
-    <q-resize-observer @resize="onPageResize" />
-
     <div class="col relative-position">
       <q-calendar-day
         ref="calendarRef"
@@ -25,12 +26,10 @@
         :drag-over-func="onDragOver"
         :drag-leave-func="onDragLeave"
         :drop-func="onDrop"
-        :weekday-class="onWeekdayClass"
-        :interval-class="onIntervalClass"
         :max-days="range"
         :interval-start="intervalStart"
         :interval-count="intervalCount"
-        :interval-minutes="props.timeInterval"
+        :interval-minutes="settings.timeInterval"
         :interval-height="intervalHeight"
         hour24-format
         time-clicks-clamped
@@ -40,6 +39,10 @@
         transition-next="slide-left"
         transition-prev="slide-right"
         class="fit absolute"
+        :style="{
+          // This is a workaround as the calendar otherwise does not shrink
+          maxWidth: maxWidth + 'px',
+        }"
         @click-time="onTimeEventAdd"
         @click-day="onDayEventAdd"
         @click-head-day="onDayEventAdd"
@@ -50,6 +53,7 @@
               v-for="event in getFullDayEvents(timestamp.date)"
               :key="event.id"
               :event="event"
+              :view-both="viewBoth"
               :draggable="true"
               @dragstart="onDragStart($event, event)"
               @edit="onEventEdit(event)"
@@ -67,6 +71,7 @@
             :event="event"
             :time-start-position="timeStartPos"
             :time-duration-height="timeDurationHeight"
+            :view-both="viewBoth"
             :draggable="true"
             @dragstart="onDragStart($event, event)"
             @edit="onEventEdit(event)"
@@ -88,28 +93,29 @@ import type {
   ProgramEventCreateData,
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
-import { useQuasar } from 'quasar';
-import { computed, onMounted, ref, watch } from 'vue';
+import { dom, useQuasar } from 'quasar';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import CalendarNavigationBar from 'components/campManagement/programPlanner/CalendarNavigationBar.vue';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
 import type { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
 import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
+import CalendarSettingsDialog from 'components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
+import { daysBetweenDates } from 'src/utils/date';
+
+interface CalendarSettings {
+  dayStart: string;
+  dayEnd: string;
+  timeInterval: number;
+}
 
 interface Props {
   camp: CampDetails;
   events: ProgramEvent[];
-  dayStart?: string;
-  dayEnd?: string;
-  timeInterval?: number;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  dayStart: '08:00',
-  dayEnd: '21:00',
-  timeInterval: 30,
-});
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'update', id: string, event: ProgramEventUpdateData): void;
@@ -117,38 +123,68 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
 }>();
 
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 const quasar = useQuasar();
 
 const calendarRef = ref<QCalendarDay | null>(null);
 const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
+const activePlan = ref<'a' | 'b' | 'both'>('a');
+const maxWidth = ref<number>();
+
+const SETTINGS_KEY = 'program-planner-settings';
+
+function loadSettings(): CalendarSettings {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) {
+      return {
+        dayStart: '08:00',
+        dayEnd: '21:00',
+        timeInterval: 30,
+        ...JSON.parse(stored),
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return { dayStart: '08:00', dayEnd: '21:00', timeInterval: 30 };
+}
+
+const settings = reactive<CalendarSettings>(loadSettings());
+
+watch(
+  settings,
+  () => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings }));
+  },
+  { deep: true },
+);
 
 onMounted(() => {
-  // TODO Find better solution
   setTimeout(() => {
     updateIntervalHeight();
   }, 500);
 });
 
 const intervalStart = computed<number>(() => {
-  const start = props.dayStart.split(':');
+  const start = settings.dayStart.split(':');
   if (start.length !== 2) {
     return 0;
   }
-  const minutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+  const minutes = parseInt(start[0] ?? '0') * 60 + parseInt(start[1] ?? '0');
 
-  return minutes / props.timeInterval;
+  return minutes / settings.timeInterval;
 });
 
 const intervalCount = computed<number>(() => {
-  const end = props.dayEnd.split(':');
+  const end = settings.dayEnd.split(':');
   if (end.length !== 2) {
     return 0;
   }
-  const minutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+  const minutes = parseInt(end[0] ?? '0') * 60 + parseInt(end[1] ?? '0');
 
-  return minutes / props.timeInterval - intervalStart.value;
+  return minutes / settings.timeInterval - intervalStart.value;
 });
 
 const intervalHeight = ref<number>(10);
@@ -157,12 +193,19 @@ watch(intervalCount, () => {
   updateIntervalHeight();
 });
 
-function onPageResize() {
-  updateIntervalHeight();
+function onResize(size: { width: number; height: number }) {
+  maxWidth.value = size.width;
+  requestAnimationFrame(() => {
+    updateIntervalHeight();
+  });
+}
+
+function getCalendarElement() {
+  return document.getElementsByClassName('q-calendar-day__body')[0];
 }
 
 function updateIntervalHeight() {
-  const el = document.getElementsByClassName('q-calendar-day__body')[0];
+  const el = getCalendarElement();
   if (!el) {
     return;
   }
@@ -171,7 +214,7 @@ function updateIntervalHeight() {
   intervalHeight.value = height / intervalCount.value;
 }
 
-function initialRange(): number {
+function maxViewportRange(): number {
   switch (quasar.screen.name) {
     case 'xs':
       return 1;
@@ -180,24 +223,58 @@ function initialRange(): number {
     case 'md':
       return 5;
     case 'lg':
-    case 'xl':
       return 7;
+    case 'xl':
+      return 10;
+    default:
+      return 1;
   }
 }
 
-function initialSelectedDate(): string {
-  return formatDate(new Date(props.camp.startAt));
+function initialRange(): number {
+  const max = daysBetweenDates(
+    new Date(props.camp.startAt),
+    new Date(props.camp.endAt),
+  );
+
+  return Math.min(max, maxViewportRange());
 }
+
+watch(
+  () => quasar.screen.name,
+  () => {
+    range.value = initialRange();
+  },
+);
+
+function initialSelectedDate(): string {
+  return props.camp.startAt.substring(0, 10);
+}
+
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-');
+  return new Date(
+    parseInt(y ?? '0'),
+    parseInt(m ?? '0') - 1,
+    parseInt(d ?? '0'),
+  );
+}
+
+const viewBoth = computed<boolean>(() => activePlan.value === 'both');
 
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
   return props.events
-    .filter((event) => event.date != null)
+    .filter((event) => {
+      if (event.date == null) return false;
+      if (activePlan.value === 'both') return true;
+      return event.plan === activePlan.value || event.plan === 'both';
+    })
     .reduce(
       (map, event) => {
         if (!(event.date! in map)) {
           map[event.date!] = [];
         }
-        map[event.date!].push(event);
+        map[event.date!]!.push(event);
 
         return map;
       },
@@ -230,6 +307,9 @@ function onDayEventAdd({ scope }: CalendarEvent) {
         date: scope.timestamp.date,
         time: null,
         duration: null,
+        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+        dateTimeMin: props.camp.startAt,
+        dateTimeMax: props.camp.endAt,
       },
     })
     .onOk((programEvent: ProgramEventCreateData) => {
@@ -244,7 +324,8 @@ function onTimeEventAdd({ scope }: CalendarEvent) {
       componentProps: {
         date: scope.timestamp.date,
         time: scope.timestamp.time,
-        duration: props.timeInterval,
+        duration: settings.timeInterval,
+        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
         dateTimeMin: props.camp.startAt,
         dateTimeMax: props.camp.endAt,
       },
@@ -264,14 +345,50 @@ function onEventEdit(event: ProgramEvent) {
         dateTimeMax: props.camp.endAt,
       },
     })
-    .onOk((programEvent: ProgramEventCreateData) => {
+    .onOk((programEvent: ProgramEventUpdateData) => {
       emit('update', event.id, programEvent);
     });
 }
 
 function onEventDelete(event: ProgramEvent) {
-  // TODO Maybe add conform
-  emit('delete', event.id);
+  quasar
+    .dialog({
+      title: t('dialog.delete.title'),
+      message: t('dialog.delete.message'),
+      cancel: {
+        color: 'primary',
+        rounded: true,
+        outline: true,
+      },
+      ok: {
+        color: 'negative',
+        rounded: true,
+      },
+      persistent: true,
+    })
+    .onOk(() => {
+      emit('delete', event.id);
+    });
+}
+
+function onSettingsOpen() {
+  quasar
+    .dialog({
+      component: CalendarSettingsDialog,
+      componentProps: {
+        modelValue: { ...settings },
+      },
+    })
+    .onOk((newSettings: CalendarSettings) => {
+      Object.assign(settings, newSettings);
+    });
+}
+
+let dragHighlightEl: Element | null = null;
+
+function clearDragHighlight() {
+  dragHighlightEl?.classList.remove('droppable');
+  dragHighlightEl = null;
 }
 
 function onDragStart(e: DragEvent, event: ProgramEvent): void {
@@ -284,33 +401,41 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   e.dataTransfer.setData('eventId', event.id);
 }
 
-function onDragEnter(
-  e: DragEvent,
-  type: string,
-  scope: DragAndDropScope,
-): boolean {
+function onDragEnter(e: DragEvent): boolean {
   e.preventDefault();
-  return true;
-}
-
-function onDragOver(
-  e: DragEvent,
-  type: string,
-  scope: DragAndDropScope,
-): boolean {
-  e.preventDefault();
-  return true;
-}
-
-function onDragLeave(
-  e: DragEvent,
-  type: string,
-  scope: DragAndDropScope,
-): boolean {
+  // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
+  if (
+    e.currentTarget instanceof Element &&
+    dragHighlightEl !== e.currentTarget
+  ) {
+    clearDragHighlight();
+    dragHighlightEl = e.currentTarget;
+    dragHighlightEl.classList.add('droppable');
+  }
   return false;
 }
 
-function onDrop(e: DragEvent, type: string, scope: DragAndDropScope): boolean {
+function onDragOver(e: DragEvent): boolean {
+  e.preventDefault();
+  return false;
+}
+
+function onDragLeave(e: DragEvent): boolean {
+  if (e.currentTarget instanceof Element) {
+    e.currentTarget.classList.remove('droppable');
+    if (dragHighlightEl === e.currentTarget) {
+      dragHighlightEl = null;
+    }
+  }
+  return false;
+}
+
+function onDrop(
+  e: DragEvent,
+  type: string,
+  { scope }: { scope: DragAndDropScope },
+): boolean {
+  clearDragHighlight();
   const eventId = e.dataTransfer?.getData('eventId');
   if (!eventId) {
     return false;
@@ -324,16 +449,13 @@ function onDrop(e: DragEvent, type: string, scope: DragAndDropScope): boolean {
   let eventUpdate: ProgramEventUpdateData;
   switch (type) {
     case 'interval':
-      // Dropped on a time slot
       eventUpdate = {
         date: scope.timestamp.date,
         time: scope.timestamp.time,
         duration: event.duration ?? 60,
-        side: event.side ?? 'auto',
       };
       break;
     case 'head-day':
-      // Dropped on the header
       eventUpdate = {
         date: scope.timestamp.date,
         time: null,
@@ -353,50 +475,35 @@ function onDrop(e: DragEvent, type: string, scope: DragAndDropScope): boolean {
   return false;
 }
 
-function onIntervalClass({ scope }: { scope: DragAndDropScope }) {
-  return {
-    droppable: scope.droppable,
-  };
-}
-
-function onWeekdayClass({ scope }: { scope: DragAndDropScope }) {
-  return {
-    droppable: scope.droppable,
-  };
-}
-
-const DAY_IN_MY = 24 * 60 * 60 * 1000;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function onNextNavigation() {
-  const endDate = new Date(props.camp.endAt);
-  endDate.setHours(0, 0);
+  const endDate = parseLocalDate(props.camp.endAt.substring(0, 10));
+  const currentDate = parseLocalDate(selectedDate.value);
 
-  const endTime = endDate.getTime();
-  const currentTime = new Date(selectedDate.value).getTime();
-
-  const rangeTime = range.value * DAY_IN_MY;
-  const maxTime = endTime - (rangeTime - DAY_IN_MY);
-  const updateMs = Math.min(maxTime, currentTime + rangeTime);
+  const rangeMs = range.value * DAY_IN_MS;
+  const maxTime = endDate.getTime() - (rangeMs - DAY_IN_MS);
+  const updateMs = Math.min(maxTime, currentDate.getTime() + rangeMs);
 
   selectedDate.value = formatDate(new Date(updateMs));
 }
 
 function onPreciousNavigation() {
-  const startDate = new Date(props.camp.startAt);
-  startDate.setHours(0, 0);
+  const startDate = parseLocalDate(props.camp.startAt.substring(0, 10));
+  const currentDate = parseLocalDate(selectedDate.value);
 
-  const startTime = startDate.getTime();
-  const currentTime = new Date(selectedDate.value).getTime();
-
-  const rangeTime = range.value * DAY_IN_MY;
-  const minTime = currentTime - rangeTime;
-  const updateMs = Math.max(startTime, minTime);
+  const rangeMs = range.value * DAY_IN_MS;
+  const minTime = currentDate.getTime() - rangeMs;
+  const updateMs = Math.max(startDate.getTime(), minTime);
 
   selectedDate.value = formatDate(new Date(updateMs));
 }
 
 function formatDate(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 </script>
 
@@ -405,3 +512,24 @@ function formatDate(date: Date): string {
   box-shadow: inset 0 0 0 1px rgba(0, 140, 200, 0.8);
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+dialog:
+  delete:
+    title: 'Delete Event'
+    message: 'Are you sure you want to delete this event?'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+dialog:
+  delete:
+    title: 'Ereignis löschen'
+    message: 'Sind Sie sicher, dass Sie dieses Ereignis löschen möchten?'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+dialog:
+  delete:
+    title: "Supprimer l'événement"
+    message: 'Êtes-vous sûr de vouloir supprimer cet événement ?'
+</i18n>

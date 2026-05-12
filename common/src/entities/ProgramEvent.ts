@@ -9,7 +9,7 @@ export interface ProgramEvent extends Identifiable {
   time: string | null;
   duration: number | null;
   color: string | null;
-  side: 'left' | 'right' | 'auto' | null;
+  plan: 'a' | 'b' | 'both';
 }
 
 export type ProgramEventCreateData = Partial<

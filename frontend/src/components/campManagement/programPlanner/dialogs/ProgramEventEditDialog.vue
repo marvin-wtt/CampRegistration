@@ -219,10 +219,10 @@
             </template>
           </q-input>
 
-          <!-- side -->
+          <!-- plan -->
           <q-btn-toggle
-            v-model="data.side"
-            :options="sideOptions"
+            v-model="data.plan"
+            :options="planOptions"
             spread
             outline
             rounded
@@ -263,7 +263,7 @@ import {
   useDialogPluginComponent,
 } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref, toRaw } from 'vue';
+import { computed, reactive, toRaw } from 'vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import type {
   ProgramEvent,
@@ -326,18 +326,21 @@ const timeEnd = computed<string>({
   },
 });
 
-const sideOptions = ref<QSelectOption[]>([
+const planOptions = computed<QSelectOption[]>(() => [
   {
-    label: t('field.side.left'),
-    value: 'left',
+    label: t('field.plan.a'),
+    value: 'a',
+    icon: 'wb_sunny',
   },
   {
-    label: t('field.side.auto'),
-    value: 'auto',
+    label: t('field.plan.both'),
+    value: 'both',
+    icon: 'repeat',
   },
   {
-    label: t('field.side.right'),
-    value: 'right',
+    label: t('field.plan.b'),
+    value: 'b',
+    icon: 'water_drop',
   },
 ]);
 
@@ -350,19 +353,19 @@ const monthYearMax = computed<string | undefined>(() => {
 });
 
 function extractYearMonth(date: string): string {
-  const year = date.substring(0, 4); // Extracts YYYY
-  const month = date.substring(5, 7); // Extracts MM
+  const year = date.substring(0, 4);
+  const month = date.substring(5, 7);
   return `${year}/${month}`;
 }
 
 function dateOptions(date: string): boolean {
-  const selectedDate = new Date(date);
-  const dateTimeMin = props.dateTimeMin ? new Date(props.dateTimeMin) : null;
-  const dateTimeMax = props.dateTimeMax ? new Date(props.dateTimeMax) : null;
+  const dateStr = date.replace(/\//g, '-');
+  const dateMin = props.dateTimeMin?.substring(0, 10) ?? null;
+  const dateMax = props.dateTimeMax?.substring(0, 10) ?? null;
 
   return (
-    (!dateTimeMin || selectedDate >= dateTimeMin) &&
-    (!dateTimeMax || selectedDate <= dateTimeMax)
+    (!dateMin || dateStr >= dateMin) &&
+    (!dateMax || dateStr <= dateMax)
   );
 }
 
@@ -386,11 +389,9 @@ function timeDifference(timeStart: string, timeEnd: string) {
   const [hoursStart, minutesStart] = timeStart.split(':').map(Number);
   const [hoursEnd, minutesEnd] = timeEnd.split(':').map(Number);
 
-  // Convert the times to total minutes
   const totalMinutesStart = hoursStart * 60 + minutesStart;
   const totalMinutesEnd = hoursEnd * 60 + minutesEnd;
 
-  // Find the absolute difference in minutes
   return totalMinutesEnd - totalMinutesStart;
 }
 </script>
@@ -401,6 +402,8 @@ function timeDifference(timeStart: string, timeEnd: string) {
 title: 'Edit Event'
 
 field:
+  date:
+    label: 'Date'
   details:
     label: 'Details'
   end:
@@ -411,10 +414,10 @@ field:
     label: 'Full Day'
   location:
     label: 'Location'
-  side:
-    left: 'Left'
-    auto: 'Auto'
-    right: 'Right'
+  plan:
+    a: 'Plan A'
+    b: 'Plan B'
+    both: 'Both'
   start:
     label: 'Start time'
   title:
@@ -432,6 +435,8 @@ action:
 title: 'Ereignis bearbeiten'
 
 field:
+  date:
+    label: 'Datum'
   details:
     label: 'Details'
   end:
@@ -442,10 +447,10 @@ field:
     label: 'Ganztägig'
   location:
     label: 'Ort'
-  side:
-    left: 'Links'
-    auto: 'Automatisch'
-    right: 'Rechts'
+  plan:
+    a: 'Plan A'
+    b: 'Plan B'
+    both: 'Beide'
   start:
     label: 'Startzeit'
   title:
@@ -463,6 +468,8 @@ action:
 title: "Modifier l'événement"
 
 field:
+  date:
+    label: 'Date'
   details:
     label: 'Détails'
   end:
@@ -473,10 +480,10 @@ field:
     label: 'Journée entière'
   location:
     label: 'Lieu'
-  side:
-    left: 'Gauche'
-    auto: 'Automatique'
-    right: 'Droit'
+  plan:
+    a: 'Plan A'
+    b: 'Plan B'
+    both: 'Les deux'
   start:
     label: 'Heure de début'
   title:

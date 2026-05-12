@@ -3,6 +3,7 @@ import { translatedValue } from '#core/validation/helper';
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
 const dateSchema = z.string(); // TODO Should be raw string YYYY-MM-DD
+const planSchema = z.enum(['a', 'b', 'both']);
 
 const show = z.object({
   params: z.object({
@@ -29,7 +30,7 @@ const store = z.object({
     time: timeSchema.optional().nullable(),
     duration: z.number().min(0).optional().nullable(),
     color: z.string().optional().nullable(),
-    side: z.string().optional().nullable(),
+    plan: planSchema.optional(),
   }),
 });
 
@@ -41,13 +42,13 @@ const update = z.object({
   body: z
     .object({
       title: translatedValue(z.string()),
-      details: translatedValue(z.string()),
-      location: translatedValue(z.string()),
+      details: translatedValue(z.string()).nullable(),
+      location: translatedValue(z.string()).nullable(),
       date: dateSchema,
       time: timeSchema.nullable(),
       duration: z.number().min(0).nullable(),
       color: z.string().nullable(),
-      side: z.string().nullable(),
+      plan: planSchema,
     })
     .partial(),
 });
