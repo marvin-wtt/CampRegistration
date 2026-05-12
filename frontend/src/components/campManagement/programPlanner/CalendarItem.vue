@@ -1,32 +1,34 @@
 <template>
   <div
     v-if="props.event.time"
-    class="my-event"
-    :class="badgeClasses"
+    class="cal-event"
     :style="badgeStyles"
+    @dragstart="onDragStart"
+    @dragend="isDragging = false"
   >
-    <span class="title q-calendar__ellipsis">
-      {{ to(props.event.title) }}
-      <q-tooltip
-        v-if="props.event.details"
-        class="column text-caption"
-        style="white-space: pre-line"
-      >
-        {{ to(props.event.details) }}
-      </q-tooltip>
-    </span>
+    <div class="cal-event__inner">
+      <div class="cal-event__title q-calendar__ellipsis">
+        {{ to(props.event.title) }}
+      </div>
+    </div>
+
+    <div
+      class="cal-event__resize-handle"
+      @mousedown.stop.prevent="startResize"
+    />
 
     <calendar-item-popup
       :event="props.event"
-      @edit="onEdit"
-      @delete="onDelete"
+      @edit="emit('edit')"
+      @delete="emit('delete')"
+      @duplicate="emit('duplicate')"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
 import type { ProgramEvent } from '@camp-registration/common/entities';
-import { computed, type StyleValue } from 'vue';
+import { computed, ref, type StyleValue } from 'vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
 
@@ -35,25 +37,26 @@ const props = defineProps<{
   viewBoth?: boolean;
   timeStartPosition?: (time?: string) => number;
   timeDurationHeight?: (duration?: number) => number;
+  snap?: number;
 }>();
 
 const emit = defineEmits<{
   (e: 'edit'): void;
   (e: 'delete'): void;
+  (e: 'duplicate'): void;
+  (e: 'resize', duration: number): void;
 }>();
 
 const { to } = useObjectTranslation();
 
-const backgroundColor = computed<string>(() => {
-  return props.event.color ?? '#0000ff';
-});
+const resizeDuration = ref<number | null>(null);
+const isDragging = ref(false);
 
-const badgeClasses = computed<Record<string, string | boolean>>(() => {
-  return {
-    [`text-white bg-${props.event.color}`]: true,
-    'rounded-border': true,
-  };
-});
+function onDragStart() {
+  setTimeout(() => {
+    isDragging.value = true;
+  }, 0);
+}
 
 const badgeStyles = computed<StyleValue>(() => {
   const top =
@@ -61,57 +64,102 @@ const badgeStyles = computed<StyleValue>(() => {
       ? props.timeStartPosition(props.event.time) + 'px'
       : undefined;
 
+  const dur = resizeDuration.value ?? props.event.duration;
   const height =
-    props.timeDurationHeight && props.event.duration
-      ? props.timeDurationHeight(props.event.duration) + 'px'
+    props.timeDurationHeight && dur
+      ? props.timeDurationHeight(dur) + 'px'
       : undefined;
 
   let left = '0';
-  let width = 'calc(100% - 2px)';
+  let width = 'calc(100% - 4px)';
 
   if (props.viewBoth && props.event.plan !== 'both') {
-    width = 'calc(50% - 2px)';
+    width = 'calc(50% - 4px)';
     if (props.event.plan === 'b') {
       left = '50%';
     }
   }
 
   return {
-    backgroundColor: backgroundColor.value,
-    alignItems: 'flex-start',
+    backgroundColor: props.event.color ?? '#2196F3',
     top,
     height,
     left,
     width,
+    opacity: isDragging.value ? 0 : undefined,
+    pointerEvents: isDragging.value ? 'none' : undefined,
   };
 });
 
-function onDelete() {
-  emit('delete');
-}
+function startResize(e: MouseEvent) {
+  if (!props.timeDurationHeight || !props.event.duration) {
+    return;
+  }
 
-function onEdit() {
-  emit('edit');
+  const startY = e.clientY;
+  const startDuration = props.event.duration;
+  const pixelsPerMinute = props.timeDurationHeight(60) / 60;
+  const snapTo = props.snap ?? 15;
+
+  function onMove(ev: MouseEvent) {
+    const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
+    const raw = startDuration + deltaMinutes;
+    resizeDuration.value = Math.max(snapTo, Math.round(raw / snapTo) * snapTo);
+  }
+
+  function onUp(ev: MouseEvent) {
+    const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
+    const raw = startDuration + deltaMinutes;
+    const final = Math.max(snapTo, Math.round(raw / snapTo) * snapTo);
+    emit('resize', final);
+    resizeDuration.value = null;
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  }
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
 }
 </script>
 
-<style lang="sass" scoped>
-.my-event
-  position: absolute
-  font-size: 12px
-  justify-content: center
-  margin: 0 1px
-  text-overflow: ellipsis
-  overflow: hidden
-  cursor: pointer
+<style lang="scss" scoped>
+.cal-event {
+  position: absolute;
+  margin: 0 2px;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
 
-.title
-  position: relative
-  display: flex
-  justify-content: center
-  align-items: center
-  height: 100%
+  &__inner {
+    padding: 2px 4px;
+    height: calc(100% - 2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
 
-.rounded-border
-  border-radius: 2px
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  &__resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    cursor: ns-resize;
+    background: rgba(0, 0, 0, 0.15);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+}
 </style>

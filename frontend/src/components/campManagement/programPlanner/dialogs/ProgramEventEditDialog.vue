@@ -17,6 +17,7 @@
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <translated-input
             v-model="data.title"
+            :locales="props.locales ?? []"
             :label="t('field.title.label')"
             :rules="[
               (val?: string) => val?.length || t('field.title.rule.required'),
@@ -32,6 +33,7 @@
 
           <translated-input
             v-model="data.location"
+            :locales="props.locales ?? []"
             :label="t('field.location.label')"
             clearable
             outlined
@@ -44,6 +46,7 @@
 
           <translated-input
             v-model="data.details"
+            :locales="props.locales ?? []"
             :label="t('field.details.label')"
             autogrow
             clearable
@@ -164,9 +167,9 @@
                   class="cursor-pointer"
                 >
                   <q-popup-proxy
-                    cover
                     transition-show="scale"
                     transition-hide="scale"
+                    cover
                   >
                     <q-time v-model="timeEnd">
                       <div class="row items-center justify-end">
@@ -186,38 +189,10 @@
           </div>
 
           <!-- color -->
-          <q-input
+          <color-picker-input
             v-model="data.color"
-            :rules="['anyColor']"
-            hide-bottom-space
-            clearable
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon
-                name="circle"
-                :style="{ color: data.color }"
-              />
-            </template>
-            <template #append>
-              <q-icon
-                name="colorize"
-                class="cursor-pointer"
-              >
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-color
-                    v-model="data.color"
-                    default-view="palette"
-                  />
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+            :label="t('field.color.label')"
+          />
 
           <!-- plan -->
           <q-btn-toggle
@@ -232,17 +207,17 @@
         <!-- action buttons -->
         <q-card-actions align="right">
           <q-btn
+            :label="t('action.cancel')"
             type="reset"
+            color="primary"
             outline
             rounded
-            color="primary"
-            :label="t('action.cancel')"
           />
           <q-btn
-            type="submit"
-            rounded
-            color="primary"
             :label="t('action.ok')"
+            type="submit"
+            color="primary"
+            rounded
           />
         </q-card-actions>
       </q-form>
@@ -265,6 +240,7 @@ import {
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, toRaw } from 'vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import ColorPickerInput from 'components/common/inputs/ColorPickerInput.vue';
 import type {
   ProgramEvent,
   ProgramEventUpdateData,
@@ -278,6 +254,7 @@ const props = defineProps<{
   event: ProgramEvent;
   dateTimeMin?: string;
   dateTimeMax?: string;
+  locales?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -363,10 +340,7 @@ function dateOptions(date: string): boolean {
   const dateMin = props.dateTimeMin?.substring(0, 10) ?? null;
   const dateMax = props.dateTimeMax?.substring(0, 10) ?? null;
 
-  return (
-    (!dateMin || dateStr >= dateMin) &&
-    (!dateMax || dateStr <= dateMax)
-  );
+  return (!dateMin || dateStr >= dateMin) && (!dateMax || dateStr <= dateMax);
 }
 
 function onOKClick(): void {
@@ -402,6 +376,8 @@ function timeDifference(timeStart: string, timeEnd: string) {
 title: 'Edit Event'
 
 field:
+  color:
+    label: 'Color'
   date:
     label: 'Date'
   details:
@@ -435,6 +411,8 @@ action:
 title: 'Ereignis bearbeiten'
 
 field:
+  color:
+    label: 'Farbe'
   date:
     label: 'Datum'
   details:
@@ -468,6 +446,8 @@ action:
 title: "Modifier l'événement"
 
 field:
+  color:
+    label: 'Couleur'
   date:
     label: 'Date'
   details:

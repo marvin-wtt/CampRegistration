@@ -17,6 +17,7 @@
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <translated-input
             v-model="data.title"
+            :locales="props.locales ?? []"
             :label="t('field.title.label')"
             :rules="[
               (val?: string) => val?.length || t('field.title.rule.required'),
@@ -32,6 +33,7 @@
 
           <translated-input
             v-model="data.location"
+            :locales="props.locales ?? []"
             :label="t('field.location.label')"
             outlined
             rounded
@@ -43,6 +45,7 @@
 
           <translated-input
             v-model="data.details"
+            :locales="props.locales ?? []"
             :label="t('field.details.label')"
             autogrow
             outlined
@@ -184,37 +187,10 @@
           </div>
 
           <!-- color -->
-          <q-input
+          <color-picker-input
             v-model="data.color"
-            :rules="['anyColor']"
-            hide-bottom-space
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon
-                name="circle"
-                :style="{ color: data.color }"
-              />
-            </template>
-            <template #append>
-              <q-icon
-                name="colorize"
-                class="cursor-pointer"
-              >
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-color
-                    v-model="data.color"
-                    default-view="palette"
-                  />
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+            :label="t('field.color.label')"
+          />
 
           <!-- plan -->
           <q-btn-toggle
@@ -262,7 +238,11 @@ import {
 import { useI18n } from 'vue-i18n';
 import { computed, reactive } from 'vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import type { ProgramEventCreateData } from '@camp-registration/common/entities';
+import ColorPickerInput from 'components/common/inputs/ColorPickerInput.vue';
+import type {
+  ProgramEventCreateData,
+  Translatable,
+} from '@camp-registration/common/entities';
 
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -270,20 +250,28 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const props = defineProps<{
   date?: string;
-  time?: string;
-  duration?: number;
+  time?: string | null;
+  duration?: number | null;
   plan?: 'a' | 'b' | 'both';
   dateTimeMin?: string;
   dateTimeMax?: string;
+  title?: Translatable;
+  location?: Translatable | null;
+  details?: Translatable | null;
+  color?: string | null;
+  locales?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const data = reactive<Partial<ProgramEventCreateData>>({
+  title: props.title,
   date: props.date,
   time: props.time,
   duration: props.duration,
-  color: '#0000ff',
+  location: props.location,
+  details: props.details,
+  color: props.color ?? '#2196F3',
   plan: props.plan ?? 'both',
 });
 
@@ -398,6 +386,8 @@ function timeDifference(timeStart: string, timeEnd: string) {
 title: 'Add Event'
 
 field:
+  color:
+    label: 'Color'
   date:
     label: 'Date'
   details:
@@ -431,6 +421,8 @@ action:
 title: 'Ereignis hinzufügen'
 
 field:
+  color:
+    label: 'Farbe'
   date:
     label: 'Datum'
   details:
@@ -464,6 +456,8 @@ action:
 title: 'Ajouter un événement'
 
 field:
+  color:
+    label: 'Couleur'
   date:
     label: 'Date'
   details:

@@ -8,20 +8,35 @@
       <q-card-actions align="right">
         <q-btn
           v-close-popup
+          icon="content_copy"
+          size="sm"
+          flat
+          rounded
+          @click="onDuplicate"
+        >
+          <q-tooltip>{{ t('action.duplicate') }}</q-tooltip>
+        </q-btn>
+        <q-btn
+          v-close-popup
           icon="edit"
           size="sm"
           flat
           rounded
           @click="onEdit"
-        />
+        >
+          <q-tooltip>{{ t('action.edit') }}</q-tooltip>
+        </q-btn>
         <q-btn
           v-close-popup
           icon="delete"
           size="sm"
           flat
           rounded
+          color="negative"
           @click="onDelete"
-        />
+        >
+          <q-tooltip>{{ t('action.delete') }}</q-tooltip>
+        </q-btn>
         <q-btn
           v-close-popup
           icon="close"
@@ -104,6 +119,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit'): void;
   (e: 'delete'): void;
+  (e: 'duplicate'): void;
 }>();
 
 const dateTime = computed<string>(() => {
@@ -136,6 +152,10 @@ function onDelete() {
 function onEdit() {
   emit('edit');
 }
+
+function onDuplicate() {
+  emit('duplicate');
+}
 </script>
 
 <style scoped></style>
@@ -144,16 +164,28 @@ function onEdit() {
 plan:
   a: 'Plan A (good weather)'
   b: 'Plan B (bad weather)'
+action:
+  duplicate: 'Duplicate'
+  edit: 'Edit'
+  delete: 'Delete'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 plan:
   a: 'Plan A (gutes Wetter)'
   b: 'Plan B (schlechtes Wetter)'
+action:
+  duplicate: 'Duplizieren'
+  edit: 'Bearbeiten'
+  delete: 'Löschen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 plan:
   a: 'Plan A (beau temps)'
   b: 'Plan B (mauvais temps)'
+action:
+  duplicate: 'Dupliquer'
+  edit: 'Modifier'
+  delete: 'Supprimer'
 </i18n>

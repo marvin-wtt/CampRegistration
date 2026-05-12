@@ -16,6 +16,7 @@
       @previous="onPreciousNavigation"
       @settings="onSettingsOpen"
     />
+
     <div class="col relative-position">
       <q-calendar-day
         ref="calendarRef"
@@ -36,8 +37,8 @@
         bordered
         hoverable
         animated
-        transition-next="slide-left"
-        transition-prev="slide-right"
+        :transition-next="range === 1 ? 'slide-left' : 'fade'"
+        :transition-prev="range === 1 ? 'slide-right' : 'fade'"
         class="fit absolute"
         :style="{
           // This is a workaround as the calendar otherwise does not shrink
@@ -58,6 +59,7 @@
               @dragstart="onDragStart($event, event)"
               @edit="onEventEdit(event)"
               @delete="onEventDelete(event)"
+              @duplicate="onEventDuplicate(event)"
             />
           </div>
         </template>
@@ -73,9 +75,12 @@
             :time-duration-height="timeDurationHeight"
             :view-both="viewBoth"
             :draggable="true"
+            :snap="settings.timeInterval"
             @dragstart="onDragStart($event, event)"
             @edit="onEventEdit(event)"
             @delete="onEventDelete(event)"
+            @duplicate="onEventDuplicate(event)"
+            @resize="onEventResize(event, $event)"
           />
         </template>
       </q-calendar-day>
@@ -93,8 +98,8 @@ import type {
   ProgramEventCreateData,
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
-import { dom, useQuasar } from 'quasar';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useQuasar } from 'quasar';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import CalendarNavigationBar from 'components/campManagement/programPlanner/CalendarNavigationBar.vue';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
@@ -165,6 +170,11 @@ onMounted(() => {
   setTimeout(() => {
     updateIntervalHeight();
   }, 500);
+  window.addEventListener('keydown', onKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown);
 });
 
 const intervalStart = computed<number>(() => {
@@ -310,6 +320,7 @@ function onDayEventAdd({ scope }: CalendarEvent) {
         plan: activePlan.value === 'both' ? 'both' : activePlan.value,
         dateTimeMin: props.camp.startAt,
         dateTimeMax: props.camp.endAt,
+        locales: props.camp.locales,
       },
     })
     .onOk((programEvent: ProgramEventCreateData) => {
@@ -328,6 +339,34 @@ function onTimeEventAdd({ scope }: CalendarEvent) {
         plan: activePlan.value === 'both' ? 'both' : activePlan.value,
         dateTimeMin: props.camp.startAt,
         dateTimeMax: props.camp.endAt,
+        locales: props.camp.locales,
+      },
+    })
+    .onOk((programEvent: ProgramEventCreateData) => {
+      emit('add', programEvent);
+    });
+}
+
+function onEventResize(event: ProgramEvent, duration: number) {
+  emit('update', event.id, { duration });
+}
+
+function onEventDuplicate(event: ProgramEvent) {
+  quasar
+    .dialog({
+      component: ProgramEventAddDialog,
+      componentProps: {
+        title: event.title,
+        date: event.date,
+        time: event.time,
+        duration: event.duration,
+        location: event.location,
+        details: event.details,
+        color: event.color,
+        plan: event.plan,
+        locales: props.camp.locales,
+        dateTimeMin: props.camp.startAt,
+        dateTimeMax: props.camp.endAt,
       },
     })
     .onOk((programEvent: ProgramEventCreateData) => {
@@ -343,6 +382,7 @@ function onEventEdit(event: ProgramEvent) {
         event,
         dateTimeMin: props.camp.startAt,
         dateTimeMax: props.camp.endAt,
+        locales: props.camp.locales,
       },
     })
     .onOk((programEvent: ProgramEventUpdateData) => {
@@ -476,6 +516,20 @@ function onDrop(
 }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function onKeydown(e: KeyboardEvent) {
+  if (
+    e.target instanceof HTMLInputElement ||
+    e.target instanceof HTMLTextAreaElement
+  ) {
+    return;
+  }
+  if (e.key === 'ArrowRight') {
+    onNextNavigation();
+  } else if (e.key === 'ArrowLeft') {
+    onPreciousNavigation();
+  }
+}
 
 function onNextNavigation() {
   const endDate = parseLocalDate(props.camp.endAt.substring(0, 10));
