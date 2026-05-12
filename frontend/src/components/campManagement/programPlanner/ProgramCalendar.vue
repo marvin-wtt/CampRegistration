@@ -351,6 +351,19 @@ function onEventResize(event: ProgramEvent, duration: number) {
   emit('update', event.id, { duration });
 }
 
+function snapTime(time: string, intervalMinutes: number): string {
+  const [h, m] = time.split(':').map(Number);
+  const total = (h ?? 0) * 60 + (m ?? 0);
+  const snapped = Math.round(total / intervalMinutes) * intervalMinutes;
+  return `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+}
+
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number);
+  const total = (h ?? 0) * 60 + (m ?? 0) + minutes;
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
 function onEventDuplicate(event: ProgramEvent) {
   quasar
     .dialog({
@@ -358,7 +371,7 @@ function onEventDuplicate(event: ProgramEvent) {
       componentProps: {
         title: event.title,
         date: event.date,
-        time: event.time,
+        time: event.time ? addMinutesToTime(event.time, 30) : event.time,
         duration: event.duration,
         location: event.location,
         details: event.details,
@@ -491,7 +504,7 @@ function onDrop(
     case 'interval':
       eventUpdate = {
         date: scope.timestamp.date,
-        time: scope.timestamp.time,
+        time: snapTime(scope.timestamp.time, settings.timeInterval),
         duration: event.duration ?? 60,
       };
       break;

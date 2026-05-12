@@ -52,7 +52,10 @@ const { to } = useObjectTranslation();
 const resizeDuration = ref<number | null>(null);
 const isDragging = ref(false);
 
-function onDragStart() {
+function onDragStart(e: DragEvent) {
+  if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
+    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+  }
   setTimeout(() => {
     isDragging.value = true;
   }, 0);
