@@ -51,14 +51,34 @@ const { to } = useObjectTranslation();
 
 const resizeDuration = ref<number | null>(null);
 const isDragging = ref(false);
+const isCopyDrag = ref(false);
 
 function onDragStart(e: DragEvent) {
   if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
     e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
   }
+
+  isCopyDrag.value = e.ctrlKey || e.metaKey;
+
+  const onKeyDown = (ev: KeyboardEvent) => {
+    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = true;
+  };
+  const onKeyUp = (ev: KeyboardEvent) => {
+    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = false;
+  };
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+
   setTimeout(() => {
     isDragging.value = true;
   }, 0);
+
+  const cleanup = () => {
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
+    document.removeEventListener('dragend', cleanup);
+  };
+  document.addEventListener('dragend', cleanup);
 }
 
 const badgeStyles = computed<StyleValue>(() => {
@@ -89,7 +109,7 @@ const badgeStyles = computed<StyleValue>(() => {
     height,
     left,
     width,
-    opacity: isDragging.value ? 0 : undefined,
+    opacity: isDragging.value && !isCopyDrag.value ? 0 : undefined,
     pointerEvents: isDragging.value ? 'none' : undefined,
   };
 });

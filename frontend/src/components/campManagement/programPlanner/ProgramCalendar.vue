@@ -44,8 +44,6 @@
           // This is a workaround as the calendar otherwise does not shrink
           maxWidth: maxWidth + 'px',
         }"
-        @click-time="onTimeEventAdd"
-        @click-day="onDayEventAdd"
         @click-head-day="onDayEventAdd"
       >
         <template #head-day-event="{ scope: { timestamp } }">
@@ -67,6 +65,25 @@
         <template
           #day-body="{ scope: { timestamp, timeStartPos, timeDurationHeight } }"
         >
+          <!-- Drag-to-create overlay: sits behind events, handles empty-area clicks -->
+          <div
+            class="cal-create-overlay"
+            :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
+            @mousedown.left.prevent="
+              onBodyMouseDown($event, timestamp, timeDurationHeight)
+            "
+          />
+
+          <!-- Selection highlight while dragging to create -->
+          <div
+            v-if="dragSelection && dragSelection?.date === timestamp.date"
+            class="cal-selection"
+            :style="{
+              top: `${(dragSelection.startMinutes - dragSelection.dayStartMinutes) * dragSelection.pxPerMinute}px`,
+              height: `${(dragSelection.endMinutes - dragSelection.startMinutes) * dragSelection.pxPerMinute}px`,
+            }"
+          />
+
           <calendar-item
             v-for="event in getEvents(timestamp.date)"
             :key="event.id"
@@ -328,24 +345,6 @@ function onDayEventAdd({ scope }: CalendarEvent) {
     });
 }
 
-function onTimeEventAdd({ scope }: CalendarEvent) {
-  quasar
-    .dialog({
-      component: ProgramEventAddDialog,
-      componentProps: {
-        date: scope.timestamp.date,
-        time: scope.timestamp.time,
-        duration: settings.timeInterval,
-        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
-        dateTimeMin: props.camp.startAt,
-        dateTimeMax: props.camp.endAt,
-        locales: props.camp.locales,
-      },
-    })
-    .onOk((programEvent: ProgramEventCreateData) => {
-      emit('add', programEvent);
-    });
-}
 
 function onEventResize(event: ProgramEvent, duration: number) {
   emit('update', event.id, { duration });
@@ -438,6 +437,83 @@ function onSettingsOpen() {
 }
 
 let dragHighlightEl: Element | null = null;
+const isDraggingEvent = ref(false);
+
+interface DragSelection {
+  date: string;
+  startMinutes: number;
+  endMinutes: number;
+  pxPerMinute: number;
+  dayStartMinutes: number;
+  bodyEl: HTMLElement;
+}
+const dragSelection = ref<DragSelection | null>(null);
+
+function onBodyMouseDown(
+  e: MouseEvent,
+  timestamp: Timestamp,
+  timeDurationHeight: (d?: number) => number,
+) {
+  const bodyEl = e.currentTarget as HTMLElement;
+  const pxPerMinute = timeDurationHeight(60) / 60;
+  const dayStartMinutes = intervalStart.value * settings.timeInterval;
+
+  const yToSnapped = (clientY: number) => {
+    const y = clientY - bodyEl.getBoundingClientRect().top;
+    const raw = y / pxPerMinute + dayStartMinutes;
+    return Math.round(raw / settings.timeInterval) * settings.timeInterval;
+  };
+
+  const start = yToSnapped(e.clientY);
+  dragSelection.value = {
+    date: timestamp.date,
+    startMinutes: start,
+    endMinutes: start + settings.timeInterval,
+    pxPerMinute,
+    dayStartMinutes,
+    bodyEl,
+  };
+
+  const onMove = (ev: MouseEvent) => {
+    if (!dragSelection.value) return;
+    const end = yToSnapped(ev.clientY);
+    dragSelection.value = {
+      ...dragSelection.value,
+      endMinutes: Math.max(
+        dragSelection.value.startMinutes + settings.timeInterval,
+        end,
+      ),
+    };
+  };
+
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+    if (!dragSelection.value) return;
+    const { date, startMinutes, endMinutes } = dragSelection.value;
+    dragSelection.value = null;
+    const time = `${String(Math.floor(startMinutes / 60)).padStart(2, '0')}:${String(startMinutes % 60).padStart(2, '0')}`;
+    quasar
+      .dialog({
+        component: ProgramEventAddDialog,
+        componentProps: {
+          date,
+          time,
+          duration: endMinutes - startMinutes,
+          plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+          dateTimeMin: props.camp.startAt,
+          dateTimeMax: props.camp.endAt,
+          locales: props.camp.locales,
+        },
+      })
+      .onOk((programEvent: ProgramEventCreateData) => {
+        emit('add', programEvent);
+      });
+  };
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
 
 function clearDragHighlight() {
   dragHighlightEl?.classList.remove('droppable');
@@ -449,9 +525,15 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
     return;
   }
 
-  e.dataTransfer.dropEffect = 'copy';
-  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.effectAllowed = 'copyMove';
   e.dataTransfer.setData('eventId', event.id);
+
+  isDraggingEvent.value = true;
+  const onDragEnd = () => {
+    isDraggingEvent.value = false;
+    document.removeEventListener('dragend', onDragEnd);
+  };
+  document.addEventListener('dragend', onDragEnd);
 }
 
 function onDragEnter(e: DragEvent): boolean {
@@ -470,6 +552,9 @@ function onDragEnter(e: DragEvent): boolean {
 
 function onDragOver(e: DragEvent): boolean {
   e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = e.ctrlKey || e.metaKey ? 'copy' : 'move';
+  }
   return false;
 }
 
@@ -523,7 +608,18 @@ function onDrop(
       };
   }
 
-  emit('update', eventId, eventUpdate);
+  if (e.ctrlKey || e.metaKey) {
+    emit('add', {
+      title: event.title,
+      location: event.location,
+      details: event.details,
+      color: event.color,
+      plan: event.plan,
+      ...eventUpdate,
+    } as ProgramEventCreateData);
+  } else {
+    emit('update', eventId, eventUpdate);
+  }
 
   return false;
 }
@@ -577,6 +673,24 @@ function formatDate(date: Date): string {
 <style lang="scss">
 .droppable {
   box-shadow: inset 0 0 0 1px rgba(0, 140, 200, 0.8);
+}
+
+.cal-create-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: cell;
+  z-index: 0;
+}
+
+.cal-selection {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  background-color: rgba(33, 150, 243, 0.15);
+  border: 1px solid rgba(33, 150, 243, 0.5);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
 }
 </style>
 

@@ -44,17 +44,36 @@ const emit = defineEmits<{
 const { to } = useObjectTranslation();
 
 const isDragging = ref(false);
+const isCopyDrag = ref(false);
 
-function onDragStart() {
+function onDragStart(e: DragEvent) {
+  isCopyDrag.value = e.ctrlKey || e.metaKey;
+
+  const onKeyDown = (ev: KeyboardEvent) => {
+    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = true;
+  };
+  const onKeyUp = (ev: KeyboardEvent) => {
+    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = false;
+  };
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+
   setTimeout(() => {
     isDragging.value = true;
   }, 0);
+
+  const cleanup = () => {
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
+    document.removeEventListener('dragend', cleanup);
+  };
+  document.addEventListener('dragend', cleanup);
 }
 
 const badgeStyles = computed<StyleValue>(() => ({
   backgroundColor: props.event.color ?? '#2196F3',
   borderLeft: `3px solid rgba(0,0,0,0.2)`,
-  opacity: isDragging.value ? 0 : undefined,
+  opacity: isDragging.value && !isCopyDrag.value ? 0 : undefined,
   pointerEvents: isDragging.value ? 'none' : undefined,
 }));
 </script>
