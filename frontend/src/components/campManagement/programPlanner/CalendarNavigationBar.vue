@@ -45,6 +45,16 @@
       />
 
       <q-btn
+        icon="print"
+        rounded
+        dense
+        flat
+        @click="$emit('print')"
+      >
+        <q-tooltip>{{ t('options.print') }}</q-tooltip>
+      </q-btn>
+
+      <q-btn
         icon="settings"
         rounded
         dense
@@ -79,6 +89,7 @@ const emit = defineEmits<{
   (e: 'update:plan', val: 'a' | 'b' | 'both'): void;
   (e: 'next'): void;
   (e: 'previous'): void;
+  (e: 'print'): void;
   (e: 'settings'): void;
 }>();
 
@@ -137,6 +148,7 @@ plan:
 options:
   range:
     label: 'Days'
+  print: 'Print calendar'
   settings: 'Calendar settings'
 </i18n>
 
@@ -148,6 +160,7 @@ plan:
 options:
   range:
     label: 'Tage'
+  print: 'Kalender drucken'
   settings: 'Kalendereinstellungen'
 </i18n>
 
@@ -159,5 +172,6 @@ plan:
 options:
   range:
     label: 'Jours'
+  print: 'Imprimer le calendrier'
   settings: 'Paramètres du calendrier'
 </i18n>

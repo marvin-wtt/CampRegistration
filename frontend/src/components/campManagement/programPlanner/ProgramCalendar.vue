@@ -14,6 +14,7 @@
       :current="selectedDate"
       @next="onNextNavigation"
       @previous="onPreciousNavigation"
+      @print="onPrint"
       @settings="onSettingsOpen"
     />
 
@@ -421,6 +422,26 @@ function onEventDelete(event: ProgramEvent) {
     .onOk(() => {
       emit('delete', event.id);
     });
+}
+
+function onPrint() {
+  const printData = {
+    camp: {
+      name: props.camp.name,
+      startAt: props.camp.startAt,
+      endAt: props.camp.endAt,
+    },
+    events: props.events,
+    date: selectedDate.value,
+    days: range.value,
+    plan: activePlan.value,
+    dayStart: settings.dayStart,
+    dayEnd: settings.dayEnd,
+    interval: settings.timeInterval,
+  };
+  const key = `print-calendar-${Date.now()}`;
+  sessionStorage.setItem(key, JSON.stringify(printData));
+  window.open(`/print/calendar?key=${encodeURIComponent(key)}`, '_blank');
 }
 
 function onSettingsOpen() {
