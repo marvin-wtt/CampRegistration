@@ -11,4 +11,5 @@ export interface NewsletterMessage extends Identifiable {
 export interface NewsletterMessageCreateData {
   subject: string;
   body: string;
+  attachmentIds?: string[];
 }

@@ -1,4 +1,5 @@
 import type i18n from '#core/i18n';
+import type { Readable } from 'stream';
 
 export type Address = string | { name: string; address: string };
 
@@ -6,7 +7,7 @@ export type AddressLike = Address | Address[];
 
 export interface MailAttachment {
   filename: string;
-  content: Buffer | string;
+  content: Buffer | Readable | string;
   contentType?: string;
   contentDisposition?: 'attachment' | 'inline';
 }

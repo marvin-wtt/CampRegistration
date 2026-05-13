@@ -1,7 +1,8 @@
 import { MailBase } from '#app/mail/mail.base';
 import type { JobOptions } from '#core/queue/Queue';
-import type { MailPriority } from '#app/mail/mail.types';
+import type { MailAttachment, MailPriority } from '#app/mail/mail.types';
 import { generateApiUrl, generateUrl } from '#utils/url';
+import { resolveFileAttachments } from '#app/mail/mail.utils';
 
 export interface NewsletterMailPayload {
   to: string;
@@ -11,6 +12,7 @@ export interface NewsletterMailPayload {
   replyTo?: string;
   newsletterId: string;
   unsubscribeToken: string;
+  attachmentIds?: string[];
 }
 
 export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
@@ -66,6 +68,10 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
       namespace: 'newsletter',
       keyPrefix: 'email',
     };
+  }
+
+  protected attachments(): Promise<MailAttachment[]> {
+    return resolveFileAttachments(this.payload.attachmentIds ?? []);
   }
 
   protected content() {

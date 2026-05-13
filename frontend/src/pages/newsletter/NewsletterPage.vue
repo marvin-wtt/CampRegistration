@@ -64,7 +64,7 @@
       </div>
 
       <!-- Tabs -->
-      <div>
+      <div class="grow">
         <q-tabs
           v-model="tab"
           align="left"
@@ -98,8 +98,7 @@
         <q-tab-panels
           v-model="tab"
           animated
-          class="q-mt-none"
-          style="background: transparent"
+          class="q-mt-none bg-transparent tab-panels"
         >
           <!-- Compose Tab -->
           <q-tab-panel
@@ -131,6 +130,17 @@
                   style="min-height: 200px"
                 />
               </div>
+
+              <file-input
+                v-model="sendAttachments"
+                :label="t('compose.attachments')"
+                outlined
+                rounded
+              >
+                <template #before>
+                  <q-icon name="attach_file" />
+                </template>
+              </file-input>
 
               <div class="row justify-between items-center q-pt-sm">
                 <div class="text-body2 text-grey-6">
@@ -197,7 +207,7 @@
               v-else
               bordered
               separator
-              class="rounded-borders"
+              class="rounded-borders list-scroll"
             >
               <q-expansion-item
                 v-for="message in messages"
@@ -270,170 +280,173 @@
           <!-- Subscribers Tab -->
           <q-tab-panel
             name="subscribers"
-            class="q-pa-none q-pt-lg"
+            class="q-pa-none"
           >
-            <!-- Toolbar + Search -->
-            <div class="row items-center q-gutter-sm q-mb-md">
-              <q-input
-                v-model="subscriberFilter"
-                :placeholder="t('subscribers.search')"
-                dense
-                outlined
-                rounded
-                clearable
-                class="col"
-              >
-                <template #prepend>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-              <q-btn
-                outline
-                color="primary"
-                icon="file_upload"
-                :label="
-                  quasar.screen.gt.sm
-                    ? t('subscribers.action.import')
-                    : undefined
-                "
-                rounded
-                no-caps
-                @click="showImportDialog"
-              >
-                <q-tooltip v-if="quasar.screen.lt.md">
-                  {{ t('subscribers.action.import') }}
-                </q-tooltip>
-              </q-btn>
-              <q-btn
-                color="primary"
-                icon="person_add"
-                :label="
-                  quasar.screen.gt.sm ? t('subscribers.action.add') : undefined
-                "
-                rounded
-                unelevated
-                no-caps
-                @click="showAddSubscriberDialog"
-              >
-                <q-tooltip v-if="quasar.screen.lt.md">
-                  {{ t('subscribers.action.add') }}
-                </q-tooltip>
-              </q-btn>
-            </div>
-
-            <!-- Loading skeletons -->
-            <div
-              v-if="subscriberStore.isLoading"
-              class="q-gutter-y-sm"
-            >
-              <q-skeleton
-                v-for="i in 4"
-                :key="i"
-                height="56px"
-                class="rounded-borders"
-              />
-            </div>
-
-            <!-- Empty: no subscribers at all -->
-            <div
-              v-else-if="subscribers.length === 0"
-              class="column items-center q-pa-xl q-gutter-sm"
-            >
-              <q-icon
-                name="group_off"
-                size="4rem"
-                color="grey-4"
-              />
-              <div class="text-subtitle2 text-grey-6">
-                {{ t('subscribers.empty') }}
-              </div>
-              <div class="text-body2 text-grey-5 text-center">
-                {{ t('subscribers.emptyHint') }}
-              </div>
-              <q-btn
-                color="primary"
-                icon="person_add"
-                :label="t('subscribers.action.add')"
-                rounded
-                unelevated
-                no-caps
-                class="q-mt-sm"
-                @click="showAddSubscriberDialog"
-              />
-            </div>
-
-            <!-- Empty: search yielded no results -->
-            <div
-              v-else-if="filteredSubscribers.length === 0"
-              class="column items-center q-pa-lg q-gutter-xs"
-            >
-              <q-icon
-                name="search_off"
-                size="3rem"
-                color="grey-4"
-              />
-              <div class="text-body2 text-grey-6">
-                {{ t('subscribers.noResults') }}
-              </div>
-            </div>
-
-            <!-- Subscriber list (virtual scroll for large datasets) -->
-            <q-virtual-scroll
-              v-else
-              :items="filteredSubscribers"
-              :virtual-scroll-item-size="56"
-              style="max-height: 540px"
-              class="rounded-borders subscriber-scroll"
-            >
-              <template #default="{ item: subscriber, index }">
-                <q-item
-                  :key="subscriber.id"
-                  class="subscriber-item"
+            <div class="q-mt-lg">
+              <!-- Toolbar + Search -->
+              <div class="row items-center q-gutter-sm q-mb-md">
+                <q-input
+                  v-model="subscriberFilter"
+                  :placeholder="t('subscribers.search')"
+                  dense
+                  outlined
+                  rounded
+                  clearable
+                  class="col"
                 >
-                  <q-item-section avatar>
-                    <q-avatar
-                      color="primary"
-                      text-color="white"
-                      size="36px"
-                    >
-                      {{
-                        (subscriber.name ?? subscriber.email)
-                          .charAt(0)
-                          .toUpperCase()
-                      }}
-                    </q-avatar>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="text-weight-medium">
-                      {{ subscriber.email }}
-                    </q-item-label>
-                    <q-item-label
-                      v-if="subscriber.name"
-                      caption
-                    >
-                      {{ subscriber.name }}
-                    </q-item-label>
-                    <q-item-label caption>
-                      {{ d(subscriber.subscribedAt, 'date') }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-btn
-                      flat
-                      round
-                      icon="person_remove"
-                      color="negative"
-                      size="sm"
-                      @click="showDeleteSubscriberDialog(subscriber)"
-                    />
-                  </q-item-section>
-                </q-item>
-                <q-separator
-                  v-if="index < filteredSubscribers.length - 1"
-                  :key="`sep-${subscriber.id}`"
+                  <template #prepend>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+                <q-btn
+                  outline
+                  color="primary"
+                  icon="file_upload"
+                  :label="
+                    quasar.screen.gt.sm
+                      ? t('subscribers.action.import')
+                      : undefined
+                  "
+                  rounded
+                  no-caps
+                  @click="showImportDialog"
+                >
+                  <q-tooltip v-if="quasar.screen.lt.md">
+                    {{ t('subscribers.action.import') }}
+                  </q-tooltip>
+                </q-btn>
+                <q-btn
+                  color="primary"
+                  icon="person_add"
+                  :label="
+                    quasar.screen.gt.sm
+                      ? t('subscribers.action.add')
+                      : undefined
+                  "
+                  rounded
+                  unelevated
+                  no-caps
+                  @click="showAddSubscriberDialog"
+                >
+                  <q-tooltip v-if="quasar.screen.lt.md">
+                    {{ t('subscribers.action.add') }}
+                  </q-tooltip>
+                </q-btn>
+              </div>
+
+              <!-- Loading skeletons -->
+              <div
+                v-if="subscriberStore.isLoading"
+                class="q-gutter-y-sm"
+              >
+                <q-skeleton
+                  v-for="i in 4"
+                  :key="i"
+                  height="56px"
+                  class="rounded-borders"
                 />
-              </template>
-            </q-virtual-scroll>
+              </div>
+
+              <!-- Empty: no subscribers at all -->
+              <div
+                v-else-if="subscribers.length === 0"
+                class="column items-center q-pa-xl q-gutter-sm"
+              >
+                <q-icon
+                  name="group_off"
+                  size="4rem"
+                  color="grey-4"
+                />
+                <div class="text-subtitle2 text-grey-6">
+                  {{ t('subscribers.empty') }}
+                </div>
+                <div class="text-body2 text-grey-5 text-center">
+                  {{ t('subscribers.emptyHint') }}
+                </div>
+                <q-btn
+                  color="primary"
+                  icon="person_add"
+                  :label="t('subscribers.action.add')"
+                  rounded
+                  unelevated
+                  no-caps
+                  class="q-mt-sm"
+                  @click="showAddSubscriberDialog"
+                />
+              </div>
+
+              <!-- Empty: search yielded no results -->
+              <div
+                v-else-if="filteredSubscribers.length === 0"
+                class="column items-center q-pa-lg q-gutter-xs"
+              >
+                <q-icon
+                  name="search_off"
+                  size="3rem"
+                  color="grey-4"
+                />
+                <div class="text-body2 text-grey-6">
+                  {{ t('subscribers.noResults') }}
+                </div>
+              </div>
+
+              <!-- Subscriber list (virtual scroll for large datasets) -->
+              <q-virtual-scroll
+                v-else
+                :items="filteredSubscribers"
+                :virtual-scroll-item-size="56"
+                class="rounded-borders subscriber-scroll"
+              >
+                <template #default="{ item: subscriber, index }">
+                  <q-item
+                    :key="subscriber.id"
+                    class="subscriber-item"
+                  >
+                    <q-item-section avatar>
+                      <q-avatar
+                        color="primary"
+                        text-color="white"
+                        size="36px"
+                      >
+                        {{
+                          (subscriber.name ?? subscriber.email)
+                            .charAt(0)
+                            .toUpperCase()
+                        }}
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">
+                        {{ subscriber.email }}
+                      </q-item-label>
+                      <q-item-label
+                        v-if="subscriber.name"
+                        caption
+                      >
+                        {{ subscriber.name }}
+                      </q-item-label>
+                      <q-item-label caption>
+                        {{ d(subscriber.subscribedAt, 'date') }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-btn
+                        flat
+                        round
+                        icon="person_remove"
+                        color="negative"
+                        size="sm"
+                        @click="showDeleteSubscriberDialog(subscriber)"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-separator
+                    v-if="index < filteredSubscribers.length - 1"
+                    :key="`sep-${subscriber.id}`"
+                  />
+                </template>
+              </q-virtual-scroll>
+            </div>
           </q-tab-panel>
 
           <!-- Managers Tab -->
@@ -456,7 +469,7 @@
             <q-list
               bordered
               separator
-              class="rounded-borders"
+              class="rounded-borders list-scroll"
             >
               <q-item
                 v-for="manager in managers"
@@ -517,6 +530,9 @@ import { useNewsletterSubscriberStore } from 'stores/newsletter-subscriber-store
 import { useNewsletterMessageStore } from 'stores/newsletter-message-store';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
+import FileInput, {
+  type FileInputModel,
+} from 'components/common/inputs/FileInput.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import type {
@@ -548,6 +564,7 @@ const messageStore = useNewsletterMessageStore();
 const tab = ref('compose');
 const sendSubject = ref('');
 const sendBody = ref('');
+const sendAttachments = ref<FileInputModel[]>([]);
 const subscriberFilter = ref('');
 
 const newsletterId = computed(() => route.params.newsletterId as string);
@@ -674,6 +691,7 @@ function showDeleteManagerDialog(manager: NewsletterManager) {
 function useAsTemplate(message: NewsletterMessage) {
   sendSubject.value = message.subject;
   sendBody.value = message.body;
+  sendAttachments.value = [];
   tab.value = 'compose';
 }
 
@@ -721,6 +739,9 @@ function confirmSend() {
           const result = await api.sendNewsletterMessage(newsletterId.value, {
             subject: sendSubject.value,
             body: sendBody.value,
+            attachmentIds: sendAttachments.value
+              .filter((f) => f.id !== undefined)
+              .map((f) => f.id!),
           });
           messageStore.invalidate();
           await messageStore.fetchData(newsletterId.value);
@@ -730,6 +751,7 @@ function confirmSend() {
           });
           sendSubject.value = '';
           sendBody.value = '';
+          sendAttachments.value = [];
           tab.value = 'history';
         } catch {
           quasar.notify({
@@ -759,6 +781,7 @@ compose:
   subject: 'Subject'
   body: 'Message'
   bodyPlaceholder: 'Write your newsletter content here...'
+  attachments: 'Attachments (optional)'
   recipientInfo: 'Will be sent to {count} subscribers'
   send: 'Send Newsletter'
   success: 'Newsletter queued for {count} recipients.'
@@ -819,6 +842,7 @@ compose:
   subject: 'Betreff'
   body: 'Nachricht'
   bodyPlaceholder: 'Schreiben Sie hier Ihren Newsletter-Inhalt...'
+  attachments: 'Anhänge (optional)'
   recipientInfo: 'Wird an {count} Abonnenten gesendet'
   send: 'Newsletter senden'
   success: 'Newsletter für {count} Empfänger in die Warteschlange gestellt.'
@@ -879,6 +903,7 @@ compose:
   subject: 'Sujet'
   body: 'Message'
   bodyPlaceholder: 'Rédigez ici le contenu de votre newsletter...'
+  attachments: 'Pièces jointes (optionnel)'
   recipientInfo: 'Sera envoyé à {count} abonnés'
   send: 'Envoyer la newsletter'
   success: "Newsletter mise en file d'attente pour {count} destinataires."
@@ -939,6 +964,7 @@ compose:
   subject: 'Temat'
   body: 'Wiadomość'
   bodyPlaceholder: 'Napisz tutaj treść swojego newslettera...'
+  attachments: 'Załączniki (opcjonalnie)'
   recipientInfo: 'Zostanie wysłany do {count} subskrybentów'
   send: 'Wyślij newsletter'
   success: 'Newsletter dodany do kolejki dla {count} odbiorców.'
@@ -999,6 +1025,7 @@ compose:
   subject: 'Předmět'
   body: 'Zpráva'
   bodyPlaceholder: 'Napište zde obsah svého newsletteru...'
+  attachments: 'Přílohy (volitelné)'
   recipientInfo: 'Bude odesláno {count} odběratelům'
   send: 'Odeslat newsletter'
   success: 'Newsletter zařazen do fronty pro {count} příjemců.'
@@ -1043,6 +1070,15 @@ managers:
 </i18n>
 
 <style scoped>
+.tab-panels {
+  overflow: hidden;
+}
+
+.list-scroll {
+  max-height: 540px;
+  overflow-y: auto;
+}
+
 .subscriber-scroll {
   border: 1px solid rgba(0, 0, 0, 0.12);
 }

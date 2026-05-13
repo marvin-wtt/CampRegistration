@@ -13,6 +13,7 @@ const store = z.object({
   body: z.object({
     subject: z.string().min(1).max(255),
     body: z.string().min(1),
+    attachmentIds: z.array(z.ulid()).optional(),
   }),
 });
 

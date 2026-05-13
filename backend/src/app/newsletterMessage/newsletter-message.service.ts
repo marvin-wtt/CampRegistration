@@ -1,8 +1,12 @@
 import { BaseService } from '#core/base/BaseService';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { FileService } from '#app/file/file.service';
 
 @injectable()
 export class NewsletterMessageService extends BaseService {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
+    super();
+  }
   async getMessages(newsletterId: string) {
     return this.prisma.newsletterMessage.findMany({
       where: { newsletterId },
@@ -25,6 +29,8 @@ export class NewsletterMessageService extends BaseService {
       body: string;
       recipientCount: number;
       sentByUserId?: string;
+      attachmentIds?: string[];
+      sessionId: string;
     },
   ) {
     return this.prisma.newsletterMessage.create({
@@ -34,8 +40,14 @@ export class NewsletterMessageService extends BaseService {
         body: data.body,
         recipientCount: data.recipientCount,
         sentByUserId: data.sentByUserId,
+        attachments: data.attachmentIds?.length
+          ? this.fileService.getFileConnectInput(data.attachmentIds, data.sessionId)
+          : undefined,
       },
-      include: { sentBy: { select: { id: true, name: true } } },
+      include: {
+        sentBy: { select: { id: true, name: true } },
+        attachments: true,
+      },
     });
   }
 
