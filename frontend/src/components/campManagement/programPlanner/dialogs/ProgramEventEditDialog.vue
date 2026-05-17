@@ -154,7 +154,7 @@
               :rules="[
                 'time',
                 (val: string) =>
-                  (data.time && isDateLater(data.time, val)) ||
+                  (data.time && isValidTimeRange(data.time, val)) ||
                   t('field.end.rule.later'),
               ]"
               hide-bottom-space
@@ -245,6 +245,7 @@ import type {
   ProgramEvent,
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
+import { isValidTimeRange, timeDifference } from 'src/utils/date';
 
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -348,25 +349,6 @@ function onOKClick(): void {
     ...data,
     duration: fullDay.value ? 24 : data.duration,
   });
-}
-
-function isDateLater(timeStart: string, timeEnd: string) {
-  const [hoursStart, minutesStart] = timeStart.split(':').map(Number);
-  const [hoursEnd, minutesEnd] = timeEnd.split(':').map(Number);
-
-  return hoursStart === hoursEnd
-    ? minutesStart < minutesEnd
-    : hoursStart < hoursEnd;
-}
-
-function timeDifference(timeStart: string, timeEnd: string) {
-  const [hoursStart, minutesStart] = timeStart.split(':').map(Number);
-  const [hoursEnd, minutesEnd] = timeEnd.split(':').map(Number);
-
-  const totalMinutesStart = hoursStart * 60 + minutesStart;
-  const totalMinutesEnd = hoursEnd * 60 + minutesEnd;
-
-  return totalMinutesEnd - totalMinutesStart;
 }
 </script>
 

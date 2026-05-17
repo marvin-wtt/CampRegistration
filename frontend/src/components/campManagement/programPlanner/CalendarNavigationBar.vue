@@ -1,54 +1,89 @@
 <template>
-  <div class="row items-center justify-between q-pa-sm q-gutter-sm">
-    <!-- Plan A/B toggle -->
+  <div class="cal-nav q-pa-xs q-pa-sm-sm">
+    <!-- Plan A/B/Both toggle — icon-only on mobile -->
     <q-btn-toggle
       :model-value="plan"
       :options="planOptions"
       rounded
       dense
       outline
+      no-caps
       toggle-color="primary"
-      @update:model-value="$emit('update:plan', $event)"
+      @update:model-value="(v) => emit('update:plan', v)"
     />
 
-    <!-- Navigation buttons -->
-    <div class="row items-center q-gutter-xs">
+    <!-- Center: prev / date label / next -->
+    <div class="cal-nav__center">
       <q-btn
-        icon="arrow_back"
+        icon="chevron_left"
         :disable="prevDisabled"
-        rounded
-        dense
         flat
+        round
+        :dense="$q.screen.gt.xs"
         @click="previous"
       />
       <q-btn
-        icon="arrow_forward"
-        :disable="nextDisabled"
-        rounded
-        dense
         flat
+        no-caps
+        :dense="$q.screen.gt.xs"
+        class="cal-nav__date-btn"
+      >
+        {{ dateRangeLabel }}
+        <q-popup-proxy
+          ref="datePickerRef"
+          cover
+          transition-show="scale"
+          transition-hide="scale"
+        >
+          <q-date
+            :model-value="current"
+            mask="YYYY-MM-DD"
+            minimal
+            :options="dateOptions"
+            :navigation-min-year-month="navYearMonthMin"
+            :navigation-max-year-month="navYearMonthMax"
+            @update:model-value="onDatePick"
+          />
+        </q-popup-proxy>
+      </q-btn>
+      <q-btn
+        icon="chevron_right"
+        :disable="nextDisabled"
+        flat
+        round
+        :dense="$q.screen.gt.xs"
         @click="next"
       />
     </div>
 
-    <!-- Right controls -->
-    <div class="row items-center q-gutter-xs">
-      <q-select
-        v-model="daysRange"
-        :label="t('options.range.label')"
-        :options="dateRangeOptions"
-        class="gt-xs"
-        rounded
-        outlined
-        dense
-        style="min-width: 80px"
-      />
+    <!-- Right: range selector (desktop only) + icon actions -->
+    <div class="cal-nav__right">
+      <!-- Range stepper: supports 1–maxDays without fixed presets -->
+      <div class="gt-xs cal-nav__stepper">
+        <q-btn
+          icon="remove"
+          flat
+          round
+          dense
+          :disable="daysRange <= 1"
+          @click="daysRange = Math.max(1, daysRange - 1)"
+        />
+        <span class="cal-nav__stepper-val">{{ daysRange }}d</span>
+        <q-btn
+          icon="add"
+          flat
+          round
+          dense
+          :disable="daysRange >= maxDays"
+          @click="daysRange = Math.min(maxDays, daysRange + 1)"
+        />
+      </div>
 
       <q-btn
         icon="print"
-        rounded
-        dense
         flat
+        round
+        :dense="$q.screen.gt.xs"
         @click="$emit('print')"
       >
         <q-tooltip>{{ t('options.print') }}</q-tooltip>
@@ -56,9 +91,9 @@
 
       <q-btn
         icon="settings"
-        rounded
-        dense
         flat
+        round
+        :dense="$q.screen.gt.xs"
         @click="$emit('settings')"
       >
         <q-tooltip>{{ t('options.settings') }}</q-tooltip>
@@ -69,10 +104,14 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted } from 'vue';
+import { useQuasar, type QPopupProxy } from 'quasar';
+import { computed, onMounted, ref } from 'vue';
 import { daysBetweenDates } from 'src/utils/date';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const $q = useQuasar();
+
+const datePickerRef = ref<InstanceType<typeof QPopupProxy> | null>(null);
 
 interface Props {
   modelValue: number;
@@ -89,6 +128,7 @@ const emit = defineEmits<{
   (e: 'update:plan', val: 'a' | 'b' | 'both'): void;
   (e: 'next'): void;
   (e: 'previous'): void;
+  (e: 'jump', date: string): void;
   (e: 'print'): void;
   (e: 'settings'): void;
 }>();
@@ -99,15 +139,31 @@ onMounted(() => {
   }
 });
 
-const planOptions = computed(() => [
-  { label: t('plan.a'), value: 'a', icon: 'wb_sunny' },
-  { label: t('plan.both'), value: 'both', icon: 'repeat' },
-  { label: t('plan.b'), value: 'b', icon: 'water_drop' },
-]);
+// Icon-only on mobile to save horizontal space; omit label entirely (not undefined)
+const planOptions = computed(() => {
+  const showLabel = $q.screen.gt.xs;
+  return [
+    { ...(showLabel && { label: t('plan.a') }), value: 'a', icon: 'wb_sunny' },
+    {
+      ...(showLabel && { label: t('plan.both') }),
+      value: 'both',
+      icon: 'repeat',
+    },
+    {
+      ...(showLabel && { label: t('plan.b') }),
+      value: 'b',
+      icon: 'water_drop',
+    },
+  ];
+});
 
 const daysRange = computed<number>({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
+});
+
+const maxDays = computed<number>(() => {
+  return daysBetweenDates(new Date(props.start), new Date(props.end)) + 1;
 });
 
 const prevDisabled = computed<boolean>(() => {
@@ -116,10 +172,62 @@ const prevDisabled = computed<boolean>(() => {
 
 const nextDisabled = computed<boolean>(() => {
   const [y, m, d] = props.current.split('-').map(Number);
-  const lastDay = new Date(y!, m! - 1, d! + daysRange.value - 1);
+  const lastDay = new Date(
+    y ?? 0,
+    (m ?? 1) - 1,
+    (d ?? 1) + daysRange.value - 1,
+  );
   const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
   return lastDayStr >= props.end.substring(0, 10);
 });
+
+// Shows current visible date range between the navigation arrows
+const dateRangeLabel = computed<string>(() => {
+  const [y, m, d] = props.current.split('-').map(Number);
+  const start = new Date(y ?? 0, (m ?? 1) - 1, d ?? 1);
+
+  if (daysRange.value === 1) {
+    return start.toLocaleDateString(locale.value, {
+      ...($q.screen.gt.xs && { weekday: 'short' }),
+      day: 'numeric',
+      month: 'short',
+    });
+  }
+
+  const end = new Date(start.getTime() + (daysRange.value - 1) * 86400000);
+  const startStr = start.toLocaleDateString(locale.value, {
+    day: 'numeric',
+    month: 'short',
+  });
+  const endStr = end.toLocaleDateString(locale.value, {
+    day: 'numeric',
+    month: 'short',
+  });
+  return `${startStr} – ${endStr}`;
+});
+
+const navYearMonthMin = computed<string>(() => {
+  const [y, m] = props.start.split('-');
+  return `${y}/${m}`;
+});
+
+const navYearMonthMax = computed<string>(() => {
+  const [y, m] = props.end.split('-');
+  return `${y}/${m}`;
+});
+
+function dateOptions(date: string): boolean {
+  const d = date.replace(/\//g, '-');
+  return d >= props.start.substring(0, 10) && d <= props.end.substring(0, 10);
+}
+
+function onDatePick(date: string | null) {
+  if (!date) {
+    return;
+  }
+  emit('jump', date);
+  datePickerRef.value?.hide();
+}
 
 function next() {
   emit('next');
@@ -128,17 +236,69 @@ function next() {
 function previous() {
   emit('previous');
 }
-
-const dateRangeOptions = computed(() =>
-  Array.from({ length: maxDays.value }, (_, index) => index + 1),
-);
-
-const maxDays = computed<number>(() => {
-  return daysBetweenDates(new Date(props.start), new Date(props.end)) + 1;
-});
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+
+  @media (min-width: 600px) {
+    gap: 8px;
+  }
+
+  &__center {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  &__date {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    padding: 0 4px;
+    user-select: none;
+    color: #424242;
+
+    @media (min-width: 600px) {
+      font-size: 14px;
+      padding: 0 8px;
+      min-width: 140px;
+    }
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 0;
+
+    @media (min-width: 600px) {
+      gap: 4px;
+    }
+  }
+
+  &__stepper {
+    display: flex;
+    align-items: center;
+
+    &-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: #424242;
+      min-width: 26px;
+      text-align: center;
+      user-select: none;
+    }
+  }
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 plan:
@@ -146,8 +306,6 @@ plan:
   b: 'Plan B'
   both: 'Both'
 options:
-  range:
-    label: 'Days'
   print: 'Print calendar'
   settings: 'Calendar settings'
 </i18n>
@@ -158,8 +316,6 @@ plan:
   b: 'Plan B'
   both: 'Beide'
 options:
-  range:
-    label: 'Tage'
   print: 'Kalender drucken'
   settings: 'Kalendereinstellungen'
 </i18n>
@@ -170,8 +326,6 @@ plan:
   b: 'Plan B'
   both: 'Les deux'
 options:
-  range:
-    label: 'Jours'
   print: 'Imprimer le calendrier'
   settings: 'Paramètres du calendrier'
 </i18n>

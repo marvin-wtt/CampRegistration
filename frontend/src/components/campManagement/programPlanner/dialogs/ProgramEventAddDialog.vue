@@ -23,6 +23,7 @@
               (val?: string) => val?.length || t('field.title.rule.required'),
             ]"
             hide-bottom-space
+            autofocus
             outlined
             rounded
           >
@@ -152,7 +153,7 @@
               :rules="[
                 'time',
                 (val: string) =>
-                  (data.time && isDateLater(data.time, val)) ||
+                  (data.time && isValidTimeRange(data.time, val)) ||
                   t('field.end.rule.later'),
               ]"
               hide-bottom-space
@@ -243,6 +244,7 @@ import type {
   ProgramEventCreateData,
   Translatable,
 } from '@camp-registration/common/entities';
+import { isValidTimeRange, timeDifference } from 'src/utils/date';
 
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -265,12 +267,12 @@ const props = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const data = reactive<Partial<ProgramEventCreateData>>({
-  title: props.title,
-  date: props.date,
-  time: props.time,
-  duration: props.duration,
-  location: props.location,
-  details: props.details,
+  title: props.title ?? '',
+  date: props.date ?? null,
+  time: props.time ?? null,
+  duration: props.duration ?? null,
+  location: props.location ?? null,
+  details: props.details ?? null,
   color: props.color ?? '#2196F3',
   plan: props.plan ?? 'both',
 });
@@ -347,10 +349,7 @@ function dateOptions(date: string): boolean {
   const dateMin = props.dateTimeMin?.substring(0, 10) ?? null;
   const dateMax = props.dateTimeMax?.substring(0, 10) ?? null;
 
-  return (
-    (!dateMin || dateStr >= dateMin) &&
-    (!dateMax || dateStr <= dateMax)
-  );
+  return (!dateMin || dateStr >= dateMin) && (!dateMax || dateStr <= dateMax);
 }
 
 function onOKClick(): void {
@@ -358,25 +357,6 @@ function onOKClick(): void {
     ...data,
     duration: fullDay.value ? 24 : data.duration,
   });
-}
-
-function isDateLater(timeStart: string, timeEnd: string) {
-  const [hoursStart, minutesStart] = timeStart.split(':').map(Number);
-  const [hoursEnd, minutesEnd] = timeEnd.split(':').map(Number);
-
-  return hoursStart === hoursEnd
-    ? minutesStart < minutesEnd
-    : hoursStart < hoursEnd;
-}
-
-function timeDifference(timeStart: string, timeEnd: string) {
-  const [hoursStart, minutesStart] = timeStart.split(':').map(Number);
-  const [hoursEnd, minutesEnd] = timeEnd.split(':').map(Number);
-
-  const totalMinutesStart = hoursStart * 60 + minutesStart;
-  const totalMinutesEnd = hoursEnd * 60 + minutesEnd;
-
-  return totalMinutesEnd - totalMinutesStart;
 }
 </script>
 

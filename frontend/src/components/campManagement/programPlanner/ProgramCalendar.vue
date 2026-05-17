@@ -14,6 +14,7 @@
       :current="selectedDate"
       @next="onNextNavigation"
       @previous="onPreciousNavigation"
+      @jump="(date) => (selectedDate = date)"
       @print="onPrint"
       @settings="onSettingsOpen"
     />
@@ -49,13 +50,39 @@
       >
         <template #head-day-event="{ scope: { timestamp } }">
           <div class="column">
+            <div
+              class="cal-day-actions"
+              @click.stop
+            >
+              <q-btn
+                v-if="range > 1"
+                icon="zoom_in"
+                flat
+                round
+                dense
+                size="xs"
+                @click.stop="onZoomToDay(timestamp.date)"
+              >
+                <q-tooltip>{{ t('actions.focusDay') }}</q-tooltip>
+              </q-btn>
+              <q-btn
+                icon="print"
+                flat
+                round
+                dense
+                size="xs"
+                @click.stop="onPrintDay(timestamp.date)"
+              >
+                <q-tooltip>{{ t('actions.printDay') }}</q-tooltip>
+              </q-btn>
+            </div>
             <calendar-day-item
               v-for="event in getFullDayEvents(timestamp.date)"
               :key="event.id"
               :event="event"
               :view-both="viewBoth"
               :draggable="true"
-              @dragstart="onDragStart($event, event)"
+              @dragstart="(e: DragEvent) => onDragStart(e, event)"
               @edit="onEventEdit(event)"
               @delete="onEventDelete(event)"
               @duplicate="onEventDuplicate(event)"
@@ -71,7 +98,7 @@
             class="cal-create-overlay"
             :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
             @mousedown.left.prevent="
-              onBodyMouseDown($event, timestamp, timeDurationHeight)
+              (e) => onBodyMouseDown(e, timestamp, timeDurationHeight)
             "
           />
 
@@ -94,11 +121,11 @@
             :view-both="viewBoth"
             :draggable="true"
             :snap="settings.timeInterval"
-            @dragstart="onDragStart($event, event)"
+            @dragstart="(e: DragEvent) => onDragStart(e, event)"
             @edit="onEventEdit(event)"
             @delete="onEventDelete(event)"
             @duplicate="onEventDuplicate(event)"
-            @resize="onEventResize(event, $event)"
+            @resize="(e) => onEventResize(event, e)"
           />
         </template>
       </q-calendar-day>
@@ -195,12 +222,37 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown);
 });
 
+const eventTimeRange = computed<{
+  minMinutes: number;
+  maxMinutes: number;
+} | null>(() => {
+  let minMinutes = Infinity;
+  let maxMinutes = -Infinity;
+
+  for (const event of props.events) {
+    if (!event.time) continue;
+    const [h, m] = event.time.split(':').map(Number);
+    const startMin = (h ?? 0) * 60 + (m ?? 0);
+    const endMin = startMin + (event.duration ?? 60);
+    if (startMin < minMinutes) minMinutes = startMin;
+    if (endMin > maxMinutes) maxMinutes = endMin;
+  }
+
+  return minMinutes === Infinity ? null : { minMinutes, maxMinutes };
+});
+
 const intervalStart = computed<number>(() => {
   const start = settings.dayStart.split(':');
   if (start.length !== 2) {
     return 0;
   }
-  const minutes = parseInt(start[0] ?? '0') * 60 + parseInt(start[1] ?? '0');
+  let minutes = parseInt(start[0] ?? '0') * 60 + parseInt(start[1] ?? '0');
+
+  if (eventTimeRange.value && eventTimeRange.value.minMinutes < minutes) {
+    minutes =
+      Math.floor(eventTimeRange.value.minMinutes / settings.timeInterval) *
+      settings.timeInterval;
+  }
 
   return minutes / settings.timeInterval;
 });
@@ -210,7 +262,13 @@ const intervalCount = computed<number>(() => {
   if (end.length !== 2) {
     return 0;
   }
-  const minutes = parseInt(end[0] ?? '0') * 60 + parseInt(end[1] ?? '0');
+  let minutes = parseInt(end[0] ?? '0') * 60 + parseInt(end[1] ?? '0');
+
+  if (eventTimeRange.value && eventTimeRange.value.maxMinutes > minutes) {
+    minutes =
+      Math.ceil(eventTimeRange.value.maxMinutes / settings.timeInterval) *
+      settings.timeInterval;
+  }
 
   return minutes / settings.timeInterval - intervalStart.value;
 });
@@ -346,7 +404,6 @@ function onDayEventAdd({ scope }: CalendarEvent) {
     });
 }
 
-
 function onEventResize(event: ProgramEvent, duration: number) {
   emit('update', event.id, { duration });
 }
@@ -434,6 +491,31 @@ function onPrint() {
     events: props.events,
     date: selectedDate.value,
     days: range.value,
+    plan: activePlan.value,
+    dayStart: settings.dayStart,
+    dayEnd: settings.dayEnd,
+    interval: settings.timeInterval,
+  };
+  const key = `print-calendar-${Date.now()}`;
+  sessionStorage.setItem(key, JSON.stringify(printData));
+  window.open(`/print/calendar?key=${encodeURIComponent(key)}`, '_blank');
+}
+
+function onZoomToDay(date: string) {
+  selectedDate.value = date;
+  range.value = 1;
+}
+
+function onPrintDay(date: string) {
+  const printData = {
+    camp: {
+      name: props.camp.name,
+      startAt: props.camp.startAt,
+      endAt: props.camp.endAt,
+    },
+    events: props.events,
+    date,
+    days: 1,
     plan: activePlan.value,
     dayStart: settings.dayStart,
     dayEnd: settings.dayEnd,
@@ -703,6 +785,18 @@ function formatDate(date: Date): string {
   z-index: 0;
 }
 
+.cal-day-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .cal-selection {
   position: absolute;
   left: 2px;
@@ -720,6 +814,9 @@ dialog:
   delete:
     title: 'Delete Event'
     message: 'Are you sure you want to delete this event?'
+actions:
+  focusDay: 'Show this day only'
+  printDay: 'Print this day'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -727,6 +824,9 @@ dialog:
   delete:
     title: 'Ereignis löschen'
     message: 'Sind Sie sicher, dass Sie dieses Ereignis löschen möchten?'
+actions:
+  focusDay: 'Nur diesen Tag anzeigen'
+  printDay: 'Diesen Tag drucken'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -734,4 +834,7 @@ dialog:
   delete:
     title: "Supprimer l'événement"
     message: 'Êtes-vous sûr de vouloir supprimer cet événement ?'
+actions:
+  focusDay: 'Afficher ce jour uniquement'
+  printDay: 'Imprimer ce jour'
 </i18n>
