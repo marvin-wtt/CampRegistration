@@ -102,6 +102,11 @@
               </q-icon>
             </template>
           </q-input>
+          <!-- Show all translations -->
+          <q-toggle
+            v-model="data.showAllTranslations"
+            :label="t('field.showAllTranslations.label')"
+          />
         </q-card-section>
 
         <!-- action buttons -->
@@ -134,6 +139,7 @@ interface CalendarSettings {
   dayStart: string;
   dayEnd: string;
   timeInterval: number;
+  showAllTranslations: boolean;
 }
 
 interface Props {
@@ -183,6 +189,8 @@ field:
   timeInterval:
     label: 'Time interval'
     hint: 'Minutes per interval'
+  showAllTranslations:
+    label: 'Show all translations'
 
 actions:
   save: 'Save'
@@ -201,6 +209,8 @@ field:
   timeInterval:
     label: 'Zeitintervall'
     hint: 'Minuten pro Intervall'
+  showAllTranslations:
+    label: 'Alle Übersetzungen anzeigen'
 
 actions:
   save: 'Speichern'
@@ -219,6 +229,8 @@ field:
   timeInterval:
     label: "Intervalle de temps"
     hint: "Minutes par intervalle"
+  showAllTranslations:
+    label: 'Afficher toutes les traductions'
 
 actions:
   save: 'Enregistrer'

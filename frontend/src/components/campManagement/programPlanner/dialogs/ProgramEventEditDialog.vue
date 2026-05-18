@@ -17,12 +17,13 @@
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <translated-input
             v-model="data.title"
-            :locales="props.locales ?? []"
             :label="t('field.title.label')"
+            :locales="props.locales ?? []"
             :rules="[
               (val?: string) => val?.length || t('field.title.rule.required'),
             ]"
             hide-bottom-space
+            default-untranslated
             outlined
             rounded
           >
@@ -33,8 +34,9 @@
 
           <translated-input
             v-model="data.location"
-            :locales="props.locales ?? []"
             :label="t('field.location.label')"
+            :locales="props.locales ?? []"
+            default-untranslated
             clearable
             outlined
             rounded
@@ -46,8 +48,9 @@
 
           <translated-input
             v-model="data.details"
-            :locales="props.locales ?? []"
             :label="t('field.details.label')"
+            :locales="props.locales ?? []"
+            default-untranslated
             autogrow
             clearable
             outlined

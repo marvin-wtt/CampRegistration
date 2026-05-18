@@ -12,7 +12,7 @@
       class="q-mr-xs"
     />
     <span class="cal-day-event__title q-calendar__ellipsis">
-      {{ to(event.title) }}
+      {{ props.showAllTranslations ? toAll(event.title) : to(event.title) }}
     </span>
 
     <calendar-item-popup
@@ -33,6 +33,7 @@ import CalendarItemPopup from 'components/campManagement/programPlanner/Calendar
 const props = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
+  showAllTranslations?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -41,7 +42,7 @@ const emit = defineEmits<{
   (e: 'duplicate'): void;
 }>();
 
-const { to } = useObjectTranslation();
+const { to, toAll } = useObjectTranslation();
 
 const isDragging = ref(false);
 const isCopyDrag = ref(false);

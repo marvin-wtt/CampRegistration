@@ -8,7 +8,7 @@
   >
     <div class="cal-event__inner">
       <div class="cal-event__title q-calendar__ellipsis">
-        {{ to(props.event.title) }}
+        {{ props.showAllTranslations ? toAll(props.event.title) : to(props.event.title) }}
       </div>
     </div>
 
@@ -35,6 +35,7 @@ import CalendarItemPopup from 'components/campManagement/programPlanner/Calendar
 const props = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
+  showAllTranslations?: boolean;
   timeStartPosition?: (time?: string) => number;
   timeDurationHeight?: (duration?: number) => number;
   snap?: number;
@@ -47,7 +48,7 @@ const emit = defineEmits<{
   (e: 'resize', duration: number): void;
 }>();
 
-const { to } = useObjectTranslation();
+const { to, toAll } = useObjectTranslation();
 
 const resizeDuration = ref<number | null>(null);
 const isDragging = ref(false);

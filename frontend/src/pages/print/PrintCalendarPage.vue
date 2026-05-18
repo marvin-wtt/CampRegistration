@@ -5,7 +5,10 @@
     :class="isPortrait ? 'print-sheet--upright' : 'print-sheet--left'"
   >
     <!-- Page header -->
-    <div class="cal-ph">
+    <div
+      ref="calPhRef"
+      class="cal-ph"
+    >
       <div class="cal-ph__title">
         <div
           v-for="line in titleLines"
@@ -14,7 +17,9 @@
           {{ line }}
         </div>
       </div>
-      <div class="cal-ph__meta">{{ headerDateRange }} &middot; {{ planLabel }}</div>
+      <div class="cal-ph__meta">
+        {{ headerDateRange }} &middot; {{ planLabel }}
+      </div>
     </div>
 
     <!-- Calendar grid -->
@@ -45,7 +50,7 @@
       <!-- All-day events row -->
       <div class="cal-print__allday-row">
         <div class="cal-print__gutter cal-print__gutter--allday">
-          {{ t('allDay') }}
+          {{ allDayLabel }}
         </div>
         <div
           v-for="day in visibleDays"
@@ -95,7 +100,9 @@
               :style="eventStyle(event)"
             >
               <div class="cal-print__event__time">{{ event.time }}</div>
-              <div class="cal-print__event__title">{{ toAll(event.title) }}</div>
+              <div class="cal-print__event__title">
+                {{ toAll(event.title) }}
+              </div>
             </div>
           </div>
         </div>
@@ -105,7 +112,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type {
@@ -117,6 +124,7 @@ interface PrintCamp {
   name: Translatable;
   startAt: string;
   endAt: string;
+  locales: string[];
 }
 
 interface PrintData {
@@ -139,13 +147,24 @@ interface TimeSlot {
 const route = useRoute();
 const { locale, t } = useI18n();
 
-// A4 usable height in px (96px/in, 25.4mm/in), minus 24mm margins
+const campLocales = computed<string[]>(
+  () => data.value?.camp.locales ?? [locale.value],
+);
+const primaryLocale = computed<string>(() => campLocales.value[0] ?? locale.value);
+
+// "All day" label shown in every camp locale, deduplicated
+const allDayLabel = computed<string>(() => {
+  const labels = campLocales.value.map((l) => t('allDay', l));
+  return [...new Set(labels)].join(' / ');
+});
+
+// A4 usable height in px (96px/in, 25.4mm/in), minus 24mm margins (12mm * 2)
 const PORTRAIT_H_PX = ((297 - 24) / 25.4) * 96; // ~1032px
 const LANDSCAPE_H_PX = ((210 - 24) / 25.4) * 96; // ~703px
-// Measured overhead: cal-ph (~55px) + col-headers (~32px) + allday-row (~25px)
-// + borders (~2px) + safety margin (26px) = 140px
-const OVERHEAD_PX = 140;
+// Overhead within cal-print that is NOT the body: head-row + allday-row + borders
+const CAL_GRID_OVERHEAD_PX = 85;
 
+const calPhRef = ref<HTMLElement | null>(null);
 const data = ref<PrintData | null>(null);
 
 onMounted(() => {
@@ -160,10 +179,16 @@ onMounted(() => {
   } catch {
     // ignore parse errors
   }
-  setTimeout(() => window.print(), 400);
+  // Wait for initial render, measure actual header height, recompute slot height, then print.
+  void nextTick(() => {
+    updateSlotHeight();
+    setTimeout(() => window.print(), 400);
+  });
 });
 
-const isPortrait = computed<boolean>(() => !data.value || data.value.days === 1);
+const isPortrait = computed<boolean>(
+  () => !data.value || data.value.days === 1,
+);
 
 const visibleDays = computed<string[]>(() => {
   if (!data.value) return [];
@@ -210,16 +235,26 @@ const timeSlots = computed<TimeSlot[]>(() => {
   return slots;
 });
 
-// Compute slot height so the entire grid fits on one page
-const slotHeight = computed<number>(() => {
-  if (!timeSlots.value.length) return 28;
+const slotHeight = ref<number>(28);
+
+function updateSlotHeight() {
+  if (!timeSlots.value.length) {
+    return;
+  }
   const pageH = isPortrait.value ? PORTRAIT_H_PX : LANDSCAPE_H_PX;
-  const available = pageH - OVERHEAD_PX;
-  return Math.max(14, Math.min(50, Math.floor(available / timeSlots.value.length)));
-});
+  // Measure the actual rendered header height so multi-line titles are handled correctly.
+  const phHeight = (calPhRef.value?.offsetHeight ?? 55) + 10; // +10 for margin-bottom
+  const available = pageH - phHeight - CAL_GRID_OVERHEAD_PX;
+  slotHeight.value = Math.max(
+    14,
+    Math.min(50, Math.floor(available / timeSlots.value.length)),
+  );
+}
 
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
-  if (!data.value) return {};
+  if (!data.value) {
+    return {};
+  }
   const plan = data.value.plan;
   return data.value.events
     .filter((e) => {
@@ -297,7 +332,7 @@ const headerDateRange = computed(() => {
   if (!days.length) return '';
   const fmt = (s: string) => {
     const [y, m, d] = s.split('-').map(Number);
-    return new Date(y!, m! - 1, d).toLocaleDateString(locale.value, {
+    return new Date(y!, m! - 1, d).toLocaleDateString(primaryLocale.value, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -310,19 +345,20 @@ const headerDateRange = computed(() => {
 
 function formatWeekday(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y!, m! - 1, d).toLocaleDateString(locale.value, {
-    weekday: 'short',
-  });
+  const date = new Date(y!, m! - 1, d);
+  const labels = campLocales.value.map((l) =>
+    date.toLocaleDateString(l, { weekday: 'short' }),
+  );
+  return [...new Set(labels)].join(' / ');
 }
 
 function formatDay(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y!, m! - 1, d).toLocaleDateString(locale.value, {
+  return new Date(y!, m! - 1, d).toLocaleDateString(primaryLocale.value, {
     day: 'numeric',
     month: 'short',
   });
 }
-
 </script>
 
 <style lang="scss" scoped>
@@ -330,7 +366,7 @@ function formatDay(dateStr: string): string {
   margin-bottom: 10px;
 
   &__title {
-    font-size: 24px;
+    font-size: 16px;
     font-weight: 800;
     color: #212121;
     line-height: 1.15;
@@ -488,13 +524,13 @@ function formatDay(dateStr: string): string {
     box-sizing: border-box;
 
     &__time {
-      font-size: 9px;
+      font-size: 11px;
       color: rgba(255, 255, 255, 0.85);
       line-height: 1.2;
     }
 
     &__title {
-      font-size: 12px;
+      font-size: 15px;
       font-weight: 700;
       color: white;
       line-height: 1.25;

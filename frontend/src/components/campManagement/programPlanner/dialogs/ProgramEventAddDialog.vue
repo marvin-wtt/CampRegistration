@@ -24,6 +24,7 @@
             ]"
             hide-bottom-space
             autofocus
+            default-untranslated
             outlined
             rounded
           >
@@ -36,6 +37,7 @@
             v-model="data.location"
             :locales="props.locales ?? []"
             :label="t('field.location.label')"
+            default-untranslated
             outlined
             rounded
           >
@@ -48,6 +50,7 @@
             v-model="data.details"
             :locales="props.locales ?? []"
             :label="t('field.details.label')"
+            default-untranslated
             autogrow
             outlined
             rounded

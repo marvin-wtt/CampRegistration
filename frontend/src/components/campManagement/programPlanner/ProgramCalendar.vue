@@ -81,6 +81,7 @@
               :key="event.id"
               :event="event"
               :view-both="viewBoth"
+              :show-all-translations="settings.showAllTranslations"
               :draggable="true"
               @dragstart="(e: DragEvent) => onDragStart(e, event)"
               @edit="onEventEdit(event)"
@@ -119,6 +120,7 @@
             :time-start-position="timeStartPos"
             :time-duration-height="timeDurationHeight"
             :view-both="viewBoth"
+            :show-all-translations="settings.showAllTranslations"
             :draggable="true"
             :snap="settings.timeInterval"
             @dragstart="(e: DragEvent) => onDragStart(e, event)"
@@ -158,6 +160,7 @@ interface CalendarSettings {
   dayStart: string;
   dayEnd: string;
   timeInterval: number;
+  showAllTranslations: boolean;
 }
 
 interface Props {
@@ -192,13 +195,14 @@ function loadSettings(): CalendarSettings {
         dayStart: '08:00',
         dayEnd: '21:00',
         timeInterval: 30,
+        showAllTranslations: false,
         ...JSON.parse(stored),
       };
     }
   } catch {
     // ignore
   }
-  return { dayStart: '08:00', dayEnd: '21:00', timeInterval: 30 };
+  return { dayStart: '08:00', dayEnd: '21:00', timeInterval: 30, showAllTranslations: false };
 }
 
 const settings = reactive<CalendarSettings>(loadSettings());
@@ -487,6 +491,7 @@ function onPrint() {
       name: props.camp.name,
       startAt: props.camp.startAt,
       endAt: props.camp.endAt,
+      locales: props.camp.locales,
     },
     events: props.events,
     date: selectedDate.value,
@@ -512,6 +517,7 @@ function onPrintDay(date: string) {
       name: props.camp.name,
       startAt: props.camp.startAt,
       endAt: props.camp.endAt,
+      locales: props.camp.locales,
     },
     events: props.events,
     date,
