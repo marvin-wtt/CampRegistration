@@ -134,40 +134,26 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
+import type { CalendarSettings } from 'components/campManagement/programPlanner/CalendarSettings';
 
-interface CalendarSettings {
-  dayStart: string;
-  dayEnd: string;
-  timeInterval: number;
-  showAllTranslations: boolean;
-}
-
-interface Props {
-  modelValue: object;
-}
-
-const props = defineProps<Props>();
+const { settings } = defineProps<{
+  settings: object;
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const data = reactive<Partial<CalendarSettings>>(initialValue());
 
 function initialValue(): Partial<CalendarSettings> {
-  return structuredClone(toRaw(props.modelValue));
+  return structuredClone(toRaw(settings));
 }
 
 const { t } = useI18n();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
-function onOKClick(): void {
+function onOKClick() {
   onDialogOK(data);
 }
 
@@ -227,8 +213,8 @@ field:
   dayEnd:
     label: 'Fin de journée'
   timeInterval:
-    label: "Intervalle de temps"
-    hint: "Minutes par intervalle"
+    label: 'Intervalle de temps'
+    hint: 'Minutes par intervalle'
   showAllTranslations:
     label: 'Afficher toutes les traductions'
 
@@ -236,6 +222,46 @@ actions:
   save: 'Enregistrer'
   cancel: 'Annuler'
   close: 'Fermer'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Ustawienia kalendarza'
+
+field:
+  dayStart:
+    label: 'Początek dnia'
+  dayEnd:
+    label: 'Koniec dnia'
+  timeInterval:
+    label: 'Przedział czasu'
+    hint: 'Minuty na przedział'
+  showAllTranslations:
+    label: 'Pokaż wszystkie tłumaczenia'
+
+actions:
+  save: 'Zapisz'
+  cancel: 'Anuluj'
+  close: 'Zamknij'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Nastavení kalendáře'
+
+field:
+  dayStart:
+    label: 'Začátek dne'
+  dayEnd:
+    label: 'Konec dne'
+  timeInterval:
+    label: 'Časový interval'
+    hint: 'Minut na interval'
+  showAllTranslations:
+    label: 'Zobrazit všechny překlady'
+
+actions:
+  save: 'Uložit'
+  cancel: 'Zrušit'
+  close: 'Zavřít'
 </i18n>
 
 <style lang="scss">

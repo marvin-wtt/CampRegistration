@@ -99,10 +99,14 @@
             class="cal-create-overlay"
             :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
             @mousedown.left.prevent="
-              (e) => !quasar.platform.is.mobile && onBodyMouseDown(e, timestamp, timeDurationHeight)
+              (e) =>
+                !quasar.platform.is.mobile &&
+                onBodyMouseDown(e, timestamp, timeDurationHeight)
             "
             @click="
-              (e) => quasar.platform.is.mobile && onBodyClick(e, timestamp, timeDurationHeight)
+              (e) =>
+                quasar.platform.is.mobile &&
+                onBodyClick(e, timestamp, timeDurationHeight)
             "
           />
 
@@ -154,33 +158,25 @@ import CalendarNavigationBar from 'components/campManagement/programPlanner/Cale
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
 import type { DragAndDropScope } from 'components/campManagement/programPlanner/DragAndDropScope';
+import type { CalendarSettings } from 'components/campManagement/programPlanner/CalendarSettings';
 import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 import CalendarSettingsDialog from 'components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import { daysBetweenDates } from 'src/utils/date';
 
-interface CalendarSettings {
-  dayStart: string;
-  dayEnd: string;
-  timeInterval: number;
-  showAllTranslations: boolean;
-}
+const { t, locale } = useI18n();
+const quasar = useQuasar();
 
-interface Props {
+const { camp, events } = defineProps<{
   camp: CampDetails;
   events: ProgramEvent[];
-}
-
-const props = defineProps<Props>();
+}>();
 
 const emit = defineEmits<{
   (e: 'update', id: string, event: ProgramEventUpdateData): void;
   (e: 'add', event: ProgramEventCreateData): void;
   (e: 'delete', id: string): void;
 }>();
-
-const { t, locale } = useI18n();
-const quasar = useQuasar();
 
 const calendarRef = ref<QCalendarDay | null>(null);
 const selectedDate = ref<string>(initialSelectedDate());
@@ -205,7 +201,12 @@ function loadSettings(): CalendarSettings {
   } catch {
     // ignore
   }
-  return { dayStart: '08:00', dayEnd: '21:00', timeInterval: 30, showAllTranslations: false };
+  return {
+    dayStart: '08:00',
+    dayEnd: '21:00',
+    timeInterval: 30,
+    showAllTranslations: false,
+  };
 }
 
 const settings = reactive<CalendarSettings>(loadSettings());
@@ -236,13 +237,19 @@ const eventTimeRange = computed<{
   let minMinutes = Infinity;
   let maxMinutes = -Infinity;
 
-  for (const event of props.events) {
-    if (!event.time) continue;
+  for (const event of events) {
+    if (!event.time) {
+      continue;
+    }
     const [h, m] = event.time.split(':').map(Number);
     const startMin = (h ?? 0) * 60 + (m ?? 0);
     const endMin = startMin + (event.duration ?? 60);
-    if (startMin < minMinutes) minMinutes = startMin;
-    if (endMin > maxMinutes) maxMinutes = endMin;
+    if (startMin < minMinutes) {
+      minMinutes = startMin;
+    }
+    if (endMin > maxMinutes) {
+      maxMinutes = endMin;
+    }
   }
 
   return minMinutes === Infinity ? null : { minMinutes, maxMinutes };
@@ -325,10 +332,7 @@ function maxViewportRange(): number {
 }
 
 function initialRange(): number {
-  const max = daysBetweenDates(
-    new Date(props.camp.startAt),
-    new Date(props.camp.endAt),
-  );
+  const max = daysBetweenDates(new Date(camp.startAt), new Date(camp.endAt));
 
   return Math.min(max, maxViewportRange());
 }
@@ -341,7 +345,7 @@ watch(
 );
 
 function initialSelectedDate(): string {
-  return props.camp.startAt.substring(0, 10);
+  return camp.startAt.substring(0, 10);
 }
 
 function parseLocalDate(dateStr: string): Date {
@@ -356,7 +360,7 @@ function parseLocalDate(dateStr: string): Date {
 const viewBoth = computed<boolean>(() => activePlan.value === 'both');
 
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
-  return props.events
+  return events
     .filter((event) => {
       if (event.date == null) return false;
       if (activePlan.value === 'both') return true;
@@ -401,9 +405,9 @@ function onDayEventAdd({ scope }: CalendarEvent) {
         time: null,
         duration: null,
         plan: activePlan.value === 'both' ? 'both' : activePlan.value,
-        dateTimeMin: props.camp.startAt,
-        dateTimeMax: props.camp.endAt,
-        locales: props.camp.locales,
+        dateTimeMin: camp.startAt,
+        dateTimeMax: camp.endAt,
+        locales: camp.locales,
       },
     })
     .onOk((programEvent: ProgramEventCreateData) => {
@@ -419,12 +423,14 @@ function snapTime(time: string, intervalMinutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = (h ?? 0) * 60 + (m ?? 0);
   const snapped = Math.round(total / intervalMinutes) * intervalMinutes;
+
   return `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
 }
 
 function addMinutesToTime(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = (h ?? 0) * 60 + (m ?? 0) + minutes;
+
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
@@ -441,9 +447,9 @@ function onEventDuplicate(event: ProgramEvent) {
         details: event.details,
         color: event.color,
         plan: event.plan,
-        locales: props.camp.locales,
-        dateTimeMin: props.camp.startAt,
-        dateTimeMax: props.camp.endAt,
+        locales: camp.locales,
+        dateTimeMin: camp.startAt,
+        dateTimeMax: camp.endAt,
       },
     })
     .onOk((programEvent: ProgramEventCreateData) => {
@@ -457,9 +463,9 @@ function onEventEdit(event: ProgramEvent) {
       component: ProgramEventEditDialog,
       componentProps: {
         event,
-        dateTimeMin: props.camp.startAt,
-        dateTimeMax: props.camp.endAt,
-        locales: props.camp.locales,
+        dateTimeMin: camp.startAt,
+        dateTimeMax: camp.endAt,
+        locales: camp.locales,
       },
     })
     .onOk((programEvent: ProgramEventUpdateData) => {
@@ -491,12 +497,12 @@ function onEventDelete(event: ProgramEvent) {
 function onPrint() {
   const printData = {
     camp: {
-      name: props.camp.name,
-      startAt: props.camp.startAt,
-      endAt: props.camp.endAt,
-      locales: props.camp.locales,
+      name: camp.name,
+      startAt: camp.startAt,
+      endAt: camp.endAt,
+      locales: camp.locales,
     },
-    events: props.events,
+    events: events,
     date: selectedDate.value,
     days: range.value,
     plan: activePlan.value,
@@ -517,12 +523,12 @@ function onZoomToDay(date: string) {
 function onPrintDay(date: string) {
   const printData = {
     camp: {
-      name: props.camp.name,
-      startAt: props.camp.startAt,
-      endAt: props.camp.endAt,
-      locales: props.camp.locales,
+      name: camp.name,
+      startAt: camp.startAt,
+      endAt: camp.endAt,
+      locales: camp.locales,
     },
-    events: props.events,
+    events: events,
     date,
     days: 1,
     plan: activePlan.value,
@@ -540,7 +546,7 @@ function onSettingsOpen() {
     .dialog({
       component: CalendarSettingsDialog,
       componentProps: {
-        modelValue: { ...settings },
+        settings: { ...settings },
       },
     })
     .onOk((newSettings: CalendarSettings) => {
@@ -559,6 +565,7 @@ interface DragSelection {
   dayStartMinutes: number;
   bodyEl: HTMLElement;
 }
+
 const dragSelection = ref<DragSelection | null>(null);
 
 function onBodyMouseDown(
@@ -613,9 +620,9 @@ function onBodyMouseDown(
           time,
           duration: endMinutes - startMinutes,
           plan: activePlan.value === 'both' ? 'both' : activePlan.value,
-          dateTimeMin: props.camp.startAt,
-          dateTimeMax: props.camp.endAt,
-          locales: props.camp.locales,
+          dateTimeMin: camp.startAt,
+          dateTimeMax: camp.endAt,
+          locales: camp.locales,
         },
       })
       .onOk((programEvent: ProgramEventCreateData) => {
@@ -637,7 +644,8 @@ function onBodyClick(
   const dayStartMinutes = intervalStart.value * settings.timeInterval;
   const y = e.clientY - bodyEl.getBoundingClientRect().top;
   const raw = y / pxPerMinute + dayStartMinutes;
-  const snapped = Math.round(raw / settings.timeInterval) * settings.timeInterval;
+  const snapped =
+    Math.round(raw / settings.timeInterval) * settings.timeInterval;
   const time = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
 
   quasar
@@ -648,9 +656,9 @@ function onBodyClick(
         time,
         duration: settings.timeInterval,
         plan: activePlan.value === 'both' ? 'both' : activePlan.value,
-        dateTimeMin: props.camp.startAt,
-        dateTimeMax: props.camp.endAt,
-        locales: props.camp.locales,
+        dateTimeMin: camp.startAt,
+        dateTimeMax: camp.endAt,
+        locales: camp.locales,
       },
     })
     .onOk((programEvent: ProgramEventCreateData) => {
@@ -722,7 +730,7 @@ function onDrop(
     return false;
   }
 
-  const event = props.events.find((value) => value.id === eventId);
+  const event = events.find((value) => value.id === eventId);
   if (!event) {
     return false;
   }
@@ -784,7 +792,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 function onNextNavigation() {
-  const endDate = parseLocalDate(props.camp.endAt.substring(0, 10));
+  const endDate = parseLocalDate(camp.endAt.substring(0, 10));
   const currentDate = parseLocalDate(selectedDate.value);
 
   const rangeMs = range.value * DAY_IN_MS;
@@ -795,7 +803,7 @@ function onNextNavigation() {
 }
 
 function onPreciousNavigation() {
-  const startDate = parseLocalDate(props.camp.startAt.substring(0, 10));
+  const startDate = parseLocalDate(camp.startAt.substring(0, 10));
   const currentDate = parseLocalDate(selectedDate.value);
 
   const rangeMs = range.value * DAY_IN_MS;
@@ -809,6 +817,7 @@ function formatDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
+
   return `${y}-${m}-${d}`;
 }
 </script>
@@ -881,4 +890,24 @@ dialog:
 actions:
   focusDay: 'Afficher ce jour uniquement'
   printDay: 'Imprimer ce jour'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+dialog:
+  delete:
+    title: 'Usuń wydarzenie'
+    message: 'Czy na pewno chcesz usunąć to wydarzenie?'
+actions:
+  focusDay: 'Pokaż tylko ten dzień'
+  printDay: 'Drukuj ten dzień'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+dialog:
+  delete:
+    title: 'Smazat událost'
+    message: 'Opravdu chcete smazat tuto událost?'
+actions:
+  focusDay: 'Zobrazit pouze tento den'
+  printDay: 'Vytisknout tento den'
 </i18n>

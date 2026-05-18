@@ -150,7 +150,9 @@ const { locale, t } = useI18n();
 const campLocales = computed<string[]>(
   () => data.value?.camp.locales ?? [locale.value],
 );
-const primaryLocale = computed<string>(() => campLocales.value[0] ?? locale.value);
+const primaryLocale = computed<string>(
+  () => campLocales.value[0] ?? locale.value,
+);
 
 // "All day" label shown in every camp locale, deduplicated
 const allDayLabel = computed<string>(() => {
@@ -191,7 +193,9 @@ const isPortrait = computed<boolean>(
 );
 
 const visibleDays = computed<string[]>(() => {
-  if (!data.value) return [];
+  if (!data.value) {
+    return [];
+  }
   const [y, m, d] = data.value.date.split('-').map(Number);
   const start = new Date(y!, m! - 1, d);
   return Array.from({ length: data.value.days }, (_, i) => {
@@ -205,19 +209,25 @@ function toDateStr(d: Date): string {
 }
 
 const dayStartMinutes = computed<number>(() => {
-  if (!data.value) return 0;
+  if (!data.value) {
+    return 0;
+  }
   const [h, m] = data.value.dayStart.split(':').map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 });
 
 const dayEndMinutes = computed<number>(() => {
-  if (!data.value) return 0;
+  if (!data.value) {
+    return 0;
+  }
   const [h, m] = data.value.dayEnd.split(':').map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 });
 
 const timeSlots = computed<TimeSlot[]>(() => {
-  if (!data.value) return [];
+  if (!data.value) {
+    return [];
+  }
   const slots: TimeSlot[] = [];
   for (
     let m = dayStartMinutes.value;
@@ -258,19 +268,22 @@ const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
   const plan = data.value.plan;
   return data.value.events
     .filter((e) => {
-      if (!e.date) return false;
-      if (plan === 'both') return true;
+      if (!e.date) {
+        return false;
+      }
+      if (plan === 'both') {
+        return true;
+      }
       return e.plan === plan || e.plan === 'both';
     })
-    .reduce(
-      (map, event) => {
-        const key = event.date!;
-        if (!map[key]) map[key] = [];
-        map[key].push(event);
-        return map;
-      },
-      {} as Record<string, ProgramEvent[]>,
-    );
+    .reduce<Record<string, ProgramEvent[]>>((map, event) => {
+      const key = event.date!;
+      if (!map[key]) {
+        map[key] = [];
+      }
+      map[key].push(event);
+      return map;
+    }, {});
 });
 
 function getFullDayEvents(date: string): ProgramEvent[] {
@@ -282,7 +295,9 @@ function getTimedEvents(date: string): ProgramEvent[] {
 }
 
 function eventStyle(event: ProgramEvent) {
-  if (!data.value || !event.time || !event.duration) return {};
+  if (!data.value || !event.time || !event.duration) {
+    return {};
+  }
   const [h, m] = event.time.split(':').map(Number);
   const startMins = (h ?? 0) * 60 + (m ?? 0);
   const offset = startMins - dayStartMinutes.value;
@@ -309,27 +324,43 @@ function eventStyle(event: ProgramEvent) {
 
 // Returns all unique translation values across all locales
 function toAll(value: Translatable | null | undefined): string {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
+  if (!value) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+
   return [...new Set(Object.values(value).filter(Boolean))].join(' / ');
 }
 
 // Camp name as one line per language (deduplicated)
 const titleLines = computed<string[]>(() => {
   const name = data.value?.camp.name;
-  if (!name) return [];
-  if (typeof name === 'string') return [name];
+  if (!name) {
+    return [];
+  }
+  if (typeof name === 'string') {
+    return [name];
+  }
+
   return [...new Set(Object.values(name).filter(Boolean))];
 });
 
 const planLabel = computed(() => {
-  if (!data.value) return '';
+  if (!data.value) {
+    return '';
+  }
+
   return { a: 'Plan A', b: 'Plan B', both: 'Plan A + B' }[data.value.plan];
 });
 
 const headerDateRange = computed(() => {
   const days = visibleDays.value;
-  if (!days.length) return '';
+  if (!days.length) {
+    return '';
+  }
+
   const fmt = (s: string) => {
     const [y, m, d] = s.split('-').map(Number);
     return new Date(y!, m! - 1, d).toLocaleDateString(primaryLocale.value, {
@@ -567,4 +598,12 @@ allDay: 'Ganztägig'
 
 <i18n lang="yaml" locale="fr">
 allDay: 'Journée'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+allDay: 'Cały dzień'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+allDay: 'Celý den'
 </i18n>

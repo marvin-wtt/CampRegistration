@@ -456,6 +456,76 @@ action:
   ok: 'Enregistrer'
 </i18n>
 
+<i18n lang="yaml" locale="pl">
+title: 'Edytuj wydarzenie'
+
+field:
+  color:
+    label: 'Kolor'
+  date:
+    label: 'Data'
+  details:
+    label: 'Szczegóły'
+  end:
+    label: 'Czas zakończenia'
+    rule:
+      later: 'Koniec musi być po czasie rozpoczęcia'
+  fullDay:
+    label: 'Cały dzień'
+  location:
+    label: 'Lokalizacja'
+  plan:
+    a: 'Plan A'
+    b: 'Plan B'
+    both: 'Oba'
+  start:
+    label: 'Czas rozpoczęcia'
+  title:
+    label: 'Tytuł'
+    rule:
+      required: 'Tytuł jest wymagany'
+
+action:
+  cancel: 'Anuluj'
+  close: 'Zamknij'
+  ok: 'Zapisz'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit událost'
+
+field:
+  color:
+    label: 'Barva'
+  date:
+    label: 'Datum'
+  details:
+    label: 'Podrobnosti'
+  end:
+    label: 'Čas ukončení'
+    rule:
+      later: 'Konec musí být po čase začátku'
+  fullDay:
+    label: 'Celý den'
+  location:
+    label: 'Místo'
+  plan:
+    a: 'Plán A'
+    b: 'Plán B'
+    both: 'Oba'
+  start:
+    label: 'Čas začátku'
+  title:
+    label: 'Název'
+    rule:
+      required: 'Název je povinný'
+
+action:
+  cancel: 'Zrušit'
+  close: 'Zavřít'
+  ok: 'Uložit'
+</i18n>
+
 <style lang="scss">
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

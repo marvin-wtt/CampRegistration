@@ -33,7 +33,7 @@ export class ProgramEventService extends BaseService {
     data: Omit<Prisma.ProgramEventUpdateInput, 'id'>,
   ) {
     return this.prisma.programEvent.update({
-      where: { id: id },
+      where: { id },
       data,
     });
   }

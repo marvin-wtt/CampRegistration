@@ -2,14 +2,13 @@
   <div class="cal-nav q-pa-xs q-pa-sm-sm">
     <!-- Plan A/B/Both toggle — icon-only on mobile -->
     <q-btn-toggle
-      :model-value="plan"
+      v-model="plan"
       :options="planOptions"
       rounded
       dense
       outline
       no-caps
       toggle-color="primary"
-      @update:model-value="(v) => emit('update:plan', v)"
     />
 
     <!-- Center: prev / date label / next -->
@@ -19,13 +18,13 @@
         :disable="prevDisabled"
         flat
         round
-        :dense="$q.screen.gt.xs"
+        :dense="quasar.screen.gt.xs"
         @click="previous"
       />
       <q-btn
         flat
         no-caps
-        :dense="$q.screen.gt.xs"
+        :dense="quasar.screen.gt.xs"
         class="cal-nav__date-btn"
       >
         {{ dateRangeLabel }}
@@ -51,7 +50,7 @@
         :disable="nextDisabled"
         flat
         round
-        :dense="$q.screen.gt.xs"
+        :dense="quasar.screen.gt.xs"
         @click="next"
       />
     </div>
@@ -83,8 +82,8 @@
         icon="print"
         flat
         round
-        :dense="$q.screen.gt.xs"
-        @click="$emit('print')"
+        :dense="quasar.screen.gt.xs"
+        @click="emit('print')"
       >
         <q-tooltip>{{ t('options.print') }}</q-tooltip>
       </q-btn>
@@ -93,8 +92,8 @@
         icon="settings"
         flat
         round
-        :dense="$q.screen.gt.xs"
-        @click="$emit('settings')"
+        :dense="quasar.screen.gt.xs"
+        @click="emit('settings')"
       >
         <q-tooltip>{{ t('options.settings') }}</q-tooltip>
       </q-btn>
@@ -109,23 +108,24 @@ import { computed, onMounted, ref } from 'vue';
 import { daysBetweenDates } from 'src/utils/date';
 
 const { t, locale } = useI18n();
-const $q = useQuasar();
+const quasar = useQuasar();
 
 const datePickerRef = ref<InstanceType<typeof QPopupProxy> | null>(null);
 
-interface Props {
-  modelValue: number;
-  plan: 'a' | 'b' | 'both';
+const daysRange = defineModel<number>({
+  required: true,
+});
+const plan = defineModel<'a' | 'b' | 'both'>('plan', {
+  required: true,
+});
+
+const { start, end, current } = defineProps<{
   start: string;
   end: string;
   current: string;
-}
-
-const props = defineProps<Props>();
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: number): void;
-  (e: 'update:plan', val: 'a' | 'b' | 'both'): void;
   (e: 'next'): void;
   (e: 'previous'): void;
   (e: 'jump', date: string): void;
@@ -141,7 +141,7 @@ onMounted(() => {
 
 // Icon-only on mobile to save horizontal space; omit label entirely (not undefined)
 const planOptions = computed(() => {
-  const showLabel = $q.screen.gt.xs;
+  const showLabel = quasar.screen.gt.xs;
   return [
     { ...(showLabel && { label: t('plan.a') }), value: 'a', icon: 'wb_sunny' },
     {
@@ -157,38 +157,33 @@ const planOptions = computed(() => {
   ];
 });
 
-const daysRange = computed<number>({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-});
-
 const maxDays = computed<number>(() => {
-  return daysBetweenDates(new Date(props.start), new Date(props.end)) + 1;
+  return daysBetweenDates(new Date(start), new Date(end)) + 1;
 });
 
 const prevDisabled = computed<boolean>(() => {
-  return props.current <= props.start.substring(0, 10);
+  return current <= start.substring(0, 10);
 });
 
 const nextDisabled = computed<boolean>(() => {
-  const [y, m, d] = props.current.split('-').map(Number);
+  const [y, m, d] = current.split('-').map(Number);
   const lastDay = new Date(
     y ?? 0,
     (m ?? 1) - 1,
     (d ?? 1) + daysRange.value - 1,
   );
   const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
-  return lastDayStr >= props.end.substring(0, 10);
+  return lastDayStr >= end.substring(0, 10);
 });
 
 // Shows current visible date range between the navigation arrows
 const dateRangeLabel = computed<string>(() => {
-  const [y, m, d] = props.current.split('-').map(Number);
+  const [y, m, d] = current.split('-').map(Number);
   const start = new Date(y ?? 0, (m ?? 1) - 1, d ?? 1);
 
   if (daysRange.value === 1) {
     return start.toLocaleDateString(locale.value, {
-      ...($q.screen.gt.xs && { weekday: 'short' }),
+      ...(quasar.screen.gt.xs && { weekday: 'short' }),
       day: 'numeric',
       month: 'short',
     });
@@ -207,18 +202,18 @@ const dateRangeLabel = computed<string>(() => {
 });
 
 const navYearMonthMin = computed<string>(() => {
-  const [y, m] = props.start.split('-');
+  const [y, m] = start.split('-');
   return `${y}/${m}`;
 });
 
 const navYearMonthMax = computed<string>(() => {
-  const [y, m] = props.end.split('-');
+  const [y, m] = end.split('-');
   return `${y}/${m}`;
 });
 
 function dateOptions(date: string): boolean {
   const d = date.replace(/\//g, '-');
-  return d >= props.start.substring(0, 10) && d <= props.end.substring(0, 10);
+  return d >= start.substring(0, 10) && d <= end.substring(0, 10);
 }
 
 function onDatePick(date: string | null) {
@@ -328,4 +323,24 @@ plan:
 options:
   print: 'Imprimer le calendrier'
   settings: 'Paramètres du calendrier'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+plan:
+  a: 'Plan A'
+  b: 'Plan B'
+  both: 'Oba'
+options:
+  print: 'Drukuj kalendarz'
+  settings: 'Ustawienia kalendarza'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+plan:
+  a: 'Plán A'
+  b: 'Plán B'
+  both: 'Oba'
+options:
+  print: 'Vytisknout kalendář'
+  settings: 'Nastavení kalendáře'
 </i18n>

@@ -104,13 +104,19 @@ const { label } = defineProps<{
 }>();
 
 const isCustom = computed(() => {
-  if (!model.value) return false;
+  if (!model.value) {
+    return false;
+  }
+
   return !PRESET_COLORS.some((p) => p.color === model.value);
 });
 
 const colorLabel = computed(() => {
   const preset = PRESET_COLORS.find((p) => p.color === model.value);
-  if (preset) return t(preset.key);
+  if (preset) {
+    return t(preset.key);
+  }
+
   return model.value ?? '';
 });
 </script>
@@ -207,4 +213,34 @@ orange: 'Orange'
 brown: 'Marron'
 blueGrey: 'Gris-bleu'
 dark: 'Sombre'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+red: 'Czerwony'
+pink: 'Różowy'
+purple: 'Fioletowy'
+indigo: 'Indygo'
+blue: 'Niebieski'
+cyan: 'Cyjan'
+teal: 'Morski'
+green: 'Zielony'
+orange: 'Pomarańczowy'
+brown: 'Brązowy'
+blueGrey: 'Niebieskoszary'
+dark: 'Ciemny'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+red: 'Červená'
+pink: 'Růžová'
+purple: 'Fialová'
+indigo: 'Indigo'
+blue: 'Modrá'
+cyan: 'Azurová'
+teal: 'Tyrkysová'
+green: 'Zelená'
+orange: 'Oranžová'
+brown: 'Hnědá'
+blueGrey: 'Modro-šedá'
+dark: 'Tmavá'
 </i18n>

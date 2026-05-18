@@ -12,11 +12,11 @@
       class="q-mr-xs"
     />
     <span class="cal-day-event__title q-calendar__ellipsis">
-      {{ props.showAllTranslations ? toAll(event.title) : to(event.title) }}
+      {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
     </span>
 
     <calendar-item-popup
-      :event="props.event"
+      :event="event"
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
@@ -30,7 +30,7 @@ import { computed, ref, type StyleValue } from 'vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
 
-const props = defineProps<{
+const { event, viewBoth, showAllTranslations } = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
@@ -72,7 +72,7 @@ function onDragStart(e: DragEvent) {
 }
 
 const badgeStyles = computed<StyleValue>(() => ({
-  backgroundColor: props.event.color ?? '#2196F3',
+  backgroundColor: event.color ?? '#2196F3',
   borderLeft: `3px solid rgba(0,0,0,0.2)`,
   opacity: isDragging.value && !isCopyDrag.value ? 0 : undefined,
   pointerEvents: isDragging.value ? 'none' : undefined,

@@ -53,12 +53,12 @@
             <q-item-section avatar>
               <q-icon
                 name="circle"
-                :style="{ color: props.event.color }"
+                :style="{ color: event.color }"
               />
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-h6">
-                {{ to(props.event.title) }}
+                {{ to(event.title) }}
               </q-item-label>
               <q-item-label caption>
                 {{ dateTime }}
@@ -67,34 +67,34 @@
           </q-item>
 
           <!-- plan (only shown when not 'both') -->
-          <q-item v-if="props.event.plan !== 'both'">
+          <q-item v-if="event.plan !== 'both'">
             <q-item-section avatar>
-              <q-icon :name="props.event.plan === 'a' ? 'wb_sunny' : 'water_drop'" />
+              <q-icon :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'" />
             </q-item-section>
             <q-item-section>
               <q-item-label>
-                {{ props.event.plan === 'a' ? t('plan.a') : t('plan.b') }}
+                {{ event.plan === 'a' ? t('plan.a') : t('plan.b') }}
               </q-item-label>
             </q-item-section>
           </q-item>
 
-          <q-item v-if="props.event.location">
+          <q-item v-if="event.location">
             <q-item-section avatar>
               <q-icon name="place" />
             </q-item-section>
             <q-item-section>
               <q-item-label>
-                {{ to(props.event.location) }}
+                {{ to(event.location) }}
               </q-item-label>
             </q-item-section>
           </q-item>
 
-          <q-item v-if="props.event.details">
+          <q-item v-if="event.details">
             <q-item-section avatar>
               <q-icon name="description" />
             </q-item-section>
             <q-item-section style="white-space: pre-line">
-              {{ to(props.event.details) }}
+              {{ to(event.details) }}
             </q-item-section>
           </q-item>
         </q-list>
@@ -112,7 +112,7 @@ import { useI18n } from 'vue-i18n';
 const { locale, t } = useI18n();
 const { to } = useObjectTranslation();
 
-const props = defineProps<{
+const { event } = defineProps<{
   event: ProgramEvent;
 }>();
 
@@ -123,18 +123,18 @@ const emit = defineEmits<{
 }>();
 
 const dateTime = computed<string>(() => {
-  if (!props.event.date) {
+  if (!event.date) {
     return '';
   }
 
-  const start = props.event.time
-    ? new Date(props.event.date + ' ' + props.event.time)
-    : new Date(props.event.date);
-  const end = props.event.duration
-    ? new Date(start.getTime() + props.event.duration * 60000)
+  const start = event.time
+    ? new Date(event.date + ' ' + event.time)
+    : new Date(event.date);
+  const end = event.duration
+    ? new Date(start.getTime() + event.duration * 60000)
     : start;
 
-  const fullDay = !props.event.time && !props.event.duration;
+  const fullDay = !event.time && !event.duration;
 
   return new Intl.DateTimeFormat(locale.value, {
     month: 'long',
@@ -188,4 +188,24 @@ action:
   duplicate: 'Dupliquer'
   edit: 'Modifier'
   delete: 'Supprimer'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+plan:
+  a: 'Plan A (dobra pogoda)'
+  b: 'Plan B (zła pogoda)'
+action:
+  duplicate: 'Duplikuj'
+  edit: 'Edytuj'
+  delete: 'Usuń'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+plan:
+  a: 'Plán A (dobré počasí)'
+  b: 'Plán B (špatné počasí)'
+action:
+  duplicate: 'Duplikovat'
+  edit: 'Upravit'
+  delete: 'Smazat'
 </i18n>

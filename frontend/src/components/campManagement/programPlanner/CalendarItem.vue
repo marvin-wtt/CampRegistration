@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="props.event.time"
+    v-if="event.time"
     class="cal-event"
     :style="badgeStyles"
     @dragstart="onDragStart"
@@ -8,7 +8,7 @@
   >
     <div class="cal-event__inner">
       <div class="cal-event__title q-calendar__ellipsis">
-        {{ props.showAllTranslations ? toAll(props.event.title) : to(props.event.title) }}
+        {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
       </div>
     </div>
 
@@ -18,7 +18,7 @@
     />
 
     <calendar-item-popup
-      :event="props.event"
+      :event="event"
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
@@ -32,12 +32,19 @@ import { computed, ref, type StyleValue } from 'vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
 
-const props = defineProps<{
+const {
+  event,
+  viewBoth = false,
+  showAllTranslations = false,
+  timeDurationHeight,
+  timeStartPosition,
+  snap,
+} = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
-  timeStartPosition?: (time?: string) => number;
-  timeDurationHeight?: (duration?: number) => number;
+  timeStartPosition: (time?: string) => number;
+  timeDurationHeight: (duration?: number) => number;
   snap?: number;
 }>();
 
@@ -83,29 +90,23 @@ function onDragStart(e: DragEvent) {
 }
 
 const badgeStyles = computed<StyleValue>(() => {
-  const top =
-    props.timeStartPosition && props.event.time
-      ? props.timeStartPosition(props.event.time) + 'px'
-      : undefined;
+  const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
 
-  const dur = resizeDuration.value ?? props.event.duration;
-  const height =
-    props.timeDurationHeight && dur
-      ? props.timeDurationHeight(dur) + 'px'
-      : undefined;
+  const dur = resizeDuration.value ?? event.duration;
+  const height = dur ? timeDurationHeight(dur) + 'px' : undefined;
 
   let left = '0';
   let width = 'calc(100% - 4px)';
 
-  if (props.viewBoth && props.event.plan !== 'both') {
+  if (viewBoth && event.plan !== 'both') {
     width = 'calc(50% - 4px)';
-    if (props.event.plan === 'b') {
+    if (event.plan === 'b') {
       left = '50%';
     }
   }
 
   return {
-    backgroundColor: props.event.color ?? '#2196F3',
+    backgroundColor: event.color ?? '#2196F3',
     top,
     height,
     left,
@@ -116,14 +117,14 @@ const badgeStyles = computed<StyleValue>(() => {
 });
 
 function startResize(e: MouseEvent) {
-  if (!props.timeDurationHeight || !props.event.duration) {
+  if (!timeDurationHeight || !event.duration) {
     return;
   }
 
   const startY = e.clientY;
-  const startDuration = props.event.duration;
-  const pixelsPerMinute = props.timeDurationHeight(60) / 60;
-  const snapTo = props.snap ?? 15;
+  const startDuration = event.duration;
+  const pixelsPerMinute = timeDurationHeight(60) / 60;
+  const snapTo = snap ?? 15;
 
   function onMove(ev: MouseEvent) {
     const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
