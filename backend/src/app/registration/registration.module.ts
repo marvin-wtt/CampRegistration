@@ -12,6 +12,7 @@ import { registrationFileGuard } from '#app/registration/registration.guard';
 import { RegistrationFilesRouter } from '#app/registration/registration-files.routes';
 import { RegistrationService } from '#app/registration/registration.service';
 import { RegistrationController } from '#app/registration/registration.controller';
+import { RegistrationLogService } from '#app/registration/registration-log.service';
 import {
   RegistrationAcceptedMessage,
   RegistrationConfirmedMessage,
@@ -26,6 +27,7 @@ import { resolve } from '#core/ioc/container';
 
 export class RegistrationModule implements AppModule {
   bindContainers(options: BindOptions) {
+    options.bind(RegistrationLogService).toSelf().inSingletonScope();
     options.bind(RegistrationService).toSelf().inSingletonScope();
     options.bind(RegistrationController).toSelf().inSingletonScope();
   }

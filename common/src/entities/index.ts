@@ -11,6 +11,7 @@ export * from './Expense.js';
 export * from './Profile.js';
 export * from './ProgramEvent.js';
 export * from './Registration.js';
+export * from './RegistrationLog.js';
 export * from './Room.js';
 export * from './ServiceFile.js';
 export * from './TableTemplate.js';

@@ -10,10 +10,15 @@ import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { RegistrationLogService } from '#app/registration/registration-log.service';
 
 @injectable()
 export class RegistrationService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(RegistrationLogService)
+    private readonly registrationLogService: RegistrationLogService,
+  ) {
     super();
   }
 
@@ -82,6 +87,7 @@ export class RegistrationService extends BaseService {
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
     fileField: string,
+    userId: string | null,
   ) {
     const form = formUtils(camp, data.data);
 
@@ -153,7 +159,7 @@ export class RegistrationService extends BaseService {
             ? 'ACCEPTED'
             : 'PENDING';
 
-        return transaction.registration.create({
+        const registration = await transaction.registration.create({
           data: {
             ...data,
             ...computedData,
@@ -164,6 +170,14 @@ export class RegistrationService extends BaseService {
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
+
+        await this.registrationLogService.logCreate(
+          transaction,
+          registration,
+          userId,
+        );
+
+        return registration;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -177,18 +191,38 @@ export class RegistrationService extends BaseService {
       'status' | 'data' | 'customData'
     >,
     sessionId: string,
+    userId: string | null,
+    note: string | null | undefined,
   ) {
     if (!data.data) {
-      return this.prisma.registration.update({
+      const before = await this.prisma.registration.findUniqueOrThrow({
         where: { id: registrationId },
-        data: {
-          customData: data.customData,
-          status: data.status,
-        },
-        include: {
-          bed: { include: { room: true } },
-        },
       });
+
+      const after = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.registration.update({
+          where: { id: registrationId },
+          data: {
+            customData: data.customData,
+            status: data.status,
+          },
+          include: {
+            bed: { include: { room: true } },
+          },
+        });
+
+        await this.registrationLogService.logUpdate(
+          tx,
+          before,
+          updated,
+          userId,
+          note,
+        );
+
+        return updated;
+      });
+
+      return after;
     }
 
     const form = formUtils(camp);
@@ -196,6 +230,10 @@ export class RegistrationService extends BaseService {
     const computedData = this.createComputedData(form.extractCampData());
 
     const fileIds = form.getFileIds();
+
+    const before = await this.prisma.registration.findUniqueOrThrow({
+      where: { id: registrationId },
+    });
 
     return this.prisma.$transaction(async (tx) => {
       const files = await this.fileService.syncFilesForOwner(
@@ -206,7 +244,7 @@ export class RegistrationService extends BaseService {
         sessionId,
       );
 
-      return tx.registration.update({
+      const updated = await tx.registration.update({
         where: { id: registrationId },
         data: {
           ...computedData,
@@ -219,10 +257,25 @@ export class RegistrationService extends BaseService {
           bed: { include: { room: true } },
         },
       });
+
+      await this.registrationLogService.logUpdate(
+        tx,
+        before,
+        updated,
+        userId,
+        note,
+      );
+
+      return updated;
     });
   }
 
-  async deleteRegistration(registration: Registration) {
+  async deleteRegistration(
+    registration: Registration,
+    userId: string | null,
+    note: string | null | undefined,
+  ) {
+    await this.registrationLogService.logDelete(registration, userId, note);
     await this.prisma.registration.delete({ where: { id: registration.id } });
   }
 

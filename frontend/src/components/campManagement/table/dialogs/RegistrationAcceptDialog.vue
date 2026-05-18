@@ -30,6 +30,18 @@
         />
       </q-card-section>
 
+      <q-card-section>
+        <q-input
+          v-model="note"
+          :label="t('field.note.label')"
+          :hint="t('field.note.hint')"
+          autogrow
+          dense
+          outlined
+          type="textarea"
+        />
+      </q-card-section>
+
       <q-card-actions align="right">
         <q-btn
           :label="t('action.cancel')"
@@ -91,10 +103,12 @@ const personName = computed<string>(() => {
 });
 
 const confirmationMessage = ref<boolean>(true);
+const note = ref<string>('');
 
 function onConfirm() {
   onDialogOK({
     suppressMessage: !confirmationMessage.value,
+    note: note.value || undefined,
   });
 }
 </script>
@@ -109,6 +123,9 @@ text: 'Are you sure you want to accept the registration of {name}? This action c
 field:
   sendAutomatedMessage:
     label: 'Send automated confirmation message'
+  note:
+    label: 'Note (optional)'
+    hint: 'Add a short note about this change'
 
 action:
   accept: 'Accept'
@@ -123,6 +140,9 @@ text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} akzeptieren möchten? 
 field:
   sendAutomatedMessage:
     label: 'Automatische Bestätigungsnachricht senden'
+  note:
+    label: 'Notiz (optional)'
+    hint: 'Fügen Sie eine kurze Notiz zu dieser Änderung hinzu'
 
 action:
   accept: 'Akzeptieren'
@@ -137,6 +157,9 @@ text: "Êtes-vous sûr de vouloir accepter l'inscription de {name} ? Cette actio
 field:
   sendAutomatedMessage:
     label: 'Envoyer un message de confirmation automatisé'
+  note:
+    label: 'Note (optionnelle)'
+    hint: 'Ajoutez une courte note sur cette modification'
 
 action:
   accept: 'Accepter'
@@ -151,6 +174,9 @@ text: 'Czy na pewno chcesz zaakceptować rejestrację {name}? Tej akcji nie moż
 field:
   sendAutomatedMessage:
     label: 'Wyślij zautomatyzowaną wiadomość potwierdzającą'
+  note:
+    label: 'Notatka (opcjonalna)'
+    hint: 'Dodaj krótką notatkę o tej zmianie'
 
 action:
   accept: 'Zaakceptuj'
@@ -165,6 +191,9 @@ text: 'Opravdu chcete přijmout registraci {name}? Tuto akci nelze vrátit zpět
 field:
   sendAutomatedMessage:
     label: 'Odeslat automatickou potvrzovací zprávu'
+  note:
+    label: 'Poznámka (volitelná)'
+    hint: 'Přidejte krátkou poznámku k této změně'
 
 action:
   accept: 'Přijmout'

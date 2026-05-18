@@ -4,6 +4,7 @@ import { useAPIService } from 'src/services/APIService';
 import type {
   Registration,
   RegistrationCreateData,
+  RegistrationDeleteData,
   RegistrationDeleteQuery,
   RegistrationUpdateData,
   RegistrationUpdateQuery,
@@ -88,13 +89,14 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   async function deleteData(
     registrationId?: string,
     params?: RegistrationDeleteQuery,
+    deleteBody?: RegistrationDeleteData,
   ) {
     const campId = route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
     const rid = checkNotNullWithNotification(registrationId);
     await withProgressNotification('delete', async () => {
-      await apiService.deleteRegistration(cid, rid, params);
+      await apiService.deleteRegistration(cid, rid, params, deleteBody);
 
       // Replace the registration with a new one
       data.value = data.value?.filter(

@@ -36,6 +36,7 @@ const update = z.object({
       data: RegistrationDataSchema,
       customData: z.record(z.string(), z.unknown()),
       status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
+      note: z.string().max(1000).optional(),
     })
     .partial(),
   query: z
@@ -50,11 +51,23 @@ const destroy = z.object({
     campId: z.ulid(),
     registrationId: z.ulid(),
   }),
+  body: z
+    .object({
+      note: z.string().max(1000),
+    })
+    .partial(),
   query: z
     .object({
       suppressMessage: z.coerce.boolean(),
     })
     .partial(),
+});
+
+const logs = z.object({
+  params: z.object({
+    campId: z.ulid(),
+    registrationId: z.ulid(),
+  }),
 });
 
 export default {
@@ -63,4 +76,5 @@ export default {
   store,
   update,
   destroy,
+  logs,
 };

@@ -2,6 +2,7 @@
   <q-dialog
     ref="dialogRef"
     @hide="onDialogHide"
+    @show="loadLogs"
   >
     <q-card style="width: min(700px, 95vw); max-width: min(900px, 95vw)">
       <!-- Header -->
@@ -249,7 +250,7 @@
             </template>
           </div>
 
-          <!-- Right column: room + timeline -->
+          <!-- Right column: timeline -->
           <div class="col-12 col-sm-6 timeline-column">
             <q-separator
               class="lt-sm"
@@ -263,21 +264,44 @@
               </q-item-label>
             </q-list>
 
+            <div
+              v-if="logsLoading"
+              class="flex flex-center q-py-md"
+            >
+              <q-spinner
+                color="primary"
+                size="md"
+              />
+            </div>
+
             <q-timeline
+              v-else
               class="q-px-lg"
               color="primary"
             >
               <q-timeline-entry
-                :subtitle="formattedCreatedAt"
-                :title="t('timeline.registered')"
-                color="positive"
-                icon="how_to_reg"
-              />
+                v-for="entry in timelineEntries"
+                :key="entry.id"
+                :color="entry.color"
+                :icon="entry.icon"
+                :subtitle="entry.subtitle"
+                :title="entry.title"
+              >
+                <div
+                  v-if="entry.note"
+                  class="text-caption text-grey-7"
+                >
+                  <q-icon name="notes" />
+                  {{ entry.note }}
+                </div>
+                <div
+                  v-if="entry.author"
+                  class="text-caption text-grey-6"
+                >
+                  {{ entry.author }}
+                </div>
+              </q-timeline-entry>
             </q-timeline>
-
-            <p class="text-caption text-grey-6 text-center q-px-md q-pb-md">
-              {{ t('timeline.moreComingSoon') }}
-            </p>
           </div>
         </div>
       </q-scroll-area>
@@ -288,19 +312,116 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
-import type { Registration } from '@camp-registration/common/entities';
+import { computed, ref } from 'vue';
+import type {
+  Registration,
+  RegistrationLog,
+} from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useAPIService } from 'src/services/APIService';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
+const apiService = useAPIService();
 
-const { registration } = defineProps<{
+const { registration, campId } = defineProps<{
   registration: Registration;
+  campId: string;
 }>();
+
+const logsLoading = ref<boolean>(false);
+const logs = ref<RegistrationLog[]>([]);
+
+async function loadLogs() {
+  logsLoading.value = true;
+  try {
+    logs.value = await apiService.fetchRegistrationLogs(
+      campId,
+      registration.id,
+    );
+  } finally {
+    logsLoading.value = false;
+  }
+}
+
+interface TimelineEntry {
+  id: string;
+  icon: string;
+  color: string;
+  title: string;
+  subtitle: string;
+  note: string | null;
+  author: string | null;
+}
+
+const timelineEntries = computed<TimelineEntry[]>(() => {
+  const entries: TimelineEntry[] = [];
+
+  for (const log of logs.value) {
+    entries.push({
+      id: log.id,
+      icon: actionIcon(log.action),
+      color: actionColor(log),
+      title: actionTitle(log),
+      subtitle: formatDate(log.createdAt),
+      note: log.note,
+      author: log.userName,
+    });
+  }
+
+  return entries;
+});
+
+function actionIcon(action: RegistrationLog['action']): string {
+  switch (action) {
+    case 'CREATE':
+      return 'how_to_reg';
+    case 'UPDATE':
+      return 'edit';
+    case 'DELETE':
+      return 'delete';
+  }
+}
+
+function actionColor(log: RegistrationLog): string {
+  switch (log.action) {
+    case 'CREATE':
+      return 'positive';
+    case 'DELETE':
+      return 'negative';
+    case 'UPDATE': {
+      const after = log.after;
+      if (after?.status === 'ACCEPTED') return 'positive';
+      if (after?.status === 'WAITLISTED') return 'warning';
+      return 'primary';
+    }
+  }
+}
+
+function actionTitle(log: RegistrationLog): string {
+  switch (log.action) {
+    case 'CREATE':
+      return t('timeline.created');
+    case 'DELETE':
+      return t('timeline.deleted');
+    case 'UPDATE': {
+      const before = log.before;
+      const after = log.after;
+      if (before?.status !== after?.status) {
+        const rawStatus = after?.status;
+        const newStatus =
+          typeof rawStatus === 'string' ? rawStatus.toLowerCase() : '';
+        const key = `timeline.statusChanged.${newStatus}`;
+        const result = t(key);
+        return result === key ? t('timeline.updated') : result;
+      }
+      return t('timeline.updated');
+    }
+  }
+}
 
 const personName = computed<string>(() => {
   const firstName = registration.computedData.firstName?.trim() ?? '';
@@ -353,8 +474,8 @@ const formattedDateOfBirth = computed<string>(() => {
   });
 });
 
-const formattedCreatedAt = computed<string>(() => {
-  const date = new Date(registration.createdAt);
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
   return date.toLocaleString(locale.value, {
     year: 'numeric',
     month: '2-digit',
@@ -362,7 +483,7 @@ const formattedCreatedAt = computed<string>(() => {
     hour: '2-digit',
     minute: '2-digit',
   });
-});
+}
 </script>
 
 <i18n lang="yaml" locale="en">
@@ -396,8 +517,13 @@ role:
   counselor: 'Counselor'
 
 timeline:
-  registered: 'Registered'
-  moreComingSoon: 'More timeline events will be available in a future update.'
+  created: 'Registered'
+  updated: 'Updated'
+  deleted: 'Deleted'
+  statusChanged:
+    accepted: 'Status changed to Accepted'
+    pending: 'Status changed to Pending'
+    waitlisted: 'Status changed to Waitlisted'
 
 action:
   close: 'Close'
@@ -434,8 +560,13 @@ role:
   counselor: 'Betreuer'
 
 timeline:
-  registered: 'Angemeldet'
-  moreComingSoon: 'Weitere Zeitstrahl-Einträge werden in einem zukünftigen Update verfügbar sein.'
+  created: 'Angemeldet'
+  updated: 'Aktualisiert'
+  deleted: 'Gelöscht'
+  statusChanged:
+    accepted: 'Status geändert zu Akzeptiert'
+    pending: 'Status geändert zu Ausstehend'
+    waitlisted: 'Status geändert zu Warteliste'
 
 action:
   close: 'Schließen'
@@ -472,8 +603,13 @@ role:
   counselor: 'Conseiller'
 
 timeline:
-  registered: 'Inscrit'
-  moreComingSoon: "D'autres événements seront disponibles dans une future mise à jour."
+  created: 'Inscrit'
+  updated: 'Mis à jour'
+  deleted: 'Supprimé'
+  statusChanged:
+    accepted: 'Statut changé en Accepté'
+    pending: 'Statut changé en En attente'
+    waitlisted: "Statut changé en Liste d'attente"
 
 action:
   close: 'Fermer'
@@ -510,8 +646,13 @@ role:
   counselor: 'Opiekun'
 
 timeline:
-  registered: 'Zarejestrowano'
-  moreComingSoon: 'Więcej wpisów będzie dostępnych w przyszłej aktualizacji.'
+  created: 'Zarejestrowano'
+  updated: 'Zaktualizowano'
+  deleted: 'Usunięto'
+  statusChanged:
+    accepted: 'Status zmieniony na Zaakceptowano'
+    pending: 'Status zmieniony na Oczekuje'
+    waitlisted: 'Status zmieniony na Lista oczekujących'
 
 action:
   close: 'Zamknij'
@@ -548,8 +689,13 @@ role:
   counselor: 'Pečovatel'
 
 timeline:
-  registered: 'Zaregistrováno'
-  moreComingSoon: 'Další záznamy budou dostupné v budoucí aktualizaci.'
+  created: 'Zaregistrováno'
+  updated: 'Aktualizováno'
+  deleted: 'Odstraněno'
+  statusChanged:
+    accepted: 'Stav změněn na Přijato'
+    pending: 'Stav změněn na Čeká na schválení'
+    waitlisted: 'Stav změněn na Čekací listina'
 
 action:
   close: 'Zavřít'
