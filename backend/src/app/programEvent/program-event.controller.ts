@@ -53,31 +53,31 @@ export class ProgramEventController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const {
-      params: { programEventId: id },
-      body,
-    } = await req.validate(validator.update);
+    const { body } = await req.validate(validator.update);
+    const programEvent = req.modelOrFail('programEvent');
 
-    const event = await this.programEventService.updateProgramEventById(id, {
-      title: body.title,
-      details: body.details,
-      location: body.location,
-      date: body.date,
-      time: body.time,
-      duration: body.duration,
-      color: body.color,
-      plan: body.plan,
-    });
+    const event = await this.programEventService.updateProgramEventById(
+      programEvent.id,
+      {
+        title: body.title,
+        details: body.details,
+        location: body.location,
+        date: body.date,
+        time: body.time,
+        duration: body.duration,
+        color: body.color,
+        plan: body.plan,
+      },
+    );
 
     res.resource(new ProgramEventResource(event));
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { programEventId: id },
-    } = await req.validate(validator.destroy);
+    await req.validate(validator.destroy);
+    const programEvent = req.modelOrFail('programEvent');
 
-    await this.programEventService.deleteProgramEventById(id);
+    await this.programEventService.deleteProgramEventById(programEvent.id);
 
     res.status(httpStatus.NO_CONTENT).send();
   }

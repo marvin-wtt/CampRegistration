@@ -15,8 +15,8 @@ export class ProgramEventResource extends JsonResource<
       date: this.data.date ?? null,
       time: this.data.time ?? null,
       duration: this.data.duration ?? null,
-      color: this.data.color ?? 'white',
-      plan: (this.data.plan as ProgramEventResourceData['plan']) ?? 'both',
+      color: this.data.color ?? null,
+      plan: this.data.plan as ProgramEventResourceData['plan'],
     };
   }
 }

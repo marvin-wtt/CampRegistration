@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE `program_events` (
     `id` CHAR(26) NOT NULL,
-    `camp_id` CHAR(36) NOT NULL,
+    `camp_id` CHAR(26) NOT NULL,
     `title` JSON NOT NULL,
     `details` JSON NULL,
     `location` JSON NULL,

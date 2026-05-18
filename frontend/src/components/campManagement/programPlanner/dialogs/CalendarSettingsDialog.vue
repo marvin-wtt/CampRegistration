@@ -137,7 +137,7 @@ import { reactive, toRaw } from 'vue';
 import type { CalendarSettings } from 'components/campManagement/programPlanner/CalendarSettings';
 
 const { settings } = defineProps<{
-  settings: object;
+  settings: Partial<CalendarSettings>;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);

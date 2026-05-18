@@ -121,7 +121,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     checkNotNullWithError(campId);
 
     if (isIdOptimistic(id)) {
-      return withErrorNotification('update', () => {
+      return withErrorNotification('delete', () => {
         throw new Error('Please wait until the event is created');
       });
     }

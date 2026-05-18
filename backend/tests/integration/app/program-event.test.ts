@@ -299,21 +299,18 @@ describe('/api/v1/camps/:campId/program-events', () => {
       { label: 'time format is invalid', data: { title: 'T', time: '8:00' } },
       { label: 'duration is negative', data: { title: 'T', duration: -1 } },
       { label: 'plan is invalid', data: { title: 'T', plan: 'c' } },
-    ])(
-      'should respond with `400` when $label',
-      async ({ data }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+    ])('should respond with `400` when $label', async ({ data }) => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
 
-        await request()
-          .post(`/api/v1/camps/${camp.id}/program-events`)
-          .send(data)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(400);
+      await request()
+        .post(`/api/v1/camps/${camp.id}/program-events`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
 
-        const count = await prisma.programEvent.count();
-        expect(count).toBe(0);
-      },
-    );
+      const count = await prisma.programEvent.count();
+      expect(count).toBe(0);
+    });
 
     it('should respond with `403` when user is not a camp manager', async () => {
       const camp = await CampFactory.create();
@@ -468,19 +465,16 @@ describe('/api/v1/camps/:campId/program-events', () => {
       { label: 'time format is invalid', data: { time: '8:00' } },
       { label: 'duration is negative', data: { duration: -1 } },
       { label: 'plan is invalid', data: { plan: 'c' } },
-    ])(
-      'should respond with `400` when $label',
-      async ({ data }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const event = await createEventForCamp(camp);
+    ])('should respond with `400` when $label', async ({ data }) => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const event = await createEventForCamp(camp);
 
-        await request()
-          .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
-          .send(data)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(400);
-      },
-    );
+      await request()
+        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
 
     it('should respond with `403` when user is not a camp manager', async () => {
       const camp = await CampFactory.create();

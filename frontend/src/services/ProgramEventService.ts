@@ -15,7 +15,7 @@ export function useProgramEventService() {
   async function fetchProgramEvent(
     campId: string,
     programEventId: string,
-  ): Promise<ProgramEvent[]> {
+  ): Promise<ProgramEvent> {
     const response = await api.get(
       `camps/${campId}/program-events/${programEventId}/`,
     );

@@ -360,7 +360,8 @@ function dateOptions(date: string): boolean {
 function onOKClick(): void {
   onDialogOK({
     ...data,
-    duration: fullDay.value ? 24 : data.duration,
+    time: fullDay.value ? null : data.time,
+    duration: fullDay.value ? null : data.duration,
   });
 }
 </script>

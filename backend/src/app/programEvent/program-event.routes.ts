@@ -10,7 +10,7 @@ import { inject, injectable } from 'inversify';
 export class ProgramEventRouter extends ModuleRouter {
   constructor(
     @inject(ProgramEventService)
-    private readonly programPlannerService: ProgramEventService,
+    private readonly programEventService: ProgramEventService,
     @inject(ProgramEventController)
     private readonly programEventController: ProgramEventController,
   ) {
@@ -20,7 +20,7 @@ export class ProgramEventRouter extends ModuleRouter {
   protected registerBindings() {
     this.bindModel('programEvent', (req, id) => {
       const camp = req.modelOrFail('camp');
-      return this.programPlannerService.getProgramEventById(camp.id, id);
+      return this.programEventService.getProgramEventById(camp.id, id);
     });
   }
 

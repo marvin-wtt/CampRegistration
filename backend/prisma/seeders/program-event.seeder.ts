@@ -30,7 +30,11 @@ const EVENTS: EventData[] = [
     plan: 'both',
   },
   {
-    title: { de: 'Morgenandacht', fr: 'Dévotion du matin', en: 'Morning devotion' },
+    title: {
+      de: 'Morgenandacht',
+      fr: 'Dévotion du matin',
+      en: 'Morning devotion',
+    },
     date: '2026-11-18',
     time: '08:00',
     duration: 30,
@@ -62,8 +66,11 @@ const EVENTS: EventData[] = [
     plan: 'both',
   },
   {
-    title: { de: 'Kletterpark', fr: 'Parc d\'escalade', en: 'Climbing park' },
-    details: { de: 'Sicherheitseinweisung um 14:00 Uhr', en: 'Safety briefing at 14:00' },
+    title: { de: 'Kletterpark', fr: "Parc d'escalade", en: 'Climbing park' },
+    details: {
+      de: 'Sicherheitseinweisung um 14:00 Uhr',
+      en: 'Safety briefing at 14:00',
+    },
     location: { de: 'Kletterpark Süd', en: 'South Climbing Park' },
     date: '2026-11-18',
     time: '14:00',
@@ -98,7 +105,11 @@ const EVENTS: EventData[] = [
     plan: 'both',
   },
   {
-    title: { de: 'Morgenandacht', fr: 'Dévotion du matin', en: 'Morning devotion' },
+    title: {
+      de: 'Morgenandacht',
+      fr: 'Dévotion du matin',
+      en: 'Morning devotion',
+    },
     date: '2026-11-19',
     time: '08:00',
     duration: 30,
@@ -115,7 +126,10 @@ const EVENTS: EventData[] = [
   },
   {
     title: { de: 'Sporttag', fr: 'Journée sportive', en: 'Sports day' },
-    details: { de: 'Fußball, Basketball, Volleyball', en: 'Football, basketball, volleyball' },
+    details: {
+      de: 'Fußball, Basketball, Volleyball',
+      en: 'Football, basketball, volleyball',
+    },
     location: { de: 'Sportplatz', en: 'Sports ground' },
     date: '2026-11-19',
     time: '10:00',
@@ -189,7 +203,11 @@ const EVENTS: EventData[] = [
     plan: 'both',
   },
   {
-    title: { de: 'Kreativangebot', fr: 'Atelier créatif', en: 'Creative workshop' },
+    title: {
+      de: 'Kreativangebot',
+      fr: 'Atelier créatif',
+      en: 'Creative workshop',
+    },
     location: { de: 'Werkraum', en: 'Workshop room' },
     date: '2026-11-21',
     time: '14:00',
@@ -214,7 +232,11 @@ const EVENTS: EventData[] = [
     plan: 'both',
   },
   {
-    title: { de: 'Abschlussfeier', fr: 'Cérémonie de clôture', en: 'Closing ceremony' },
+    title: {
+      de: 'Abschlussfeier',
+      fr: 'Cérémonie de clôture',
+      en: 'Closing ceremony',
+    },
     date: '2026-11-23',
     time: '19:00',
     duration: 120,

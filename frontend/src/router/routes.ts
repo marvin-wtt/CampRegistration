@@ -140,12 +140,12 @@ const routes: RouteRecordRaw[] = [
               },
               {
                 path: 'program-planner',
-            name: 'program-planner',
-            component: () =>
-              import('pages/campManagement/ProgramPlannerPage.vue'),
-          },
-          {
-            path: 'room-planner',
+                name: 'management.camp.program-planner',
+                component: () =>
+                  import('pages/campManagement/ProgramPlannerPage.vue'),
+              },
+              {
+                path: 'room-planner',
                 name: 'management.camp.room-planner',
                 component: () =>
                   import('pages/campManagement/RoomPlannerPage.vue'),

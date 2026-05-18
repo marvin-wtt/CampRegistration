@@ -237,11 +237,7 @@ import {
   parseTimestamp,
 } from '@quasar/quasar-ui-qcalendar';
 
-import {
-  QPopupProxy,
-  useDialogPluginComponent,
-  useQuasar,
-} from 'quasar';
+import { QPopupProxy, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, toRaw } from 'vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
@@ -313,9 +309,21 @@ const timeEnd = computed<string>({
 const planOptions = computed(() => {
   const showLabel = $q.screen.gt.xs;
   return [
-    { ...( showLabel && { label: t('field.plan.a') }), value: 'a', icon: 'wb_sunny' },
-    { ...( showLabel && { label: t('field.plan.both') }), value: 'both', icon: 'repeat' },
-    { ...( showLabel && { label: t('field.plan.b') }), value: 'b', icon: 'water_drop' },
+    {
+      ...(showLabel && { label: t('field.plan.a') }),
+      value: 'a',
+      icon: 'wb_sunny',
+    },
+    {
+      ...(showLabel && { label: t('field.plan.both') }),
+      value: 'both',
+      icon: 'repeat',
+    },
+    {
+      ...(showLabel && { label: t('field.plan.b') }),
+      value: 'b',
+      icon: 'water_drop',
+    },
   ];
 });
 
@@ -344,7 +352,8 @@ function dateOptions(date: string): boolean {
 function onOKClick(): void {
   onDialogOK({
     ...data,
-    duration: fullDay.value ? 24 : data.duration,
+    time: fullDay.value ? null : data.time,
+    duration: fullDay.value ? null : data.duration,
   });
 }
 </script>

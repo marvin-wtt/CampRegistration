@@ -128,7 +128,7 @@ const dateTime = computed<string>(() => {
   }
 
   const start = event.time
-    ? new Date(event.date + ' ' + event.time)
+    ? new Date(`${event.date}T${event.time}`)
     : new Date(event.date);
   const end = event.duration
     ? new Date(start.getTime() + event.duration * 60000)

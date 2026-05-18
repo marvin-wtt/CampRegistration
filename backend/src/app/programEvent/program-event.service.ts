@@ -1,6 +1,16 @@
-import { type Prisma } from '#generated/prisma/client';
+import { Prisma } from '#generated/prisma/client';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+
+type NullableTranslation = string | Record<string, string> | null | undefined;
+
+interface ProgramEventUpdateDto extends Omit<
+  Prisma.ProgramEventUpdateInput,
+  'id' | 'details' | 'location'
+> {
+  details: NullableTranslation;
+  location: NullableTranslation;
+}
 
 @injectable()
 export class ProgramEventService extends BaseService {
@@ -28,13 +38,14 @@ export class ProgramEventService extends BaseService {
     });
   }
 
-  async updateProgramEventById(
-    id: string,
-    data: Omit<Prisma.ProgramEventUpdateInput, 'id'>,
-  ) {
+  async updateProgramEventById(id: string, data: ProgramEventUpdateDto) {
     return this.prisma.programEvent.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        location: data.location === null ? Prisma.JsonNull : data.location,
+        details: data.details === null ? Prisma.JsonNull : data.details,
+      },
     });
   }
 

@@ -18,7 +18,7 @@
         </div>
       </div>
       <div class="cal-ph__meta">
-        {{ headerDateRange }} &middot; {{ planLabel }}
+        {{ headerDateRange }}{{ planLabel ? ` · ${planLabel}` : '' }}
       </div>
     </div>
 
@@ -347,12 +347,19 @@ const titleLines = computed<string[]>(() => {
   return [...new Set(Object.values(name).filter(Boolean))];
 });
 
-const planLabel = computed(() => {
+const planLabel = computed<string>(() => {
   if (!data.value) {
     return '';
   }
 
-  return { a: 'Plan A', b: 'Plan B', both: 'Plan A + B' }[data.value.plan];
+  const plan = data.value.plan;
+  if (plan === 'both') {
+    return '';
+  }
+
+  const key = plan === 'a' ? 'planA' : 'planB';
+  const labels = campLocales.value.map((l) => t(key, l));
+  return [...new Set(labels)].join(' / ');
 });
 
 const headerDateRange = computed(() => {
@@ -590,20 +597,30 @@ function formatDay(dateStr: string): string {
 
 <i18n lang="yaml" locale="en">
 allDay: 'All day'
+planA: 'Plan A'
+planB: 'Plan B'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 allDay: 'Ganztägig'
+planA: 'Plan A'
+planB: 'Plan B'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 allDay: 'Journée'
+planA: 'Plan A'
+planB: 'Plan B'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 allDay: 'Cały dzień'
+planA: 'Plan A'
+planB: 'Plan B'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 allDay: 'Celý den'
+planA: 'Plán A'
+planB: 'Plán B'
 </i18n>
