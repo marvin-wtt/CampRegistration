@@ -1,72 +1,97 @@
 <template>
-  <div>
-    <div class="text-caption text-grey-7 q-mb-sm">
-      {{ label }}
-    </div>
-    <div class="row items-center justify-around q-gutter-xs no-wrap">
-      <button
-        v-for="color in PRESET_COLORS"
-        :key="color"
-        type="button"
-        class="color-swatch"
-        :style="{ background: color }"
-        :class="{ 'color-swatch--active': model === color }"
-        @click="model = color"
-      >
-        <q-icon
-          v-if="model === color"
-          name="check"
-          size="12px"
-          color="white"
+  <q-field
+    :model-value="model"
+    :label="label"
+    outlined
+    rounded
+    readonly
+    class="cursor-pointer"
+  >
+    <template #control>
+      <div class="row items-center q-gutter-xs no-wrap">
+        <div
+          class="color-dot"
+          :style="{ background: model ?? '#ffffff' }"
         />
-      </button>
+        <span class="text-body2">{{ colorLabel }}</span>
+      </div>
+    </template>
 
-      <button
-        type="button"
-        class="color-swatch color-swatch--custom"
-        :style="isCustom ? { background: model ?? '#ffffff' } : {}"
-        :class="{ 'color-swatch--active': isCustom }"
-      >
-        <q-icon
-          v-if="!isCustom"
-          name="colorize"
-          size="12px"
-          color="grey-6"
-        />
-        <q-icon
-          v-else
-          name="check"
-          size="12px"
-          color="white"
-        />
-        <q-popup-proxy
-          cover
-          transition-show="scale"
-          transition-hide="scale"
+    <q-menu
+      anchor="bottom left"
+      self="top left"
+      :offset="[0, 4]"
+    >
+      <div class="color-grid q-pa-sm">
+        <button
+          v-for="preset in PRESET_COLORS"
+          :key="preset.color"
+          v-close-popup
+          type="button"
+          class="color-swatch"
+          :style="{ background: preset.color }"
+          :class="{ 'color-swatch--active': model === preset.color }"
+          @click="model = preset.color"
         >
-          <q-color v-model="model" />
-        </q-popup-proxy>
-      </button>
-    </div>
-  </div>
+          <q-icon
+            v-if="model === preset.color"
+            name="check"
+            size="12px"
+            color="white"
+          />
+          <q-tooltip>{{ t(preset.key) }}</q-tooltip>
+        </button>
+
+        <button
+          type="button"
+          class="color-swatch color-swatch--custom"
+          :style="isCustom ? { background: model ?? '#ffffff' } : {}"
+          :class="{ 'color-swatch--active': isCustom }"
+        >
+          <q-icon
+            v-if="!isCustom"
+            name="colorize"
+            size="12px"
+            color="grey-6"
+          />
+          <q-icon
+            v-else
+            name="check"
+            size="12px"
+            color="white"
+          />
+          <q-popup-proxy
+            cover
+            transition-show="scale"
+            transition-hide="scale"
+          >
+            <q-color v-model="model" />
+          </q-popup-proxy>
+        </button>
+      </div>
+    </q-menu>
+  </q-field>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const PRESET_COLORS = [
-  '#F44336',
-  '#E91E63',
-  '#9C27B0',
-  '#3F51B5',
-  '#2196F3',
-  '#00BCD4',
-  '#009688',
-  '#4CAF50',
-  '#FF9800',
-  '#795548',
-  '#607D8B',
-  '#212121',
+  { color: '#F44336', key: 'red' },
+  { color: '#E91E63', key: 'pink' },
+  { color: '#9C27B0', key: 'purple' },
+  { color: '#3F51B5', key: 'indigo' },
+  { color: '#2196F3', key: 'blue' },
+  { color: '#00BCD4', key: 'cyan' },
+  { color: '#009688', key: 'teal' },
+  { color: '#4CAF50', key: 'green' },
+  { color: '#FF9800', key: 'orange' },
+  { color: '#795548', key: 'brown' },
+  { color: '#607D8B', key: 'blueGrey' },
+  { color: '#212121', key: 'dark' },
 ] as const;
 
 const model = defineModel<string | null | undefined>({
@@ -79,18 +104,36 @@ const { label } = defineProps<{
 }>();
 
 const isCustom = computed(() => {
-  if (!model.value) {
-    return false;
-  }
+  if (!model.value) return false;
+  return !PRESET_COLORS.some((p) => p.color === model.value);
+});
 
-  return !(PRESET_COLORS as readonly string[]).includes(model.value);
+const colorLabel = computed(() => {
+  const preset = PRESET_COLORS.find((p) => p.color === model.value);
+  if (preset) return t(preset.key);
+  return model.value ?? '';
 });
 </script>
 
 <style lang="scss" scoped>
+.color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  justify-items: center;
+}
+
 .color-swatch {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
@@ -102,7 +145,6 @@ const isCustom = computed(() => {
     transform 0.15s ease,
     box-shadow 0.15s ease,
     border-color 0.15s ease;
-  flex-shrink: 0;
 
   &:hover {
     transform: scale(1.15);
@@ -121,3 +163,48 @@ const isCustom = computed(() => {
   }
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+red: 'Red'
+pink: 'Pink'
+purple: 'Purple'
+indigo: 'Indigo'
+blue: 'Blue'
+cyan: 'Cyan'
+teal: 'Teal'
+green: 'Green'
+orange: 'Orange'
+brown: 'Brown'
+blueGrey: 'Blue Grey'
+dark: 'Dark'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+red: 'Rot'
+pink: 'Rosa'
+purple: 'Lila'
+indigo: 'Indigo'
+blue: 'Blau'
+cyan: 'Cyan'
+teal: 'Blaugrün'
+green: 'Grün'
+orange: 'Orange'
+brown: 'Braun'
+blueGrey: 'Blaugrau'
+dark: 'Dunkel'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+red: 'Rouge'
+pink: 'Rose'
+purple: 'Violet'
+indigo: 'Indigo'
+blue: 'Bleu'
+cyan: 'Cyan'
+teal: 'Sarcelle'
+green: 'Vert'
+orange: 'Orange'
+brown: 'Marron'
+blueGrey: 'Gris-bleu'
+dark: 'Sombre'
+</i18n>

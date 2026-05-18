@@ -177,12 +177,16 @@ function startResize(e: MouseEvent) {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    height: 6px;
     cursor: ns-resize;
     background: rgba(0, 0, 0, 0.15);
 
     &:hover {
       background: rgba(0, 0, 0, 0.3);
+    }
+
+    @media (hover: none) {
+      display: none;
     }
   }
 }

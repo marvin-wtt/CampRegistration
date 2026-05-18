@@ -110,7 +110,7 @@
           <!-- time & duration -->
           <div
             v-if="!fullDay"
-            class="row no-wrap q-gutter-sm"
+            class="row q-gutter-sm"
           >
             <!-- time -->
             <q-input
@@ -121,6 +121,7 @@
               hide-bottom-space
               outlined
               rounded
+              class="col-12 col-sm"
             >
               <template #append>
                 <q-icon
@@ -162,6 +163,7 @@
               hide-bottom-space
               outlined
               rounded
+              class="col-12 col-sm"
             >
               <template #append>
                 <q-icon
@@ -234,11 +236,7 @@ import {
   parseTimestamp,
 } from '@quasar/quasar-ui-qcalendar';
 
-import {
-  QPopupProxy,
-  type QSelectOption,
-  useDialogPluginComponent,
-} from 'quasar';
+import { QPopupProxy, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive } from 'vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
@@ -250,6 +248,7 @@ import type {
 import { isValidTimeRange, timeDifference } from 'src/utils/date';
 
 const { t } = useI18n();
+const $q = useQuasar();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
@@ -315,23 +314,26 @@ const timeEnd = computed<string>({
   },
 });
 
-const planOptions = computed<QSelectOption[]>(() => [
-  {
-    label: t('field.plan.a'),
-    value: 'a',
-    icon: 'wb_sunny',
-  },
-  {
-    label: t('field.plan.both'),
-    value: 'both',
-    icon: 'repeat',
-  },
-  {
-    label: t('field.plan.b'),
-    value: 'b',
-    icon: 'water_drop',
-  },
-]);
+const planOptions = computed(() => {
+  const showLabel = $q.screen.gt.xs;
+  return [
+    {
+      ...(showLabel && { label: t('field.plan.a') }),
+      value: 'a',
+      icon: 'wb_sunny',
+    },
+    {
+      ...(showLabel && { label: t('field.plan.both') }),
+      value: 'both',
+      icon: 'repeat',
+    },
+    {
+      ...(showLabel && { label: t('field.plan.b') }),
+      value: 'b',
+      icon: 'water_drop',
+    },
+  ];
+});
 
 const monthYearMin = computed<string | undefined>(() => {
   return props.dateTimeMin ? extractYearMonth(props.dateTimeMin) : undefined;

@@ -1,6 +1,7 @@
 import { CampFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
 import { RegistrationSeeder } from './registration.seeder';
+import { ProgramEventSeeder } from './program-event.seeder';
 
 class CampSeeder extends BaseSeeder {
   name(): string {
@@ -987,6 +988,7 @@ class CampSeeder extends BaseSeeder {
 
     await new RegistrationSeeder(exampleCamp).seed(25, { country: 'de' });
     await new RegistrationSeeder(exampleCamp).seed(22, { country: 'fr' });
+    await new ProgramEventSeeder(exampleCamp).seed();
   }
 }
 

@@ -99,7 +99,10 @@
             class="cal-create-overlay"
             :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
             @mousedown.left.prevent="
-              (e) => onBodyMouseDown(e, timestamp, timeDurationHeight)
+              (e) => !quasar.platform.is.mobile && onBodyMouseDown(e, timestamp, timeDurationHeight)
+            "
+            @click="
+              (e) => quasar.platform.is.mobile && onBodyClick(e, timestamp, timeDurationHeight)
             "
           />
 
@@ -624,6 +627,37 @@ function onBodyMouseDown(
   window.addEventListener('mouseup', onUp);
 }
 
+function onBodyClick(
+  e: MouseEvent,
+  timestamp: Timestamp,
+  timeDurationHeight: (d?: number) => number,
+) {
+  const bodyEl = e.currentTarget as HTMLElement;
+  const pxPerMinute = timeDurationHeight(60) / 60;
+  const dayStartMinutes = intervalStart.value * settings.timeInterval;
+  const y = e.clientY - bodyEl.getBoundingClientRect().top;
+  const raw = y / pxPerMinute + dayStartMinutes;
+  const snapped = Math.round(raw / settings.timeInterval) * settings.timeInterval;
+  const time = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+
+  quasar
+    .dialog({
+      component: ProgramEventAddDialog,
+      componentProps: {
+        date: timestamp.date,
+        time,
+        duration: settings.timeInterval,
+        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+        dateTimeMin: props.camp.startAt,
+        dateTimeMax: props.camp.endAt,
+        locales: props.camp.locales,
+      },
+    })
+    .onOk((programEvent: ProgramEventCreateData) => {
+      emit('add', programEvent);
+    });
+}
+
 function clearDragHighlight() {
   dragHighlightEl?.classList.remove('droppable');
   dragHighlightEl = null;
@@ -799,6 +833,10 @@ function formatDate(date: Date): string {
   transition: opacity 0.15s;
 
   &:hover {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
     opacity: 1;
   }
 }
