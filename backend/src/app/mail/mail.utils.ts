@@ -12,14 +12,18 @@ export function addressLikeToString(to: AddressLike): string {
 export async function resolveFileAttachments(
   ids: string[],
 ): Promise<MailAttachment[]> {
-  if (!ids.length) return [];
+  if (!ids.length) {
+    return [];
+  }
 
   const fileService = resolve(FileService);
 
   const results = await Promise.all(
     ids.map(async (id): Promise<MailAttachment | null> => {
       const file = await fileService.getFileById(id);
-      if (!file) return null;
+      if (!file) {
+        return null;
+      }
 
       return {
         filename: file.originalName,

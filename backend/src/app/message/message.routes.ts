@@ -11,7 +11,9 @@ export class MessageRouter extends ModuleRouter {
     const messageService = resolve(MessageService);
     this.bindModel('message', (req, id) => {
       const camp = req.model('camp');
-      if (!camp) return null;
+      if (!camp) {
+        return null;
+      }
       return messageService.getMessageById(camp.id, id);
     });
   }

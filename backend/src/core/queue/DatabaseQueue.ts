@@ -410,7 +410,9 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     tx: PrismaTransaction,
   ): Promise<{ available: number; now: Date } | null> {
     const limit = this.options.limit;
-    if (!limit) return null;
+    if (!limit) {
+      return null;
+    }
 
     const now = new Date();
 
