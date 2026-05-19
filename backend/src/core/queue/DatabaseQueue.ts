@@ -140,7 +140,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     while (this.running) {
       if (!this.handler) {
         logger.info(
-          `Worker for queue ${this.queue} stopped (no handler defined)`,
+          `Worker for queue '${this.queue}' stopped (no handler defined)`,
         );
         this.pause();
         return;
@@ -170,13 +170,15 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
         await this.processJob(job);
       } catch (error) {
+        console.trace(error);
+
         errorSleepMs =
           errorSleepMs === 0
             ? this.minErrorBackoffMs
             : Math.min(this.maxErrorBackoffMs, errorSleepMs * 2);
 
         logger.error(
-          `Worker for queue ${this.queue} encountered an error: ${errorMessage(error)}`,
+          `Worker for queue '${this.queue}' encountered an error: ${errorMessage(error)}`,
         );
         await this.sleep(errorSleepMs);
       }
@@ -401,9 +403,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
       return {
         id: job.id,
         name: job.name,
-        payload: (typeof job.payload === 'string'
-          ? JSON.parse(job.payload)
-          : job.payload) as P,
+        payload: job.payload as P,
       };
     });
   }
