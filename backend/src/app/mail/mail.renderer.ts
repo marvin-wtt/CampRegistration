@@ -58,7 +58,7 @@ export class MailRenderer {
     const globalContext = {
       appName: config.appName,
       style: {
-        primaryColor: '#338d8e', // TODO Import from config
+        primaryColor: config.primaryColor,
       },
     };
     const filepath = this.getView(options.template);

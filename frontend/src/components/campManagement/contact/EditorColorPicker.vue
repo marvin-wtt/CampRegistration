@@ -9,7 +9,6 @@
     flat
     menu-anchor="bottom left"
     menu-self="top left"
-    @click="pickerVisible = true"
   >
     <q-color
       v-model="value"
@@ -22,7 +21,6 @@
 import { ref } from 'vue';
 import { QBtnDropdown, QColor } from 'quasar';
 
-const pickerVisible = ref<boolean>(true);
 const token = ref<QBtnDropdown | null>(null);
 
 const props = withDefaults(

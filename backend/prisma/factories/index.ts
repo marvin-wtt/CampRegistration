@@ -13,3 +13,4 @@ export * from './message-template.js';
 export * from './newsletter.js';
 export * from './newsletter-subscriber.js';
 export * from './newsletter-message.js';
+export * from './program-event.js';

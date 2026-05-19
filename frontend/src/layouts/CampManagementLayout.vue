@@ -193,11 +193,17 @@ const items: NavigationItemProps[] = [
   },
   {
     name: 'contact',
-    preview: true,
     label: t('contact'),
     icon: 'send',
     permission: 'camp.messages.create',
     to: { name: 'management.camp.contact' },
+  },
+  {
+    name: 'program_planner',
+    label: t('program_planner'),
+    icon: 'event',
+    permission: 'camp.program_events.view',
+    to: { name: 'management.camp.program-planner' },
   },
   {
     name: 'room_planner',

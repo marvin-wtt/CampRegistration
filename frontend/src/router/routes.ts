@@ -139,6 +139,12 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('pages/campManagement/ContactPage.vue'),
               },
               {
+                path: 'program-planner',
+                name: 'management.camp.program-planner',
+                component: () =>
+                  import('pages/campManagement/ProgramPlannerPage.vue'),
+              },
+              {
                 path: 'room-planner',
                 name: 'management.camp.room-planner',
                 component: () =>
@@ -289,6 +295,11 @@ const routes: RouteRecordRaw[] = [
         path: 'tables',
         name: 'print.tables',
         component: () => import('pages/print/PrintTablesPage.vue'),
+      },
+      {
+        path: 'calendar',
+        name: 'print.calendar',
+        component: () => import('pages/print/PrintCalendarPage.vue'),
       },
     ],
   },

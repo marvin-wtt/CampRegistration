@@ -103,6 +103,10 @@ export class FileService extends BaseService {
 
   private async uploadFile(filename: string) {
     await this.storageRegistry.getStorage().moveToStorage(filename);
+    await this.prisma.file.updateMany({
+      where: { name: filename },
+      data: { uploadStatus: 'READY' },
+    });
   }
 
   public getFileConnectInput(
@@ -186,14 +190,17 @@ export class FileService extends BaseService {
     const fileData = this.mapFields(file, originalFileName, field, accessLevel);
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
-    await this.queue.add('upload', file.filename);
-
-    return this.prisma.file.create({
+    const created = await this.prisma.file.create({
       data: {
         ...fileData,
         ...modelData,
+        uploadStatus: 'PENDING',
       },
     });
+
+    await this.queue.add('upload', file.filename);
+
+    return created;
   }
 
   async getModelFile(modelName: string, modelId: string, id: string) {

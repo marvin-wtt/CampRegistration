@@ -267,11 +267,18 @@ describe('/api/v1/camps/:campId/messages', () => {
         maxParticipants: { de: 8, fr: 9 },
       });
 
+      const file1Name = crypto.randomUUID() + '.pdf';
+      const file2Name = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', file1Name);
+      await uploadFile('blank.pdf', file2Name);
+
       const file1 = await FileFactory.create({
         field: sessionId,
+        name: file1Name,
       });
       const file2 = await FileFactory.create({
         field: sessionId,
+        name: file2Name,
       });
 
       const registration = await RegistrationFactory.create({

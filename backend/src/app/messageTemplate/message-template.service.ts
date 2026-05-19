@@ -2,6 +2,7 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { sanitizeEmailHtml } from '#utils/sanitize';
 
 @injectable()
 export class MessageTemplateService extends BaseService {
@@ -71,8 +72,9 @@ export class MessageTemplateService extends BaseService {
         event: data.event,
         country: data.country,
         subject: data.subject,
-        body: data.body,
+        body: sanitizeEmailHtml(data.body),
         priority: data.priority,
+        replyTo: data.replyTo,
         campId,
         attachments: data.attachmentIds
           ? this.fileService.getFileConnectInput(
@@ -92,6 +94,7 @@ export class MessageTemplateService extends BaseService {
     campId: string,
     data: Prisma.MessageTemplateUpdateInput & {
       attachmentIds?: string[] | undefined;
+      body?: string | undefined;
     },
     sessionId: string,
   ) {
@@ -113,7 +116,8 @@ export class MessageTemplateService extends BaseService {
         },
         data: {
           subject: data.subject,
-          body: data.body,
+          body:
+            data.body !== undefined ? sanitizeEmailHtml(data.body) : undefined,
           priority: data.priority,
           attachments,
         },

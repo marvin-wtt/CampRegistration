@@ -38,10 +38,14 @@
 <script lang="ts" setup>
 import { ref, useAttrs, watch } from 'vue';
 import type { QInputSlots } from 'quasar';
+import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useAPIService } from 'src/services/APIService';
 import type { ServiceFile } from '@camp-registration/common/entities';
 
 const api = useAPIService();
+const quasar = useQuasar();
+const { t } = useI18n();
 
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
@@ -116,8 +120,6 @@ function removeFile(index: number) {
 }
 
 function onUploadSuccess(progressId: string, serviceFile: ServiceFile) {
-  assertModelMatch();
-
   const i = findIndexByProgressId(progressId);
   if (i < 0) {
     return;
@@ -129,14 +131,20 @@ function onUploadSuccess(progressId: string, serviceFile: ServiceFile) {
 function onUploadError(progressId: string, error: unknown) {
   // eslint-disable-next-line no-console
   console.error('File upload failed', error);
-  assertModelMatch();
 
   const i = findIndexByProgressId(progressId);
   if (i < 0) {
     return;
   }
 
+  const failedName = model.value?.at(i)?.name ?? '';
   removeFile(i);
+
+  quasar.notify({
+    type: 'negative',
+    message: t('uploadFailed'),
+    caption: failedName,
+  });
 }
 
 function findIndexByProgressId(progressId: string): number {
@@ -146,12 +154,26 @@ function findIndexByProgressId(progressId: string): number {
     ) ?? -1
   );
 }
-
-function assertModelMatch() {
-  if (model.value?.length !== files.value.length) {
-    throw Error('Model length mismatch');
-  }
-}
 </script>
 
 <style scoped></style>
+
+<i18n lang="yaml" locale="en">
+uploadFailed: 'File upload failed'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+uploadFailed: 'Datei-Upload fehlgeschlagen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+uploadFailed: 'Échec du téléchargement du fichier'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+uploadFailed: 'Przesyłanie pliku nie powiodło się'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+uploadFailed: 'Nahrávání souboru se nezdařilo'
+</i18n>

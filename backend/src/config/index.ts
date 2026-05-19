@@ -4,6 +4,7 @@ import { appPath } from '#utils/paths';
 const config = {
   env: env.NODE_ENV,
   appName: env.APP_NAME,
+  primaryColor: env.APP_PRIMARY_COLOR,
   port: env.APP_PORT,
   origin: env.APP_URL,
   database: {

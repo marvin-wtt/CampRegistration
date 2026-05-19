@@ -51,7 +51,20 @@ export function useObjectTranslation() {
     }).value;
   }
 
+  function toAll(value: string | Record<string, string> | undefined): string {
+    if (value == null) {
+      return '';
+    }
+
+    if (typeof value !== 'object') {
+      return value;
+    }
+
+    return [...new Set(Object.values(value).filter(Boolean))].join(' / ');
+  }
+
   return {
     to,
+    toAll,
   };
 }

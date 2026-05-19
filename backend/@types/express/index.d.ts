@@ -14,6 +14,7 @@ import type {
   NewsletterManager,
   NewsletterSubscriber,
   NewsletterMessage,
+  ProgramEvent,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
@@ -35,6 +36,7 @@ declare global {
       newsletterManager?: NewsletterManager;
       newsletterMessage?: NewsletterMessage;
       newsletterSubscriber?: NewsletterSubscriber;
+      programEvent?: ProgramEvent;
     }
 
     interface AuthUser {

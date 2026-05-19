@@ -10,4 +10,9 @@ export const MainEnvSchema = z.object({
     .default(8000),
   APP_URL: z.url().describe('URL, where the app is hosted.'),
   APP_NAME: z.string().readonly().describe('The name of the app.'),
+  APP_PRIMARY_COLOR: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .default('#338d8e')
+    .describe('Primary color used in email templates.'),
 });

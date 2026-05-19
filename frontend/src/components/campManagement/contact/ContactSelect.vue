@@ -128,8 +128,12 @@ const filteredOptions = computed<Contact[]>(() => {
       }
 
       if (contact.type === 'group') {
+        const contactIds = new Set(contact.registrations.map((r) => r.id));
         return !model.value.some(
-          (value) => value.type === 'group' && value.name === contact.name,
+          (value) =>
+            value.type === 'group' &&
+            value.registrations.length === contact.registrations.length &&
+            value.registrations.every(({ id }) => contactIds.has(id)),
         );
       }
 
@@ -163,7 +167,7 @@ const options = computed<Contact[]>(() => {
 
 function getRegistrationType(
   registration: Registration,
-): Exclude<Contact['type'], 'group' | 'external'> {
+): Exclude<Contact['type'], 'group'> {
   if (registration.status === 'PENDING') {
     throw new Error('Pending registrations should be filtered out beforehand.');
   }

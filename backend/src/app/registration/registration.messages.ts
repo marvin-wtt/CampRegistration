@@ -19,6 +19,7 @@ import Handlebars from 'handlebars';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
 import { MessageService } from '#app/message/message.service';
+import { FileService } from '#app/file/file.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 
@@ -27,6 +28,17 @@ function dateToString(date: Date | string | null): string | null {
     return date;
   }
   return typeof date === 'string' ? date : date.toISOString();
+}
+
+function formatDate(date: Date | string | null, locale: string): string | null {
+  if (date === null) {
+    return null;
+  }
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }).format(d);
 }
 
 abstract class RegistrationMessage<
@@ -186,6 +198,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected replyTo(): AddressLike | undefined {
+    if (this.payload.messageTemplate.replyTo) {
+      return this.payload.messageTemplate.replyTo;
+    }
     return translateObject(
       this.payload.camp.contactEmail,
       this.payload.registration.country ?? '',
@@ -214,6 +229,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         contactEmail: translateObject(camp.contactEmail, locale),
         maxParticipants: translateObject(camp.maxParticipants, locale),
         location: translateObject(camp.location, locale),
+        // Format dates using the registration's full locale
+        startAt: formatDate(camp.startAt, this.locale()),
+        endAt: formatDate(camp.endAt, this.locale()),
       },
       registration: {
         id: this.payload.registration.id,
@@ -245,6 +263,21 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     };
   }
 
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    const files = this.payload.messageTemplate.attachments;
+    if (!files.length) {
+      return [];
+    }
+
+    const fileService = resolve(FileService);
+
+    return files.map((file) => ({
+      filename: file.originalName,
+      content: fileService.getFileStream(file),
+      contentType: file.type,
+    }));
+  }
+
   async build(): Promise<BuiltMail> {
     const mail = await super.build();
 
@@ -267,10 +300,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected content(): Content | Promise<Content> {
-    const template = translateObject(
-      this.payload.messageTemplate.body,
-      this.payload.registration.country ?? this.locale(),
-    );
+    const locale = this.payload.registration.country ?? this.locale();
+
+    const template = translateObject(this.payload.messageTemplate.body, locale);
 
     const compile = Handlebars.compile(template, {
       knownHelpersOnly: true,
@@ -283,7 +315,12 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     });
 
     return {
-      html: compile(this.context()),
+      template: 'registration-message',
+      context: {
+        body: compile(this.context()),
+        campName: translateObject(this.payload.camp.name, locale),
+        reason: this.reason(),
+      },
     };
   }
 

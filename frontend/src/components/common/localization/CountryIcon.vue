@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import { hasFlag } from 'country-flag-icons';
-import { defineProps, computed } from 'vue';
+import { computed } from 'vue';
 
 type Props =
   | {

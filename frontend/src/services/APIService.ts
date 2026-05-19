@@ -16,6 +16,7 @@ import { useNewsletterService } from 'src/services/NewsletterService';
 import { useNewsletterManagerService } from 'src/services/NewsletterManagerService';
 import { useNewsletterSubscriberService } from 'src/services/NewsletterSubscriberService';
 import { useNewsletterMessageService } from 'src/services/NewsletterMessageService';
+import { useProgramEventService } from 'src/services/ProgramEventService';
 
 export function useAPIService() {
   return {
@@ -36,6 +37,7 @@ export function useAPIService() {
     ...useNewsletterManagerService(),
     ...useNewsletterSubscriberService(),
     ...useNewsletterMessageService(),
+    ...useProgramEventService(),
   };
 }
 

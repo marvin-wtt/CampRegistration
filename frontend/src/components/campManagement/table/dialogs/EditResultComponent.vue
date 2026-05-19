@@ -3,6 +3,7 @@
     ref="dialogRef"
     full-height
     full-width
+    :maximized="quasar.screen.lt.sm"
     @hide="onDialogHide"
   >
     <q-card class="column">
@@ -29,7 +30,7 @@
           :camp-details="camp"
           :data="data"
           :submit-fn="onSubmit"
-          :upload-file-fn="onFileUpload"
+          :upload-file-fn="uploadFileFn"
           moderation
         />
       </q-scroll-area>
@@ -38,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import type {
   CampDetails,
   Registration,
@@ -46,7 +47,12 @@ import type {
 import RegistrationForm from 'components/common/RegistrationForm.vue';
 import { useI18n } from 'vue-i18n';
 
-const props = defineProps<{
+const quasar = useQuasar();
+const { t } = useI18n();
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
+  useDialogPluginComponent();
+
+const { camp, data, uploadFileFn } = defineProps<{
   camp: CampDetails;
   data: Registration['data'];
   uploadFileFn: (file: File) => Promise<string>;
@@ -54,18 +60,10 @@ const props = defineProps<{
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { t } = useI18n();
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-  useDialogPluginComponent();
-
 function onSubmit(id: string, data: unknown) {
   onDialogOK(data);
   // Error is handled elsewhere
   return Promise.resolve();
-}
-
-async function onFileUpload(file: File) {
-  return props.uploadFileFn(file);
 }
 </script>
 

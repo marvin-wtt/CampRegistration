@@ -8,6 +8,7 @@ import ApiError from '#utils/ApiError';
 import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
 import { inject, injectable } from 'inversify';
+import { sanitizeEmailHtml } from '#utils/sanitize';
 
 @injectable()
 export class MessageController extends BaseController {
@@ -60,7 +61,13 @@ export class MessageController extends BaseController {
 
     const template = await this.messageTemplateService.createTemplate(
       camp.id,
-      { subject, body, priority, replyTo, attachmentIds },
+      {
+        subject,
+        body: sanitizeEmailHtml(body),
+        priority,
+        replyTo,
+        attachmentIds,
+      },
       req.sessionId,
     );
 
