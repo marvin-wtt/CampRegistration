@@ -302,10 +302,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   protected content(): Content | Promise<Content> {
     const locale = this.payload.registration.country ?? this.locale();
 
-    const template = translateObject(
-      this.payload.messageTemplate.body,
-      locale,
-    );
+    const template = translateObject(this.payload.messageTemplate.body, locale);
 
     const compile = Handlebars.compile(template, {
       knownHelpersOnly: true,

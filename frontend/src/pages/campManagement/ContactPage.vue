@@ -59,7 +59,9 @@
                 @click.stop="replyTo = suggestedReplyTo"
               >
                 <q-tooltip>
-                  {{ t('input.replyTo.suggestion', { email: suggestedReplyTo }) }}
+                  {{
+                    t('input.replyTo.suggestion', { email: suggestedReplyTo })
+                  }}
                 </q-tooltip>
               </q-btn>
             </template>
@@ -517,7 +519,7 @@ input:
   replyTo:
     label: 'Répondre à'
     required: 'Une adresse de réponse est requise'
-    suggestion: 'Utiliser l''adresse suggérée : {email}'
+    suggestion: "Utiliser l'adresse suggérée : {email}"
     rule:
       invalid: 'Veuillez entrer une adresse e-mail valide'
   subject:

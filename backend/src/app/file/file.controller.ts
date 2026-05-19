@@ -26,7 +26,10 @@ export class FileController extends BaseController {
     const file = req.modelOrFail('file');
 
     if (file.uploadStatus === 'PENDING') {
-      throw new ApiError(httpStatus.CONFLICT, 'File upload is still in progress');
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'File upload is still in progress',
+      );
     }
 
     const fileStream = this.fileService.getFileStream(file);
