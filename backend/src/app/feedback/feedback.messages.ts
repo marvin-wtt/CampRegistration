@@ -12,8 +12,15 @@ export interface FeedbackData {
 export class FeedbackMessage extends MailBase<FeedbackData> {
   static readonly type = 'feedback:new';
 
+  protected getTranslationOptions() {
+    return {
+      namespace: 'feedback',
+      keyPrefix: 'email',
+    };
+  }
+
   protected subject(): string {
-    return 'New Feedback';
+    return this.getT()('subject');
   }
 
   public to(): AddressLike {
