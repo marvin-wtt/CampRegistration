@@ -2015,7 +2015,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(204);
 
-        expect(mailer.sendMail).not.toHaveBeenCalledWith(
+        expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: 'test@email.com',
             replyTo: camp.contactEmail,
