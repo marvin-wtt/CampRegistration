@@ -7,7 +7,7 @@ export interface StorageFile {
   field: string | null;
   size: number;
   type: string;
-  accessLevel: string;
+  accessLevel: string | null;
   storageLocation: string;
 }
 
