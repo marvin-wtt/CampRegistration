@@ -201,7 +201,6 @@ const items: NavigationItemProps[] = [
   },
   {
     name: 'program_planner',
-    preview: true,
     label: t('program_planner'),
     icon: 'event',
     permission: 'camp.program_events.view',

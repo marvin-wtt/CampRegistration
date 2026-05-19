@@ -37,7 +37,7 @@ export function useProgramEventService() {
     programEventId: string,
     data: ProgramEventUpdateData,
   ): Promise<ProgramEvent> {
-    const response = await api.put(
+    const response = await api.patch(
       `camps/${campId}/program-events/${programEventId}/`,
       data,
     );

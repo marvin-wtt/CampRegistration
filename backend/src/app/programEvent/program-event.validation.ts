@@ -18,6 +18,7 @@ const dateSchema = z
     );
   }, 'Date must be a valid calendar date');
 const planSchema = z.enum(['a', 'b', 'both']);
+const colorSchema = z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/);
 
 const show = z.object({
   params: z.object({
@@ -43,7 +44,7 @@ const store = z.object({
     date: dateSchema.optional().nullable(),
     time: timeSchema.optional().nullable(),
     duration: z.number().min(1).optional().nullable(),
-    color: z.string().optional().nullable(),
+    color: colorSchema.optional().nullable(),
     plan: planSchema.optional(),
   }),
 });
@@ -61,7 +62,7 @@ const update = z.object({
       date: dateSchema.nullable(),
       time: timeSchema.nullable(),
       duration: z.number().min(1).nullable(),
-      color: z.string().nullable(),
+      color: colorSchema.nullable(),
       plan: planSchema,
     })
     .partial(),

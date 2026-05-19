@@ -42,7 +42,7 @@ export class ProgramEventRouter extends ModuleRouter {
       guard(campManager('camp.program_events.create')),
       controller(this.programEventController, 'store'),
     );
-    this.router.put(
+    this.router.patch(
       '/:programEventId',
       guard(campManager('camp.program_events.update')),
       controller(this.programEventController, 'update'),

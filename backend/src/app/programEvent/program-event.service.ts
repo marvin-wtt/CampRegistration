@@ -50,6 +50,6 @@ export class ProgramEventService extends BaseService {
   }
 
   async deleteProgramEventById(id: string) {
-    await this.prisma.programEvent.delete({ where: { id: id } });
+    await this.prisma.programEvent.delete({ where: { id } });
   }
 }

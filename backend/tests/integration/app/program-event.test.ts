@@ -339,7 +339,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
     });
   });
 
-  describe('PUT /api/v1/camps/:campId/program-events/:programEventId', () => {
+  describe('PATCH /api/v1/camps/:campId/program-events/:programEventId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -352,7 +352,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
         const event = await createEventForCamp(camp);
 
         await request()
-          .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+          .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
           .send({ title: 'Updated Title' })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -375,7 +375,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       };
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send(update)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -399,7 +399,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       });
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send({ plan: 'b' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -412,7 +412,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const event = await createEventForCamp(camp);
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send({ title: { de: 'Deutsch', en: 'English' } })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -430,7 +430,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       });
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send({ time: null, duration: null, color: null })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -443,7 +443,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${ulid()}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${ulid()}`)
         .send({ title: 'Updated' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -455,7 +455,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const event = await createEventForCamp(otherCamp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send({ title: 'Updated' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -470,7 +470,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const event = await createEventForCamp(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
@@ -482,7 +482,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send({ title: 'Updated' })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -493,7 +493,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const event = await createEventForCamp(camp);
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
+        .patch(`/api/v1/camps/${camp.id}/program-events/${event.id}`)
         .send({ title: 'Updated' })
         .expect(401);
     });

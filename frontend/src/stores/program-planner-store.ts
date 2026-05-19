@@ -33,10 +33,10 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     invalidate();
   });
 
-  async function fetchData(id?: string): Promise<void> {
-    const campId = id ?? (route.params.campId as string | undefined);
-
-    const cid = checkNotNullWithError(campId);
+  async function fetchData(campId?: string): Promise<void> {
+    const cid = checkNotNullWithError(
+      campId ?? (route.params.campId as string),
+    );
     await lazyFetch(async () => await apiService.fetchProgramEvents(cid));
   }
 
