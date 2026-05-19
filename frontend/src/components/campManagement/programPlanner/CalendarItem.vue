@@ -1,0 +1,194 @@
+<template>
+  <div
+    v-if="event.time"
+    class="cal-event"
+    :style="badgeStyles"
+    @dragstart="onDragStart"
+    @dragend="isDragging = false"
+  >
+    <div class="cal-event__inner">
+      <div class="cal-event__title q-calendar__ellipsis">
+        {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
+      </div>
+    </div>
+
+    <div
+      class="cal-event__resize-handle"
+      @mousedown.stop.prevent="startResize"
+    />
+
+    <calendar-item-popup
+      :event="event"
+      @edit="emit('edit')"
+      @delete="emit('delete')"
+      @duplicate="emit('duplicate')"
+    />
+  </div>
+</template>
+
+<script lang="ts" setup>
+import type { ProgramEvent } from '@camp-registration/common/entities';
+import { computed, ref, type StyleValue } from 'vue';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
+
+const {
+  event,
+  viewBoth = false,
+  showAllTranslations = false,
+  timeDurationHeight,
+  timeStartPosition,
+  snap,
+} = defineProps<{
+  event: ProgramEvent;
+  viewBoth?: boolean;
+  showAllTranslations?: boolean;
+  timeStartPosition: (time?: string) => number;
+  timeDurationHeight: (duration?: number) => number;
+  snap?: number;
+}>();
+
+const emit = defineEmits<{
+  (e: 'edit'): void;
+  (e: 'delete'): void;
+  (e: 'duplicate'): void;
+  (e: 'resize', duration: number): void;
+}>();
+
+const { to, toAll } = useObjectTranslation();
+
+const resizeDuration = ref<number | null>(null);
+const isDragging = ref(false);
+const isCopyDrag = ref(false);
+
+function onDragStart(e: DragEvent) {
+  if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
+    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+  }
+
+  isCopyDrag.value = e.ctrlKey || e.metaKey;
+
+  const onKeyDown = (ev: KeyboardEvent) => {
+    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = true;
+  };
+  const onKeyUp = (ev: KeyboardEvent) => {
+    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = false;
+  };
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+
+  setTimeout(() => {
+    isDragging.value = true;
+  }, 0);
+
+  const cleanup = () => {
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
+    document.removeEventListener('dragend', cleanup);
+  };
+  document.addEventListener('dragend', cleanup);
+}
+
+const badgeStyles = computed<StyleValue>(() => {
+  const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
+
+  const dur = resizeDuration.value ?? event.duration;
+  const height = dur ? timeDurationHeight(dur) + 'px' : undefined;
+
+  let left = '0';
+  let width = 'calc(100% - 4px)';
+
+  if (viewBoth && event.plan !== 'both') {
+    width = 'calc(50% - 4px)';
+    if (event.plan === 'b') {
+      left = '50%';
+    }
+  }
+
+  return {
+    backgroundColor: event.color ?? '#2196F3',
+    top,
+    height,
+    left,
+    width,
+    opacity: isDragging.value && !isCopyDrag.value ? 0 : undefined,
+    pointerEvents: isDragging.value ? 'none' : undefined,
+  };
+});
+
+function startResize(e: MouseEvent) {
+  if (!timeDurationHeight || !event.duration) {
+    return;
+  }
+
+  const startY = e.clientY;
+  const startDuration = event.duration;
+  const pixelsPerMinute = timeDurationHeight(60) / 60;
+  const snapTo = snap ?? 15;
+
+  function onMove(ev: MouseEvent) {
+    const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
+    const raw = startDuration + deltaMinutes;
+    resizeDuration.value = Math.max(snapTo, Math.round(raw / snapTo) * snapTo);
+  }
+
+  function onUp(ev: MouseEvent) {
+    const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
+    const raw = startDuration + deltaMinutes;
+    const final = Math.max(snapTo, Math.round(raw / snapTo) * snapTo);
+    emit('resize', final);
+    resizeDuration.value = null;
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  }
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+</script>
+
+<style lang="scss" scoped>
+.cal-event {
+  position: absolute;
+  margin: 0 2px;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+
+  &__inner {
+    padding: 2px 4px;
+    height: calc(100% - 2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  &__resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    background: rgba(0, 0, 0, 0.15);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    @media (hover: none) {
+      display: none;
+    }
+  }
+}
+</style>

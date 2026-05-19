@@ -80,6 +80,7 @@ model Camp {
   tableTemplates   TableTemplate[]
   messageTemplates MessageTemplate[]
   files            File[]
+  programEvents    ProgramEvent[]
 
   @@map("camps")
 }
@@ -365,4 +366,23 @@ model NewsletterMessage {
 
   @@index([newsletterId], map: "newsletter_messages_newsletter_id_index")
   @@map("newsletter_messages")
+}
+
+model ProgramEvent {
+  id       String  @id @unique(map: "program_event_id_unique") @default(ulid()) @db.Char(26)
+  campId   String  @map("camp_id") @db.Char(26) // Prisma does not support morth
+  /// ![string | Record<string, string>]
+  title    Json
+  /// ![string | Record<string, string>]
+  details  Json?
+  /// ![string | Record<string, string>]
+  location Json?
+  date     String?
+  duration Int?
+  time     String?
+  color    String? @map("color")
+  plan     String  @default("both")
+  camp     Camp    @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  @@map("program_events")
 }

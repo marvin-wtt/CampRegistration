@@ -200,6 +200,13 @@ const items: NavigationItemProps[] = [
     to: { name: 'management.camp.contact' },
   },
   {
+    name: 'program_planner',
+    label: t('program_planner'),
+    icon: 'event',
+    permission: 'camp.program_events.view',
+    to: { name: 'management.camp.program-planner' },
+  },
+  {
     name: 'room_planner',
     label: t('room_planner'),
     icon: 'single_bed',

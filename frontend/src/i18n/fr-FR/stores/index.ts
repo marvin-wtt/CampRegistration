@@ -5,6 +5,7 @@ import campManager from './camp-manager';
 import campFiles from './camp-files';
 import auth from './auth';
 import profile from './profile';
+import programPlanner from './program-planner';
 
 export default {
   camp,
@@ -14,4 +15,5 @@ export default {
   campFiles,
   auth,
   profile,
+  programPlanner,
 };

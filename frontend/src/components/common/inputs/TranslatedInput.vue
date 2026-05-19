@@ -121,10 +121,12 @@ const {
   label = '',
   locales = [],
   always = false,
+  defaultUntranslated = false,
 } = defineProps<{
   label?: string;
   locales?: string[];
   always?: boolean;
+  defaultUntranslated?: boolean;
 }>();
 
 const useTranslations = ref(defaultUseTranslations());
@@ -136,7 +138,11 @@ const enabled = computed<boolean>(() => {
 });
 
 function defaultUseTranslations(): boolean {
-  return model.value == null || typeof model.value === 'object';
+  if (model.value == null) {
+    return !defaultUntranslated;
+  }
+
+  return typeof model.value === 'object';
 }
 
 function defaultValue(): string | number {

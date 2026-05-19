@@ -27,6 +27,7 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@quasar/extras": "^1.16.17",
+    "@quasar/quasar-ui-qcalendar": "^4.1.2",
     "@tiptap/extension-color": "^2.11.9",
     "@tiptap/extension-hard-break": "^2.11.9",
     "@tiptap/extension-highlight": "^2.11.9",
