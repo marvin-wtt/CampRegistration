@@ -186,6 +186,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected replyTo(): AddressLike | undefined {
+    if (this.payload.messageTemplate.replyTo) {
+      return this.payload.messageTemplate.replyTo;
+    }
     return translateObject(
       this.payload.camp.contactEmail,
       this.payload.registration.country ?? '',

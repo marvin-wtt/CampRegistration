@@ -38,10 +38,12 @@
 <script lang="ts" setup>
 import { ref, useAttrs, watch } from 'vue';
 import type { QInputSlots } from 'quasar';
+import { useQuasar } from 'quasar';
 import { useAPIService } from 'src/services/APIService';
 import type { ServiceFile } from '@camp-registration/common/entities';
 
 const api = useAPIService();
+const quasar = useQuasar();
 
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
@@ -136,7 +138,14 @@ function onUploadError(progressId: string, error: unknown) {
     return;
   }
 
+  const failedName = model.value?.at(i)?.name;
   removeFile(i);
+
+  quasar.notify({
+    type: 'negative',
+    message: 'File upload failed',
+    caption: failedName,
+  });
 }
 
 function findIndexByProgressId(progressId: string): number {

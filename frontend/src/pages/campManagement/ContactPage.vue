@@ -26,14 +26,20 @@
       />
 
       <expand-slide
-        expand-label="Show more"
-        contract-label="Show less"
+        :expand-label="t('action.showMore')"
+        :contract-label="t('action.showLess')"
       >
         <div class="row q-mt-none q-gutter-sm">
           <q-input
             v-model="replyTo"
             type="email"
             :label="t('input.replyTo.label')"
+            :rules="[
+              (val?: string) =>
+                !val ||
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
+                t('input.replyTo.rule.invalid'),
+            ]"
             :disable="sendInProgress"
             class="col-grow"
             outlined
@@ -78,7 +84,7 @@
         :form="campDetailsStore.data?.form"
         :rules="[
           (val?: string) =>
-            (!!val && val.length > 0) || t('input.message.rule.required'),
+            (!!val && val.length > 0) || t('input.message.required'),
         ]"
         hide-bottom-space
         :disable="sendInProgress"
@@ -182,11 +188,11 @@ const priorityOptions = computed<QSelectOption[]>(() => [
 ]);
 
 const error = computed<string | null>(() => {
-  return registrationStore.error;
+  return registrationStore.error ?? campDetailsStore.error;
 });
 
 const loading = computed<boolean>(() => {
-  return registrationStore.isLoading;
+  return registrationStore.isLoading || campDetailsStore.isLoading;
 });
 
 const registrations = computed<Registration[]>(() => {
@@ -216,13 +222,17 @@ function getAttachmentErrorTranslated(entity: QRejectedEntry): string {
     case 'max-files':
       return t('error.attachment.maxFiles');
     default:
-      return 'error.attachment.default';
+      return t('error.attachment.default');
   }
 }
 
 async function send() {
   const campId = campDetailsStore.data?.id;
   if (!campId) {
+    quasar.notify({
+      type: 'negative',
+      message: t('error.campNotLoaded'),
+    });
     return;
   }
 
@@ -265,6 +275,8 @@ function reset() {
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
+  replyTo.value = undefined;
+  attachments.value = [];
 
   formRef.value?.resetValidation();
 }
@@ -275,8 +287,11 @@ function reset() {
 <i18n lang="yaml" locale="en">
 action:
   send: 'Send'
+  showMore: 'Show more'
+  showLess: 'Show less'
 
 error:
+  campNotLoaded: 'Camp details could not be loaded. Please reload the page.'
   attachment:
     ongoing: 'Waiting for file uploads to finish. Please try again later.'
     default: 'File not allowed'
@@ -294,6 +309,8 @@ input:
   replyTo:
     label: 'Reply To:'
     required: 'A reply-to address is required'
+    rule:
+      invalid: 'Please enter a valid email address'
   subject:
     label: 'Subject:'
     rule:
@@ -315,7 +332,13 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+action:
+  send: 'Senden'
+  showMore: 'Mehr anzeigen'
+  showLess: 'Weniger anzeigen'
+
 error:
+  campNotLoaded: 'Camp-Details konnten nicht geladen werden. Bitte Seite neu laden.'
   attachment:
     ongoing: 'Warten auf den Abschluss des Datei-Uploads. Bitte später erneut versuchen.'
     default: 'Datei nicht erlaubt'
@@ -333,6 +356,8 @@ input:
   replyTo:
     label: 'Antwort an:'
     required: 'Eine Antwortadresse ist erforderlich'
+    rule:
+      invalid: 'Bitte gib eine gültige E-Mail-Adresse ein'
   subject:
     label: 'Betreff:'
     rule:
@@ -354,7 +379,13 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+action:
+  send: 'Envoyer'
+  showMore: 'Afficher plus'
+  showLess: 'Afficher moins'
+
 error:
+  campNotLoaded: "Les détails du camp n'ont pas pu être chargés. Veuillez recharger la page."
   attachment:
     ongoing: 'En attente de la fin du téléchargement des fichiers. Veuillez réessayer plus tard.'
     default: 'Fichier non autorisé'
@@ -372,6 +403,8 @@ input:
   replyTo:
     label: 'Répondre à:'
     required: 'Une adresse de réponse est requise'
+    rule:
+      invalid: 'Veuillez entrer une adresse e-mail valide'
   subject:
     label: 'Objet:'
     rule:
@@ -395,8 +428,11 @@ request:
 <i18n lang="yaml" locale="pl">
 action:
   send: 'Wyślij'
+  showMore: 'Pokaż więcej'
+  showLess: 'Pokaż mniej'
 
 error:
+  campNotLoaded: 'Nie udało się załadować danych obozu. Proszę odświeżyć stronę.'
   attachment:
     ongoing: 'Oczekiwanie na zakończenie przesyłania plików. Spróbuj ponownie później.'
     default: 'Plik niedozwolony'
@@ -414,6 +450,8 @@ input:
   replyTo:
     label: 'Odpowiedź do:'
     required: 'Adres do odpowiedzi jest wymagany'
+    rule:
+      invalid: 'Proszę wprowadzić poprawny adres e-mail'
   subject:
     label: 'Temat:'
     rule:
@@ -437,8 +475,11 @@ request:
 <i18n lang="yaml" locale="cs">
 action:
   send: 'Odeslat'
+  showMore: 'Zobrazit více'
+  showLess: 'Zobrazit méně'
 
 error:
+  campNotLoaded: 'Nepodařilo se načíst údaje o táboře. Prosím obnovte stránku.'
   attachment:
     ongoing: 'Čeká se na dokončení nahrávání souborů. Zkuste to prosím později.'
     default: 'Soubor není povolen'
@@ -456,6 +497,8 @@ input:
   replyTo:
     label: 'Odpovědět na:'
     required: 'Adresa pro odpověď je povinná'
+    rule:
+      invalid: 'Prosím zadejte platnou e-mailovou adresu'
   subject:
     label: 'Předmět:'
     rule:
