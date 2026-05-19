@@ -52,7 +52,8 @@ const ALLOWED_STYLES: sanitizeHtml.IOptions['allowedStyles'] = {
     color: COLOR_RE,
     'background-color': COLOR_RE,
     'text-align': [/^(left|right|center|justify)$/],
-    'font-size': [/^\d{1,4}(?:\.\d{1,3})?(?:px|em|rem|%|pt)$/],
+    // eslint-disable-next-line security/detect-unsafe-regex
+    'font-size': [/^(?:0|[1-9][0-9]{0,3})(?:\.[0-9]{1,3})?(?:px|pt|%|r?em)$/u],
     'font-weight': [/^(bold|normal|[1-9]00)$/],
     'font-style': [/^(italic|normal|oblique)$/],
     'text-decoration': [
