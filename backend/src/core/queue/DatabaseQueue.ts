@@ -170,8 +170,6 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
         await this.processJob(job);
       } catch (error) {
-        console.trace(error);
-
         errorSleepMs =
           errorSleepMs === 0
             ? this.minErrorBackoffMs
