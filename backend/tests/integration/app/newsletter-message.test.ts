@@ -306,7 +306,11 @@ describe(`${BASE}/:newsletterId/messages`, () => {
       await request()
         .post(`${BASE}/${newsletter.id}/messages`)
         .setSessionId(sessionId)
-        .send({ subject: 'Hello', body: '<p>World</p>', attachmentIds: [fileBody.data.id] })
+        .send({
+          subject: 'Hello',
+          body: '<p>World</p>',
+          attachmentIds: [fileBody.data.id],
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -432,11 +436,17 @@ describe(`${BASE}/:newsletterId/messages`, () => {
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/messages`)
         .setSessionId(sessionId)
-        .send({ subject: 'Hello', body: '<p>World</p>', attachmentIds: [fileBody.data.id] })
+        .send({
+          subject: 'Hello',
+          body: '<p>World</p>',
+          attachmentIds: [fileBody.data.id],
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      const file = await prisma.file.findUnique({ where: { id: fileBody.data.id } });
+      const file = await prisma.file.findUnique({
+        where: { id: fileBody.data.id },
+      });
       expect(file?.newsletterMessageId).toBe(body.data.id);
     });
 
