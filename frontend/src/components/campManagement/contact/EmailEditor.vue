@@ -4,7 +4,7 @@
     dense
     class="email-editor"
     :class="singleLine ? '' : 'email-editor__multiline'"
-    @click="onFieldClick"
+    @focus="onFieldClick"
   >
     <template #control="{ focused }">
       <transition name="fade">
@@ -308,6 +308,7 @@ import Variable, {
 
 const quasar = useQuasar();
 const { t } = useI18n();
+const attrs = useAttrs();
 
 const model = defineModel<string>({
   required: true,
@@ -426,6 +427,7 @@ function getEditorValue(editor: Editor) {
 function wrapTemplateVariables(html: string): string {
   // This regex matches patterns like {{ some.variable }}
   const regex = /(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})/g;
+
   return html.replace(regex, '<span data-variable>$1</span>');
 }
 
@@ -436,8 +438,6 @@ function unwrapTemplateVariables(html: string): string {
 
   return html.replace(regex, '$1');
 }
-
-const attrs = useAttrs();
 
 watch(
   () => attrs.disable as boolean | undefined,

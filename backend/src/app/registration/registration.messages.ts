@@ -30,6 +30,17 @@ function dateToString(date: Date | string | null): string | null {
   return typeof date === 'string' ? date : date.toISOString();
 }
 
+function formatDate(date: Date | string | null, locale: string): string | null {
+  if (date === null) {
+    return null;
+  }
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }).format(d);
+}
+
 abstract class RegistrationMessage<
   T extends {
     registration: Registration;
@@ -218,6 +229,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         contactEmail: translateObject(camp.contactEmail, locale),
         maxParticipants: translateObject(camp.maxParticipants, locale),
         location: translateObject(camp.location, locale),
+        // Format dates using the registration's full locale
+        startAt: formatDate(camp.startAt, this.locale()),
+        endAt: formatDate(camp.endAt, this.locale()),
       },
       registration: {
         id: this.payload.registration.id,

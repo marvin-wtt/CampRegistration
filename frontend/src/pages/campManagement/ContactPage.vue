@@ -45,7 +45,25 @@
             rounded
             dense
             class="col"
-          />
+          >
+            <template
+              v-if="suggestedReplyTo && suggestedReplyTo !== replyTo"
+              #append
+            >
+              <q-btn
+                icon="autorenew"
+                size="xs"
+                flat
+                round
+                :disable="sendInProgress"
+                @click.stop="replyTo = suggestedReplyTo"
+              >
+                <q-tooltip>
+                  {{ t('input.replyTo.suggestion', { email: suggestedReplyTo }) }}
+                </q-tooltip>
+              </q-btn>
+            </template>
+          </q-input>
 
           <q-select
             v-model="priority"
@@ -103,11 +121,10 @@
         outlined
       />
 
-      <!-- ── Footer: attachments · priority · send ── -->
-      <!-- File input grows from its content width (flex-shrink:0) so when chips
-           push it past the available space it wraps to its own row; the
-           priority+send pair follows on the next line, right-aligned. -->
-      <div class="row items-center q-gutter-xs" style="flex-wrap: wrap">
+      <div
+        class="row items-center q-gutter-xs"
+        style="flex-wrap: wrap"
+      >
         <file-input
           v-model="attachments"
           :label="t('input.attachments')"
@@ -173,11 +190,52 @@ onMounted(async () => {
     campDetailsStore.fetchData(),
     registrationStore.fetchData(),
   ]);
+  replyTo.value = defaultReplyTo();
 });
 
 const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
 const replyTo = ref<string>('');
+const suggestedReplyTo = computed(() => defaultReplyTo());
+
+const recipientCountries = computed(() => {
+  const extractRegistrationCountry = (r: Registration) => {
+    return r.computedData.address.country;
+  };
+
+  return to.value
+    .flatMap((contact) =>
+      contact.type === 'group'
+        ? contact.registrations.map(extractRegistrationCountry)
+        : [extractRegistrationCountry(contact.registration)],
+    )
+    .filter((c): c is string => c != null);
+});
+
+function defaultReplyTo(): string {
+  const contactEmail = campDetailsStore.data?.contactEmail;
+  if (!contactEmail) {
+    return '';
+  }
+  if (typeof contactEmail === 'string') {
+    return contactEmail;
+  }
+
+  const countries = recipientCountries.value;
+  if (countries.length > 0) {
+    const freq = new Map<string, number>();
+    for (const c of countries) {
+      freq.set(c, (freq.get(c) ?? 0) + 1);
+    }
+    const dominant = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]![0];
+    if (contactEmail[dominant]) {
+      return contactEmail[dominant];
+    }
+  }
+
+  return Object.values(contactEmail)[0] ?? '';
+}
+
 const subject = ref<string>('');
 const attachments = ref<FileInputModel[]>([]);
 const priority = ref<'high' | 'normal' | 'low'>('normal');
@@ -328,7 +386,7 @@ function reset() {
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
-  replyTo.value = '';
+  replyTo.value = defaultReplyTo();
   attachments.value = [];
 
   void nextTick(() => formRef.value?.resetValidation());
@@ -365,6 +423,7 @@ input:
   replyTo:
     label: 'Reply To'
     required: 'A reply-to address is required'
+    suggestion: 'Use suggested address: {email}'
     rule:
       invalid: 'Please enter a valid email address'
   subject:
@@ -411,6 +470,7 @@ input:
   replyTo:
     label: 'Antwort an'
     required: 'Eine Antwortadresse ist erforderlich'
+    suggestion: 'Vorschlag verwenden: {email}'
     rule:
       invalid: 'Bitte gib eine gültige E-Mail-Adresse ein'
   subject:
@@ -457,6 +517,7 @@ input:
   replyTo:
     label: 'Répondre à'
     required: 'Une adresse de réponse est requise'
+    suggestion: 'Utiliser l''adresse suggérée : {email}'
     rule:
       invalid: 'Veuillez entrer une adresse e-mail valide'
   subject:
@@ -503,6 +564,7 @@ input:
   replyTo:
     label: 'Odpowiedź do'
     required: 'Adres do odpowiedzi jest wymagany'
+    suggestion: 'Użyj sugerowanego adresu: {email}'
     rule:
       invalid: 'Proszę wprowadzić poprawny adres e-mail'
   subject:
@@ -549,6 +611,7 @@ input:
   replyTo:
     label: 'Odpovědět na'
     required: 'Adresa pro odpověď je povinná'
+    suggestion: 'Použít navrhovanou adresu: {email}'
     rule:
       invalid: 'Prosím zadejte platnou e-mailovou adresu'
   subject:
