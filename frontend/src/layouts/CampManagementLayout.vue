@@ -193,7 +193,6 @@ const items: NavigationItemProps[] = [
   },
   {
     name: 'contact',
-    preview: true,
     label: t('contact'),
     icon: 'send',
     permission: 'camp.messages.create',

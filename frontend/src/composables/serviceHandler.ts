@@ -150,7 +150,7 @@ export function useErrorExtractor() {
 
 export function useServiceNotifications(storeName?: string) {
   const { t } = useI18n({
-    useScope: 'global',
+    useScope: storeName ? 'global' : 'local',
   });
   const quasar = useQuasar();
   const { extractErrorText } = useErrorExtractor();

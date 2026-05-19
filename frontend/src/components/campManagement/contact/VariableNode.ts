@@ -112,13 +112,13 @@ const Variable = Node.create<VariableOptions>({
 
       if (category) {
         const categoryEl = document.createElement('span');
-        categoryEl.innerHTML = category;
+        categoryEl.textContent = category;
         categoryEl.classList.add('variable-category');
         dom.append(categoryEl);
       }
 
       const labelEl = document.createElement('span');
-      labelEl.innerHTML = label ?? value;
+      labelEl.textContent = label ?? value;
       labelEl.classList.add('variable-label');
       dom.append(labelEl);
 

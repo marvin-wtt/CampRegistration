@@ -12,6 +12,7 @@ export class FileResource extends JsonResource<File, FileResourceData> {
       type: this.data.type,
       size: this.data.size,
       accessLevel: this.data.accessLevel,
+      uploadStatus: this.data.uploadStatus,
       createdAt: this.data.createdAt.toISOString(),
       url: `${config.origin}/api/v1/files/${this.data.id}`,
     };
