@@ -130,7 +130,10 @@ const campOptions = computed(() => {
 });
 
 const selectedCampCountries = computed<string[]>(() => {
-  if (!campId.value) return [];
+  if (!campId.value) {
+    return [];
+  }
+
   return (
     assignedCampsStore.data?.find((c) => c.id === campId.value)?.countries ?? []
   );

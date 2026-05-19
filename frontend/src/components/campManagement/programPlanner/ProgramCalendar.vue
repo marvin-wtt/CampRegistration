@@ -386,8 +386,14 @@ const viewBoth = computed<boolean>(() => activePlan.value === 'both');
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
   return events
     .filter((event) => {
-      if (event.date == null) return false;
-      if (activePlan.value === 'both') return true;
+      if (event.date == null) {
+        return false;
+      }
+
+      if (activePlan.value === 'both') {
+        return true;
+      }
+
       return event.plan === activePlan.value || event.plan === 'both';
     })
     .reduce(
@@ -642,7 +648,9 @@ function onBodyMouseDown(
   };
 
   const onMove = (ev: MouseEvent) => {
-    if (!dragSelection.value) return;
+    if (!dragSelection.value) {
+      return;
+    }
     const end = yToSnapped(ev.clientY);
     dragSelection.value = {
       ...dragSelection.value,
@@ -656,7 +664,9 @@ function onBodyMouseDown(
   const onUp = () => {
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
-    if (!dragSelection.value) return;
+    if (!dragSelection.value) {
+      return;
+    }
     const { date, startMinutes, endMinutes } = dragSelection.value;
     dragSelection.value = null;
     const time = `${String(Math.floor(startMinutes / 60)).padStart(2, '0')}:${String(startMinutes % 60).padStart(2, '0')}`;

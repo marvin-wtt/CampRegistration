@@ -608,7 +608,10 @@ const error = computed<string | null>(
 
 const filteredSubscribers = computed<NewsletterSubscriber[]>(() => {
   const query = subscriberFilter.value?.trim().toLowerCase();
-  if (!query) return subscribers.value;
+  if (!query) {
+    return subscribers.value;
+  }
+
   return subscribers.value.filter(
     (s) =>
       s.email.toLowerCase().includes(query) ||
