@@ -5,286 +5,288 @@
   >
     <div class="absolute fit row no-wrap justify-center q-pa-md">
       <div class="column no-wrap col-sm-11 col-md-10 col-lg-9 col-12">
-      <!-- Header -->
-      <div class="row items-start justify-between no-wrap q-mb-lg">
-        <div class="col">
-          <div
-            class="text-overline text-grey-6 text-uppercase letter-spacing-1"
-          >
-            {{ t('header.label') }}
-          </div>
-          <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
-          <div
-            v-if="newsletter?.description"
-            class="text-body2 text-grey-6 q-mt-xs"
-          >
-            {{ newsletter.description }}
-          </div>
-          <div
-            v-if="newsletter?.replyTo"
-            class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
-          >
-            <q-icon
-              name="reply"
-              size="xs"
-            />
-            <span>{{ newsletter.replyTo }}</span>
-          </div>
-          <div
-            class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
-          >
-            <div class="row items-center q-gutter-x-xs">
+        <!-- Header -->
+        <div class="row items-start justify-between no-wrap q-mb-lg">
+          <div class="col">
+            <div
+              class="text-overline text-grey-6 text-uppercase letter-spacing-1"
+            >
+              {{ t('header.label') }}
+            </div>
+            <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
+            <div
+              v-if="newsletter?.description"
+              class="text-body2 text-grey-6 q-mt-xs"
+            >
+              {{ newsletter.description }}
+            </div>
+            <div
+              v-if="newsletter?.replyTo"
+              class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
+            >
               <q-icon
-                name="people"
+                name="reply"
                 size="xs"
               />
-              <span>{{
-                t('header.subscribers', { count: subscribers.length })
-              }}</span>
+              <span>{{ newsletter.replyTo }}</span>
             </div>
-            <div class="row items-center q-gutter-x-xs">
-              <q-icon
-                name="send"
-                size="xs"
-              />
-              <span>{{ t('header.sent', { count: messages.length }) }}</span>
+            <div
+              class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
+            >
+              <div class="row items-center q-gutter-x-xs">
+                <q-icon
+                  name="people"
+                  size="xs"
+                />
+                <span>{{
+                  t('header.subscribers', { count: subscribers.length })
+                }}</span>
+              </div>
+              <div class="row items-center q-gutter-x-xs">
+                <q-icon
+                  name="send"
+                  size="xs"
+                />
+                <span>{{ t('header.sent', { count: messages.length }) }}</span>
+              </div>
             </div>
           </div>
+          <q-btn
+            flat
+            round
+            icon="edit"
+            color="grey-7"
+            class="q-mt-sm"
+            @click="showEditDialog"
+          >
+            <q-tooltip>{{ t('header.edit') }}</q-tooltip>
+          </q-btn>
         </div>
-        <q-btn
-          flat
-          round
-          icon="edit"
-          color="grey-7"
-          class="q-mt-sm"
-          @click="showEditDialog"
-        >
-          <q-tooltip>{{ t('header.edit') }}</q-tooltip>
-        </q-btn>
-      </div>
 
-      <!-- Tabs -->
-      <div class="column no-wrap col newsletter-tabs">
-        <q-tabs
-          v-model="tab"
-          align="left"
-          no-caps
-          indicator-color="primary"
-          class="q-mb-none"
-        >
-          <q-tab
-            name="compose"
-            :label="t('tab.compose')"
-            icon="edit_note"
-          />
-          <q-tab
-            name="history"
-            :label="t('tab.history')"
-            icon="history"
-          />
-          <q-tab
-            name="subscribers"
-            :label="t('tab.subscribers')"
-            icon="people"
-          />
-          <q-tab
-            name="managers"
-            :label="t('tab.managers')"
-            icon="manage_accounts"
-          />
-        </q-tabs>
-        <q-separator />
-
-        <q-tab-panels
-          v-model="tab"
-          animated
-          class="col bg-transparent newsletter-panels"
-        >
-          <!-- Compose Tab -->
-          <q-tab-panel
-            name="compose"
-            class="q-pa-none q-pt-lg"
-            style="overflow-y: auto"
+        <!-- Tabs -->
+        <div class="column no-wrap col newsletter-tabs">
+          <q-tabs
+            v-model="tab"
+            align="left"
+            no-caps
+            indicator-color="primary"
+            class="q-mb-none"
           >
-            <div class="q-gutter-y-md">
-              <q-input
-                v-model="sendSubject"
-                :label="t('compose.subject')"
-                outlined
-                rounded
-                clearable
-              >
-                <template #before>
-                  <q-icon name="subject" />
-                </template>
-              </q-input>
+            <q-tab
+              name="compose"
+              :label="t('tab.compose')"
+              icon="edit_note"
+            />
+            <q-tab
+              name="history"
+              :label="t('tab.history')"
+              icon="history"
+            />
+            <q-tab
+              name="subscribers"
+              :label="t('tab.subscribers')"
+              icon="people"
+            />
+            <q-tab
+              name="managers"
+              :label="t('tab.managers')"
+              icon="manage_accounts"
+            />
+          </q-tabs>
+          <q-separator />
 
-              <div>
-                <div class="text-caption text-grey-7 q-mb-xs q-ml-sm">
-                  {{ t('compose.body') }}
-                </div>
-                <email-editor
-                  v-model="sendBody"
-                  :placeholder="t('compose.bodyPlaceholder')"
+          <q-tab-panels
+            v-model="tab"
+            animated
+            class="col bg-transparent newsletter-panels"
+          >
+            <!-- Compose Tab -->
+            <q-tab-panel
+              name="compose"
+              class="q-pa-none q-pt-lg"
+              style="overflow-y: auto"
+            >
+              <div class="q-gutter-y-md">
+                <q-input
+                  v-model="sendSubject"
+                  :label="t('compose.subject')"
                   outlined
                   rounded
-                  style="min-height: 200px"
-                />
-              </div>
+                  clearable
+                >
+                  <template #before>
+                    <q-icon name="subject" />
+                  </template>
+                </q-input>
 
-              <file-input
-                v-model="sendAttachments"
-                :label="t('compose.attachments')"
-                outlined
-                rounded
-              >
-                <template #before>
-                  <q-icon name="attach_file" />
-                </template>
-              </file-input>
-
-              <div class="row justify-between items-center q-pt-sm">
-                <div class="text-body2 text-grey-6">
-                  <q-icon
-                    name="info_outline"
-                    size="xs"
-                    class="q-mr-xs"
+                <div>
+                  <div class="text-caption text-grey-7 q-mb-xs q-ml-sm">
+                    {{ t('compose.body') }}
+                  </div>
+                  <email-editor
+                    v-model="sendBody"
+                    :placeholder="t('compose.bodyPlaceholder')"
+                    outlined
+                    rounded
+                    style="min-height: 200px"
                   />
-                  {{
-                    t('compose.recipientInfo', { count: subscribers.length })
-                  }}
                 </div>
-                <q-btn
-                  color="primary"
-                  icon="send"
-                  :label="t('compose.send')"
-                  :disable="
-                    !sendSubject || !sendBody || subscribers.length === 0
-                  "
+
+                <file-input
+                  v-model="sendAttachments"
+                  :label="t('compose.attachments')"
+                  outlined
                   rounded
-                  unelevated
-                  no-caps
-                  @click="confirmSend"
-                />
-              </div>
-            </div>
-          </q-tab-panel>
+                >
+                  <template #before>
+                    <q-icon name="attach_file" />
+                  </template>
+                </file-input>
 
-          <!-- History Tab -->
-          <q-tab-panel
-            name="history"
-            class="q-pa-none q-pt-lg"
-            style="overflow-y: auto"
-          >
-            <div
-              v-if="messageStore.isLoading"
-              class="q-gutter-y-sm"
-            >
-              <q-skeleton
-                v-for="i in 3"
-                :key="i"
-                height="60px"
-                class="rounded-borders"
-              />
-            </div>
-
-            <div
-              v-else-if="messages.length === 0"
-              class="column items-center q-pa-xl q-gutter-sm"
-            >
-              <q-icon
-                name="mark_email_unread"
-                size="4rem"
-                color="grey-4"
-              />
-              <div class="text-subtitle2 text-grey-6">
-                {{ t('history.empty') }}
-              </div>
-              <div class="text-body2 text-grey-5 text-center">
-                {{ t('history.emptyHint') }}
-              </div>
-            </div>
-
-            <q-list
-              v-else
-              bordered
-              separator
-              class="rounded-borders list-scroll"
-            >
-              <q-expansion-item
-                v-for="message in messages"
-                :key="message.id"
-                expand-separator
-              >
-                <template #header>
-                  <q-item-section avatar>
-                    <q-avatar
-                      color="primary"
-                      text-color="white"
-                      size="36px"
-                      icon="email"
+                <div class="row justify-between items-center q-pt-sm">
+                  <div class="text-body2 text-grey-6">
+                    <q-icon
+                      name="info_outline"
+                      size="xs"
+                      class="q-mr-xs"
                     />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="text-weight-medium">
-                      {{ message.subject }}
-                    </q-item-label>
-                    <q-item-label caption>
-                      {{ d(message.sentAt, 'dateTime') }}
-                      <span v-if="message.sentBy">
-                        &middot; {{ message.sentBy.name }}
-                      </span>
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <div class="row items-center q-gutter-xs no-wrap">
-                      <q-chip
-                        dense
-                        outline
-                        icon="people"
-                        :label="String(message.recipientCount)"
-                        color="grey-6"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="forward"
-                        size="sm"
-                        @click.stop="useAsTemplate(message)"
-                      >
-                        <q-tooltip>{{ t('history.useAsTemplate') }}</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="delete_outline"
-                        color="negative"
-                        size="sm"
-                        @click.stop="deleteMessage(message)"
-                      >
-                        <q-tooltip>{{ t('history.delete') }}</q-tooltip>
-                      </q-btn>
-                    </div>
-                  </q-item-section>
-                </template>
+                    {{
+                      t('compose.recipientInfo', { count: subscribers.length })
+                    }}
+                  </div>
+                  <q-btn
+                    color="primary"
+                    icon="send"
+                    :label="t('compose.send')"
+                    :disable="
+                      !sendSubject || !sendBody || subscribers.length === 0
+                    "
+                    rounded
+                    unelevated
+                    no-caps
+                    @click="confirmSend"
+                  />
+                </div>
+              </div>
+            </q-tab-panel>
 
-                <q-separator />
-                <div
-                  class="q-pa-md newsletter-preview"
-                  v-html="message.body"
+            <!-- History Tab -->
+            <q-tab-panel
+              name="history"
+              class="q-pa-none q-pt-lg"
+              style="overflow-y: auto"
+            >
+              <div
+                v-if="messageStore.isLoading"
+                class="q-gutter-y-sm"
+              >
+                <q-skeleton
+                  v-for="i in 3"
+                  :key="i"
+                  height="60px"
+                  class="rounded-borders"
                 />
-              </q-expansion-item>
-            </q-list>
-          </q-tab-panel>
+              </div>
 
-          <!-- Subscribers Tab -->
-          <q-tab-panel
-            name="subscribers"
-            class="q-pa-none column no-wrap"
-            style="overflow: hidden"
-          >
+              <div
+                v-else-if="messages.length === 0"
+                class="column items-center q-pa-xl q-gutter-sm"
+              >
+                <q-icon
+                  name="mark_email_unread"
+                  size="4rem"
+                  color="grey-4"
+                />
+                <div class="text-subtitle2 text-grey-6">
+                  {{ t('history.empty') }}
+                </div>
+                <div class="text-body2 text-grey-5 text-center">
+                  {{ t('history.emptyHint') }}
+                </div>
+              </div>
+
+              <q-list
+                v-else
+                bordered
+                separator
+                class="rounded-borders list-scroll"
+              >
+                <q-expansion-item
+                  v-for="message in messages"
+                  :key="message.id"
+                  expand-separator
+                >
+                  <template #header>
+                    <q-item-section avatar>
+                      <q-avatar
+                        color="primary"
+                        text-color="white"
+                        size="36px"
+                        icon="email"
+                      />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">
+                        {{ message.subject }}
+                      </q-item-label>
+                      <q-item-label caption>
+                        {{ d(message.sentAt, 'dateTime') }}
+                        <span v-if="message.sentBy">
+                          &middot; {{ message.sentBy.name }}
+                        </span>
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <div class="row items-center q-gutter-xs no-wrap">
+                        <q-chip
+                          dense
+                          outline
+                          icon="people"
+                          :label="String(message.recipientCount)"
+                          color="grey-6"
+                        />
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="forward"
+                          size="sm"
+                          @click.stop="useAsTemplate(message)"
+                        >
+                          <q-tooltip>{{
+                            t('history.useAsTemplate')
+                          }}</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete_outline"
+                          color="negative"
+                          size="sm"
+                          @click.stop="deleteMessage(message)"
+                        >
+                          <q-tooltip>{{ t('history.delete') }}</q-tooltip>
+                        </q-btn>
+                      </div>
+                    </q-item-section>
+                  </template>
+
+                  <q-separator />
+                  <div
+                    class="q-pa-md newsletter-preview"
+                    v-html="message.body"
+                  />
+                </q-expansion-item>
+              </q-list>
+            </q-tab-panel>
+
+            <!-- Subscribers Tab -->
+            <q-tab-panel
+              name="subscribers"
+              class="q-pa-none column no-wrap"
+              style="overflow: hidden"
+            >
               <!-- Toolbar + Search -->
               <div class="row items-center q-gutter-sm q-mb-md q-mt-lg">
                 <q-input
@@ -448,76 +450,76 @@
                   />
                 </template>
               </q-virtual-scroll>
-          </q-tab-panel>
+            </q-tab-panel>
 
-          <!-- Managers Tab -->
-          <q-tab-panel
-            name="managers"
-            class="q-pa-none q-pt-lg"
-            style="overflow-y: auto"
-          >
-            <div class="row justify-end q-mb-md">
-              <q-btn
-                color="primary"
-                icon="person_add"
-                :label="t('managers.action.add')"
-                rounded
-                unelevated
-                no-caps
-                @click="showAddManagerDialog"
-              />
-            </div>
-
-            <q-list
-              bordered
-              separator
-              class="rounded-borders list-scroll"
+            <!-- Managers Tab -->
+            <q-tab-panel
+              name="managers"
+              class="q-pa-none q-pt-lg"
+              style="overflow-y: auto"
             >
-              <q-item
-                v-for="manager in managers"
-                :key="manager.id"
+              <div class="row justify-end q-mb-md">
+                <q-btn
+                  color="primary"
+                  icon="person_add"
+                  :label="t('managers.action.add')"
+                  rounded
+                  unelevated
+                  no-caps
+                  @click="showAddManagerDialog"
+                />
+              </div>
+
+              <q-list
+                bordered
+                separator
+                class="rounded-borders list-scroll"
               >
-                <q-item-section avatar>
-                  <q-avatar
-                    color="primary"
-                    text-color="white"
-                    size="36px"
-                  >
-                    {{
-                      manager.name?.charAt(0).toUpperCase() ??
-                      manager.email.charAt(0).toUpperCase()
-                    }}
-                  </q-avatar>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    {{ manager.name ?? manager.email }}
-                  </q-item-label>
-                  <q-item-label
-                    v-if="manager.name"
-                    caption
-                  >
-                    {{ manager.email }}
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section
-                  v-if="manager.email !== userEmail"
-                  side
+                <q-item
+                  v-for="manager in managers"
+                  :key="manager.id"
                 >
-                  <q-btn
-                    flat
-                    round
-                    icon="person_remove"
-                    color="negative"
-                    size="sm"
-                    @click="showDeleteManagerDialog(manager)"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-tab-panel>
-        </q-tab-panels>
-      </div>
+                  <q-item-section avatar>
+                    <q-avatar
+                      color="primary"
+                      text-color="white"
+                      size="36px"
+                    >
+                      {{
+                        manager.name?.charAt(0).toUpperCase() ??
+                        manager.email.charAt(0).toUpperCase()
+                      }}
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>
+                      {{ manager.name ?? manager.email }}
+                    </q-item-label>
+                    <q-item-label
+                      v-if="manager.name"
+                      caption
+                    >
+                      {{ manager.email }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section
+                    v-if="manager.email !== userEmail"
+                    side
+                  >
+                    <q-btn
+                      flat
+                      round
+                      icon="person_remove"
+                      color="negative"
+                      size="sm"
+                      @click="showDeleteManagerDialog(manager)"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-tab-panel>
+          </q-tab-panels>
+        </div>
       </div>
     </div>
   </page-state-handler>

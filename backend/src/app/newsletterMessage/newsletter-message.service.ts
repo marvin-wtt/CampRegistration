@@ -41,7 +41,10 @@ export class NewsletterMessageService extends BaseService {
         recipientCount: data.recipientCount,
         sentByUserId: data.sentByUserId,
         attachments: data.attachmentIds?.length
-          ? this.fileService.getFileConnectInput(data.attachmentIds, data.sessionId)
+          ? this.fileService.getFileConnectInput(
+              data.attachmentIds,
+              data.sessionId,
+            )
           : undefined,
       },
       include: {
