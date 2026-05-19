@@ -221,7 +221,7 @@ model File {
   registrationId      String?      @map("registration_id") @db.Char(26) // Prisma does not support morth
   messageId           String?      @map("message_id") @db.Char(26) // Prisma does not support morth
   messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
-  newsletterMessageId String?  @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
+  newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
   name                String
   originalName        String       @map("original_name")
   field               String?
@@ -229,7 +229,7 @@ model File {
   size                Int
   accessLevel         String?      @map("access_level")
   storageLocation     String       @map("storage_location")
-  uploadStatus      UploadStatus @default(READY) @map("upload_status")
+  uploadStatus        UploadStatus @default(READY) @map("upload_status")
   createdAt           DateTime     @default(now()) @map("created_at")
 
   camp              Camp?              @relation(fields: [campId], references: [id], onDelete: SetNull)
