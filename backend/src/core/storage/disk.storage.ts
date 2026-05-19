@@ -1,9 +1,8 @@
-import type { Storage } from '#core/storage/storage';
+import type { Storage, StorageFile } from '#core/storage/storage';
 import fse from 'fs-extra';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import type { File } from '#generated/prisma/client.js';
 import path from 'path';
 
 export class DiskStorage implements Storage {
@@ -50,7 +49,7 @@ export class DiskStorage implements Storage {
     return fse.readdir(this.storageDir);
   }
 
-  stream(file: File) {
+  stream(file: StorageFile) {
     const filePath = this.safeJoinFilePath(this.storageDir, file.name);
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename

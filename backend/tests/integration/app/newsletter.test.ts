@@ -170,7 +170,7 @@ describe(BASE, () => {
 
     it('should respond with `401` when not an admin', async () => {
       const user = await UserFactory.create({
-        role: 'ADMIN',
+        role: 'USER',
       });
       const accessToken = generateAccessToken(user);
 

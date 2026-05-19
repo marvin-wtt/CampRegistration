@@ -55,9 +55,7 @@ export class NewsletterMessageController extends BaseController {
         replyTo: newsletter.replyTo ?? undefined,
         newsletterId: newsletter.id,
         unsubscribeToken: subscriber.unsubscribeToken,
-        attachmentIds: body.attachmentIds?.length
-          ? body.attachmentIds
-          : undefined,
+        attachmentIds: message.attachments,
       })),
     );
 

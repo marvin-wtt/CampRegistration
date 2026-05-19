@@ -13,6 +13,7 @@ import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config/index';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
+import { StorageFile } from '#core/storage/storage';
 
 type RequestFile = Express.Multer.File;
 
@@ -242,7 +243,7 @@ export class FileService extends BaseService {
     });
   }
 
-  getFileStream(file: File) {
+  getFileStream(file: StorageFile) {
     return this.storageRegistry.getStorage(file.storageLocation).stream(file);
   }
 
