@@ -168,7 +168,7 @@ describe(BASE, () => {
       await request().post(BASE).send({ name: 'Test' }).expect(401);
     });
 
-    it('should respond with `401` when not an admin', async () => {
+    it('should respond with `403` when not an admin', async () => {
       const user = await UserFactory.create({
         role: 'USER',
       });
