@@ -19,6 +19,7 @@ import Handlebars from 'handlebars';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
 import { MessageService } from '#app/message/message.service';
+import { FileService } from '#app/file/file.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 
@@ -246,6 +247,21 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         createdAt: dateToString(this.payload.registration.createdAt),
       },
     };
+  }
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    const files = this.payload.messageTemplate.attachments;
+    if (!files.length) {
+      return [];
+    }
+
+    const fileService = resolve(FileService);
+
+    return files.map((file) => ({
+      filename: file.originalName,
+      content: fileService.getFileStream(file),
+      contentType: file.type,
+    }));
   }
 
   async build(): Promise<BuiltMail> {

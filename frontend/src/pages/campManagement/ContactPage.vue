@@ -6,78 +6,88 @@
   >
     <q-form
       ref="formRef"
-      class="absolute fit column q-gutter-y-sm q-pa-md"
+      class="absolute fit column q-pa-md q-gutter-y-sm"
       @submit="send()"
       @reset="reset()"
     >
-      <contact-select
-        v-model="to"
-        :label="t('input.to.label')"
-        :registrations
-        :rules="[
-          (val?: Contact[]) =>
-            (!!val && val.length > 0) || t('input.to.rule.required'),
-        ]"
-        hide-bottom-space
-        :disable="sendInProgress"
-        outlined
-        rounded
-        dense
-      />
+      <!-- ── Header: recipient + optional fields + subject ── -->
+      <div class="column q-gutter-y-xs">
+        <contact-select
+          v-model="to"
+          :label="t('input.to.label')"
+          :registrations
+          :rules="[
+            (val?: Contact[]) =>
+              (!!val && val.length > 0) || t('input.to.rule.required'),
+          ]"
+          hide-bottom-space
+          :disable="sendInProgress"
+          outlined
+          rounded
+          dense
+        />
 
-      <expand-slide
-        :expand-label="t('action.showMore')"
-        :contract-label="t('action.showLess')"
-      >
-        <div class="row q-mt-none q-gutter-sm">
+        <div class="row items-start q-gutter-x-xs">
           <q-input
             v-model="replyTo"
             type="email"
             :label="t('input.replyTo.label')"
             :rules="[
+              (val?: string) => !!val || t('input.replyTo.required'),
               (val?: string) =>
                 !val ||
                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
                 t('input.replyTo.rule.invalid'),
             ]"
+            hide-bottom-space
             :disable="sendInProgress"
-            class="col-grow"
             outlined
             rounded
             dense
+            class="col"
           />
 
           <q-select
             v-model="priority"
-            :label="t('input.priority')"
             :options="priorityOptions"
             :disable="sendInProgress"
-            class="col-xs-12 col-sm-2"
-            emit-value
-            map-options
             outlined
             rounded
             dense
-          />
+            emit-value
+            map-options
+            class="priority-select"
+          >
+            <template #prepend>
+              <q-icon
+                :name="priorityIcon"
+                :color="priorityColor"
+                size="xs"
+              />
+            </template>
+          </q-select>
         </div>
-      </expand-slide>
 
-      <registration-email-editor
-        v-model="subject"
-        :label="t('input.subject.label')"
-        :form="campDetailsStore.data?.form"
-        :rules="[
-          (val?: string) =>
-            (!!val && val.length > 0) || t('input.subject.rule.required'),
-        ]"
-        hide-bottom-space
-        :disable="sendInProgress"
-        rounded
-        outlined
-        single-line
-        plain-text
-      />
+        <registration-email-editor
+          v-model="subject"
+          :label="t('input.subject.label')"
+          :form="campDetailsStore.data?.form"
+          :rules="[
+            (val?: string) =>
+              (!!val && val.length > 0) || t('input.subject.rule.required'),
+          ]"
+          hide-bottom-space
+          :disable="sendInProgress"
+          rounded
+          outlined
+          single-line
+          plain-text
+        />
+      </div>
 
+      <q-separator />
+
+      <!-- ── Body: message editor fills remaining space ── -->
       <registration-email-editor
         v-model="text"
         :label="t('input.message.label')"
@@ -93,7 +103,11 @@
         outlined
       />
 
-      <div class="row q-gutter-sm justify-between">
+      <!-- ── Footer: attachments · priority · send ── -->
+      <!-- File input grows from its content width (flex-shrink:0) so when chips
+           push it past the available space it wraps to its own row; the
+           priority+send pair follows on the next line, right-aligned. -->
+      <div class="row items-center q-gutter-xs" style="flex-wrap: wrap">
         <file-input
           v-model="attachments"
           :label="t('input.attachments')"
@@ -106,8 +120,7 @@
           outlined
           rounded
           dense
-          class="col-xs-12 col-sm-auto"
-          style="max-width: 600px"
+          style="flex: 1 0 auto; max-width: 100%"
           @rejected="onAttachmentRejected"
         >
           <template #prepend>
@@ -116,13 +129,13 @@
         </file-input>
 
         <q-btn
-          :label="t('action.send')"
+          :label="sendLabel"
           :loading="sendInProgress"
           type="submit"
           icon="send"
           color="primary"
-          class="col-xs-12 col-sm-auto"
           rounded
+          style="margin-left: auto"
         />
       </div>
     </q-form>
@@ -132,14 +145,13 @@
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
 import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from 'components/campManagement/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
-import ExpandSlide from 'components/common/ExpandSlide.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
 import { useServiceNotifications } from 'src/composables/serviceHandler';
@@ -165,7 +177,7 @@ onMounted(async () => {
 
 const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
-const replyTo = ref<string>();
+const replyTo = ref<string>('');
 const subject = ref<string>('');
 const attachments = ref<FileInputModel[]>([]);
 const priority = ref<'high' | 'normal' | 'low'>('normal');
@@ -197,6 +209,47 @@ const loading = computed<boolean>(() => {
 
 const registrations = computed<Registration[]>(() => {
   return registrationStore.data ?? [];
+});
+
+const recipientCount = computed<number>(() => {
+  const ids = new Set<string>();
+  to.value.forEach((contact) => {
+    if (contact.type === 'group') {
+      contact.registrations.forEach((r: Registration) => ids.add(r.id));
+    } else {
+      ids.add(contact.registration.id);
+    }
+  });
+  return ids.size;
+});
+
+const priorityIcon = computed<string>(() => {
+  switch (priority.value) {
+    case 'high':
+      return 'keyboard_double_arrow_up';
+    case 'low':
+      return 'keyboard_double_arrow_down';
+    default:
+      return 'remove';
+  }
+});
+
+const priorityColor = computed<string | undefined>(() => {
+  switch (priority.value) {
+    case 'high':
+      return 'negative';
+    case 'low':
+      return 'grey';
+    default:
+      return undefined;
+  }
+});
+
+const sendLabel = computed<string>(() => {
+  if (recipientCount.value > 0) {
+    return t('action.sendTo', { count: recipientCount.value });
+  }
+  return t('action.send');
 });
 
 function onAttachmentRejected(entities: QRejectedEntry[]) {
@@ -275,20 +328,23 @@ function reset() {
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
-  replyTo.value = undefined;
+  replyTo.value = '';
   attachments.value = [];
 
-  formRef.value?.resetValidation();
+  void nextTick(() => formRef.value?.resetValidation());
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.priority-select {
+  min-width: 110px;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 action:
   send: 'Send'
-  showMore: 'Show more'
-  showLess: 'Show less'
+  sendTo: 'Send ({count})'
 
 error:
   campNotLoaded: 'Camp details could not be loaded. Please reload the page.'
@@ -301,22 +357,22 @@ error:
     maxFileSize: 'File(s) too large. Maximum file size is 20 MB'
 
 input:
-  attachments: 'Attachments:'
+  attachments: 'Attachments'
   message:
-    label: 'Message:'
+    label: 'Message'
     required: 'A message is required'
-  priority: 'Priority:'
+  priority: 'Priority'
   replyTo:
-    label: 'Reply To:'
+    label: 'Reply To'
     required: 'A reply-to address is required'
     rule:
       invalid: 'Please enter a valid email address'
   subject:
-    label: 'Subject:'
+    label: 'Subject'
     rule:
       required: 'A subject is required'
   to:
-    label: 'To:'
+    label: 'To'
     rule:
       required: 'At least one contact is required'
 
@@ -334,8 +390,7 @@ request:
 <i18n lang="yaml" locale="de">
 action:
   send: 'Senden'
-  showMore: 'Mehr anzeigen'
-  showLess: 'Weniger anzeigen'
+  sendTo: 'Senden ({count})'
 
 error:
   campNotLoaded: 'Camp-Details konnten nicht geladen werden. Bitte Seite neu laden.'
@@ -348,22 +403,22 @@ error:
     maxFileSize: 'Datei(en) zu groß. Maximale Dateigröße beträgt 20 MB'
 
 input:
-  attachments: 'Anhänge:'
+  attachments: 'Anhänge'
   message:
-    label: 'Nachricht:'
+    label: 'Nachricht'
     required: 'Eine Nachricht ist erforderlich'
-  priority: 'Priorität:'
+  priority: 'Priorität'
   replyTo:
-    label: 'Antwort an:'
+    label: 'Antwort an'
     required: 'Eine Antwortadresse ist erforderlich'
     rule:
       invalid: 'Bitte gib eine gültige E-Mail-Adresse ein'
   subject:
-    label: 'Betreff:'
+    label: 'Betreff'
     rule:
       required: 'Ein Betreff ist erforderlich'
   to:
-    label: 'An:'
+    label: 'An'
     rule:
       required: 'Mindestens ein Kontakt ist erforderlich'
 
@@ -381,8 +436,7 @@ request:
 <i18n lang="yaml" locale="fr">
 action:
   send: 'Envoyer'
-  showMore: 'Afficher plus'
-  showLess: 'Afficher moins'
+  sendTo: 'Envoyer ({count})'
 
 error:
   campNotLoaded: "Les détails du camp n'ont pas pu être chargés. Veuillez recharger la page."
@@ -395,22 +449,22 @@ error:
     maxFileSize: 'Fichier(s) trop volumineux. La taille maximale est de 20 Mo'
 
 input:
-  attachments: 'Pièces jointes:'
+  attachments: 'Pièces jointes'
   message:
-    label: 'Message:'
+    label: 'Message'
     required: 'Un message est requis'
-  priority: 'Priorité:'
+  priority: 'Priorité'
   replyTo:
-    label: 'Répondre à:'
+    label: 'Répondre à'
     required: 'Une adresse de réponse est requise'
     rule:
       invalid: 'Veuillez entrer une adresse e-mail valide'
   subject:
-    label: 'Objet:'
+    label: 'Objet'
     rule:
       required: 'Un objet est requis'
   to:
-    label: 'À:'
+    label: 'À'
     rule:
       required: 'Au moins un contact est requis'
 
@@ -428,8 +482,7 @@ request:
 <i18n lang="yaml" locale="pl">
 action:
   send: 'Wyślij'
-  showMore: 'Pokaż więcej'
-  showLess: 'Pokaż mniej'
+  sendTo: 'Wyślij ({count})'
 
 error:
   campNotLoaded: 'Nie udało się załadować danych obozu. Proszę odświeżyć stronę.'
@@ -442,22 +495,22 @@ error:
     maxFileSize: 'Plik(i) są zbyt duże. Maksymalny rozmiar pliku to 20 MB'
 
 input:
-  attachments: 'Załączniki:'
+  attachments: 'Załączniki'
   message:
-    label: 'Wiadomość:'
+    label: 'Wiadomość'
     required: 'Wiadomość jest wymagana'
-  priority: 'Priorytet:'
+  priority: 'Priorytet'
   replyTo:
-    label: 'Odpowiedź do:'
+    label: 'Odpowiedź do'
     required: 'Adres do odpowiedzi jest wymagany'
     rule:
       invalid: 'Proszę wprowadzić poprawny adres e-mail'
   subject:
-    label: 'Temat:'
+    label: 'Temat'
     rule:
       required: 'Temat jest wymagany'
   to:
-    label: 'Do:'
+    label: 'Do'
     rule:
       required: 'Wymagany jest co najmniej jeden kontakt'
 
@@ -475,8 +528,7 @@ request:
 <i18n lang="yaml" locale="cs">
 action:
   send: 'Odeslat'
-  showMore: 'Zobrazit více'
-  showLess: 'Zobrazit méně'
+  sendTo: 'Odeslat ({count})'
 
 error:
   campNotLoaded: 'Nepodařilo se načíst údaje o táboře. Prosím obnovte stránku.'
@@ -489,22 +541,22 @@ error:
     maxFileSize: 'Soubor(y) jsou příliš velké. Maximální velikost souboru je 20 MB'
 
 input:
-  attachments: 'Přílohy:'
+  attachments: 'Přílohy'
   message:
-    label: 'Zpráva:'
+    label: 'Zpráva'
     required: 'Zpráva je povinná'
-  priority: 'Priorita:'
+  priority: 'Priorita'
   replyTo:
-    label: 'Odpovědět na:'
+    label: 'Odpovědět na'
     required: 'Adresa pro odpověď je povinná'
     rule:
       invalid: 'Prosím zadejte platnou e-mailovou adresu'
   subject:
-    label: 'Předmět:'
+    label: 'Předmět'
     rule:
       required: 'Předmět je povinný'
   to:
-    label: 'Komu:'
+    label: 'Komu'
     rule:
       required: 'Je vyžadován alespoň jeden kontakt'
 

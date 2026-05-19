@@ -61,7 +61,13 @@ export class MessageController extends BaseController {
 
     const template = await this.messageTemplateService.createTemplate(
       camp.id,
-      { subject, body: sanitizeEmailHtml(body), priority, replyTo, attachmentIds },
+      {
+        subject,
+        body: sanitizeEmailHtml(body),
+        priority,
+        replyTo,
+        attachmentIds,
+      },
       req.sessionId,
     );
 
