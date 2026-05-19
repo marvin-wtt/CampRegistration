@@ -40,7 +40,7 @@ const update = z.object({
     .partial(),
   query: z
     .object({
-      suppressMessage: z.coerce.boolean(),
+      suppressMessage: z.stringbool(),
     })
     .partial(),
 });
@@ -52,7 +52,7 @@ const destroy = z.object({
   }),
   query: z
     .object({
-      suppressMessage: z.coerce.boolean(),
+      suppressMessage: z.stringbool(),
     })
     .partial(),
 });

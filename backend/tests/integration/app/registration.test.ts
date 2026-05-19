@@ -1982,6 +1982,48 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
+      it('should send update email when not suppressed', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            createMany: {
+              data: [
+                MessageTemplateFactory.build({
+                  event: 'registration_canceled',
+                  country: 'us',
+                  subject: 'Oops',
+                }),
+                MessageTemplateFactory.build({
+                  event: 'registration_canceled',
+                  country: 'fr',
+                  subject: 'Registration canceled',
+                }),
+              ],
+            },
+          },
+        });
+        const registration = await RegistrationFactory.create({
+          camp: { connect: { id: camp.id } },
+          emails: ['test@email.com'],
+          country: 'fr',
+        });
+        await request()
+          .delete(
+            `/api/v1/camps/${camp.id}/registrations/${registration.id}?suppressMessage=false`,
+          )
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(204);
+
+        expect(mailer.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'test@email.com',
+            replyTo: camp.contactEmail,
+            subject: 'Registration canceled',
+          }),
+        );
+      });
+
       it('should not send email when suppressed', async () => {
         const { camp, accessToken } = await createCampWithManagerAndToken({
           ...campWithEmail,
