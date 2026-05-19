@@ -94,6 +94,7 @@ export class MessageTemplateService extends BaseService {
     campId: string,
     data: Prisma.MessageTemplateUpdateInput & {
       attachmentIds?: string[] | undefined;
+      body?: string | undefined;
     },
     sessionId: string,
   ) {
@@ -116,9 +117,7 @@ export class MessageTemplateService extends BaseService {
         data: {
           subject: data.subject,
           body:
-            data.body !== undefined
-              ? sanitizeEmailHtml(String(data.body))
-              : undefined,
+            data.body !== undefined ? sanitizeEmailHtml(data.body) : undefined,
           priority: data.priority,
           attachments,
         },

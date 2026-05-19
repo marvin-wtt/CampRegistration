@@ -52,10 +52,10 @@ const ALLOWED_STYLES: sanitizeHtml.IOptions['allowedStyles'] = {
     color: COLOR_RE,
     'background-color': COLOR_RE,
     'text-align': [/^(left|right|center|justify)$/],
-    'font-size': [/^\d+(\.\d+)?(px|em|rem|%|pt)$/],
+    'font-size': [/^\d{1,4}(?:\.\d{1,3})?(?:px|em|rem|%|pt)$/],
     'font-weight': [/^(bold|normal|[1-9]00)$/],
     'font-style': [/^(italic|normal|oblique)$/],
-    'text-decoration': [/^(underline|line-through|none|overline)(\s+(underline|line-through|none|overline))*$/],
+    'text-decoration': [/^(?:underline|line-through|none|overline)(?:\s(?:underline|line-through|none|overline)){0,3}$/],
   },
 };
 
