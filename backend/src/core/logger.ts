@@ -10,11 +10,32 @@ const enumerateErrorFormat = winston.format((info) => {
   return info;
 });
 
+const isDevEnv = config.env === 'development';
+
+const devFormat = winston.format.combine(
+  enumerateErrorFormat(),
+  winston.format.colorize(),
+  winston.format.splat(),
+  winston.format.timestamp(),
+  winston.format.printf(
+    ({ level, message, timestamp }) =>
+      `${String(timestamp)} ${level}: ${String(message)}`,
+  ),
+);
+
+const prodFormat = winston.format.combine(
+  enumerateErrorFormat(),
+  winston.format.splat(),
+  winston.format.timestamp(),
+  winston.format.json(),
+);
+
 const fileTransport = new winston.transports.DailyRotateFile({
   filename: '%DATE%-app.log',
   datePattern: 'YYYY-MM-DD',
   maxSize: '20m',
   maxFiles: '14d',
+  zippedArchive: true,
   dirname: appPath('logs'),
 });
 
@@ -24,6 +45,7 @@ const fileErrorTransport = new winston.transports.DailyRotateFile({
   datePattern: 'YYYY-MM-DD',
   maxSize: '20m',
   maxFiles: '14d',
+  zippedArchive: true,
   dirname: appPath('logs'),
 });
 
@@ -31,20 +53,9 @@ const consoleTransport = new winston.transports.Console({
   stderrLevels: ['error'],
 });
 
-const isDevEnv = config.env === 'development';
-
 const logger = winston.createLogger({
-  level: isDevEnv ? 'debug' : 'info',
-  format: winston.format.combine(
-    enumerateErrorFormat(),
-    isDevEnv ? winston.format.colorize() : winston.format.uncolorize(),
-    winston.format.splat(),
-    winston.format.timestamp(),
-    winston.format.printf(
-      ({ level, message, timestamp }) =>
-        `${String(timestamp)} ${level}: ${String(message)}`,
-    ),
-  ),
+  level: config.log.level ?? (isDevEnv ? 'debug' : 'info'),
+  format: isDevEnv ? devFormat : prodFormat,
   transports: [consoleTransport, fileTransport, fileErrorTransport],
 });
 

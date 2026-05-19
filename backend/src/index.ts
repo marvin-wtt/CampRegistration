@@ -1,9 +1,26 @@
+import * as Sentry from '@sentry/node';
 import config from '#config/index';
 import logger from '#core/logger';
 import { createApp } from './app.js';
 import { boot, shutdown } from './boot.js';
+import ApiError from '#utils/ApiError';
 
 async function main() {
+  if (config.sentry.dsn) {
+    Sentry.init({
+      dsn: config.sentry.dsn,
+      environment: config.env,
+      sendDefaultPii: false,
+      beforeSend(event, hint) {
+        const err = hint.originalException;
+        if (err instanceof ApiError && err.isOperational) {
+          return null;
+        }
+        return event;
+      },
+    });
+  }
+
   // Boot must happen before the app is created is it registers routes and middlewares
   await boot();
 

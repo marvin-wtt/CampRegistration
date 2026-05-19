@@ -64,6 +64,7 @@
     "@candoimage/prisma-extension-soft-delete": "^2.1.2",
     "@prisma/adapter-mariadb": "^7.6.0",
     "@prisma/client": "^7.6.0",
+    "@sentry/node": "^10.53.1",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.71.1",
     "compression": "^1.8.1",

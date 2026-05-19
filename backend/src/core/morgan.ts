@@ -1,7 +1,8 @@
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import morgan from 'morgan';
 import config from '#config/index';
 import logger from '#core/logger';
+import { anonymizeIp } from '#utils/anonymizeIp';
 
 const extractMessage = (res: Response): string | undefined => {
   if (
@@ -15,9 +16,12 @@ const extractMessage = (res: Response): string | undefined => {
 };
 
 morgan.token('message', (_req, res: Response) => extractMessage(res) ?? '');
+morgan.token('client-ip', (req: Request) =>
+  anonymizeIp(req.ip ?? req.socket.remoteAddress ?? ''),
+);
 
 const getIpFormat = () =>
-  config.env === 'production' ? ':remote-addr - ' : '';
+  config.env === 'production' ? ':client-ip - ' : '';
 const successResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms`;
 const errorResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms - message: :message`;
 

@@ -15,4 +15,9 @@ export const MainEnvSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/)
     .default('#338d8e')
     .describe('Primary color used in email templates.'),
+  SENTRY_DSN: z.url().optional().describe('Sentry DSN for error tracking.'),
+  LOG_LEVEL: z
+    .enum(['error', 'warn', 'info', 'http', 'debug'])
+    .optional()
+    .describe('Override the default log level.'),
 });
