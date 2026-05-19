@@ -9,8 +9,8 @@
       v-model="range"
       v-model:plan="activePlan"
       class="col-shrink"
-      :start="props.camp.startAt"
-      :end="props.camp.endAt"
+      :start="camp.startAt"
+      :end="camp.endAt"
       :current="selectedDate"
       @next="onNextNavigation"
       @previous="onPreciousNavigation"
@@ -19,125 +19,145 @@
       @settings="onSettingsOpen"
     />
 
-    <div class="col relative-position">
-      <q-calendar-day
-        ref="calendarRef"
-        v-model="selectedDate"
-        view="day"
-        :locale="locale"
-        :drag-enter-func="onDragEnter"
-        :drag-over-func="onDragOver"
-        :drag-leave-func="onDragLeave"
-        :drop-func="onDrop"
-        :max-days="range"
-        :interval-start="intervalStart"
-        :interval-count="intervalCount"
-        :interval-minutes="settings.timeInterval"
-        :interval-height="intervalHeight"
-        hour24-format
-        time-clicks-clamped
-        bordered
-        hoverable
-        animated
-        :transition-next="range === 1 ? 'slide-left' : 'fade'"
-        :transition-prev="range === 1 ? 'slide-right' : 'fade'"
-        class="fit absolute"
-        :style="{
-          // This is a workaround as the calendar otherwise does not shrink
-          maxWidth: maxWidth + 'px',
-        }"
-        @click-head-day="onDayEventAdd"
-      >
-        <template #head-day-event="{ scope: { timestamp } }">
-          <div class="column">
-            <div
-              class="cal-day-actions"
-              @click.stop
+    <div
+      class="col row no-wrap"
+      style="min-height: 0"
+    >
+      <div class="col relative-position">
+        <div class="absolute fit">
+          <q-calendar-day
+            ref="calendarRef"
+            class="fit"
+            v-model="selectedDate"
+            view="day"
+            :locale="locale"
+            :drag-enter-func="onDragEnter"
+            :drag-over-func="onDragOver"
+            :drag-leave-func="onDragLeave"
+            :drop-func="onDrop"
+            :max-days="range"
+            :interval-start="intervalStart"
+            :interval-count="intervalCount"
+            :interval-minutes="settings.timeInterval"
+            :interval-height="intervalHeight"
+            hour24-format
+            time-clicks-clamped
+            bordered
+            hoverable
+            animated
+            :transition-next="range === 1 ? 'slide-left' : 'fade'"
+            :transition-prev="range === 1 ? 'slide-right' : 'fade'"
+            @click-head-day="onDayEventAdd"
+          >
+            <template #head-day-event="{ scope: { timestamp } }">
+              <div class="column">
+                <div
+                  class="cal-day-actions"
+                  @click.stop
+                >
+                  <q-btn
+                    v-if="range > 1"
+                    icon="zoom_in"
+                    flat
+                    round
+                    dense
+                    size="xs"
+                    @click.stop="onZoomToDay(timestamp.date)"
+                  >
+                    <q-tooltip>{{ t('actions.focusDay') }}</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    icon="print"
+                    flat
+                    round
+                    dense
+                    size="xs"
+                    @click.stop="onPrintDay(timestamp.date)"
+                  >
+                    <q-tooltip>{{ t('actions.printDay') }}</q-tooltip>
+                  </q-btn>
+                </div>
+                <calendar-day-item
+                  v-for="event in getFullDayEvents(timestamp.date)"
+                  :key="event.id"
+                  :event="event"
+                  :view-both="viewBoth"
+                  :show-all-translations="settings.showAllTranslations"
+                  :draggable="true"
+                  @dragstart="(e: DragEvent) => onDragStart(e, event)"
+                  @edit="onEventEdit(event)"
+                  @delete="onEventDelete(event)"
+                  @duplicate="onEventDuplicate(event)"
+                />
+              </div>
+            </template>
+
+            <template
+              #day-body="{
+                scope: { timestamp, timeStartPos, timeDurationHeight },
+              }"
             >
-              <q-btn
-                v-if="range > 1"
-                icon="zoom_in"
-                flat
-                round
-                dense
-                size="xs"
-                @click.stop="onZoomToDay(timestamp.date)"
-              >
-                <q-tooltip>{{ t('actions.focusDay') }}</q-tooltip>
-              </q-btn>
-              <q-btn
-                icon="print"
-                flat
-                round
-                dense
-                size="xs"
-                @click.stop="onPrintDay(timestamp.date)"
-              >
-                <q-tooltip>{{ t('actions.printDay') }}</q-tooltip>
-              </q-btn>
-            </div>
-            <calendar-day-item
-              v-for="event in getFullDayEvents(timestamp.date)"
-              :key="event.id"
-              :event="event"
-              :view-both="viewBoth"
-              :show-all-translations="settings.showAllTranslations"
-              :draggable="true"
-              @dragstart="(e: DragEvent) => onDragStart(e, event)"
-              @edit="onEventEdit(event)"
-              @delete="onEventDelete(event)"
-              @duplicate="onEventDuplicate(event)"
-            />
-          </div>
-        </template>
+              <!-- Drag-to-create overlay: sits behind events, handles empty-area clicks -->
+              <div
+                class="cal-create-overlay"
+                :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
+                @mousedown.left.prevent="
+                  (e) =>
+                    !quasar.platform.is.mobile &&
+                    onBodyMouseDown(e, timestamp, timeDurationHeight)
+                "
+                @click="
+                  (e) =>
+                    quasar.platform.is.mobile &&
+                    onBodyClick(e, timestamp, timeDurationHeight)
+                "
+              />
 
-        <template
-          #day-body="{ scope: { timestamp, timeStartPos, timeDurationHeight } }"
-        >
-          <!-- Drag-to-create overlay: sits behind events, handles empty-area clicks -->
-          <div
-            class="cal-create-overlay"
-            :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
-            @mousedown.left.prevent="
-              (e) =>
-                !quasar.platform.is.mobile &&
-                onBodyMouseDown(e, timestamp, timeDurationHeight)
-            "
-            @click="
-              (e) =>
-                quasar.platform.is.mobile &&
-                onBodyClick(e, timestamp, timeDurationHeight)
-            "
-          />
+              <!-- Selection highlight while dragging to create -->
+              <div
+                v-if="dragSelection && dragSelection?.date === timestamp.date"
+                class="cal-selection"
+                :style="{
+                  top: `${(dragSelection.startMinutes - dragSelection.dayStartMinutes) * dragSelection.pxPerMinute}px`,
+                  height: `${(dragSelection.endMinutes - dragSelection.startMinutes) * dragSelection.pxPerMinute}px`,
+                }"
+              />
 
-          <!-- Selection highlight while dragging to create -->
-          <div
-            v-if="dragSelection && dragSelection?.date === timestamp.date"
-            class="cal-selection"
-            :style="{
-              top: `${(dragSelection.startMinutes - dragSelection.dayStartMinutes) * dragSelection.pxPerMinute}px`,
-              height: `${(dragSelection.endMinutes - dragSelection.startMinutes) * dragSelection.pxPerMinute}px`,
-            }"
-          />
+              <calendar-item
+                v-for="event in getEvents(timestamp.date)"
+                :key="event.id"
+                :event="event"
+                :time-start-position="timeStartPos"
+                :time-duration-height="timeDurationHeight"
+                :view-both="viewBoth"
+                :show-all-translations="settings.showAllTranslations"
+                :draggable="true"
+                :snap="settings.timeInterval"
+                @dragstart="(e: DragEvent) => onDragStart(e, event)"
+                @edit="onEventEdit(event)"
+                @delete="onEventDelete(event)"
+                @duplicate="onEventDuplicate(event)"
+                @resize="(e) => onEventResize(event, e)"
+              />
+            </template>
+          </q-calendar-day>
+        </div>
+      </div>
 
-          <calendar-item
-            v-for="event in getEvents(timestamp.date)"
-            :key="event.id"
-            :event="event"
-            :time-start-position="timeStartPos"
-            :time-duration-height="timeDurationHeight"
-            :view-both="viewBoth"
-            :show-all-translations="settings.showAllTranslations"
-            :draggable="true"
-            :snap="settings.timeInterval"
-            @dragstart="(e: DragEvent) => onDragStart(e, event)"
-            @edit="onEventEdit(event)"
-            @delete="onEventDelete(event)"
-            @duplicate="onEventDuplicate(event)"
-            @resize="(e) => onEventResize(event, e)"
-          />
-        </template>
-      </q-calendar-day>
+      <calendar-backlog-panel
+        :events="backlogEvents"
+        :active-plan="activePlan"
+        :show-all-translations="settings.showAllTranslations"
+        @add="onBacklogAdd"
+        @edit="onEventEdit"
+        @delete="onEventDelete"
+        @duplicate="onEventDuplicate"
+        @dragstart="
+          (e: DragEvent, event: ProgramEvent) => onDragStart(e, event)
+        "
+        @dragend="isDraggingEvent = false"
+        @move-to-backlog="onMoveToBacklog"
+      />
     </div>
   </div>
 </template>
@@ -162,6 +182,7 @@ import type { CalendarSettings } from 'components/campManagement/programPlanner/
 import ProgramEventAddDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from 'components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 import CalendarSettingsDialog from 'components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
+import CalendarBacklogPanel from 'components/campManagement/programPlanner/CalendarBacklogPanel.vue';
 import { daysBetweenDates } from 'src/utils/date';
 
 const { t, locale } = useI18n();
@@ -182,7 +203,6 @@ const calendarRef = ref<QCalendarDay | null>(null);
 const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
 const activePlan = ref<'a' | 'b' | 'both'>('a');
-const maxWidth = ref<number>();
 
 const SETTINGS_KEY = 'program-planner-settings';
 
@@ -293,8 +313,7 @@ watch(intervalCount, () => {
   updateIntervalHeight();
 });
 
-function onResize(size: { width: number; height: number }) {
-  maxWidth.value = size.width;
+function onResize() {
   requestAnimationFrame(() => {
     updateIntervalHeight();
   });
@@ -378,6 +397,10 @@ const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
       {} as Record<string, ProgramEvent[]>,
     );
 });
+
+const backlogEvents = computed<ProgramEvent[]>(() =>
+  events.filter((e) => e.date == null),
+);
 
 function getFullDayEvents(date: string) {
   const events = eventsMap.value[date] || [];
@@ -471,6 +494,26 @@ function onEventEdit(event: ProgramEvent) {
     .onOk((programEvent: ProgramEventUpdateData) => {
       emit('update', event.id, programEvent);
     });
+}
+
+function onBacklogAdd() {
+  quasar
+    .dialog({
+      component: ProgramEventAddDialog,
+      componentProps: {
+        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+        dateTimeMin: camp.startAt,
+        dateTimeMax: camp.endAt,
+        locales: camp.locales,
+      },
+    })
+    .onOk((programEvent: ProgramEventCreateData) => {
+      emit('add', programEvent);
+    });
+}
+
+function onMoveToBacklog(id: string) {
+  emit('update', id, { date: null, time: null });
 }
 
 function onEventDelete(event: ProgramEvent) {

@@ -103,13 +103,14 @@
           </q-input>
 
           <q-toggle
+            v-if="data.date"
             v-model="fullDay"
             :label="t('field.fullDay.label')"
           />
 
           <!-- time & duration -->
           <div
-            v-if="!fullDay"
+            v-if="data.date && !fullDay"
             class="row q-gutter-sm"
           >
             <!-- time -->
