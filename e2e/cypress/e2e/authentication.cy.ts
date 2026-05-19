@@ -24,7 +24,7 @@ describe("Authentication", () => {
 
       cy.wait("@loginUser").its("response.statusCode").should("eq", 200);
 
-      cy.location("pathname").should("eq", "/management");
+      cy.location("pathname").should("eq", "/management/camps");
     });
 
     it("should show error for invalid credentials", () => {
