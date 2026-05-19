@@ -19,14 +19,18 @@ export const useNewsletterMessageStore = defineStore(
       withProgressNotification,
     } = useServiceHandler<NewsletterMessage[]>('newsletterMessage');
 
-    authBus.on('logout', () => {
-      reset();
-    });
+    authBus.on('logout', reset);
+
+    let lastNewsletterId: string | null = null;
 
     async function fetchData(newsletterId: string) {
+      if (lastNewsletterId != null && lastNewsletterId !== newsletterId) {
+        invalidate();
+      }
       await lazyFetch(async () => {
         return await api.fetchNewsletterMessages(newsletterId);
       });
+      lastNewsletterId = newsletterId;
     }
 
     async function deleteData(newsletterId: string, messageId: string) {

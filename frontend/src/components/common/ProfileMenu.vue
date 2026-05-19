@@ -26,7 +26,7 @@
         <q-item
           v-close-popup
           clickable
-          :to="{ name: 'management' }"
+          :to="{ name: 'management.camps' }"
           active-class=""
           exact-active-class=""
         >

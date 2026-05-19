@@ -9,6 +9,7 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
+import { randomBytes } from 'node:crypto';
 import { NoOpMailer } from '../../../src/app/mail/noop.mailer.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail';
 
@@ -286,6 +287,167 @@ describe(`${BASE}/:newsletterId/messages`, () => {
       expect(mailer.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({ subject: 'My Subject' }),
       );
+    });
+
+    it('should include an attachment in each email when an attachment id is provided', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      const sessionId = randomBytes(16).toString('hex');
+
+      const { body: fileBody } = await request()
+        .post('/api/v1/files/')
+        .setSessionId(sessionId)
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .setSessionId(sessionId)
+        .send({
+          subject: 'Hello',
+          body: '<p>World</p>',
+          attachmentIds: [fileBody.data.id],
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expectEmailWith({
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ filename: 'blank.pdf' }),
+        ]),
+      });
+    });
+
+    it('should include multiple attachments in each email', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      const sessionId = randomBytes(16).toString('hex');
+
+      const { body: file1Body } = await request()
+        .post('/api/v1/files/')
+        .setSessionId(sessionId)
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+      const { body: file2Body } = await request()
+        .post('/api/v1/files/')
+        .setSessionId(sessionId)
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .setSessionId(sessionId)
+        .send({
+          subject: 'Hello',
+          body: '<p>World</p>',
+          attachmentIds: [file1Body.data.id, file2Body.data.id],
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expectEmailWith({
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ filename: 'blank.pdf' }),
+          expect.objectContaining({ filename: 'blank.pdf' }),
+        ]),
+      });
+    });
+
+    it('should send the same attachments to every subscriber', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const sub1 = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        email: 'alice@example.com',
+        name: null,
+      });
+      const sub2 = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+        email: 'bob@example.com',
+        name: null,
+      });
+
+      const sessionId = randomBytes(16).toString('hex');
+
+      const { body: fileBody } = await request()
+        .post('/api/v1/files/')
+        .setSessionId(sessionId)
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .setSessionId(sessionId)
+        .send({
+          subject: 'Hello',
+          body: '<p>World</p>',
+          attachmentIds: [fileBody.data.id],
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expectEmailCount(2);
+      expectEmailWith({
+        to: sub1.email,
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ filename: 'blank.pdf' }),
+        ]),
+      });
+      expectEmailWith({
+        to: sub2.email,
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ filename: 'blank.pdf' }),
+        ]),
+      });
+    });
+
+    it('should not include attachments in email when no attachmentIds are provided', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.not.objectContaining({ attachments: expect.anything() }),
+      );
+    });
+
+    it('should connect attachment files to the newsletter message in the database', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const sessionId = randomBytes(16).toString('hex');
+
+      const { body: fileBody } = await request()
+        .post('/api/v1/files/')
+        .setSessionId(sessionId)
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .setSessionId(sessionId)
+        .send({
+          subject: 'Hello',
+          body: '<p>World</p>',
+          attachmentIds: [fileBody.data.id],
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      const file = await prisma.file.findUnique({
+        where: { id: fileBody.data.id },
+      });
+      expect(file?.newsletterMessageId).toBe(body.data.id);
     });
 
     it('should respond with `400` when subject is missing', async () => {

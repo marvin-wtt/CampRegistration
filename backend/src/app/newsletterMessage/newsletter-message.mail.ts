@@ -1,7 +1,10 @@
 import { MailBase } from '#app/mail/mail.base';
 import type { JobOptions } from '#core/queue/Queue';
-import type { MailPriority } from '#app/mail/mail.types';
+import type { MailAttachment, MailPriority } from '#app/mail/mail.types';
 import { generateApiUrl, generateUrl } from '#utils/url';
+import { resolve } from '#core/ioc/container';
+import { FileService } from '#app/file/file.service';
+import type { StorageFile } from '#core/storage/storage';
 
 export interface NewsletterMailPayload {
   to: string;
@@ -11,6 +14,7 @@ export interface NewsletterMailPayload {
   replyTo?: string;
   newsletterId: string;
   unsubscribeToken: string;
+  attachments?: StorageFile[];
 }
 
 export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
@@ -66,6 +70,21 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
       namespace: 'newsletter',
       keyPrefix: 'email',
     };
+  }
+
+  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+    const files = this.payload.attachments ?? [];
+    if (!files.length) {
+      return [];
+    }
+
+    const fileService = resolve(FileService);
+
+    return files.map((file) => ({
+      filename: file.originalName,
+      content: fileService.getFileStream(file),
+      contentType: file.type,
+    }));
   }
 
   protected content() {

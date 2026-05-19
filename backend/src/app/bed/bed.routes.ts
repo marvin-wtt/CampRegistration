@@ -11,7 +11,9 @@ export class BedRouter extends ModuleRouter {
     const bedService = resolve(BedService);
     this.bindModel('bed', (req, id) => {
       const room = req.model('room');
-      if (!room) return null;
+      if (!room) {
+        return null;
+      }
       return bedService.getBedById(id, room.id);
     });
   }

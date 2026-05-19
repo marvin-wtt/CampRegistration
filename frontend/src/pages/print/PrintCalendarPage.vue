@@ -172,7 +172,10 @@ const data = ref<PrintData | null>(null);
 
 onMounted(() => {
   const key = route.query.key as string;
-  if (!key) return;
+  if (!key) {
+    return;
+  }
+
   try {
     const raw = sessionStorage.getItem(key);
     if (raw) {

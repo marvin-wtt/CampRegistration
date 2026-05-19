@@ -81,7 +81,9 @@ describe(BASE, () => {
 
   describe(`POST ${BASE}`, () => {
     it('should respond with `201` and the created newsletter', async () => {
-      const user = await UserFactory.create();
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+      });
       const accessToken = generateAccessToken(user);
 
       const { body } = await request()
@@ -102,7 +104,9 @@ describe(BASE, () => {
     });
 
     it('should respond with `201` and include replyTo when provided', async () => {
-      const user = await UserFactory.create();
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+      });
       const accessToken = generateAccessToken(user);
 
       const { body } = await request()
@@ -115,7 +119,9 @@ describe(BASE, () => {
     });
 
     it('should automatically add the creating user as manager', async () => {
-      const user = await UserFactory.create();
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+      });
       const accessToken = generateAccessToken(user);
 
       const { body } = await request()
@@ -131,7 +137,9 @@ describe(BASE, () => {
     });
 
     it('should accept a null description', async () => {
-      const user = await UserFactory.create();
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+      });
       const accessToken = generateAccessToken(user);
 
       const { body } = await request()
@@ -144,7 +152,9 @@ describe(BASE, () => {
     });
 
     it('should respond with `400` when name is missing', async () => {
-      const user = await UserFactory.create();
+      const user = await UserFactory.create({
+        role: 'ADMIN',
+      });
       const accessToken = generateAccessToken(user);
 
       await request()
@@ -156,6 +166,19 @@ describe(BASE, () => {
 
     it('should respond with `401` when unauthenticated', async () => {
       await request().post(BASE).send({ name: 'Test' }).expect(401);
+    });
+
+    it('should respond with `403` when not an admin', async () => {
+      const user = await UserFactory.create({
+        role: 'USER',
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post(BASE)
+        .send({ name: 'My Newsletter', description: null })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
     });
   });
 

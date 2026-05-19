@@ -16,8 +16,13 @@
           rounded
           unelevated
           no-caps
+          :disable="!isAdmin"
           @click="showCreateDialog"
-        />
+        >
+          <q-tooltip v-if="!isAdmin">
+            {{ t('adminOnly') }}
+          </q-tooltip>
+        </q-btn>
       </div>
 
       <div
@@ -119,15 +124,22 @@
         <div class="text-subtitle1 text-grey-6 text-center">
           {{ t('empty') }}
         </div>
-        <q-btn
-          color="primary"
-          icon="add"
-          :label="t('action.create')"
-          rounded
-          unelevated
-          no-caps
-          @click="showCreateDialog"
-        />
+        <template v-if="isAdmin">
+          <q-btn
+            color="primary"
+            icon="add"
+            :label="t('action.create')"
+            rounded
+            unelevated
+            no-caps
+            @click="showCreateDialog"
+          />
+        </template>
+        <template v-else>
+          <div class="text-body2 text-grey-6 text-center">
+            {{ t('adminOnly') }}
+          </div>
+        </template>
       </div>
     </div>
   </page-state-handler>
@@ -137,6 +149,7 @@
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted } from 'vue';
 import { useNewsletterStore } from 'stores/newsletter-store';
+import { useProfileStore } from 'stores/profile-store';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
@@ -153,6 +166,7 @@ const { t } = useI18n();
 const router = useRouter();
 const quasar = useQuasar();
 const newsletterStore = useNewsletterStore();
+const profileStore = useProfileStore();
 
 onMounted(async () => {
   await newsletterStore.fetchData();
@@ -161,6 +175,7 @@ onMounted(async () => {
 const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
 const isLoading = computed<boolean>(() => newsletterStore.isLoading);
 const error = computed<string | null>(() => newsletterStore.error);
+const isAdmin = computed<boolean>(() => profileStore.user?.role === 'ADMIN');
 
 function showCreateDialog() {
   quasar
@@ -201,6 +216,7 @@ function showDeleteDialog(newsletter: Newsletter) {
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
 empty: 'No newsletters yet. Create one to get started.'
+adminOnly: 'Only administrators can create newsletters.'
 action:
   create: 'New Newsletter'
   edit: 'Edit'
@@ -215,6 +231,7 @@ dialog:
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
 empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
+adminOnly: 'Nur Administratoren können Newsletter erstellen.'
 action:
   create: 'Neuer Newsletter'
   edit: 'Bearbeiten'
@@ -229,6 +246,7 @@ dialog:
 <i18n lang="yaml" locale="fr">
 title: 'Newsletters'
 empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
+adminOnly: 'Seuls les administrateurs peuvent créer des newsletters.'
 action:
   create: 'Nouvelle newsletter'
   edit: 'Modifier'
@@ -243,6 +261,7 @@ dialog:
 <i18n lang="yaml" locale="pl">
 title: 'Newslettery'
 empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
+adminOnly: 'Tylko administratorzy mogą tworzyć newslettery.'
 action:
   create: 'Nowy newsletter'
   edit: 'Edytuj'
@@ -257,6 +276,7 @@ dialog:
 <i18n lang="yaml" locale="cs">
 title: 'Newslettery'
 empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
+adminOnly: 'Newslettery mohou vytvářet pouze správci.'
 action:
   create: 'Nový newsletter'
   edit: 'Upravit'

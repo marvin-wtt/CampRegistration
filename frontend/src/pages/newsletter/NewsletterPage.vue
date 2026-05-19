@@ -1,394 +1,483 @@
 <template>
   <page-state-handler
-    padding
     :error
-    class="row justify-center"
+    class="relative-position"
   >
-    <div class="column col-sm-11 col-md-10 col-lg-9 col-12 q-gutter-y-lg">
-      <!-- Header -->
-      <div class="row items-start justify-between no-wrap">
-        <div class="col">
-          <div
-            class="text-overline text-grey-6 text-uppercase letter-spacing-1"
-          >
-            {{ t('header.label') }}
-          </div>
-          <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
-          <div
-            v-if="newsletter?.description"
-            class="text-body2 text-grey-6 q-mt-xs"
-          >
-            {{ newsletter.description }}
-          </div>
-          <div
-            v-if="newsletter?.replyTo"
-            class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
-          >
-            <q-icon
-              name="reply"
-              size="xs"
-            />
-            <span>{{ newsletter.replyTo }}</span>
-          </div>
-          <div
-            class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
-          >
-            <div class="row items-center q-gutter-x-xs">
+    <div class="absolute fit row no-wrap justify-center q-pa-md">
+      <div class="column no-wrap col-sm-11 col-md-10 col-lg-9 col-12">
+        <!-- Header -->
+        <div class="row items-start justify-between no-wrap q-mb-lg">
+          <div class="col">
+            <div
+              class="text-overline text-grey-6 text-uppercase letter-spacing-1"
+            >
+              {{ t('header.label') }}
+            </div>
+            <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
+            <div
+              v-if="newsletter?.description"
+              class="text-body2 text-grey-6 q-mt-xs"
+            >
+              {{ newsletter.description }}
+            </div>
+            <div
+              v-if="newsletter?.replyTo"
+              class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
+            >
               <q-icon
-                name="people"
+                name="reply"
                 size="xs"
               />
-              <span>{{
-                t('header.subscribers', { count: subscribers.length })
-              }}</span>
+              <span>{{ newsletter.replyTo }}</span>
             </div>
-            <div class="row items-center q-gutter-x-xs">
-              <q-icon
-                name="send"
-                size="xs"
-              />
-              <span>{{ t('header.sent', { count: messages.length }) }}</span>
+            <div
+              class="row items-center q-gutter-x-md q-mt-sm text-body2 text-grey-6"
+            >
+              <div class="row items-center q-gutter-x-xs">
+                <q-icon
+                  name="people"
+                  size="xs"
+                />
+                <span>{{
+                  t('header.subscribers', { count: subscribers.length })
+                }}</span>
+              </div>
+              <div class="row items-center q-gutter-x-xs">
+                <q-icon
+                  name="send"
+                  size="xs"
+                />
+                <span>{{ t('header.sent', { count: messages.length }) }}</span>
+              </div>
             </div>
           </div>
+          <q-btn
+            flat
+            round
+            icon="edit"
+            color="grey-7"
+            class="q-mt-sm"
+            @click="showEditDialog"
+          >
+            <q-tooltip>{{ t('header.edit') }}</q-tooltip>
+          </q-btn>
         </div>
-        <q-btn
-          flat
-          round
-          icon="edit"
-          color="grey-7"
-          class="q-mt-sm"
-          @click="showEditDialog"
-        >
-          <q-tooltip>{{ t('header.edit') }}</q-tooltip>
-        </q-btn>
-      </div>
 
-      <!-- Tabs -->
-      <div>
-        <q-tabs
-          v-model="tab"
-          align="left"
-          no-caps
-          indicator-color="primary"
-          class="q-mb-none"
-        >
-          <q-tab
-            name="compose"
-            :label="t('tab.compose')"
-            icon="edit_note"
-          />
-          <q-tab
-            name="history"
-            :label="t('tab.history')"
-            icon="history"
-          />
-          <q-tab
-            name="subscribers"
-            :label="t('tab.subscribers')"
-            icon="people"
-          />
-          <q-tab
-            name="managers"
-            :label="t('tab.managers')"
-            icon="manage_accounts"
-          />
-        </q-tabs>
-        <q-separator />
-
-        <q-tab-panels
-          v-model="tab"
-          animated
-          class="q-mt-none"
-          style="background: transparent"
-        >
-          <!-- Compose Tab -->
-          <q-tab-panel
-            name="compose"
-            class="q-pa-none q-pt-lg"
+        <!-- Tabs -->
+        <div class="column no-wrap col newsletter-tabs">
+          <q-tabs
+            v-model="tab"
+            align="left"
+            no-caps
+            indicator-color="primary"
+            class="q-mb-none"
           >
-            <div class="q-gutter-y-md">
-              <q-input
-                v-model="sendSubject"
-                :label="t('compose.subject')"
-                outlined
-                rounded
-                clearable
-              >
-                <template #before>
-                  <q-icon name="subject" />
-                </template>
-              </q-input>
+            <q-tab
+              name="compose"
+              :label="t('tab.compose')"
+              icon="edit_note"
+            />
+            <q-tab
+              name="history"
+              :label="t('tab.history')"
+              icon="history"
+            />
+            <q-tab
+              name="subscribers"
+              :label="t('tab.subscribers')"
+              icon="people"
+            />
+            <q-tab
+              name="managers"
+              :label="t('tab.managers')"
+              icon="manage_accounts"
+            />
+          </q-tabs>
+          <q-separator />
 
-              <div>
-                <div class="text-caption text-grey-7 q-mb-xs q-ml-sm">
-                  {{ t('compose.body') }}
-                </div>
-                <email-editor
-                  v-model="sendBody"
-                  :placeholder="t('compose.bodyPlaceholder')"
+          <q-tab-panels
+            v-model="tab"
+            animated
+            class="col bg-transparent newsletter-panels"
+          >
+            <!-- Compose Tab -->
+            <q-tab-panel
+              name="compose"
+              class="q-pa-none q-pt-lg"
+              style="overflow-y: auto"
+            >
+              <div class="q-gutter-y-md">
+                <q-input
+                  v-model="sendSubject"
+                  :label="t('compose.subject')"
                   outlined
                   rounded
-                  style="min-height: 200px"
+                  clearable
+                >
+                  <template #before>
+                    <q-icon name="subject" />
+                  </template>
+                </q-input>
+
+                <div>
+                  <div class="text-caption text-grey-7 q-mb-xs q-ml-sm">
+                    {{ t('compose.body') }}
+                  </div>
+                  <email-editor
+                    v-model="sendBody"
+                    :placeholder="t('compose.bodyPlaceholder')"
+                    outlined
+                    rounded
+                    style="min-height: 200px"
+                  />
+                </div>
+
+                <file-input
+                  v-model="sendAttachments"
+                  :label="t('compose.attachments')"
+                  outlined
+                  rounded
+                >
+                  <template #before>
+                    <q-icon name="attach_file" />
+                  </template>
+                </file-input>
+
+                <div class="row justify-between items-center q-pt-sm">
+                  <div class="text-body2 text-grey-6">
+                    <q-icon
+                      name="info_outline"
+                      size="xs"
+                      class="q-mr-xs"
+                    />
+                    {{
+                      t('compose.recipientInfo', { count: subscribers.length })
+                    }}
+                  </div>
+                  <q-btn
+                    color="primary"
+                    icon="send"
+                    :label="t('compose.send')"
+                    :disable="
+                      !sendSubject || !sendBody || subscribers.length === 0
+                    "
+                    rounded
+                    unelevated
+                    no-caps
+                    @click="confirmSend"
+                  />
+                </div>
+              </div>
+            </q-tab-panel>
+
+            <!-- History Tab -->
+            <q-tab-panel
+              name="history"
+              class="q-pa-none q-pt-lg"
+              style="overflow-y: auto"
+            >
+              <div
+                v-if="messageStore.isLoading"
+                class="q-gutter-y-sm"
+              >
+                <q-skeleton
+                  v-for="i in 3"
+                  :key="i"
+                  height="60px"
+                  class="rounded-borders"
                 />
               </div>
 
-              <div class="row justify-between items-center q-pt-sm">
-                <div class="text-body2 text-grey-6">
-                  <q-icon
-                    name="info_outline"
-                    size="xs"
-                    class="q-mr-xs"
-                  />
-                  {{
-                    t('compose.recipientInfo', { count: subscribers.length })
-                  }}
+              <div
+                v-else-if="messages.length === 0"
+                class="column items-center q-pa-xl q-gutter-sm"
+              >
+                <q-icon
+                  name="mark_email_unread"
+                  size="4rem"
+                  color="grey-4"
+                />
+                <div class="text-subtitle2 text-grey-6">
+                  {{ t('history.empty') }}
                 </div>
+                <div class="text-body2 text-grey-5 text-center">
+                  {{ t('history.emptyHint') }}
+                </div>
+              </div>
+
+              <q-list
+                v-else
+                bordered
+                separator
+                class="rounded-borders list-scroll"
+              >
+                <q-expansion-item
+                  v-for="message in messages"
+                  :key="message.id"
+                  expand-separator
+                >
+                  <template #header>
+                    <q-item-section avatar>
+                      <q-avatar
+                        color="primary"
+                        text-color="white"
+                        size="36px"
+                        icon="email"
+                      />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">
+                        {{ message.subject }}
+                      </q-item-label>
+                      <q-item-label caption>
+                        {{ d(message.sentAt, 'dateTime') }}
+                        <span v-if="message.sentBy">
+                          &middot; {{ message.sentBy.name }}
+                        </span>
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <div class="row items-center q-gutter-xs no-wrap">
+                        <q-chip
+                          dense
+                          outline
+                          icon="people"
+                          :label="String(message.recipientCount)"
+                          color="grey-6"
+                        />
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="forward"
+                          size="sm"
+                          @click.stop="useAsTemplate(message)"
+                        >
+                          <q-tooltip>{{
+                            t('history.useAsTemplate')
+                          }}</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete_outline"
+                          color="negative"
+                          size="sm"
+                          @click.stop="deleteMessage(message)"
+                        >
+                          <q-tooltip>{{ t('history.delete') }}</q-tooltip>
+                        </q-btn>
+                      </div>
+                    </q-item-section>
+                  </template>
+
+                  <q-separator />
+                  <div
+                    class="q-pa-md newsletter-preview"
+                    v-html="message.body"
+                  />
+                </q-expansion-item>
+              </q-list>
+            </q-tab-panel>
+
+            <!-- Subscribers Tab -->
+            <q-tab-panel
+              name="subscribers"
+              class="q-pa-none column no-wrap"
+              style="overflow: hidden"
+            >
+              <!-- Toolbar + Search -->
+              <div class="row items-center q-gutter-sm q-mb-md q-mt-lg">
+                <q-input
+                  v-model="subscriberFilter"
+                  :placeholder="t('subscribers.search')"
+                  dense
+                  outlined
+                  rounded
+                  clearable
+                  class="col"
+                >
+                  <template #prepend>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+                <q-btn
+                  outline
+                  color="primary"
+                  icon="file_upload"
+                  :label="
+                    quasar.screen.gt.sm
+                      ? t('subscribers.action.import')
+                      : undefined
+                  "
+                  rounded
+                  no-caps
+                  @click="showImportDialog"
+                >
+                  <q-tooltip v-if="quasar.screen.lt.md">
+                    {{ t('subscribers.action.import') }}
+                  </q-tooltip>
+                </q-btn>
                 <q-btn
                   color="primary"
-                  icon="send"
-                  :label="t('compose.send')"
-                  :disable="
-                    !sendSubject || !sendBody || subscribers.length === 0
+                  icon="person_add"
+                  :label="
+                    quasar.screen.gt.sm
+                      ? t('subscribers.action.add')
+                      : undefined
                   "
                   rounded
                   unelevated
                   no-caps
-                  @click="confirmSend"
+                  @click="showAddSubscriberDialog"
+                >
+                  <q-tooltip v-if="quasar.screen.lt.md">
+                    {{ t('subscribers.action.add') }}
+                  </q-tooltip>
+                </q-btn>
+              </div>
+
+              <!-- Loading skeletons -->
+              <div
+                v-if="subscriberStore.isLoading"
+                class="q-gutter-y-sm"
+              >
+                <q-skeleton
+                  v-for="i in 4"
+                  :key="i"
+                  height="56px"
+                  class="rounded-borders"
                 />
               </div>
-            </div>
-          </q-tab-panel>
 
-          <!-- History Tab -->
-          <q-tab-panel
-            name="history"
-            class="q-pa-none q-pt-lg"
-          >
-            <div
-              v-if="messageStore.isLoading"
-              class="q-gutter-y-sm"
-            >
-              <q-skeleton
-                v-for="i in 3"
-                :key="i"
-                height="60px"
-                class="rounded-borders"
-              />
-            </div>
-
-            <div
-              v-else-if="messages.length === 0"
-              class="column items-center q-pa-xl q-gutter-sm"
-            >
-              <q-icon
-                name="mark_email_unread"
-                size="4rem"
-                color="grey-4"
-              />
-              <div class="text-subtitle2 text-grey-6">
-                {{ t('history.empty') }}
-              </div>
-              <div class="text-body2 text-grey-5 text-center">
-                {{ t('history.emptyHint') }}
-              </div>
-            </div>
-
-            <q-list
-              v-else
-              bordered
-              separator
-              class="rounded-borders"
-            >
-              <q-expansion-item
-                v-for="message in messages"
-                :key="message.id"
-                expand-separator
+              <!-- Empty: no subscribers at all -->
+              <div
+                v-else-if="subscribers.length === 0"
+                class="column items-center q-pa-xl q-gutter-sm"
               >
-                <template #header>
-                  <q-item-section avatar>
-                    <q-avatar
-                      color="primary"
-                      text-color="white"
-                      size="36px"
-                      icon="email"
-                    />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="text-weight-medium">
-                      {{ message.subject }}
-                    </q-item-label>
-                    <q-item-label caption>
-                      {{ d(message.sentAt, 'dateTime') }}
-                      <span v-if="message.sentBy">
-                        &middot; {{ message.sentBy.name }}
-                      </span>
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <div class="row items-center q-gutter-xs no-wrap">
-                      <q-chip
-                        dense
-                        outline
-                        icon="people"
-                        :label="String(message.recipientCount)"
-                        color="grey-6"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="forward"
-                        size="sm"
-                        @click.stop="useAsTemplate(message)"
+                <q-icon
+                  name="group_off"
+                  size="4rem"
+                  color="grey-4"
+                />
+                <div class="text-subtitle2 text-grey-6">
+                  {{ t('subscribers.empty') }}
+                </div>
+                <div class="text-body2 text-grey-5 text-center">
+                  {{ t('subscribers.emptyHint') }}
+                </div>
+                <q-btn
+                  color="primary"
+                  icon="person_add"
+                  :label="t('subscribers.action.add')"
+                  rounded
+                  unelevated
+                  no-caps
+                  class="q-mt-sm"
+                  @click="showAddSubscriberDialog"
+                />
+              </div>
+
+              <!-- Empty: search yielded no results -->
+              <div
+                v-else-if="filteredSubscribers.length === 0"
+                class="column items-center q-pa-lg q-gutter-xs"
+              >
+                <q-icon
+                  name="search_off"
+                  size="3rem"
+                  color="grey-4"
+                />
+                <div class="text-body2 text-grey-6">
+                  {{ t('subscribers.noResults') }}
+                </div>
+              </div>
+
+              <!-- Subscriber list (virtual scroll for large datasets) -->
+              <q-virtual-scroll
+                v-else
+                :items="filteredSubscribers"
+                :virtual-scroll-item-size="56"
+                class="col rounded-borders subscriber-scroll"
+              >
+                <template #default="{ item: subscriber, index }">
+                  <q-item
+                    :key="subscriber.id"
+                    class="subscriber-item"
+                  >
+                    <q-item-section avatar>
+                      <q-avatar
+                        color="primary"
+                        text-color="white"
+                        size="36px"
                       >
-                        <q-tooltip>{{ t('history.useAsTemplate') }}</q-tooltip>
-                      </q-btn>
+                        {{
+                          (subscriber.name ?? subscriber.email)
+                            .charAt(0)
+                            .toUpperCase()
+                        }}
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">
+                        {{ subscriber.email }}
+                      </q-item-label>
+                      <q-item-label
+                        v-if="subscriber.name"
+                        caption
+                      >
+                        {{ subscriber.name }}
+                      </q-item-label>
+                      <q-item-label caption>
+                        {{ d(subscriber.subscribedAt, 'date') }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
                       <q-btn
                         flat
                         round
-                        dense
-                        icon="delete_outline"
+                        icon="person_remove"
                         color="negative"
                         size="sm"
-                        @click.stop="deleteMessage(message)"
-                      >
-                        <q-tooltip>{{ t('history.delete') }}</q-tooltip>
-                      </q-btn>
-                    </div>
-                  </q-item-section>
+                        @click="showDeleteSubscriberDialog(subscriber)"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-separator
+                    v-if="index < filteredSubscribers.length - 1"
+                    :key="`sep-${subscriber.id}`"
+                  />
                 </template>
+              </q-virtual-scroll>
+            </q-tab-panel>
 
-                <q-separator />
-                <div
-                  class="q-pa-md newsletter-preview"
-                  v-html="message.body"
+            <!-- Managers Tab -->
+            <q-tab-panel
+              name="managers"
+              class="q-pa-none q-pt-lg"
+              style="overflow-y: auto"
+            >
+              <div class="row justify-end q-mb-md">
+                <q-btn
+                  color="primary"
+                  icon="person_add"
+                  :label="t('managers.action.add')"
+                  rounded
+                  unelevated
+                  no-caps
+                  @click="showAddManagerDialog"
                 />
-              </q-expansion-item>
-            </q-list>
-          </q-tab-panel>
-
-          <!-- Subscribers Tab -->
-          <q-tab-panel
-            name="subscribers"
-            class="q-pa-none q-pt-lg"
-          >
-            <!-- Toolbar + Search -->
-            <div class="row items-center q-gutter-sm q-mb-md">
-              <q-input
-                v-model="subscriberFilter"
-                :placeholder="t('subscribers.search')"
-                dense
-                outlined
-                rounded
-                clearable
-                class="col"
-              >
-                <template #prepend>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-              <q-btn
-                outline
-                color="primary"
-                icon="file_upload"
-                :label="
-                  quasar.screen.gt.sm
-                    ? t('subscribers.action.import')
-                    : undefined
-                "
-                rounded
-                no-caps
-                @click="showImportDialog"
-              >
-                <q-tooltip v-if="quasar.screen.lt.md">
-                  {{ t('subscribers.action.import') }}
-                </q-tooltip>
-              </q-btn>
-              <q-btn
-                color="primary"
-                icon="person_add"
-                :label="
-                  quasar.screen.gt.sm ? t('subscribers.action.add') : undefined
-                "
-                rounded
-                unelevated
-                no-caps
-                @click="showAddSubscriberDialog"
-              >
-                <q-tooltip v-if="quasar.screen.lt.md">
-                  {{ t('subscribers.action.add') }}
-                </q-tooltip>
-              </q-btn>
-            </div>
-
-            <!-- Loading skeletons -->
-            <div
-              v-if="subscriberStore.isLoading"
-              class="q-gutter-y-sm"
-            >
-              <q-skeleton
-                v-for="i in 4"
-                :key="i"
-                height="56px"
-                class="rounded-borders"
-              />
-            </div>
-
-            <!-- Empty: no subscribers at all -->
-            <div
-              v-else-if="subscribers.length === 0"
-              class="column items-center q-pa-xl q-gutter-sm"
-            >
-              <q-icon
-                name="group_off"
-                size="4rem"
-                color="grey-4"
-              />
-              <div class="text-subtitle2 text-grey-6">
-                {{ t('subscribers.empty') }}
               </div>
-              <div class="text-body2 text-grey-5 text-center">
-                {{ t('subscribers.emptyHint') }}
-              </div>
-              <q-btn
-                color="primary"
-                icon="person_add"
-                :label="t('subscribers.action.add')"
-                rounded
-                unelevated
-                no-caps
-                class="q-mt-sm"
-                @click="showAddSubscriberDialog"
-              />
-            </div>
 
-            <!-- Empty: search yielded no results -->
-            <div
-              v-else-if="filteredSubscribers.length === 0"
-              class="column items-center q-pa-lg q-gutter-xs"
-            >
-              <q-icon
-                name="search_off"
-                size="3rem"
-                color="grey-4"
-              />
-              <div class="text-body2 text-grey-6">
-                {{ t('subscribers.noResults') }}
-              </div>
-            </div>
-
-            <!-- Subscriber list (virtual scroll for large datasets) -->
-            <q-virtual-scroll
-              v-else
-              :items="filteredSubscribers"
-              :virtual-scroll-item-size="56"
-              style="max-height: 540px"
-              class="rounded-borders subscriber-scroll"
-            >
-              <template #default="{ item: subscriber, index }">
+              <q-list
+                bordered
+                separator
+                class="rounded-borders list-scroll"
+              >
                 <q-item
-                  :key="subscriber.id"
-                  class="subscriber-item"
+                  v-for="manager in managers"
+                  :key="manager.id"
                 >
                   <q-item-section avatar>
                     <q-avatar
@@ -397,111 +486,40 @@
                       size="36px"
                     >
                       {{
-                        (subscriber.name ?? subscriber.email)
-                          .charAt(0)
-                          .toUpperCase()
+                        manager.name?.charAt(0).toUpperCase() ??
+                        manager.email.charAt(0).toUpperCase()
                       }}
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label class="text-weight-medium">
-                      {{ subscriber.email }}
+                    <q-item-label>
+                      {{ manager.name ?? manager.email }}
                     </q-item-label>
                     <q-item-label
-                      v-if="subscriber.name"
+                      v-if="manager.name"
                       caption
                     >
-                      {{ subscriber.name }}
-                    </q-item-label>
-                    <q-item-label caption>
-                      {{ d(subscriber.subscribedAt, 'date') }}
+                      {{ manager.email }}
                     </q-item-label>
                   </q-item-section>
-                  <q-item-section side>
+                  <q-item-section
+                    v-if="manager.email !== userEmail"
+                    side
+                  >
                     <q-btn
                       flat
                       round
                       icon="person_remove"
                       color="negative"
                       size="sm"
-                      @click="showDeleteSubscriberDialog(subscriber)"
+                      @click="showDeleteManagerDialog(manager)"
                     />
                   </q-item-section>
                 </q-item>
-                <q-separator
-                  v-if="index < filteredSubscribers.length - 1"
-                  :key="`sep-${subscriber.id}`"
-                />
-              </template>
-            </q-virtual-scroll>
-          </q-tab-panel>
-
-          <!-- Managers Tab -->
-          <q-tab-panel
-            name="managers"
-            class="q-pa-none q-pt-lg"
-          >
-            <div class="row justify-end q-mb-md">
-              <q-btn
-                color="primary"
-                icon="person_add"
-                :label="t('managers.action.add')"
-                rounded
-                unelevated
-                no-caps
-                @click="showAddManagerDialog"
-              />
-            </div>
-
-            <q-list
-              bordered
-              separator
-              class="rounded-borders"
-            >
-              <q-item
-                v-for="manager in managers"
-                :key="manager.id"
-              >
-                <q-item-section avatar>
-                  <q-avatar
-                    color="primary"
-                    text-color="white"
-                    size="36px"
-                  >
-                    {{
-                      manager.name?.charAt(0).toUpperCase() ??
-                      manager.email.charAt(0).toUpperCase()
-                    }}
-                  </q-avatar>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    {{ manager.name ?? manager.email }}
-                  </q-item-label>
-                  <q-item-label
-                    v-if="manager.name"
-                    caption
-                  >
-                    {{ manager.email }}
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section
-                  v-if="manager.email !== userEmail"
-                  side
-                >
-                  <q-btn
-                    flat
-                    round
-                    icon="person_remove"
-                    color="negative"
-                    size="sm"
-                    @click="showDeleteManagerDialog(manager)"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-tab-panel>
-        </q-tab-panels>
+              </q-list>
+            </q-tab-panel>
+          </q-tab-panels>
+        </div>
       </div>
     </div>
   </page-state-handler>
@@ -517,6 +535,9 @@ import { useNewsletterSubscriberStore } from 'stores/newsletter-subscriber-store
 import { useNewsletterMessageStore } from 'stores/newsletter-message-store';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
+import FileInput, {
+  type FileInputModel,
+} from 'components/common/inputs/FileInput.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import type {
@@ -548,6 +569,7 @@ const messageStore = useNewsletterMessageStore();
 const tab = ref('compose');
 const sendSubject = ref('');
 const sendBody = ref('');
+const sendAttachments = ref<FileInputModel[]>([]);
 const subscriberFilter = ref('');
 
 const newsletterId = computed(() => route.params.newsletterId as string);
@@ -586,7 +608,10 @@ const error = computed<string | null>(
 
 const filteredSubscribers = computed<NewsletterSubscriber[]>(() => {
   const query = subscriberFilter.value?.trim().toLowerCase();
-  if (!query) return subscribers.value;
+  if (!query) {
+    return subscribers.value;
+  }
+
   return subscribers.value.filter(
     (s) =>
       s.email.toLowerCase().includes(query) ||
@@ -674,6 +699,7 @@ function showDeleteManagerDialog(manager: NewsletterManager) {
 function useAsTemplate(message: NewsletterMessage) {
   sendSubject.value = message.subject;
   sendBody.value = message.body;
+  sendAttachments.value = [];
   tab.value = 'compose';
 }
 
@@ -721,6 +747,9 @@ function confirmSend() {
           const result = await api.sendNewsletterMessage(newsletterId.value, {
             subject: sendSubject.value,
             body: sendBody.value,
+            attachmentIds: sendAttachments.value
+              .filter((f) => f.id !== undefined)
+              .map((f) => f.id!),
           });
           messageStore.invalidate();
           await messageStore.fetchData(newsletterId.value);
@@ -730,6 +759,7 @@ function confirmSend() {
           });
           sendSubject.value = '';
           sendBody.value = '';
+          sendAttachments.value = [];
           tab.value = 'history';
         } catch {
           quasar.notify({
@@ -759,6 +789,7 @@ compose:
   subject: 'Subject'
   body: 'Message'
   bodyPlaceholder: 'Write your newsletter content here...'
+  attachments: 'Attachments (optional)'
   recipientInfo: 'Will be sent to {count} subscribers'
   send: 'Send Newsletter'
   success: 'Newsletter queued for {count} recipients.'
@@ -819,6 +850,7 @@ compose:
   subject: 'Betreff'
   body: 'Nachricht'
   bodyPlaceholder: 'Schreiben Sie hier Ihren Newsletter-Inhalt...'
+  attachments: 'Anhänge (optional)'
   recipientInfo: 'Wird an {count} Abonnenten gesendet'
   send: 'Newsletter senden'
   success: 'Newsletter für {count} Empfänger in die Warteschlange gestellt.'
@@ -879,6 +911,7 @@ compose:
   subject: 'Sujet'
   body: 'Message'
   bodyPlaceholder: 'Rédigez ici le contenu de votre newsletter...'
+  attachments: 'Pièces jointes (optionnel)'
   recipientInfo: 'Sera envoyé à {count} abonnés'
   send: 'Envoyer la newsletter'
   success: "Newsletter mise en file d'attente pour {count} destinataires."
@@ -939,6 +972,7 @@ compose:
   subject: 'Temat'
   body: 'Wiadomość'
   bodyPlaceholder: 'Napisz tutaj treść swojego newslettera...'
+  attachments: 'Załączniki (opcjonalnie)'
   recipientInfo: 'Zostanie wysłany do {count} subskrybentów'
   send: 'Wyślij newsletter'
   success: 'Newsletter dodany do kolejki dla {count} odbiorców.'
@@ -999,6 +1033,7 @@ compose:
   subject: 'Předmět'
   body: 'Zpráva'
   bodyPlaceholder: 'Napište zde obsah svého newsletteru...'
+  attachments: 'Přílohy (volitelné)'
   recipientInfo: 'Bude odesláno {count} odběratelům'
   send: 'Odeslat newsletter'
   success: 'Newsletter zařazen do fronty pro {count} příjemců.'
@@ -1043,7 +1078,28 @@ managers:
 </i18n>
 
 <style scoped>
+.newsletter-tabs {
+  min-height: 0;
+}
+
+.newsletter-panels {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.newsletter-panels :deep(.q-tab-panel) {
+  flex: 1;
+  min-height: 0;
+}
+
+.list-scroll {
+  overflow-y: auto;
+}
+
 .subscriber-scroll {
+  min-height: 0;
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
 

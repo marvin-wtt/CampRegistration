@@ -25,15 +25,18 @@ export const useNewsletterSubscriberStore = defineStore(
       checkNotNullWithNotification,
     } = useServiceHandler<NewsletterSubscriber[]>('newsletterSubscriber');
 
-    authBus.on('logout', () => {
-      reset();
-    });
+    authBus.on('logout', reset);
+
+    let lastNewsletterId: string | null = null;
 
     async function fetchData(newsletterId: string) {
-      const nid = checkNotNullWithError(newsletterId);
+      if (lastNewsletterId != null && lastNewsletterId !== newsletterId) {
+        invalidate();
+      }
       await lazyFetch(async () => {
-        return await api.fetchNewsletterSubscribers(nid);
+        return await api.fetchNewsletterSubscribers(newsletterId);
       });
+      lastNewsletterId = newsletterId;
     }
 
     async function createData(

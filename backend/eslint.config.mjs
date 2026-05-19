@@ -19,6 +19,7 @@ export default tseslint.config(
   security.configs.recommended,
   {
     rules: {
+      curly: 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',

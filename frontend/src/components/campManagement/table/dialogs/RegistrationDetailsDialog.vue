@@ -328,24 +328,33 @@ const hasAddress = computed<boolean>(() => {
 
 const translatedGender = computed<string>(() => {
   const g = registration.computedData.gender;
-  if (!g) return '';
+  if (!g) {
+    return '';
+  }
   const key = `gender.${g}`;
   const result = t(key);
+
   return result === key ? g : result;
 });
 
 const translatedRole = computed<string>(() => {
   const r = registration.computedData.role;
-  if (!r) return '';
+  if (!r) {
+    return '';
+  }
   const key = `role.${r}`;
   const result = t(key);
+
   return result === key ? r : result;
 });
 
 const formattedDateOfBirth = computed<string>(() => {
   const dob = registration.computedData.dateOfBirth;
-  if (!dob) return '';
+  if (!dob) {
+    return '';
+  }
   const date = new Date(dob);
+
   return date.toLocaleDateString(locale.value, {
     year: 'numeric',
     month: 'long',

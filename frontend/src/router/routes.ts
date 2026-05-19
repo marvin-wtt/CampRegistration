@@ -277,7 +277,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/newsletters/unsubscribe/:token',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('layouts/PublicLayout.vue'),
     children: [
       {
         path: '',

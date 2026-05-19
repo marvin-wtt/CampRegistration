@@ -66,7 +66,10 @@ const Variable = Node.create<VariableOptions>({
           return content.substring(2, content.length - 2).trim();
         },
         renderHTML: (attributes) => {
-          if (!attributes.value) return {};
+          if (!attributes.value) {
+            return {};
+          }
+
           return { 'data-variable': true };
         },
       },

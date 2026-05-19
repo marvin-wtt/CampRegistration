@@ -7,7 +7,7 @@ export type AddressLike = Address | Address[];
 
 export interface MailAttachment {
   filename: string;
-  content: Buffer | string | Readable;
+  content: Buffer | Readable | string;
   contentType?: string;
   contentDisposition?: 'attachment' | 'inline';
 }

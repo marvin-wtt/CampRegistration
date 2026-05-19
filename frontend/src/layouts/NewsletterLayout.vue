@@ -98,4 +98,26 @@ title: 'Newslettery'
 .fade-leave-to {
   opacity: 0;
 }
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 0.125rem grey;
+  border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #656565;
+  border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b4b4b;
+}
+
+::-webkit-scrollbar-corner {
+}
 </style>

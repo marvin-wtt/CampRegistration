@@ -42,6 +42,8 @@ export class NewsletterMessageController extends BaseController {
       body: body.body,
       recipientCount: subscribers.length,
       sentByUserId: userId,
+      attachmentIds: body.attachmentIds,
+      sessionId: req.sessionId,
     });
 
     await NewsletterMessageMail.enqueueBulk(
@@ -53,6 +55,7 @@ export class NewsletterMessageController extends BaseController {
         replyTo: newsletter.replyTo ?? undefined,
         newsletterId: newsletter.id,
         unsubscribeToken: subscriber.unsubscribeToken,
+        attachments: message.attachments,
       })),
     );
 

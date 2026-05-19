@@ -265,7 +265,10 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
 
     // priority asc (1 is highest), then stable-ish tie-breaker by id
     pending.sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority - b.priority;
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+
       return a.id.localeCompare(b.id);
     });
 
@@ -356,7 +359,10 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   private stringifyError(err: unknown): string {
-    if (err instanceof Error) return err.message;
+    if (err instanceof Error) {
+      return err.message;
+    }
+
     return String(err);
   }
 

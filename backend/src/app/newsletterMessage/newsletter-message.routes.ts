@@ -11,7 +11,9 @@ export class NewsletterMessageRouter extends ModuleRouter {
     const messageService = resolve(NewsletterMessageService);
     this.bindModel('newsletterMessage', (req, id) => {
       const newsletter = req.model('newsletter');
-      if (!newsletter) return null;
+      if (!newsletter) {
+        return null;
+      }
       return messageService.getMessageById(newsletter.id, id);
     });
   }

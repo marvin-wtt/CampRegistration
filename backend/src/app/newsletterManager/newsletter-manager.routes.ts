@@ -11,7 +11,9 @@ export class NewsletterManagerRouter extends ModuleRouter {
     const managerService = resolve(NewsletterManagerService);
     this.bindModel('newsletterManager', (req, id) => {
       const newsletter = req.model('newsletter');
-      if (!newsletter) return null;
+      if (!newsletter) {
+        return null;
+      }
       return managerService.getManagerById(newsletter.id, id);
     });
   }

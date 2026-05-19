@@ -216,25 +216,27 @@ enum UploadStatus {
 }
 
 model File {
-  id                String       @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
-  campId            String?      @map("camp_id") @db.Char(26) // Prisma does not support morth
-  registrationId    String?      @map("registration_id") @db.Char(26) // Prisma does not support morth
-  messageId         String?      @map("message_id") @db.Char(26) // Prisma does not support morth
-  messageTemplateId String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
-  name              String
-  originalName      String       @map("original_name")
-  field             String?
-  type              String
-  size              Int
-  accessLevel       String?      @map("access_level")
-  storageLocation   String       @map("storage_location")
-  uploadStatus      UploadStatus @default(READY) @map("upload_status")
-  createdAt         DateTime     @default(now()) @map("created_at")
+  id                  String       @id @unique(map: "files_id_unique") @default(ulid()) @db.Char(26)
+  campId              String?      @map("camp_id") @db.Char(26) // Prisma does not support morth
+  registrationId      String?      @map("registration_id") @db.Char(26) // Prisma does not support morth
+  messageId           String?      @map("message_id") @db.Char(26) // Prisma does not support morth
+  messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
+  newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
+  name                String
+  originalName        String       @map("original_name")
+  field               String?
+  type                String
+  size                Int
+  accessLevel         String?      @map("access_level")
+  storageLocation     String       @map("storage_location")
+  uploadStatus        UploadStatus @default(READY) @map("upload_status")
+  createdAt           DateTime     @default(now()) @map("created_at")
 
-  camp            Camp?            @relation(fields: [campId], references: [id], onDelete: SetNull)
-  registration    Registration?    @relation(fields: [registrationId], references: [id], onDelete: SetNull)
-  message         Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
-  messageTemplate MessageTemplate? @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
+  camp              Camp?              @relation(fields: [campId], references: [id], onDelete: SetNull)
+  registration      Registration?      @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  message           Message?           @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  messageTemplate   MessageTemplate?   @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
+  newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
 
   @@map("files")
 }
@@ -367,8 +369,9 @@ model NewsletterMessage {
   recipientCount Int      @map("recipient_count")
   sentAt         DateTime @default(now()) @map("sent_at")
 
-  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_messages_newsletter_id_foreign")
-  sentBy     User?      @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "newsletter_messages_sent_by_user_id_foreign")
+  newsletter  Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_messages_newsletter_id_foreign")
+  sentBy      User?      @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "newsletter_messages_sent_by_user_id_foreign")
+  attachments File[]
 
   @@index([newsletterId], map: "newsletter_messages_newsletter_id_index")
   @@map("newsletter_messages")

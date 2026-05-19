@@ -157,8 +157,6 @@ export function useAuthService() {
     if (csrfToken !== undefined && typeof csrfToken === 'string') {
       api.defaults.headers.common['x-csrf-token'] = csrfToken;
     }
-
-    return;
   }
 
   function setOnUnauthenticated(handler: () => unknown) {
@@ -214,6 +212,7 @@ export function useAuthService() {
     sendEmailVerify,
     refreshTokens,
     setOnUnauthenticated,
+    requestCsrfToken,
     extractPartialAuthResponse,
   };
 }
