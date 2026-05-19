@@ -4,6 +4,7 @@
     dense
     class="email-editor"
     :class="singleLine ? '' : 'email-editor__multiline'"
+    @click="onFieldClick"
   >
     <template #control="{ focused }">
       <transition name="fade">
@@ -15,7 +16,6 @@
           <bubble-menu
             v-if="!plainText"
             :editor
-            :tippy-options="{ duration: 100 }"
             class="col-shrink bubble-menu q-pa-xs"
           >
             <div class="row q-gutter-xs no-wrap">
@@ -276,18 +276,25 @@
 <script lang="ts" setup>
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, onBeforeUnmount, reactive, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  reactive,
+  useAttrs,
+  watch,
+} from 'vue';
 import type {
   Token,
   TokenRegistry,
 } from 'components/campManagement/contact/TokenRegistry';
 import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
-import { EditorContent, BubbleMenu, useEditor } from '@tiptap/vue-3';
+import { EditorContent, useEditor } from '@tiptap/vue-3';
+import { BubbleMenu } from '@tiptap/vue-3/menus';
 import type { Editor } from '@tiptap/core';
 import { Color } from '@tiptap/extension-color';
-import TextStyle from '@tiptap/extension-text-style';
-import ListItem from '@tiptap/extension-list-item';
+import { TextStyleKit } from '@tiptap/extension-text-style';
 import Placeholder from '@tiptap/extension-placeholder';
 import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
@@ -378,11 +385,11 @@ const editor = useEditor({
       placeholder: placeholder ?? t('placeholder'),
     }),
     Underline,
-    Color.configure({ types: [TextStyle.name, ListItem.name] }),
+    Color,
     Highlight.configure({
       multicolor: true,
     }),
-    TextStyle.configure({ types: [ListItem.name] }),
+    TextStyleKit,
     HardBreak,
     Variable.configure({
       variables: variables.value,
@@ -407,7 +414,9 @@ watch(model, (value) => {
     return;
   }
 
-  editor.value?.commands.setContent(wrapTemplateVariables(value), false);
+  editor.value?.commands.setContent(wrapTemplateVariables(value), {
+    emitUpdate: false,
+  });
 });
 
 function getEditorValue(editor: Editor) {
@@ -426,6 +435,17 @@ function unwrapTemplateVariables(html: string): string {
     /<span\b(?=[^>]*\bdata-variable\b)[^>]*>(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})<\/span>/g;
 
   return html.replace(regex, '$1');
+}
+
+const attrs = useAttrs();
+
+watch(
+  () => attrs.disable as boolean | undefined,
+  (disabled) => editor.value?.setEditable(!disabled),
+);
+
+async function onFieldClick() {
+  await nextTick(() => editor.value?.commands.focus());
 }
 
 function onAddToken() {
