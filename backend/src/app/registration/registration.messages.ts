@@ -286,9 +286,11 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected content(): Content | Promise<Content> {
+    const locale = this.payload.registration.country ?? this.locale();
+
     const template = translateObject(
       this.payload.messageTemplate.body,
-      this.payload.registration.country ?? this.locale(),
+      locale,
     );
 
     const compile = Handlebars.compile(template, {
@@ -302,7 +304,12 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     });
 
     return {
-      html: compile(this.context()),
+      template: 'registration-message',
+      context: {
+        body: compile(this.context()),
+        campName: translateObject(this.payload.camp.name, locale),
+        reason: this.reason(),
+      },
     };
   }
 
