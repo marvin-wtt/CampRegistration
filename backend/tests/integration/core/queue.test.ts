@@ -140,6 +140,27 @@ describe('Queue', () => {
         await q.close();
       });
 
+      it('processes a string payload', async () => {
+        const q = createQueue<string, void, 'upload'>(
+          uniqueName(`q-str-${name}`),
+          DEFAULTS,
+        );
+
+        const seen: string[] = [];
+        q.process(async (p) => {
+          seen.push(p.payload);
+        });
+
+        await q.add('upload', 'abc123.jpg');
+        await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+          timeout: 5_000,
+        });
+
+        expect(seen).toEqual(['abc123.jpg']);
+
+        await q.close();
+      });
+
       it('retries once after failure then completes', async () => {
         const q = createQueue<{ i: number }, string, 'test'>(
           uniqueName(`q-retry-${name}`),

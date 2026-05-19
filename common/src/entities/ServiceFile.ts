@@ -6,6 +6,7 @@ export interface ServiceFile extends Identifiable {
   type: string;
   size: number;
   accessLevel: string | null;
+  uploadStatus: 'PENDING' | 'READY';
   createdAt: string;
   url: string;
 }

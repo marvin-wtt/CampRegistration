@@ -31,6 +31,7 @@ export class RegistrationService extends BaseService {
       where: {
         id: { in: ids },
         campId,
+        status: { not: 'PENDING' },
       },
       include: {
         bed: { include: { room: true } },

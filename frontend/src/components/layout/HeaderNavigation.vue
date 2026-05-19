@@ -16,7 +16,7 @@
   />
   <q-btn
     :label="t('camps')"
-    :to="{ name: 'management' }"
+    :to="{ name: 'management.camps' }"
     class="gt-sm"
     flat
     rounded
