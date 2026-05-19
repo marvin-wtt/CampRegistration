@@ -61,6 +61,7 @@ const error = ref(false);
 onMounted(async () => {
   const token = route.params.token as string;
   try {
+    await api.requestCsrfToken();
     await api.unsubscribeByToken(token);
     success.value = true;
   } catch {
