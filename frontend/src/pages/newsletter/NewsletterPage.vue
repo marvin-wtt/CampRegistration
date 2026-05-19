@@ -1,12 +1,12 @@
 <template>
   <page-state-handler
-    padding
     :error
-    class="row justify-center"
+    class="relative-position"
   >
-    <div class="column col-sm-11 col-md-10 col-lg-9 col-12 q-gutter-y-lg">
+    <div class="absolute fit row no-wrap justify-center q-pa-md">
+      <div class="column no-wrap col-sm-11 col-md-10 col-lg-9 col-12">
       <!-- Header -->
-      <div class="row items-start justify-between no-wrap">
+      <div class="row items-start justify-between no-wrap q-mb-lg">
         <div class="col">
           <div
             class="text-overline text-grey-6 text-uppercase letter-spacing-1"
@@ -64,7 +64,7 @@
       </div>
 
       <!-- Tabs -->
-      <div class="grow">
+      <div class="column no-wrap col newsletter-tabs">
         <q-tabs
           v-model="tab"
           align="left"
@@ -98,12 +98,13 @@
         <q-tab-panels
           v-model="tab"
           animated
-          class="q-mt-none bg-transparent tab-panels"
+          class="col bg-transparent newsletter-panels"
         >
           <!-- Compose Tab -->
           <q-tab-panel
             name="compose"
             class="q-pa-none q-pt-lg"
+            style="overflow-y: auto"
           >
             <div class="q-gutter-y-md">
               <q-input
@@ -173,6 +174,7 @@
           <q-tab-panel
             name="history"
             class="q-pa-none q-pt-lg"
+            style="overflow-y: auto"
           >
             <div
               v-if="messageStore.isLoading"
@@ -280,11 +282,11 @@
           <!-- Subscribers Tab -->
           <q-tab-panel
             name="subscribers"
-            class="q-pa-none"
+            class="q-pa-none column no-wrap"
+            style="overflow: hidden"
           >
-            <div class="q-mt-lg">
               <!-- Toolbar + Search -->
-              <div class="row items-center q-gutter-sm q-mb-md">
+              <div class="row items-center q-gutter-sm q-mb-md q-mt-lg">
                 <q-input
                   v-model="subscriberFilter"
                   :placeholder="t('subscribers.search')"
@@ -395,7 +397,7 @@
                 v-else
                 :items="filteredSubscribers"
                 :virtual-scroll-item-size="56"
-                class="rounded-borders subscriber-scroll"
+                class="col rounded-borders subscriber-scroll"
               >
                 <template #default="{ item: subscriber, index }">
                   <q-item
@@ -446,13 +448,13 @@
                   />
                 </template>
               </q-virtual-scroll>
-            </div>
           </q-tab-panel>
 
           <!-- Managers Tab -->
           <q-tab-panel
             name="managers"
             class="q-pa-none q-pt-lg"
+            style="overflow-y: auto"
           >
             <div class="row justify-end q-mb-md">
               <q-btn
@@ -515,6 +517,7 @@
             </q-list>
           </q-tab-panel>
         </q-tab-panels>
+      </div>
       </div>
     </div>
   </page-state-handler>
@@ -1070,16 +1073,28 @@ managers:
 </i18n>
 
 <style scoped>
-.tab-panels {
+.newsletter-tabs {
+  min-height: 0;
+}
+
+.newsletter-panels {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  min-height: 0;
+}
+
+.newsletter-panels :deep(.q-tab-panel) {
+  flex: 1;
+  min-height: 0;
 }
 
 .list-scroll {
-  max-height: 540px;
   overflow-y: auto;
 }
 
 .subscriber-scroll {
+  min-height: 0;
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
