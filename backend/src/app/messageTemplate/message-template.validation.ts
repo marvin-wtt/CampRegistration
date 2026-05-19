@@ -18,7 +18,7 @@ const index = z.object({
   }),
   query: z
     .object({
-      hasEvent: z.coerce.boolean().optional(),
+      hasEvent: z.stringbool().optional(),
     })
     .partial() satisfies ZodType<MessageTemplateQuery>,
 });
