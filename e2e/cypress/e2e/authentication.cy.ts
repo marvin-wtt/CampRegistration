@@ -66,7 +66,7 @@ describe("Authentication", () => {
 
       cy.wait("@verifyTotp").its("response.statusCode").should("eq", 200);
 
-      cy.location("pathname").should("eq", "/management");
+      cy.location("pathname").should("eq", "/management/camps");
     });
 
     it("should show error for invalid totp", () => {
@@ -133,7 +133,7 @@ describe("Authentication", () => {
       loginForm.getBySel("password").type("Password123#");
       loginForm.getBySel("submit").click();
 
-      cy.location("pathname").should("eq", "/management");
+      cy.location("pathname").should("eq", "/management/camps");
     });
   });
 
@@ -176,7 +176,7 @@ describe("Authentication", () => {
       loginForm.getBySel("submit").click();
 
       cy.wait("@loginUser").its("response.statusCode").should("eq", 200);
-      cy.location("pathname").should("eq", "/management");
+      cy.location("pathname").should("eq", "/management/camps");
     });
   });
 });
