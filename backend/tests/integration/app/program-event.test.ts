@@ -180,7 +180,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       date: '2025-07-15',
       time: '08:00',
       duration: 60,
-      color: 'blue',
+      color: '#FF0000',
       plan: 'both',
     };
 
@@ -254,7 +254,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
         date: '2025-07-16',
         time: '20:00',
         duration: 90,
-        color: 'orange',
+        color: '#0000FF',
         plan: 'a',
       };
 
@@ -370,7 +370,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
         date: '2025-08-01',
         time: '14:00',
         duration: 45,
-        color: 'green',
+        color: '#00FF00',
         plan: 'b',
       };
 
@@ -426,7 +426,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
       const event = await createEventForCamp(camp, {
         time: '10:00',
         duration: 60,
-        color: 'red',
+        color: '#123456',
       });
 
       const { body } = await request()
