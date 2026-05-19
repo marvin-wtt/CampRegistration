@@ -13,7 +13,7 @@
       :end="camp.endAt"
       :current="selectedDate"
       @next="onNextNavigation"
-      @previous="onPreciousNavigation"
+      @previous="onPreviousNavigation"
       @jump="(date) => (selectedDate = date)"
       @print="onPrint"
       @settings="onSettingsOpen"
@@ -329,8 +329,12 @@ function updateIntervalHeight() {
     return;
   }
 
-  const height = el.clientHeight - 10;
-  intervalHeight.value = height / intervalCount.value;
+  const count = intervalCount.value;
+  if (!Number.isFinite(count) || count <= 0) {
+    return;
+  }
+  const height = Math.max(0, el.clientHeight - 10);
+  intervalHeight.value = height / count;
 }
 
 function maxViewportRange(): number {
@@ -351,7 +355,8 @@ function maxViewportRange(): number {
 }
 
 function initialRange(): number {
-  const max = daysBetweenDates(new Date(camp.startAt), new Date(camp.endAt));
+  const max =
+    daysBetweenDates(new Date(camp.startAt), new Date(camp.endAt)) + 1;
 
   return Math.min(max, maxViewportRange());
 }
@@ -830,7 +835,7 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ArrowRight') {
     onNextNavigation();
   } else if (e.key === 'ArrowLeft') {
-    onPreciousNavigation();
+    onPreviousNavigation();
   }
 }
 
@@ -845,7 +850,7 @@ function onNextNavigation() {
   selectedDate.value = formatDate(new Date(updateMs));
 }
 
-function onPreciousNavigation() {
+function onPreviousNavigation() {
   const startDate = parseLocalDate(camp.startAt.substring(0, 10));
   const currentDate = parseLocalDate(selectedDate.value);
 

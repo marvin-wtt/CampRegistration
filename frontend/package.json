@@ -27,6 +27,7 @@
   "dependencies": {
     "@camp-registration/common": "*",
     "@quasar/extras": "^1.16.17",
+    "@quasar/quasar-ui-qcalendar": "^4.1.2",
     "@tiptap/extension-color": "^2.11.9",
     "@tiptap/extension-hard-break": "^2.11.9",
     "@tiptap/extension-highlight": "^2.11.9",
@@ -39,8 +40,6 @@
     "@vue/eslint-config-prettier": "^10.2.0",
     "apexcharts": "^5.1.0",
     "axios": "^1.16.0",
-    "@quasar/quasar-ui-qcalendar": "^4.1.2",
-    "dom-to-image": "^2.6.0",
     "flag-icons": "^7.3.2",
     "html-to-image": "^1.11.13",
     "http-status": "^2.1.0",

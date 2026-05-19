@@ -2,7 +2,21 @@ import { z } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
-const dateSchema = z.string(); // TODO Should be raw string YYYY-MM-DD
+const dateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+  .refine((value) => {
+    const [yearString, monthString, dayString] = value.split('-');
+    const year = Number(yearString);
+    const month = Number(monthString);
+    const day = Number(dayString);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    );
+  }, 'Date must be a valid calendar date');
 const planSchema = z.enum(['a', 'b', 'both']);
 
 const show = z.object({
@@ -28,7 +42,7 @@ const store = z.object({
     location: translatedValue(z.string()).optional().nullable(),
     date: dateSchema.optional().nullable(),
     time: timeSchema.optional().nullable(),
-    duration: z.number().min(0).optional().nullable(),
+    duration: z.number().min(1).optional().nullable(),
     color: z.string().optional().nullable(),
     plan: planSchema.optional(),
   }),
@@ -46,7 +60,7 @@ const update = z.object({
       location: translatedValue(z.string()).nullable(),
       date: dateSchema.nullable(),
       time: timeSchema.nullable(),
-      duration: z.number().min(0).nullable(),
+      duration: z.number().min(1).nullable(),
       color: z.string().nullable(),
       plan: planSchema,
     })

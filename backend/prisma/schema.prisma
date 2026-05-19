@@ -382,7 +382,7 @@ model ProgramEvent {
   time     String?
   color    String? @map("color")
   plan     String  @default("both")
-  camp     Camp?   @relation(fields: [campId], references: [id], onDelete: Cascade)
+  camp     Camp    @relation(fields: [campId], references: [id], onDelete: Cascade)
 
   @@map("program_events")
 }

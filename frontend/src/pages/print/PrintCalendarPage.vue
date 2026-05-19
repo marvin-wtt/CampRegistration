@@ -156,7 +156,8 @@ const primaryLocale = computed<string>(
 
 // "All day" label shown in every camp locale, deduplicated
 const allDayLabel = computed<string>(() => {
-  const labels = campLocales.value.map((l) => t('allDay', l));
+  const labels = campLocales.value.map((l) => t('allDay', {}, { locale: l }));
+
   return [...new Set(labels)].join(' / ');
 });
 

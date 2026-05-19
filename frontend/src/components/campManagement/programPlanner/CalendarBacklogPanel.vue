@@ -91,7 +91,10 @@
   <div
     v-else
     class="backlog"
-    :class="[{ 'backlog--collapsed': collapsed }, { 'backlog--dragover': isDragOver }]"
+    :class="[
+      { 'backlog--collapsed': collapsed },
+      { 'backlog--dragover': isDragOver },
+    ]"
     @dragover.prevent
     @dragenter="onDragEnter"
     @dragleave="onDragLeave"
@@ -190,7 +193,11 @@ const { t } = useI18n();
 const quasar = useQuasar();
 const { to, toAll } = useObjectTranslation();
 
-const { events, activePlan, showAllTranslations = false } = defineProps<{
+const {
+  events,
+  activePlan,
+  showAllTranslations = false,
+} = defineProps<{
   events: ProgramEvent[];
   activePlan: 'a' | 'b' | 'both';
   showAllTranslations?: boolean;
@@ -212,7 +219,9 @@ let dragCounter = 0;
 const isDragOver = ref(false);
 
 const filteredEvents = computed<ProgramEvent[]>(() => {
-  if (activePlan === 'both') return events;
+  if (activePlan === 'both') {
+    return events;
+  }
   return events.filter((e) => e.plan === activePlan || e.plan === 'both');
 });
 
@@ -221,7 +230,9 @@ function onMobileAdd() {
 }
 
 function onCardDragStart(e: DragEvent, event: ProgramEvent) {
-  if (!e.dataTransfer) return;
+  if (!e.dataTransfer) {
+    return;
+  }
   e.dataTransfer.effectAllowed = 'copyMove';
   e.dataTransfer.setData('eventId', event.id);
   emit('dragstart', e, event);
@@ -233,14 +244,18 @@ function onDragEnter() {
 }
 
 function onDragLeave() {
-  if (--dragCounter === 0) isDragOver.value = false;
+  if (--dragCounter === 0) {
+    isDragOver.value = false;
+  }
 }
 
 function onDrop(e: DragEvent) {
   dragCounter = 0;
   isDragOver.value = false;
   const id = e.dataTransfer?.getData('eventId');
-  if (id) emit('move-to-backlog', id);
+  if (id) {
+    emit('move-to-backlog', id);
+  }
 }
 </script>
 
