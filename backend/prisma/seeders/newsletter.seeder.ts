@@ -22,7 +22,7 @@ class NewsletterSeeder extends BaseSeeder {
       },
     });
 
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 120; i++) {
       await NewsletterSubscriberFactory.create({
         newsletter: { connect: { id: newsletter1.id } },
       });
