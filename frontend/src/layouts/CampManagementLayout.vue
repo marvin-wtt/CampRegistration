@@ -290,7 +290,7 @@ function toggleDrawer() {
 }
 
 function navigateHome() {
-  void router.push({ name: 'management' });
+  void router.push({ name: 'management.camps' });
 }
 </script>
 

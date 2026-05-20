@@ -59,7 +59,7 @@ export const useNewsletterSubscriberStore = defineStore(
     ): Promise<{ added: number; skipped: number }> {
       checkNotNullWithError(newsletterId);
       let result = { added: 0, skipped: 0 };
-      await withProgressNotification('create', async () => {
+      await withProgressNotification('import', async () => {
         result = await api.importNewsletterSubscribers(
           newsletterId,
           importData,

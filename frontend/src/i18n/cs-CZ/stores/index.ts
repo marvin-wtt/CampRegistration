@@ -7,6 +7,10 @@ import auth from './auth';
 import profile from './profile';
 import programPlanner from './program-planner';
 import queue from './queue';
+import newsletter from './newsletter';
+import newsletterSubscriber from './newsletter-subscriber';
+import newsletterMessage from './newsletter-message';
+import newsletterManager from './newsletter-manager';
 
 export default {
   camp,
@@ -18,4 +22,8 @@ export default {
   profile,
   programPlanner,
   queue,
+  newsletter,
+  newsletterSubscriber,
+  newsletterMessage,
+  newsletterManager,
 };
