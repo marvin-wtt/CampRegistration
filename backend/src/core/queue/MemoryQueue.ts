@@ -64,15 +64,22 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public retryFailed(): Promise<void> {
+    const batchSize = 10;
+    const now = Date.now();
+    let i = 0;
+
     for (const job of this.jobs.values()) {
       if (job.status === 'FAILED') {
-        job.status = 'PENDING';
+        const delay = Math.floor(i / batchSize) * this.options.retryDelay;
+        job.status = delay > 0 ? 'DELAYED' : 'PENDING';
         job.attempts = 0;
         job.error = null;
         job.finishedAt = null;
-        job.runAt = null;
+        job.runAt = delay > 0 ? new Date(now + delay) : null;
+        i++;
       }
     }
+
     return Promise.resolve();
   }
 

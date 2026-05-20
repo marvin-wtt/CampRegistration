@@ -179,8 +179,19 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public async retryFailed(): Promise<void> {
+    const batchSize = 10;
     const failed = await this.bull.getJobs(['failed']);
-    await Promise.all(failed.map((job) => job.retry()));
+
+    await Promise.all(
+      failed.map(async (job, index) => {
+        const delay = Math.floor(index / batchSize) * this.options.retryDelay;
+        await this.bull.add(job.name, job.data, {
+          priority: job.opts.priority,
+          delay,
+        });
+        await job.remove();
+      }),
+    );
   }
 
   public async deleteFailed(): Promise<void> {

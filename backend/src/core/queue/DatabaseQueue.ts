@@ -242,17 +242,32 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   }
 
   public async retryFailed(): Promise<void> {
-    await prisma.job.updateMany({
+    const batchSize = 10;
+    const now = Date.now();
+
+    const failed = await prisma.job.findMany({
       where: { queue: this.queue, status: 'FAILED' },
-      data: {
-        status: 'PENDING',
-        attempts: 0,
-        error: null,
-        reservedAt: null,
-        finishedAt: null,
-        runAt: new Date(),
-      },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
     });
+
+    await Promise.all(
+      failed.map((job, index) => {
+        const delay = Math.floor(index / batchSize) * this.options.retryDelay;
+        return prisma.job.update({
+          where: { id: job.id },
+          data: {
+            status: 'PENDING',
+            attempts: 0,
+            error: null,
+            reservedAt: null,
+            finishedAt: null,
+            runAt: new Date(now + delay),
+          },
+        });
+      }),
+    );
+
     this.wake();
   }
 
