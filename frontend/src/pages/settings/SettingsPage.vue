@@ -5,7 +5,7 @@
     :loading
     class="row"
   >
-    <div class="col-12 col-sm-4 col-md-2">
+    <div class="col-12 col-sm-4 col-md-3">
       <q-list padding>
         <template
           v-for="item in items"
@@ -33,7 +33,7 @@
       </q-list>
     </div>
 
-    <div class="col-12 col-sm-8 col-md-10">
+    <div class="col-12 col-sm-8 col-md-9">
       <router-view v-slot="{ Component }">
         <transition name="fade">
           <component :is="Component" />

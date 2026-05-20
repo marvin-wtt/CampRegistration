@@ -1,11 +1,14 @@
 <template>
-  <q-card flat>
+  <q-card
+    flat
+    bordered
+  >
     <q-form @submit="onDisable">
-      <q-card-section class="text-h4">
+      <q-card-section class="text-h6">
         {{ t('title') }}
       </q-card-section>
 
-      <q-card-section class="text-subtitle-2">
+      <q-card-section class="text-subtitle-2 q-pt-none">
         {{ t('description') }}
       </q-card-section>
 
@@ -47,12 +50,16 @@
         </q-input>
       </q-card-section>
 
-      <q-card-section
+      <div
         v-if="error"
-        class="text-negative q-ma-none q-py-xs"
+        class="q-px-md q-pb-sm text-negative text-body2"
       >
-        {{ error }}
-      </q-card-section>
+        <q-icon
+          name="warning"
+          size="xs"
+          class="q-mr-xs"
+        />{{ error }}
+      </div>
 
       <q-card-actions>
         <q-btn
@@ -60,7 +67,7 @@
           type="submit"
           color="primary"
           :loading
-          outlined
+          outline
           rounded
         />
       </q-card-actions>
@@ -115,10 +122,11 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Two-Factor Authentication'
+title: 'Zwei-Faktor-Authentifizierung'
 
-description: 'Two-factor authentication is currently active. You can disable it
-  by entering your password and the OTP.'
+description:
+  'Die Zwei-Faktor-Authentifizierung ist derzeit aktiv. Sie können sie
+  deaktivieren, indem Sie Ihr Passwort und das OTP eingeben.'
 
 field:
   password:
