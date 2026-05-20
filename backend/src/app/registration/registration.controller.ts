@@ -21,7 +21,7 @@ import { inject } from 'inversify';
 export class RegistrationController extends BaseController {
   constructor(
     @inject(RegistrationService)
-    private readonly registrationService: RegistrationService = registrationService,
+    private readonly registrationService: RegistrationService,
   ) {
     super();
   }

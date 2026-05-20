@@ -6,6 +6,7 @@ import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
+import contentDisposition from 'content-disposition';
 
 interface ModelData {
   id: string;
@@ -37,10 +38,9 @@ export class FileController extends BaseController {
     // Set response headers for image display
     res.contentType(file.type);
 
-    const disposition = download ? 'attachment' : 'inline';
     res.setHeader(
       'Content-disposition',
-      `${disposition}; filename=${file.originalName}`,
+      this.buildContentDisposition(file.originalName, download),
     );
 
     fileStream.pipe(res); // Pipe the file stream to the response
@@ -108,6 +108,19 @@ export class FileController extends BaseController {
     await this.fileService.deleteFile(file.id);
 
     res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  private buildContentDisposition(
+    originalName: string,
+    download: boolean | undefined,
+  ): string {
+    const type = download ? 'attachment' : 'inline';
+    try {
+      return contentDisposition(originalName, { type });
+    } catch {
+      // originalName contains characters rejected by RFC 6266 (e.g. CR/LF);
+      return contentDisposition(undefined, { type });
+    }
   }
 
   getRelationModel(req: Request): ModelData | undefined {

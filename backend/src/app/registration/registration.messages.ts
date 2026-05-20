@@ -191,7 +191,6 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         each: true,
         with: true,
       },
-      noEscape: true, // No escape needed for subjects
     });
 
     return compile(this.context());

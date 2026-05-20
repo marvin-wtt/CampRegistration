@@ -44,7 +44,7 @@ watch(data, (value) => {
 
 async function onSubmit() {
   loading.value = true;
-  const value: Camp | undefined = camp.value as Camp | undefined;
+  const value: Camp | undefined = camp.value;
 
   if (value === undefined) {
     return;

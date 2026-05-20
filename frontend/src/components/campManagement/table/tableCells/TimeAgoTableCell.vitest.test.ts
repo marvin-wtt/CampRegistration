@@ -25,11 +25,11 @@ const createCellProps = (
   value: '2023-01-01T00:00:00Z',
   sort: () => {},
   row: {
-    id: '' as Registration['id'],
-    locale: '' as Registration['locale'],
-    data: {} as Registration['data'],
+    id: '',
+    locale: '',
+    data: {},
     computedData: {} as Registration['computedData'],
-    customData: {} as Registration['customData'],
+    customData: {},
     status: 'ACCEPTED',
     createdAt: '2023-01-01T00:00:00Z',
   },
@@ -69,7 +69,7 @@ const createCamp = (
   location: 'Test Location',
   freePlaces: 10,
   form: {} as CampDetails['form'],
-  themes: {} as CampDetails['themes'],
+  themes: {},
   ...overrides,
 });
 
