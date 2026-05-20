@@ -5,7 +5,8 @@ import { Translatable } from './Translatable.js';
 
 export interface Camp extends Identifiable {
   public: boolean;
-  active: boolean;
+  registrationOpenAt: string | null;
+  registrationCloseAt: string | null;
   confirmationMode: 'AUTOMATIC' | 'MANUAL';
   countries: string[];
   locales: string[];

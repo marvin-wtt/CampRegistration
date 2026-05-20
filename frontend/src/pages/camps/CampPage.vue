@@ -6,7 +6,7 @@
     :style="{ backgroundColor: bgColor }"
   >
     <registration-form
-      v-if="camp"
+      v-if="registrationStatus === 'open'"
       :camp-details="camp"
       :submit-fn="submit"
       :upload-file-fn="uploadFile"
@@ -14,7 +14,7 @@
       @bg-color-update="(color) => updateBgColor(color)"
     />
 
-    <!-- Not available -->
+    <!-- Not available / registration closed -->
     <div
       v-else
       class="column justify-center q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
@@ -22,7 +22,7 @@
       <div class="col-shrink column q-gutter-lg">
         <div class="col-shrink self-center">
           <q-avatar
-            :icon="knownErrorIcon"
+            :icon="statusIcon"
             color="primary"
             text-color="white"
             size="100px"
@@ -30,7 +30,15 @@
         </div>
 
         <div class="col text-h6 text-center">
-          {{ knownErrorText }}
+          {{ statusText }}
+        </div>
+
+        <div
+          v-if="campContactEmail"
+          class="col text-center"
+        >
+          {{ t('contact.label') }}
+          <a :href="`mailto:${campContactEmail}`">{{ campContactEmail }}</a>
         </div>
 
         <div class="col-shrink row justify-center">
@@ -118,20 +126,46 @@ async function init() {
   }
 }
 
-const knownErrorIcon = computed<string>(() => {
-  return knownError.value === 'unavailable' ? 'event_busy' : 'warning';
+type RegistrationStatus = 'open' | 'not_open' | 'closed' | 'unavailable' | 'not_found';
+
+const registrationStatus = computed<RegistrationStatus>(() => {
+  if (knownError.value) return knownError.value;
+  if (!camp.value) return 'not_found';
+
+  const now = new Date();
+  const { registrationOpenAt, registrationCloseAt } = camp.value;
+
+  if (registrationOpenAt && now < new Date(registrationOpenAt)) {
+    return 'not_open';
+  }
+  if (registrationCloseAt && now > new Date(registrationCloseAt)) {
+    return 'closed';
+  }
+  return 'open';
 });
 
-const knownErrorText = computed<string>(() => {
-  if (knownError.value === 'unavailable') {
-    return t('error.unavailable');
-  }
+const campContactEmail = computed<string | null>(() => {
+  if (!camp.value?.contactEmail) return null;
+  const email = camp.value.contactEmail;
+  return typeof email === 'string' ? email : (Object.values(email)[0] ?? null);
+});
 
-  if (knownError.value === 'not_found') {
-    return t('error.not_found');
+const statusIcon = computed<string>(() => {
+  switch (registrationStatus.value) {
+    case 'not_open': return 'schedule';
+    case 'closed': return 'event_busy';
+    case 'not_found': return 'warning';
+    default: return 'lock';
   }
+});
 
-  return 'Unknown error occurred';
+const statusText = computed<string>(() => {
+  switch (registrationStatus.value) {
+    case 'not_open': return t('error.not_open');
+    case 'closed': return t('error.closed');
+    case 'not_found': return t('error.not_found');
+    default: return t('error.unavailable');
+  }
 });
 
 async function submit(
@@ -159,54 +193,68 @@ function updateBgColor(color: string | undefined) {
 action:
   home: 'Look for other camps'
 
+contact:
+  label: 'For questions, contact:'
+
 error:
-  unavailable: "Registration for this camp is not yet possible or is already
-    closed. Please check the camp's registration dates. If you believe that this
-    is a mistake, please contact the camp administration."
-  not_found: 'The camp you are looking for could not be found. Please check the
-    URL or contact the camp administration.'
+  not_open: 'Registration for this camp has not opened yet.'
+  closed: 'Registration for this camp is already closed.'
+  unavailable: 'This camp is not available.'
+  not_found: 'The camp you are looking for could not be found. Please check the URL.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 action:
   home: 'Nach anderen Camps suchen'
 
+contact:
+  label: 'Bei Fragen wenden Sie sich an:'
+
 error:
-  unavailable: 'Die Anmeldung für dieses Camp ist noch nicht möglich oder ist
-    bereits geschlossen. Bitte überprüfen Sie die Anmeldedaten des Camps.
-    Wenn Sie glauben, dass es sich hierbei um einen Fehler handelt, wenden Sie
-    sich bitte an die Camp-Verwaltung.'
-  not_found:
-    'Das gesuchte Camp konnte nicht gefunden werden. Bitte überprüfen Sie die
-    URL oder wenden Sie sich an die Camp-Verwaltung.'
+  not_open: 'Die Anmeldung für dieses Camp hat noch nicht begonnen.'
+  closed: 'Die Anmeldung für dieses Camp ist bereits geschlossen.'
+  unavailable: 'Dieses Camp ist nicht verfügbar.'
+  not_found: 'Das gesuchte Camp konnte nicht gefunden werden. Bitte überprüfen Sie die URL.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 action:
   home: "Chercher d'autres camps"
 
+contact:
+  label: "Pour toute question, contactez :"
+
 error:
-  unavailable: "L'inscription à ce camp n'est pas encore possible ou est déjà
-    terminée. Veuillez vérifier les dates d'inscription du camp. Si vous pensez
-    qu'il s'agit d'une erreur, veuillez contacter l'administration du camp."
-  not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'
-    URL ou contacter l'administration du camp."
+  not_open: "L'inscription à ce camp n'a pas encore commencé."
+  closed: "L'inscription à ce camp est déjà terminée."
+  unavailable: "Ce camp n'est pas disponible."
+  not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'URL."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 action:
   home: 'Szukaj innych obozów'
 
+contact:
+  label: 'W razie pytań skontaktuj się:'
+
 error:
-  unavailable: 'Rejestracja na ten obóz nie jest jeszcze możliwa lub została już zamknięta. Sprawdź dane rejestracyjne obozu. Jeśli uważasz, że to błąd, skontaktuj się z administracją obozu.'
-  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL lub skontaktuj się z administracją obozu.'
+  not_open: 'Rejestracja na ten obóz jeszcze się nie rozpoczęła.'
+  closed: 'Rejestracja na ten obóz jest już zamknięta.'
+  unavailable: 'Ten obóz jest niedostępny.'
+  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 action:
   home: 'Hledat jiné tábory'
 
+contact:
+  label: 'V případě dotazů kontaktujte:'
+
 error:
-  unavailable: 'Registrace na tento tábor zatím není možná nebo již byla uzavřena. Zkontrolujte registrační údaje tábora. Pokud si myslíte, že jde o chybu, kontaktujte správu tábora.'
-  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu nebo kontaktujte správu tábora.'
+  not_open: 'Registrace na tento tábor ještě nezačala.'
+  closed: 'Registrace na tento tábor je již uzavřena.'
+  unavailable: 'Tento tábor není dostupný.'
+  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu.'
 </i18n>

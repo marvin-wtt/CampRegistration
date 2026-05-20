@@ -215,7 +215,8 @@ function deleteAction() {
 function enableAction() {
   void withLoading(enableLoading, async () => {
     await capsStore.updateEntry(camp.id, {
-      active: true,
+      registrationOpenAt: new Date().toISOString(),
+      registrationCloseAt: null,
     });
     await profileStore.fetchProfile();
   });
@@ -224,7 +225,7 @@ function enableAction() {
 function disableAction() {
   void withLoading(disableLoading, async () => {
     await capsStore.updateEntry(camp.id, {
-      active: false,
+      registrationCloseAt: new Date().toISOString(),
     });
     await profileStore.fetchProfile();
   });

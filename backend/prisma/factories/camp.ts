@@ -26,7 +26,6 @@ export const CampFactory = {
     const countries = data.countries ?? ['de'];
     return {
       public: faker.datatype.boolean(),
-      active: faker.datatype.boolean(),
       countries,
       name: faker.lorem.word(),
       organizer: faker.company.name(),

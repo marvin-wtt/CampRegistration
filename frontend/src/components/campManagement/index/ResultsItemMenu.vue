@@ -70,7 +70,7 @@
       </q-item>
 
       <q-item
-        v-if="!camp.active && can('camp.delete')"
+        v-if="!active && can('camp.delete')"
         v-close-popup
         class="text-negative"
         clickable

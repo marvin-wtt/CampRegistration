@@ -1,6 +1,6 @@
 import { RegistrationController } from './registration.controller.js';
 import { auth, guard } from '#middlewares/index';
-import { campActive, campManager } from '#guards/index';
+import { registrationOpen, campManager } from '#guards/index';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';
@@ -35,7 +35,7 @@ export class RegistrationRouter extends ModuleRouter {
     );
     this.router.post(
       '/',
-      guard(campActive),
+      guard(registrationOpen),
       controller(registrationController, 'store'),
     );
     this.router.patch(

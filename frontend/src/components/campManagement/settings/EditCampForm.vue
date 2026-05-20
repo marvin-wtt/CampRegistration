@@ -135,6 +135,35 @@
       </time-input>
     </div>
 
+    <!-- Registration window -->
+    <date-time-input
+      v-model="data.registrationOpenAt"
+      :disable="loading"
+      :label="t('field.registrationOpenAt')"
+      clearable
+      hide-bottom-space
+      outlined
+      rounded
+    >
+      <template #before>
+        <q-icon name="lock_open" />
+      </template>
+    </date-time-input>
+
+    <date-time-input
+      v-model="data.registrationCloseAt"
+      :disable="loading"
+      :label="t('field.registrationCloseAt')"
+      clearable
+      hide-bottom-space
+      outlined
+      rounded
+    >
+      <template #before>
+        <q-icon name="lock" />
+      </template>
+    </date-time-input>
+
     <!-- participants -->
     <translated-input
       v-model.number="data.maxParticipants"
@@ -290,6 +319,7 @@ import { useI18n } from 'vue-i18n';
 import CountrySelect from 'components/common/CountrySelect.vue';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
+import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
 import { deepToRaw } from 'src/utils/deepToRaw';
 import type { QSelectOption } from 'quasar';
 
@@ -369,6 +399,8 @@ field:
   dateRange: 'Start and end date'
   startTime: 'Start time'
   endTime: 'End time'
+  registrationOpenAt: 'Registration opens (optional)'
+  registrationCloseAt: 'Registration closes (optional)'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
   confirmation_mode: 'Accept registrations'
@@ -435,6 +467,8 @@ field:
   dateRange: 'Start- und Enddatum'
   startTime: 'Startzeit'
   endTime: 'Endzeit'
+  registrationOpenAt: 'Anmeldung öffnet (optional)'
+  registrationCloseAt: 'Anmeldung schließt (optional)'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
   confirmation_mode: 'Anmeldungen annehmen'
@@ -501,6 +535,8 @@ field:
   dateRange: 'Date de début et de fin'
   startTime: 'Heure de début'
   endTime: 'Heure de fin'
+  registrationOpenAt: "Ouverture des inscriptions (optionnel)"
+  registrationCloseAt: "Clôture des inscriptions (optionnel)"
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
   confirmation_mode: 'Accepter les inscriptions'
@@ -567,6 +603,8 @@ field:
   dateRange: 'Data rozpoczęcia i zakończenia'
   startTime: 'Czas rozpoczęcia'
   endTime: 'Czas zakończenia'
+  registrationOpenAt: 'Rejestracja otwierana (opcjonalnie)'
+  registrationCloseAt: 'Rejestracja zamykana (opcjonalnie)'
   minAge: 'Minimalny wiek'
   maxAge: 'Maksymalny wiek'
   confirmation_mode: 'Przyjmowanie zgłoszeń'
@@ -633,6 +671,8 @@ field:
   dateRange: 'Datum začátku a konce'
   startTime: 'Čas začátku'
   endTime: 'Čas konce'
+  registrationOpenAt: 'Otevření registrace (volitelné)'
+  registrationCloseAt: 'Uzavření registrace (volitelné)'
   minAge: 'Minimální věk'
   maxAge: 'Maximální věk'
   confirmation_mode: 'Přijímání přihlášek'

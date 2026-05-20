@@ -14,12 +14,11 @@ import { Camp, Prisma } from '#generated/prisma/client.js';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
-  campActivePrivate,
-  campActivePublic,
+  campPublic,
+  campPrivate,
   campCreateInternational,
   campCreatedBody,
   campCreateNational,
-  campInactive,
   campUpdateBody,
   campWithForm,
   campUpdateBodyWithForm,
@@ -45,8 +44,9 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
 
   expect(camp).toEqual({
     id: data.id ?? expect.anything(),
-    active: data.active,
     public: data.public,
+    registrationOpenAt: (data as any).registrationOpenAt ?? null,
+    registrationCloseAt: (data as any).registrationCloseAt ?? null,
     confirmationMode: data.confirmationMode,
     countries: data.countries,
     name: data.name,
@@ -75,8 +75,9 @@ const assertCampResponseBody = (
 
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
-    active: data.active,
     public: data.public,
+    registrationOpenAt: (data as any).registrationOpenAt ?? null,
+    registrationCloseAt: (data as any).registrationCloseAt ?? null,
     confirmationMode: data.confirmationMode,
     countries: data.countries,
     locales: data.locales,
@@ -119,11 +120,11 @@ const createCampWithManagerAndToken = async (
 
 const createCampWithFileAndToken = async (
   accessLevel: string = 'private',
-  campActive: boolean = false,
+  campIsPublic: boolean = false,
 ) => {
   const { camp, user, manager, accessToken } =
     await createCampWithManagerAndToken({
-      active: campActive,
+      public: campIsPublic,
     });
   const fileName = crypto.randomUUID() + '.pdf';
 
@@ -147,14 +148,14 @@ const createCampWithFileAndToken = async (
 describe('/api/v1/camps', () => {
   describe('GET /api/v1/camps', () => {
     it('should respond with `200` status code', async () => {
-      await CampFactory.create(campActivePublic);
+      await CampFactory.create(campPublic);
 
       await request().get(`/api/v1/camps/`).send().expect(200);
     });
 
     it('should show all public camps', async () => {
-      await CampFactory.create(campActivePublic);
-      await CampFactory.create(campActivePublic);
+      await CampFactory.create(campPublic);
+      await CampFactory.create(campPublic);
 
       const { body } = await request().get(`/api/v1/camps/`).send().expect(200);
 
@@ -162,9 +163,9 @@ describe('/api/v1/camps', () => {
       expect(body.data.length).toBe(2);
     });
 
-    it('should only include active camps', async () => {
-      await CampFactory.create(campActivePublic);
-      await CampFactory.create(campInactive);
+    it('should only include public camps', async () => {
+      await CampFactory.create(campPublic);
+      await CampFactory.create(campPrivate);
 
       const { body } = await request().get(`/api/v1/camps/`).send();
 
@@ -174,11 +175,11 @@ describe('/api/v1/camps', () => {
 
     it('should calculate free places', async () => {
       const campA = await CampFactory.create({
-        ...campActivePublic,
+        ...campPublic,
         maxParticipants: 10,
       });
       const campB = await CampFactory.create({
-        ...campActivePublic,
+        ...campPublic,
         countries: ['de', 'fr'],
         maxParticipants: {
           de: 10,
@@ -217,9 +218,9 @@ describe('/api/v1/camps', () => {
 
     describe('query', () => {
       it('should respond with all camps if view is "all" and user is admin', async () => {
-        await CampFactory.create(campActivePublic);
-        await CampFactory.create(campActivePrivate);
-        await CampFactory.create(campInactive);
+        await CampFactory.create(campPublic);
+        await CampFactory.create(campPrivate);
+        await CampFactory.create(campPrivate);
 
         const user = await UserFactory.create({
           role: 'ADMIN',
@@ -240,9 +241,9 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `401` status code when view is "all" and user is unauthenticated', async () => {
-        await CampFactory.create(campActivePublic);
-        await CampFactory.create(campActivePrivate);
-        await CampFactory.create(campInactive);
+        await CampFactory.create(campPublic);
+        await CampFactory.create(campPrivate);
+        await CampFactory.create(campPrivate);
 
         await request()
           .get(`/api/v1/camps/`)
@@ -254,9 +255,9 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `403` status code when view is "all" and user is not an admin', async () => {
-        await CampFactory.create(campActivePublic);
-        await CampFactory.create(campActivePrivate);
-        await CampFactory.create(campInactive);
+        await CampFactory.create(campPublic);
+        await CampFactory.create(campPrivate);
+        await CampFactory.create(campPrivate);
 
         const user = await UserFactory.create();
         const accessToken = generateAccessToken(user);
@@ -272,9 +273,9 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `401` status code when view is "assigned" and user is unauthenticated', async () => {
-        await CampFactory.create(campActivePublic);
-        await CampFactory.create(campActivePrivate);
-        await CampFactory.create(campInactive);
+        await CampFactory.create(campPublic);
+        await CampFactory.create(campPrivate);
+        await CampFactory.create(campPrivate);
 
         await request()
           .get(`/api/v1/camps/`)
@@ -286,12 +287,12 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with assigned camps when view is "assigned" and user is not an admin', async () => {
-        const camp1 = await CampFactory.create(campActivePrivate);
-        const camp2 = await CampFactory.create(campInactive);
+        const camp1 = await CampFactory.create(campPrivate);
+        const camp2 = await CampFactory.create(campPrivate);
 
-        await CampFactory.create(campActivePublic);
-        await CampFactory.create(campActivePrivate);
-        await CampFactory.create(campInactive);
+        await CampFactory.create(campPublic);
+        await CampFactory.create(campPrivate);
+        await CampFactory.create(campPrivate);
 
         const user = await UserFactory.create();
 
@@ -326,22 +327,22 @@ describe('/api/v1/camps', () => {
 
       it.skip('should filter by name', async () => {
         await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           name: 'TestCamp',
         });
         await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           name: {
             de: 'TestCampDE',
             en: 'TestCampEN',
           },
         });
         await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           name: 'OtherCamp',
         });
         await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           name: {
             de: 'OtherCampDE',
             en: 'OtherCampEN',
@@ -374,7 +375,6 @@ describe('/api/v1/camps', () => {
   describe('GET /api/v1/camps/:campId', () => {
     it('should respond with `200` status code when camp is public', async () => {
       const camp = await CampFactory.create({
-        active: true,
         public: true,
         countries: ['de', 'cz'],
       });
@@ -387,9 +387,10 @@ describe('/api/v1/camps', () => {
       expect(body).toHaveProperty('data');
       expect(body.data).toEqual({
         id: camp.id,
-        active: camp.active,
         confirmationMode: camp.confirmationMode,
         public: camp.public,
+        registrationOpenAt: null,
+        registrationCloseAt: null,
         countries: camp.countries,
         locales: ['de', 'cs'],
         name: camp.name,
@@ -410,7 +411,6 @@ describe('/api/v1/camps', () => {
 
     it('should respond with `200` status code when camp is private', async () => {
       const camp = await CampFactory.create({
-        active: true,
         public: false,
       });
 
@@ -420,7 +420,7 @@ describe('/api/v1/camps', () => {
     describe('free places', () => {
       it('should calculate free places for national camps', async () => {
         const camp = await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           maxParticipants: 10,
         });
 
@@ -450,7 +450,7 @@ describe('/api/v1/camps', () => {
 
       it('should calculate free places for international camps', async () => {
         const camp = await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           countries: ['de', 'fr'],
           maxParticipants: {
             de: 8,
@@ -489,7 +489,7 @@ describe('/api/v1/camps', () => {
 
       it('should ignore deleted registrations', async () => {
         const camp = await CampFactory.create({
-          ...campActivePublic,
+          ...campPublic,
           countries: ['de', 'fr'],
           maxParticipants: {
             de: 8,
@@ -521,44 +521,9 @@ describe('/api/v1/camps', () => {
       });
     });
 
-    it.each([
-      { role: 'DIRECTOR', expectedStatus: 200 },
-      { role: 'COORDINATOR', expectedStatus: 200 },
-      { role: 'COUNSELOR', expectedStatus: 200 },
-      { role: 'VIEWER', expectedStatus: 200 },
-    ])(
-      'should respond with `$expectedStatus` status code when camp is not active and user is $role',
-      async ({ role, expectedStatus }) => {
-        const camp = await CampFactory.create({
-          active: false,
-        });
-        const user = await UserFactory.create();
-        await CampManagerFactory.create({
-          camp: { connect: { id: camp.id } },
-          user: { connect: { id: user.id } },
-          role,
-        });
-        const accessToken = generateAccessToken(user);
-
-        await request()
-          .get(`/api/v1/camps/${camp.id}`)
-          .send()
-          .auth(accessToken, { type: 'bearer' })
-          .expect(expectedStatus);
-      },
-    );
-
-    it('should respond with `401` status code when camp is not active and user is unauthenticated', async () => {
+    it('should respond with `200` status code for any authenticated user regardless of registration window', async () => {
       const camp = await CampFactory.create({
-        active: false,
-      });
-
-      await request().get(`/api/v1/camps/${camp.id}`).send().expect(401);
-    });
-
-    it('should respond with `403` status code when camp is not active and user is not a manager', async () => {
-      const camp = await CampFactory.create({
-        active: false,
+        registrationCloseAt: new Date('2020-01-01'),
       });
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -566,7 +531,15 @@ describe('/api/v1/camps', () => {
         .get(`/api/v1/camps/${camp.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
-        .expect(403);
+        .expect(200);
+    });
+
+    it('should respond with `200` status code for unauthenticated users regardless of registration window', async () => {
+      const camp = await CampFactory.create({
+        registrationCloseAt: new Date('2020-01-01'),
+      });
+
+      await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
     });
 
     it('should respond with `404` status code when camp id does not exists', async () => {
@@ -630,20 +603,17 @@ describe('/api/v1/camps', () => {
       await request().post(`/api/v1/camps/`).send().expect(401);
     });
 
-    it('should be inactive by default', async () => {
+    it('should have no registration window by default', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
-      const data = {
-        ...campCreateNational,
-        active: undefined,
-      };
 
       const { body } = await request()
         .post(`/api/v1/camps/`)
-        .send(data)
+        .send(campCreateNational)
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body).toHaveProperty('data.active', false);
+      expect(body).toHaveProperty('data.registrationOpenAt', null);
+      expect(body).toHaveProperty('data.registrationCloseAt', null);
     });
 
     describe('invalid request body', () => {
@@ -1073,7 +1043,6 @@ describe('/api/v1/camps', () => {
         );
 
         const data = {
-          active: true,
           confirmationMode: 'AUTOMATIC' as CampCreateData['confirmationMode'],
           public: false,
           countries: ['de'],
@@ -1386,13 +1355,13 @@ describe('/api/v1/files/', () => {
         .expect(200);
     });
 
-    it('should respond with `200` status code when file is public and camp is active', async () => {
+    it('should respond with `200` status code when file is public and camp is public', async () => {
       const { file } = await createCampWithFileAndToken('public', true);
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(200);
     });
 
-    it('should respond with `401` status code when camp is not active', async () => {
+    it('should respond with `401` status code when file is public but camp is not public', async () => {
       const { file } = await createCampWithFileAndToken('public', false);
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(401);

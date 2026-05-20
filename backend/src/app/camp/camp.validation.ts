@@ -43,8 +43,17 @@ function validateRecordKeys(
 const store = z.object({
   body: z
     .object({
-      active: z.boolean().optional(),
       public: z.boolean().optional(),
+      registrationOpenAt: z
+        .iso.datetime()
+        .transform((val) => new Date(val))
+        .nullable()
+        .optional(),
+      registrationCloseAt: z
+        .iso.datetime()
+        .transform((val) => new Date(val))
+        .nullable()
+        .optional(),
       countries: z.array(z.string().length(2)).min(1),
       name: translatedValue(z.string()),
       organizer: translatedValue(z.string()),
@@ -114,8 +123,17 @@ const update = (camp: Camp) =>
     }),
     body: z
       .object({
-        active: z.boolean(),
         public: z.boolean(),
+        registrationOpenAt: z
+          .iso.datetime()
+          .transform((val) => new Date(val))
+          .nullable()
+          .optional(),
+        registrationCloseAt: z
+          .iso.datetime()
+          .transform((val) => new Date(val))
+          .nullable()
+          .optional(),
         countries: z.array(z.string().length(2)).min(1),
         name: translatedValue(z.string()),
         organizer: translatedValue(z.string()),

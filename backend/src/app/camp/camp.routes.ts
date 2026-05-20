@@ -2,7 +2,7 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { CampController } from '#app/camp/camp.controller';
 import { CampService } from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
-import { or, campActive, campManager } from '#guards/index';
+import { campManager } from '#guards/index';
 import type { CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 import { resolve } from '#core/ioc/container';
@@ -27,7 +27,6 @@ export class CampRouter extends ModuleRouter {
 
     this.router.get(
       '/:campId',
-      guard(or(campManager('camp.view'), campActive)),
       controller(campController, 'show'),
     );
 

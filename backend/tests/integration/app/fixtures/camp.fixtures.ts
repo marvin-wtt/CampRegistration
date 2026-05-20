@@ -2,22 +2,15 @@ import moment from 'moment';
 import { Prisma } from '#generated/prisma/client.js';
 import { createForm } from '../utils/form.js';
 
-export const campActivePublic = {
-  active: true,
+export const campPublic = {
   public: true,
 };
 
-export const campActivePrivate = {
-  active: true,
+export const campPrivate = {
   public: false,
 };
 
-export const campInactive = {
-  active: false,
-};
-
 export const campCreateNational = {
-  active: false,
   public: false,
   confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],
@@ -65,20 +58,52 @@ type CreateBodyData = {
 };
 
 export const campCreatedBody: CreateBodyData[] = [
-  // Active
+  // Registration window
   {
-    name: 'Active missing',
+    name: 'Registration open at valid',
     data: {
       ...campCreateInternational,
-      active: undefined,
+      registrationOpenAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 201,
   },
   {
-    name: 'Active invalid',
+    name: 'Registration open at null',
     data: {
       ...campCreateInternational,
-      active: 'disabled',
+      registrationOpenAt: null,
+    },
+    expected: 201,
+  },
+  {
+    name: 'Registration open at invalid',
+    data: {
+      ...campCreateInternational,
+      registrationOpenAt: 'not-a-date',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Registration close at valid',
+    data: {
+      ...campCreateInternational,
+      registrationCloseAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Registration close at null',
+    data: {
+      ...campCreateInternational,
+      registrationCloseAt: null,
+    },
+    expected: 201,
+  },
+  {
+    name: 'Registration close at invalid',
+    data: {
+      ...campCreateInternational,
+      registrationCloseAt: 'not-a-date',
     },
     expected: 400,
   },
@@ -530,18 +555,46 @@ type UpdateBodyData = {
 };
 
 export const campUpdateBody: UpdateBodyData[] = [
-  // Active
+  // Registration window
   {
-    name: 'Active',
+    name: 'Registration open at',
     data: {
-      active: true,
+      registrationOpenAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 200,
   },
   {
-    name: 'Active invalid',
+    name: 'Registration open at null',
     data: {
-      active: 'disabled',
+      registrationOpenAt: null,
+    },
+    expected: 200,
+  },
+  {
+    name: 'Registration open at invalid',
+    data: {
+      registrationOpenAt: 'not-a-date',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Registration close at',
+    data: {
+      registrationCloseAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 200,
+  },
+  {
+    name: 'Registration close at null',
+    data: {
+      registrationCloseAt: null,
+    },
+    expected: 200,
+  },
+  {
+    name: 'Registration close at invalid',
+    data: {
+      registrationCloseAt: 'not-a-date',
     },
     expected: 400,
   },

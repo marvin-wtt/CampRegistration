@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import { type GuardFn, and, campActive, campManager, or } from '#guards/index';
+import { type GuardFn, and, campPublic, campManager, or } from '#guards/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { CampService } from '#app/camp/camp.service';
@@ -24,5 +24,5 @@ export const campFileGuard = async (req: Request): Promise<GuardFn> => {
     return file.accessLevel === 'public';
   };
 
-  return or(campManager('camp.files.view'), and(fileAccess, campActive));
+  return or(campManager('camp.files.view'), and(fileAccess, campPublic));
 };

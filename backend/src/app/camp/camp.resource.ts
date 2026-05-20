@@ -18,7 +18,8 @@ export class CampResource extends JsonResource<
     return {
       id: this.data.id,
       public: this.data.public,
-      active: this.data.active,
+      registrationOpenAt: this.data.registrationOpenAt?.toISOString() ?? null,
+      registrationCloseAt: this.data.registrationCloseAt?.toISOString() ?? null,
       confirmationMode: this.data.confirmationMode,
       countries: this.data.countries,
       locales: countriesToLocales(this.data.countries),
