@@ -20,7 +20,7 @@ export class CampManagerService extends BaseService {
         where: {
           campId,
           userId,
-          expiresAt: { lte: new Date() },
+          expiresAt: { gt: new Date() },
         },
       })
       .then((value) => value !== null);
