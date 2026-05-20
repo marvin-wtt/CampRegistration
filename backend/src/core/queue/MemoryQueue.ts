@@ -63,6 +63,28 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     return Promise.resolve(count);
   }
 
+  public retryFailed(): Promise<void> {
+    for (const job of this.jobs.values()) {
+      if (job.status === 'FAILED') {
+        job.status = 'PENDING';
+        job.attempts = 0;
+        job.error = null;
+        job.finishedAt = null;
+        job.runAt = null;
+      }
+    }
+    return Promise.resolve();
+  }
+
+  public deleteFailed(): Promise<void> {
+    for (const [id, job] of this.jobs.entries()) {
+      if (job.status === 'FAILED') {
+        this.jobs.delete(id);
+      }
+    }
+    return Promise.resolve();
+  }
+
   public jobCounts(): Promise<QueueJobCounts> {
     const counts: QueueJobCounts = {
       active: 0,

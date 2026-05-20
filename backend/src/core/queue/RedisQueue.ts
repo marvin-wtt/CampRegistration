@@ -178,6 +178,15 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     };
   }
 
+  public async retryFailed(): Promise<void> {
+    const failed = await this.bull.getJobs(['failed']);
+    await Promise.all(failed.map((job) => job.retry()));
+  }
+
+  public async deleteFailed(): Promise<void> {
+    await this.bull.clean(0, 0, 'failed');
+  }
+
   public async close(): Promise<void> {
     await this.worker?.close();
     await this.events.close();

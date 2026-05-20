@@ -2,6 +2,7 @@ import {
   type JobOptions,
   type Job,
   type JobStatus,
+  type QueueJobCounts,
   Queue,
   type SimpleJob,
   type QueueOptions,
@@ -86,5 +87,17 @@ class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   all(_status?: JobStatus): Promise<Job<P>[]> {
     return Promise.resolve([]);
+  }
+
+  jobCounts(): Promise<QueueJobCounts> {
+    return Promise.resolve({ active: 0, failed: 0, pending: 0, delayed: 0 });
+  }
+
+  retryFailed(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  deleteFailed(): Promise<void> {
+    return Promise.resolve();
   }
 }

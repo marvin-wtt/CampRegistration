@@ -149,6 +149,12 @@ const items: NavigationItemProps[] = [
     to: { name: 'administration.newsletters' },
   },
   {
+    name: 'queues',
+    label: t('queues'),
+    icon: 'queue',
+    to: { name: 'administration.queues' },
+  },
+  {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
@@ -182,6 +188,7 @@ title: 'Administration'
 
 camps: 'Camps'
 newsletters: 'Newsletters'
+queues: 'Queues'
 users: 'Users'
 settings: 'Settings'
 </i18n>
@@ -191,6 +198,7 @@ title: 'Verwaltung'
 
 camps: 'Camps'
 newsletters: 'Newsletter'
+queues: 'Warteschlangen'
 users: 'Benutzer'
 settings: 'Einstellungen'
 </i18n>
@@ -200,6 +208,7 @@ title: 'Administration'
 
 camps: 'Camps'
 newsletters: 'Newsletters'
+queues: "Files d'attente"
 users: 'Utilisateurs'
 settings: 'Paramètres'
 </i18n>
@@ -209,6 +218,7 @@ title: 'Administracja'
 
 camps: 'Obozy'
 newsletters: 'Newslettery'
+queues: 'Kolejki'
 users: 'Użytkownicy'
 settings: 'Ustawienia'
 </i18n>
@@ -218,6 +228,7 @@ title: 'Administrace'
 
 camps: 'Tábory'
 newsletters: 'Newslettery'
+queues: 'Fronty'
 users: 'Uživatelé'
 settings: 'Nastavení'
 </i18n>

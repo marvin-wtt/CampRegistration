@@ -6,6 +6,7 @@ import campFiles from './camp-files';
 import auth from './auth';
 import profile from './profile';
 import programPlanner from './program-planner';
+import queue from './queue';
 
 export default {
   camp,
@@ -16,4 +17,5 @@ export default {
   auth,
   profile,
   programPlanner,
+  queue,
 };

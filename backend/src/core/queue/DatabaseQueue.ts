@@ -226,7 +226,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
   }
 
-  private wake() {
+  protected wake() {
     if (this.sleepResolve) {
       this.sleepResolve();
     }
@@ -238,6 +238,27 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         queue: this.queue,
         status: { in: ['PENDING', 'RUNNING'] },
       },
+    });
+  }
+
+  public async retryFailed(): Promise<void> {
+    await prisma.job.updateMany({
+      where: { queue: this.queue, status: 'FAILED' },
+      data: {
+        status: 'PENDING',
+        attempts: 0,
+        error: null,
+        reservedAt: null,
+        finishedAt: null,
+        runAt: new Date(),
+      },
+    });
+    this.wake();
+  }
+
+  public async deleteFailed(): Promise<void> {
+    await prisma.job.deleteMany({
+      where: { queue: this.queue, status: 'FAILED' },
     });
   }
 

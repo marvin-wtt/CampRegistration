@@ -16,6 +16,7 @@ import { UserModule } from '#app/user/user.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
+import { QueueModule } from '#app/queue/queue.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
 import { MailModule } from '#app/mail/mail.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
@@ -36,6 +37,7 @@ const loadModules = () =>
   (modules = [
     new MailModule(),
     new HealthModule(),
+    new QueueModule(),
     new TokenModule(),
     new AuthModule(),
     new TotpModule(),

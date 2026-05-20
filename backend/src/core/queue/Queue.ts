@@ -86,6 +86,10 @@ export abstract class Queue<P, R = void, N extends string = string> {
 
   public abstract jobCounts(): Promise<QueueJobCounts>;
 
+  public abstract retryFailed(): Promise<void>;
+
+  public abstract deleteFailed(): Promise<void>;
+
   public abstract add(name: N, payload: P, options?: JobOptions): Promise<void>;
 
   public abstract addBulk(

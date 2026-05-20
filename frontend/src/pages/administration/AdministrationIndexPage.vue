@@ -83,6 +83,14 @@ const items = [
     color: 'teal',
     to: { name: 'administration.newsletters' },
   },
+  {
+    name: 'queues',
+    label: t('queues.label'),
+    description: t('queues.description'),
+    icon: 'queue',
+    color: 'deep-orange',
+    to: { name: 'administration.queues' },
+  },
 ] as const;
 </script>
 
@@ -98,6 +106,9 @@ camps:
 newsletters:
   label: 'Newsletters'
   description: 'Manage newsletter lists and subscriber imports.'
+queues:
+  label: 'Queues'
+  description: 'Monitor background jobs, retry or delete failed jobs.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -112,6 +123,9 @@ camps:
 newsletters:
   label: 'Newsletter'
   description: 'Newsletter-Listen und Abonnenten-Importe verwalten.'
+queues:
+  label: 'Warteschlangen'
+  description: 'Hintergrundjobs überwachen, fehlgeschlagene Jobs wiederholen oder löschen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -126,6 +140,9 @@ camps:
 newsletters:
   label: 'Newsletters'
   description: "Gérer les listes de newsletters et les importations d'abonnés."
+queues:
+  label: "Files d'attente"
+  description: 'Surveiller les tâches en arrière-plan, relancer ou supprimer les tâches échouées.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -140,6 +157,9 @@ camps:
 newsletters:
   label: 'Newslettery'
   description: 'Zarządzaj listami newsletterów i importami subskrybentów.'
+queues:
+  label: 'Kolejki'
+  description: 'Monitoruj zadania w tle, ponawiaj lub usuwaj nieudane zadania.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -154,4 +174,7 @@ camps:
 newsletters:
   label: 'Newslettery'
   description: 'Spravujte seznamy newsletterů a importy odběratelů.'
+queues:
+  label: 'Fronty'
+  description: 'Sledujte úlohy na pozadí, opakujte nebo mažte neúspěšné úlohy.'
 </i18n>
