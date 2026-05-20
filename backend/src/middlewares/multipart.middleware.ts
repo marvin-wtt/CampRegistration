@@ -13,6 +13,9 @@ type ParameterType = string | Field | readonly Field[] | null | undefined;
 
 // Types that browsers may execute or interpret as active content
 const BLOCKED_MIME_TYPES = new Set([
+  'text/html',
+  'application/xhtml+xml',
+  'image/svg+xml',
   'application/javascript',
   'text/javascript',
   'application/x-httpd-php',

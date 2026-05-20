@@ -1,7 +1,9 @@
 import { doubleCsrf } from 'csrf-csrf';
+import { ExtractJwt } from 'passport-jwt';
 import config from '#config/index';
 
 const secure = config.env !== 'development';
+const jwtFromHeader = ExtractJwt.fromAuthHeaderAsBearerToken();
 
 const { doubleCsrfProtection } = doubleCsrf({
   getSecret: () => config.csrf.secret,
@@ -20,7 +22,14 @@ const { doubleCsrfProtection } = doubleCsrf({
     secure,
   },
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
-  skipCsrfProtection: (req) => req.isUnauthenticated(),
+  skipCsrfProtection: (req) => {
+    if (req.isUnauthenticated()) {
+      return true;
+    }
+
+    // Only skip for Bearer token auth — non-browser clients can't be CSRF-attacked
+    return jwtFromHeader(req) !== null;
+  },
 });
 
 export const csrfProtection = doubleCsrfProtection;
