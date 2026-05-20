@@ -1,5 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
+import { permissionRegistry } from '#core/permission-registry';
 import type { Prisma } from '#generated/prisma/client.js';
+import type { Permission } from '@camp-registration/common/permissions';
 import { injectable } from 'inversify';
 
 type ManagerCreateData = Pick<
@@ -24,6 +26,25 @@ export class CampManagerService extends BaseService {
         },
       })
       .then((value) => value !== null);
+  }
+
+  async campManagerHasPermission(
+    campId: string,
+    userId: string,
+    permission: Permission,
+  ): Promise<boolean> {
+    const manager = await this.getManagerByUserId(campId, userId);
+    if (manager === null) {
+      return false;
+    }
+
+    if (manager.expiresAt !== null && manager.expiresAt <= new Date()) {
+      return false;
+    }
+
+    const permissions = permissionRegistry.getPermissions(manager.role);
+
+    return permissions.includes(permission);
   }
 
   async getManagers(campId: string) {

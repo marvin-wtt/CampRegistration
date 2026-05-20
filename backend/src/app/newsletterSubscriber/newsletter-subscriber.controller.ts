@@ -64,12 +64,13 @@ export class NewsletterSubscriberController extends BaseController {
     const userId = req.authUserId();
     const { body } = await req.validate(validator.importFromCamp);
 
-    const isCampManager =
-      await this.campManagerService.campManagerExistsWithUserIdAndCampId(
+    const canViewRegistrations =
+      await this.campManagerService.campManagerHasPermission(
         body.campId,
         userId,
+        'camp.registrations.view',
       );
-    if (!isCampManager) {
+    if (!canViewRegistrations) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
         'You are not allowed to import subscribers from this camp.',

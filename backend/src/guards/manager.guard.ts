@@ -1,7 +1,6 @@
 import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
-import { permissionRegistry } from '#core/permission-registry';
 import { resolve } from '#core/ioc/container';
 
 export const campManager = (
@@ -10,20 +9,9 @@ export const campManager = (
   return async (req: Request) => {
     const userId = req.authUserId();
     const campId = req.modelOrFail('camp').id;
-
     const managerService = resolve(CampManagerService);
-    const manager = await managerService.getManagerByUserId(campId, userId);
-    if (manager === null) {
-      return false;
-    }
 
-    const permissions = permissionRegistry.getPermissions(manager.role);
-
-    if (!permissions.includes(permission)) {
-      return false;
-    }
-
-    return manager.expiresAt === null || manager.expiresAt > new Date();
+    return managerService.campManagerHasPermission(campId, userId, permission);
   };
 };
 
