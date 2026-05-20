@@ -576,12 +576,19 @@ const newsletterId = computed(() => route.params.newsletterId as string);
 
 onMounted(async () => {
   await Promise.allSettled([
-    newsletterStore.fetchData(),
+    loadNewsletter(),
     managerStore.fetchData(newsletterId.value),
     subscriberStore.fetchData(newsletterId.value),
     messageStore.fetchData(newsletterId.value),
   ]);
 });
+
+async function loadNewsletter() {
+  await newsletterStore.fetchData();
+  if (!newsletter.value) {
+    await newsletterStore.fetchById(newsletterId.value);
+  }
+}
 
 const userEmail = computed<string | undefined>(() => {
   return profileStore.user?.email;
