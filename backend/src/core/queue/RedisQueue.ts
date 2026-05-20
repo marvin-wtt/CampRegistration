@@ -3,6 +3,7 @@ import {
   type QueueOptions,
   type JobOptions,
   type JobStatus,
+  type QueueJobCounts,
   type SimpleJob,
 } from '#core/queue/Queue';
 import {
@@ -157,6 +158,44 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   public async count(): Promise<number> {
     return this.bull.count();
+  }
+
+  public async jobCounts(): Promise<QueueJobCounts> {
+    const counts = await this.bull.getJobCounts(
+      'active',
+      'failed',
+      'waiting',
+      'delayed',
+      'paused',
+      'prioritized',
+    );
+
+    return {
+      active: counts.active + counts.prioritized,
+      failed: counts.failed,
+      pending: counts.waiting + counts.paused,
+      delayed: counts.delayed,
+    };
+  }
+
+  public async retryFailed(): Promise<void> {
+    const batchSize = 10;
+    const failed = await this.bull.getJobs(['failed']);
+
+    await Promise.all(
+      failed.map(async (job, index) => {
+        const delay = Math.floor(index / batchSize) * this.options.retryDelay;
+        await this.bull.add(job.name, job.data, {
+          priority: job.opts.priority,
+          delay,
+        });
+        await job.remove();
+      }),
+    );
+  }
+
+  public async deleteFailed(): Promise<void> {
+    await this.bull.clean(0, 0, 'failed');
   }
 
   public async close(): Promise<void> {

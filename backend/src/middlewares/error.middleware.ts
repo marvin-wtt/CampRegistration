@@ -75,8 +75,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     ...(config.env === 'development' && { stack: err.stack }),
   };
 
-  if (config.env === 'development') {
+  if (!err.isOperational) {
     logger.error(err);
+  } else if (config.env === 'development') {
+    logger.warn(err);
   }
 
   res.status(statusCode).send(response);

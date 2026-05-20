@@ -244,6 +244,11 @@ const routes: RouteRecordRaw[] = [
         name: 'administration.users',
         component: () => import('pages/administration/UserIndexPage.vue'),
       },
+      {
+        path: 'queues',
+        name: 'administration.queues',
+        component: () => import('pages/administration/QueueIndexPage.vue'),
+      },
     ],
   },
   {

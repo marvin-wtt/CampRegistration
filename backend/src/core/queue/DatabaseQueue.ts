@@ -4,6 +4,7 @@ import {
   Queue,
   type Job,
   type JobStatus,
+  type QueueJobCounts,
   type QueueOptions,
   type SimpleJob,
 } from '#core/queue/Queue';
@@ -225,7 +226,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     });
   }
 
-  private wake() {
+  protected wake() {
     if (this.sleepResolve) {
       this.sleepResolve();
     }
@@ -238,6 +239,58 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         status: { in: ['PENDING', 'RUNNING'] },
       },
     });
+  }
+
+  public async retryFailed(): Promise<void> {
+    const batchSize = 10;
+    const now = Date.now();
+
+    const failed = await prisma.job.findMany({
+      where: { queue: this.queue, status: 'FAILED' },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    await Promise.all(
+      failed.map((job, index) => {
+        const delay = Math.floor(index / batchSize) * this.options.retryDelay;
+        return prisma.job.update({
+          where: { id: job.id },
+          data: {
+            status: 'PENDING',
+            attempts: 0,
+            error: null,
+            reservedAt: null,
+            finishedAt: null,
+            runAt: new Date(now + delay),
+          },
+        });
+      }),
+    );
+
+    this.wake();
+  }
+
+  public async deleteFailed(): Promise<void> {
+    await prisma.job.deleteMany({
+      where: { queue: this.queue, status: 'FAILED' },
+    });
+  }
+
+  public async jobCounts(): Promise<QueueJobCounts> {
+    const now = new Date();
+    const [active, failed, pending, delayed] = await Promise.all([
+      prisma.job.count({ where: { queue: this.queue, status: 'RUNNING' } }),
+      prisma.job.count({ where: { queue: this.queue, status: 'FAILED' } }),
+      prisma.job.count({
+        where: { queue: this.queue, status: 'PENDING', runAt: { lte: now } },
+      }),
+      prisma.job.count({
+        where: { queue: this.queue, status: 'PENDING', runAt: { gt: now } },
+      }),
+    ]);
+
+    return { active, failed, pending, delayed };
   }
 
   public async all(status?: JobStatus): Promise<Job<P>[]> {

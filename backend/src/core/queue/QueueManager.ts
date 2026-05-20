@@ -17,6 +17,10 @@ export class QueueManager {
     return Object.values(this.queues);
   }
 
+  get(name: string): Queue<unknown, unknown> | undefined {
+    return this.queues[name];
+  }
+
   async close(): Promise<void> {
     const results = await Promise.allSettled(
       this.all().map((queue) => Promise.resolve(queue.close())),

@@ -52,6 +52,12 @@ const config = {
   queue: {
     driver: env.QUEUE_DRIVER,
   },
+  sentry: {
+    dsn: env.SENTRY_DSN,
+  },
+  log: {
+    level: env.LOG_LEVEL,
+  },
 };
 
 export type StorageConfig = (typeof config)['storage'];

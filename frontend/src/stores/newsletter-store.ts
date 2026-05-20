@@ -58,6 +58,24 @@ export const useNewsletterStore = defineStore('newsletter', () => {
     });
   }
 
+  async function fetchById(id: string): Promise<void> {
+    if (data.value?.find((n) => n.id === id)) {
+      return;
+    }
+    try {
+      const newsletter = await api.fetchNewsletter(id);
+      if (data.value) {
+        if (!data.value.find((n) => n.id === newsletter.id)) {
+          data.value = [...data.value, newsletter];
+        }
+      } else {
+        data.value = [newsletter];
+      }
+    } catch {
+      // Errors surface through manager/subscriber/message store fetches
+    }
+  }
+
   return {
     reset,
     invalidate,
@@ -65,6 +83,7 @@ export const useNewsletterStore = defineStore('newsletter', () => {
     isLoading,
     error,
     fetchData,
+    fetchById,
     createData,
     updateData,
     deleteData,
