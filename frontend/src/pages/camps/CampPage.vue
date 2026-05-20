@@ -126,7 +126,12 @@ async function init() {
   }
 }
 
-type RegistrationStatus = 'open' | 'not_open' | 'closed' | 'unavailable' | 'not_found';
+type RegistrationStatus =
+  | 'open'
+  | 'not_open'
+  | 'closed'
+  | 'unavailable'
+  | 'not_found';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
   if (knownError.value) return knownError.value;
@@ -152,19 +157,27 @@ const campContactEmail = computed<string | null>(() => {
 
 const statusIcon = computed<string>(() => {
   switch (registrationStatus.value) {
-    case 'not_open': return 'schedule';
-    case 'closed': return 'event_busy';
-    case 'not_found': return 'warning';
-    default: return 'lock';
+    case 'not_open':
+      return 'schedule';
+    case 'closed':
+      return 'event_busy';
+    case 'not_found':
+      return 'warning';
+    default:
+      return 'lock';
   }
 });
 
 const statusText = computed<string>(() => {
   switch (registrationStatus.value) {
-    case 'not_open': return t('error.not_open');
-    case 'closed': return t('error.closed');
-    case 'not_found': return t('error.not_found');
-    default: return t('error.unavailable');
+    case 'not_open':
+      return t('error.not_open');
+    case 'closed':
+      return t('error.closed');
+    case 'not_found':
+      return t('error.not_found');
+    default:
+      return t('error.unavailable');
   }
 });
 
@@ -222,7 +235,7 @@ action:
   home: "Chercher d'autres camps"
 
 contact:
-  label: "Pour toute question, contactez :"
+  label: 'Pour toute question, contactez :'
 
 error:
   not_open: "L'inscription à ce camp n'a pas encore commencé."

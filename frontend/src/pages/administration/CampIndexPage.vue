@@ -976,8 +976,7 @@ dialog:
     cancel: 'Anuluj'
   delete:
     title: 'Usuń obóz'
-    message:
-      'Zamierzasz usunąć "{ name }" zorganizowany przez "{ organizer }".
+    message: 'Zamierzasz usunąć "{ name }" zorganizowany przez "{ organizer }".
       Wszystkie zgłoszenia i powiązane szablony zostaną utracone.
       Ta akcja jest nieodwracalna.
       Czy na pewno chcesz usunąć ten obóz?'
@@ -1047,8 +1046,7 @@ dialog:
     cancel: 'Zrušit'
   delete:
     title: 'Smazat tábor'
-    message:
-      'Chystáte se smazat "{ name }" organizovaný "{ organizer }".
+    message: 'Chystáte se smazat "{ name }" organizovaný "{ organizer }".
       Všechny přihlášky a přidružené šablony budou ztraceny.
       Tato akce je nevratná.
       Opravdu chcete tento tábor smazat?'

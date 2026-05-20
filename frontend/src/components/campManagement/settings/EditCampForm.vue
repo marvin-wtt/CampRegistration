@@ -535,8 +535,8 @@ field:
   dateRange: 'Date de début et de fin'
   startTime: 'Heure de début'
   endTime: 'Heure de fin'
-  registrationOpenAt: "Ouverture des inscriptions (optionnel)"
-  registrationCloseAt: "Clôture des inscriptions (optionnel)"
+  registrationOpenAt: 'Ouverture des inscriptions (optionnel)'
+  registrationCloseAt: 'Clôture des inscriptions (optionnel)'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
   confirmation_mode: 'Accepter les inscriptions'
