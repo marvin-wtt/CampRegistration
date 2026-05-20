@@ -1,5 +1,9 @@
+import dotenv from 'dotenv';
+import { resolve } from 'path';
 import { PrismaClient } from '#generated/prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+
+dotenv.config({ path: resolve(import.meta.dirname, '../../../.env') });
 
 const prisma = new PrismaClient({
   adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
@@ -8,6 +12,7 @@ const prisma = new PrismaClient({
 async function main() {
   await prisma.$transaction(async (tx) => {
     const templates = await tx.messageTemplate.findMany({
+      where: { country: null },
       include: {
         camp: true,
         messages: {
