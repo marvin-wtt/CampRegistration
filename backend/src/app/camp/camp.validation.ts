@@ -44,13 +44,13 @@ const store = z.object({
   body: z
     .object({
       public: z.boolean().optional(),
-      registrationOpenAt: z
-        .iso.datetime()
+      registrationOpenAt: z.iso
+        .datetime()
         .transform((val) => new Date(val))
         .nullable()
         .optional(),
-      registrationCloseAt: z
-        .iso.datetime()
+      registrationCloseAt: z.iso
+        .datetime()
         .transform((val) => new Date(val))
         .nullable()
         .optional(),
@@ -124,13 +124,13 @@ const update = (camp: Camp) =>
     body: z
       .object({
         public: z.boolean(),
-        registrationOpenAt: z
-          .iso.datetime()
+        registrationOpenAt: z.iso
+          .datetime()
           .transform((val) => new Date(val))
           .nullable()
           .optional(),
-        registrationCloseAt: z
-          .iso.datetime()
+        registrationCloseAt: z.iso
+          .datetime()
           .transform((val) => new Date(val))
           .nullable()
           .optional(),

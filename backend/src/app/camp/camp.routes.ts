@@ -25,10 +25,7 @@ export class CampRouter extends ModuleRouter {
       controller(campController, 'index'),
     );
 
-    this.router.get(
-      '/:campId',
-      controller(campController, 'show'),
-    );
+    this.router.get('/:campId', controller(campController, 'show'));
 
     this.router.post('/', auth(), controller(campController, 'store'));
 
