@@ -46,6 +46,13 @@ export interface Job<T> extends SimpleJob<T> {
   attempts: number;
 }
 
+export interface QueueJobCounts {
+  active: number;
+  failed: number;
+  pending: number;
+  delayed: number;
+}
+
 export abstract class Queue<P, R = void, N extends string = string> {
   protected readonly options: QueueOptions = {
     maxAttempts: 5,
@@ -65,6 +72,10 @@ export abstract class Queue<P, R = void, N extends string = string> {
     };
   }
 
+  public get name(): string {
+    return this.queue;
+  }
+
   public abstract get type(): string;
 
   public abstract process(handler: (job: SimpleJob<P>) => Promise<R>): void;
@@ -72,6 +83,8 @@ export abstract class Queue<P, R = void, N extends string = string> {
   public abstract all(status?: JobStatus): Promise<Job<P>[]>;
 
   public abstract count(): Promise<number>;
+
+  public abstract jobCounts(): Promise<QueueJobCounts>;
 
   public abstract add(name: N, payload: P, options?: JobOptions): Promise<void>;
 

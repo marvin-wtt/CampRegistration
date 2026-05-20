@@ -20,8 +20,7 @@ morgan.token('client-ip', (req: Request) =>
   anonymizeIp(req.ip ?? req.socket.remoteAddress ?? ''),
 );
 
-const getIpFormat = () =>
-  config.env === 'production' ? ':client-ip - ' : '';
+const getIpFormat = () => (config.env === 'production' ? ':client-ip - ' : '');
 const successResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms`;
 const errorResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms - message: :message`;
 

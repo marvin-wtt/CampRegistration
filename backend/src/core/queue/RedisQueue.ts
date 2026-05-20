@@ -3,6 +3,7 @@ import {
   type QueueOptions,
   type JobOptions,
   type JobStatus,
+  type QueueJobCounts,
   type SimpleJob,
 } from '#core/queue/Queue';
 import {
@@ -157,6 +158,24 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
 
   public async count(): Promise<number> {
     return this.bull.count();
+  }
+
+  public async jobCounts(): Promise<QueueJobCounts> {
+    const counts = await this.bull.getJobCounts(
+      'active',
+      'failed',
+      'waiting',
+      'delayed',
+      'paused',
+      'prioritized',
+    );
+
+    return {
+      active: counts.active + counts.prioritized,
+      failed: counts.failed,
+      pending: counts.waiting + counts.paused,
+      delayed: counts.delayed,
+    };
   }
 
   public async close(): Promise<void> {

@@ -5,6 +5,7 @@ import {
   type SimpleJob,
   type JobStatus,
   type JobOptions,
+  type QueueJobCounts,
 } from '#core/queue/Queue.js';
 import logger from '#core/logger';
 
@@ -60,6 +61,29 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     ).length;
 
     return Promise.resolve(count);
+  }
+
+  public jobCounts(): Promise<QueueJobCounts> {
+    const counts: QueueJobCounts = {
+      active: 0,
+      failed: 0,
+      pending: 0,
+      delayed: 0,
+    };
+
+    for (const job of this.jobs.values()) {
+      if (job.status === 'RUNNING') {
+        counts.active++;
+      } else if (job.status === 'FAILED') {
+        counts.failed++;
+      } else if (job.status === 'PENDING') {
+        counts.pending++;
+      } else if (job.status === 'DELAYED') {
+        counts.delayed++;
+      }
+    }
+
+    return Promise.resolve(counts);
   }
 
   public add(name: N, payload: P, options?: JobOptions): Promise<void> {

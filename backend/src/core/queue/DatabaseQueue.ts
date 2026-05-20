@@ -4,6 +4,7 @@ import {
   Queue,
   type Job,
   type JobStatus,
+  type QueueJobCounts,
   type QueueOptions,
   type SimpleJob,
 } from '#core/queue/Queue';
@@ -238,6 +239,22 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         status: { in: ['PENDING', 'RUNNING'] },
       },
     });
+  }
+
+  public async jobCounts(): Promise<QueueJobCounts> {
+    const now = new Date();
+    const [active, failed, pending, delayed] = await Promise.all([
+      prisma.job.count({ where: { queue: this.queue, status: 'RUNNING' } }),
+      prisma.job.count({ where: { queue: this.queue, status: 'FAILED' } }),
+      prisma.job.count({
+        where: { queue: this.queue, status: 'PENDING', runAt: { lte: now } },
+      }),
+      prisma.job.count({
+        where: { queue: this.queue, status: 'PENDING', runAt: { gt: now } },
+      }),
+    ]);
+
+    return { active, failed, pending, delayed };
   }
 
   public async all(status?: JobStatus): Promise<Job<P>[]> {
