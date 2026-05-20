@@ -8,6 +8,7 @@ import { remove } from 'fs-extra';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import logger from '#core/logger';
+import { resolve as resolvePath, sep } from 'path';
 
 type ParameterType = string | Field | readonly Field[] | null | undefined;
 
@@ -108,6 +109,21 @@ const formatterMiddleware = async (
   req.body = removePrototype(req.body) as unknown;
 
   const files = getAllFiles(req);
+  const resolvedTmpDir = resolvePath(config.storage.tmpDir) + sep;
+
+  const removeTmpFile = async (f: Express.Multer.File) => {
+    const resolvedPath = resolvePath(f.path);
+    if (!resolvedPath.startsWith(resolvedTmpDir)) {
+      logger.warn('Refusing to remove file outside tmpDir', {
+        path: resolvedPath,
+      });
+      return;
+    }
+
+    return remove(resolvedPath).catch((e: unknown) => {
+      logger.warn('Failed to remove tmp file', e);
+    });
+  };
 
   for (const file of files) {
     const detected = await fileTypeFromFile(file.path);
@@ -116,13 +132,7 @@ const formatterMiddleware = async (
     const mime = detected?.mime ?? 'application/octet-stream';
 
     if (BLOCKED_MIME_TYPES.has(mime)) {
-      await Promise.all(
-        files.map((f) =>
-          remove(f.path).catch((e: unknown) => {
-            logger.warn('Failed to remove tmp file', e);
-          }),
-        ),
-      );
+      await Promise.all(files.map(removeTmpFile));
       next(
         new ApiError(httpStatus.UNPROCESSABLE_ENTITY, 'File type not allowed'),
       );

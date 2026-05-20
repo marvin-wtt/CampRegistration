@@ -275,7 +275,7 @@
                   <q-separator />
                   <div
                     class="q-pa-md newsletter-preview"
-                    v-html="sanitize(message.body)"
+                    v-html="sanitizedBodies[message.id]"
                   />
                 </q-expansion-item>
               </q-list>
@@ -608,9 +608,11 @@ const error = computed<string | null>(
     null,
 );
 
-function sanitize(html: string): string {
-  return DOMPurify.sanitize(html);
-}
+const sanitizedBodies = computed<Record<string, string>>(() =>
+  Object.fromEntries(
+    messages.value.map((m) => [m.id, DOMPurify.sanitize(m.body)]),
+  ),
+);
 
 const filteredSubscribers = computed<NewsletterSubscriber[]>(() => {
   const query = subscriberFilter.value?.trim().toLowerCase();
