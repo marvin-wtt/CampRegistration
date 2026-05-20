@@ -1,7 +1,7 @@
 <template>
   <page-state-handler
     :error
-    class="relative-position"
+    style="height: 1px"
   >
     <div class="absolute fit row no-wrap justify-center q-pa-md">
       <div class="column no-wrap col-sm-11 col-md-10 col-lg-9 col-12">
@@ -38,9 +38,9 @@
                   name="people"
                   size="xs"
                 />
-                <span>{{
-                  t('header.subscribers', { count: subscribers.length })
-                }}</span>
+                <span>
+                  {{ t('header.subscribers', { count: subscribers.length }) }}
+                </span>
               </div>
               <div class="row items-center q-gutter-x-xs">
                 <q-icon
@@ -253,9 +253,9 @@
                           size="sm"
                           @click.stop="useAsTemplate(message)"
                         >
-                          <q-tooltip>{{
-                            t('history.useAsTemplate')
-                          }}</q-tooltip>
+                          <q-tooltip>
+                            {{ t('history.useAsTemplate') }}
+                          </q-tooltip>
                         </q-btn>
                         <q-btn
                           flat
@@ -394,62 +394,56 @@
                 </div>
               </div>
 
-              <!-- Subscriber list (virtual scroll for large datasets) -->
-              <q-virtual-scroll
+              <!-- Subscriber list -->
+              <q-list
                 v-else
-                :items="filteredSubscribers"
-                :virtual-scroll-item-size="56"
-                class="col rounded-borders subscriber-scroll"
+                bordered
+                separator
+                class="col rounded-borders list-scroll"
               >
-                <template #default="{ item: subscriber, index }">
-                  <q-item
-                    :key="subscriber.id"
-                    class="subscriber-item"
-                  >
-                    <q-item-section avatar>
-                      <q-avatar
-                        color="primary"
-                        text-color="white"
-                        size="36px"
-                      >
-                        {{
-                          (subscriber.name ?? subscriber.email)
-                            .charAt(0)
-                            .toUpperCase()
-                        }}
-                      </q-avatar>
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label class="text-weight-medium">
-                        {{ subscriber.email }}
-                      </q-item-label>
-                      <q-item-label
-                        v-if="subscriber.name"
-                        caption
-                      >
-                        {{ subscriber.name }}
-                      </q-item-label>
-                      <q-item-label caption>
-                        {{ d(subscriber.subscribedAt, 'date') }}
-                      </q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-btn
-                        flat
-                        round
-                        icon="person_remove"
-                        color="negative"
-                        size="sm"
-                        @click="showDeleteSubscriberDialog(subscriber)"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-separator
-                    v-if="index < filteredSubscribers.length - 1"
-                    :key="`sep-${subscriber.id}`"
-                  />
-                </template>
-              </q-virtual-scroll>
+                <q-item
+                  v-for="subscriber in filteredSubscribers"
+                  :key="subscriber.id"
+                >
+                  <q-item-section avatar>
+                    <q-avatar
+                      color="primary"
+                      text-color="white"
+                      size="36px"
+                    >
+                      {{
+                        (subscriber.name ?? subscriber.email)
+                          .charAt(0)
+                          .toUpperCase()
+                      }}
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-weight-medium">
+                      {{ subscriber.email }}
+                    </q-item-label>
+                    <q-item-label
+                      v-if="subscriber.name"
+                      caption
+                    >
+                      {{ subscriber.name }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ d(subscriber.subscribedAt, 'date') }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      round
+                      icon="person_remove"
+                      color="negative"
+                      size="sm"
+                      @click="showDeleteSubscriberDialog(subscriber)"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
             </q-tab-panel>
 
             <!-- Managers Tab -->
@@ -1103,19 +1097,7 @@ managers:
 
 .list-scroll {
   overflow-y: auto;
-}
-
-.subscriber-scroll {
   min-height: 0;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.body--dark .subscriber-scroll {
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.subscriber-item {
-  min-height: 56px;
 }
 
 .newsletter-preview {
