@@ -8,6 +8,7 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 const BASE = '/api/v1/newsletters';
 
@@ -15,9 +16,18 @@ const createNewsletterWithManager = async () => {
   const user = await UserFactory.create();
   const accessToken = generateAccessToken(user);
   const newsletter = await NewsletterFactory.create({
-    managers: { create: { userId: user.id } },
+    managers: { create: { userId: user.id, role: 'OWNER' } },
   });
   return { user, accessToken, newsletter };
+};
+
+const createNewsletterWithRole = async (role: NewsletterManagerRole) => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+  const newsletter = await NewsletterFactory.create({
+    managers: { create: { userId: user.id, role } },
+  });
+  return { accessToken, newsletter };
 };
 
 describe(BASE, () => {
@@ -136,6 +146,22 @@ describe(BASE, () => {
       expect(manager).not.toBeNull();
     });
 
+    it('should add the creating user as OWNER', async () => {
+      const user = await UserFactory.create({ role: 'ADMIN' });
+      const accessToken = generateAccessToken(user);
+
+      const { body } = await request()
+        .post(BASE)
+        .send({ name: 'My Newsletter' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      const manager = await prisma.newsletterManager.findFirst({
+        where: { newsletterId: body.data.id, userId: user.id },
+      });
+      expect(manager?.role).toBe('OWNER');
+    });
+
     it('should accept a null description', async () => {
       const user = await UserFactory.create({
         role: 'ADMIN',
@@ -223,6 +249,18 @@ describe(BASE, () => {
         .get(`${BASE}/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it.each([
+      ['OWNER', 200],
+      ['EDITOR', 200],
+      ['VIEWER', 200],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .get(`${BASE}/${newsletter.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 
@@ -335,6 +373,19 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
+
+    it.each([
+      ['OWNER', 200],
+      ['EDITOR', 200],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .patch(`${BASE}/${newsletter.id}`)
+        .send({ name: 'Updated' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+    });
   });
 
   describe(`DELETE ${BASE}/:newsletterId`, () => {
@@ -398,6 +449,18 @@ describe(BASE, () => {
         .delete(`${BASE}/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it.each([
+      ['OWNER', 204],
+      ['EDITOR', 403],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .delete(`${BASE}/${newsletter.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 });

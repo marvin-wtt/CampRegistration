@@ -1,7 +1,9 @@
 import type { Router } from 'express';
 import type {
   ManagerRole,
+  NewsletterManagerRole,
   Permission,
+  NewsletterPermission,
 } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
 import type { ContainerModuleLoadOptions } from 'inversify';
@@ -10,14 +12,14 @@ export type AppRouter = Router & {
   useRouter: (path: string, router: ModuleRouter) => void;
 };
 
-// Convert to interface to allow for more flexibility in the future
 export type ModuleOptions = object;
 
 export type BindOptions = ContainerModuleLoadOptions;
 
-export type RoleToPermissions<T extends Permission> = Partial<
-  Record<ManagerRole, T[]>
->;
+export type RoleToPermissions<
+  TRole extends string,
+  TPermission extends string,
+> = Partial<Record<TRole, TPermission[]>>;
 
 export interface AppModule {
   configure?(options: ModuleOptions): Promise<void> | void;
@@ -26,7 +28,12 @@ export interface AppModule {
 
   registerRoutes?(router?: Router): void;
 
-  registerPermissions?(): RoleToPermissions<Permission>;
+  registerPermissions?(): RoleToPermissions<ManagerRole, Permission>;
+
+  registerNewsletterPermissions?(): RoleToPermissions<
+    NewsletterManagerRole,
+    NewsletterPermission
+  >;
 
   shutdown?(): Promise<void> | void;
 }

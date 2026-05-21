@@ -7,6 +7,7 @@ import type {
 import type {
   CampPermission,
   FilePermission,
+  ManagerRole,
 } from '@camp-registration/common/permissions';
 import { CampRouter } from '#app/camp/camp.routes';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -28,7 +29,10 @@ export class CampModule implements AppModule {
     router.useRouter('/camps', new CampRouter());
   }
 
-  registerPermissions(): RoleToPermissions<CampPermission | FilePermission> {
+  registerPermissions(): RoleToPermissions<
+    ManagerRole,
+    CampPermission | FilePermission
+  > {
     return {
       DIRECTOR: [
         'camp.view',

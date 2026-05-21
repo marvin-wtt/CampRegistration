@@ -6,7 +6,10 @@ import type {
   ModuleOptions,
 } from '#core/base/AppModule';
 import { RegistrationRouter } from '#app/registration/registration.routes';
-import type { RegistrationPermission } from '@camp-registration/common/permissions';
+import type {
+  ManagerRole,
+  RegistrationPermission,
+} from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { registrationFileGuard } from '#app/registration/registration.guard';
 import { RegistrationFilesRouter } from '#app/registration/registration-files.routes';
@@ -53,7 +56,10 @@ export class RegistrationModule implements AppModule {
     router.useRouter('/camps/:campId/registrations', new RegistrationRouter());
   }
 
-  registerPermissions(): RoleToPermissions<RegistrationPermission> {
+  registerPermissions(): RoleToPermissions<
+    ManagerRole,
+    RegistrationPermission
+  > {
     return {
       DIRECTOR: [
         'camp.registrations.view',

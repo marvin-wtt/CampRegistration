@@ -24,19 +24,19 @@ export class NewsletterMessageRouter extends ModuleRouter {
     this.router.get(
       '/',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.messages.view')),
       controller(messageController, 'index'),
     );
     this.router.post(
       '/',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.messages.create')),
       controller(messageController, 'store'),
     );
     this.router.delete(
       '/:newsletterMessageId',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.messages.delete')),
       controller(messageController, 'destroy'),
     );
   }

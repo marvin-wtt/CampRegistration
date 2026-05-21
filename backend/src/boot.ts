@@ -23,7 +23,10 @@ import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
-import { permissionRegistry } from '#core/permission-registry';
+import {
+  campPermissionRegistry,
+  newsletterPermissionRegistry,
+} from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
 import { startJobs, stopJobs } from '#jobs';
 import { connectDatabase, disconnectDatabase } from '#core/database';
@@ -101,8 +104,12 @@ async function bootModules() {
   // Register permissions
   for (const module of modules) {
     if (module.registerPermissions) {
-      const permissions = module.registerPermissions();
-      permissionRegistry.registerAll(permissions);
+      campPermissionRegistry.registerAll(module.registerPermissions());
+    }
+    if (module.registerNewsletterPermissions) {
+      newsletterPermissionRegistry.registerAll(
+        module.registerNewsletterPermissions(),
+      );
     }
   }
 

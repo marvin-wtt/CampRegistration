@@ -5,7 +5,10 @@ import type {
   BindOptions,
 } from '#core/base/AppModule';
 import { MessageTemplateRouter } from '#app/messageTemplate/message-template.routes';
-import type { MessageTemplatePermission } from '@camp-registration/common/permissions';
+import type {
+  ManagerRole,
+  MessageTemplatePermission,
+} from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { messageTemplateFileGuard } from '#app/messageTemplate/message-template.guard';
 import { resolve } from '#core/ioc/container';
@@ -28,7 +31,10 @@ export class MessageTemplateModule implements AppModule {
     );
   }
 
-  registerPermissions(): RoleToPermissions<MessageTemplatePermission> {
+  registerPermissions(): RoleToPermissions<
+    ManagerRole,
+    MessageTemplatePermission
+  > {
     return {
       DIRECTOR: [
         'camp.message_templates.view',

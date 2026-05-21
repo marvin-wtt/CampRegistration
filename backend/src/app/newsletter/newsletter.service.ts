@@ -38,7 +38,7 @@ export class NewsletterService extends BaseService {
         description: data.description,
         replyTo: data.replyTo,
         managers: {
-          create: { userId },
+          create: { userId, role: 'OWNER' },
         },
       },
     });

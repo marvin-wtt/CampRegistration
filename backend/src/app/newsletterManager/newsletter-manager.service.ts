@@ -1,19 +1,9 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 @injectable()
 export class NewsletterManagerService extends BaseService {
-  async isNewsletterManager(
-    newsletterId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const manager = await this.prisma.newsletterManager.findFirst({
-      where: { newsletterId, userId },
-    });
-
-    return manager != null;
-  }
-
   async getManagers(newsletterId: string) {
     return this.prisma.newsletterManager.findMany({
       where: { newsletterId },
@@ -34,9 +24,13 @@ export class NewsletterManagerService extends BaseService {
     });
   }
 
-  async addManager(newsletterId: string, userId: string) {
+  async addManager(
+    newsletterId: string,
+    userId: string,
+    role: NewsletterManagerRole = 'EDITOR',
+  ) {
     return this.prisma.newsletterManager.create({
-      data: { newsletterId, userId },
+      data: { newsletterId, userId, role },
       include: { user: true },
     });
   }
@@ -45,7 +39,9 @@ export class NewsletterManagerService extends BaseService {
     return this.prisma.newsletterManager.delete({ where: { id } });
   }
 
-  async countManagers(newsletterId: string) {
-    return this.prisma.newsletterManager.count({ where: { newsletterId } });
+  async countOwners(newsletterId: string) {
+    return this.prisma.newsletterManager.count({
+      where: { newsletterId, role: 'OWNER' },
+    });
   }
 }

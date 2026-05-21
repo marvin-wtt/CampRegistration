@@ -12,6 +12,7 @@ import { ulid } from 'ulidx';
 import { randomBytes } from 'node:crypto';
 import { NoOpMailer } from '../../../src/app/mail/noop.mailer.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 const mailer = NoOpMailer.prototype;
 
@@ -22,10 +23,19 @@ const createNewsletterWithManager = async () => {
   const accessToken = generateAccessToken(user);
 
   const newsletter = await NewsletterFactory.create({
-    managers: { create: { userId: user.id } },
+    managers: { create: { userId: user.id, role: 'OWNER' } },
   });
 
   return { user, accessToken, newsletter };
+};
+
+const createNewsletterWithRole = async (role: NewsletterManagerRole) => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+  const newsletter = await NewsletterFactory.create({
+    managers: { create: { userId: user.id, role } },
+  });
+  return { accessToken, newsletter };
 };
 
 describe(`${BASE}/:newsletterId/messages`, () => {
@@ -133,6 +143,18 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .get(`${BASE}/${ulid()}/messages`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it.each([
+      ['OWNER', 200],
+      ['EDITOR', 200],
+      ['VIEWER', 200],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .get(`${BASE}/${newsletter.id}/messages`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 
@@ -501,6 +523,19 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
+
+    it.each([
+      ['OWNER', 201],
+      ['EDITOR', 201],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>Content</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+    });
   });
 
   describe(`DELETE ${BASE}/:newsletterId/messages/:newsletterMessageId`, () => {
@@ -587,6 +622,21 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .delete(`${BASE}/${newsletter.id}/messages/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it.each([
+      ['OWNER', 204],
+      ['EDITOR', 204],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      const message = await NewsletterMessageFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+      await request()
+        .delete(`${BASE}/${newsletter.id}/messages/${message.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 });

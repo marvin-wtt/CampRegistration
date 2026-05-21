@@ -5,7 +5,10 @@ import type {
   BindOptions,
 } from '#core/base/AppModule';
 import { MessageRouter } from '#app/message/message.routes';
-import type { MessagePermission } from '@camp-registration/common/permissions';
+import type {
+  ManagerRole,
+  MessagePermission,
+} from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { messageFileGuard } from '#app/message/message.guard';
 import { MessageService } from '#app/message/message.service';
@@ -23,7 +26,7 @@ export class MessageModule implements AppModule {
     router.useRouter('/camps/:campId/messages', new MessageRouter());
   }
 
-  registerPermissions(): RoleToPermissions<MessagePermission> {
+  registerPermissions(): RoleToPermissions<ManagerRole, MessagePermission> {
     return {
       DIRECTOR: [
         'camp.messages.view',
