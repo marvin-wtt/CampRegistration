@@ -12,6 +12,7 @@ const store = z.object({
   }),
   body: z.object({
     email: z.email(),
+    role: z.enum(['OWNER', 'EDITOR', 'VIEWER']).optional(),
   }),
 });
 

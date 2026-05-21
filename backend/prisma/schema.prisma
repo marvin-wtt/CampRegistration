@@ -336,6 +336,7 @@ model NewsletterManager {
   id           String @id @unique(map: "newsletter_managers_id_unique") @default(ulid()) @db.Char(26)
   newsletterId String @map("newsletter_id") @db.Char(26)
   userId       String @map("user_id") @db.Char(26)
+  role         String @default("OWNER") @db.VarChar(50)
 
   newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_managers_newsletter_id_foreign")
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "newsletter_managers_user_id_foreign")

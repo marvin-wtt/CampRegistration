@@ -15,6 +15,7 @@ export class NewsletterManagerResource extends JsonResource<
       id: this.data.id,
       name: this.data.user.name,
       email: this.data.user.email,
+      role: this.data.role as NewsletterManagerData['role'],
     };
   }
 }

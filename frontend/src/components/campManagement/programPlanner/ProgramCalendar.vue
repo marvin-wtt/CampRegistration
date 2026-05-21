@@ -631,13 +631,14 @@ function onBodyMouseDown(
   const pxPerMinute = timeDurationHeight(60) / 60;
   const dayStartMinutes = intervalStart.value * settings.timeInterval;
 
-  const yToSnapped = (clientY: number) => {
+  const yToSnapped = (clientY: number, roundFn = Math.round) => {
     const y = clientY - bodyEl.getBoundingClientRect().top;
     const raw = y / pxPerMinute + dayStartMinutes;
-    return Math.round(raw / settings.timeInterval) * settings.timeInterval;
+
+    return roundFn(raw / settings.timeInterval) * settings.timeInterval;
   };
 
-  const start = yToSnapped(e.clientY);
+  const start = yToSnapped(e.clientY, Math.floor);
   dragSelection.value = {
     date: timestamp.date,
     startMinutes: start,
@@ -703,7 +704,7 @@ function onBodyClick(
   const y = e.clientY - bodyEl.getBoundingClientRect().top;
   const raw = y / pxPerMinute + dayStartMinutes;
   const snapped =
-    Math.round(raw / settings.timeInterval) * settings.timeInterval;
+    Math.floor(raw / settings.timeInterval) * settings.timeInterval;
   const time = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
 
   quasar

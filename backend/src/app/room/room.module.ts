@@ -5,7 +5,10 @@ import type {
   BindOptions,
 } from '#core/base/AppModule';
 import { RoomRouter } from '#app/room/room.routes';
-import type { RoomPermission } from '@camp-registration/common/permissions';
+import type {
+  ManagerRole,
+  RoomPermission,
+} from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import { RoomController } from '#app/room/room.controller.js';
 import { RoomService } from '#app/room/room.service.js';
@@ -21,7 +24,7 @@ export class RoomModule implements AppModule {
     router.useRouter('/camps/:campId/rooms', resolve(RoomRouter));
   }
 
-  registerPermissions(): RoleToPermissions<RoomPermission> {
+  registerPermissions(): RoleToPermissions<ManagerRole, RoomPermission> {
     return {
       DIRECTOR: [
         'camp.rooms.view',

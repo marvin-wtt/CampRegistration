@@ -1,10 +1,13 @@
 <template>
-  <q-card flat>
+  <q-card
+    flat
+    bordered
+  >
     <q-form
       @submit="onSave"
       @reset="onReset"
     >
-      <q-card-section class="text-h4">
+      <q-card-section class="text-h6">
         {{ t('title') }}
       </q-card-section>
 
@@ -69,7 +72,6 @@
           :label="t('action.save')"
           type="submit"
           color="primary"
-          outlined
           rounded
         />
       </q-card-actions>

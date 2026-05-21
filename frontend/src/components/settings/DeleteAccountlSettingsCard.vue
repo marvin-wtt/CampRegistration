@@ -1,7 +1,10 @@
 <template>
-  <q-card flat>
+  <q-card
+    flat
+    bordered
+  >
     <q-form @submit="onSave">
-      <q-card-section class="text-h4 text-negative">
+      <q-card-section class="text-h6 text-negative">
         {{ t('title') }}
       </q-card-section>
 
@@ -23,7 +26,6 @@
           :label="t('action.delete')"
           type="submit"
           color="negative"
-          outlined
           rounded
         />
       </q-card-actions>

@@ -7,6 +7,7 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 const BASE = '/api/v1/newsletters';
 
@@ -14,9 +15,18 @@ const createNewsletterWithManager = async () => {
   const user = await UserFactory.create();
   const accessToken = generateAccessToken(user);
   const newsletter = await NewsletterFactory.create({
-    managers: { create: { userId: user.id } },
+    managers: { create: { userId: user.id, role: 'OWNER' } },
   });
   return { user, accessToken, newsletter };
+};
+
+const createNewsletterWithRole = async (role: NewsletterManagerRole) => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+  const newsletter = await NewsletterFactory.create({
+    managers: { create: { userId: user.id, role } },
+  });
+  return { accessToken, newsletter };
 };
 
 describe(`${BASE}/:newsletterId/managers`, () => {
@@ -35,6 +45,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         id: expect.any(String),
         email: user.email,
         name: user.name,
+        role: 'OWNER',
       });
     });
 
@@ -79,6 +90,18 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
+
+    it.each([
+      ['OWNER', 200],
+      ['EDITOR', 200],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .get(`${BASE}/${newsletter.id}/managers`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+    });
   });
 
   describe(`POST ${BASE}/:newsletterId/managers`, () => {
@@ -96,12 +119,27 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         id: expect.any(String),
         email: newManager.email,
         name: newManager.name,
+        role: 'EDITOR',
       });
 
       const record = await prisma.newsletterManager.findFirst({
         where: { newsletterId: newsletter.id, userId: newManager.id },
       });
       expect(record).not.toBeNull();
+      expect(record?.role).toBe('EDITOR');
+    });
+
+    it('should add manager with specified role when role is provided', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const newManager = await UserFactory.create();
+
+      const { body } = await request()
+        .post(`${BASE}/${newsletter.id}/managers`)
+        .send({ email: newManager.email, role: 'VIEWER' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data).toMatchObject({ role: 'VIEWER' });
     });
 
     it('should respond with `400` when user is already a manager', async () => {
@@ -178,6 +216,20 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
+
+    it.each([
+      ['OWNER', 201],
+      ['EDITOR', 403],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      const newUser = await UserFactory.create();
+      await request()
+        .post(`${BASE}/${newsletter.id}/managers`)
+        .send({ email: newUser.email })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+    });
   });
 
   describe(`DELETE ${BASE}/:newsletterId/managers/:newsletterManagerId`, () => {
@@ -185,7 +237,11 @@ describe(`${BASE}/:newsletterId/managers`, () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
       const secondUser = await UserFactory.create();
       const secondManager = await prisma.newsletterManager.create({
-        data: { newsletterId: newsletter.id, userId: secondUser.id },
+        data: {
+          newsletterId: newsletter.id,
+          userId: secondUser.id,
+          role: 'EDITOR',
+        },
       });
 
       await request()
@@ -199,7 +255,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
       expect(deleted).toBeNull();
     });
 
-    it('should respond with `400` when trying to remove the last manager', async () => {
+    it('should respond with `400` when trying to remove the last owner', async () => {
       const { user, accessToken, newsletter } =
         await createNewsletterWithManager();
 
@@ -211,6 +267,56 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .delete(`${BASE}/${newsletter.id}/managers/${manager.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
+    });
+
+    it('should respond with `400` when removing the last owner even if other managers exist', async () => {
+      const { user, accessToken, newsletter } =
+        await createNewsletterWithManager();
+
+      const editorUser = await UserFactory.create();
+      await prisma.newsletterManager.create({
+        data: {
+          newsletterId: newsletter.id,
+          userId: editorUser.id,
+          role: 'EDITOR',
+        },
+      });
+
+      const ownerManager = await prisma.newsletterManager.findFirstOrThrow({
+        where: { newsletterId: newsletter.id, userId: user.id },
+      });
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/managers/${ownerManager.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should respond with `204` when removing an owner if another owner remains', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const secondOwnerUser = await UserFactory.create();
+      const secondOwner = await prisma.newsletterManager.create({
+        data: {
+          newsletterId: newsletter.id,
+          userId: secondOwnerUser.id,
+          role: 'OWNER',
+        },
+      });
+
+      await request()
+        .delete(`${BASE}/${newsletter.id}/managers/${secondOwner.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+    });
+
+    it('should respond with `404` when newsletter does not exist', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .delete(`${BASE}/${ulid()}/managers/${ulid()}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
     });
 
     it('should respond with `404` when manager does not exist', async () => {
@@ -226,7 +332,7 @@ describe(`${BASE}/:newsletterId/managers`, () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
       const otherUser = await UserFactory.create();
       const otherNewsletter = await NewsletterFactory.create({
-        managers: { create: { userId: otherUser.id } },
+        managers: { create: { userId: otherUser.id, role: 'OWNER' } },
       });
       const otherManager = await prisma.newsletterManager.findFirstOrThrow({
         where: { newsletterId: otherNewsletter.id },
@@ -255,6 +361,26 @@ describe(`${BASE}/:newsletterId/managers`, () => {
         .delete(`${BASE}/${newsletter.id}/managers/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
+    });
+
+    it.each([
+      ['OWNER', 204],
+      ['EDITOR', 403],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      const targetUser = await UserFactory.create();
+      const targetManager = await prisma.newsletterManager.create({
+        data: {
+          newsletterId: newsletter.id,
+          userId: targetUser.id,
+          role: 'EDITOR',
+        },
+      });
+      await request()
+        .delete(`${BASE}/${newsletter.id}/managers/${targetManager.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 });

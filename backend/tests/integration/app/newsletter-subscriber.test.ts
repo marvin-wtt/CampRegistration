@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CampFactory,
+  CampManagerFactory,
   NewsletterFactory,
   NewsletterSubscriberFactory,
   RegistrationFactory,
@@ -11,6 +12,7 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import { Prisma } from '#generated/prisma/client';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 const BASE = '/api/v1/newsletters';
 
@@ -18,9 +20,28 @@ const createNewsletterWithManager = async () => {
   const user = await UserFactory.create();
   const accessToken = generateAccessToken(user);
   const newsletter = await NewsletterFactory.create({
-    managers: { create: { userId: user.id } },
+    managers: { create: { userId: user.id, role: 'OWNER' } },
   });
   return { user, accessToken, newsletter };
+};
+
+const createNewsletterWithRole = async (role: NewsletterManagerRole) => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+  const newsletter = await NewsletterFactory.create({
+    managers: { create: { userId: user.id, role } },
+  });
+  return { accessToken, newsletter };
+};
+
+const createNewsletterAndCampWithManager = async () => {
+  const { user, accessToken, newsletter } = await createNewsletterWithManager();
+  const camp = await CampFactory.create();
+  await CampManagerFactory.create({
+    camp: { connect: { id: camp.id } },
+    user: { connect: { id: user.id } },
+  });
+  return { user, accessToken, newsletter, camp };
 };
 
 describe(`${BASE}/:newsletterId/subscribers`, () => {
@@ -142,6 +163,18 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .get(`${BASE}/${ulid()}/subscribers`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it.each([
+      ['OWNER', 200],
+      ['EDITOR', 200],
+      ['VIEWER', 200],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .get(`${BASE}/${newsletter.id}/subscribers`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 
@@ -267,12 +300,25 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
+
+    it.each([
+      ['OWNER', 201],
+      ['EDITOR', 201],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers`)
+        .send({ email: `${role.toLowerCase()}-sub@example.com` })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+    });
   });
 
   describe(`POST ${BASE}/:newsletterId/subscribers/import`, () => {
     it('should respond with `200` and import registrations with emails', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['import1@example.com'],
@@ -297,8 +343,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip registrations without an email (empty array)', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: [],
@@ -314,8 +360,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip registrations where emails field is null', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: Prisma.DbNull,
@@ -331,8 +377,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip null/empty individual emails within an emails array', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       // emails array contains a falsy value
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
@@ -350,8 +396,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should deduplicate emails that appear in multiple registrations', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['shared@example.com'],
@@ -377,8 +423,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip already-subscribed emails and report them as skipped', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['existing@example.com'],
@@ -398,8 +444,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should filter by country when provided', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['de@example.com'],
@@ -426,8 +472,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should import all registrations regardless of consent when requireConsent is false', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['consent-true@example.com'],
@@ -450,8 +496,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should only import registrations with explicit consent when requireConsent is true', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['consent-true@example.com'],
@@ -484,8 +530,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name from firstName and lastName', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['named@example.com'],
@@ -506,8 +552,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name from firstName only when lastName is missing', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['firstonly@example.com'],
@@ -528,8 +574,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name from lastName only when firstName is missing', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['lastonly@example.com'],
@@ -550,8 +596,8 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name to null when both firstName and lastName are missing', async () => {
-      const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
       await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
         emails: ['noname@example.com'],
@@ -590,7 +636,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .expect(401);
     });
 
-    it('should respond with `403` when user is not a manager', async () => {
+    it('should respond with `403` when user is not a newsletter manager', async () => {
       const newsletter = await NewsletterFactory.create();
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
@@ -598,6 +644,17 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
         .send({ campId: ulid() })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `403` when user is a newsletter manager but not a camp manager', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const camp = await CampFactory.create();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
@@ -671,6 +728,21 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .delete(`${BASE}/${newsletter.id}/subscribers/${subscriber.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
+    });
+
+    it.each([
+      ['OWNER', 204],
+      ['EDITOR', 204],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      const subscriber = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+      await request()
+        .delete(`${BASE}/${newsletter.id}/subscribers/${subscriber.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 });

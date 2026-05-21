@@ -95,7 +95,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     const previousData = data.value ? [...data.value] : undefined;
     const currentEvent = data.value?.find((e) => e.id === id);
     if (currentEvent) {
-      const optimisticEvent = { ...currentEvent, ...event } as ProgramEvent;
+      const optimisticEvent = { ...currentEvent, ...event };
       data.value = data.value?.map((value) =>
         value.id === id ? optimisticEvent : value,
       );

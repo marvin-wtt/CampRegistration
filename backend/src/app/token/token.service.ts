@@ -99,7 +99,13 @@ export class TokenService extends BaseService {
 
     const userId = payload.sub;
     const tokenData = await this.prisma.token.findFirst({
-      where: { token, type, userId, blacklisted: false },
+      where: {
+        token,
+        type,
+        userId,
+        blacklisted: false,
+        expiresAt: { gte: new Date() },
+      },
     });
 
     if (!tokenData) {

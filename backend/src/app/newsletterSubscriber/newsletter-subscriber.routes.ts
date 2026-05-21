@@ -25,25 +25,25 @@ export class NewsletterSubscriberRouter extends ModuleRouter {
     this.router.get(
       '/',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.subscribers.view')),
       controller(subscriberController, 'index'),
     );
     this.router.post(
       '/',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.subscribers.create')),
       controller(subscriberController, 'store'),
     );
     this.router.post(
       '/import',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.subscribers.create')),
       controller(subscriberController, 'importFromCamp'),
     );
     this.router.delete(
       '/:newsletterSubscriberId',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.subscribers.delete')),
       controller(subscriberController, 'destroy'),
     );
   }

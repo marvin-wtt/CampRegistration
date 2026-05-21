@@ -1,44 +1,54 @@
 import type {
   ManagerRole,
+  NewsletterManagerRole,
   Permission,
+  NewsletterPermission,
 } from '@camp-registration/common/permissions';
 
-export class PermissionRegistry {
-  private map = new Map<ManagerRole, Set<Permission>>();
+export class PermissionRegistry<
+  TRole extends string,
+  TPermission extends string,
+> {
+  private map = new Map<TRole, Set<TPermission>>();
 
-  register(role: ManagerRole, perms: Permission[]) {
-    const set = this.map.get(role) ?? new Set<Permission>();
+  register(role: TRole, perms: TPermission[]) {
+    const set = this.map.get(role) ?? new Set<TPermission>();
     perms.forEach((p) => set.add(p));
     this.map.set(role, set);
   }
 
-  registerAll(permissions: Partial<Record<ManagerRole, Permission[]>>) {
-    for (const [role, perms] of Object.entries(permissions)) {
-      this.register(role as ManagerRole, perms);
+  registerAll(permissions: Partial<Record<TRole, TPermission[]>>) {
+    const entries = Object.entries(permissions) as [TRole, TPermission[]][];
+    for (const [role, perms] of entries) {
+      this.register(role, perms);
     }
   }
 
-  get(role: ManagerRole): Permission[] {
-    if (!this.map.has(role)) {
-      return [];
-    }
-
+  get(role: TRole): TPermission[] {
     return Array.from(this.map.get(role) ?? []);
   }
 
-  getPermissions(role: string): Permission[] {
-    return this.hasRole(role) ? this.get(role as ManagerRole) : [];
+  getPermissions(role: string): TPermission[] {
+    return this.map.has(role as TRole) ? this.get(role as TRole) : [];
   }
 
   hasRole(role: string): boolean {
-    return this.map.has(role as ManagerRole);
+    return this.map.has(role as TRole);
   }
 
-  getAll(): Record<ManagerRole, Permission[]> {
+  getAll(): Record<TRole, TPermission[]> {
     return Object.fromEntries(
       [...this.map.entries()].map(([role, perms]) => [role, Array.from(perms)]),
-    ) as Record<ManagerRole, Permission[]>;
+    ) as Record<TRole, TPermission[]>;
   }
 }
 
-export const permissionRegistry = new PermissionRegistry();
+export const campPermissionRegistry = new PermissionRegistry<
+  ManagerRole,
+  Permission
+>();
+
+export const newsletterPermissionRegistry = new PermissionRegistry<
+  NewsletterManagerRole,
+  NewsletterPermission
+>();

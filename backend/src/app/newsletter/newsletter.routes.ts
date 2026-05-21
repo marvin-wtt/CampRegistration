@@ -27,7 +27,7 @@ export class NewsletterRouter extends ModuleRouter {
     this.router.get(
       '/:newsletterId',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.view')),
       controller(newsletterController, 'show'),
     );
     this.router.post(
@@ -39,13 +39,13 @@ export class NewsletterRouter extends ModuleRouter {
     this.router.patch(
       '/:newsletterId',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.edit')),
       controller(newsletterController, 'update'),
     );
     this.router.delete(
       '/:newsletterId',
       auth(),
-      guard(newsletterManager),
+      guard(newsletterManager('newsletter.delete')),
       controller(newsletterController, 'destroy'),
     );
   }

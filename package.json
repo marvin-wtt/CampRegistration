@@ -4,6 +4,7 @@
   "scripts": {
     "depoly": "./post-deploy.sh",
     "build": "npm run build --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
     "migrate": "npm run migrate --workspaces --if-present",
     "build-and-migrate": "run-s build migrate",
     "production": "cross-env NODE_ENV=production node backend/build/entry.cjs"
