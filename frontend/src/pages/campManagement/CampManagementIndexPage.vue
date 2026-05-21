@@ -43,15 +43,23 @@ const {
 
 onMounted(() => void assignedCampsStore.fetchData());
 
+function isRegistrationOpen(camp: Camp): boolean {
+  const now = new Date();
+  return (
+    (!camp.registrationOpensAt || now >= new Date(camp.registrationOpensAt)) &&
+    (!camp.registrationClosesAt || now <= new Date(camp.registrationClosesAt))
+  );
+}
+
 const activeCamps = computed<Camp[]>(() => {
   return (camps.value ?? [])
-    .filter((value) => value.active)
+    .filter(isRegistrationOpen)
     .toSorted(sortCamps);
 });
 
 const inactiveCamps = computed<Camp[]>(() => {
   return (camps.value ?? [])
-    .filter((value) => !value.active)
+    .filter((value) => !isRegistrationOpen(value))
     .toSorted(sortCamps);
 });
 

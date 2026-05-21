@@ -12,6 +12,14 @@ export const useAssignedCampsStore = defineStore('assignedCamps', () => {
     useServiceHandler<Camp[]>('camp');
 
   bus.on('create', () => void reload());
+  bus.on('update', (updatedCamp) => {
+    if (data.value) {
+      const index = data.value.findIndex((c) => c.id === updatedCamp.id);
+      if (index !== -1) {
+        data.value[index] = updatedCamp;
+      }
+    }
+  });
   bus.on('delete', () => void reload());
   authBus.on('logout', () => reset());
 
