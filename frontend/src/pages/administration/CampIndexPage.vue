@@ -583,10 +583,14 @@ function onDeleteCamp(camp: Camp) {
 
 function registrationStatus(camp: Camp): 'open' | 'not_open' | 'closed' {
   const now = new Date();
-  if (camp.registrationOpenAt && now < new Date(camp.registrationOpenAt))
+  if (camp.registrationOpensAt && now < new Date(camp.registrationOpensAt)) {
     return 'not_open';
-  if (camp.registrationCloseAt && now > new Date(camp.registrationCloseAt))
+  }
+
+  if (camp.registrationClosesAt && now > new Date(camp.registrationClosesAt)) {
     return 'closed';
+  }
+
   return 'open';
 }
 
@@ -609,8 +613,8 @@ function onActivateCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        registrationOpenAt: new Date().toISOString(),
-        registrationCloseAt: null,
+        registrationOpensAt: new Date().toISOString(),
+        registrationClosesAt: null,
       });
     });
 }
@@ -634,7 +638,7 @@ function onDeactivateCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        registrationCloseAt: new Date().toISOString(),
+        registrationClosesAt: new Date().toISOString(),
       });
     });
 }

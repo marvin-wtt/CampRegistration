@@ -22,10 +22,10 @@ export const campPublic = (req: Request): boolean => {
 export const registrationOpen = (req: Request): boolean => {
   const camp = req.modelOrFail('camp');
   const now = new Date();
-  if (camp.registrationOpenAt && now < camp.registrationOpenAt) {
+  if (camp.registrationOpensAt && now < camp.registrationOpensAt) {
     return false;
   }
-  if (camp.registrationCloseAt && now > camp.registrationCloseAt) {
+  if (camp.registrationClosesAt && now > camp.registrationClosesAt) {
     return false;
   }
   return true;

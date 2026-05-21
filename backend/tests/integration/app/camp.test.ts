@@ -45,8 +45,8 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
   expect(camp).toEqual({
     id: data.id ?? expect.anything(),
     public: data.public,
-    registrationOpenAt: (data as any).registrationOpenAt ?? null,
-    registrationCloseAt: (data as any).registrationCloseAt ?? null,
+    registrationOpensAt: (data as any).registrationOpensAt ?? null,
+    registrationClosesAt: (data as any).registrationClosesAt ?? null,
     confirmationMode: data.confirmationMode,
     countries: data.countries,
     name: data.name,
@@ -76,8 +76,8 @@ const assertCampResponseBody = (
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
     public: data.public,
-    registrationOpenAt: (data as any).registrationOpenAt ?? null,
-    registrationCloseAt: (data as any).registrationCloseAt ?? null,
+    registrationOpensAt: (data as any).registrationOpensAt ?? null,
+    registrationClosesAt: (data as any).registrationClosesAt ?? null,
     confirmationMode: data.confirmationMode,
     countries: data.countries,
     locales: data.locales,
@@ -389,8 +389,8 @@ describe('/api/v1/camps', () => {
         id: camp.id,
         confirmationMode: camp.confirmationMode,
         public: camp.public,
-        registrationOpenAt: null,
-        registrationCloseAt: null,
+        registrationOpensAt: null,
+        registrationClosesAt: null,
         countries: camp.countries,
         locales: ['de', 'cs'],
         name: camp.name,
@@ -523,7 +523,7 @@ describe('/api/v1/camps', () => {
 
     it('should respond with `200` status code for any authenticated user regardless of registration window', async () => {
       const camp = await CampFactory.create({
-        registrationCloseAt: new Date('2020-01-01'),
+        registrationClosesAt: new Date('2020-01-01'),
       });
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -536,7 +536,7 @@ describe('/api/v1/camps', () => {
 
     it('should respond with `200` status code for unauthenticated users regardless of registration window', async () => {
       const camp = await CampFactory.create({
-        registrationCloseAt: new Date('2020-01-01'),
+        registrationClosesAt: new Date('2020-01-01'),
       });
 
       await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
@@ -612,8 +612,8 @@ describe('/api/v1/camps', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body).toHaveProperty('data.registrationOpenAt', null);
-      expect(body).toHaveProperty('data.registrationCloseAt', null);
+      expect(body).toHaveProperty('data.registrationOpensAt', null);
+      expect(body).toHaveProperty('data.registrationClosesAt', null);
     });
 
     describe('invalid request body', () => {

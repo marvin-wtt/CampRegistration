@@ -138,12 +138,12 @@ const registrationStatus = computed<RegistrationStatus>(() => {
   if (!camp.value) return 'not_found';
 
   const now = new Date();
-  const { registrationOpenAt, registrationCloseAt } = camp.value;
+  const { registrationOpensAt, registrationClosesAt } = camp.value;
 
-  if (registrationOpenAt && now < new Date(registrationOpenAt)) {
+  if (registrationOpensAt && now < new Date(registrationOpensAt)) {
     return 'not_open';
   }
-  if (registrationCloseAt && now > new Date(registrationCloseAt)) {
+  if (registrationClosesAt && now > new Date(registrationClosesAt)) {
     return 'closed';
   }
   return 'open';

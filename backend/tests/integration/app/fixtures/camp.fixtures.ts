@@ -63,7 +63,7 @@ export const campCreatedBody: CreateBodyData[] = [
     name: 'Registration open at valid',
     data: {
       ...campCreateInternational,
-      registrationOpenAt: '2100-01-01T00:00:00.000Z',
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 201,
   },
@@ -71,7 +71,7 @@ export const campCreatedBody: CreateBodyData[] = [
     name: 'Registration open at null',
     data: {
       ...campCreateInternational,
-      registrationOpenAt: null,
+      registrationOpensAt: null,
     },
     expected: 201,
   },
@@ -79,7 +79,7 @@ export const campCreatedBody: CreateBodyData[] = [
     name: 'Registration open at invalid',
     data: {
       ...campCreateInternational,
-      registrationOpenAt: 'not-a-date',
+      registrationOpensAt: 'not-a-date',
     },
     expected: 400,
   },
@@ -87,7 +87,7 @@ export const campCreatedBody: CreateBodyData[] = [
     name: 'Registration close at valid',
     data: {
       ...campCreateInternational,
-      registrationCloseAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 201,
   },
@@ -95,7 +95,7 @@ export const campCreatedBody: CreateBodyData[] = [
     name: 'Registration close at null',
     data: {
       ...campCreateInternational,
-      registrationCloseAt: null,
+      registrationClosesAt: null,
     },
     expected: 201,
   },
@@ -103,7 +103,7 @@ export const campCreatedBody: CreateBodyData[] = [
     name: 'Registration close at invalid',
     data: {
       ...campCreateInternational,
-      registrationCloseAt: 'not-a-date',
+      registrationClosesAt: 'not-a-date',
     },
     expected: 400,
   },
@@ -559,42 +559,42 @@ export const campUpdateBody: UpdateBodyData[] = [
   {
     name: 'Registration open at',
     data: {
-      registrationOpenAt: '2100-01-01T00:00:00.000Z',
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 200,
   },
   {
     name: 'Registration open at null',
     data: {
-      registrationOpenAt: null,
+      registrationOpensAt: null,
     },
     expected: 200,
   },
   {
     name: 'Registration open at invalid',
     data: {
-      registrationOpenAt: 'not-a-date',
+      registrationOpensAt: 'not-a-date',
     },
     expected: 400,
   },
   {
     name: 'Registration close at',
     data: {
-      registrationCloseAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
     },
     expected: 200,
   },
   {
     name: 'Registration close at null',
     data: {
-      registrationCloseAt: null,
+      registrationClosesAt: null,
     },
     expected: 200,
   },
   {
     name: 'Registration close at invalid',
     data: {
-      registrationCloseAt: 'not-a-date',
+      registrationClosesAt: 'not-a-date',
     },
     expected: 400,
   },
