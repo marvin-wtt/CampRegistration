@@ -109,6 +109,7 @@ import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import { computed, ref, useAttrs, watch } from 'vue';
 import { type QInputSlots } from 'quasar';
 import TranslationToggleBtn from 'components/common/inputs/TranslationToggleBtn.vue';
+import { useI18n } from 'vue-i18n';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
@@ -116,6 +117,7 @@ type ModelValueType = undefined | null | string | number | Translations;
 const [model, modifiers] = defineModel<ModelValueType>();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
+const { locale } = useI18n();
 
 const {
   label = '',
@@ -192,6 +194,18 @@ function clearTranslation(locale: string) {
     delete translations.value[locale];
   }
 }
+
+watch(useTranslations, (enabled, wasEnabled) => {
+  if (!enabled || wasEnabled || value.value === '' || value.value === 0) {
+    return;
+  }
+
+  const userLocale = locale.value.split('-')[0]!;
+  const matchedLocale = locales.find((l) => l === userLocale);
+  if (matchedLocale && !(matchedLocale in translations.value)) {
+    translations.value[matchedLocale] = value.value;
+  }
+});
 
 watch(
   () => model.value,
