@@ -23,11 +23,18 @@
 
       <q-card-section>
         <q-checkbox
+          v-if="hasTemplate"
           v-model="confirmationMessage"
           :label="t('field.sendAutomatedMessage.label')"
           color="primary"
           dense
         />
+        <span
+          v-else
+          class="text-caption text-grey-7"
+        >
+          {{ t('field.noTemplate') }}
+        </span>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -54,7 +61,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onUnmounted, ref } from 'vue';
-import type { Camp, Registration } from '@camp-registration/common/entities';
+import type { Registration } from '@camp-registration/common/entities';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -62,9 +69,9 @@ const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const { registration } = defineProps<{
+const { registration, hasTemplate } = defineProps<{
   registration: Registration;
-  camp: Camp;
+  hasTemplate: boolean;
 }>();
 
 onUnmounted(() => {
@@ -94,7 +101,7 @@ const confirmationMessage = ref<boolean>(true);
 
 function onConfirm() {
   onDialogOK({
-    suppressMessage: !confirmationMessage.value,
+    suppressMessage: hasTemplate ? !confirmationMessage.value : undefined,
   });
 }
 </script>
@@ -109,6 +116,7 @@ text: 'Are you sure you want to accept the registration of {name}? This action c
 field:
   sendAutomatedMessage:
     label: 'Send automated confirmation message'
+  noTemplate: 'No message template configured — no notification will be sent.'
 
 action:
   accept: 'Accept'
@@ -123,6 +131,7 @@ text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} akzeptieren möchten? 
 field:
   sendAutomatedMessage:
     label: 'Automatische Bestätigungsnachricht senden'
+  noTemplate: 'Keine Nachrichtenvorlage konfiguriert — es wird keine Benachrichtigung gesendet.'
 
 action:
   accept: 'Akzeptieren'
@@ -137,6 +146,7 @@ text: "Êtes-vous sûr de vouloir accepter l'inscription de {name} ? Cette actio
 field:
   sendAutomatedMessage:
     label: 'Envoyer un message de confirmation automatisé'
+  noTemplate: 'Aucun modèle de message configuré — aucune notification ne sera envoyée.'
 
 action:
   accept: 'Accepter'
@@ -151,6 +161,7 @@ text: 'Czy na pewno chcesz zaakceptować rejestrację {name}? Tej akcji nie moż
 field:
   sendAutomatedMessage:
     label: 'Wyślij zautomatyzowaną wiadomość potwierdzającą'
+  noTemplate: 'Brak skonfigurowanego szablonu wiadomości — nie zostanie wysłane żadne powiadomienie.'
 
 action:
   accept: 'Zaakceptuj'
@@ -165,6 +176,7 @@ text: 'Opravdu chcete přijmout registraci {name}? Tuto akci nelze vrátit zpět
 field:
   sendAutomatedMessage:
     label: 'Odeslat automatickou potvrzovací zprávu'
+  noTemplate: 'Žádná šablona zprávy není nakonfigurována — žádné oznámení nebude odesláno.'
 
 action:
   accept: 'Přijmout'
