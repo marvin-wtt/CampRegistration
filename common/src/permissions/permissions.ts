@@ -51,6 +51,20 @@ export type ProgramEventPermission =
   | 'camp.program_events.update'
   | 'camp.program_events.delete';
 
+export type NewsletterPermission =
+  | 'newsletter.view'
+  | 'newsletter.edit'
+  | 'newsletter.delete'
+  | 'newsletter.managers.view'
+  | 'newsletter.managers.create'
+  | 'newsletter.managers.delete'
+  | 'newsletter.subscribers.view'
+  | 'newsletter.subscribers.create'
+  | 'newsletter.subscribers.delete'
+  | 'newsletter.messages.view'
+  | 'newsletter.messages.create'
+  | 'newsletter.messages.delete';
+
 export type Permission =
   | CampPermission
   | FilePermission
@@ -61,6 +75,7 @@ export type Permission =
   | TableTemplatePermission
   | RoomPermission
   | BedPermission
-  | ProgramEventPermission;
+  | ProgramEventPermission
+  | NewsletterPermission;
 
 export type Permissions = Permission[];

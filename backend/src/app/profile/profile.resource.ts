@@ -1,7 +1,7 @@
 import type { CampManager, User } from '#generated/prisma/client.js';
 import type { Profile as ProfileResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import { permissionRegistry } from '#core/permission-registry';
+import { campPermissionRegistry } from '#core/permission-registry';
 
 export interface UserWithCampRoles extends Omit<User, 'password'> {
   campRoles: CampManager[];
@@ -21,7 +21,7 @@ export class ProfileResource extends JsonResource<
       campAccess: this.data.campRoles.map((manager) => ({
         campId: manager.campId,
         role: manager.role,
-        permissions: permissionRegistry.getPermissions(manager.role),
+        permissions: campPermissionRegistry.getPermissions(manager.role),
       })),
     };
   }

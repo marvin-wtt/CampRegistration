@@ -5,7 +5,10 @@ import type {
   BindOptions,
 } from '#core/base/AppModule';
 import { ProgramEventRouter } from '#app/programEvent/program-event.routes';
-import type { ProgramEventPermission } from '@camp-registration/common/permissions';
+import type {
+  ManagerRole,
+  ProgramEventPermission,
+} from '@camp-registration/common/permissions';
 import { ProgramEventService } from '#app/programEvent/program-event.service';
 import { ProgramEventController } from '#app/programEvent/program-event.controller';
 import { resolve } from '#core/ioc/container';
@@ -24,7 +27,10 @@ export class ProgramEventModule implements AppModule {
     );
   }
 
-  registerPermissions(): RoleToPermissions<ProgramEventPermission> {
+  registerPermissions(): RoleToPermissions<
+    ManagerRole,
+    ProgramEventPermission
+  > {
     return {
       DIRECTOR: [
         'camp.program_events.view',

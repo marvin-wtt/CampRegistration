@@ -1,5 +1,5 @@
 import { BaseService } from '#core/base/BaseService';
-import { permissionRegistry } from '#core/permission-registry';
+import { campPermissionRegistry } from '#core/permission-registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { Permission } from '@camp-registration/common/permissions';
 import { injectable } from 'inversify';
@@ -42,7 +42,7 @@ export class CampManagerService extends BaseService {
       return false;
     }
 
-    const permissions = permissionRegistry.getPermissions(manager.role);
+    const permissions = campPermissionRegistry.getPermissions(manager.role);
 
     return permissions.includes(permission);
   }

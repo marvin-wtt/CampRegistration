@@ -53,6 +53,7 @@ export class NewsletterManagerController extends BaseController {
     const manager = await this.managerService.addManager(
       newsletter.id,
       user.id,
+      body.role,
     );
 
     res
@@ -65,13 +66,16 @@ export class NewsletterManagerController extends BaseController {
       params: { newsletterManagerId },
     } = await req.validate(validator.destroy);
     const newsletter = req.modelOrFail('newsletter');
+    const target = req.modelOrFail('newsletterManager');
 
-    const count = await this.managerService.countManagers(newsletter.id);
-    if (count <= 1) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'The newsletter must always have at least one manager.',
-      );
+    if (target.role === 'OWNER') {
+      const ownerCount = await this.managerService.countOwners(newsletter.id);
+      if (ownerCount <= 1) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'The newsletter must always have at least one owner.',
+        );
+      }
     }
 
     await this.managerService.removeManager(newsletterManagerId);

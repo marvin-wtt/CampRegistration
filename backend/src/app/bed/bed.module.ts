@@ -5,7 +5,10 @@ import type {
   BindOptions,
 } from '#core/base/AppModule';
 import { BedRouter } from '#app/bed/bed.routes';
-import type { BedPermission } from '@camp-registration/common/permissions';
+import type {
+  BedPermission,
+  ManagerRole,
+} from '@camp-registration/common/permissions';
 import { BedService } from '#app/bed/bed.service';
 import { BedController } from '#app/bed/bed.controller';
 
@@ -19,7 +22,7 @@ export class BedModule implements AppModule {
     router.useRouter('/camps/:campId/rooms/:roomId/beds', new BedRouter());
   }
 
-  registerPermissions(): RoleToPermissions<BedPermission> {
+  registerPermissions(): RoleToPermissions<ManagerRole, BedPermission> {
     return {
       DIRECTOR: [
         'camp.rooms.beds.create',

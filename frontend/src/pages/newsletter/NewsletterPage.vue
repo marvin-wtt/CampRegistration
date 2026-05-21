@@ -496,6 +496,16 @@
                       {{ manager.email }}
                     </q-item-label>
                   </q-item-section>
+                  <q-item-section side>
+                    <q-chip
+                      dense
+                      :color="roleColor(manager.role)"
+                      text-color="white"
+                      size="sm"
+                    >
+                      {{ t(`managers.role.${manager.role}`) }}
+                    </q-chip>
+                  </q-item-section>
                   <q-item-section
                     v-if="manager.email !== userEmail"
                     side
@@ -536,12 +546,14 @@ import { useQuasar } from 'quasar';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
 import type {
   NewsletterManager,
+  NewsletterManagerCreateData,
   NewsletterMessage,
   NewsletterSubscriber,
   NewsletterUpdateData,
   NewsletterSubscriberCreateData,
   NewsletterSubscriberImportData,
 } from '@camp-registration/common/entities';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 import NewsletterEditDialog from 'components/newsletter/NewsletterEditDialog.vue';
 import NewsletterSubscriberAddDialog from 'components/newsletter/NewsletterSubscriberAddDialog.vue';
 import NewsletterSubscriberImportDialog from 'components/newsletter/NewsletterSubscriberImportDialog.vue';
@@ -680,10 +692,16 @@ function showDeleteSubscriberDialog(subscriber: NewsletterSubscriber) {
     });
 }
 
+function roleColor(role: NewsletterManagerRole): string {
+  if (role === 'OWNER') return 'primary';
+  if (role === 'EDITOR') return 'secondary';
+  return 'grey-6';
+}
+
 function showAddManagerDialog() {
   quasar
     .dialog({ component: NewsletterManagerAddDialog })
-    .onOk((data: { email: string }) => {
+    .onOk((data: NewsletterManagerCreateData) => {
       void managerStore.createData(newsletterId.value, data);
     });
 }
@@ -834,7 +852,11 @@ subscribers:
 managers:
   action:
     add: 'Add Manager'
-  removeDisabledHint: 'At least one manager is required'
+  removeDisabledHint: 'At least one owner is required'
+  role:
+    OWNER: 'Owner'
+    EDITOR: 'Editor'
+    VIEWER: 'Viewer'
   dialog:
     delete:
       title: 'Remove Manager'
@@ -895,7 +917,11 @@ subscribers:
 managers:
   action:
     add: 'Verwalter hinzufügen'
-  removeDisabledHint: 'Mindestens ein Verwalter ist erforderlich'
+  removeDisabledHint: 'Mindestens ein Eigentümer ist erforderlich'
+  role:
+    OWNER: 'Eigentümer'
+    EDITOR: 'Redakteur'
+    VIEWER: 'Betrachter'
   dialog:
     delete:
       title: 'Verwalter entfernen'
@@ -956,7 +982,11 @@ subscribers:
 managers:
   action:
     add: 'Ajouter un gestionnaire'
-  removeDisabledHint: 'Au moins un gestionnaire est requis'
+  removeDisabledHint: 'Au moins un propriétaire est requis'
+  role:
+    OWNER: 'Propriétaire'
+    EDITOR: 'Éditeur'
+    VIEWER: 'Lecteur'
   dialog:
     delete:
       title: 'Supprimer un gestionnaire'
@@ -1017,7 +1047,11 @@ subscribers:
 managers:
   action:
     add: 'Dodaj zarządzającego'
-  removeDisabledHint: 'Wymagany jest co najmniej jeden zarządzający'
+  removeDisabledHint: 'Wymagany jest co najmniej jeden właściciel'
+  role:
+    OWNER: 'Właściciel'
+    EDITOR: 'Redaktor'
+    VIEWER: 'Obserwator'
   dialog:
     delete:
       title: 'Usuń zarządzającego'
@@ -1078,7 +1112,11 @@ subscribers:
 managers:
   action:
     add: 'Přidat správce'
-  removeDisabledHint: 'Je vyžadován alespoň jeden správce'
+  removeDisabledHint: 'Je vyžadován alespoň jeden vlastník'
+  role:
+    OWNER: 'Vlastník'
+    EDITOR: 'Editor'
+    VIEWER: 'Pozorovatel'
   dialog:
     delete:
       title: 'Odstranit správce'
