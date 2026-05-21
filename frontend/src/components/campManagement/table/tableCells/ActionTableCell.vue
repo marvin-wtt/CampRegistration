@@ -58,13 +58,14 @@
 <script lang="ts" setup>
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import EditResultComponent from 'components/campManagement/table/dialogs/EditResultComponent.vue';
+import RegistrationEditor from 'components/campManagement/table/dialogs/RegistrationEditor.vue';
 
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type {
+  MessageTemplate,
   Registration,
   RegistrationDeleteQuery,
   RegistrationUpdateQuery,
@@ -75,6 +76,7 @@ import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/Re
 import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
 import RegistrationDetailsDialog from 'components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
 import { useAPIService } from 'src/services/APIService';
+import { useMessageTemplateService } from 'src/services/MessageTemplateService';
 
 const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 const quasar = useQuasar();
@@ -82,6 +84,7 @@ const { t } = useI18n();
 const apiService = useAPIService();
 const campDetailStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
+const messageTemplateService = useMessageTemplateService();
 const { data: campData } = storeToRefs(campDetailStore);
 const { can } = usePermissions();
 
@@ -97,6 +100,30 @@ const accepted = computed<boolean>(() => {
   return cellProps.row.status === 'ACCEPTED';
 });
 
+let templatesFetch: Promise<MessageTemplate[]> | null = null;
+
+function ensureTemplates(): Promise<MessageTemplate[]> {
+  templatesFetch ??= messageTemplateService
+    .fetchMessageTemplates(campData.value!.id)
+    .catch(() => []);
+
+  return templatesFetch;
+}
+
+function hasTemplateForEvent(
+  allTemplates: MessageTemplate[],
+  eventName: string,
+): boolean {
+  const country = registration.value.computedData.address.country ?? null;
+
+  return allTemplates
+    .filter((tmpl) => tmpl.event === eventName)
+    .some(
+      (tmpl) =>
+        country === null || tmpl.country === null || tmpl.country === country,
+    );
+}
+
 function showDetails(): void {
   quasar.dialog({
     component: RegistrationDetailsDialog,
@@ -106,13 +133,19 @@ function showDetails(): void {
   });
 }
 
-function deleteItem(): void {
+async function deleteItem(): Promise<void> {
+  const allTemplates = await ensureTemplates();
+  const hasTemplate = hasTemplateForEvent(
+    allTemplates,
+    'registration_canceled',
+  );
+
   quasar
     .dialog({
       component: RegistrationDeleteDialog,
       componentProps: {
         registration: registration.value,
-        camp: campData.value,
+        hasTemplate,
       },
     })
     .onOk((params: RegistrationDeleteQuery) => {
@@ -121,40 +154,50 @@ function deleteItem(): void {
     });
 }
 
-function accept(): void {
+async function accept(): Promise<void> {
+  const allTemplates = await ensureTemplates();
+  const event =
+    registration.value.status === 'WAITLISTED'
+      ? 'registration_waitlist_accepted'
+      : 'registration_confirmed';
+  const hasTemplate = hasTemplateForEvent(allTemplates, event);
+
   quasar
     .dialog({
       component: RegistrationAcceptDialog,
       componentProps: {
         registration: registration.value,
-        camp: campData.value,
+        hasTemplate,
       },
     })
     .onOk((params: RegistrationUpdateQuery) => {
       const id = cellProps.row.id;
-      void registrationStore.updateData(
-        id,
-        {
-          status: 'ACCEPTED',
-        },
-        params,
-      );
+      void registrationStore.updateData(id, { status: 'ACCEPTED' }, params);
     });
 }
 
-function editItem(): void {
+interface EditCallbackData {
+  data: Record<string, unknown>;
+  suppressMessage: boolean;
+}
+
+async function editItem(): Promise<void> {
+  const allTemplates = await ensureTemplates();
+  const hasTemplate = hasTemplateForEvent(allTemplates, 'registration_updated');
+
   quasar
     .dialog({
-      component: EditResultComponent,
+      component: RegistrationEditor,
       componentProps: {
         camp: campData.value,
         data: cellProps.row.data,
         uploadFileFn: uploadFile,
+        hasTemplate,
       },
     })
-    .onOk((payload) => {
+    .onOk(({ data, suppressMessage }: EditCallbackData) => {
       const id = cellProps.row.id;
-      void registrationStore.updateData(id, { data: payload });
+      void registrationStore.updateData(id, { data }, { suppressMessage });
     });
 }
 

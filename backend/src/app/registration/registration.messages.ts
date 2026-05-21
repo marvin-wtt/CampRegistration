@@ -96,8 +96,11 @@ export class RegistrationNotifyMessage extends MailBase<{
   }
 
   protected locale(): string {
-    // The locale of the contact mail is unknown, so we use the users locale
-    return this.payload.registration.locale;
+    // The locale of the contact mail is unknown, so we use the country and
+    //  locale of the registration to determine the language of the email.
+    return (
+      this.payload.registration.country ?? this.payload.registration.locale
+    );
   }
 
   protected replyTo(): AddressLike | undefined {

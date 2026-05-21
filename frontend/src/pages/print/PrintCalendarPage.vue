@@ -564,18 +564,19 @@ function formatDay(dateStr: string): string {
     padding: 1px 3px;
     overflow: hidden;
     box-sizing: border-box;
+    min-height: 22px;
 
     &__time {
-      font-size: 11px;
+      font-size: 8px;
       color: rgba(255, 255, 255, 0.85);
-      line-height: 1.2;
+      line-height: 1.1;
     }
 
     &__title {
-      font-size: 15px;
+      font-size: 11px;
       font-weight: 700;
       color: white;
-      line-height: 1.25;
+      line-height: 1.2;
     }
   }
 }

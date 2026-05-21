@@ -84,11 +84,6 @@ function createModerationForm(form: object) {
     ...form,
     showTOC: true,
     fitToContainer: true,
-    completeText: {
-      default: 'Save',
-      de: 'Speichern',
-      fr: 'Sauver',
-    },
   };
 }
 
@@ -97,7 +92,11 @@ function createModel(campId: string, form: object): SurveyModel {
   survey.locale = locale.value;
 
   if (props.moderation) {
-    survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(true);
+    const hideComplete = () => {
+      survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
+    };
+    hideComplete();
+    survey.onCurrentPageChanged.add(hideComplete);
   }
 
   // Handle file uploads
@@ -239,6 +238,10 @@ function mapFileQuestionValues(survey: SurveyModel) {
 function isFile(file: unknown): file is Pick<File, 'name'> {
   return file != null && typeof file === 'object' && 'name' in file;
 }
+
+defineExpose({
+  submit: () => model.doComplete(),
+});
 </script>
 
 <style lang="scss">

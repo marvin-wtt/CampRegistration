@@ -181,14 +181,16 @@ function startResize(e: MouseEvent) {
     height: 6px;
     cursor: ns-resize;
     background: rgba(0, 0, 0, 0.15);
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.3);
-    }
+    opacity: 0;
+    transition: opacity 0.15s ease;
 
     @media (hover: none) {
       display: none;
     }
+  }
+
+  &:hover &__resize-handle {
+    opacity: 1;
   }
 }
 </style>
