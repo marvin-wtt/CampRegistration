@@ -4,17 +4,6 @@ import type { NewsletterManagerRole } from '@camp-registration/common/permission
 
 @injectable()
 export class NewsletterManagerService extends BaseService {
-  async isNewsletterManager(
-    newsletterId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const manager = await this.prisma.newsletterManager.findFirst({
-      where: { newsletterId, userId },
-    });
-
-    return manager != null;
-  }
-
   async getManagers(newsletterId: string) {
     return this.prisma.newsletterManager.findMany({
       where: { newsletterId },
@@ -48,10 +37,6 @@ export class NewsletterManagerService extends BaseService {
 
   async removeManager(id: string) {
     return this.prisma.newsletterManager.delete({ where: { id } });
-  }
-
-  async countManagers(newsletterId: string) {
-    return this.prisma.newsletterManager.count({ where: { newsletterId } });
   }
 
   async countOwners(newsletterId: string) {

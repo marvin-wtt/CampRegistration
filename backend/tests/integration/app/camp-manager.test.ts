@@ -523,19 +523,22 @@ describe('/api/v1/camps/:campId/managers', () => {
     it('should respond with `403` status code when manager expired', async () => {
       const user = await UserFactory.create();
       const camp = await CampFactory.create();
-      // Manager with correct camp but wrong user
-      const manager = await CampManagerFactory.create({
-        user: { create: UserFactory.build() },
+      // The requesting user has an expired manager record for this camp
+      await CampManagerFactory.create({
+        user: { connect: { id: user.id } },
         camp: { connect: { id: camp.id } },
         expiresAt: new Date(Date.UTC(2020, 0)).toISOString(),
+      });
+      // A second manager to be the target of the PATCH
+      const target = await CampManagerFactory.create({
+        user: { create: UserFactory.build() },
+        camp: { connect: { id: camp.id } },
       });
       const accessToken = generateAccessToken(user);
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
-        .send({
-          email: 'invited@email.net',
-        })
+        .patch(`/api/v1/camps/${camp.id}/managers/${target.id}`)
+        .send({ role: 'COUNSELOR' })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });

@@ -28,7 +28,7 @@ export class NewsletterModule implements AppModule {
   > {
     return {
       OWNER: ['newsletter.view', 'newsletter.edit', 'newsletter.delete'],
-      EDITOR: ['newsletter.view'],
+      EDITOR: ['newsletter.view', 'newsletter.edit'],
       VIEWER: ['newsletter.view'],
     };
   }

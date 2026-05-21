@@ -12,6 +12,7 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import { Prisma } from '#generated/prisma/client';
+import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 const BASE = '/api/v1/newsletters';
 
@@ -19,9 +20,18 @@ const createNewsletterWithManager = async () => {
   const user = await UserFactory.create();
   const accessToken = generateAccessToken(user);
   const newsletter = await NewsletterFactory.create({
-    managers: { create: { userId: user.id } },
+    managers: { create: { userId: user.id, role: 'OWNER' } },
   });
   return { user, accessToken, newsletter };
+};
+
+const createNewsletterWithRole = async (role: NewsletterManagerRole) => {
+  const user = await UserFactory.create();
+  const accessToken = generateAccessToken(user);
+  const newsletter = await NewsletterFactory.create({
+    managers: { create: { userId: user.id, role } },
+  });
+  return { accessToken, newsletter };
 };
 
 const createNewsletterAndCampWithManager = async () => {
@@ -154,6 +164,18 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
+
+    it.each([
+      ['OWNER', 200],
+      ['EDITOR', 200],
+      ['VIEWER', 200],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .get(`${BASE}/${newsletter.id}/subscribers`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+    });
   });
 
   describe(`POST ${BASE}/:newsletterId/subscribers`, () => {
@@ -277,6 +299,19 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .send({ email: 'test@example.com' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it.each([
+      ['OWNER', 201],
+      ['EDITOR', 201],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers`)
+        .send({ email: `${role.toLowerCase()}-sub@example.com` })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 
@@ -693,6 +728,21 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
         .delete(`${BASE}/${newsletter.id}/subscribers/${subscriber.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
+    });
+
+    it.each([
+      ['OWNER', 204],
+      ['EDITOR', 204],
+      ['VIEWER', 403],
+    ] as const)('role %s → %i', async (role, status) => {
+      const { accessToken, newsletter } = await createNewsletterWithRole(role);
+      const subscriber = await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+      await request()
+        .delete(`${BASE}/${newsletter.id}/subscribers/${subscriber.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
     });
   });
 });
