@@ -51,8 +51,16 @@ onMounted(async () => {
   await Promise.allSettled([campsStore.fetchData()]);
 });
 
+function isRegistrationOpen(camp: Camp): boolean {
+  const now = new Date();
+  return (
+    (!camp.registrationOpensAt || now >= new Date(camp.registrationOpensAt)) &&
+    (!camp.registrationClosesAt || now <= new Date(camp.registrationClosesAt))
+  );
+}
+
 const filteredCamps = computed<Camp[]>(() => {
-  return campsStore.data ?? [];
+  return (campsStore.data ?? []).filter(isRegistrationOpen);
 });
 
 const error = computed(() => {

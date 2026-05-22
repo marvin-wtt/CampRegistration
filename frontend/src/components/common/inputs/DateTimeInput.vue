@@ -13,7 +13,7 @@
         name="event"
       >
         <q-popup-proxy
-          ref="popup"
+          ref="datePopupRef"
           cover
           transition-hide="scale"
           transition-show="scale"
@@ -21,16 +21,8 @@
           <q-date
             v-model="modelValue"
             mask="YYYY-MM-DD HH:mm"
-          >
-            <div class="row items-center justify-end">
-              <q-btn
-                v-close-popup
-                color="primary"
-                flat
-                :label="t('action.ok')"
-              />
-            </div>
-          </q-date>
+            @update:model-value="onDateSelected"
+          />
         </q-popup-proxy>
       </q-icon>
 
@@ -40,7 +32,7 @@
         name="schedule"
       >
         <q-popup-proxy
-          ref="popup"
+          ref="timePopupRef"
           cover
           transition-hide="scale"
           transition-show="scale"
@@ -79,11 +71,19 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { type QInputSlots } from 'quasar';
-import { useAttrs } from 'vue';
+import { type QInputSlots, type QPopupProxy } from 'quasar';
+import { nextTick, ref, useAttrs } from 'vue';
 
 const attrs = useAttrs();
 const { t } = useI18n();
+
+const datePopupRef = ref<QPopupProxy>();
+const timePopupRef = ref<QPopupProxy>();
+
+function onDateSelected() {
+  datePopupRef.value?.hide();
+  void nextTick(() => timePopupRef.value?.show());
+}
 
 type ModelValue = string | null | undefined;
 

@@ -140,6 +140,13 @@
       v-model="data.registrationOpensAt"
       :disable="loading"
       :label="t('field.registrationOpensAt')"
+      :rules="[
+        (val?: string | null) =>
+          !val ||
+          !data.registrationClosesAt ||
+          val < data.registrationClosesAt ||
+          t('validation.registrationOpensAt.before_close'),
+      ]"
       clearable
       hide-bottom-space
       outlined
@@ -154,6 +161,13 @@
       v-model="data.registrationClosesAt"
       :disable="loading"
       :label="t('field.registrationClosesAt')"
+      :rules="[
+        (val?: string | null) =>
+          !val ||
+          !data.registrationOpensAt ||
+          val > data.registrationOpensAt ||
+          t('validation.registrationClosesAt.after_open'),
+      ]"
       clearable
       hide-bottom-space
       outlined
@@ -441,6 +455,10 @@ validation:
   price:
     empty: 'Please enter a price greater than or equal to 0'
     positive: 'Price must be a positive number'
+  registrationOpensAt:
+    before_close: 'Opening time must be before closing time'
+  registrationClosesAt:
+    after_open: 'Closing time must be after opening time'
 
 confirmation_mode:
   automatic: 'Automatic'
@@ -509,6 +527,10 @@ validation:
   price:
     empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
     positive: 'Der Preis muss eine positive Zahl sein'
+  registrationOpensAt:
+    before_close: 'Der Öffnungszeitpunkt muss vor dem Schließzeitpunkt liegen'
+  registrationClosesAt:
+    after_open: 'Der Schließzeitpunkt muss nach dem Öffnungszeitpunkt liegen'
 
 confirmation_mode:
   automatic: 'Automatisch'
@@ -577,6 +599,10 @@ validation:
   price:
     empty: 'Veuillez entrer un prix supérieur ou égal à 0'
     positive: 'Le prix doit être un nombre positif'
+  registrationOpensAt:
+    before_close: "L'heure d'ouverture doit être antérieure à l'heure de fermeture"
+  registrationClosesAt:
+    after_open: "L'heure de fermeture doit être postérieure à l'heure d'ouverture"
 
 confirmation_mode:
   automatic: 'Automatique'
@@ -645,6 +671,10 @@ validation:
   price:
     empty: 'Podaj cenę większą lub równą 0'
     positive: 'Cena musi być liczbą dodatnią'
+  registrationOpensAt:
+    before_close: 'Czas otwarcia musi być wcześniejszy niż czas zamknięcia'
+  registrationClosesAt:
+    after_open: 'Czas zamknięcia musi być późniejszy niż czas otwarcia'
 
 confirmation_mode:
   automatic: 'Automatyczny'
@@ -713,6 +743,10 @@ validation:
   price:
     empty: 'Zadejte cenu větší nebo rovnu 0'
     positive: 'Cena musí být kladné číslo'
+  registrationOpensAt:
+    before_close: 'Čas otevření musí být před časem zavření'
+  registrationClosesAt:
+    after_open: 'Čas zavření musí být po čase otevření'
 
 confirmation_mode:
   automatic: 'Automatický'

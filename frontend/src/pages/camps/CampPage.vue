@@ -6,7 +6,7 @@
     :style="{ backgroundColor: bgColor }"
   >
     <registration-form
-      v-if="registrationStatus === 'open'"
+      v-if="camp && registrationStatus === 'open'"
       :camp-details="camp"
       :submit-fn="submit"
       :upload-file-fn="uploadFile"
@@ -19,37 +19,42 @@
       v-else
       class="column justify-center q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
     >
-      <div class="col-shrink column q-gutter-lg">
-        <div class="col-shrink self-center">
-          <q-avatar
-            :icon="statusIcon"
-            color="primary"
-            text-color="white"
-            size="100px"
-          />
+      <div class="col-shrink column items-center q-gutter-md">
+        <q-avatar
+          :icon="statusIcon"
+          color="primary"
+          text-color="white"
+          size="100px"
+        />
+
+        <div
+          v-if="camp"
+          class="text-h5 text-center text-weight-medium"
+        >
+          {{ to(camp.name) }}
         </div>
 
-        <div class="col text-h6 text-center">
+        <div class="text-body1 text-center">
           {{ statusText }}
         </div>
 
         <div
-          v-if="campContactEmail"
-          class="col text-center"
+          v-if="statusDate"
+          class="text-body2 text-center text-grey-7"
         >
-          {{ t('contact.label') }}
-          <a :href="`mailto:${campContactEmail}`">{{ campContactEmail }}</a>
+          {{ statusDate }}
         </div>
 
-        <div class="col-shrink row justify-center">
-          <q-btn
-            :label="t('action.home')"
-            icon="search"
-            :to="{ name: 'camps' }"
-            color="primary"
-            rounded
-          />
-        </div>
+        <q-btn
+          v-if="campContactEmail"
+          :href="`mailto:${campContactEmail}`"
+          :label="campContactEmail"
+          icon="mail"
+          type="a"
+          flat
+          rounded
+          color="primary"
+        />
       </div>
     </div>
   </page-state-handler>
@@ -57,7 +62,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
@@ -67,7 +72,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from 'src/composables/serviceHandler';
 
-const { t } = useI18n();
+const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
 const route = useRoute();
@@ -78,6 +83,35 @@ const camp = ref<CampDetails | undefined>();
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
+const now = ref(new Date());
+
+let openTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  () => camp.value?.registrationOpensAt,
+  (opensAt) => {
+    if (openTimer !== null) {
+      clearTimeout(openTimer);
+      openTimer = null;
+    }
+    if (!opensAt) {
+      return;
+    }
+    const delay = new Date(opensAt).getTime() - Date.now();
+    const offset = 1000;
+    if (delay > 0) {
+      openTimer = setTimeout(() => {
+        now.value = new Date();
+      }, delay + offset);
+    }
+  },
+);
+
+onUnmounted(() => {
+  if (openTimer !== null) {
+    clearTimeout(openTimer);
+  }
+});
 
 onMounted(async () => {
   await init();
@@ -134,23 +168,31 @@ type RegistrationStatus =
   | 'not_found';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
-  if (knownError.value) return knownError.value;
-  if (!camp.value) return 'not_found';
+  if (knownError.value) {
+    return knownError.value;
+  }
+  if (!camp.value) {
+    return 'not_found';
+  }
 
-  const now = new Date();
   const { registrationOpensAt, registrationClosesAt } = camp.value;
 
-  if (registrationOpensAt && now < new Date(registrationOpensAt)) {
+  if (registrationOpensAt && now.value < new Date(registrationOpensAt)) {
     return 'not_open';
   }
-  if (registrationClosesAt && now > new Date(registrationClosesAt)) {
+
+  if (registrationClosesAt && now.value > new Date(registrationClosesAt)) {
     return 'closed';
   }
+
   return 'open';
 });
 
 const campContactEmail = computed<string | null>(() => {
-  if (!camp.value?.contactEmail) return null;
+  if (!camp.value?.contactEmail) {
+    return null;
+  }
+
   const email = camp.value.contactEmail;
   return typeof email === 'string' ? email : (Object.values(email)[0] ?? null);
 });
@@ -166,6 +208,18 @@ const statusIcon = computed<string>(() => {
     default:
       return 'lock';
   }
+});
+
+const statusDate = computed<string | null>(() => {
+  if (
+    registrationStatus.value === 'not_open' &&
+    camp.value?.registrationOpensAt
+  ) {
+    return t('date.opens', {
+      date: d(camp.value.registrationOpensAt, 'dateTime'),
+    });
+  }
+  return null;
 });
 
 const statusText = computed<string>(() => {
@@ -203,11 +257,8 @@ function updateBgColor(color: string | undefined) {
 </script>
 
 <i18n lang="yaml" locale="en">
-action:
-  home: 'Look for other camps'
-
-contact:
-  label: 'For questions, contact:'
+date:
+  opens: 'Opens on {date}'
 
 error:
   not_open: 'Registration for this camp has not opened yet.'
@@ -217,11 +268,8 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-action:
-  home: 'Nach anderen Camps suchen'
-
-contact:
-  label: 'Bei Fragen wenden Sie sich an:'
+date:
+  opens: 'Öffnet am {date}'
 
 error:
   not_open: 'Die Anmeldung für dieses Camp hat noch nicht begonnen.'
@@ -231,11 +279,8 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-action:
-  home: "Chercher d'autres camps"
-
-contact:
-  label: 'Pour toute question, contactez :'
+date:
+  opens: 'Ouvre le {date}'
 
 error:
   not_open: "L'inscription à ce camp n'a pas encore commencé."
@@ -245,11 +290,8 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-action:
-  home: 'Szukaj innych obozów'
-
-contact:
-  label: 'W razie pytań skontaktuj się:'
+date:
+  opens: 'Otwiera się {date}'
 
 error:
   not_open: 'Rejestracja na ten obóz jeszcze się nie rozpoczęła.'
@@ -259,11 +301,8 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-action:
-  home: 'Hledat jiné tábory'
-
-contact:
-  label: 'V případě dotazů kontaktujte:'
+date:
+  opens: 'Otevírá se {date}'
 
 error:
   not_open: 'Registrace na tento tábor ještě nezačala.'
