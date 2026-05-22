@@ -23,7 +23,6 @@ type MessageTemplateCreateData = (OptionalByKeys<
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 interface CampQueryArgs {
-  active?: boolean | undefined;
   public?: boolean | undefined;
   name?: string | undefined;
   age?: number | undefined;
@@ -90,9 +89,7 @@ export class CampService extends BaseService {
     const sortType = options.sortType ?? 'desc';
 
     const where: Prisma.CampWhereInput = {
-      // Only show active, public camps by default
       public: filter.public,
-      active: filter.active,
       // FIXME Name filter not working for translated names
       // OR: filter.name
       //   ? [

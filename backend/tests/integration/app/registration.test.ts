@@ -41,6 +41,7 @@ import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
+import moment from 'moment';
 
 const mailer = NoOpMailer.prototype;
 
@@ -378,12 +379,21 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     it('should respond with `401` status code when camp is not active', async () => {
-      const camp = await CampFactory.create({
-        active: false,
+      const camp1 = await CampFactory.create({
+        registrationClosesAt: moment().subtract(1, 'day').toDate(),
       });
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/camps/${camp1.id}/registrations`)
+        .send()
+        .expect(401);
+
+      const camp2 = await CampFactory.create({
+        registrationOpensAt: moment().add(1, 'day').toDate(),
+      });
+
+      await request()
+        .post(`/api/v1/camps/${camp2.id}/registrations`)
         .send()
         .expect(401);
     });

@@ -109,9 +109,9 @@
         <translation-td :props="props" />
       </template>
 
-      <template #body-cell-active="props">
+      <template #body-cell-registrationStatus="props">
         <q-td :props="props">
-          {{ props.value ? t('value.active') : t('value.inactive') }}
+          {{ t(`value.${registrationStatus(props.row)}`) }}
         </q-td>
       </template>
 
@@ -180,7 +180,7 @@
               <q-tooltip>{{ t('action.unpublish') }}</q-tooltip>
             </q-btn>
             <q-btn
-              v-if="!props.row.active"
+              v-if="registrationStatus(props.row) !== 'open'"
               icon="toggle_on"
               round
               flat
@@ -273,7 +273,7 @@
                   </q-item-section>
                 </q-item>
                 <q-item
-                  v-if="!props.row.active"
+                  v-if="registrationStatus(props.row) !== 'open'"
                   v-close-popup
                   clickable
                   @click="onActivateCamp(props.row)"
@@ -460,9 +460,9 @@ const columns: QTableColumn<Camp>[] = [
     sortable: true,
   },
   {
-    name: 'active',
-    label: t('column.active'),
-    field: 'active',
+    name: 'registrationStatus',
+    label: t('column.registrationStatus'),
+    field: (row: Camp) => registrationStatus(row),
     align: 'left',
     sortable: true,
   },
@@ -490,7 +490,7 @@ const visibleColumns = ref([
   'name',
   'organizer',
   'countries',
-  'active',
+  'registrationStatus',
   'public',
   'action',
 ]);
@@ -581,6 +581,19 @@ function onDeleteCamp(camp: Camp) {
     });
 }
 
+function registrationStatus(camp: Camp): 'open' | 'not_open' | 'closed' {
+  const now = new Date();
+  if (camp.registrationOpensAt && now < new Date(camp.registrationOpensAt)) {
+    return 'not_open';
+  }
+
+  if (camp.registrationClosesAt && now > new Date(camp.registrationClosesAt)) {
+    return 'closed';
+  }
+
+  return 'open';
+}
+
 function onActivateCamp(camp: Camp) {
   quasar
     .dialog({
@@ -600,7 +613,8 @@ function onActivateCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        active: true,
+        registrationOpensAt: new Date().toISOString(),
+        registrationClosesAt: null,
       });
     });
 }
@@ -624,7 +638,7 @@ function onDeactivateCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        active: false,
+        registrationClosesAt: new Date().toISOString(),
       });
     });
 }
@@ -729,7 +743,7 @@ action:
 
 column:
   action: 'Action'
-  active: 'Active'
+  registrationStatus: 'Registration'
   countries: 'Countries'
   end: 'End'
   maxAge: 'Max Age'
@@ -777,8 +791,9 @@ header:
   columns: 'Columns'
 
 value:
-  active: 'Active'
-  inactive: 'Inactive'
+  open: 'Open'
+  not_open: 'Not open yet'
+  closed: 'Closed'
   public: 'Public'
   private: 'Private'
 </i18n>
@@ -798,7 +813,7 @@ action:
 
 column:
   action: 'Aktion'
-  active: 'Aktiv'
+  registrationStatus: 'Anmeldung'
   countries: 'Länder'
   end: 'Ende'
   maxAge: 'Max. Alter'
@@ -847,8 +862,9 @@ header:
   columns: 'Spalten'
 
 value:
-  active: 'Aktiv'
-  inactive: 'Inaktiv'
+  open: 'Offen'
+  not_open: 'Noch nicht offen'
+  closed: 'Geschlossen'
   public: 'Öffentlich'
   private: 'Privat'
 </i18n>
@@ -868,7 +884,7 @@ action:
 
 column:
   action: 'Action'
-  active: 'Actif'
+  registrationStatus: 'Inscription'
   countries: 'Pays'
   end: 'Fin'
   maxAge: 'Âge max'
@@ -917,8 +933,149 @@ header:
   columns: 'Colonnes'
 
 value:
-  active: 'Actif'
-  inactive: 'Inactif'
+  open: 'Ouvert'
+  not_open: 'Pas encore ouvert'
+  closed: 'Fermé'
   public: 'Public'
   private: 'Privé'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Obozy'
+
+action:
+  activate: 'Aktywuj'
+  deactivate: 'Dezaktywuj'
+  delete: 'Usuń'
+  edit: 'Edytuj'
+  form: 'Formularz'
+  publish: 'Opublikuj'
+  results: 'Wyniki'
+  unpublish: 'Cofnij publikację'
+
+column:
+  action: 'Akcja'
+  registrationStatus: 'Rejestracja'
+  countries: 'Kraje'
+  end: 'Koniec'
+  maxAge: 'Maks. wiek'
+  maxParticipants: 'Maks. uczestników'
+  minAge: 'Min. wiek'
+  name: 'Nazwa'
+  organizer: 'Organizator'
+  price: 'Cena'
+  public: 'Publiczny'
+  start: 'Start'
+
+dialog:
+  activate:
+    title: 'Aktywuj obóz'
+    message: 'Czy na pewno chcesz otworzyć rejestrację dla { name }?'
+    ok: 'Aktywuj'
+    cancel: 'Anuluj'
+  deactivate:
+    title: 'Dezaktywuj obóz'
+    message: 'Czy na pewno chcesz zamknąć rejestrację dla { name }?'
+    ok: 'Dezaktywuj'
+    cancel: 'Anuluj'
+  delete:
+    title: 'Usuń obóz'
+    message: 'Zamierzasz usunąć "{ name }" zorganizowany przez "{ organizer }".
+      Wszystkie zgłoszenia i powiązane szablony zostaną utracone.
+      Ta akcja jest nieodwracalna.
+      Czy na pewno chcesz usunąć ten obóz?'
+    label: 'Nazwa'
+  publish:
+    title: 'Opublikuj obóz'
+    message: 'Czy na pewno chcesz opublikować { name }?'
+    ok: 'Opublikuj'
+    cancel: 'Anuluj'
+  unpublish:
+    title: 'Cofnij publikację obozu'
+    message: 'Czy na pewno chcesz cofnąć publikację { name }?'
+    ok: 'Cofnij'
+    cancel: 'Anuluj'
+
+filter:
+  search: 'Szukaj'
+
+header:
+  columns: 'Kolumny'
+
+value:
+  open: 'Otwarta'
+  not_open: 'Jeszcze nie otwarta'
+  closed: 'Zamknięta'
+  public: 'Publiczny'
+  private: 'Prywatny'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Tábory'
+
+action:
+  activate: 'Aktivovat'
+  deactivate: 'Deaktivovat'
+  delete: 'Smazat'
+  edit: 'Upravit'
+  form: 'Formulář'
+  publish: 'Zveřejnit'
+  results: 'Výsledky'
+  unpublish: 'Zrušit zveřejnění'
+
+column:
+  action: 'Akce'
+  registrationStatus: 'Registrace'
+  countries: 'Země'
+  end: 'Konec'
+  maxAge: 'Max. věk'
+  maxParticipants: 'Max. účastníků'
+  minAge: 'Min. věk'
+  name: 'Název'
+  organizer: 'Organizátor'
+  price: 'Cena'
+  public: 'Veřejný'
+  start: 'Start'
+
+dialog:
+  activate:
+    title: 'Aktivovat tábor'
+    message: 'Opravdu chcete otevřít registraci pro { name }?'
+    ok: 'Aktivovat'
+    cancel: 'Zrušit'
+  deactivate:
+    title: 'Deaktivovat tábor'
+    message: 'Opravdu chcete uzavřít registraci pro { name }?'
+    ok: 'Deaktivovat'
+    cancel: 'Zrušit'
+  delete:
+    title: 'Smazat tábor'
+    message: 'Chystáte se smazat "{ name }" organizovaný "{ organizer }".
+      Všechny přihlášky a přidružené šablony budou ztraceny.
+      Tato akce je nevratná.
+      Opravdu chcete tento tábor smazat?'
+    label: 'Název'
+  publish:
+    title: 'Zveřejnit tábor'
+    message: 'Opravdu chcete zveřejnit { name }?'
+    ok: 'Zveřejnit'
+    cancel: 'Zrušit'
+  unpublish:
+    title: 'Zrušit zveřejnění tábora'
+    message: 'Opravdu chcete zrušit zveřejnění { name }?'
+    ok: 'Zrušit'
+    cancel: 'Zrušit'
+
+filter:
+  search: 'Hledat'
+
+header:
+  columns: 'Sloupce'
+
+value:
+  open: 'Otevřená'
+  not_open: 'Ještě neotevřená'
+  closed: 'Uzavřená'
+  public: 'Veřejný'
+  private: 'Soukromý'
 </i18n>

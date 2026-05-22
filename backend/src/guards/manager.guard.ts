@@ -15,6 +15,18 @@ export const campManager = (
   };
 };
 
-export const campActive = (req: Request): boolean | string => {
-  return req.modelOrFail('camp').active;
+export const campPublic = (req: Request): boolean => {
+  return req.modelOrFail('camp').public;
+};
+
+export const registrationOpen = (req: Request): boolean => {
+  const camp = req.modelOrFail('camp');
+  const now = new Date();
+  if (camp.registrationOpensAt && now < camp.registrationOpensAt) {
+    return false;
+  }
+  if (camp.registrationClosesAt && now > camp.registrationClosesAt) {
+    return false;
+  }
+  return true;
 };

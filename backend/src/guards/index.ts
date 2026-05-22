@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-export * from './manager.guard.js';
+export { campPublic, registrationOpen, campManager } from './manager.guard.js';
 export { default as admin } from './admin.guard.js';
 
 export type GuardFn = (

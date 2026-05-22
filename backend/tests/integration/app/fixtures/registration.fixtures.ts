@@ -2,7 +2,6 @@ import { createForm } from '../utils/form.js';
 import { Prisma } from '#generated/prisma/client';
 
 export const campPrivate = {
-  active: true,
   public: false,
   form: createForm([
     {
@@ -14,7 +13,6 @@ export const campPrivate = {
 };
 
 export const campPublic: Partial<Prisma.CampCreateInput> = {
-  active: true,
   public: false,
   confirmationMode: 'AUTOMATIC',
   form: createForm([
@@ -31,7 +29,6 @@ export const campPublic: Partial<Prisma.CampCreateInput> = {
 };
 
 export const campWithAdditionalFields = {
-  active: true,
   form: createForm([
     {
       name: 'first_name',
@@ -48,7 +45,6 @@ export const campWithAdditionalFields = {
 };
 
 export const campWithRequiredField = {
-  active: true,
   form: createForm([
     {
       name: 'first_name',
@@ -64,7 +60,6 @@ export const campWithRequiredField = {
 };
 
 export const campWithFileRequired = {
-  active: true,
   form: createForm([
     {
       name: 'some_field',
@@ -80,7 +75,6 @@ export const campWithFileRequired = {
 };
 
 export const campWithMultipleFilesRequired = {
-  active: true,
   form: createForm([
     {
       name: 'some_field',
@@ -97,7 +91,6 @@ export const campWithMultipleFilesRequired = {
 };
 
 export const campWithCustomFields = {
-  active: true,
   form: createForm([
     {
       name: 'first_name',
@@ -113,7 +106,6 @@ export const campWithCustomFields = {
 };
 
 export const campWithCampVariable = {
-  active: true,
   minAge: 10,
   maxAge: 15,
   form: createForm([
@@ -134,7 +126,6 @@ export const campWithCampVariable = {
 };
 
 export const campWithFileOptional = {
-  active: true,
   form: createForm([
     {
       name: 'some_field',
@@ -150,7 +141,6 @@ export const campWithFileOptional = {
 };
 
 export const campWithMaxParticipantsNational = {
-  active: true,
   maxParticipants: 5,
   form: createForm([
     {
@@ -162,7 +152,6 @@ export const campWithMaxParticipantsNational = {
 };
 
 export const campWithMaxParticipantsInternational = {
-  active: true,
   countries: ['de', 'fr'],
   maxParticipants: {
     de: 5,
@@ -184,7 +173,6 @@ export const campWithMaxParticipantsInternational = {
 };
 
 export const campWithAddress = {
-  active: true,
   countries: ['de', 'fr'],
   maxParticipants: {
     de: 5,
@@ -206,7 +194,6 @@ export const campWithAddress = {
 };
 
 export const campWithMaxParticipantsRolesNational = {
-  active: true,
   maxParticipants: 5,
   form: createForm([
     {
@@ -224,7 +211,6 @@ export const campWithMaxParticipantsRolesNational = {
 };
 
 export const campWithMaxParticipantsRolesInternational = {
-  active: true,
   countries: ['de', 'fr'],
   maxParticipants: {
     de: 5,
@@ -252,7 +238,6 @@ export const campWithMaxParticipantsRolesInternational = {
 };
 
 export const campWithAddressCampDataTypes = {
-  active: true,
   form: createForm([
     {
       name: 'address',
@@ -263,7 +248,6 @@ export const campWithAddressCampDataTypes = {
 };
 
 export const campWithAllCampDataTypes = {
-  active: true,
   form: createForm([
     {
       name: 'firstName',

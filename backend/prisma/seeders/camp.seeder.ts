@@ -13,7 +13,6 @@ class CampSeeder extends BaseSeeder {
       id: '01JHP0CXJFR4MQS8SF1HQJCY38',
       name: 'Simple Camp',
       public: true,
-      active: true,
       form: {
         name: 'Simple test camp',
         description: 'Camp without special fields or translations',
@@ -36,7 +35,6 @@ class CampSeeder extends BaseSeeder {
       id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
       name: 'Files Camp',
       public: true,
-      active: true,
       form: {
         name: 'Files test camp',
         description: 'Camp without special fields or translations',
@@ -58,7 +56,6 @@ class CampSeeder extends BaseSeeder {
 
     const exampleCamp = await CampFactory.create({
       id: '01K9ATF1H9KD1K6H12F3YK8RWR',
-      active: true,
       public: true,
       countries: ['de', 'fr'],
       name: { de: 'Beispielcamp', fr: 'Exemple de camp' },

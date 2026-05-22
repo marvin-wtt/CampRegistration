@@ -6,7 +6,7 @@
     :style="{ backgroundColor: bgColor }"
   >
     <registration-form
-      v-if="camp"
+      v-if="camp && registrationStatus === 'open'"
       :camp-details="camp"
       :submit-fn="submit"
       :upload-file-fn="uploadFile"
@@ -14,34 +14,47 @@
       @bg-color-update="(color) => updateBgColor(color)"
     />
 
-    <!-- Not available -->
+    <!-- Not available / registration closed -->
     <div
       v-else
       class="column justify-center q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
     >
-      <div class="col-shrink column q-gutter-lg">
-        <div class="col-shrink self-center">
-          <q-avatar
-            :icon="knownErrorIcon"
-            color="primary"
-            text-color="white"
-            size="100px"
-          />
+      <div class="col-shrink column items-center q-gutter-md">
+        <q-avatar
+          :icon="statusIcon"
+          color="primary"
+          text-color="white"
+          size="100px"
+        />
+
+        <div
+          v-if="camp"
+          class="text-h5 text-center text-weight-medium"
+        >
+          {{ to(camp.name) }}
         </div>
 
-        <div class="col text-h6 text-center">
-          {{ knownErrorText }}
+        <div class="text-body1 text-center">
+          {{ statusText }}
         </div>
 
-        <div class="col-shrink row justify-center">
-          <q-btn
-            :label="t('action.home')"
-            icon="search"
-            :to="{ name: 'camps' }"
-            color="primary"
-            rounded
-          />
+        <div
+          v-if="statusDate"
+          class="text-body2 text-center text-grey-7"
+        >
+          {{ statusDate }}
         </div>
+
+        <q-btn
+          v-if="campContactEmail"
+          :href="`mailto:${campContactEmail}`"
+          :label="campContactEmail"
+          icon="mail"
+          type="a"
+          flat
+          rounded
+          color="primary"
+        />
       </div>
     </div>
   </page-state-handler>
@@ -49,7 +62,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import RegistrationForm from 'components/common/RegistrationForm.vue';
@@ -59,7 +72,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from 'src/composables/serviceHandler';
 
-const { t } = useI18n();
+const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
 const route = useRoute();
@@ -70,6 +83,35 @@ const camp = ref<CampDetails | undefined>();
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
+const now = ref(new Date());
+
+let openTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  () => camp.value?.registrationOpensAt,
+  (opensAt) => {
+    if (openTimer !== null) {
+      clearTimeout(openTimer);
+      openTimer = null;
+    }
+    if (!opensAt) {
+      return;
+    }
+    const delay = new Date(opensAt).getTime() - Date.now();
+    const offset = 1000;
+    if (delay > 0) {
+      openTimer = setTimeout(() => {
+        now.value = new Date();
+      }, delay + offset);
+    }
+  },
+);
+
+onUnmounted(() => {
+  if (openTimer !== null) {
+    clearTimeout(openTimer);
+  }
+});
 
 onMounted(async () => {
   await init();
@@ -118,20 +160,79 @@ async function init() {
   }
 }
 
-const knownErrorIcon = computed<string>(() => {
-  return knownError.value === 'unavailable' ? 'event_busy' : 'warning';
+type RegistrationStatus =
+  | 'open'
+  | 'not_open'
+  | 'closed'
+  | 'unavailable'
+  | 'not_found';
+
+const registrationStatus = computed<RegistrationStatus>(() => {
+  if (knownError.value) {
+    return knownError.value;
+  }
+  if (!camp.value) {
+    return 'not_found';
+  }
+
+  const { registrationOpensAt, registrationClosesAt } = camp.value;
+
+  if (registrationOpensAt && now.value < new Date(registrationOpensAt)) {
+    return 'not_open';
+  }
+
+  if (registrationClosesAt && now.value > new Date(registrationClosesAt)) {
+    return 'closed';
+  }
+
+  return 'open';
 });
 
-const knownErrorText = computed<string>(() => {
-  if (knownError.value === 'unavailable') {
-    return t('error.unavailable');
+const campContactEmail = computed<string | null>(() => {
+  if (!camp.value?.contactEmail) {
+    return null;
   }
 
-  if (knownError.value === 'not_found') {
-    return t('error.not_found');
-  }
+  const email = camp.value.contactEmail;
+  return typeof email === 'string' ? email : (Object.values(email)[0] ?? null);
+});
 
-  return 'Unknown error occurred';
+const statusIcon = computed<string>(() => {
+  switch (registrationStatus.value) {
+    case 'not_open':
+      return 'schedule';
+    case 'closed':
+      return 'event_busy';
+    case 'not_found':
+      return 'warning';
+    default:
+      return 'lock';
+  }
+});
+
+const statusDate = computed<string | null>(() => {
+  if (
+    registrationStatus.value === 'not_open' &&
+    camp.value?.registrationOpensAt
+  ) {
+    return t('date.opens', {
+      date: d(camp.value.registrationOpensAt, 'dateTime'),
+    });
+  }
+  return null;
+});
+
+const statusText = computed<string>(() => {
+  switch (registrationStatus.value) {
+    case 'not_open':
+      return t('error.not_open');
+    case 'closed':
+      return t('error.closed');
+    case 'not_found':
+      return t('error.not_found');
+    default:
+      return t('error.unavailable');
+  }
 });
 
 async function submit(
@@ -156,57 +257,56 @@ function updateBgColor(color: string | undefined) {
 </script>
 
 <i18n lang="yaml" locale="en">
-action:
-  home: 'Look for other camps'
+date:
+  opens: 'Opens on {date}'
 
 error:
-  unavailable: "Registration for this camp is not yet possible or is already
-    closed. Please check the camp's registration dates. If you believe that this
-    is a mistake, please contact the camp administration."
-  not_found: 'The camp you are looking for could not be found. Please check the
-    URL or contact the camp administration.'
+  not_open: 'Registration for this camp has not opened yet.'
+  closed: 'Registration for this camp is already closed.'
+  unavailable: 'This camp is not available.'
+  not_found: 'The camp you are looking for could not be found. Please check the URL.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-action:
-  home: 'Nach anderen Camps suchen'
+date:
+  opens: 'Öffnet am {date}'
 
 error:
-  unavailable: 'Die Anmeldung für dieses Camp ist noch nicht möglich oder ist
-    bereits geschlossen. Bitte überprüfen Sie die Anmeldedaten des Camps.
-    Wenn Sie glauben, dass es sich hierbei um einen Fehler handelt, wenden Sie
-    sich bitte an die Camp-Verwaltung.'
-  not_found:
-    'Das gesuchte Camp konnte nicht gefunden werden. Bitte überprüfen Sie die
-    URL oder wenden Sie sich an die Camp-Verwaltung.'
+  not_open: 'Die Anmeldung für dieses Camp hat noch nicht begonnen.'
+  closed: 'Die Anmeldung für dieses Camp ist bereits geschlossen.'
+  unavailable: 'Dieses Camp ist nicht verfügbar.'
+  not_found: 'Das gesuchte Camp konnte nicht gefunden werden. Bitte überprüfen Sie die URL.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-action:
-  home: "Chercher d'autres camps"
+date:
+  opens: 'Ouvre le {date}'
 
 error:
-  unavailable: "L'inscription à ce camp n'est pas encore possible ou est déjà
-    terminée. Veuillez vérifier les dates d'inscription du camp. Si vous pensez
-    qu'il s'agit d'une erreur, veuillez contacter l'administration du camp."
-  not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'
-    URL ou contacter l'administration du camp."
+  not_open: "L'inscription à ce camp n'a pas encore commencé."
+  closed: "L'inscription à ce camp est déjà terminée."
+  unavailable: "Ce camp n'est pas disponible."
+  not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'URL."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-action:
-  home: 'Szukaj innych obozów'
+date:
+  opens: 'Otwiera się {date}'
 
 error:
-  unavailable: 'Rejestracja na ten obóz nie jest jeszcze możliwa lub została już zamknięta. Sprawdź dane rejestracyjne obozu. Jeśli uważasz, że to błąd, skontaktuj się z administracją obozu.'
-  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL lub skontaktuj się z administracją obozu.'
+  not_open: 'Rejestracja na ten obóz jeszcze się nie rozpoczęła.'
+  closed: 'Rejestracja na ten obóz jest już zamknięta.'
+  unavailable: 'Ten obóz jest niedostępny.'
+  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-action:
-  home: 'Hledat jiné tábory'
+date:
+  opens: 'Otevírá se {date}'
 
 error:
-  unavailable: 'Registrace na tento tábor zatím není možná nebo již byla uzavřena. Zkontrolujte registrační údaje tábora. Pokud si myslíte, že jde o chybu, kontaktujte správu tábora.'
-  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu nebo kontaktujte správu tábora.'
+  not_open: 'Registrace na tento tábor ještě nezačala.'
+  closed: 'Registrace na tento tábor je již uzavřena.'
+  unavailable: 'Tento tábor není dostupný.'
+  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu.'
 </i18n>

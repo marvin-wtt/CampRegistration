@@ -135,6 +135,49 @@
       </time-input>
     </div>
 
+    <!-- Registration window -->
+    <date-time-input
+      v-model="data.registrationOpensAt"
+      :disable="loading"
+      :label="t('field.registrationOpensAt')"
+      :rules="[
+        (val?: string | null) =>
+          !val ||
+          !data.registrationClosesAt ||
+          val < data.registrationClosesAt ||
+          t('validation.registrationOpensAt.before_close'),
+      ]"
+      clearable
+      hide-bottom-space
+      outlined
+      rounded
+    >
+      <template #before>
+        <q-icon name="lock_open" />
+      </template>
+    </date-time-input>
+
+    <date-time-input
+      v-model="data.registrationClosesAt"
+      :disable="loading"
+      :label="t('field.registrationClosesAt')"
+      :rules="[
+        (val?: string | null) =>
+          !val ||
+          !data.registrationOpensAt ||
+          val > data.registrationOpensAt ||
+          t('validation.registrationClosesAt.after_open'),
+      ]"
+      clearable
+      hide-bottom-space
+      outlined
+      rounded
+    >
+      <template #before>
+        <q-icon name="lock" />
+      </template>
+    </date-time-input>
+
     <!-- participants -->
     <translated-input
       v-model.number="data.maxParticipants"
@@ -290,6 +333,7 @@ import { useI18n } from 'vue-i18n';
 import CountrySelect from 'components/common/CountrySelect.vue';
 import TimeInput from 'components/common/inputs/TimeInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
+import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
 import { deepToRaw } from 'src/utils/deepToRaw';
 import type { QSelectOption } from 'quasar';
 
@@ -369,6 +413,8 @@ field:
   dateRange: 'Start and end date'
   startTime: 'Start time'
   endTime: 'End time'
+  registrationOpensAt: 'Registration opens (optional)'
+  registrationClosesAt: 'Registration closes (optional)'
   minAge: 'Minimum age'
   maxAge: 'Maximum age'
   confirmation_mode: 'Accept registrations'
@@ -409,6 +455,10 @@ validation:
   price:
     empty: 'Please enter a price greater than or equal to 0'
     positive: 'Price must be a positive number'
+  registrationOpensAt:
+    before_close: 'Opening time must be before closing time'
+  registrationClosesAt:
+    after_open: 'Closing time must be after opening time'
 
 confirmation_mode:
   automatic: 'Automatic'
@@ -435,6 +485,8 @@ field:
   dateRange: 'Start- und Enddatum'
   startTime: 'Startzeit'
   endTime: 'Endzeit'
+  registrationOpensAt: 'Anmeldung öffnet (optional)'
+  registrationClosesAt: 'Anmeldung schließt (optional)'
   minAge: 'Mindestalter'
   maxAge: 'Maximalalter'
   confirmation_mode: 'Anmeldungen annehmen'
@@ -475,6 +527,10 @@ validation:
   price:
     empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
     positive: 'Der Preis muss eine positive Zahl sein'
+  registrationOpensAt:
+    before_close: 'Der Öffnungszeitpunkt muss vor dem Schließzeitpunkt liegen'
+  registrationClosesAt:
+    after_open: 'Der Schließzeitpunkt muss nach dem Öffnungszeitpunkt liegen'
 
 confirmation_mode:
   automatic: 'Automatisch'
@@ -501,6 +557,8 @@ field:
   dateRange: 'Date de début et de fin'
   startTime: 'Heure de début'
   endTime: 'Heure de fin'
+  registrationOpensAt: 'Ouverture des inscriptions (optionnel)'
+  registrationClosesAt: 'Clôture des inscriptions (optionnel)'
   minAge: 'Âge minimum'
   maxAge: 'Âge maximum'
   confirmation_mode: 'Accepter les inscriptions'
@@ -541,6 +599,10 @@ validation:
   price:
     empty: 'Veuillez entrer un prix supérieur ou égal à 0'
     positive: 'Le prix doit être un nombre positif'
+  registrationOpensAt:
+    before_close: "L'heure d'ouverture doit être antérieure à l'heure de fermeture"
+  registrationClosesAt:
+    after_open: "L'heure de fermeture doit être postérieure à l'heure d'ouverture"
 
 confirmation_mode:
   automatic: 'Automatique'
@@ -567,6 +629,8 @@ field:
   dateRange: 'Data rozpoczęcia i zakończenia'
   startTime: 'Czas rozpoczęcia'
   endTime: 'Czas zakończenia'
+  registrationOpensAt: 'Rejestracja otwierana (opcjonalnie)'
+  registrationClosesAt: 'Rejestracja zamykana (opcjonalnie)'
   minAge: 'Minimalny wiek'
   maxAge: 'Maksymalny wiek'
   confirmation_mode: 'Przyjmowanie zgłoszeń'
@@ -607,6 +671,10 @@ validation:
   price:
     empty: 'Podaj cenę większą lub równą 0'
     positive: 'Cena musi być liczbą dodatnią'
+  registrationOpensAt:
+    before_close: 'Czas otwarcia musi być wcześniejszy niż czas zamknięcia'
+  registrationClosesAt:
+    after_open: 'Czas zamknięcia musi być późniejszy niż czas otwarcia'
 
 confirmation_mode:
   automatic: 'Automatyczny'
@@ -633,6 +701,8 @@ field:
   dateRange: 'Datum začátku a konce'
   startTime: 'Čas začátku'
   endTime: 'Čas konce'
+  registrationOpensAt: 'Otevření registrace (volitelné)'
+  registrationClosesAt: 'Uzavření registrace (volitelné)'
   minAge: 'Minimální věk'
   maxAge: 'Maximální věk'
   confirmation_mode: 'Přijímání přihlášek'
@@ -673,6 +743,10 @@ validation:
   price:
     empty: 'Zadejte cenu větší nebo rovnu 0'
     positive: 'Cena musí být kladné číslo'
+  registrationOpensAt:
+    before_close: 'Čas otevření musí být před časem zavření'
+  registrationClosesAt:
+    after_open: 'Čas zavření musí být po čase otevření'
 
 confirmation_mode:
   automatic: 'Automatický'
