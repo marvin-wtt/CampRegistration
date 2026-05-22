@@ -52,15 +52,15 @@ function isRegistrationOpen(camp: Camp): boolean {
 }
 
 const activeCamps = computed<Camp[]>(() => {
-  return (camps.value ?? [])
-    .filter(isRegistrationOpen)
-    .toSorted(sortCamps);
+  return camps.value?.filter(isRegistrationOpen).toSorted(sortCamps) ?? [];
 });
 
 const inactiveCamps = computed<Camp[]>(() => {
-  return (camps.value ?? [])
-    .filter((value) => !isRegistrationOpen(value))
-    .toSorted(sortCamps);
+  return (
+    camps.value
+      ?.filter((value) => !isRegistrationOpen(value))
+      .toSorted(sortCamps) ?? []
+  );
 });
 
 function sortCamps(a: Camp, b: Camp) {
