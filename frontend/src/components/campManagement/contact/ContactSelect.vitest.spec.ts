@@ -335,7 +335,9 @@ describe('ContactSelect', () => {
     const options = getOptions(mountContactSelect([r1, r2], [selectedGroup]));
     const individuals = options.filter((o) => o.type !== 'group');
 
-    expect(individuals.find((o) => o.registration.id === r1.id)).toBeUndefined();
+    expect(
+      individuals.find((o) => o.registration.id === r1.id),
+    ).toBeUndefined();
     expect(individuals.find((o) => o.registration.id === r2.id)).toBeDefined();
   });
 
