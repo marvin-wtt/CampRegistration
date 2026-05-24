@@ -49,7 +49,7 @@ import { ref } from 'vue';
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 const { t } = useI18n();
 
-const props = defineProps<{
+const { tokens } = defineProps<{
   tokens: TokenRegistry[];
 }>();
 
@@ -58,7 +58,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 const selectedToken = ref<TokenRegistry>({
   label: '',
   value: '',
-  items: props.tokens,
+  items: tokens,
 });
 
 function onTokenSelect(token: TokenRegistry | Token) {
