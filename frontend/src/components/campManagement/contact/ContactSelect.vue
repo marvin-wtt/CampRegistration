@@ -82,7 +82,7 @@ const model = defineModel<Contact[]>({
   required: true,
 });
 
-const props = defineProps<{
+const { registrations } = defineProps<{
   registrations: Registration[];
 }>();
 
@@ -150,7 +150,7 @@ const filteredOptions = computed<Contact[]>(() => {
 });
 
 const options = computed<Contact[]>(() => {
-  const registrationOptions = props.registrations
+  const registrationOptions = registrations
     .filter((registration) => registration.status !== 'PENDING')
     .map(
       (registration): Contact => ({
@@ -160,7 +160,7 @@ const options = computed<Contact[]>(() => {
       }),
     );
 
-  const groupOptions = createGroups(props.registrations);
+  const groupOptions = createGroups(registrations);
 
   return sortItems([...groupOptions, ...registrationOptions]);
 });
