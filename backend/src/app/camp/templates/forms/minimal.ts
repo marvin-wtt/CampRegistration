@@ -208,6 +208,21 @@ export default {
             default: 'dd.mm.yyyy',
           },
         },
+        {
+          type: 'country',
+          name: 'country',
+          visibleIf: 'count({camp.countries}) > 1',
+          requiredIf: 'count({camp.countries}) > 1',
+          title: {
+            en: 'Country',
+            de: 'Land',
+            fr: 'Pays',
+            pl: 'Kraj',
+            cs: 'Země',
+            default: 'Country',
+          },
+          campDataType: 'country',
+        },
       ],
     },
     {
