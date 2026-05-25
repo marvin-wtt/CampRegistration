@@ -729,7 +729,7 @@ export default [
         align: 'left',
       },
       {
-        name: 'medical_restristrions',
+        name: 'medical_restrictions',
         label: {
           en: 'Restrictions',
           de: 'Einschränkungen',
@@ -753,20 +753,6 @@ export default [
         field: 'data.additional_information',
         renderAs: 'text',
         align: 'left',
-      },
-      {
-        name: 'language_skills',
-        label: {
-          fr: 'Connaissances linguistiques',
-          de: 'Sprachkenntnisse',
-          en: 'Language skills',
-          cs: 'Jazykové znalosti',
-          pl: 'Umiejętności językowe',
-        },
-        field: 'data.language_skills',
-        renderAs: 'language_skills',
-        align: 'center',
-        shrink: true,
       },
     ],
     indexed: true,
