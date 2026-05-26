@@ -25,8 +25,8 @@ export const CAMP_PRESETS: Record<Preset, CampPreset> = {
   },
 };
 
-export function getCampPreset(name: Preset | undefined): CampPreset {
-  if (name === undefined) {
+export function getCampPreset(name: Preset | null | undefined): CampPreset {
+  if (name == null) {
     return CAMP_PRESETS.standard;
   }
 
