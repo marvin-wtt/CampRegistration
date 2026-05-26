@@ -7,6 +7,28 @@
     <q-card style="min-width: 300px">
       <q-card-actions align="right">
         <q-btn
+          v-if="!event.date"
+          v-close-popup
+          icon="event"
+          size="sm"
+          flat
+          rounded
+          @click="emit('schedule')"
+        >
+          <q-tooltip>{{ t('action.schedule') }}</q-tooltip>
+        </q-btn>
+        <q-btn
+          v-if="event.date"
+          v-close-popup
+          icon="inbox"
+          size="sm"
+          flat
+          rounded
+          @click="emit('move-to-backlog')"
+        >
+          <q-tooltip>{{ t('action.moveToBacklog') }}</q-tooltip>
+        </q-btn>
+        <q-btn
           v-close-popup
           icon="content_copy"
           size="sm"
@@ -39,6 +61,7 @@
         </q-btn>
         <q-btn
           v-close-popup
+          class="gt-xs"
           icon="close"
           size="sm"
           flat
@@ -120,6 +143,8 @@ const emit = defineEmits<{
   (e: 'edit'): void;
   (e: 'delete'): void;
   (e: 'duplicate'): void;
+  (e: 'schedule'): void;
+  (e: 'move-to-backlog'): void;
 }>();
 
 const dateTime = computed<string>(() => {
@@ -165,6 +190,8 @@ plan:
   a: 'Plan A (good weather)'
   b: 'Plan B (bad weather)'
 action:
+  schedule: 'Schedule'
+  moveToBacklog: 'Move to backlog'
   duplicate: 'Duplicate'
   edit: 'Edit'
   delete: 'Delete'
@@ -175,6 +202,8 @@ plan:
   a: 'Plan A (gutes Wetter)'
   b: 'Plan B (schlechtes Wetter)'
 action:
+  schedule: 'Einplanen'
+  moveToBacklog: 'In Backlog verschieben'
   duplicate: 'Duplizieren'
   edit: 'Bearbeiten'
   delete: 'Löschen'
@@ -185,6 +214,8 @@ plan:
   a: 'Plan A (beau temps)'
   b: 'Plan B (mauvais temps)'
 action:
+  schedule: 'Planifier'
+  moveToBacklog: 'Déplacer vers le backlog'
   duplicate: 'Dupliquer'
   edit: 'Modifier'
   delete: 'Supprimer'
@@ -195,6 +226,8 @@ plan:
   a: 'Plan A (dobra pogoda)'
   b: 'Plan B (zła pogoda)'
 action:
+  schedule: 'Zaplanuj'
+  moveToBacklog: 'Przenieś do backlogu'
   duplicate: 'Duplikuj'
   edit: 'Edytuj'
   delete: 'Usuń'
@@ -205,6 +238,8 @@ plan:
   a: 'Plán A (dobré počasí)'
   b: 'Plán B (špatné počasí)'
 action:
+  schedule: 'Naplánovat'
+  moveToBacklog: 'Přesunout do backlogu'
   duplicate: 'Duplikovat'
   edit: 'Upravit'
   delete: 'Smazat'

@@ -88,6 +88,7 @@
                   @edit="onEventEdit(event)"
                   @delete="onEventDelete(event)"
                   @duplicate="onEventDuplicate(event)"
+                  @move-to-backlog="onMoveToBacklog(event.id)"
                 />
               </div>
             </template>
@@ -137,6 +138,7 @@
                 @edit="onEventEdit(event)"
                 @delete="onEventDelete(event)"
                 @duplicate="onEventDuplicate(event)"
+                @move-to-backlog="onMoveToBacklog(event.id)"
                 @resize="(e) => onEventResize(event, e)"
               />
             </template>
@@ -152,10 +154,10 @@
         @edit="onEventEdit"
         @delete="onEventDelete"
         @duplicate="onEventDuplicate"
+        @schedule="onScheduleFromBacklog"
         @dragstart="
           (e: DragEvent, event: ProgramEvent) => onDragStart(e, event)
         "
-        @dragend="isDraggingEvent = false"
         @move-to-backlog="onMoveToBacklog"
       />
     </div>
@@ -202,7 +204,7 @@ const emit = defineEmits<{
 const calendarRef = ref<QCalendarDay | null>(null);
 const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
-const activePlan = ref<'a' | 'b' | 'both'>('a');
+const activePlan = ref<'a' | 'b' | 'both'>('both');
 
 const SETTINGS_KEY = 'program-planner-settings';
 
@@ -334,7 +336,7 @@ function updateIntervalHeight() {
     return;
   }
   const height = Math.max(0, el.clientHeight - 10);
-  intervalHeight.value = height / count;
+  intervalHeight.value = Math.max(24, height / count);
 }
 
 function maxViewportRange(): number {
@@ -525,6 +527,10 @@ function onBacklogAdd() {
 
 function onMoveToBacklog(id: string) {
   emit('update', id, { date: null, time: null });
+}
+
+function onScheduleFromBacklog(event: ProgramEvent) {
+  emit('update', event.id, { date: selectedDate.value, time: null, duration: null });
 }
 
 function onEventDelete(event: ProgramEvent) {
@@ -736,7 +742,7 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   }
 
   e.dataTransfer.effectAllowed = 'copyMove';
-  e.dataTransfer.setData('eventId', event.id);
+  e.dataTransfer.setData('text/plain', event.id);
 
   isDraggingEvent.value = true;
   const onDragEnd = () => {
@@ -784,7 +790,7 @@ function onDrop(
   { scope }: { scope: DragAndDropScope },
 ): boolean {
   clearDragHighlight();
-  const eventId = e.dataTransfer?.getData('eventId');
+  const eventId = e.dataTransfer?.getData('text/plain');
   if (!eventId) {
     return false;
   }

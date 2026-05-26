@@ -22,6 +22,7 @@
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
+      @move-to-backlog="emit('move-to-backlog')"
     />
   </div>
 </template>
@@ -52,6 +53,7 @@ const emit = defineEmits<{
   (e: 'edit'): void;
   (e: 'delete'): void;
   (e: 'duplicate'): void;
+  (e: 'move-to-backlog'): void;
   (e: 'resize', duration: number): void;
 }>();
 
@@ -93,7 +95,7 @@ const badgeStyles = computed<StyleValue>(() => {
   const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
 
   const dur = resizeDuration.value ?? event.duration;
-  const height = dur ? timeDurationHeight(dur) + 'px' : undefined;
+  const height = dur ? `calc(${timeDurationHeight(dur)}px - 2px)` : undefined;
 
   let left = '0';
   let width = 'calc(100% - 4px)';
@@ -150,11 +152,12 @@ function startResize(e: MouseEvent) {
 <style lang="scss" scoped>
 .cal-event {
   position: absolute;
-  margin: 0 2px;
+  margin: 1px 2px;
   border-radius: 3px;
   overflow: hidden;
   cursor: pointer;
   border-left: 3px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 
   &__inner {
     padding: 2px 4px;
