@@ -67,17 +67,13 @@ function onDragStart(e: DragEvent) {
   if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
     const rect = e.currentTarget.getBoundingClientRect();
 
-    const isMobile = window.matchMedia('(hover: none)').matches;
     const grabX = e.clientX - rect.left;
     const grabY = e.clientY - rect.top;
 
-    if (isMobile) {
-      // Store grab offset in minutes so the drop handler can place the event
-      // at the correct start time rather than at the touch point within the event.
-      const pixelsPerMinute = timeDurationHeight(60) / 60;
-      const grabOffsetMinutes = Math.round(grabY / pixelsPerMinute);
-      e.dataTransfer.setData('text/grab-offset', String(grabOffsetMinutes));
-    }
+    // Always store grab offset so the drop handler and preview can adjust position
+    const pixelsPerMinute = timeDurationHeight(60) / 60;
+    const grabOffsetMinutes = Math.round(grabY / pixelsPerMinute);
+    e.dataTransfer.setData('text/grab-offset', String(grabOffsetMinutes));
 
     const ghost = document.createElement('div');
     ghost.textContent = to(event.title);
@@ -103,13 +99,8 @@ function onDragStart(e: DragEvent) {
       pointerEvents: 'none',
     });
     document.body.appendChild(ghost);
-    // On mobile anchor the ghost at the actual grab point to prevent it from
-    // jumping; on desktop anchor at the top-center so the cursor marks the start.
-    e.dataTransfer.setDragImage(
-      ghost,
-      isMobile ? grabX : Math.round(rect.width / 2),
-      isMobile ? grabY : 0,
-    );
+    // Anchor ghost at the grab point so the event appears to move with the cursor
+    e.dataTransfer.setDragImage(ghost, grabX, grabY);
     setTimeout(() => document.body.removeChild(ghost), 0);
   }
 

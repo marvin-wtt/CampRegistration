@@ -228,8 +228,8 @@ function loadSettings(): CalendarSettings {
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) {
       return {
-        dayStart: '08:00',
-        dayEnd: '21:00',
+        dayStart: '07:00',
+        dayEnd: '23:00',
         timeInterval: 30,
         showAllTranslations: false,
         ...JSON.parse(stored),
@@ -646,6 +646,7 @@ interface DragHoverPreview {
 const dragHoverPreview = ref<DragHoverPreview | null>(null);
 let draggingEventDuration = 60;
 let draggingEventColor = '#2196F3';
+let draggingGrabOffset = 0;
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -783,6 +784,8 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
 
   draggingEventDuration = event.duration ?? 60;
   draggingEventColor = event.color ?? '#2196F3';
+  draggingGrabOffset =
+    parseInt(e.dataTransfer.getData('text/grab-offset')) || 0;
 
   isDraggingEvent.value = true;
   const onDragEnd = () => {
@@ -800,9 +803,15 @@ function onDragEnter(
 ): boolean {
   e.preventDefault();
   if (type === 'interval') {
+    const [h, m] = scope.timestamp.time.split(':').map(Number);
+    const rawMinutes = (h ?? 0) * 60 + (m ?? 0) - draggingGrabOffset;
+    const snapped =
+      Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
+      settings.timeInterval;
+    const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
     dragHoverPreview.value = {
       date: scope.timestamp.date,
-      startTime: scope.timestamp.time,
+      startTime,
       duration: draggingEventDuration,
       color: draggingEventColor,
     };
