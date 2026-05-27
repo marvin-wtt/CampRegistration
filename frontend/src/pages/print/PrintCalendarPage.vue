@@ -99,9 +99,9 @@
               class="cal-print__event"
               :style="eventStyle(event)"
             >
-              <div class="cal-print__event__time">{{ event.time }}</div>
               <div class="cal-print__event__title">
-                {{ toAll(event.title) }}
+                <span class="cal-print__event__time">{{ event.time }} · </span
+                >{{ toAll(event.title) }}
               </div>
             </div>
           </div>
@@ -568,8 +568,8 @@ function formatDay(dateStr: string): string {
 
     &__time {
       font-size: 8px;
-      color: rgba(255, 255, 255, 0.85);
-      line-height: 1.1;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.8);
     }
 
     &__title {

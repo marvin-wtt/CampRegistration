@@ -65,7 +65,52 @@ const isCopyDrag = ref(false);
 
 function onDragStart(e: DragEvent) {
   if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
-    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    const isMobile = window.matchMedia('(hover: none)').matches;
+    const grabX = e.clientX - rect.left;
+    const grabY = e.clientY - rect.top;
+
+    if (isMobile) {
+      // Store grab offset in minutes so the drop handler can place the event
+      // at the correct start time rather than at the touch point within the event.
+      const pixelsPerMinute = timeDurationHeight(60) / 60;
+      const grabOffsetMinutes = Math.round(grabY / pixelsPerMinute);
+      e.dataTransfer.setData('text/grab-offset', String(grabOffsetMinutes));
+    }
+
+    const ghost = document.createElement('div');
+    ghost.textContent = to(event.title);
+    Object.assign(ghost.style, {
+      position: 'fixed',
+      top: '-9999px',
+      left: '-9999px',
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      backgroundColor: event.color ?? '#2196F3',
+      borderLeft: '3px solid rgba(0,0,0,0.2)',
+      borderRadius: '3px',
+      color: 'white',
+      fontSize: '13px',
+      fontWeight: '600',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      padding: '2px 4px',
+      boxSizing: 'border-box',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.18)',
+      pointerEvents: 'none',
+    });
+    document.body.appendChild(ghost);
+    // On mobile anchor the ghost at the actual grab point to prevent it from
+    // jumping; on desktop anchor at the top-center so the cursor marks the start.
+    e.dataTransfer.setDragImage(
+      ghost,
+      isMobile ? grabX : Math.round(rect.width / 2),
+      isMobile ? grabY : 0,
+    );
+    setTimeout(() => document.body.removeChild(ghost), 0);
   }
 
   isCopyDrag.value = e.ctrlKey || e.metaKey;

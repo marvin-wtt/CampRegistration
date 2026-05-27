@@ -47,6 +47,7 @@
             animated
             :transition-next="range === 1 ? 'slide-left' : 'fade'"
             :transition-prev="range === 1 ? 'slide-right' : 'fade'"
+            :interval-class="outOfCampIntervalClass"
             @click-head-day="onDayEventAdd"
           >
             <template #head-day-event="{ scope: { timestamp } }">
@@ -530,7 +531,11 @@ function onMoveToBacklog(id: string) {
 }
 
 function onScheduleFromBacklog(event: ProgramEvent) {
-  emit('update', event.id, { date: selectedDate.value, time: null, duration: null });
+  emit('update', event.id, {
+    date: selectedDate.value,
+    time: null,
+    duration: null,
+  });
 }
 
 function onEventDelete(event: ProgramEvent) {
@@ -802,13 +807,22 @@ function onDrop(
 
   let eventUpdate: ProgramEventUpdateData;
   switch (type) {
-    case 'interval':
+    case 'interval': {
+      const grabOffsetMinutes =
+        parseInt(e.dataTransfer?.getData('text/grab-offset') ?? '0') || 0;
+      const [dh, dm] = scope.timestamp.time.split(':').map(Number);
+      const adjustedMinutes = Math.max(
+        0,
+        (dh ?? 0) * 60 + (dm ?? 0) - grabOffsetMinutes,
+      );
+      const adjustedTime = `${String(Math.floor(adjustedMinutes / 60) % 24).padStart(2, '0')}:${String(adjustedMinutes % 60).padStart(2, '0')}`;
       eventUpdate = {
         date: scope.timestamp.date,
-        time: snapTime(scope.timestamp.time, settings.timeInterval),
+        time: snapTime(adjustedTime, settings.timeInterval),
         duration: event.duration ?? 60,
       };
       break;
+    }
     case 'head-day':
       eventUpdate = {
         date: scope.timestamp.date,
@@ -838,6 +852,26 @@ function onDrop(
   }
 
   return false;
+}
+
+function outOfCampIntervalClass({
+  scope,
+}: {
+  scope: { timestamp: Timestamp };
+}): Record<string, boolean> {
+  const { date, time } = scope.timestamp;
+  const startDate = camp.startAt.substring(0, 10);
+  const startTime = camp.startAt.substring(11, 16);
+  const endDate = camp.endAt.substring(0, 10);
+  const endTime = camp.endAt.substring(11, 16);
+
+  const outside =
+    date < startDate ||
+    (date === startDate && time < startTime) ||
+    date > endDate ||
+    (date === endDate && time >= endTime);
+
+  return { 'cal-outside-camp': outside };
 }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -924,6 +958,14 @@ function formatDate(date: Date): string {
   border-radius: 3px;
   pointer-events: none;
   z-index: 1;
+}
+
+.cal-outside-camp {
+  background-color: rgba(0, 0, 0, 0.08);
+
+  .body--dark & {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
 }
 </style>
 

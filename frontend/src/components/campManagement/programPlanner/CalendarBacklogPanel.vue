@@ -22,7 +22,13 @@
       v-model="mobileOpen"
       position="bottom"
     >
-      <q-card style="width: 100%">
+      <q-card
+        :style="{
+          width: '90vw',
+          borderBottomLeftRadius: '0px !important',
+          borderBottomRightRadius: '0px !important',
+        }"
+      >
         <q-card-section class="row items-center">
           <span class="text-h6">{{ t('title') }}</span>
           <q-badge
