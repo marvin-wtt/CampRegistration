@@ -394,7 +394,10 @@ function fitEventText() {
     // subtract 1px top + 1px bottom padding from el
     const availableHeight = el.clientHeight - 2;
     // start proportional to available space so tall events get larger text
-    let fontSize = Math.min(13, Math.max(6, Math.floor(availableHeight * 0.45)));
+    let fontSize = Math.min(
+      13,
+      Math.max(6, Math.floor(availableHeight * 0.45)),
+    );
     title.style.fontSize = `${fontSize}px`;
     while (title.scrollHeight > availableHeight && fontSize > 6) {
       fontSize -= 0.5;
