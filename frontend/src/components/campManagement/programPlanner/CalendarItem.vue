@@ -2,6 +2,7 @@
   <div
     v-if="event.time"
     class="cal-event"
+    :class="{ 'cal-event--selected': selected }"
     :style="badgeStyles"
     @dragstart="onDragStart"
     @dragend="isDragging = false"
@@ -22,6 +23,7 @@
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
+      @move-to-backlog="emit('move-to-backlog')"
     />
   </div>
 </template>
@@ -36,6 +38,7 @@ const {
   event,
   viewBoth = false,
   showAllTranslations = false,
+  selected = false,
   timeDurationHeight,
   timeStartPosition,
   snap,
@@ -43,6 +46,7 @@ const {
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
+  selected?: boolean;
   timeStartPosition: (time?: string) => number;
   timeDurationHeight: (duration?: number) => number;
   snap?: number;
@@ -52,6 +56,7 @@ const emit = defineEmits<{
   (e: 'edit'): void;
   (e: 'delete'): void;
   (e: 'duplicate'): void;
+  (e: 'move-to-backlog'): void;
   (e: 'resize', duration: number): void;
 }>();
 
@@ -63,7 +68,43 @@ const isCopyDrag = ref(false);
 
 function onDragStart(e: DragEvent) {
   if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
-    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    const grabX = e.clientX - rect.left;
+    const grabY = e.clientY - rect.top;
+
+    // Always store grab offset so the drop handler and preview can adjust position
+    const pixelsPerMinute = timeDurationHeight(60) / 60;
+    const grabOffsetMinutes = Math.round(grabY / pixelsPerMinute);
+    e.dataTransfer.setData('text/grab-offset', String(grabOffsetMinutes));
+
+    const ghost = document.createElement('div');
+    ghost.textContent = to(event.title);
+    Object.assign(ghost.style, {
+      position: 'fixed',
+      top: '-9999px',
+      left: '-9999px',
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      backgroundColor: event.color ?? '#2196F3',
+      borderLeft: '3px solid rgba(0,0,0,0.2)',
+      borderRadius: '3px',
+      color: 'white',
+      fontSize: '13px',
+      fontWeight: '600',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      padding: '2px 4px',
+      boxSizing: 'border-box',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.18)',
+      pointerEvents: 'none',
+    });
+    document.body.appendChild(ghost);
+    // Anchor ghost at the grab point so the event appears to move with the cursor
+    e.dataTransfer.setDragImage(ghost, grabX, grabY);
+    setTimeout(() => document.body.removeChild(ghost), 0);
   }
 
   isCopyDrag.value = e.ctrlKey || e.metaKey;
@@ -93,7 +134,7 @@ const badgeStyles = computed<StyleValue>(() => {
   const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
 
   const dur = resizeDuration.value ?? event.duration;
-  const height = dur ? timeDurationHeight(dur) + 'px' : undefined;
+  const height = dur ? `calc(${timeDurationHeight(dur)}px - 2px)` : undefined;
 
   let left = '0';
   let width = 'calc(100% - 4px)';
@@ -150,11 +191,17 @@ function startResize(e: MouseEvent) {
 <style lang="scss" scoped>
 .cal-event {
   position: absolute;
-  margin: 0 2px;
+  margin: 1px 2px;
   border-radius: 3px;
   overflow: hidden;
   cursor: pointer;
   border-left: 3px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+
+  &--selected {
+    outline: 2px solid white;
+    outline-offset: 1px;
+  }
 
   &__inner {
     padding: 2px 4px;

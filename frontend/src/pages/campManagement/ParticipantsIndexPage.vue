@@ -26,6 +26,7 @@ import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
 import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
+import { openPrintIframe } from 'src/utils/printIframe';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
@@ -100,59 +101,18 @@ function onTemplatesPrint(templateIds: string[]) {
   const key = `print:tables:${camp.value.id}:${Date.now()}`;
   sessionStorage.setItem(key, JSON.stringify(payload));
 
-  // Create iframe pointing to print route
-  const iframe = createHiddenPrintIframe(
-    `/print/tables?key=${encodeURIComponent(key)}`,
-  );
-
-  const onMessage = (ev: MessageEvent) => {
-    if (ev.origin !== window.location.origin) {
-      return;
-    }
-    if (!ev.data || typeof ev.data !== 'object' || !('type' in ev.data)) {
-      return;
-    }
-
-    const cleanup = () => {
-      window.removeEventListener('message', onMessage);
-      iframe.remove();
-      sessionStorage.removeItem(key);
-    };
-
-    if (ev.data.type === 'PRINT_TABLES:ERROR') {
+  openPrintIframe(`/print/tables?key=${encodeURIComponent(key)}`, {
+    messagePrefix: 'PRINT_TABLES',
+    onError: (error) => {
       quasar.notify({
         type: 'negative',
         message: 'An error occurred while preparing the printout.',
-        caption: ev.data.error,
+        caption: error,
       });
-      cleanup();
-      return;
-    }
-
-    // Can be used to show a loading indicator
-    if (ev.data.type === 'PRINT_TABLES:AFTERPRINT') {
-      cleanup();
-    }
-  };
-
-  window.addEventListener('message', onMessage);
-}
-
-function createHiddenPrintIframe(src: string): HTMLIFrameElement {
-  const iframe = document.createElement('iframe');
-  iframe.src = src;
-
-  // IMPORTANT: do not use display:none (print needs layout)
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = '0';
-  iframe.style.opacity = '0';
-  iframe.style.pointerEvents = 'none';
-
-  document.body.appendChild(iframe);
-  return iframe;
+    },
+    onAfterPrint: () => {
+      sessionStorage.removeItem(key);
+    },
+  });
 }
 </script>

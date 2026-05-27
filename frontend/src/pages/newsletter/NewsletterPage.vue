@@ -693,9 +693,14 @@ function showDeleteSubscriberDialog(subscriber: NewsletterSubscriber) {
 }
 
 function roleColor(role: NewsletterManagerRole): string {
-  if (role === 'OWNER') return 'primary';
-  if (role === 'EDITOR') return 'secondary';
-  return 'grey-6';
+  switch (role) {
+    case 'OWNER':
+      return 'primary';
+    case 'EDITOR':
+      return 'secondary';
+    default:
+      return 'grey-6';
+  }
 }
 
 function showAddManagerDialog() {
