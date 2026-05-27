@@ -115,6 +115,20 @@
                 "
               />
 
+              <!-- Drop preview while dragging an existing event -->
+              <div
+                v-if="
+                  dragHoverPreview && dragHoverPreview.date === timestamp.date
+                "
+                class="cal-drop-preview"
+                :style="{
+                  top: `${timeStartPos(dragHoverPreview.startTime) || 0}px`,
+                  height: `${timeDurationHeight(dragHoverPreview.duration)}px`,
+                  backgroundColor: hexToRgba(dragHoverPreview.color, 0.2),
+                  borderColor: hexToRgba(dragHoverPreview.color, 0.7),
+                }"
+              />
+
               <!-- Selection highlight while dragging to create -->
               <div
                 v-if="dragSelection && dragSelection?.date === timestamp.date"
@@ -337,7 +351,7 @@ function updateIntervalHeight() {
     return;
   }
   const height = Math.max(0, el.clientHeight - 10);
-  intervalHeight.value = Math.max(24, height / count);
+  intervalHeight.value = Math.max(10, height / count);
 }
 
 function maxViewportRange(): number {
@@ -622,6 +636,24 @@ function onSettingsOpen() {
 let dragHighlightEl: Element | null = null;
 const isDraggingEvent = ref(false);
 
+interface DragHoverPreview {
+  date: string;
+  startTime: string;
+  duration: number;
+  color: string;
+}
+
+const dragHoverPreview = ref<DragHoverPreview | null>(null);
+let draggingEventDuration = 60;
+let draggingEventColor = '#2196F3';
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface DragSelection {
   date: string;
   startMinutes: number;
@@ -749,24 +781,42 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   e.dataTransfer.effectAllowed = 'copyMove';
   e.dataTransfer.setData('text/plain', event.id);
 
+  draggingEventDuration = event.duration ?? 60;
+  draggingEventColor = event.color ?? '#2196F3';
+
   isDraggingEvent.value = true;
   const onDragEnd = () => {
     isDraggingEvent.value = false;
+    dragHoverPreview.value = null;
     document.removeEventListener('dragend', onDragEnd);
   };
   document.addEventListener('dragend', onDragEnd);
 }
 
-function onDragEnter(e: DragEvent): boolean {
+function onDragEnter(
+  e: DragEvent,
+  type: string,
+  { scope }: { scope: DragAndDropScope },
+): boolean {
   e.preventDefault();
-  // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
-  if (
-    e.currentTarget instanceof Element &&
-    dragHighlightEl !== e.currentTarget
-  ) {
-    clearDragHighlight();
-    dragHighlightEl = e.currentTarget;
-    dragHighlightEl.classList.add('droppable');
+  if (type === 'interval') {
+    dragHoverPreview.value = {
+      date: scope.timestamp.date,
+      startTime: scope.timestamp.time,
+      duration: draggingEventDuration,
+      color: draggingEventColor,
+    };
+  } else {
+    dragHoverPreview.value = null;
+    // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
+    if (
+      e.currentTarget instanceof Element &&
+      dragHighlightEl !== e.currentTarget
+    ) {
+      clearDragHighlight();
+      dragHighlightEl = e.currentTarget;
+      dragHighlightEl.classList.add('droppable');
+    }
   }
   return false;
 }
@@ -795,6 +845,7 @@ function onDrop(
   { scope }: { scope: DragAndDropScope },
 ): boolean {
   clearDragHighlight();
+  dragHoverPreview.value = null;
   const eventId = e.dataTransfer?.getData('text/plain');
   if (!eventId) {
     return false;
@@ -955,6 +1006,16 @@ function formatDate(date: Date): string {
   right: 2px;
   background-color: rgba(33, 150, 243, 0.15);
   border: 1px solid rgba(33, 150, 243, 0.5);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cal-drop-preview {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border: 2px dashed;
   border-radius: 3px;
   pointer-events: none;
   z-index: 1;
