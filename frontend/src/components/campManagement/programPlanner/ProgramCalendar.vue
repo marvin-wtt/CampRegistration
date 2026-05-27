@@ -628,7 +628,6 @@ function onPrintDay(date: string) {
   printCalendar(date, 1);
 }
 
-
 function onSettingsOpen() {
   quasar
     .dialog({
@@ -656,6 +655,31 @@ const dragHoverPreview = ref<DragHoverPreview | null>(null);
 let draggingEventDuration = 60;
 let draggingEventColor = '#2196F3';
 let draggingGrabOffset = 0;
+
+let previewRafId: number | null = null;
+let pendingPreview: DragHoverPreview | null | undefined = undefined;
+
+function schedulePreviewUpdate(preview: DragHoverPreview | null) {
+  pendingPreview = preview;
+  if (previewRafId === null) {
+    previewRafId = requestAnimationFrame(() => {
+      previewRafId = null;
+      if (pendingPreview !== undefined) {
+        dragHoverPreview.value = pendingPreview;
+        pendingPreview = undefined;
+      }
+    });
+  }
+}
+
+function cancelPreviewUpdate(immediate: DragHoverPreview | null) {
+  if (previewRafId !== null) {
+    cancelAnimationFrame(previewRafId);
+    previewRafId = null;
+  }
+  pendingPreview = undefined;
+  dragHoverPreview.value = immediate;
+}
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -799,7 +823,7 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   isDraggingEvent.value = true;
   const onDragEnd = () => {
     isDraggingEvent.value = false;
-    dragHoverPreview.value = null;
+    cancelPreviewUpdate(null);
     document.removeEventListener('dragend', onDragEnd);
   };
   document.addEventListener('dragend', onDragEnd);
@@ -818,14 +842,14 @@ function onDragEnter(
       Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
       settings.timeInterval;
     const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
-    dragHoverPreview.value = {
+    schedulePreviewUpdate({
       date: scope.timestamp.date,
       startTime,
       duration: draggingEventDuration,
       color: draggingEventColor,
-    };
+    });
   } else {
-    dragHoverPreview.value = null;
+    schedulePreviewUpdate(null);
     // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
     if (
       e.currentTarget instanceof Element &&
@@ -863,7 +887,7 @@ function onDrop(
   { scope }: { scope: DragAndDropScope },
 ): boolean {
   clearDragHighlight();
-  dragHoverPreview.value = null;
+  cancelPreviewUpdate(null);
   const eventId = e.dataTransfer?.getData('text/plain');
   if (!eventId) {
     return false;

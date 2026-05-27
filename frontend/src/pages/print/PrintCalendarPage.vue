@@ -308,20 +308,28 @@ function toDateStr(d: Date): string {
 }
 
 const settingsDayStartMinutes = computed<number>(() => {
-  if (!data.value) return 0;
+  if (!data.value) {
+    return 0;
+  }
   const [h, m] = data.value.dayStart.split(':').map(Number);
+
   return (h ?? 0) * 60 + (m ?? 0);
 });
 
 const settingsDayEndMinutes = computed<number>(() => {
-  if (!data.value) return 0;
+  if (!data.value) {
+    return 0;
+  }
   const [h, m] = data.value.dayEnd.split(':').map(Number);
+
   return (h ?? 0) * 60 + (m ?? 0);
 });
 
 // Expand the time range to ensure every timed event in the visible days is included.
 const dayStartMinutes = computed<number>(() => {
-  if (!data.value) return 0;
+  if (!data.value) {
+    return 0;
+  }
   const interval = data.value.interval;
   const plan = data.value.plan;
   const daySet = new Set(visibleDays.value);
@@ -335,13 +343,18 @@ const dayStartMinutes = computed<number>(() => {
     )
     .reduce((acc, e) => {
       const [h, m] = (e.time as string).split(':').map(Number);
+
       return Math.min(acc, (h ?? 0) * 60 + (m ?? 0));
     }, settingsDayStartMinutes.value);
+
   return Math.floor(min / interval) * interval;
 });
 
 const dayEndMinutes = computed<number>(() => {
-  if (!data.value) return 0;
+  if (!data.value) {
+    return 0;
+  }
+
   const interval = data.value.interval;
   const plan = data.value.plan;
   const daySet = new Set(visibleDays.value);
@@ -356,8 +369,10 @@ const dayEndMinutes = computed<number>(() => {
     )
     .reduce((acc, e) => {
       const [h, m] = (e.time as string).split(':').map(Number);
+
       return Math.max(acc, (h ?? 0) * 60 + (m ?? 0) + (e.duration as number));
     }, settingsDayEndMinutes.value);
+
   return Math.ceil(max / interval) * interval;
 });
 
@@ -379,6 +394,7 @@ const timeSlots = computed<TimeSlot[]>(() => {
       isHour: min === 0,
     });
   }
+
   return slots;
 });
 
