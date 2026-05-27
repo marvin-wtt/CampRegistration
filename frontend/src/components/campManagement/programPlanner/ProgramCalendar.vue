@@ -209,6 +209,7 @@ import ProgramEventEditDialog from 'components/campManagement/programPlanner/dia
 import CalendarSettingsDialog from 'components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import CalendarBacklogPanel from 'components/campManagement/programPlanner/CalendarBacklogPanel.vue';
 import { daysBetweenDates } from 'src/utils/date';
+import { openPrintIframe } from 'src/utils/printIframe';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -581,33 +582,7 @@ function onEventDelete(event: ProgramEvent) {
     });
 }
 
-function onPrint() {
-  const printData = {
-    camp: {
-      name: camp.name,
-      startAt: camp.startAt,
-      endAt: camp.endAt,
-      locales: camp.locales,
-    },
-    events: events,
-    date: selectedDate.value,
-    days: range.value,
-    plan: activePlan.value,
-    dayStart: settings.dayStart,
-    dayEnd: settings.dayEnd,
-    interval: settings.timeInterval,
-  };
-  const key = `print-calendar-${Date.now()}`;
-  sessionStorage.setItem(key, JSON.stringify(printData));
-  window.open(`/print/calendar?key=${encodeURIComponent(key)}`, '_blank');
-}
-
-function onZoomToDay(date: string) {
-  selectedDate.value = date;
-  range.value = 1;
-}
-
-function onPrintDay(date: string) {
+function printCalendar(date: string, days: number) {
   const printData = {
     camp: {
       name: camp.name,
@@ -617,16 +592,42 @@ function onPrintDay(date: string) {
     },
     events: events,
     date,
-    days: 1,
+    days,
     plan: activePlan.value,
     dayStart: settings.dayStart,
     dayEnd: settings.dayEnd,
     interval: settings.timeInterval,
   };
-  const key = `print-calendar-${Date.now()}`;
+
+  const key = `print:calendar:${Date.now()}`;
   sessionStorage.setItem(key, JSON.stringify(printData));
-  window.open(`/print/calendar?key=${encodeURIComponent(key)}`, '_blank');
+
+  // 703px = A4 portrait usable width, 1032px = A4 landscape usable width (96 dpi, 12mm margins).
+  // Real dimensions are required so offsetHeight/clientHeight measurements in the print page work.
+  const widthPx = days === 1 ? 703 : 1032;
+  openPrintIframe(`/print/calendar?key=${encodeURIComponent(key)}`, {
+    messagePrefix: 'PRINT_CALENDAR',
+    widthPx,
+    heightPx: 1123, // A4 height at 96 dpi
+    onError: (error) => {
+      quasar.notify({ type: 'negative', message: error });
+    },
+  });
 }
+
+function onPrint() {
+  printCalendar(selectedDate.value, range.value);
+}
+
+function onZoomToDay(date: string) {
+  selectedDate.value = date;
+  range.value = 1;
+}
+
+function onPrintDay(date: string) {
+  printCalendar(date, 1);
+}
+
 
 function onSettingsOpen() {
   quasar
