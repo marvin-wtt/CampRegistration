@@ -6,7 +6,6 @@
       :options="planOptions"
       rounded
       dense
-      outline
       no-caps
       toggle-color="primary"
     />

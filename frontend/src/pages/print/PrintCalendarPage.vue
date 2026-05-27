@@ -1,118 +1,145 @@
 <template>
-  <div
-    v-if="data"
-    class="print-sheet"
-    :class="isPortrait ? 'print-sheet--upright' : 'print-sheet--left'"
-  >
-    <!-- Page header -->
+  <q-page class="print-page">
     <div
-      ref="calPhRef"
-      class="cal-ph"
+      v-if="error"
+      class="q-pa-md"
     >
-      <div class="cal-ph__title">
-        <div
-          v-for="line in titleLines"
-          :key="line"
-        >
-          {{ line }}
-        </div>
-      </div>
-      <div class="cal-ph__meta">
-        {{ headerDateRange }}{{ planLabel ? ` · ${planLabel}` : '' }}
-      </div>
+      <q-banner
+        inline-actions
+        rounded
+        class="bg-negative text-white"
+      >
+        {{ error }}
+      </q-banner>
     </div>
 
-    <!-- Calendar grid -->
     <div
-      class="cal-print"
-      :style="{ '--slot-h': `${slotHeight}px` }"
+      v-else-if="!data"
+      class="q-pa-md"
     >
-      <!-- Day header row -->
-      <div class="cal-print__head-row">
-        <div class="cal-print__gutter" />
-        <div
-          v-for="day in visibleDays"
-          :key="day"
-          class="cal-print__day-head"
-        >
-          <div class="cal-print__day-head__wd">{{ formatWeekday(day) }}</div>
-          <div class="cal-print__day-head__d">{{ formatDay(day) }}</div>
+      <q-banner
+        rounded
+        class="bg-grey-3 text-black"
+      >
+        Preparing document…
+      </q-banner>
+    </div>
+
+    <div
+      v-else
+      class="print-sheet"
+      :class="isPortrait ? 'print-sheet--upright' : 'print-sheet--left'"
+    >
+      <!-- Page header -->
+      <div
+        ref="calPhRef"
+        class="cal-ph"
+      >
+        <div class="cal-ph__title">
           <div
-            v-if="data.plan === 'both'"
-            class="cal-print__day-head__ab"
+            v-for="line in titleLines"
+            :key="line"
           >
-            <span>A</span>
-            <span>B</span>
+            {{ line }}
           </div>
+        </div>
+        <div class="cal-ph__meta">
+          {{ headerDateRange }}{{ planLabel ? ` · ${planLabel}` : '' }}
         </div>
       </div>
 
-      <!-- All-day events row -->
-      <div class="cal-print__allday-row">
-        <div class="cal-print__gutter cal-print__gutter--allday">
-          {{ allDayLabel }}
-        </div>
-        <div
-          v-for="day in visibleDays"
-          :key="day"
-          class="cal-print__allday-cell"
-        >
-          <div
-            v-for="event in getFullDayEvents(day)"
-            :key="event.id"
-            class="cal-print__allday-event"
-            :style="{ backgroundColor: event.color ?? '#2196F3' }"
-          >
-            {{ toAll(event.title) }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Body: time gutter + day columns -->
-      <div class="cal-print__body">
-        <!-- Time labels -->
-        <div class="cal-print__gutter">
-          <div
-            v-for="slot in timeSlots"
-            :key="slot.minutes"
-            class="cal-print__time-label"
-          >
-            <span v-if="slot.isHour">{{ slot.text }}</span>
-          </div>
-        </div>
-
-        <!-- Day columns -->
-        <div class="cal-print__day-cols">
+      <!-- Calendar grid -->
+      <div
+        class="cal-print"
+        :style="{ '--slot-h': `${slotHeight}px` }"
+      >
+        <!-- Day header row -->
+        <div class="cal-print__head-row">
+          <div class="cal-print__gutter" />
           <div
             v-for="day in visibleDays"
             :key="day"
-            class="cal-print__day-col"
+            class="cal-print__day-head"
           >
+            <div class="cal-print__day-head__wd">{{ formatWeekday(day) }}</div>
+            <div class="cal-print__day-head__d">{{ formatDay(day) }}</div>
+            <div
+              v-if="data.plan === 'both'"
+              class="cal-print__day-head__ab"
+            >
+              <span>A</span>
+              <span>B</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- All-day events row -->
+        <div class="cal-print__allday-row">
+          <div class="cal-print__gutter cal-print__gutter--allday">
+            {{ allDayLabel }}
+          </div>
+          <div
+            v-for="day in visibleDays"
+            :key="day"
+            class="cal-print__allday-cell"
+          >
+            <div
+              v-for="event in getFullDayEvents(day)"
+              :key="event.id"
+              class="cal-print__allday-event"
+              :style="{ backgroundColor: event.color ?? '#2196F3' }"
+            >
+              {{ toAll(event.title) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Body: time gutter + day columns -->
+        <div class="cal-print__body">
+          <!-- Time labels -->
+          <div class="cal-print__gutter">
             <div
               v-for="slot in timeSlots"
               :key="slot.minutes"
-              class="cal-print__slot"
-            />
-            <div
-              v-for="event in getTimedEvents(day)"
-              :key="event.id"
-              class="cal-print__event"
-              :style="eventStyle(event)"
+              class="cal-print__time-label"
             >
-              <div class="cal-print__event__time">{{ event.time }}</div>
-              <div class="cal-print__event__title">
-                {{ toAll(event.title) }}
+              <span v-if="slot.isHour">{{ slot.text }}</span>
+            </div>
+          </div>
+
+          <!-- Day columns -->
+          <div class="cal-print__day-cols">
+            <div
+              v-for="day in visibleDays"
+              :key="day"
+              class="cal-print__day-col"
+            >
+              <div
+                v-for="slot in timeSlots"
+                :key="slot.minutes"
+                class="cal-print__slot"
+              />
+              <div
+                v-for="event in getTimedEvents(day)"
+                :key="event.id"
+                class="cal-print__event"
+                :style="eventStyle(event)"
+              >
+                <div class="cal-print__event__title">
+                  <span class="cal-print__event__time">{{ event.time }} · </span
+                  >{{ toAll(event.title) }}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </q-page>
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type {
@@ -147,6 +174,63 @@ interface TimeSlot {
 const route = useRoute();
 const { locale, t } = useI18n();
 
+const data = ref<PrintData | null>(null);
+const error = ref<string | null>(null);
+
+const storageKey = computed<string>(() => {
+  const key = (route.query.key as string | undefined)?.trim();
+  return key && key.length > 0 ? key : 'print:calendar:payload';
+});
+
+function postToParent(msg: unknown) {
+  try {
+    window.parent?.postMessage(msg, window.location.origin);
+  } catch {
+    // ignore
+  }
+}
+
+function cleanupSessionStorage() {
+  try {
+    sessionStorage.removeItem(storageKey.value);
+  } catch {
+    // ignore
+  }
+}
+
+async function waitForFonts() {
+  const anyDoc = document as unknown as { fonts?: { ready?: Promise<void> } };
+  if (anyDoc.fonts?.ready) {
+    try {
+      await anyDoc.fonts.ready;
+    } catch {
+      // ignore
+    }
+  }
+}
+
+async function waitForStableLayout() {
+  await nextTick();
+  await waitForFonts();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+}
+
+function triggerPrint() {
+  postToParent({ type: 'PRINT_CALENDAR:PRINTING' });
+  window.print();
+}
+
+function onAfterPrint() {
+  cleanupSessionStorage();
+  postToParent({ type: 'PRINT_CALENDAR:AFTERPRINT' });
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('afterprint', onAfterPrint);
+  window.removeEventListener('beforeprint', fitEventText);
+});
+
 const campLocales = computed<string[]>(
   () => data.value?.camp.locales ?? [locale.value],
 );
@@ -168,28 +252,39 @@ const LANDSCAPE_H_PX = ((210 - 24) / 25.4) * 96; // ~703px
 const CAL_GRID_OVERHEAD_PX = 85;
 
 const calPhRef = ref<HTMLElement | null>(null);
-const data = ref<PrintData | null>(null);
 
-onMounted(() => {
-  const key = route.query.key as string;
-  if (!key) {
+onMounted(async () => {
+  window.addEventListener('afterprint', onAfterPrint);
+  window.addEventListener('beforeprint', fitEventText);
+
+  const raw = sessionStorage.getItem(storageKey.value);
+  if (!raw) {
+    error.value =
+      'No print payload found. Please start the export from the management page.';
+    postToParent({ type: 'PRINT_CALENDAR:ERROR', error: error.value });
     return;
   }
 
   try {
-    const raw = sessionStorage.getItem(key);
-    if (raw) {
-      data.value = JSON.parse(raw) as PrintData;
-      setTimeout(() => sessionStorage.removeItem(key), 5000);
-    }
+    data.value = JSON.parse(raw) as PrintData;
   } catch {
-    // ignore parse errors
+    error.value = 'Failed to parse print payload.';
+    postToParent({ type: 'PRINT_CALENDAR:ERROR', error: error.value });
+    return;
   }
-  // Wait for initial render, measure actual header height, recompute slot height, then print.
-  void nextTick(() => {
-    updateSlotHeight();
-    setTimeout(() => window.print(), 400);
-  });
+
+  postToParent({ type: 'PRINT_CALENDAR:LOADED' });
+
+  // First pass: template renders with data, calPhRef becomes available
+  await waitForStableLayout();
+  updateSlotHeight();
+  // Second pass: --slot-h CSS variable has been applied, slots have correct heights
+  await waitForStableLayout();
+  fitEventText();
+
+  postToParent({ type: 'PRINT_CALENDAR:READY' });
+
+  triggerPrint();
 });
 
 const isPortrait = computed<boolean>(
@@ -212,20 +307,73 @@ function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const dayStartMinutes = computed<number>(() => {
+const settingsDayStartMinutes = computed<number>(() => {
   if (!data.value) {
     return 0;
   }
   const [h, m] = data.value.dayStart.split(':').map(Number);
+
   return (h ?? 0) * 60 + (m ?? 0);
+});
+
+const settingsDayEndMinutes = computed<number>(() => {
+  if (!data.value) {
+    return 0;
+  }
+  const [h, m] = data.value.dayEnd.split(':').map(Number);
+
+  return (h ?? 0) * 60 + (m ?? 0);
+});
+
+// Expand the time range to ensure every timed event in the visible days is included.
+const dayStartMinutes = computed<number>(() => {
+  if (!data.value) {
+    return 0;
+  }
+  const interval = data.value.interval;
+  const plan = data.value.plan;
+  const daySet = new Set(visibleDays.value);
+  const min = data.value.events
+    .filter(
+      (e) =>
+        e.time &&
+        e.date &&
+        daySet.has(e.date) &&
+        (plan === 'both' || e.plan === plan || e.plan === 'both'),
+    )
+    .reduce((acc, e) => {
+      const [h, m] = (e.time as string).split(':').map(Number);
+
+      return Math.min(acc, (h ?? 0) * 60 + (m ?? 0));
+    }, settingsDayStartMinutes.value);
+
+  return Math.floor(min / interval) * interval;
 });
 
 const dayEndMinutes = computed<number>(() => {
   if (!data.value) {
     return 0;
   }
-  const [h, m] = data.value.dayEnd.split(':').map(Number);
-  return (h ?? 0) * 60 + (m ?? 0);
+
+  const interval = data.value.interval;
+  const plan = data.value.plan;
+  const daySet = new Set(visibleDays.value);
+  const max = data.value.events
+    .filter(
+      (e) =>
+        e.time &&
+        e.duration &&
+        e.date &&
+        daySet.has(e.date) &&
+        (plan === 'both' || e.plan === plan || e.plan === 'both'),
+    )
+    .reduce((acc, e) => {
+      const [h, m] = (e.time as string).split(':').map(Number);
+
+      return Math.max(acc, (h ?? 0) * 60 + (m ?? 0) + (e.duration as number));
+    }, settingsDayEndMinutes.value);
+
+  return Math.ceil(max / interval) * interval;
 });
 
 const timeSlots = computed<TimeSlot[]>(() => {
@@ -246,10 +394,33 @@ const timeSlots = computed<TimeSlot[]>(() => {
       isHour: min === 0,
     });
   }
+
   return slots;
 });
 
 const slotHeight = ref<number>(28);
+
+function fitEventText() {
+  const eventEls = document.querySelectorAll<HTMLElement>('.cal-print__event');
+  eventEls.forEach((el) => {
+    const title = el.querySelector<HTMLElement>('.cal-print__event__title');
+    if (!title) {
+      return;
+    }
+    // subtract 1px top + 1px bottom padding from el
+    const availableHeight = el.clientHeight - 2;
+    // start proportional to available space so tall events get larger text
+    let fontSize = Math.min(
+      13,
+      Math.max(6, Math.floor(availableHeight * 0.45)),
+    );
+    title.style.fontSize = `${fontSize}px`;
+    while (title.scrollHeight > availableHeight && fontSize > 6) {
+      fontSize -= 0.5;
+      title.style.fontSize = `${fontSize}px`;
+    }
+  });
+}
 
 function updateSlotHeight() {
   if (!timeSlots.value.length) {
@@ -308,7 +479,7 @@ function eventStyle(event: ProgramEvent) {
   const sh = slotHeight.value;
   const intervalMin = data.value.interval;
   const top = (offset / intervalMin) * sh;
-  const height = Math.max((event.duration / intervalMin) * sh, sh);
+  const height = (event.duration / intervalMin) * sh;
 
   let left = '1px';
   let width = 'calc(100% - 5px)';
@@ -404,6 +575,25 @@ function formatDay(dateStr: string): string {
 </script>
 
 <style lang="scss" scoped>
+.print-page {
+  background: white;
+}
+
+// A4 usable widths: (paper_mm - 2*12mm margin) * 96px/25.4mm
+.print-sheet {
+  &--upright {
+    // portrait: 210mm - 24mm = 186mm ≈ 703px
+    max-width: 703px;
+    margin: 0 auto;
+  }
+
+  &--left {
+    // landscape: 297mm - 24mm = 273mm ≈ 1032px
+    max-width: 1032px;
+    margin: 0 auto;
+  }
+}
+
 .cal-ph {
   margin-bottom: 10px;
 
@@ -564,12 +754,11 @@ function formatDay(dateStr: string): string {
     padding: 1px 3px;
     overflow: hidden;
     box-sizing: border-box;
-    min-height: 22px;
 
     &__time {
-      font-size: 8px;
-      color: rgba(255, 255, 255, 0.85);
-      line-height: 1.1;
+      font-size: 0.8em;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.8);
     }
 
     &__title {
@@ -583,6 +772,10 @@ function formatDay(dateStr: string): string {
 </style>
 
 <style>
+@page {
+  margin: 12mm;
+}
+
 @media print {
   /* Prevent blank trailing page from Quasar layout wrappers */
   .q-layout,
@@ -596,6 +789,8 @@ function formatDay(dateStr: string): string {
   .print-sheet {
     break-after: avoid;
     page-break-after: avoid;
+    /* In print the browser clips to the page anyway — remove the screen max-width cap */
+    max-width: none !important;
   }
 }
 </style>

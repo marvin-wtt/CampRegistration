@@ -47,6 +47,7 @@
             animated
             :transition-next="range === 1 ? 'slide-left' : 'fade'"
             :transition-prev="range === 1 ? 'slide-right' : 'fade'"
+            :interval-class="outOfCampIntervalClass"
             @click-head-day="onDayEventAdd"
           >
             <template #head-day-event="{ scope: { timestamp } }">
@@ -83,11 +84,14 @@
                   :event="event"
                   :view-both="viewBoth"
                   :show-all-translations="settings.showAllTranslations"
+                  :selected="event.id === selectedEventId"
                   :draggable="true"
+                  @click.stop="selectedEventId = event.id"
                   @dragstart="(e: DragEvent) => onDragStart(e, event)"
                   @edit="onEventEdit(event)"
                   @delete="onEventDelete(event)"
                   @duplicate="onEventDuplicate(event)"
+                  @move-to-backlog="onMoveToBacklog(event.id)"
                 />
               </div>
             </template>
@@ -102,15 +106,33 @@
                 class="cal-create-overlay"
                 :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
                 @mousedown.left.prevent="
-                  (e) =>
+                  (e) => {
+                    selectedEventId = null;
                     !quasar.platform.is.mobile &&
-                    onBodyMouseDown(e, timestamp, timeDurationHeight)
+                      onBodyMouseDown(e, timestamp, timeDurationHeight);
+                  }
                 "
                 @click="
-                  (e) =>
+                  (e) => {
+                    selectedEventId = null;
                     quasar.platform.is.mobile &&
-                    onBodyClick(e, timestamp, timeDurationHeight)
+                      onBodyClick(e, timestamp, timeDurationHeight);
+                  }
                 "
+              />
+
+              <!-- Drop preview while dragging an existing event -->
+              <div
+                v-if="
+                  dragHoverPreview && dragHoverPreview.date === timestamp.date
+                "
+                class="cal-drop-preview"
+                :style="{
+                  top: `${timeStartPos(dragHoverPreview.startTime) || 0}px`,
+                  height: `${timeDurationHeight(dragHoverPreview.duration)}px`,
+                  backgroundColor: hexToRgba(dragHoverPreview.color, 0.2),
+                  borderColor: hexToRgba(dragHoverPreview.color, 0.7),
+                }"
               />
 
               <!-- Selection highlight while dragging to create -->
@@ -131,12 +153,15 @@
                 :time-duration-height="timeDurationHeight"
                 :view-both="viewBoth"
                 :show-all-translations="settings.showAllTranslations"
+                :selected="event.id === selectedEventId"
                 :draggable="true"
                 :snap="settings.timeInterval"
+                @click.stop="selectedEventId = event.id"
                 @dragstart="(e: DragEvent) => onDragStart(e, event)"
                 @edit="onEventEdit(event)"
                 @delete="onEventDelete(event)"
                 @duplicate="onEventDuplicate(event)"
+                @move-to-backlog="onMoveToBacklog(event.id)"
                 @resize="(e) => onEventResize(event, e)"
               />
             </template>
@@ -152,10 +177,10 @@
         @edit="onEventEdit"
         @delete="onEventDelete"
         @duplicate="onEventDuplicate"
+        @schedule="onScheduleFromBacklog"
         @dragstart="
           (e: DragEvent, event: ProgramEvent) => onDragStart(e, event)
         "
-        @dragend="isDraggingEvent = false"
         @move-to-backlog="onMoveToBacklog"
       />
     </div>
@@ -184,6 +209,7 @@ import ProgramEventEditDialog from 'components/campManagement/programPlanner/dia
 import CalendarSettingsDialog from 'components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import CalendarBacklogPanel from 'components/campManagement/programPlanner/CalendarBacklogPanel.vue';
 import { daysBetweenDates } from 'src/utils/date';
+import { openPrintIframe } from 'src/utils/printIframe';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -202,7 +228,7 @@ const emit = defineEmits<{
 const calendarRef = ref<QCalendarDay | null>(null);
 const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
-const activePlan = ref<'a' | 'b' | 'both'>('a');
+const activePlan = ref<'a' | 'b' | 'both'>('both');
 
 const SETTINGS_KEY = 'program-planner-settings';
 
@@ -211,8 +237,8 @@ function loadSettings(): CalendarSettings {
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) {
       return {
-        dayStart: '08:00',
-        dayEnd: '21:00',
+        dayStart: '07:00',
+        dayEnd: '23:00',
         timeInterval: 30,
         showAllTranslations: false,
         ...JSON.parse(stored),
@@ -334,7 +360,7 @@ function updateIntervalHeight() {
     return;
   }
   const height = Math.max(0, el.clientHeight - 10);
-  intervalHeight.value = height / count;
+  intervalHeight.value = Math.max(10, height / count);
 }
 
 function maxViewportRange(): number {
@@ -527,6 +553,14 @@ function onMoveToBacklog(id: string) {
   emit('update', id, { date: null, time: null });
 }
 
+function onScheduleFromBacklog(event: ProgramEvent) {
+  emit('update', event.id, {
+    date: selectedDate.value,
+    time: null,
+    duration: null,
+  });
+}
+
 function onEventDelete(event: ProgramEvent) {
   quasar
     .dialog({
@@ -548,33 +582,7 @@ function onEventDelete(event: ProgramEvent) {
     });
 }
 
-function onPrint() {
-  const printData = {
-    camp: {
-      name: camp.name,
-      startAt: camp.startAt,
-      endAt: camp.endAt,
-      locales: camp.locales,
-    },
-    events: events,
-    date: selectedDate.value,
-    days: range.value,
-    plan: activePlan.value,
-    dayStart: settings.dayStart,
-    dayEnd: settings.dayEnd,
-    interval: settings.timeInterval,
-  };
-  const key = `print-calendar-${Date.now()}`;
-  sessionStorage.setItem(key, JSON.stringify(printData));
-  window.open(`/print/calendar?key=${encodeURIComponent(key)}`, '_blank');
-}
-
-function onZoomToDay(date: string) {
-  selectedDate.value = date;
-  range.value = 1;
-}
-
-function onPrintDay(date: string) {
+function printCalendar(date: string, days: number) {
   const printData = {
     camp: {
       name: camp.name,
@@ -584,15 +592,40 @@ function onPrintDay(date: string) {
     },
     events: events,
     date,
-    days: 1,
+    days,
     plan: activePlan.value,
     dayStart: settings.dayStart,
     dayEnd: settings.dayEnd,
     interval: settings.timeInterval,
   };
-  const key = `print-calendar-${Date.now()}`;
+
+  const key = `print:calendar:${Date.now()}`;
   sessionStorage.setItem(key, JSON.stringify(printData));
-  window.open(`/print/calendar?key=${encodeURIComponent(key)}`, '_blank');
+
+  // 703px = A4 portrait usable width, 1032px = A4 landscape usable width (96 dpi, 12mm margins).
+  // Real dimensions are required so offsetHeight/clientHeight measurements in the print page work.
+  const widthPx = days === 1 ? 703 : 1032;
+  openPrintIframe(`/print/calendar?key=${encodeURIComponent(key)}`, {
+    messagePrefix: 'PRINT_CALENDAR',
+    widthPx,
+    heightPx: 1123, // A4 height at 96 dpi
+    onError: (error) => {
+      quasar.notify({ type: 'negative', message: error });
+    },
+  });
+}
+
+function onPrint() {
+  printCalendar(selectedDate.value, range.value);
+}
+
+function onZoomToDay(date: string) {
+  selectedDate.value = date;
+  range.value = 1;
+}
+
+function onPrintDay(date: string) {
+  printCalendar(date, 1);
 }
 
 function onSettingsOpen() {
@@ -610,6 +643,50 @@ function onSettingsOpen() {
 
 let dragHighlightEl: Element | null = null;
 const isDraggingEvent = ref(false);
+
+interface DragHoverPreview {
+  date: string;
+  startTime: string;
+  duration: number;
+  color: string;
+}
+
+const dragHoverPreview = ref<DragHoverPreview | null>(null);
+let draggingEventDuration = 60;
+let draggingEventColor = '#2196F3';
+let draggingGrabOffset = 0;
+
+let previewRafId: number | null = null;
+let pendingPreview: DragHoverPreview | null | undefined = undefined;
+
+function schedulePreviewUpdate(preview: DragHoverPreview | null) {
+  pendingPreview = preview;
+  if (previewRafId === null) {
+    previewRafId = requestAnimationFrame(() => {
+      previewRafId = null;
+      if (pendingPreview !== undefined) {
+        dragHoverPreview.value = pendingPreview;
+        pendingPreview = undefined;
+      }
+    });
+  }
+}
+
+function cancelPreviewUpdate(immediate: DragHoverPreview | null) {
+  if (previewRafId !== null) {
+    cancelAnimationFrame(previewRafId);
+    previewRafId = null;
+  }
+  pendingPreview = undefined;
+  dragHoverPreview.value = immediate;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 interface DragSelection {
   date: string;
@@ -736,26 +813,52 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   }
 
   e.dataTransfer.effectAllowed = 'copyMove';
-  e.dataTransfer.setData('eventId', event.id);
+  e.dataTransfer.setData('text/plain', event.id);
+
+  draggingEventDuration = event.duration ?? 60;
+  draggingEventColor = event.color ?? '#2196F3';
+  draggingGrabOffset =
+    parseInt(e.dataTransfer.getData('text/grab-offset')) || 0;
 
   isDraggingEvent.value = true;
   const onDragEnd = () => {
     isDraggingEvent.value = false;
+    cancelPreviewUpdate(null);
     document.removeEventListener('dragend', onDragEnd);
   };
   document.addEventListener('dragend', onDragEnd);
 }
 
-function onDragEnter(e: DragEvent): boolean {
+function onDragEnter(
+  e: DragEvent,
+  type: string,
+  { scope }: { scope: DragAndDropScope },
+): boolean {
   e.preventDefault();
-  // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
-  if (
-    e.currentTarget instanceof Element &&
-    dragHighlightEl !== e.currentTarget
-  ) {
-    clearDragHighlight();
-    dragHighlightEl = e.currentTarget;
-    dragHighlightEl.classList.add('droppable');
+  if (type === 'interval') {
+    const [h, m] = scope.timestamp.time.split(':').map(Number);
+    const rawMinutes = (h ?? 0) * 60 + (m ?? 0) - draggingGrabOffset;
+    const snapped =
+      Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
+      settings.timeInterval;
+    const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+    schedulePreviewUpdate({
+      date: scope.timestamp.date,
+      startTime,
+      duration: draggingEventDuration,
+      color: draggingEventColor,
+    });
+  } else {
+    schedulePreviewUpdate(null);
+    // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
+    if (
+      e.currentTarget instanceof Element &&
+      dragHighlightEl !== e.currentTarget
+    ) {
+      clearDragHighlight();
+      dragHighlightEl = e.currentTarget;
+      dragHighlightEl.classList.add('droppable');
+    }
   }
   return false;
 }
@@ -784,7 +887,8 @@ function onDrop(
   { scope }: { scope: DragAndDropScope },
 ): boolean {
   clearDragHighlight();
-  const eventId = e.dataTransfer?.getData('eventId');
+  cancelPreviewUpdate(null);
+  const eventId = e.dataTransfer?.getData('text/plain');
   if (!eventId) {
     return false;
   }
@@ -796,13 +900,22 @@ function onDrop(
 
   let eventUpdate: ProgramEventUpdateData;
   switch (type) {
-    case 'interval':
+    case 'interval': {
+      const grabOffsetMinutes =
+        parseInt(e.dataTransfer?.getData('text/grab-offset') ?? '0') || 0;
+      const [dh, dm] = scope.timestamp.time.split(':').map(Number);
+      const adjustedMinutes = Math.max(
+        0,
+        (dh ?? 0) * 60 + (dm ?? 0) - grabOffsetMinutes,
+      );
+      const adjustedTime = `${String(Math.floor(adjustedMinutes / 60) % 24).padStart(2, '0')}:${String(adjustedMinutes % 60).padStart(2, '0')}`;
       eventUpdate = {
         date: scope.timestamp.date,
-        time: snapTime(scope.timestamp.time, settings.timeInterval),
+        time: snapTime(adjustedTime, settings.timeInterval),
         duration: event.duration ?? 60,
       };
       break;
+    }
     case 'head-day':
       eventUpdate = {
         date: scope.timestamp.date,
@@ -834,6 +947,41 @@ function onDrop(
   return false;
 }
 
+function outOfCampIntervalClass({
+  scope,
+}: {
+  scope: { timestamp: Timestamp };
+}): Record<string, boolean> {
+  const { date, time } = scope.timestamp;
+  const startDate = camp.startAt.substring(0, 10);
+  const startTime = camp.startAt.substring(11, 16);
+  const endDate = camp.endAt.substring(0, 10);
+  const endTime = camp.endAt.substring(11, 16);
+
+  const outside =
+    date < startDate ||
+    (date === startDate && time < startTime) ||
+    date > endDate ||
+    (date === endDate && time >= endTime);
+
+  return { 'cal-outside-camp': outside };
+}
+
+const selectedEventId = ref<string | null>(null);
+
+type UndoEntry =
+  | { type: 'update'; id: string; data: ProgramEventUpdateData }
+  | { type: 'delete'; eventData: ProgramEventCreateData };
+
+const undoStack: UndoEntry[] = [];
+
+function pushUndo(entry: UndoEntry) {
+  undoStack.push(entry);
+  if (undoStack.length > 20) {
+    undoStack.shift();
+  }
+}
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function onKeydown(e: KeyboardEvent) {
@@ -843,10 +991,47 @@ function onKeydown(e: KeyboardEvent) {
   ) {
     return;
   }
-  if (e.key === 'ArrowRight') {
+  if (e.key === 'Escape') {
+    selectedEventId.value = null;
+  } else if (e.key === 'ArrowRight') {
     onNextNavigation();
   } else if (e.key === 'ArrowLeft') {
     onPreviousNavigation();
+  } else if (e.key === 'p') {
+    const event = events.find((ev) => ev.id === selectedEventId.value);
+    if (event) {
+      pushUndo({ type: 'update', id: event.id, data: { plan: event.plan } });
+      const nextPlan =
+        event.plan === 'both' ? 'a' : event.plan === 'a' ? 'b' : 'both';
+      emit('update', event.id, { plan: nextPlan });
+    }
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    const event = events.find((ev) => ev.id === selectedEventId.value);
+    if (event) {
+      pushUndo({
+        type: 'delete',
+        eventData: {
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          duration: event.duration,
+          location: event.location,
+          details: event.details,
+          color: event.color,
+          plan: event.plan,
+        },
+      });
+      selectedEventId.value = null;
+      emit('delete', event.id);
+    }
+  } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    const entry = undoStack.pop();
+    if (entry?.type === 'update') {
+      emit('update', entry.id, entry.data);
+    } else if (entry?.type === 'delete') {
+      emit('add', entry.eventData);
+    }
   }
 }
 
@@ -918,6 +1103,24 @@ function formatDate(date: Date): string {
   border-radius: 3px;
   pointer-events: none;
   z-index: 1;
+}
+
+.cal-drop-preview {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border: 2px dashed;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cal-outside-camp {
+  background-color: rgba(0, 0, 0, 0.08);
+
+  .body--dark & {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
 }
 </style>
 

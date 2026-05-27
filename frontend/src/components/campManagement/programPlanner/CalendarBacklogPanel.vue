@@ -22,7 +22,13 @@
       v-model="mobileOpen"
       position="bottom"
     >
-      <q-card style="width: 100%">
+      <q-card
+        :style="{
+          width: '90vw',
+          borderBottomLeftRadius: '0px !important',
+          borderBottomRightRadius: '0px !important',
+        }"
+      >
         <q-card-section class="row items-center">
           <span class="text-h6">{{ t('title') }}</span>
           <q-badge
@@ -79,6 +85,7 @@
                 @edit="emit('edit', event)"
                 @delete="emit('delete', event)"
                 @duplicate="emit('duplicate', event)"
+                @schedule="onMobileSchedule(event)"
               />
             </div>
           </div>
@@ -158,7 +165,6 @@
         :style="{ borderLeftColor: event.color ?? '#9E9E9E' }"
         draggable="true"
         @dragstart="(e) => onCardDragStart(e, event)"
-        @dragend="emit('dragend')"
       >
         <div class="backlog-card__title text-caption">
           {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
@@ -175,6 +181,7 @@
           @edit="emit('edit', event)"
           @delete="emit('delete', event)"
           @duplicate="emit('duplicate', event)"
+          @schedule="emit('schedule', event)"
         />
       </div>
     </div>
@@ -208,8 +215,8 @@ const emit = defineEmits<{
   (e: 'edit', event: ProgramEvent): void;
   (e: 'delete', event: ProgramEvent): void;
   (e: 'duplicate', event: ProgramEvent): void;
+  (e: 'schedule', event: ProgramEvent): void;
   (e: 'dragstart', nativeEvent: DragEvent, event: ProgramEvent): void;
-  (e: 'dragend'): void;
   (e: 'move-to-backlog', id: string): void;
 }>();
 
@@ -229,12 +236,17 @@ function onMobileAdd() {
   emit('add');
 }
 
+function onMobileSchedule(event: ProgramEvent) {
+  mobileOpen.value = false;
+  emit('schedule', event);
+}
+
 function onCardDragStart(e: DragEvent, event: ProgramEvent) {
   if (!e.dataTransfer) {
     return;
   }
   e.dataTransfer.effectAllowed = 'copyMove';
-  e.dataTransfer.setData('eventId', event.id);
+  e.dataTransfer.setData('text/plain', event.id);
   emit('dragstart', e, event);
 }
 
@@ -252,7 +264,7 @@ function onDragLeave() {
 function onDrop(e: DragEvent) {
   dragCounter = 0;
   isDragOver.value = false;
-  const id = e.dataTransfer?.getData('eventId');
+  const id = e.dataTransfer?.getData('text/plain');
   if (id) {
     emit('move-to-backlog', id);
   }
