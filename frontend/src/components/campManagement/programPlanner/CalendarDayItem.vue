@@ -1,6 +1,7 @@
 <template>
   <div
     class="cal-day-event cursor-pointer"
+    :class="{ 'cal-day-event--selected': selected }"
     :style="badgeStyles"
     @dragstart="onDragStart"
     @dragend="isDragging = false"
@@ -31,10 +32,16 @@ import { computed, ref, type StyleValue } from 'vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
 
-const { event, viewBoth, showAllTranslations } = defineProps<{
+const {
+  event,
+  viewBoth,
+  showAllTranslations,
+  selected = false,
+} = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
+  selected?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -90,6 +97,11 @@ const badgeStyles = computed<StyleValue>(() => ({
   margin: 2px 2px;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+
+  &--selected {
+    outline: 2px solid white;
+    outline-offset: 1px;
+  }
 
   &__title {
     font-size: 12px;

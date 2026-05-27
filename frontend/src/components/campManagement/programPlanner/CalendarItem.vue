@@ -2,6 +2,7 @@
   <div
     v-if="event.time"
     class="cal-event"
+    :class="{ 'cal-event--selected': selected }"
     :style="badgeStyles"
     @dragstart="onDragStart"
     @dragend="isDragging = false"
@@ -37,6 +38,7 @@ const {
   event,
   viewBoth = false,
   showAllTranslations = false,
+  selected = false,
   timeDurationHeight,
   timeStartPosition,
   snap,
@@ -44,6 +46,7 @@ const {
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
+  selected?: boolean;
   timeStartPosition: (time?: string) => number;
   timeDurationHeight: (duration?: number) => number;
   snap?: number;
@@ -194,6 +197,11 @@ function startResize(e: MouseEvent) {
   cursor: pointer;
   border-left: 3px solid rgba(0, 0, 0, 0.2);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+
+  &--selected {
+    outline: 2px solid white;
+    outline-offset: 1px;
+  }
 
   &__inner {
     padding: 2px 4px;

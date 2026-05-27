@@ -84,7 +84,9 @@
                   :event="event"
                   :view-both="viewBoth"
                   :show-all-translations="settings.showAllTranslations"
+                  :selected="event.id === selectedEventId"
                   :draggable="true"
+                  @click.stop="selectedEventId = event.id"
                   @dragstart="(e: DragEvent) => onDragStart(e, event)"
                   @edit="onEventEdit(event)"
                   @delete="onEventDelete(event)"
@@ -104,14 +106,18 @@
                 class="cal-create-overlay"
                 :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
                 @mousedown.left.prevent="
-                  (e) =>
+                  (e) => {
+                    selectedEventId = null;
                     !quasar.platform.is.mobile &&
-                    onBodyMouseDown(e, timestamp, timeDurationHeight)
+                      onBodyMouseDown(e, timestamp, timeDurationHeight);
+                  }
                 "
                 @click="
-                  (e) =>
+                  (e) => {
+                    selectedEventId = null;
                     quasar.platform.is.mobile &&
-                    onBodyClick(e, timestamp, timeDurationHeight)
+                      onBodyClick(e, timestamp, timeDurationHeight);
+                  }
                 "
               />
 
@@ -147,8 +153,10 @@
                 :time-duration-height="timeDurationHeight"
                 :view-both="viewBoth"
                 :show-all-translations="settings.showAllTranslations"
+                :selected="event.id === selectedEventId"
                 :draggable="true"
                 :snap="settings.timeInterval"
+                @click.stop="selectedEventId = event.id"
                 @dragstart="(e: DragEvent) => onDragStart(e, event)"
                 @edit="onEventEdit(event)"
                 @delete="onEventDelete(event)"
@@ -934,6 +942,21 @@ function outOfCampIntervalClass({
   return { 'cal-outside-camp': outside };
 }
 
+const selectedEventId = ref<string | null>(null);
+
+type UndoEntry =
+  | { type: 'update'; id: string; data: ProgramEventUpdateData }
+  | { type: 'delete'; eventData: ProgramEventCreateData };
+
+const undoStack: UndoEntry[] = [];
+
+function pushUndo(entry: UndoEntry) {
+  undoStack.push(entry);
+  if (undoStack.length > 20) {
+    undoStack.shift();
+  }
+}
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function onKeydown(e: KeyboardEvent) {
@@ -943,10 +966,47 @@ function onKeydown(e: KeyboardEvent) {
   ) {
     return;
   }
-  if (e.key === 'ArrowRight') {
+  if (e.key === 'Escape') {
+    selectedEventId.value = null;
+  } else if (e.key === 'ArrowRight') {
     onNextNavigation();
   } else if (e.key === 'ArrowLeft') {
     onPreviousNavigation();
+  } else if (e.key === 'p') {
+    const event = events.find((ev) => ev.id === selectedEventId.value);
+    if (event) {
+      pushUndo({ type: 'update', id: event.id, data: { plan: event.plan } });
+      const nextPlan =
+        event.plan === 'both' ? 'a' : event.plan === 'a' ? 'b' : 'both';
+      emit('update', event.id, { plan: nextPlan });
+    }
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    const event = events.find((ev) => ev.id === selectedEventId.value);
+    if (event) {
+      pushUndo({
+        type: 'delete',
+        eventData: {
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          duration: event.duration,
+          location: event.location,
+          details: event.details,
+          color: event.color,
+          plan: event.plan,
+        },
+      });
+      selectedEventId.value = null;
+      emit('delete', event.id);
+    }
+  } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    const entry = undoStack.pop();
+    if (entry?.type === 'update') {
+      emit('update', entry.id, entry.data);
+    } else if (entry?.type === 'delete') {
+      emit('add', entry.eventData);
+    }
   }
 }
 
