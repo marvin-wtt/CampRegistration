@@ -122,7 +122,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
@@ -182,6 +182,16 @@ useMeta(() => {
 const drawer = ref<boolean>(false);
 const floatingDrawer = ref<boolean>(true);
 const miniState = ref<boolean>(true);
+
+watch(
+  () => quasar.screen.lt.sm,
+  () => {
+    // Reset drawer when screen size changes
+    drawer.value = false;
+    floatingDrawer.value = true;
+    miniState.value = true;
+  },
+);
 
 const items: NavigationItemProps[] = [
   {
