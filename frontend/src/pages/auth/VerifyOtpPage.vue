@@ -113,7 +113,7 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Vérification OTP'
 
-description: 'Pour continuer, ouvrez votre application d'authentification et saisissez le code à 6 chiffres affiché.'
+description: "Pour continuer, ouvrez votre application d'authentification et saisissez le code à 6 chiffres affiché."
 
 action:
   verify: 'Vérifier'
