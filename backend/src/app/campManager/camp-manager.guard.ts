@@ -1,4 +1,4 @@
-import { CampManagerService } from '#app/campManager/camp-manager.service.js';
+import { CampManagerService } from '#app/campManager/camp-manager.service';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
