@@ -4,33 +4,37 @@
     :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
     <q-card
-      class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
+      class="auth-card col-xs-12 col-sm-8 col-md-6 col-lg-4"
       :flat="quasar.screen.lt.sm"
     >
+      <div class="auth-card-header">
+        <q-avatar
+          icon="shield"
+          color="white"
+          text-color="primary"
+          size="64px"
+          class="auth-card-avatar"
+        />
+      </div>
+
       <q-form
-        class="fit column justify-center no-wrap"
+        class="column no-wrap"
         data-test="totp-form"
         @submit="verify"
       >
-        <q-card-section class="text-h4 text-bold text-center">
+        <q-card-section
+          class="text-h5 text-weight-bold text-center q-pt-xl q-pb-xs"
+        >
           {{ t('title') }}
         </q-card-section>
 
-        <!-- Description -->
-        <q-card-section class="text-subtitle1 text-center">
+        <q-card-section
+          class="text-subtitle2 text-center text-grey-7 q-pt-none q-pb-sm"
+        >
           {{ t('description') }}
         </q-card-section>
 
-        <q-card-section class="row justify-center">
-          <q-avatar
-            icon="verified_user"
-            color="primary"
-            text-color="white"
-            size="100px"
-          />
-        </q-card-section>
-
-        <q-card-section>
+        <q-card-section class="q-pt-xs">
           <otp-input
             v-model="otp"
             :length="6"
@@ -40,7 +44,7 @@
           />
         </q-card-section>
 
-        <q-card-actions class="q-ma-md">
+        <q-card-actions class="q-px-md">
           <q-btn
             :label="t('action.verify')"
             type="submit"
@@ -55,7 +59,7 @@
 
         <q-card-section
           v-if="error"
-          class="text-negative text-center text-bold"
+          class="text-negative text-center text-bold q-py-sm"
           data-test="error"
         >
           {{ error }}
@@ -109,7 +113,7 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Vérification OTP'
 
-description: 'Pour continuer, ouvrez votre application d’authentification et saisissez le code à 6 chiffres affiché.'
+description: 'Pour continuer, ouvrez votre application d'authentification et saisissez le code à 6 chiffres affiché.'
 
 action:
   verify: 'Vérifier'
