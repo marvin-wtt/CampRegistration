@@ -119,9 +119,9 @@
     "@types/html-to-text": "^9.0.4",
     "@types/mjml": "^5.0.0",
     "@types/morgan": "^1.9.10",
-    "@types/multer": "^1.4.13",
-    "@types/node": "^24.12.4",
-    "@types/nodemailer": "^6.4.15",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.9.1",
+    "@types/nodemailer": "^6.4.16",
     "@types/passport": "^1.0.17",
     "@types/passport-anonymous": "^1.0.5",
     "@types/passport-jwt": "^4.0.1",
@@ -148,6 +148,6 @@
     "typescript-eslint": "^8.60.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.7",
-    "vitest-mock-extended": "^3.1.1"
+    "vitest-mock-extended": "^4.0.0"
   }
 }
