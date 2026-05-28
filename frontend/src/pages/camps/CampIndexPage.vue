@@ -52,6 +52,9 @@ onMounted(async () => {
 });
 
 function isRegistrationOpen(camp: Camp): boolean {
+  if (!camp.registrationOpensAt && !camp.registrationClosesAt) {
+    return false;
+  }
   const now = new Date();
   return (
     (!camp.registrationOpensAt || now >= new Date(camp.registrationOpensAt)) &&
