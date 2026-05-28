@@ -21,7 +21,7 @@ class UserSeeder extends BaseSeeder {
       password: 'admin-password',
       emailVerified: true,
       twoFactorEnabled: true,
-      totpSecret: 'JBSWY3DPEHPK3PXP',
+      totpSecret: 'TMRUI6PADI7DGPJF5DPMLCWSXW32MKXM',
       role: 'ADMIN',
     });
   }
