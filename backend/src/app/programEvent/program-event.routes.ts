@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#guards/index';
+import { campManager } from '#app/campManager/camp-manager.guard';
 import { ProgramEventService } from './program-event.service.js';
 import { ProgramEventController } from './program-event.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';

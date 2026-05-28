@@ -1,8 +1,11 @@
 import type { Request } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-export { campPublic, registrationOpen, campManager } from './manager.guard.js';
-export { default as admin } from './admin.guard.js';
+export {
+  campPublic,
+  registrationOpen,
+  campManager,
+} from '#app/campManager/camp-manager.guard';
 
 export type GuardFn = (
   req: Request,
@@ -61,4 +64,13 @@ export const or = (...guardFns: GuardFn[]): GuardFn => {
     // Return last error message on failure
     return result;
   };
+};
+
+export const admin = (req: Request): boolean | string => {
+  return (
+    req.user !== undefined &&
+    'role' in req.user &&
+    typeof req.user.role === 'string' &&
+    req.user.role.toLowerCase() === 'admin'
+  );
 };

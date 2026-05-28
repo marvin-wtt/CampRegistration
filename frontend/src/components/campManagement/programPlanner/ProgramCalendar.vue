@@ -464,7 +464,7 @@ function onDayEventAdd({ scope }: CalendarEvent) {
         date: scope.timestamp.date,
         time: null,
         duration: null,
-        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+        plan: activePlan.value,
         dateTimeMin: camp.startAt,
         dateTimeMax: camp.endAt,
         locales: camp.locales,

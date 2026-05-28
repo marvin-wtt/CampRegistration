@@ -1,6 +1,9 @@
 import { RegistrationController } from './registration.controller.js';
 import { auth, guard } from '#middlewares/index';
-import { registrationOpen, campManager } from '#guards/index';
+import {
+  registrationOpen,
+  campManager,
+} from '#app/campManager/camp-manager.guard';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';
