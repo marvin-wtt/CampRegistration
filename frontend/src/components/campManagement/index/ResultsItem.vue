@@ -8,6 +8,12 @@
       <q-item-label>
         {{ to(camp.name) }}
       </q-item-label>
+      <q-item-label
+        v-if="registrationNote"
+        caption
+      >
+        {{ registrationNote }}
+      </q-item-label>
     </q-item-section>
 
     <q-item-section side>
@@ -120,7 +126,7 @@ const capsStore = useCampsStore();
 const profileStore = useProfileStore();
 const router = useRouter();
 const quasar = useQuasar();
-const { t } = useI18n();
+const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 const { canFor } = usePermissions();
 
@@ -128,6 +134,25 @@ const { camp, active = false } = defineProps<{
   camp: Camp;
   active?: boolean;
 }>();
+
+const registrationNote = computed<string | null>(() => {
+  if (active && camp.registrationClosesAt) {
+    const closesDate = new Date(camp.registrationClosesAt);
+    return t('registration.closes', {
+      date: d(closesDate, 'dateTime'),
+    });
+  }
+
+  if (!active && camp.registrationOpensAt) {
+    const opensDate = new Date(camp.registrationOpensAt);
+    if (opensDate > new Date()) {
+      return t('registration.opens', {
+        date: d(new Date(camp.registrationOpensAt), 'dateTime'),
+      });
+    }
+  }
+  return null;
+});
 
 const resultLoading = ref<boolean>(false);
 const enableLoading = ref<boolean>(false);
@@ -262,6 +287,10 @@ dialog:
 notification:
   share_success: 'Link copied to clipboard'
   share_fail: 'Failed to copy link to clipboard'
+
+registration:
+  opens: 'Opens on {date}'
+  closes: 'Closes on {date}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -283,6 +312,10 @@ dialog:
 notification:
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
+
+registration:
+  opens: 'Öffnet am {date}'
+  closes: 'Schließt am {date}'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -304,6 +337,10 @@ dialog:
 notification:
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
+
+registration:
+  opens: 'Ouvre le {date}'
+  closes: 'Ferme le {date}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -325,6 +362,10 @@ dialog:
 notification:
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
+
+registration:
+  opens: 'Otwiera się {date}'
+  closes: 'Zamyka się {date}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -346,4 +387,8 @@ dialog:
 notification:
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
+
+registration:
+  opens: 'Otevírá se {date}'
+  closes: 'Uzavírá se {date}'
 </i18n>
