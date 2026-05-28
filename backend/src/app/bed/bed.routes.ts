@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#guards/manager.guard';
+import { campManager } from '#app/campManager/camp-manager.guard';
 import { BedController } from './bed.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { BedService } from '#app/bed/bed.service';

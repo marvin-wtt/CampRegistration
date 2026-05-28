@@ -35,6 +35,7 @@ class CampSeeder extends BaseSeeder {
       id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
       name: 'Files Camp',
       public: true,
+      registrationOpensAt: '2025-11-05T20:13:53.577Z',
       form: {
         name: 'Files test camp',
         description: 'Camp without special fields or translations',
@@ -66,6 +67,7 @@ class CampSeeder extends BaseSeeder {
       maxAge: 12,
       startAt: '2026-11-17T15:00:00.000Z',
       endAt: '2026-11-24T10:00:00.000Z',
+      registrationOpensAt: '2025-11-05T20:13:53.577Z',
       price: 200,
       location: 'TBD',
       form: {

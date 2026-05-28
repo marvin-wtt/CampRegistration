@@ -1,7 +1,7 @@
 import { FileController } from '#app/file/file.controller';
 import { FileService } from '#app/file/file.service';
 import { auth, guard, multipart } from '#middlewares/index';
-import { campManager } from '#guards/index';
+import { campManager } from '#app/campManager/camp-manager.guard';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
