@@ -46,7 +46,7 @@
     "vitest": "^4.1.7"
   },
   "peerDependencies": {
-    "survey-core": "2.5.4"
+    "survey-core": "^3.0.0-beta.6"
   },
   "engines": {
     "node": ">=22 <25"

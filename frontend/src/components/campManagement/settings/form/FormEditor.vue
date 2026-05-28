@@ -24,6 +24,7 @@ import {
   localization,
   PropertyGridEditorCollection,
   SurveyCreatorModel,
+  CreatorThemes,
 } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
@@ -37,7 +38,6 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import SurveyCreatorTheme from 'survey-creator-core/themes';
 import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
 import { registerSurveyTheme } from 'survey-creator-core';
@@ -114,7 +114,7 @@ const creatorOptions: ICreatorOptions = {
 const mdConverter = createMarkdownConverter();
 
 registerSurveyTheme(SurveyTheme);
-registerCreatorTheme(SurveyCreatorTheme);
+registerCreatorTheme(CreatorThemes);
 
 surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
@@ -146,7 +146,10 @@ applyCreatorTheme(quasar.dark.isActive);
 
 function applyCreatorTheme(isDark: boolean) {
   const theme = isDark
-    ? SurveyCreatorTheme.DefaultDark
+    ? {
+        themeName: 'default-dark',
+        cssVariables: {},
+      }
     : {
         themeName: 'default-light',
         cssVariables: {},
@@ -157,8 +160,6 @@ function applyCreatorTheme(isDark: boolean) {
     isLight: !isDark,
     cssVariables: {
       ...theme.cssVariables,
-      '--sjs-primary-background-500': undefined,
-      '--sjs-secondary-background-500': undefined,
       '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
     },
   });

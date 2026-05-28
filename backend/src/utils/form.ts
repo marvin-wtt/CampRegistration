@@ -1,7 +1,23 @@
 import { SurveyModel } from 'survey-core';
+import { SurveyPDF } from 'survey-pdf';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp } from '#generated/prisma/client.js';
+import type { Camp, Registration } from '#generated/prisma/client.js';
+import jsdom from 'jsdom';
+
+export function exportPDF(camp: Camp, registration: Registration) {
+  const { window } = new jsdom.JSDOM();
+  // @ts-expect-error Required for survey-pdf, which expects a browser environment
+  global.window = window;
+  global.document = window.document;
+
+  const surveyPDF = new SurveyPDF(camp.form);
+  surveyPDF.data = registration.data;
+  surveyPDF.locale = registration.locale;
+  surveyPDF.readOnly = true;
+
+  return surveyPDF.raw('arraybuffer');
+}
 
 export const formUtils = (
   camp: Camp & { freePlaces: number | Record<string, number> },

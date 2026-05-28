@@ -19,7 +19,9 @@ export class RegistrationRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const registrationController = resolve(RegistrationController);
+    const registrationController: RegistrationController = resolve(
+      RegistrationController,
+    );
 
     this.router.get(
       '/',

@@ -13,6 +13,7 @@ import type {
   MailAttachment,
   MailPriority,
 } from '#app/mail/mail.types';
+import { exportPDF } from '#utils/form';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
 import Handlebars from 'handlebars';
@@ -39,6 +40,26 @@ function formatDate(date: Date | string | null, locale: string): string | null {
     dateStyle: 'long',
     timeStyle: 'short',
   }).format(d);
+}
+
+async function createPdfAttachment(
+  camp: Camp,
+  registration: Registration,
+): Promise<MailAttachment> {
+  const buffer = await exportPDF(camp, registration);
+  const filename = [
+    'Registration',
+    registration.lastName,
+    registration.firstName,
+  ]
+    .filter((v) => v != null)
+    .join('_');
+
+  return {
+    filename: `${filename}.pdf`,
+    content: Buffer.from(buffer),
+    contentType: 'application/pdf',
+  };
 }
 
 abstract class RegistrationMessage<
@@ -147,8 +168,9 @@ export class RegistrationNotifyMessage extends MailBase<{
     };
   }
 
-  protected attachments(): MailAttachment[] {
+  protected async attachments(): Promise<MailAttachment[]> {
     return [
+      await createPdfAttachment(this.payload.camp, this.payload.registration),
       {
         filename: 'data.json',
         contentType: 'application/json',
@@ -488,9 +510,12 @@ export class RegistrationSubmittedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_submitted';
   static readonly type = 'registration:template:submitted';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+  protected async attachments(): Promise<MailAttachment[]> {
+    const attachments = await super.attachments();
+
     return [
-      // Attach registration data PDF here
+      ...attachments,
+      await createPdfAttachment(this.payload.camp, this.payload.registration),
     ];
   }
 }
@@ -499,9 +524,12 @@ export class RegistrationConfirmedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_confirmed';
   static readonly type = 'registration:template:confirmed';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+  protected async attachments(): Promise<MailAttachment[]> {
+    const attachments = await super.attachments();
+
     return [
-      // Attach registration data PDF here
+      ...attachments,
+      await createPdfAttachment(this.payload.camp, this.payload.registration),
     ];
   }
 }
@@ -509,15 +537,27 @@ export class RegistrationConfirmedMessage extends RegistrationEventMessage {
 export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_waitlisted';
   static readonly type = 'registration:template:waitlisted';
+
+  protected async attachments(): Promise<MailAttachment[]> {
+    const attachments = await super.attachments();
+
+    return [
+      ...attachments,
+      await createPdfAttachment(this.payload.camp, this.payload.registration),
+    ];
+  }
 }
 
 export class RegistrationUpdatedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_updated';
   static readonly type = 'registration:template:updated';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+  protected async attachments(): Promise<MailAttachment[]> {
+    const attachments = await super.attachments();
+
     return [
-      // Attach registration data PDF here
+      ...attachments,
+      await createPdfAttachment(this.payload.camp, this.payload.registration),
     ];
   }
 }
