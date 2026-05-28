@@ -2,10 +2,15 @@ import { SurveyModel } from 'survey-core';
 import { SurveyPDF } from 'survey-pdf';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp, Registration } from '#generated/prisma/client.js';
+import type { Registration } from '#generated/prisma/client.js';
 import jsdom from 'jsdom';
+import type { CampWithFreePlaces } from '#app/camp/camp.types';
+import { createMarkdownConverter } from '@camp-registration/common/utils';
 
-export function exportPDF(camp: Camp, registration: Registration) {
+export function exportPDF(
+  camp: CampWithFreePlaces,
+  registration: Registration,
+) {
   const { window } = new jsdom.JSDOM();
   // @ts-expect-error Required for survey-pdf, which expects a browser environment
   global.window = window;
@@ -16,13 +21,17 @@ export function exportPDF(camp: Camp, registration: Registration) {
   surveyPDF.locale = registration.locale;
   surveyPDF.readOnly = true;
 
+  const mdConverter = createMarkdownConverter();
+  surveyPDF.onTextMarkdown.add((_, options) => {
+    options.html = mdConverter.renderInline(options.text);
+  });
+
+  setVariables(surveyPDF, camp);
+
   return surveyPDF.raw('arraybuffer');
 }
 
-export const formUtils = (
-  camp: Camp & { freePlaces: number | Record<string, number> },
-  data?: unknown,
-) => {
+export const formUtils = (camp: CampWithFreePlaces, data?: unknown) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';

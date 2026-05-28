@@ -24,7 +24,6 @@ import {
   localization,
   PropertyGridEditorCollection,
   SurveyCreatorModel,
-  CreatorThemes,
 } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
@@ -38,11 +37,10 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
 import { registerSurveyTheme } from 'survey-creator-core';
 import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from 'src/utils/markdown';
+import { createMarkdownConverter } from '@camp-registration/common/utils';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -114,7 +112,6 @@ const creatorOptions: ICreatorOptions = {
 const mdConverter = createMarkdownConverter();
 
 registerSurveyTheme(SurveyTheme);
-registerCreatorTheme(CreatorThemes);
 
 surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
@@ -160,7 +157,7 @@ function applyCreatorTheme(isDark: boolean) {
     isLight: !isDark,
     cssVariables: {
       ...theme.cssVariables,
-      '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
+      //'--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
     },
   });
 
@@ -317,11 +314,29 @@ creator.onOpenFileChooser.add((_, options) => {
 });
 
 const themes: {
+  light: ITheme;
   dark?: ITheme;
-  light?: ITheme;
-} = {};
+} = {
+  light: props.camp.themes['light'] ?? {},
+  dark: props.camp.themes['dark'] as ITheme,
+};
+
+function syncThemeProperty(theme: ITheme, property: keyof ITheme) {
+  if (theme[property] === undefined) {
+    return;
+  }
+
+  themes.light[property] = theme[property];
+
+  if (themes.dark) {
+    themes.dark[property] = theme[property];
+  }
+}
+
 let previousColorPalette: string | undefined;
 creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
+  syncThemeProperty(theme, 'isPanelless');
+
   const colorPalette = theme.colorPalette;
   if (!colorPalette || (colorPalette !== 'dark' && colorPalette !== 'light')) {
     return;
@@ -333,7 +348,7 @@ creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
   }
   previousColorPalette = theme.colorPalette;
 
-  const mewTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
+  const mewTheme = themes[colorPalette];
   if (mewTheme) {
     themeModel.setTheme(mewTheme);
   }
