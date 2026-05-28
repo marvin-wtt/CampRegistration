@@ -35,15 +35,15 @@
     "#permissions": "./src/permissions/index.js"
   },
   "devDependencies": {
-    "@eslint/js": "^9.29.0",
-    "@types/node": "^24.0.4",
-    "@vitest/coverage-v8": "^4.0.8",
-    "@vitest/ui": "^4.0.8",
-    "eslint": "^9.29.0",
-    "prettier": "^3.6.0",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.35.0",
-    "vitest": "^4.0.8"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.12.4",
+    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/ui": "^4.1.7",
+    "eslint": "^10.4.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vitest": "^4.1.7"
   },
   "peerDependencies": {
     "survey-core": "2.5.4"

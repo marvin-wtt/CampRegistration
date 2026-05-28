@@ -1,4 +1,3 @@
-import type i18n from '#core/i18n';
 import type { Readable } from 'stream';
 
 export type Address = string | { name: string; address: string };
@@ -47,7 +46,10 @@ export interface BuiltMail extends Envelope {
   attachments?: MailAttachment[];
 }
 
-export type Translator = typeof i18n.t;
+export type Translator = (
+  key: string,
+  context?: Record<string, unknown>,
+) => string;
 
 export interface TranslationOptions {
   namespace?: string | undefined;

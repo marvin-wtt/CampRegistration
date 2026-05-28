@@ -26,7 +26,7 @@ This is an **npm workspaces monorepo** with the following workspaces:
 - **Auth**: Passport.js + JWT + TOTP 2FA
 - **Email**: Nodemailer + MJML templates
 - **Logging**: Winston
-- **Validation**: express-validator + Zod
+- **Validation**: Zod
 - **Testing**: Vitest (unit + integration)
 
 ### Frontend
@@ -151,7 +151,6 @@ Request → Router → Controller (validation) → Service (business logic) → 
 
 ### Validation
 
-- Use `express-validator` chains for HTTP input validation
 - Use `Zod` schemas for complex data shapes (e.g., form definitions, JSON columns)
 
 ### Database (Prisma)

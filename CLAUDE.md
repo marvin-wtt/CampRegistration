@@ -101,10 +101,10 @@ class ExampleModule implements AppModule {
 ### Request Flow
 
 ```
-Request → Router → Controller (express-validator) → Service (business logic) → Prisma → Response
+Request → Router → Controller → Service (business logic) → Prisma → Response
 ```
 
-- Use `express-validator` chains for HTTP input; use `Zod` for complex data shapes (JSON columns, form definitions)
+- Use `Zod` for complex data shapes (JSON columns, form definitions)
 - Extend `ModuleRouter` for all routers; use model binding for route params (`:campId` → `Camp` entity)
 - Throw `ApiError` from services; centralized error middleware handles the response
 - Use RBAC permission guards — never write ad-hoc role comparisons

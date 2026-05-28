@@ -59,7 +59,7 @@ describe("Authentication", () => {
       cy.location("pathname").should("eq", "/verify-otp");
 
       const totpForm = cy.getBySel("totp-form");
-      cy.generateTotp("JBSWY3DPEHPK3PXP").then((totp) => {
+      cy.generateTotp("TMRUI6PADI7DGPJF5DPMLCWSXW32MKXM").then((totp) => {
         totpForm.getBySel("totp").get("input").first().type(totp);
       });
       totpForm.getBySel("submit").click();

@@ -1,5 +1,5 @@
 import { defineConfig } from "cypress";
-import { authenticator } from "otplib";
+import * as authenticator from "otplib";
 
 export default defineConfig({
   e2e: {
@@ -17,8 +17,10 @@ export default defineConfig({
       on("task", {
         // cypress cannot return undefined, thus we return null as a fallback
 
-        generateTotp(secret: string): string {
-          return authenticator.generate(secret);
+        generateTotp(secret: string): Promise<string> {
+          return authenticator.generate({
+            secret,
+          });
         },
       });
 
