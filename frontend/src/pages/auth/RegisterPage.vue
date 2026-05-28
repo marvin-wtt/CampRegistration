@@ -4,25 +4,28 @@
     :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
     <q-card
-      class="q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
+      class="auth-card col-xs-12 col-sm-8 col-md-6 col-lg-4"
       :flat="quasar.screen.lt.sm"
     >
+      <div class="auth-card-header">
+        <q-avatar
+          icon="how_to_reg"
+          color="white"
+          text-color="primary"
+          size="64px"
+          class="auth-card-avatar"
+        />
+      </div>
+
       <q-form
-        class="fit column justify-center no-wrap"
+        class="column no-wrap"
         data-test="registration-form"
         @submit="register"
       >
-        <q-card-section class="text-h4 text-bold text-center">
+        <q-card-section
+          class="text-h5 text-weight-bold text-center q-pt-xl q-pb-none"
+        >
           {{ t('title') }}
-        </q-card-section>
-
-        <q-card-section class="row justify-center">
-          <q-avatar
-            icon="how_to_reg"
-            color="primary"
-            text-color="white"
-            size="100px"
-          />
         </q-card-section>
 
         <q-card-section class="q-gutter-md">
@@ -91,7 +94,7 @@
           </q-input>
         </q-card-section>
 
-        <q-card-actions>
+        <q-card-actions class="q-px-md q-pb-none">
           <q-btn
             :label="t('action.register')"
             type="submit"
@@ -106,13 +109,13 @@
 
         <q-card-section
           v-if="error"
-          class="text-negative text-center text-bold"
+          class="text-negative text-center text-bold q-py-sm"
           data-test="error"
         >
           {{ error }}
         </q-card-section>
 
-        <q-card-section class="text-center">
+        <q-card-section class="text-center q-pt-sm q-pb-lg">
           <q-btn
             color="primary"
             size="lg"
