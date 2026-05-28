@@ -137,14 +137,19 @@ const { camp, active = false } = defineProps<{
 
 const registrationNote = computed<string | null>(() => {
   if (active && camp.registrationClosesAt) {
+    const closesDate = new Date(camp.registrationClosesAt);
     return t('registration.closes', {
-      date: d(new Date(camp.registrationClosesAt), 'dateTime'),
+      date: d(closesDate, 'dateTime'),
     });
   }
-  if (!active && camp.registrationOpensAt && new Date(camp.registrationOpensAt) > new Date()) {
-    return t('registration.opens', {
-      date: d(new Date(camp.registrationOpensAt), 'dateTime'),
-    });
+
+  if (!active && camp.registrationOpensAt) {
+    const opensDate = new Date(camp.registrationOpensAt);
+    if (opensDate > new Date()) {
+      return t('registration.opens', {
+        date: d(new Date(camp.registrationOpensAt), 'dateTime'),
+      });
+    }
   }
   return null;
 });
@@ -334,8 +339,8 @@ notification:
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
 
 registration:
-  opens: "Ouvre le {date}"
-  closes: "Ferme le {date}"
+  opens: 'Ouvre le {date}'
+  closes: 'Ferme le {date}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">

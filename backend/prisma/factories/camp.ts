@@ -46,6 +46,7 @@ export const CampFactory = {
           data: MessageTemplateFactory.buildDefaults(countries),
         },
       },
+      registrationOpensAt: faker.date.past(),
       ...data,
     };
   },
