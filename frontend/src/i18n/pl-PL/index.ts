@@ -15,6 +15,7 @@ export default {
   country: {
     de: 'Niemcy',
     fr: 'Francja',
+    gb: 'Wielka Brytania',
     us: 'USA',
     pl: 'Polska',
     cz: 'Czechy',

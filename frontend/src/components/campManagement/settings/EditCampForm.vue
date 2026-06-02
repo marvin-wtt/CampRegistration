@@ -15,7 +15,7 @@
       v-model="data.countries"
       :disable="loading"
       :label="t('field.countries')"
-      :countries="['de', 'fr', 'pl', 'cz']"
+      :countries="['de', 'fr', 'gb', 'pl', 'cz']"
       :rules="[
         (val?: string[]) =>
           (val && val.length > 0) || t('validation.countries.empty'),
