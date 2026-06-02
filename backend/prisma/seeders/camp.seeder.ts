@@ -2,6 +2,7 @@ import { CampFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
 import { RegistrationSeeder } from './registration.seeder';
 import { ProgramEventSeeder } from './program-event.seeder';
+import { defaultMessageTemplatesForCountries } from '#assets/camp/messageTemplates.js';
 
 class CampSeeder extends BaseSeeder {
   name(): string {
@@ -58,11 +59,11 @@ class CampSeeder extends BaseSeeder {
     const exampleCamp = await CampFactory.create({
       id: '01K9ATF1H9KD1K6H12F3YK8RWR',
       public: true,
-      countries: ['de', 'fr'],
-      name: { de: 'Beispielcamp', fr: 'Exemple de camp' },
-      organizer: { de: 'Orga DE', fr: 'Orga FR' },
-      contactEmail: { de: 'camp-de@example.com', fr: 'camp-fr@example.com' },
-      maxParticipants: { de: 25, fr: 25 },
+      countries: ['gb', 'fr'],
+      name: { gb: 'Summer Camp', fr: 'Colonie de vacances' },
+      organizer: { gb: 'Youth Adventures UK', fr: 'Aventures Jeunesse' },
+      contactEmail: { gb: 'camp-gb@example.com', fr: 'camp-fr@example.com' },
+      maxParticipants: { gb: 25, fr: 25 },
       minAge: 7,
       maxAge: 12,
       startAt: '2026-11-17T15:00:00.000Z',
@@ -71,7 +72,7 @@ class CampSeeder extends BaseSeeder {
       price: 200,
       location: 'TBD',
       form: {
-        locale: 'de',
+        locale: 'en',
         title: '{camp.name}',
         description: '{camp.startAtDate} - {camp.endAtDate}',
         logoHeight: '80px',
@@ -978,15 +979,22 @@ class CampSeeder extends BaseSeeder {
           cs: 'Zaregistrovat se (placeně)',
           default: 'Register for a fee',
         },
-        widthMode: 'responsive',
+        widthMode: 'static',
         headerView: 'advanced',
+      },
+      messageTemplates: {
+        createMany: {
+          data: defaultMessageTemplatesForCountries(['gb', 'fr']),
+        },
       },
       createdAt: '2025-11-05T20:13:53.577Z',
       updatedAt: '2025-11-05T20:14:01.950Z',
     });
 
-    await new RegistrationSeeder(exampleCamp).seed(25, { country: 'de' });
-    await new RegistrationSeeder(exampleCamp).seed(22, { country: 'fr' });
+    await new RegistrationSeeder(exampleCamp).seed(25, { country: 'gb', status: 'ACCEPTED' });
+    await new RegistrationSeeder(exampleCamp).seed(8, { country: 'gb', status: 'WAITLISTED' });
+    await new RegistrationSeeder(exampleCamp).seed(25, { country: 'fr', status: 'ACCEPTED' });
+    await new RegistrationSeeder(exampleCamp).seed(5, { country: 'fr', status: 'WAITLISTED' });
     await new ProgramEventSeeder(exampleCamp).seed();
   }
 }
