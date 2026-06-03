@@ -13,6 +13,11 @@ export default {
     error: 'Błąd podczas usuwania pliku',
     invalid: 'Nieprawidłowy identyfikator pliku',
   },
+  replace: {
+    progress: 'Zastępowanie pliku...',
+    success: 'Plik pomyślnie zastąpiony',
+    error: 'Błąd podczas zastępowania pliku',
+  },
   download: {
     error: 'Błąd podczas pobierania pliku',
   },

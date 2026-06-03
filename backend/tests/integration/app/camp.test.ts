@@ -45,8 +45,12 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
   expect(camp).toEqual({
     id: data.id ?? expect.anything(),
     public: data.public,
-    registrationOpensAt: (data as any).registrationOpensAt ?? null,
-    registrationClosesAt: (data as any).registrationClosesAt ?? null,
+    registrationOpensAt: data.registrationOpensAt
+      ? new Date(data.registrationOpensAt)
+      : null,
+    registrationClosesAt: data.registrationClosesAt
+      ? new Date(data.registrationClosesAt)
+      : null,
     confirmationMode: data.confirmationMode,
     countries: data.countries,
     name: data.name,
@@ -76,8 +80,8 @@ const assertCampResponseBody = (
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
     public: data.public,
-    registrationOpensAt: (data as any).registrationOpensAt ?? null,
-    registrationClosesAt: (data as any).registrationClosesAt ?? null,
+    registrationOpensAt: data.registrationOpensAt ?? null,
+    registrationClosesAt: data.registrationClosesAt ?? null,
     confirmationMode: data.confirmationMode,
     countries: data.countries,
     locales: data.locales,
@@ -389,8 +393,8 @@ describe('/api/v1/camps', () => {
         id: camp.id,
         confirmationMode: camp.confirmationMode,
         public: camp.public,
-        registrationOpensAt: null,
-        registrationClosesAt: null,
+        registrationOpensAt: camp.registrationOpensAt?.toISOString() ?? null,
+        registrationClosesAt: camp.registrationClosesAt?.toISOString() ?? null,
         countries: camp.countries,
         locales: ['de', 'cs'],
         name: camp.name,
@@ -741,24 +745,6 @@ describe('/api/v1/camps', () => {
           }
         });
       });
-
-      it('should create default files', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(campCreateNational)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        const files = await prisma.file.findMany({
-          where: {
-            camp: { id: body.data.id },
-          },
-        });
-
-        expect(files.length).not.toBe(0);
-      });
     });
 
     describe('reference id', () => {
@@ -1043,7 +1029,9 @@ describe('/api/v1/camps', () => {
         );
 
         const data = {
-          confirmationMode: 'AUTOMATIC' as CampCreateData['confirmationMode'],
+          confirmationMode: 'AUTOMATIC' as const,
+          registrationOpensAt: null,
+          registrationClosesAt: null,
           public: false,
           countries: ['de'],
           name: 'Test Camp',

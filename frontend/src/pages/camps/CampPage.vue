@@ -177,6 +177,10 @@ const registrationStatus = computed<RegistrationStatus>(() => {
 
   const { registrationOpensAt, registrationClosesAt } = camp.value;
 
+  if (!registrationOpensAt && !registrationClosesAt) {
+    return 'closed';
+  }
+
   if (registrationOpensAt && now.value < new Date(registrationOpensAt)) {
     return 'not_open';
   }

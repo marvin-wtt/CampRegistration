@@ -23,15 +23,15 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     services:
-      mysql:
-        image: mysql:9
+      mariadb:
+        image: mariadb:10.11.15
         env:
           MYSQL_DATABASE: test_db
           MYSQL_ROOT_PASSWORD: admin123
         options: >-
           --health-cmd "mysqladmin ping"
-          --health-interval 10s 
-          --health-timeout 5s 
+          --health-interval 10s
+          --health-timeout 5s
           --health-retries 3
         ports:
           - 3306:3306
@@ -49,7 +49,7 @@ jobs:
           node-version: 24
 
       - name: Install prisma
-        run: npm i prisma@7
+        run: npm i prisma
 
       - name: Verify migrations
         run: >
@@ -71,6 +71,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -108,8 +109,8 @@ jobs:
           MYSQL_ROOT_PASSWORD: admin123
         options: >-
           --health-cmd "mysqladmin ping"
-          --health-interval 10s 
-          --health-timeout 5s 
+          --health-interval 10s
+          --health-timeout 5s
           --health-retries 3
 
       redis:
@@ -146,6 +147,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -189,6 +191,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -197,7 +200,11 @@ jobs:
         run: npm run build --workspace common
 
       - name: Test frontend
-        run: npm run test --workspace frontend
+        run: >
+          npm run test --workspace frontend --
+          --coverage.enabled=true
+          --coverage.reporter=json-summary
+          --coverage.reporter=json
 
       - name: Report coverage
         if: always() && github.event_name == 'pull_request'
@@ -249,7 +256,7 @@ jobs:
       APP_URL: http://localhost:3001
       APP_NAME: Test App
       DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
-      SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
       STORAGE_LOCATION: local
@@ -272,6 +279,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: 'npm'
 
       - name: Cypress run
         uses: cypress-io/github-action@v6

@@ -83,6 +83,7 @@ export class FileService extends BaseService {
     file: RequestFile,
     name?: string,
     field?: string,
+    locale?: string | null,
     accessLevel?: string,
   ): Prisma.FileCreateInput => {
     return {
@@ -91,6 +92,7 @@ export class FileService extends BaseService {
       name: file.filename,
       size: file.size,
       field: extractKeyFromFieldName(field ?? file.fieldname),
+      locale: locale ?? null,
       storageLocation: this.config.storage.location,
       accessLevel,
     };
@@ -182,13 +184,20 @@ export class FileService extends BaseService {
     file: RequestFile,
     name?: string,
     field?: string,
+    locale?: string | null,
     accessLevel?: string,
   ) {
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
       : file.originalname;
 
-    const fileData = this.mapFields(file, originalFileName, field, accessLevel);
+    const fileData = this.mapFields(
+      file,
+      originalFileName,
+      field,
+      locale,
+      accessLevel,
+    );
     const modelData = model ? { [`${model.name}Id`]: model.id } : {};
 
     const created = await this.prisma.file.create({

@@ -582,6 +582,10 @@ function onDeleteCamp(camp: Camp) {
 }
 
 function registrationStatus(camp: Camp): 'open' | 'not_open' | 'closed' {
+  if (!camp.registrationOpensAt && !camp.registrationClosesAt) {
+    return 'closed';
+  }
+
   const now = new Date();
   if (camp.registrationOpensAt && now < new Date(camp.registrationOpensAt)) {
     return 'not_open';

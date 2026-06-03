@@ -10,7 +10,7 @@
       >
         <q-card-section>
           <div class="text-h6">
-            {{ t(`title`) }}
+            {{ t('title') }}
           </div>
         </q-card-section>
 
@@ -57,11 +57,26 @@
               v-model="fileData.field"
               :label="t('fields.field.label')"
               :hint="t('fields.field.hint')"
+              :readonly="isReplaceMode"
               :rules="[
                 (val?: string) => !!val || t('fields.field.rules.required'),
                 (val: string) =>
-                  !fields.includes(val) || t('fields.field.rules.unique'),
+                  isReplaceMode ||
+                  !fields.includes(val) ||
+                  t('fields.field.rules.unique'),
               ]"
+              outlined
+              rounded
+            />
+
+            <!-- Locale -->
+            <q-select
+              v-model="fileData.locale"
+              :options="localeOptions"
+              :label="t('fields.locale.label')"
+              :hint="t('fields.locale.hint')"
+              emit-value
+              map-options
               outlined
               rounded
             />
@@ -121,13 +136,24 @@
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref } from 'vue';
-import type { ServiceFileCreateData } from '@camp-registration/common/entities';
+import type {
+  ServiceFileCreateData,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import { uniqueName } from 'src/utils/uniqueName';
 import { useCampFilesStore } from 'stores/camp-files-store';
+import { useCampDetailsStore } from 'stores/camp-details-store';
+
+const { initialField, initialLocale, fileToReplace } = defineProps<{
+  initialField?: string;
+  initialLocale?: string | null;
+  fileToReplace?: ServiceFile;
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const campFileStore = useCampFilesStore();
+const campStore = useCampDetailsStore();
 
 const { t } = useI18n();
 
@@ -136,14 +162,31 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const fileData = reactive<ServiceFileCreateData>({
   accessLevel: 'public',
+  field: fileToReplace?.field ?? initialField,
+  locale: fileToReplace?.locale ?? initialLocale ?? null,
 } as ServiceFileCreateData);
 
 const loading = ref<boolean>(false);
 
+const isReplaceMode = computed(
+  () => fileToReplace !== undefined || initialField !== undefined,
+);
+
 const fields = computed<string[]>(() => {
+  if (isReplaceMode.value) {
+    return [];
+  }
   const files = campFileStore.data ?? [];
 
   return files.map((file) => file.field).filter((field) => field != null);
+});
+
+const localeOptions = computed<QSelectOption<string | null>[]>(() => {
+  const locales = campStore.data?.locales ?? [];
+  return [
+    { label: t('fields.locale.default'), value: null },
+    ...locales.map((locale) => ({ label: locale, value: locale })),
+  ];
 });
 
 interface AccessLevelOption extends QSelectOption {
@@ -165,11 +208,9 @@ const accessLevelOptions: AccessLevelOption[] = [
 
 function onFileUpdate() {
   if (!fileData.name || fileData.name.trim().length === 0) {
-    // File name without extension
     fileData.name = fileData.file.name.replace(/\.[^/.]+$/, '');
   }
 
-  // Generate default
   if (fileData.name && !fileData.field) {
     const name = fileData.name.trim().toLowerCase().replaceAll(' ', '-');
     fileData.field = uniqueName(name, fields.value);
@@ -179,7 +220,9 @@ function onFileUpdate() {
 async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
-    const file = await campFileStore.createEntry(fileData);
+    const file = fileToReplace
+      ? await campFileStore.replaceFile(fileToReplace, fileData)
+      : await campFileStore.createEntry(fileData);
 
     onDialogOK(file);
   } finally {
@@ -212,6 +255,10 @@ fields:
     label: 'File'
     rules:
       required: 'Please select a file to upload'
+  locale:
+    label: 'Language'
+    hint: 'Leave as default to apply to all languages'
+    default: 'Default (all languages)'
   name:
     label: 'Name'
     rules:
@@ -248,6 +295,10 @@ fields:
     label: 'Datei'
     rules:
       required: 'Bitte wählen Sie eine Datei zum Hochladen aus'
+  locale:
+    label: 'Sprache'
+    hint: 'Leer lassen, um auf alle Sprachen anzuwenden'
+    default: 'Standard (alle Sprachen)'
   name:
     label: 'Name'
     rules:
@@ -284,6 +335,10 @@ fields:
     label: 'Fichier'
     rules:
       required: 'Veuillez sélectionner un fichier à téléverser'
+  locale:
+    label: 'Langue'
+    hint: 'Laisser par défaut pour appliquer à toutes les langues'
+    default: 'Défaut (toutes les langues)'
   name:
     label: 'Nom'
     rules:
@@ -320,6 +375,10 @@ fields:
     label: 'Plik'
     rules:
       required: 'Wybierz plik do przesłania'
+  locale:
+    label: 'Język'
+    hint: 'Pozostaw domyślnie, aby zastosować do wszystkich języków'
+    default: 'Domyślny (wszystkie języki)'
   name:
     label: 'Nazwa'
     rules:
@@ -356,6 +415,10 @@ fields:
     label: 'Soubor'
     rules:
       required: 'Vyberte soubor k nahrání'
+  locale:
+    label: 'Jazyk'
+    hint: 'Ponechte výchozí pro použití ve všech jazycích'
+    default: 'Výchozí (všechny jazyky)'
   name:
     label: 'Název'
     rules:

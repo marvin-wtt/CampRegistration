@@ -13,6 +13,11 @@ export default {
     error: 'Failed to delete file',
     invalid: 'Invalid file id',
   },
+  replace: {
+    progress: 'Replacing file...',
+    success: 'File replaced successfully',
+    error: 'Failed to replace file',
+  },
   download: {
     error: 'Failed to download file',
   },

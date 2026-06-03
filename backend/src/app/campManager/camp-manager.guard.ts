@@ -1,4 +1,4 @@
-import { CampManagerService } from '#app/campManager/camp-manager.service.js';
+import { CampManagerService } from '#app/campManager/camp-manager.service';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
@@ -21,12 +21,16 @@ export const campPublic = (req: Request): boolean => {
 
 export const registrationOpen = (req: Request): boolean => {
   const camp = req.modelOrFail('camp');
+  const { registrationOpensAt, registrationClosesAt } = camp;
+
+  if (!registrationOpensAt && !registrationClosesAt) {
+    return false;
+  }
+
   const now = new Date();
-  if (camp.registrationOpensAt && now < camp.registrationOpensAt) {
+  if (registrationOpensAt && now < registrationOpensAt) {
     return false;
   }
-  if (camp.registrationClosesAt && now > camp.registrationClosesAt) {
-    return false;
-  }
-  return true;
+
+  return !(registrationClosesAt && now > registrationClosesAt);
 };

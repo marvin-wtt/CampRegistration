@@ -24,9 +24,52 @@
         header-nav
         class="column col-xs-12 col-sm-7 col-md-5 col-lg-4 col-xl-3"
       >
+        <!-- Template -->
         <camp-edit-step
           v-model="step"
           :name="0"
+          :title="t('step.template')"
+          icon="settings"
+        >
+          <!-- Preset -->
+          <q-select
+            v-model="data.preset"
+            :label="t('field.use_template')"
+            :options="presetOptions"
+            :disable="data.referenceCampId != null"
+            outlined
+            rounded
+            emit-value
+            map-options
+          >
+          </q-select>
+
+          <!-- Template -->
+          <q-select
+            v-if="!data.preset || data.referenceCampId"
+            v-model="data.referenceCampId"
+            :label="t('field.template')"
+            :options="referenceCampOptions"
+            :rules="[
+              (val?: string) => !!val || t('validation.referenceCampId.empty'),
+            ]"
+            clearable
+            outlined
+            rounded
+            emit-value
+            map-options
+            @clear="clearReferenceCamp()"
+          >
+            <template #before>
+              <q-icon name="content_copy" />
+            </template>
+          </q-select>
+        </camp-edit-step>
+
+        <!-- General -->
+        <camp-edit-step
+          v-model="step"
+          :name="1"
           :title="t('step.general')"
           icon="info"
         >
@@ -68,41 +111,6 @@
               <q-icon name="title" />
             </template>
           </translated-input>
-        </camp-edit-step>
-
-        <!-- Template -->
-        <camp-edit-step
-          v-model="step"
-          :name="1"
-          :title="t('step.template')"
-          icon="settings"
-        >
-          <q-toggle
-            v-model="isUsingTemplate"
-            :label="t('field.use_template')"
-            :disable="
-              data.referenceCampId != null || referenceCampOptions.length === 0
-            "
-            color="primary"
-          />
-
-          <!-- Template -->
-          <q-select
-            v-if="isUsingTemplate || data.referenceCampId"
-            v-model="data.referenceCampId"
-            :label="t('field.template.label')"
-            :options="referenceCampOptions"
-            clearable
-            outlined
-            rounded
-            emit-value
-            map-options
-            @clear="data.referenceCampId = undefined"
-          >
-            <template #before>
-              <q-icon name="content_copy" />
-            </template>
-          </q-select>
         </camp-edit-step>
 
         <!-- Organizer -->
@@ -378,7 +386,7 @@ import CampEditStep from 'components/campManagement/settings/create/CampEditStep
 import CountrySelect from 'components/common/CountrySelect.vue';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type {
   CampCreateData,
   CampDetails,
@@ -392,15 +400,18 @@ const assignedCampsStore = useAssignedCampsStore();
 const campStore = useCampsStore();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
+const DEFAULT_DATA = {
+  confirmationMode: 'AUTOMATIC',
+  preset: 'standard',
+} as CampCreateData;
+
 const step = ref<number>(0);
 const loading = ref<boolean>(false);
 const data = ref<CampCreateData>({
-  confirmationMode: 'AUTOMATIC',
-} as CampCreateData);
+  ...DEFAULT_DATA,
+});
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-
-const isUsingTemplate = ref<boolean>(false);
 
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
@@ -415,7 +426,7 @@ const referenceCampOptions = computed<ReferenceCampOptions>(() => {
 });
 
 const confirmationModeOptions = computed<
-  QSelectOption<CampDetails['confirmationMode']>[]
+  QSelectOption<CampCreateData['confirmationMode']>[]
 >(() => {
   return [
     {
@@ -429,6 +440,63 @@ const confirmationModeOptions = computed<
   ];
 });
 
+const presetOptions = computed<QSelectOption<CampCreateData['preset']>[]>(
+  () => {
+    return [
+      {
+        label: t('preset.standard'),
+        value: 'standard',
+      },
+      {
+        label: t('preset.minimal'),
+        value: 'minimal',
+      },
+      {
+        label: t('preset.otherCamp'),
+        value: null,
+      },
+    ];
+  },
+);
+
+watch(
+  () => data.value.referenceCampId,
+  () => {
+    if (!data.value.referenceCampId) {
+      return;
+    }
+
+    const refCamp = assignedCampsStore.data?.find(
+      (camp) => camp.id === data.value.referenceCampId,
+    );
+    if (!refCamp) {
+      return;
+    }
+
+    const copyKeys = [
+      'countries',
+      'name',
+      'organizer',
+      'contactEmail',
+      'maxParticipants',
+      'minAge',
+      'maxAge',
+      'location',
+      'price',
+      'public',
+      'confirmationMode',
+    ] as const satisfies ReadonlyArray<
+      keyof CampCreateData & keyof CampDetails
+    >;
+
+    for (const key of copyKeys) {
+      if (data.value[key] === undefined) {
+        data.value[key] = refCamp[key] as never;
+      }
+    }
+  },
+);
+
 async function onComplete() {
   loading.value = true;
   // Create camp
@@ -441,6 +509,10 @@ async function onComplete() {
     loading.value = false;
     step.value--;
   }
+}
+
+function clearReferenceCamp() {
+  data.value = { ...DEFAULT_DATA };
 }
 </script>
 
@@ -459,11 +531,8 @@ step:
 field:
   countries: 'Countries'
   name: 'Camp name'
-  use_template: 'Use another camp as a template'
-  template:
-    label: 'Template'
-    options:
-      default: 'Default'
+  use_template: 'Preset'
+  template: 'Camp'
   organizer: 'Organizer'
   contactEmail: 'Contact email'
   maxParticipants: 'Maximum number of participants'
@@ -477,14 +546,19 @@ field:
   price: 'Price'
   public: 'Show camp on main page'
 
+preset:
+  standard: 'Standard'
+  minimal: 'Minimal'
+  otherCamp: 'Copy from another camp'
+
 validation:
   countries:
     empty: 'Please select at least one countryQuestion'
+  referenceCampId:
+    empty: 'Please select a camp to copy from'
   name:
     empty: 'Please enter a camp name'
     length: 'Camp name must not exceed 255 characters'
-  template:
-    empty: 'Please choose a template'
   organizer:
     empty: 'Please enter the organizer'
   contactEmail:
@@ -531,11 +605,8 @@ step:
 field:
   countries: 'Länder'
   name: 'Camp Name'
-  use_template: 'Ein anderes Camp als Vorlage verwenden'
-  template:
-    label: 'Vorlage'
-    options:
-      default: 'Standard'
+  use_template: 'Vorlage'
+  template: 'Camp'
   organizer: 'Veranstalter'
   contactEmail: 'Kontakt-Email'
   maxParticipants: 'Maximale Teilnehmeranzahl'
@@ -549,14 +620,19 @@ field:
   price: 'Preis'
   public: 'Camp auf Startseite anzeigen'
 
+preset:
+  standard: 'Standard'
+  minimal: 'Minimal'
+  otherCamp: 'Von einem anderen Camp kopieren'
+
 validation:
   countries:
     empty: 'Bitte wählen Sie mindestens ein Land aus'
+  referenceCampId:
+    empty: 'Bitte wähle ein Camp aus, von dem kopiert werden soll'
   name:
     empty: 'Bitte geben Sie einen Camp-Namen ein'
     length: 'Der Camp-Name darf maximal 255 Zeichen haben'
-  template:
-    empty: 'Bitte Vorlage auswählen'
   organizer:
     empty: 'Bitte geben Sie ein Veranstalter an'
   contactEmail:
@@ -603,11 +679,8 @@ step:
 field:
   countries: 'Pays'
   name: 'Nom du camp'
-  use_template: 'Utiliser un autre camp comme modèle'
-  template:
-    label: 'Modèle'
-    options:
-      default: 'Par défaut'
+  use_template: 'Modèle'
+  template: 'Camp'
   organizer: 'Organisateur'
   contactEmail: 'Email de contact'
   maxParticipants: 'Nombre maximum de participants'
@@ -621,14 +694,19 @@ field:
   price: 'Prix'
   public: "Afficher le camp sur la page d'accueil"
 
+preset:
+  standard: 'Standard'
+  minimal: 'Minimal'
+  otherCamp: 'Copier depuis un autre camp'
+
 validation:
   countries:
     empty: 'Veuillez sélectionner au moins un pays'
+  referenceCampId:
+    empty: 'Veuillez sélectionner un camp à copier'
   name:
     empty: 'Veuillez entrer un nom de camp'
     length: 'Le nom du camp ne doit pas dépasser 255 caractères'
-  template:
-    empty: 'Veuillez choisir un modèle'
   organizer:
     empty: "Veuillez entrer l'organisateur"
   contactEmail:
@@ -675,11 +753,8 @@ step:
 field:
   countries: 'Kraje'
   name: 'Nazwa obozu'
-  use_template: 'Użyj innego obozu jako szablonu'
-  template:
-    label: 'Szablon'
-    options:
-      default: 'Domyślny'
+  use_template: 'Szablon'
+  template: 'Obóz'
   organizer: 'Organizator'
   contactEmail: 'E-mail kontaktowy'
   maxParticipants: 'Maksymalna liczba uczestników'
@@ -693,14 +768,19 @@ field:
   price: 'Cena'
   public: 'Pokaż obóz na stronie głównej'
 
+preset:
+  standard: 'Standard'
+  minimal: 'Minimalny'
+  otherCamp: 'Skopiuj z innego obozu'
+
 validation:
   countries:
     empty: 'Wybierz co najmniej jeden kraj'
+  referenceCampId:
+    empty: 'Wybierz obóz, z którego chcesz skopiować'
   name:
     empty: 'Podaj nazwę obozu'
     length: 'Nazwa obozu może mieć maksymalnie 255 znaków'
-  template:
-    empty: 'Wybierz szablon'
   organizer:
     empty: 'Podaj organizatora'
   contactEmail:
@@ -747,11 +827,8 @@ step:
 field:
   countries: 'Země'
   name: 'Název tábora'
-  use_template: 'Použít jiný tábor jako šablonu'
-  template:
-    label: 'Šablona'
-    options:
-      default: 'Výchozí'
+  use_template: 'Šablona'
+  template: 'Tábor'
   organizer: 'Organizátor'
   contactEmail: 'Kontaktní e-mail'
   maxParticipants: 'Maximální počet účastníků'
@@ -765,14 +842,19 @@ field:
   price: 'Cena'
   public: 'Zobrazit tábor na úvodní stránce'
 
+preset:
+  standard: 'Standard'
+  minimal: 'Minimální'
+  otherCamp: 'Zkopírovat z jiného tábora'
+
 validation:
   countries:
     empty: 'Vyberte alespoň jednu zemi'
+  referenceCampId:
+    empty: 'Vyberte tábor, ze kterého chcete kopírovat'
   name:
     empty: 'Zadejte název tábora'
     length: 'Název tábora může mít maximálně 255 znaků'
-  template:
-    empty: 'Vyberte šablonu'
   organizer:
     empty: 'Zadejte organizátora'
   contactEmail:

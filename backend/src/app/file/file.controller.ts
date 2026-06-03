@@ -81,7 +81,7 @@ export class FileController extends BaseController {
 
   async store(req: Request, res: Response) {
     const {
-      body: { accessLevel, field, name },
+      body: { accessLevel, field, locale, name },
       file,
     } = await req.validate(validator.store);
 
@@ -96,6 +96,7 @@ export class FileController extends BaseController {
       file,
       name,
       fieldValue,
+      locale,
       accessLevel ?? 'private',
     );
 
