@@ -7,7 +7,7 @@ import httpStatus from 'http-status';
 import {
   defaultMessageTemplatesForCountries,
   getCampPreset,
-} from './templates/index.js';
+} from '#app/camp/presets/index.js';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
