@@ -1,9 +1,3 @@
-import config from '#config/index';
-
-const host = config.origin;
-
-// Minimal form for adult camps, workshops, or simple events.
-// No guardian/permission/emergency-contact sections.
 export default {
   locale: 'en',
   title: '{camp.name}',
