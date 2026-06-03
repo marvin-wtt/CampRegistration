@@ -1,8 +1,3 @@
-// TODO Set file IDs
-import config from '#config/index';
-
-const host = config.origin;
-
 export default {
   locale: 'de',
   title: '{camp.name}',
@@ -11,17 +6,25 @@ export default {
   logoHeight: '80px',
   logoPosition: 'right',
   completedHtml: {
-    en: '<h3>Thank you for your registration!</h3><p stype="font-size: 18px">You should receive a confirmation email shortly.</p>',
-    de: '<h3>Vielen Dank für deine Anmeldung!</h3><p stype="font-size: 18px">Du solltest in kurze eine Bestätigungsmail erhalten.</p>',
-    fr: '<h3>Merci de t\'inscrire!</h3><p stype="font-size : 18px">Tu devrais recevoir un e-mail de confirmation dans les plus brefs délais.</p>',
-    pl: '<h3>Dziękujemy za rejestrację!</h3><p stype="font-size: 18px">Wkrótce powinieneś/powinnaś otrzymać e-mail z potwierdzeniem.</p>',
-    cs: '<h3>Děkujeme za registraci!</h3><p stype="font-size: 18px">Brzy by ti měl přijít potvrzovací e-mail.</p>',
+    en: '<h3>Thank you for your registration!</h3><p style="font-size: 18px">You should receive a confirmation email shortly.</p>',
+    de: '<h3>Vielen Dank für deine Anmeldung!</h3><p style="font-size: 18px">Du solltest in kurze eine Bestätigungsmail erhalten.</p>',
+    fr: '<h3>Merci de t\'inscrire!</h3><p style="font-size: 18px">Tu devrais recevoir un e-mail de confirmation dans les plus brefs délais.</p>',
+    pl: '<h3>Dziękujemy za rejestrację!</h3><p style="font-size: 18px">Wkrótce powinieneś/powinnaś otrzymać e-mail z potwierdzeniem.</p>',
+    cs: '<h3>Děkujeme za registraci!</h3><p style="font-size: 18px">Brzy by ti měl přijít potvrzovací e-mail.</p>',
     default:
-      '<h3>Thank you for your registration!<p stype="font-size: 18px">You should receive a confirmation email shortly.</p>',
+      '<h3>Thank you for your registration!</h3><p style="font-size: 18px">You should receive a confirmation email shortly.</p>',
   },
   pages: [
     {
       name: 'p_overview',
+      title: {
+        en: 'Information',
+        de: 'Informationen',
+        fr: 'Informations',
+        pl: 'Informacje',
+        cs: 'Informace',
+        default: 'Information',
+      },
       elements: [
         {
           type: 'expression',
@@ -39,7 +42,7 @@ export default {
             fr: '{camp.startAtDate} au {camp.endAtDate}',
             pl: '{camp.startAtDate} do {camp.endAtDate}',
             cs: '{camp.startAtDate} až {camp.endAtDate}',
-            default: '{camp.startAtDate} until {camp.endAtDate}  ',
+            default: '{camp.startAtDate} until {camp.endAtDate}',
           },
         },
         {
@@ -105,17 +108,17 @@ export default {
           campDataType: 'role',
         },
       ],
-      title: {
-        en: 'Information',
-        de: 'Informationen',
-        fr: 'Informations',
-        pl: 'Informacje',
-        cs: 'Informace',
-        default: 'Information',
-      },
     },
     {
       name: 'p_general_information',
+      title: {
+        en: 'General Information',
+        de: 'Allgemeine Informationen',
+        fr: 'Informations générales',
+        pl: 'Informacje ogólne',
+        cs: 'Obecné informace',
+        default: 'General Information',
+      },
       elements: [
         {
           type: 'text',
@@ -239,17 +242,17 @@ export default {
           },
         },
       ],
-      title: {
-        en: 'General Information',
-        de: 'Allgemeine Informationen',
-        fr: 'Informations générales',
-        pl: 'Informacje ogólne',
-        cs: 'Obecné informace',
-        default: 'General Information',
-      },
     },
     {
       name: 'p_contact',
+      title: {
+        en: 'Contact Information',
+        de: 'Kontaktinformationen',
+        fr: 'Coordonnées',
+        pl: 'Dane kontaktowe',
+        cs: 'Kontaktní údaje',
+        default: 'Contact Information',
+      },
       elements: [
         {
           type: 'address',
@@ -346,17 +349,18 @@ export default {
           ],
         },
       ],
-      title: {
-        en: 'Contact Information',
-        de: 'Kontaktinformationen',
-        fr: 'Coordonnées',
-        pl: 'Dane kontaktowe',
-        cs: 'Kontaktní údaje',
-        default: 'Contact Information',
-      },
     },
     {
       name: 'p_guardian',
+      title: {
+        en: 'Information about legal guardians',
+        de: 'Informationen über Sorgeberechtigten',
+        fr: 'Informations sur les tuteurs légaux',
+        pl: 'Informacje o opiekunach prawnych',
+        cs: 'Informace o zákonných zástupcích',
+        default: 'Information about legal guardians',
+      },
+      visibleIf: '{isminor}',
       elements: [
         {
           type: 'text',
@@ -404,18 +408,17 @@ export default {
           autocomplete: 'email',
         },
       ],
-      visibleIf: '{isminor}',
-      title: {
-        en: 'Information about legal guardians',
-        de: 'Informationen über Sorgeberechtigten',
-        fr: 'Informations sur les tuteurs légaux',
-        pl: 'Informacje o opiekunach prawnych',
-        cs: 'Informace o zákonných zástupcích',
-        default: 'Information about legal guardians',
-      },
     },
     {
       name: 'p_emergency_contact',
+      title: {
+        en: 'Emergency contacts',
+        de: 'Notfallkontakte',
+        fr: "Contacts en cas d'urgence",
+        pl: 'Kontakty awaryjne',
+        cs: 'Kontakty pro nouzi',
+        default: 'Emergency contacts',
+      },
       elements: [
         {
           type: 'paneldynamic',
@@ -510,17 +513,18 @@ export default {
           },
         },
       ],
-      title: {
-        en: 'Emergency contacts',
-        de: 'Notfallkontakte',
-        fr: "Contacts en cas d'urgence",
-        pl: 'Kontakty awaryjne',
-        cs: 'Kontakty pro nouzi',
-        default: 'Emergency contacts',
-      },
     },
     {
       name: 'p_permissions',
+      title: {
+        en: 'Permissions',
+        de: 'Berechtigungen',
+        fr: 'Autorisations',
+        pl: 'Uprawnienia',
+        cs: 'Oprávnění',
+        default: 'Permissions',
+      },
+      visibleIf: '{isminor}',
       elements: [
         {
           type: 'boolean',
@@ -647,18 +651,17 @@ export default {
           },
         },
       ],
-      visibleIf: '{isminor}',
-      title: {
-        en: 'Permissions',
-        de: 'Berechtigungen',
-        fr: 'Autorisations',
-        pl: 'Uprawnienia',
-        cs: 'Oprávnění',
-        default: 'Permissions',
-      },
     },
     {
       name: 'p_additional_information',
+      title: {
+        en: 'Additional Information',
+        de: 'Weitere Informationen',
+        fr: 'Informations supplémentaires',
+        pl: 'Dodatkowe informacje',
+        cs: 'Další informace',
+        default: 'Additional Information',
+      },
       elements: [
         {
           type: 'text',
@@ -722,28 +725,29 @@ export default {
           },
         },
       ],
-      title: {
-        en: 'Additional Information',
-        de: 'Weitere Informationen',
-        fr: 'Informations supplémentaires',
-        pl: 'Dodatkowe informacje',
-        cs: 'Další informace',
-        default: 'Additional Information',
-      },
     },
     {
       name: 'p_consent',
+      title: {
+        en: 'Consents',
+        fr: 'Approbations',
+        de: 'Zustimmung',
+        pl: 'Zgody',
+        cs: 'Souhlasy',
+        default: 'Consents',
+      },
       elements: [
         {
           type: 'boolean',
           name: 'consent_rules',
           title: {
-            en: `I have read the [camp rules](${host}/) and agree to them.`,
-            de: `Ich habe die [Campregeln](${host}/) gelesen und bin damit einverstanden.`,
-            fr: `J'ai lu et j'accepte le [règlement](${host}/) de la colonie de vacances.`,
-            pl: `Przeczytałem/łam [regulamin obozu](${host}/) i akceptuję go.`,
-            cs: `Přečetl/a jsem si [táborová pravidla](${host}/) a souhlasím s nimi.`,
-            default: `I have read the [camp rules](${host}/) and agree to them.`,
+            en: 'I have read the [camp rules]({_file.rules}) and agree to them.',
+            de: 'Ich habe die [Campregeln]({_file.rules}) gelesen und bin damit einverstanden.',
+            fr: "J'ai lu et j'accepte le [règlement]({_file.rules}) de la colonie de vacances.",
+            pl: 'Przeczytałem/łam [regulamin obozu]({_file.rules}) i akceptuję go.',
+            cs: 'Přečetl/a jsem si [táborová pravidla]({_file.rules}) a souhlasím s nimi.',
+            default:
+              'I have read the [camp rules]({_file.rules}) and agree to them.',
           },
           correctAnswer: true,
           isRequired: true,
@@ -776,12 +780,13 @@ export default {
           type: 'boolean',
           name: 'consent_general_terms_and_conditions',
           title: {
-            en: `I have read the [General Terms and Conditions](${host}/) and agree to them.`,
-            de: `Ich habe die [allgemeinen Geschäftsbedingungen](${host}/) gelesen und stimme diesen zu.`,
-            fr: `J'ai lu et j'accepte les [conditions générales](${host}/).`,
-            pl: `Przeczytałem/łam [regulamin / warunki uczestnictwa](${host}/) i je akceptuję.`,
-            cs: `Přečetl/a jsem si [obchodní podmínky](${host}/) a souhlasím s nimi.`,
-            default: `I have read the [General Terms and Conditions](${host}/) and agree to them.`,
+            en: 'I have read the [General Terms and Conditions]({_file.toc}) and agree to them.',
+            de: 'Ich habe die [allgemeinen Geschäftsbedingungen]({_file.toc}) gelesen und stimme diesen zu.',
+            fr: "J'ai lu et j'accepte les [conditions générales]({_file.toc}).",
+            pl: 'Przeczytałem/łam [regulamin / warunki uczestnictwa]({_file.toc}) i je akceptuję.',
+            cs: 'Přečetl/a jsem si [obchodní podmínky]({_file.toc}) a souhlasím s nimi.',
+            default:
+              'I have read the [General Terms and Conditions]({_file.toc}) and agree to them.',
           },
           correctAnswer: true,
           isRequired: true,
@@ -876,14 +881,6 @@ export default {
           ],
         },
       ],
-      title: {
-        en: 'Consents',
-        fr: 'Approbations',
-        de: 'Zustimmung',
-        pl: 'Zgody',
-        cs: 'Souhlasy',
-        default: 'Consents',
-      },
     },
   ],
   calculatedValues: [

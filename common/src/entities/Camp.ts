@@ -33,6 +33,7 @@ export type CampCreateData = Omit<
   'id' | 'freePlaces'
 > & {
   referenceCampId?: string | undefined;
+  preset?: 'standard' | 'minimal' | undefined | null;
 };
 
 export type CampUpdateData = Partial<CampCreateData>;

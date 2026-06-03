@@ -4,11 +4,10 @@ import { FileService } from '#app/file/file.service';
 import { RegistrationService } from '#app/registration/registration.service';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
-import defaultForm from '#assets/camp/form';
-import defaultThemes from '#assets/camp/themes';
-import defaultTableTemplates from '#assets/camp/tableTemplates';
-import { defaultMessageTemplatesForCountries } from '#assets/camp/messageTemplates';
-import defaultFiles from '#assets/camp/files';
+import {
+  defaultMessageTemplatesForCountries,
+  getCampPreset,
+} from '#app/camp/presets/index.js';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
@@ -91,21 +90,23 @@ export class CampController extends BaseController {
       ? await this.campService.getCampById(body.referenceCampId)
       : undefined;
 
-    const form = body.form ?? referenceCamp?.form ?? defaultForm;
-    const themes = body.themes ?? referenceCamp?.themes ?? defaultThemes;
+    const preset = getCampPreset(body.preset);
 
-    // Copy files from reference or use defaults
+    const form = body.form ?? referenceCamp?.form ?? preset.form;
+    const themes = body.themes ?? referenceCamp?.themes ?? preset.themes;
+
+    // Copy files from reference camp when cloning; no default files otherwise
     const files = body.referenceCampId
       ? await this.fileService.queryModelFiles({
           name: 'camp',
           id: body.referenceCampId,
         })
-      : defaultFiles;
+      : [];
 
-    // Copy table templates from reference or use defaults
+    // Copy table templates from reference camp when cloning; otherwise use preset
     const tableTemplates = body.referenceCampId
       ? await this.tableTemplateService.queryTemplates(body.referenceCampId)
-      : defaultTableTemplates.map((value) => ({ data: value }));
+      : preset.tableTemplates.map((value) => ({ data: value }));
 
     const messageTemplates = body.referenceCampId
       ? await this.messageTemplateService.queryMessageTemplates(

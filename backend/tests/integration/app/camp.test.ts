@@ -745,24 +745,6 @@ describe('/api/v1/camps', () => {
           }
         });
       });
-
-      it('should create default files', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(campCreateNational)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        const files = await prisma.file.findMany({
-          where: {
-            camp: { id: body.data.id },
-          },
-        });
-
-        expect(files.length).not.toBe(0);
-      });
     });
 
     describe('reference id', () => {
