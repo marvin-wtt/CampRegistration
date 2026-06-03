@@ -58,7 +58,7 @@
             rounded
             emit-value
             map-options
-            @clear="data.referenceCampId = undefined"
+            @clear="clearReferenceCamp()"
           >
             <template #before>
               <q-icon name="content_copy" />
@@ -400,12 +400,16 @@ const assignedCampsStore = useAssignedCampsStore();
 const campStore = useCampsStore();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
+const DEFAULT_DATA = {
+  confirmationMode: 'AUTOMATIC',
+  preset: 'standard',
+} as CampCreateData;
+
 const step = ref<number>(0);
 const loading = ref<boolean>(false);
 const data = ref<CampCreateData>({
-  confirmationMode: 'AUTOMATIC',
-  preset: 'standard',
-} as CampCreateData);
+  ...DEFAULT_DATA,
+});
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
@@ -505,6 +509,10 @@ async function onComplete() {
     loading.value = false;
     step.value--;
   }
+}
+
+function clearReferenceCamp() {
+  data.value = { ...DEFAULT_DATA };
 }
 </script>
 
