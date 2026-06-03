@@ -5,13 +5,14 @@ import type {
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
 import { useRouter } from 'vue-router';
-import { useAuthBus } from 'src/composables/bus';
+import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 
 export const useProfileStore = defineStore('profile', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const authBus = useAuthBus();
+  const campBus = useCampBus();
   const {
     data,
     isLoading,
@@ -26,6 +27,12 @@ export const useProfileStore = defineStore('profile', () => {
   });
 
   authBus.on('logout', reset);
+
+  campBus.on('create', () => {
+    void apiService.fetchProfile().then((profile) => {
+      data.value = profile;
+    });
+  });
 
   async function fetchProfile(): Promise<void> {
     await errorOnFailure(async () => {
