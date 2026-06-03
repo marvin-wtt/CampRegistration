@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
+import { formUtils } from '#utils/form';
+
+type CampWithFreePlaces = Parameters<typeof formUtils>[0];
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
@@ -16,15 +19,34 @@ const show = z.object({
   }),
 });
 
-const store = z.object({
-  params: z.object({
-    campId: z.ulid(),
-  }),
-  body: z.object({
-    data: RegistrationDataSchema,
-    locale: LocaleSchema.nullable().optional(),
-  }),
-});
+const store = (camp: CampWithFreePlaces) =>
+  z.object({
+    params: z.object({
+      campId: z.ulid(),
+    }),
+    body: z.object({
+      data: RegistrationDataSchema.superRefine((data, ctx) => {
+        const form = formUtils(camp, data);
+
+        if (form.hasDataErrors()) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Invalid survey data: ${form.getDataErrorFields()}`,
+          });
+          return;
+        }
+
+        const unknownFields = form.unknownDataFields();
+        if (unknownFields.length > 0) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Unknown fields '${unknownFields.join(', ')}'`,
+          });
+        }
+      }),
+      locale: LocaleSchema.nullable().optional(),
+    }),
+  });
 
 const update = z.object({
   params: z.object({
