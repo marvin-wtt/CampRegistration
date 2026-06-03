@@ -144,17 +144,11 @@ import { uniqueName } from 'src/utils/uniqueName';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 
-interface Props {
+const { initialField, initialLocale, fileToReplace } = defineProps<{
   initialField?: string;
   initialLocale?: string | null;
   fileToReplace?: ServiceFile;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  initialField: undefined,
-  initialLocale: undefined,
-  fileToReplace: undefined,
-});
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -168,23 +162,26 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const fileData = reactive<ServiceFileCreateData>({
   accessLevel: 'public',
-  field: props.fileToReplace?.field ?? props.initialField,
-  locale: props.fileToReplace?.locale ?? props.initialLocale ?? null,
+  field: fileToReplace?.field ?? initialField,
+  locale: fileToReplace?.locale ?? initialLocale ?? null,
 } as ServiceFileCreateData);
 
 const loading = ref<boolean>(false);
 
 const isReplaceMode = computed(
-  () => props.fileToReplace !== undefined || props.initialField !== undefined,
+  () => fileToReplace !== undefined || initialField !== undefined,
 );
 
 const fields = computed<string[]>(() => {
-  if (isReplaceMode.value) return [];
+  if (isReplaceMode.value) {
+    return [];
+  }
   const files = campFileStore.data ?? [];
+
   return files.map((file) => file.field).filter((field) => field != null);
 });
 
-const localeOptions = computed<QSelectOption[]>(() => {
+const localeOptions = computed<QSelectOption<string | null>[]>(() => {
   const locales = campStore.data?.locales ?? [];
   return [
     { label: t('fields.locale.default'), value: null },
@@ -223,9 +220,10 @@ function onFileUpdate() {
 async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
-    const file = props.fileToReplace
-      ? await campFileStore.replaceFile(props.fileToReplace, fileData)
+    const file = fileToReplace
+      ? await campFileStore.replaceFile(fileToReplace, fileData)
       : await campFileStore.createEntry(fileData);
+
     onDialogOK(file);
   } finally {
     loading.value = false;

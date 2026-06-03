@@ -29,9 +29,7 @@ export const useProfileStore = defineStore('profile', () => {
   authBus.on('logout', reset);
 
   campBus.on('create', () => {
-    void apiService.fetchProfile().then((profile) => {
-      data.value = profile;
-    });
+    void fetchProfile();
   });
 
   async function fetchProfile(): Promise<void> {

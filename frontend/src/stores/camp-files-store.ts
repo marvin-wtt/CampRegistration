@@ -136,11 +136,11 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     const campId = queryParam('campId');
 
     return withProgressNotification('replace', async () => {
-      await apiService.deleteCampFile(campId, oldFile.id);
-      data.value = data.value?.filter((f) => f.id !== oldFile.id);
-
       const newFile = await apiService.createCampFile(campId, createData);
       data.value?.push(newFile);
+
+      await apiService.deleteCampFile(campId, oldFile.id);
+      data.value = data.value?.filter((f) => f.id !== oldFile.id);
 
       return newFile;
     });
