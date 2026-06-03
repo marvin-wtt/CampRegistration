@@ -37,9 +37,9 @@ describe("registration page", () => {
       .click();
 
     cy.wait("@createCampRegistration").then((interception) => {
-      expect(interception.response.statusCode).to.eq(201);
+      expect(interception.response?.statusCode).to.eq(201);
 
-      const body = interception.response.body;
+      const body = interception.response?.body;
       expect(body).to.have.property("data");
       const data = body.data;
       expect(data).to.have.property("id");
@@ -87,9 +87,9 @@ describe("registration page", () => {
       .click();
 
     cy.wait("@createCampRegistration").then((interception) => {
-      expect(interception.response.statusCode).to.eq(201);
+      expect(interception.response?.statusCode).to.eq(201);
 
-      const body = interception.response.body;
+      const body = interception.response?.body;
       expect(body).to.have.property("data");
       const data = body.data;
       expect(data).to.have.property("id");

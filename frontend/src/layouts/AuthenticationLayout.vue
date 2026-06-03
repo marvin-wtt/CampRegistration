@@ -1,8 +1,9 @@
 <template>
-  <q-layout view="hHh Lpr fFf">
-    <!-- Be sure to play with the Layout demo on docs -->
+  <q-layout
+    view="hHh Lpr fFf"
+    class="auth-layout"
+  >
     <q-page-container>
-      <!-- This is where pages get injected -->
       <router-view />
     </q-page-container>
   </q-layout>
@@ -20,16 +21,81 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-@keyframes gradient {
-  0% {
-    background-position: 0 50%;
+<style>
+.auth-layout {
+  background:
+    radial-gradient(
+      ellipse at 12% 88%,
+      rgba(51, 141, 142, 0.35) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 88% 12%,
+      rgba(51, 95, 142, 0.28) 0%,
+      transparent 52%
+    ),
+    linear-gradient(155deg, #1c6869 0%, #226982 35%, #2a4d7e 100%);
+}
+
+.body--dark .auth-layout {
+  background:
+    radial-gradient(
+      ellipse at 12% 88%,
+      rgba(51, 141, 142, 0.15) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 88% 12%,
+      rgba(51, 95, 142, 0.12) 0%,
+      transparent 52%
+    ),
+    linear-gradient(155deg, #0c3132 0%, #0e2c3b 35%, #0d1d35 100%);
+}
+
+/* Shared card animation and elevation */
+.auth-card {
+  overflow: hidden;
+  animation: authCardIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-card:not(.q-card--flat) {
+  box-shadow:
+    0 20px 72px rgba(0, 0, 0, 0.32),
+    0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+.auth-card-header {
+  height: 100px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #338d8e 0%, #2e78a0 50%, #2a5d8d 100%);
+  position: relative;
+}
+
+.auth-card-avatar {
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow:
+    0 0 0 4px #fff,
+    0 6px 24px rgba(0, 0, 0, 0.22);
+  z-index: 1;
+}
+
+.body--dark .auth-card-avatar {
+  box-shadow:
+    0 0 0 4px #1d1d1d,
+    0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes authCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

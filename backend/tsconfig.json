@@ -27,9 +27,8 @@
     "noImplicitThis": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
-      "#*": ["src/*"]
+      "#*": ["./src/*"]
     }
   },
   "tsc-alias": {

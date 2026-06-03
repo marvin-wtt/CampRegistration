@@ -55,6 +55,7 @@ export abstract class MailBase<P> {
 
       this.t = i18n.getFixedT(locale, namespace, keyPrefix);
     }
+
     return this.t;
   }
 

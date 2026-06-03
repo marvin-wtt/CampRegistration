@@ -104,7 +104,7 @@ let templatesFetch: Promise<MessageTemplate[]> | null = null;
 
 function ensureTemplates(): Promise<MessageTemplate[]> {
   templatesFetch ??= messageTemplateService
-    .fetchMessageTemplates(campData.value!.id)
+    .fetchMessageTemplates(campData.value.id)
     .catch(() => []);
 
   return templatesFetch;

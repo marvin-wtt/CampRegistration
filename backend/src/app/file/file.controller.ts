@@ -116,10 +116,10 @@ export class FileController extends BaseController {
   ): string {
     const type = download ? 'attachment' : 'inline';
     try {
-      return contentDisposition(originalName, { type });
+      return contentDisposition.create(originalName, { type });
     } catch {
       // originalName contains characters rejected by RFC 6266 (e.g. CR/LF);
-      return contentDisposition(undefined, { type });
+      return contentDisposition.create(undefined, { type });
     }
   }
 
