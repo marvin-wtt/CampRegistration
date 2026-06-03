@@ -193,7 +193,7 @@ watch(
   },
 );
 
-const items: NavigationItemProps[] = [
+const items = computed<NavigationItemProps[]>(() => [
   {
     name: 'participants',
     label: t('participants'),
@@ -266,10 +266,10 @@ const items: NavigationItemProps[] = [
       },
     ],
   },
-];
+]);
 
 const filteredItems = computed<NavigationItemProps[]>(() => {
-  return filterItems(items);
+  return filterItems(items.value);
 });
 
 function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
