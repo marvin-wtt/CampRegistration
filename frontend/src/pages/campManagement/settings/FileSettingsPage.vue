@@ -9,6 +9,7 @@
       flat
       :columns
       :rows
+      row-key="id"
       selection="multiple"
       virtual-scroll
       :rows-per-page-options="[0]"
@@ -36,6 +37,15 @@
               @click="downloadFiles"
             />
             <q-btn
+              v-if="selected.length === 1 && can('camp.files.create')"
+              :label="t('action.replace')"
+              icon="cloud_upload"
+              color="primary"
+              rounded
+              :disable="deletionOngoing"
+              @click="openReplaceDialog(selected[0]!)"
+            />
+            <q-btn
               v-if="can('camp.files.delete')"
               :label="t('action.delete')"
               icon="delete"
@@ -47,10 +57,35 @@
           </template>
         </div>
       </template>
-      <!-- Custom cells -->
+
+      <!-- Selection: hide checkbox for virtual rows -->
+      <template #body-selection="props">
+        <q-td v-if="!props.row._virtual">
+          <q-checkbox
+            v-model="props.selected"
+            dense
+          />
+        </q-td>
+        <q-td v-else />
+      </template>
+
+      <!-- Name: upload action for virtual rows, file link for real rows -->
       <template #body-cell-name="props">
         <q-td :props="props">
+          <q-btn
+            v-if="props.row._virtual"
+            :label="getUploadHint(props.row.field, props.row.locale)"
+            icon="cloud_upload"
+            color="warning"
+            no-caps
+            rounded
+            flat
+            dense
+            class="q-px-xs"
+            @click="uploadForSlot(props.row.field, props.row.locale)"
+          />
           <a
+            v-else
             :href="props.row.href"
             target="_blank"
             style="text-decoration: none; color: inherit"
@@ -59,10 +94,12 @@
           </a>
         </q-td>
       </template>
-      <!-- Link button -->
+
+      <!-- Link: hidden for virtual rows -->
       <template #body-cell-link="props">
         <q-td :props="props">
           <q-btn
+            v-if="!props.row._virtual"
             icon="share"
             size="sm"
             rounded
@@ -80,7 +117,7 @@ import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
 import { type QTableColumn } from 'quasar';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
@@ -89,7 +126,7 @@ import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { usePermissions } from 'src/composables/permissions';
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const quasar = useQuasar();
 const campStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
@@ -102,28 +139,21 @@ onMounted(async () => {
 const uploadOngoing = ref(false);
 const deletionOngoing = ref(false);
 const selected = ref([]);
-const pagination = ref({
-  rowsPerPage: 0,
+const pagination = ref({ rowsPerPage: 0 });
+
+watch(selected, (val) => {
+  const filtered = val.filter((row: { _virtual?: boolean }) => !row._virtual);
+
+  if (filtered.length !== val.length) {
+    selected.value = filtered;
+  }
 });
+
 const columns: QTableColumn[] = [
-  {
-    name: 'name',
-    label: t('column.name'),
-    field: 'name',
-    align: 'left',
-  },
-  {
-    name: 'link',
-    label: t('column.link'),
-    field: 'href',
-    align: 'center',
-  },
-  {
-    name: 'field',
-    label: t('column.field'),
-    field: 'field',
-    align: 'left',
-  },
+  { name: 'name', label: t('column.name'), field: 'name', align: 'left' },
+  { name: 'link', label: t('column.link'), field: 'href', align: 'center' },
+  { name: 'field', label: t('column.field'), field: 'field', align: 'left' },
+  { name: 'locale', label: t('column.locale'), field: 'locale', align: 'left' },
   {
     name: 'access',
     label: t('column.access_level'),
@@ -136,71 +166,109 @@ const columns: QTableColumn[] = [
     field: 'createdAt',
     align: 'left',
   },
-  {
-    name: 'type',
-    label: t('column.type'),
-    field: 'type',
-    align: 'left',
-  },
-  {
-    name: 'size',
-    label: t('column.size'),
-    field: 'size',
-    align: 'left',
-  },
+  { name: 'type', label: t('column.type'), field: 'type', align: 'left' },
+  { name: 'size', label: t('column.size'), field: 'size', align: 'left' },
 ];
+
 const rows = computed(() => {
-  const files = campFileStore.data;
-  if (!files) {
-    return [];
+  const fileRows = (campFileStore.data ?? []).map(mapFileRow);
+
+  if (!can('camp.files.create')) {
+    return fileRows;
   }
 
-  return files.map((file) => mapColumnData(file));
+  const pendingRows = campFileStore.pendingSlots.map((slot) => ({
+    _virtual: true as const,
+    id: `__pending__${slot}`,
+    field: slot,
+    locale: null,
+    name: '',
+    href: '',
+    type: '',
+    size: '',
+    accessLevel: '',
+    createdAt: '',
+  }));
+
+  const missingLocaleRows = campFileStore.slotsWithMissingLocales.flatMap(
+    ({ slot, missingLocales }) =>
+      missingLocales.map((locale) => ({
+        _virtual: true as const,
+        id: `__missing__${slot}__${locale}`,
+        field: slot,
+        locale,
+        name: '',
+        href: '',
+        type: '',
+        size: '',
+        accessLevel: '',
+        createdAt: '',
+      })),
+  );
+
+  return [...fileRows, ...pendingRows, ...missingLocaleRows];
 });
 
-const loading = computed<boolean>(() => {
-  return campStore.isLoading || campFileStore.isLoading;
-});
+const loading = computed<boolean>(
+  () => campStore.isLoading || campFileStore.isLoading,
+);
 
-const error = computed<string | null>(() => {
-  return campStore.error || campFileStore.error;
-});
+const error = computed<string | null>(
+  () => campStore.error || campFileStore.error,
+);
 
-function mapColumnData(file: ServiceFile) {
-  const accessLevel = file.accessLevel
-    ? t(`access_level.${file.accessLevel}`)
-    : 'Unknown';
+function mapFileRow(file: ServiceFile) {
   return {
     ...file,
+    _virtual: false as const,
     size: formatBytes(file.size),
-    accessLevel,
+    accessLevel: file.accessLevel ? t(`access_level.${file.accessLevel}`) : '',
     createdAt: formatUtcDateTime(file.createdAt),
     href: campFileStore.getUrl(file.id),
   };
 }
 
-function uploadFile() {
+function openDialog(componentProps?: Record<string, unknown>) {
   uploadOngoing.value = true;
-
   quasar
-    .dialog({
-      component: FileUploadDialog,
-    })
+    .dialog({ component: FileUploadDialog, componentProps })
     .onDismiss(() => {
       uploadOngoing.value = false;
     });
 }
 
-function deleteFiles() {
-  selected.value.forEach((value: ServiceFile) => {
-    void campFileStore.deleteEntry(value.id);
-  });
+function uploadFile() {
+  openDialog();
+}
 
+function getUploadHint(field: string, locale?: string | null): string {
+  const key = `virtual.upload_hint.${field}`;
+  const label = te(key) ? t(key) : t('virtual.upload_hint.default', { field });
+
+  return locale ? `${label} (${locale})` : label;
+}
+
+function uploadForSlot(slot: string, locale?: string | null) {
+  openDialog({ initialField: slot, initialLocale: locale });
+}
+
+function openReplaceDialog(file: ServiceFile) {
+  openDialog({ fileToReplace: file });
+}
+
+function deleteFiles() {
+  selected.value
+    .filter((row: { _virtual: boolean }) => !row._virtual)
+    .forEach((value: ServiceFile) => {
+      void campFileStore.deleteEntry(value.id);
+    });
   selected.value = [];
 }
 
 function downloadFiles() {
-  selected.value.forEach((file) => void campFileStore.downloadFile(file));
+  selected.value
+    .filter((row: { _virtual: boolean }) => !row._virtual)
+    .forEach((file) => void campFileStore.downloadFile(file));
 }
 
 function copyLink(url: string) {
@@ -228,12 +296,20 @@ action:
   delete: 'Delete'
   download: 'Download'
   upload: 'Upload'
+  replace: 'Replace'
+
+virtual:
+  upload_hint:
+    rules: 'Upload Camp Rules'
+    toc: 'Upload Terms & Conditions'
+    default: 'Upload {field}'
 
 column:
   access_level: 'Access'
   field: 'Identifier'
   last_modified: 'Last Modified'
   link: 'Link'
+  locale: 'Language'
   name: 'Name'
   size: 'Size'
   type: 'Type'
@@ -255,12 +331,20 @@ action:
   delete: 'Löschen'
   download: 'Herunterladen'
   upload: 'Hochladen'
+  replace: 'Ersetzen'
+
+virtual:
+  upload_hint:
+    rules: 'Campregeln hochladen'
+    toc: 'AGB hochladen'
+    default: '{field} hochladen'
 
 column:
   access_level: 'Zugriff'
   field: 'Kennung'
   last_modified: 'Zuletzt geändert'
   link: 'Link'
+  locale: 'Sprache'
   name: 'Name'
   size: 'Größe'
   type: 'Typ'
@@ -282,12 +366,20 @@ action:
   delete: 'Supprimer'
   download: 'Télécharger'
   upload: 'Téléverser'
+  replace: 'Remplacer'
+
+virtual:
+  upload_hint:
+    rules: 'Téléverser le règlement'
+    toc: 'Téléverser les conditions générales'
+    default: 'Téléverser {field}'
 
 column:
   access_level: 'Accès'
   field: 'Identifiant'
   last_modified: 'Dernière modification'
   link: 'Lien'
+  locale: 'Langue'
   name: 'Nom'
   size: 'Taille'
   type: 'Type'
@@ -309,12 +401,20 @@ action:
   delete: 'Usuń'
   download: 'Pobierz'
   upload: 'Prześlij'
+  replace: 'Zastąp'
+
+virtual:
+  upload_hint:
+    rules: 'Prześlij regulamin'
+    toc: 'Prześlij warunki uczestnictwa'
+    default: 'Prześlij {field}'
 
 column:
   access_level: 'Dostęp'
   field: 'Identyfikator'
   last_modified: 'Ostatnia modyfikacja'
   link: 'Link'
+  locale: 'Język'
   name: 'Nazwa'
   size: 'Rozmiar'
   type: 'Typ'
@@ -336,12 +436,20 @@ action:
   delete: 'Smazat'
   download: 'Stáhnout'
   upload: 'Nahrát'
+  replace: 'Nahradit'
+
+virtual:
+  upload_hint:
+    rules: 'Nahrát táborová pravidla'
+    toc: 'Nahrát obchodní podmínky'
+    default: 'Nahrát {field}'
 
 column:
   access_level: 'Přístup'
   field: 'Identifikátor'
   last_modified: 'Naposledy změněno'
   link: 'Odkaz'
+  locale: 'Jazyk'
   name: 'Název'
   size: 'Velikost'
   type: 'Typ'

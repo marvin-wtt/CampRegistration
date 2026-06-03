@@ -1,7 +1,3 @@
-import config from '#config/index';
-
-const host = config.origin;
-
 export default {
   locale: 'de',
   title: '{camp.name}',
@@ -745,12 +741,13 @@ export default {
           type: 'boolean',
           name: 'consent_rules',
           title: {
-            en: `I have read the [camp rules](${host}/) and agree to them.`,
-            de: `Ich habe die [Campregeln](${host}/) gelesen und bin damit einverstanden.`,
-            fr: `J'ai lu et j'accepte le [règlement](${host}/) de la colonie de vacances.`,
-            pl: `Przeczytałem/łam [regulamin obozu](${host}/) i akceptuję go.`,
-            cs: `Přečetl/a jsem si [táborová pravidla](${host}/) a souhlasím s nimi.`,
-            default: `I have read the [camp rules](${host}/) and agree to them.`,
+            en: 'I have read the [camp rules]({_file.rules}) and agree to them.',
+            de: 'Ich habe die [Campregeln]({_file.rules}) gelesen und bin damit einverstanden.',
+            fr: "J'ai lu et j'accepte le [règlement]({_file.rules}) de la colonie de vacances.",
+            pl: 'Przeczytałem/łam [regulamin obozu]({_file.rules}) i akceptuję go.',
+            cs: 'Přečetl/a jsem si [táborová pravidla]({_file.rules}) a souhlasím s nimi.',
+            default:
+              'I have read the [camp rules]({_file.rules}) and agree to them.',
           },
           correctAnswer: true,
           isRequired: true,
@@ -783,12 +780,13 @@ export default {
           type: 'boolean',
           name: 'consent_general_terms_and_conditions',
           title: {
-            en: `I have read the [General Terms and Conditions](${host}/) and agree to them.`,
-            de: `Ich habe die [allgemeinen Geschäftsbedingungen](${host}/) gelesen und stimme diesen zu.`,
-            fr: `J'ai lu et j'accepte les [conditions générales](${host}/).`,
-            pl: `Przeczytałem/łam [regulamin / warunki uczestnictwa](${host}/) i je akceptuję.`,
-            cs: `Přečetl/a jsem si [obchodní podmínky](${host}/) a souhlasím s nimi.`,
-            default: `I have read the [General Terms and Conditions](${host}/) and agree to them.`,
+            en: 'I have read the [General Terms and Conditions]({_file.toc}) and agree to them.',
+            de: 'Ich habe die [allgemeinen Geschäftsbedingungen]({_file.toc}) gelesen und stimme diesen zu.',
+            fr: "J'ai lu et j'accepte les [conditions générales]({_file.toc}).",
+            pl: 'Przeczytałem/łam [regulamin / warunki uczestnictwa]({_file.toc}) i je akceptuję.',
+            cs: 'Přečetl/a jsem si [obchodní podmínky]({_file.toc}) a souhlasím s nimi.',
+            default:
+              'I have read the [General Terms and Conditions]({_file.toc}) and agree to them.',
           },
           correctAnswer: true,
           isRequired: true,

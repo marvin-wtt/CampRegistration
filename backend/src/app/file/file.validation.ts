@@ -31,6 +31,7 @@ const store = z.object({
   body: z.object({
     name: z.string().optional(),
     field: z.string().optional(),
+    locale: z.string().nullable().optional(),
     accessLevel: z.string().optional(),
   }),
   file: z.custom<Express.Multer.File>((file) => {

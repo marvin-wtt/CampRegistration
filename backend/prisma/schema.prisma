@@ -226,6 +226,7 @@ model File {
   name                String
   originalName        String       @map("original_name")
   field               String?
+  locale              String?
   type                String
   size                Int
   accessLevel         String?      @map("access_level")
