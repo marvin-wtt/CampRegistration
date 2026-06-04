@@ -183,7 +183,7 @@ describe('variables', () => {
 
       setVariables(model, fakeCampData(), getFileUrl, files);
 
-      expect(model.getVariable('_file')).toBeUndefined();
+      expect(model.getVariable('_file')).toBe({});
     });
 
     it('should handle multiple fields independently', () => {

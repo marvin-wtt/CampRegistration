@@ -49,11 +49,7 @@ async function createPdfAttachment(
 ): Promise<MailAttachment> {
   const buffer = await exportPDF(camp, registration);
   const filename = safeFileName(
-    [
-      'Registration',
-      registration.lastName,
-      registration.firstName,
-    ]
+    ['Registration', registration.lastName, registration.firstName]
       .filter((v) => v != null)
       .join('_'),
     'Registration',
