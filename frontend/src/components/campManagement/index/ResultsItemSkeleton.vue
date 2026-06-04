@@ -46,10 +46,6 @@
   </q-item>
 </template>
 
-<script lang="ts" setup>
-const { isPublic = false } = defineProps<{
-  isPublic?: boolean;
-}>();
-</script>
+<script lang="ts" setup></script>
 
 <style scoped></style>
