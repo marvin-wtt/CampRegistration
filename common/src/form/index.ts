@@ -23,4 +23,4 @@ Serializer.getProperty('file', 'storeDataAsText').visible = false;
 Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
 export { setVariables };
-export { selectFilesByLocale } from './files.js';
+export { selectFilesByLocale, setFileVariables } from './files.js';

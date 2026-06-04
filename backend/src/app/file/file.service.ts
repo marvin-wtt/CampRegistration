@@ -236,7 +236,7 @@ export class FileService extends BaseService {
     } = {},
   ) {
     const page = options.page ?? 1;
-    const limit = options.limit ?? 10;
+    const limit = options.limit ?? 0;
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
 

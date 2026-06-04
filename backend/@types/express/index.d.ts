@@ -23,7 +23,10 @@ declare global {
   namespace Express {
     interface Models {
       user?: UserModel;
-      camp?: Camp & { freePlaces: number | Record<string, number> };
+      camp?: Camp & {
+        freePlaces: number | Record<string, number>;
+        files: Pick<'id' | 'field' | 'locale'>[];
+      };
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
