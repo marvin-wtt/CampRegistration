@@ -112,4 +112,121 @@ describe('variables', () => {
       expect(model.getVariable('_validationEnabled')).toBe(false);
     });
   });
+
+  describe('files', () => {
+    const getFileUrl = (id: string) => `https://example.com/files/${id}`;
+
+    it('should set _file variable with resolved URLs', () => {
+      const model = new SurveyModel();
+      model.locale = 'de';
+
+      const files = [{ id: 'file-1', field: 'rules', locale: 'de' }];
+
+      setVariables(model, fakeCampData(), getFileUrl, files);
+
+      expect(model.getVariable('_file')).toEqual({
+        rules: 'https://example.com/files/file-1',
+      });
+    });
+
+    it('should prefer exact locale match', () => {
+      const model = new SurveyModel();
+      model.locale = 'de-DE';
+
+      const files = [
+        { id: 'default', field: 'rules', locale: null },
+        { id: 'german', field: 'rules', locale: 'de' },
+        { id: 'german-exact', field: 'rules', locale: 'de-DE' },
+      ];
+
+      setVariables(model, fakeCampData(), getFileUrl, files);
+
+      expect(model.getVariable('_file')).toEqual({
+        rules: 'https://example.com/files/german-exact',
+      });
+    });
+
+    it('should fall back to language prefix when exact locale is missing', () => {
+      const model = new SurveyModel();
+      model.locale = 'de-DE';
+
+      const files = [
+        { id: 'default', field: 'rules', locale: null },
+        { id: 'german', field: 'rules', locale: 'de' },
+      ];
+
+      setVariables(model, fakeCampData(), getFileUrl, files);
+
+      expect(model.getVariable('_file')).toEqual({
+        rules: 'https://example.com/files/german',
+      });
+    });
+
+    it('should fall back to null-locale file when no locale matches', () => {
+      const model = new SurveyModel();
+      model.locale = 'fr';
+
+      const files = [{ id: 'default', field: 'rules', locale: null }];
+
+      setVariables(model, fakeCampData(), getFileUrl, files);
+
+      expect(model.getVariable('_file')).toEqual({
+        rules: 'https://example.com/files/default',
+      });
+    });
+
+    it('should exclude files that do not match the locale at all', () => {
+      const model = new SurveyModel();
+      model.locale = 'fr';
+
+      const files = [{ id: 'german', field: 'rules', locale: 'de' }];
+
+      setVariables(model, fakeCampData(), getFileUrl, files);
+
+      expect(model.getVariable('_file')).toBeUndefined();
+    });
+
+    it('should handle multiple fields independently', () => {
+      const model = new SurveyModel();
+      model.locale = 'de';
+
+      const files = [
+        { id: 'rules-de', field: 'rules', locale: 'de' },
+        { id: 'toc-de', field: 'toc', locale: 'de' },
+      ];
+
+      setVariables(model, fakeCampData(), getFileUrl, files);
+
+      expect(model.getVariable('_file')).toEqual({
+        rules: 'https://example.com/files/rules-de',
+        toc: 'https://example.com/files/toc-de',
+      });
+    });
+
+    it('should not set _file when getFileUrl is not provided', () => {
+      const model = new SurveyModel();
+
+      const files = [{ id: 'file-1', field: 'rules', locale: null }];
+
+      setVariables(model, fakeCampData(), undefined, files);
+
+      expect(model.getVariable('_file')).toBeUndefined();
+    });
+
+    it('should not set _file when files array is empty', () => {
+      const model = new SurveyModel();
+
+      setVariables(model, fakeCampData(), getFileUrl, []);
+
+      expect(model.getVariable('_file')).toBeUndefined();
+    });
+
+    it('should not set _file when files are not provided', () => {
+      const model = new SurveyModel();
+
+      setVariables(model, fakeCampData(), getFileUrl);
+
+      expect(model.getVariable('_file')).toBeUndefined();
+    });
+  });
 });

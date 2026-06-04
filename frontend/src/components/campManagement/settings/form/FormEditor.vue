@@ -49,6 +49,7 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
+import { useAPIService } from 'src/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
 
 const props = defineProps<{
@@ -62,6 +63,7 @@ const props = defineProps<{
 
 const quasar = useQuasar();
 const { locale } = useI18n();
+const api = useAPIService();
 
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
@@ -240,9 +242,10 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
-    setVariables(survey, props.camp);
+    const getFileUrl = (id: string) => api.getFileUrl(id);
+    setVariables(survey, props.camp, getFileUrl, props.files);
     survey.onLocaleChangedEvent.add((sender) => {
-      setVariables(sender, props.camp);
+      setVariables(sender, props.camp, getFileUrl, props.files);
     });
   }
 
@@ -320,23 +323,8 @@ const themes: {
   light: props.camp.themes['light'] ?? {},
   dark: props.camp.themes['dark'] as ITheme,
 };
-
-function syncThemeProperty(theme: ITheme, property: keyof ITheme) {
-  if (theme[property] === undefined) {
-    return;
-  }
-
-  themes.light[property] = theme[property];
-
-  if (themes.dark) {
-    themes.dark[property] = theme[property];
-  }
-}
-
 let previousColorPalette: string | undefined;
 creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
-  syncThemeProperty(theme, 'isPanelless');
-
   const colorPalette = theme.colorPalette;
   if (!colorPalette || (colorPalette !== 'dark' && colorPalette !== 'light')) {
     return;
