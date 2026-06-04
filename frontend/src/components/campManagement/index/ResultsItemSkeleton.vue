@@ -10,44 +10,36 @@
     </q-item-section>
 
     <q-item-section side>
-      <div class="q-gutter-xs">
+      <div class="q-gutter-sm row no-wrap">
         <q-skeleton
-          v-if="!isPublic"
           type="QBtn"
-          class="gt-xs"
-        />
-
-        <q-skeleton
-          v-if="!isPublic"
-          type="QBtn"
+          width="7em"
+          height="2em"
           class="gt-sm"
         />
 
         <q-skeleton
           type="QBtn"
-          class="gt-xs"
-        />
-
-        <q-skeleton
-          type="QBtn"
+          width="7em"
+          height="2em"
           class="gt-sm"
+          rounded
         />
 
         <q-skeleton
-          v-if="!isPublic"
           type="QBtn"
+          width="7em"
+          height="2em"
           class="gt-sm"
-        />
-
-        <q-skeleton
-          v-if="!isPublic"
-          type="QBtn"
-          class="gt-sm"
+          rounded
         />
 
         <q-skeleton
           type="QBtn"
+          width="2em"
+          height="2em"
           class="lt-md"
+          rounded
         />
       </div>
     </q-item-section>
