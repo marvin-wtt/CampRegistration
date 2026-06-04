@@ -45,12 +45,14 @@ export function setFileVariables(
   const selected = selectFilesByLocale(files, locale);
   const entries = Object.entries(selected);
   if (entries.length === 0) {
+    model.setVariable('_file', {});
     return;
   }
   const fileVars: Record<string, string> = {};
   for (const [field, file] of entries) {
     fileVars[field] = getUrl(file.id);
   }
+
   model.setVariable('_file', fileVars);
 }
 

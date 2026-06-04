@@ -1,11 +1,21 @@
 import type { Camp, File } from '#generated/prisma/client';
 
-export interface CampWithFreePlacesAndFiles extends Camp {
+interface FreePlaces {
   freePlaces: number | Record<string, number>;
+}
+
+interface CampFiles {
   files: Pick<File, 'id' | 'field' | 'locale'>[];
 }
 
-export interface CampWithRegistrationAndFiles extends Camp {
+interface SimpleRegistrations {
   registrations: { country: string | null }[];
-  files: Pick<File, 'id' | 'field' | 'locale'>[];
 }
+
+export type CampWithFreePlaces = Camp & FreePlaces;
+
+export type CampWithFreePlacesAndFiles = CampWithFreePlaces & CampFiles;
+
+export type CampWithRegistrationAndFiles = Camp &
+  SimpleRegistrations &
+  CampFiles;

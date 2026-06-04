@@ -10,7 +10,7 @@ import { BaseService } from '#core/base/BaseService';
 import { fileNameExtension } from '#utils/file';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import { StorageFile } from '#core/storage/storage';
@@ -235,10 +235,12 @@ export class FileService extends BaseService {
       sortType?: 'asc' | 'desc';
     } = {},
   ) {
-    const page = options.page ?? 1;
     const limit = options.limit ?? 0;
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
+
+    const skip = options.page ? (options.page - 1) * limit : undefined;
+    const take = options.limit;
 
     return this.prisma.file.findMany({
       where: {
@@ -246,8 +248,8 @@ export class FileService extends BaseService {
         type: filter.type,
         [`${model.name}Id`]: model.id,
       },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip,
+      take,
       orderBy: sortBy ? { [sortBy]: sortType } : undefined,
     });
   }

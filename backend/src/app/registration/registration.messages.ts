@@ -15,6 +15,7 @@ import type {
 import { exportPDF } from '#utils/form';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
+import { safeFileName } from '#utils/file';
 import Handlebars from 'handlebars';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
@@ -47,13 +48,16 @@ async function createPdfAttachment(
   registration: Registration,
 ): Promise<MailAttachment> {
   const buffer = await exportPDF(camp, registration);
-  const filename = [
+  const filename = safeFileName(
+    [
+      'Registration',
+      registration.lastName,
+      registration.firstName,
+    ]
+      .filter((v) => v != null)
+      .join('_'),
     'Registration',
-    registration.lastName,
-    registration.firstName,
-  ]
-    .filter((v) => v != null)
-    .join('_');
+  );
 
   return {
     filename: `${filename}.pdf`,

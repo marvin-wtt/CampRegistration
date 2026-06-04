@@ -7,34 +7,55 @@ import jsdom from 'jsdom';
 import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
 import { generateApiUrl } from '#utils/url';
+import { Mutex } from 'async-mutex';
+
+// Serializes PDF generation since survey-pdf relies on shared global state
+// (global.window / global.document) that concurrent calls would clobber.
+const pdfMutex = new Mutex();
 
 export function exportPDF(
   camp: CampWithFreePlacesAndFiles,
   registration: Registration,
-) {
+): Promise<ArrayBuffer> {
+  return pdfMutex.runExclusive(() => runExportPDF(camp, registration));
+}
+
+async function runExportPDF(
+  camp: CampWithFreePlacesAndFiles,
+  registration: Registration,
+): Promise<ArrayBuffer> {
   const { window } = new jsdom.JSDOM();
+
+  const prevWindow = global.window;
+  const prevDocument = global.document;
+
   // @ts-expect-error Required for survey-pdf, which expects a browser environment
   global.window = window;
   global.document = window.document;
 
-  const surveyPDF = new SurveyPDF(camp.form);
-  surveyPDF.data = registration.data;
-  surveyPDF.locale = registration.locale;
-  surveyPDF.readOnly = true;
+  try {
+    const surveyPDF = new SurveyPDF(camp.form);
+    surveyPDF.data = registration.data;
+    surveyPDF.locale = registration.locale;
+    surveyPDF.readOnly = true;
 
-  const mdConverter = createMarkdownConverter();
-  surveyPDF.onTextMarkdown.add((_, options) => {
-    options.html = mdConverter.renderInline(options.text);
-  });
+    const mdConverter = createMarkdownConverter();
+    surveyPDF.onTextMarkdown.add((_, options) => {
+      options.html = mdConverter.renderInline(options.text);
+    });
 
-  setVariables(
-    surveyPDF,
-    camp,
-    (id: string) => generateApiUrl(['files', id]),
-    camp.files,
-  );
+    setVariables(
+      surveyPDF,
+      camp,
+      (id: string) => generateApiUrl(['files', id]),
+      camp.files,
+    );
 
-  return surveyPDF.raw('arraybuffer');
+    return await surveyPDF.raw('arraybuffer');
+  } finally {
+    global.window = prevWindow;
+    global.document = prevDocument;
+  }
 }
 
 export const formUtils = (camp: CampWithFreePlacesAndFiles, data?: unknown) => {
