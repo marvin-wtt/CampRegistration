@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import { type GuardFn } from '#guards/index';
+import { type GuardFn } from '#core/guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 

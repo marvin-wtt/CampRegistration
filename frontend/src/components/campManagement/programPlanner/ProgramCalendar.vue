@@ -464,7 +464,7 @@ function onDayEventAdd({ scope }: CalendarEvent) {
         date: scope.timestamp.date,
         time: null,
         duration: null,
-        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+        plan: activePlan.value,
         dateTimeMin: camp.startAt,
         dateTimeMax: camp.endAt,
         locales: camp.locales,
@@ -947,22 +947,28 @@ function onDrop(
   return false;
 }
 
+function localDateTimeParts(isoString: string): { date: string; time: string } {
+  const dt = new Date(isoString);
+  return {
+    date: formatDate(dt),
+    time: `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`,
+  };
+}
+
 function outOfCampIntervalClass({
   scope,
 }: {
   scope: { timestamp: Timestamp };
 }): Record<string, boolean> {
   const { date, time } = scope.timestamp;
-  const startDate = camp.startAt.substring(0, 10);
-  const startTime = camp.startAt.substring(11, 16);
-  const endDate = camp.endAt.substring(0, 10);
-  const endTime = camp.endAt.substring(11, 16);
+  const start = localDateTimeParts(camp.startAt);
+  const end = localDateTimeParts(camp.endAt);
 
   const outside =
-    date < startDate ||
-    (date === startDate && time < startTime) ||
-    date > endDate ||
-    (date === endDate && time >= endTime);
+    date < start.date ||
+    (date === start.date && time < start.time) ||
+    date > end.date ||
+    (date === end.date && time >= end.time);
 
   return { 'cal-outside-camp': outside };
 }

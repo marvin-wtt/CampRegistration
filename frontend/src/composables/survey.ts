@@ -41,21 +41,7 @@ export function startAutoDataUpdate(
     }
 
     model.locale = locale;
-    setVariables(model, data);
-
-    // Set file variables
-    if (data && files) {
-      files.forEach((file) => {
-        if (!file.field) {
-          return;
-        }
-
-        const name = `_file:${file.field}`;
-        const url = api.getFileUrl(file.id);
-
-        model.setVariable(name, url);
-      });
-    }
+    setVariables(model, data, (id) => api.getFileUrl(id), files);
   };
 
   updateVariables(model, data.value, files.value, locale.value);

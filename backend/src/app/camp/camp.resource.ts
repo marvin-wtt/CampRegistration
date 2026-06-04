@@ -4,10 +4,10 @@ import type {
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { countriesToLocales } from '#utils/countriesToLocales';
-import type { CampWithFreePlaces } from '#app/camp/camp.types';
+import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
 
 export class CampResource extends JsonResource<
-  CampWithFreePlaces,
+  CampWithFreePlacesAndFiles,
   CampResourceData
 > {
   transform(): CampResourceData {
@@ -36,7 +36,7 @@ export class CampResource extends JsonResource<
 }
 
 export class CampDetailsResource extends JsonResource<
-  CampWithFreePlaces,
+  CampWithFreePlacesAndFiles,
   CampDetailsResourceData
 > {
   transform(): CampDetailsResourceData {

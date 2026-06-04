@@ -1,5 +1,5 @@
 import { auth, guard, multipart } from '#middlewares/index';
-import { campManager } from '#guards/index';
+import { campManager } from '#app/campManager/camp-manager.guard';
 import { MessageController } from './message.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';

@@ -1,5 +1,6 @@
 import type { Request } from 'express';
-import { type GuardFn, and, campPublic, campManager, or } from '#guards/index';
+import { campManager } from '#app/campManager/camp-manager.guard';
+import { type GuardFn, and, campPublic, or } from '#core/guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { CampService } from '#app/camp/camp.service';

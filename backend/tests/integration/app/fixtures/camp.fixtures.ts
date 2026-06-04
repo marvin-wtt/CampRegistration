@@ -545,6 +545,39 @@ export const campCreatedBody: CreateBodyData[] = [
     },
     expected: 201,
   },
+  // Preset
+  {
+    name: 'Preset standard',
+    data: {
+      ...campCreateInternational,
+      preset: 'standard',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Preset minimal',
+    data: {
+      ...campCreateInternational,
+      preset: 'minimal',
+    },
+    expected: 201,
+  },
+  {
+    name: 'Preset missing',
+    data: {
+      ...campCreateInternational,
+      preset: undefined,
+    },
+    expected: 201,
+  },
+  {
+    name: 'Preset invalid',
+    data: {
+      ...campCreateInternational,
+      preset: 'full',
+    },
+    expected: 400,
+  },
 ];
 
 type UpdateBodyData = {

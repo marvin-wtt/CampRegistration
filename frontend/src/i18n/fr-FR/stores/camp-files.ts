@@ -13,6 +13,11 @@ export default {
     error: 'Échec de la suppression du fichier',
     invalid: 'ID de fichier non valide',
   },
+  replace: {
+    progress: 'Remplacement du fichier en cours...',
+    success: 'Fichier remplacé avec succès',
+    error: 'Échec du remplacement du fichier',
+  },
   download: {
     error: 'Échec du téléchargement du fichier',
   },

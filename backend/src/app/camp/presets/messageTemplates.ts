@@ -2,7 +2,6 @@ import { getCountryData, type TCountryCode } from 'countries-list';
 
 const messageTemplatesObj = {
   registration_submitted: {
-    includeOnCreate: true,
     subject: {
       en: 'Registration Received – {{ camp.name }}',
       de: 'Anmeldung erhalten – {{ camp.name }}',
@@ -25,8 +24,8 @@ const messageTemplatesObj = {
 
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>merci pour ton inscription au camp <strong>{{ camp.name }}</strong>. Nous avons bien reçu ton inscription.</p>
-           <p>Nous allons examiner ton inscription et te recontacterons prochainement avec plus d’informations.</p>
-           <p>Si tu as des questions, n’hésite pas à répondre directement à cet e-mail.</p>
+           <p>Nous allons examiner ton inscription et te recontacterons prochainement avec plus d'informations.</p>
+           <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe du camp</p>`,
 
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
@@ -43,7 +42,6 @@ const messageTemplatesObj = {
     },
   },
   registration_confirmed: {
-    includeOnCreate: true,
     subject: {
       en: 'Registration Confirmed – Welcome to {{ camp.name }}!',
       de: 'Anmeldung bestätigt – Willkommen im Camp {{ camp.name }}!',
@@ -75,7 +73,6 @@ const messageTemplatesObj = {
     },
   },
   registration_waitlisted: {
-    includeOnCreate: true,
     subject: {
       en: 'Registration Waitlisted – {{ camp.name }}',
       de: 'Anmeldung auf Warteliste – {{ camp.name }}',
@@ -93,8 +90,8 @@ const messageTemplatesObj = {
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
-           <p>Ton inscription au camp <strong>{{ camp.name }}</strong> a été placée sur la liste d’attente car la limite pour ton groupe a été atteinte. Nous te tiendrons informé(e) et te contacterons dès qu’une place sera disponible.</p>
-           <p>Si tu as des questions, n’hésite pas à répondre directement à cet e-mail.</p>
+           <p>Ton inscription au camp <strong>{{ camp.name }}</strong> a été placée sur la liste d'attente car la limite pour ton groupe a été atteinte. Nous te tiendrons informé(e) et te contacterons dès qu'une place sera disponible.</p>
+           <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe du camp</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
            <p>Twoje zgłoszenie na obóz <strong>{{ camp.name }}</strong> zostało umieszczone na liście oczekujących, ponieważ limit dla Twojej grupy został osiągnięty. Będziemy Cię informować, gdy tylko zwolni się miejsce.</p>
@@ -107,7 +104,6 @@ const messageTemplatesObj = {
     },
   },
   registration_waitlist_accepted: {
-    includeOnCreate: true,
     subject: {
       en: "Waitlist Registration Accepted – You're In for {{ camp.name }}",
       de: 'Wartelistenanmeldung akzeptiert – Du bist dabei bei {{ camp.name }}',
@@ -139,7 +135,6 @@ const messageTemplatesObj = {
     },
   },
   registration_updated: {
-    includeOnCreate: true,
     subject: {
       en: 'Registration Updated – Check Your Details for {{ camp.name }}',
       de: 'Anmeldung aktualisiert – Überprüfe deine Daten für {{ camp.name }}',
@@ -171,7 +166,6 @@ const messageTemplatesObj = {
     },
   },
   registration_canceled: {
-    includeOnCreate: true,
     subject: {
       en: 'Registration Canceled – {{ camp.name }}',
       de: 'Anmeldung storniert – {{ camp.name }}',

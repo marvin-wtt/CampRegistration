@@ -4,11 +4,12 @@ import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
 import type { Registration } from '#generated/prisma/client.js';
 import jsdom from 'jsdom';
-import type { CampWithFreePlaces } from '#app/camp/camp.types';
+import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
+import { generateApiUrl } from '#utils/url';
 
 export function exportPDF(
-  camp: CampWithFreePlaces,
+  camp: CampWithFreePlacesAndFiles,
   registration: Registration,
 ) {
   const { window } = new jsdom.JSDOM();
@@ -26,12 +27,17 @@ export function exportPDF(
     options.html = mdConverter.renderInline(options.text);
   });
 
-  setVariables(surveyPDF, camp);
+  setVariables(
+    surveyPDF,
+    camp,
+    (id: string) => generateApiUrl(['files', id]),
+    camp.files,
+  );
 
   return surveyPDF.raw('arraybuffer');
 }
 
-export const formUtils = (camp: CampWithFreePlaces, data?: unknown) => {
+export const formUtils = (camp: CampWithFreePlacesAndFiles, data?: unknown) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';

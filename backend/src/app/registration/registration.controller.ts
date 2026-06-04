@@ -44,12 +44,11 @@ export class RegistrationController extends BaseController {
   }
 
   async store(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
     const {
       body: { data, locale: bodyLocale },
-    } = await req.validate(validator.store);
-    // !! USE CAUTION, THE DATA IS NOT VALIDATED HERE !!
+    } = await req.validate(validator.store(camp));
 
-    const camp = req.modelOrFail('camp');
     const locale = bodyLocale ?? req.preferredLocale();
 
     const registration = await this.registrationService.createRegistration(
