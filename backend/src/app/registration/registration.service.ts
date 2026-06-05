@@ -58,27 +58,6 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  private validateRegistrationData(
-    formHelper: ReturnType<typeof formUtils>,
-  ): void | never {
-    if (formHelper.hasDataErrors()) {
-      const errors = formHelper.getDataErrorFields();
-
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Invalid survey data: ${errors}`,
-      );
-    }
-
-    const unknownDataFields = formHelper.unknownDataFields();
-    if (unknownDataFields.length > 0) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Unknown fields '${unknownDataFields.join(', ')}'`,
-      );
-    }
-  }
-
   async createRegistration(
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
@@ -86,10 +65,6 @@ export class RegistrationService extends BaseService {
   ) {
     const form = formUtils(camp, data.data);
 
-    // TODO Should this really be done here?
-    //  Can't we do it at a better place?
-    this.validateRegistrationData(form);
-    // Get updated data from form back
     const formData = form.data();
     const computedData = this.createComputedData(form.extractCampData());
 

@@ -5,7 +5,10 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
-import { setVariables } from '@camp-registration/common/form';
+import {
+  setVariables,
+  selectFilesByLocale,
+} from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 import { PlainLight, PlainDark } from 'survey-core/themes';
 import { useAPIService } from 'src/services/APIService';
@@ -43,18 +46,14 @@ export function startAutoDataUpdate(
     model.locale = locale;
     setVariables(model, data);
 
-    // Set file variables
+    // Build locale-aware _file variable object: {_file.rules}, {_file.toc}, etc.
     if (data && files) {
-      files.forEach((file) => {
-        if (!file.field) {
-          return;
-        }
-
-        const name = `_file:${file.field}`;
-        const url = api.getFileUrl(file.id);
-
-        model.setVariable(name, url);
-      });
+      const selected = selectFilesByLocale(files, locale);
+      const fileVars: Record<string, string> = {};
+      for (const [field, file] of Object.entries(selected)) {
+        fileVars[field] = api.getFileUrl(file.id);
+      }
+      model.setVariable('_file', fileVars);
     }
   };
 

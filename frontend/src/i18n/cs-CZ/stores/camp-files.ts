@@ -13,6 +13,11 @@ export default {
     error: 'Chyba při odstraňování souboru',
     invalid: 'Neplatné ID souboru',
   },
+  replace: {
+    progress: 'Nahrazování souboru...',
+    success: 'Soubor úspěšně nahrazen',
+    error: 'Chyba při nahrazování souboru',
+  },
   download: {
     error: 'Chyba při stahování souboru',
   },
