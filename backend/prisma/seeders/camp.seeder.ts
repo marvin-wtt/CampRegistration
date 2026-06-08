@@ -991,10 +991,22 @@ class CampSeeder extends BaseSeeder {
       updatedAt: '2025-11-05T20:14:01.950Z',
     });
 
-    await new RegistrationSeeder(exampleCamp).seed(25, { country: 'gb', status: 'ACCEPTED' });
-    await new RegistrationSeeder(exampleCamp).seed(8, { country: 'gb', status: 'WAITLISTED' });
-    await new RegistrationSeeder(exampleCamp).seed(25, { country: 'fr', status: 'ACCEPTED' });
-    await new RegistrationSeeder(exampleCamp).seed(5, { country: 'fr', status: 'WAITLISTED' });
+    await new RegistrationSeeder(exampleCamp).seed(25, {
+      country: 'gb',
+      status: 'ACCEPTED',
+    });
+    await new RegistrationSeeder(exampleCamp).seed(8, {
+      country: 'gb',
+      status: 'WAITLISTED',
+    });
+    await new RegistrationSeeder(exampleCamp).seed(25, {
+      country: 'fr',
+      status: 'ACCEPTED',
+    });
+    await new RegistrationSeeder(exampleCamp).seed(5, {
+      country: 'fr',
+      status: 'WAITLISTED',
+    });
     await new ProgramEventSeeder(exampleCamp).seed();
   }
 }
