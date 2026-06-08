@@ -98,7 +98,7 @@ function navigateToRegistration() {
   void router.push({
     name: 'camp',
     params: {
-      camp: props.camp.id,
+      campId: props.camp.id,
     },
   });
 }

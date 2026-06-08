@@ -19,7 +19,7 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/camps/CampIndexPage.vue'),
           },
           {
-            path: ':camp',
+            path: ':campId',
             name: 'camp',
             component: () => import('pages/camps/CampPage.vue'),
           },
