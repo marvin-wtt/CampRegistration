@@ -17,6 +17,7 @@ export default {
   country: {
     de: 'Německo',
     fr: 'Francie',
+    gb: 'Spojené království',
     us: 'USA',
     pl: 'Polsko',
     cz: 'Česko',

@@ -99,7 +99,7 @@ export function useResultTableModel(
     let r = [...input.registrations.value];
 
     // Preset filter
-    if (template.value.filter !== undefined) {
+    if (template.value.filter != null) {
       const ex = new ExpressionEvaluator(template.value.filter);
       r = r.filter((row) => ex.evaluate(row));
     }

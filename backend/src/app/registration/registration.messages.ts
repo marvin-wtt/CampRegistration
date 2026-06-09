@@ -7,6 +7,7 @@ import type {
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
 import { type MailableCtor, MailBase } from '#app/mail/mail.base';
 import type {
+  Address,
   AddressLike,
   BuiltMail,
   Content,
@@ -22,6 +23,8 @@ import { MessageService } from '#app/message/message.service';
 import { FileService } from '#app/file/file.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -172,6 +175,25 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   email: string;
 }> {
   static readonly type: string = 'registration:template:simple';
+
+  protected from(): Address {
+    const from = super.from();
+    const address = typeof from === 'string' ? from : from?.address;
+    if (!address) {
+      // This is purely defensive since the base class never returns undefined
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Invalid email from address',
+      );
+    }
+    const senderName = typeof from === 'string' ? undefined : from?.name;
+    const campName = translateObject(this.payload.camp.name, this.locale());
+
+    return {
+      name: senderName ? `${campName} | ${senderName}` : campName,
+      address,
+    };
+  }
 
   protected subject(): string | Promise<string> {
     let template = translateObject(

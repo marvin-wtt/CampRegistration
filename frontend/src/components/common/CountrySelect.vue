@@ -74,6 +74,10 @@ const langOptions = computed<QSelectOption[]>(() => [
     value: 'fr',
   },
   {
+    label: t('country.gb'),
+    value: 'gb',
+  },
+  {
     label: t('country.us'),
     value: 'us',
   },

@@ -1,5 +1,5 @@
 <template>
-  <q-card>
+  <q-card class="camp-card">
     <!-- Image -->
     <q-card-section class="col q-pa-none">
       <q-skeleton height="200px" />
@@ -77,8 +77,6 @@
 
 <style scoped>
 .camp-card {
-  width: 100%;
-  min-width: 300px;
-  max-width: 300px;
+  width: 300px;
 }
 </style>

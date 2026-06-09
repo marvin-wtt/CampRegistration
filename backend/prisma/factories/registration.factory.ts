@@ -1,5 +1,5 @@
 import { Prisma } from '#generated/prisma/client.js';
-import prisma from './prisma.js';
+import prisma from '../client.js';
 import { faker } from '@faker-js/faker/locale/en';
 
 export const RegistrationFactory = {
@@ -20,7 +20,7 @@ export const RegistrationFactory = {
       street: faker.location.street(),
       city: faker.location.city(),
       zipCode: faker.location.zipCode(),
-      country: faker.helpers.arrayElement(['de', 'fr']),
+      country: faker.helpers.arrayElement(['gb', 'fr']),
       status: 'ACCEPTED',
       data: {},
       camp: {},

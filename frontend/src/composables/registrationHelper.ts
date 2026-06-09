@@ -24,7 +24,9 @@ export function useRegistrationHelper() {
   }
 
   function uniqueName(registration: Registration): string | undefined {
-    const others = registrationStore.data;
+    const others = registrationStore.data?.filter(
+      (value) => value !== registration && value.status === registration.status,
+    );
 
     const firstNameValue = firstName(registration);
     const lastNameValue = lastName(registration);
@@ -41,10 +43,7 @@ export function useRegistrationHelper() {
 
     // Search for people with same name
     const sameFirstName = others.filter((value) => {
-      return (
-        value !== registration &&
-        firstName(value)?.toLowerCase() === firstNameValue.toLowerCase()
-      );
+      return firstName(value)?.toLowerCase() === firstNameValue.toLowerCase();
     });
 
     // If no match was found, this can be ignored.
