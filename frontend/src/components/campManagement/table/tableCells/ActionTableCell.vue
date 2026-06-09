@@ -20,6 +20,21 @@
       </q-item>
 
       <q-item
+        v-if="can('camp.messages.create')"
+        v-close-popup
+        :disable="!hasEmail"
+        clickable
+        @click="sendMessage"
+      >
+        <q-item-section>
+          {{ t('option.sendMessage') }}
+        </q-item-section>
+        <q-tooltip v-if="!hasEmail">
+          {{ t('option.sendMessageDisabled') }}
+        </q-tooltip>
+      </q-item>
+
+      <q-item
         v-if="!readonly && can('camp.registrations.edit')"
         v-close-popup
         clickable
@@ -75,6 +90,7 @@ import { usePermissions } from 'src/composables/permissions';
 import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
 import RegistrationDetailsDialog from 'components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
+import RegistrationMessageDialog from 'components/campManagement/table/dialogs/RegistrationMessageDialog.vue';
 import { useAPIService } from 'src/services/APIService';
 import { useMessageTemplateService } from 'src/services/MessageTemplateService';
 
@@ -98,6 +114,10 @@ const registration = computed<Registration>(() => {
 
 const accepted = computed<boolean>(() => {
   return cellProps.row.status === 'ACCEPTED';
+});
+
+const hasEmail = computed<boolean>(() => {
+  return !!registration.value.computedData.emails?.length;
 });
 
 let templatesFetch: Promise<MessageTemplate[]> | null = null;
@@ -127,6 +147,15 @@ function hasTemplateForEvent(
 function showDetails(): void {
   quasar.dialog({
     component: RegistrationDetailsDialog,
+    componentProps: {
+      registration: registration.value,
+    },
+  });
+}
+
+function sendMessage(): void {
+  quasar.dialog({
+    component: RegistrationMessageDialog,
     componentProps: {
       registration: registration.value,
     },
@@ -211,6 +240,8 @@ async function uploadFile(file: File): Promise<string> {
 <i18n lang="yaml" locale="en">
 option:
   details: 'Show details'
+  sendMessage: 'Send message'
+  sendMessageDisabled: 'No email address available'
   edit: 'Edit'
   delete: 'Delete'
   accept: 'Accept registration'
@@ -219,6 +250,8 @@ option:
 <i18n lang="yaml" locale="de">
 option:
   details: 'Details anzeigen'
+  sendMessage: 'Nachricht senden'
+  sendMessageDisabled: 'Keine E-Mail-Adresse verfügbar'
   edit: 'Bearbeiten'
   delete: 'Löschen'
   accept: 'Anmeldung akzeptieren'
@@ -227,6 +260,8 @@ option:
 <i18n lang="yaml" locale="fr">
 option:
   details: 'Voir détails'
+  sendMessage: 'Envoyer un message'
+  sendMessageDisabled: 'Aucune adresse e-mail disponible'
   edit: 'Modifier'
   delete: 'Supprimer'
   accept: "Accepter l'inscription"
@@ -235,6 +270,8 @@ option:
 <i18n lang="yaml" locale="pl">
 option:
   details: 'Pokaż szczegóły'
+  sendMessage: 'Wyślij wiadomość'
+  sendMessageDisabled: 'Brak dostępnego adresu e-mail'
   edit: 'Edytuj'
   delete: 'Usuń'
   accept: 'Akceptuj zgłoszenie'
@@ -243,6 +280,8 @@ option:
 <i18n lang="yaml" locale="cs">
 option:
   details: 'Zobrazit podrobnosti'
+  sendMessage: 'Odeslat zprávu'
+  sendMessageDisabled: 'Není k dispozici žádná e-mailová adresa'
   edit: 'Upravit'
   delete: 'Smazat'
   accept: 'Přijmout registraci'
