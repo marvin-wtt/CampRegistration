@@ -1,9 +1,5 @@
-import { PrismaClient, type Prisma } from '#generated/prisma/client.js';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-
-const prisma = new PrismaClient({
-  adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
-});
+import { type Prisma } from '#generated/prisma/client.js';
+import prisma from '../client.js';
 
 export async function main() {
   // https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries

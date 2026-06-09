@@ -1,0 +1,55 @@
+# Production stack for Coolify. Both services share the CI-built image; the
+# migrate service just overrides the command. MariaDB and Redis are separate
+# Coolify-managed resources, pointed at via env settings.
+name: camp-registration
+
+x-image: &image ghcr.io/marvin-wtt/campregistration:${TAG:-latest}
+
+services:
+  # One-shot: applies schema + data migrations, then exits.
+  migrate:
+    image: *image
+    command: npm run migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    init: true
+    restart: "no"
+
+  app:
+    image: *image
+    init: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      APP_PORT: "3000"
+      APP_URL: ${APP_URL}
+      APP_NAME: ${APP_NAME}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO}
+      EMAIL_ADMIN: ${EMAIL_ADMIN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      STORAGE_LOCATION: local
+      UPLOAD_DIR: /data/uploads/
+      TMP_DIR: /data/tmp/
+    volumes:
+      - storage:/data
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+    # Scale out on a single host: uncomment and keep `expose` (not `ports`).
+    # deploy:
+    #   replicas: 3
+
+volumes:
+  storage:

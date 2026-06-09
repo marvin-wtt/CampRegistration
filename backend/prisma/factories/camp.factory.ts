@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '#generated/prisma/client.js';
-import prisma from './prisma.js';
-import { MessageTemplateFactory } from './message-template.js';
+import prisma from '../client.js';
+import { MessageTemplateFactory } from './message-template.factory';
 
 export const CampFactory = {
   build: (

@@ -2,7 +2,7 @@ import { CampFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
 import { RegistrationSeeder } from './registration.seeder';
 import { ProgramEventSeeder } from './program-event.seeder';
-import { defaultMessageTemplatesForCountries } from '#assets/camp/messageTemplates.js';
+import { defaultMessageTemplatesForCountries } from '#app/camp/presets/messageTemplates.js';
 
 class CampSeeder extends BaseSeeder {
   name(): string {
