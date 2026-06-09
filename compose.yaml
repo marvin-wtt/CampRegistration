@@ -1,0 +1,64 @@
+# Production stack for Coolify. Both services share the SAME image built by CI
+# (.github/workflows/build-image.yml) — the migrate service just overrides the
+# command. `prisma` and `tsx` are prod dependencies, so the pruned image can run
+# migrations; no separate build is needed.
+#
+# MariaDB and Redis are expected to be separate Coolify-managed resources;
+# point DATABASE_URL / REDIS_HOST at them via Coolify's env settings.
+name: camp-registration
+
+x-image: &image ghcr.io/marvin-wtt/campregistration:${TAG:-latest}
+
+services:
+  # One-shot: applies schema migrations, then exits. The app waits for it to
+  # succeed. Runs once per deploy (not per app replica), and does NOT re-run on
+  # an app container restart.
+  migrate:
+    image: *image
+    command: npm run migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    restart: "no"
+
+  app:
+    image: *image
+    command: node backend/build/entry.cjs
+    depends_on:
+      migrate:
+        condition: service_completed_successfully   # start only if migrate exits 0
+    environment:
+      NODE_ENV: production
+      APP_PORT: "3000"
+      APP_URL: ${APP_URL}
+      APP_NAME: ${APP_NAME}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO}
+      EMAIL_ADMIN: ${EMAIL_ADMIN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      # Uploads/tmp live on the shared volume below so they survive redeploys
+      # (and are shared across replicas on the same host).
+      STORAGE_LOCATION: local
+      UPLOAD_DIR: /data/uploads/
+      TMP_DIR: /data/tmp/
+    volumes:
+      - storage:/data
+    expose:
+      - "3000"            # Coolify's proxy routes your domain to this port
+    restart: unless-stopped
+
+    # To scale out on a single host, uncomment below and keep `expose` (never a
+    # fixed host `ports:` mapping — replicas would collide on the host port).
+    # The single migrate service still runs once; all replicas gate on it.
+    # deploy:
+    #   replicas: 3
+
+volumes:
+  storage:
