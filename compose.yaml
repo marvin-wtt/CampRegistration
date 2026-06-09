@@ -1,32 +1,26 @@
-# Production stack for Coolify. Both services share the SAME image built by CI
-# (.github/workflows/build-image.yml) — the migrate service just overrides the
-# command. `prisma` and `tsx` are prod dependencies, so the pruned image can run
-# migrations; no separate build is needed.
-#
-# MariaDB and Redis are expected to be separate Coolify-managed resources;
-# point DATABASE_URL / REDIS_HOST at them via Coolify's env settings.
+# Production stack for Coolify. Both services share the CI-built image; the
+# migrate service just overrides the command. MariaDB and Redis are separate
+# Coolify-managed resources, pointed at via env settings.
 name: camp-registration
 
 x-image: &image ghcr.io/marvin-wtt/campregistration:${TAG:-latest}
 
 services:
-  # One-shot: applies schema migrations, then exits. The app waits for it to
-  # succeed. Runs once per deploy (not per app replica), and does NOT re-run on
-  # an app container restart.
+  # One-shot: applies schema + data migrations, then exits.
   migrate:
     image: *image
     command: npm run migrate
     environment:
       DATABASE_URL: ${DATABASE_URL}
+    init: true
     restart: "no"
 
   app:
     image: *image
-    # WORKDIR in the image is /app/backend, so the entry path is relative to it.
-    command: node build/entry.cjs
+    init: true
     depends_on:
       migrate:
-        condition: service_completed_successfully   # start only if migrate exits 0
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       APP_PORT: "3000"
@@ -44,20 +38,16 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
-      # Uploads/tmp live on the shared volume below so they survive redeploys
-      # (and are shared across replicas on the same host).
       STORAGE_LOCATION: local
       UPLOAD_DIR: /data/uploads/
       TMP_DIR: /data/tmp/
     volumes:
       - storage:/data
     expose:
-      - "3000"            # Coolify's proxy routes your domain to this port
+      - "3000"
     restart: unless-stopped
 
-    # To scale out on a single host, uncomment below and keep `expose` (never a
-    # fixed host `ports:` mapping — replicas would collide on the host port).
-    # The single migrate service still runs once; all replicas gate on it.
+    # Scale out on a single host: uncomment and keep `expose` (not `ports`).
     # deploy:
     #   replicas: 3
 
