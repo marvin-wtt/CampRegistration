@@ -2,7 +2,6 @@
   "name": "camp-registration",
   "version": "0.0.1",
   "scripts": {
-    "depoly": "./post-deploy.sh",
     "build": "npm run build --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
     "migrate": "npm run migrate --workspaces --if-present",

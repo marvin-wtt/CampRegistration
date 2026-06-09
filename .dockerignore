@@ -1,0 +1,32 @@
+# Dependencies & build output (rebuilt inside the image)
+**/node_modules
+**/dist
+**/build
+common/dist
+backend/build
+frontend/dist
+
+# Generated Prisma client (regenerated during build)
+backend/src/generated
+
+# Local env / secrets — provide these via Coolify, never bake into the image
+**/.env
+**/.env.*
+!**/.env.example
+
+# Tests & tooling not needed for the production image
+e2e
+**/coverage
+**/tests/tmp
+**/*.log
+
+# VCS / editor / OS cruft
+.git
+.github
+.idea
+.vscode
+**/.DS_Store
+
+# Local runtime storage (uploads live on a persistent volume, not in the image)
+backend/storage
+backend/public/uploads
