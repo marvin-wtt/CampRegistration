@@ -35,10 +35,8 @@ host it: `prisma migrate dev --create-only --name <descriptive_name>`.
 - Use the plain transaction client `tx` — the soft-delete extension is not applied
   here, so deleted rows are visible. Do **not** wrap your work in your own
   `$transaction`; the runner already does.
-- The two existing `migration.ts` scripts predate this runner, use the old
-  self-running style, and are **baselined** (recorded as applied, never imported).
-  Don't copy their structure — use the `export up` format above.
-
-```
-
-```
+- The two existing `migration.ts` scripts predate this runner and are
+  **baselined** (recorded as applied the first time the tracking table is
+  created, so they are never imported or re-run). They already use the
+  `export up` format, so importing them would be safe even if baselining were
+  removed.

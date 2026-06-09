@@ -22,7 +22,8 @@ services:
 
   app:
     image: *image
-    command: node backend/build/entry.cjs
+    # WORKDIR in the image is /app/backend, so the entry path is relative to it.
+    command: node build/entry.cjs
     depends_on:
       migrate:
         condition: service_completed_successfully   # start only if migrate exits 0

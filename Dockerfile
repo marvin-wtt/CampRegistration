@@ -28,8 +28,11 @@ RUN npm run build --workspace common \
   && npm run build --workspace frontend
 
 # Drop devDependencies so the runtime image only ships what production needs.
-# `prisma` (CLI for `migrate deploy`) and `@prisma/adapter-mariadb` are runtime
-# dependencies and are kept.
+# The migration step needs these at runtime, so they are declared as runtime
+# dependencies (in backend/package.json) and survive the prune:
+#   - `prisma`               CLI for `migrate deploy`
+#   - `tsx`                  runs the data-migration runner from TS source
+#   - `@prisma/adapter-mariadb`  DB driver used by the runner
 RUN npm prune --omit=dev
 
 # ------------------------------------------------------------------------------

@@ -14,8 +14,10 @@ backend/src/generated
 **/.env.*
 !**/.env.example
 
-# Tests & tooling not needed for the production image
-e2e
+# Tests & tooling not needed for the production image.
+# Keep e2e/package.json: it is a workspace, so `npm ci` needs its manifest.
+e2e/*
+!e2e/package.json
 **/coverage
 **/tests/tmp
 **/*.log

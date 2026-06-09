@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Prisma } from '#generated/prisma/client.js';
-import prisma from './prisma.js';
+import prisma from '../client.js';
 
 /**
  * Idempotent, tracked data-migration runner.

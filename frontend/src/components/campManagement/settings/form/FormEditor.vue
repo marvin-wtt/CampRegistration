@@ -319,22 +319,43 @@ const themes: {
   dark?: ITheme;
   light?: ITheme;
 } = {};
-let previousColorPalette: string | undefined;
+let previousColorPalette: 'dark' | 'light' | undefined;
 creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
   const colorPalette = theme.colorPalette;
   if (!colorPalette || (colorPalette !== 'dark' && colorPalette !== 'light')) {
     return;
   }
 
-  if (theme.colorPalette === previousColorPalette) {
+  if (colorPalette === previousColorPalette) {
     themes[colorPalette] = theme;
+    // Keep themeName and isPanelless in sync with the other palette's stored theme
+    const otherPalette = colorPalette === 'dark' ? 'light' : 'dark';
+    const otherTheme = themes[otherPalette];
+    if (otherTheme) {
+      themes[otherPalette] = {
+        ...otherTheme,
+        ...(theme.themeName !== undefined && { themeName: theme.themeName }),
+        ...(theme.isPanelless !== undefined && {
+          isPanelless: theme.isPanelless,
+        }),
+      };
+    }
     return;
   }
-  previousColorPalette = theme.colorPalette;
 
-  const mewTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
-  if (mewTheme) {
-    themeModel.setTheme(mewTheme);
+  previousColorPalette = colorPalette;
+
+  const storedTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
+  if (storedTheme) {
+    // Restore the stored theme for this palette, but preserve the current
+    // themeName and isPanelless which must be the same across both palettes.
+    themeModel.setTheme({
+      ...storedTheme,
+      ...(theme.themeName !== undefined && { themeName: theme.themeName }),
+      ...(theme.isPanelless !== undefined && {
+        isPanelless: theme.isPanelless,
+      }),
+    });
   }
 });
 
