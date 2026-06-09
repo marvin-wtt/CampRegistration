@@ -66,40 +66,24 @@
 </template>
 
 <script setup lang="ts">
-import {
-  onBeforeUnmount,
-  onMounted,
-  nextTick,
-  ref,
-  computed,
-  watch,
-} from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, watch } from 'vue';
 import ResultTablePrint from 'components/campManagement/table/ResultTablePrint.vue';
 import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { usePrintPage, waitForStableLayout } from 'src/composables/printPage';
 
-const route = useRoute();
 const { to } = useObjectTranslation();
 
-const payload = ref<PrintTablesPayload | null>(null);
 const timestamp = ref<string>('');
-const error = ref<string | null>(null);
 
-// Storage key can be provided (recommended when multiple exports could overlap)
-const storageKey = computed<string>(() => {
-  const key = (route.query.key as string | undefined)?.trim();
-  return key && key.length > 0 ? key : 'print:tables:payload';
+const { payload, error } = usePrintPage<PrintTablesPayload>({
+  messagePrefix: 'PRINT_TABLES',
+  defaultStorageKey: 'print:tables:payload',
+  prepare: async () => {
+    await waitForStableLayout();
+    assignPageOrientation();
+  },
 });
-
-function postToParent(msg: unknown) {
-  // Works for iframe usage; harmless otherwise
-  try {
-    window.parent?.postMessage(msg, window.location.origin);
-  } catch {
-    // ignore
-  }
-}
 
 watch(payload, (value) => {
   timestamp.value = formatDate(
@@ -120,38 +104,6 @@ function formatDate(iso: string, locale?: string): string {
     }).format(date);
   } catch {
     return date.toISOString();
-  }
-}
-
-function readPayloadFromSessionStorage(): PrintTablesPayload | null {
-  const raw = sessionStorage.getItem(storageKey.value);
-  if (!raw) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw) as PrintTablesPayload;
-  } catch {
-    return null;
-  }
-}
-
-function cleanupSessionStorage() {
-  try {
-    sessionStorage.removeItem(storageKey.value);
-  } catch {
-    // ignore
-  }
-}
-
-async function waitForFonts() {
-  // Some environments don’t support document.fonts
-  const anyDoc = document as unknown as { fonts?: { ready?: Promise<void> } };
-  if (anyDoc.fonts?.ready) {
-    try {
-      await anyDoc.fonts.ready;
-    } catch {
-      // ignore
-    }
   }
 }
 
@@ -210,61 +162,6 @@ function printOrientationClass(
 
   return '';
 }
-
-async function waitForStableLayout() {
-  await nextTick();
-  await waitForFonts();
-  // Two frames is usually enough for Quasar/QTable layout + icon/font settling
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function triggerPrint() {
-  // Tell parent we’re about to print (useful to disable UI/spinners)
-  postToParent({ type: 'PRINT_TABLES:PRINTING' });
-
-  // Print dialog (user saves as PDF)
-  window.print();
-}
-
-function onAfterPrint() {
-  // Cleanup storage to avoid stale data
-  cleanupSessionStorage();
-
-  // Signal parent to cleanup iframe
-  postToParent({ type: 'PRINT_TABLES:AFTERPRINT' });
-}
-
-onMounted(async () => {
-  window.addEventListener('afterprint', onAfterPrint);
-
-  // Load payload (sessionStorage is simplest)
-  const p = readPayloadFromSessionStorage();
-  if (!p) {
-    error.value =
-      'No print payload found. Please start the export from the management page.';
-    postToParent({ type: 'PRINT_TABLES:ERROR', error: error.value });
-    return;
-  }
-
-  payload.value = p;
-
-  // Let parent know we loaded it
-  postToParent({ type: 'PRINT_TABLES:LOADED' });
-
-  await waitForStableLayout();
-
-  assignPageOrientation();
-
-  // Ready → parent can call iframeWindow.print() too, but we can auto-print.
-  postToParent({ type: 'PRINT_TABLES:READY' });
-
-  triggerPrint();
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('afterprint', onAfterPrint);
-});
 </script>
 
 <style scoped>

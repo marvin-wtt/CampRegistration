@@ -139,9 +139,9 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { usePrintPage, waitForStableLayout } from 'src/composables/printPage';
 import type {
   ProgramEvent,
   Translatable,
@@ -171,64 +171,20 @@ interface TimeSlot {
   isHour: boolean;
 }
 
-const route = useRoute();
 const { locale, t } = useI18n();
 
-const data = ref<PrintData | null>(null);
-const error = ref<string | null>(null);
-
-const storageKey = computed<string>(() => {
-  const key = (route.query.key as string | undefined)?.trim();
-  return key && key.length > 0 ? key : 'print:calendar:payload';
-});
-
-function postToParent(msg: unknown) {
-  try {
-    window.parent?.postMessage(msg, window.location.origin);
-  } catch {
-    // ignore
-  }
-}
-
-function cleanupSessionStorage() {
-  try {
-    sessionStorage.removeItem(storageKey.value);
-  } catch {
-    // ignore
-  }
-}
-
-async function waitForFonts() {
-  const anyDoc = document as unknown as { fonts?: { ready?: Promise<void> } };
-  if (anyDoc.fonts?.ready) {
-    try {
-      await anyDoc.fonts.ready;
-    } catch {
-      // ignore
-    }
-  }
-}
-
-async function waitForStableLayout() {
-  await nextTick();
-  await waitForFonts();
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function triggerPrint() {
-  postToParent({ type: 'PRINT_CALENDAR:PRINTING' });
-  window.print();
-}
-
-function onAfterPrint() {
-  cleanupSessionStorage();
-  postToParent({ type: 'PRINT_CALENDAR:AFTERPRINT' });
-}
-
-onBeforeUnmount(() => {
-  window.removeEventListener('afterprint', onAfterPrint);
-  window.removeEventListener('beforeprint', fitEventText);
+const { payload: data, error } = usePrintPage<PrintData>({
+  messagePrefix: 'PRINT_CALENDAR',
+  defaultStorageKey: 'print:calendar:payload',
+  beforePrint: fitEventText,
+  prepare: async () => {
+    // First pass: template renders with data, calPhRef becomes available
+    await waitForStableLayout();
+    updateSlotHeight();
+    // Second pass: --slot-h applied, slots have correct heights
+    await waitForStableLayout();
+    fitEventText();
+  },
 });
 
 const campLocales = computed<string[]>(
@@ -252,40 +208,6 @@ const LANDSCAPE_H_PX = ((210 - 24) / 25.4) * 96; // ~703px
 const CAL_GRID_OVERHEAD_PX = 85;
 
 const calPhRef = ref<HTMLElement | null>(null);
-
-onMounted(async () => {
-  window.addEventListener('afterprint', onAfterPrint);
-  window.addEventListener('beforeprint', fitEventText);
-
-  const raw = sessionStorage.getItem(storageKey.value);
-  if (!raw) {
-    error.value =
-      'No print payload found. Please start the export from the management page.';
-    postToParent({ type: 'PRINT_CALENDAR:ERROR', error: error.value });
-    return;
-  }
-
-  try {
-    data.value = JSON.parse(raw) as PrintData;
-  } catch {
-    error.value = 'Failed to parse print payload.';
-    postToParent({ type: 'PRINT_CALENDAR:ERROR', error: error.value });
-    return;
-  }
-
-  postToParent({ type: 'PRINT_CALENDAR:LOADED' });
-
-  // First pass: template renders with data, calPhRef becomes available
-  await waitForStableLayout();
-  updateSlotHeight();
-  // Second pass: --slot-h CSS variable has been applied, slots have correct heights
-  await waitForStableLayout();
-  fitEventText();
-
-  postToParent({ type: 'PRINT_CALENDAR:READY' });
-
-  triggerPrint();
-});
 
 const isPortrait = computed<boolean>(
   () => !data.value || data.value.days === 1,
