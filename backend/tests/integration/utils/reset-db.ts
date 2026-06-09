@@ -1,4 +1,4 @@
-import prisma from '../client.js';
+import prisma from './prisma.js';
 
 let cachedTableNames: string[] | null = null;
 
