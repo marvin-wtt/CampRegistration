@@ -9,10 +9,10 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts'],
     coverage: {
       enabled: true,
-      include: ['src/*'],
+      include: ['src/**'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'clover'],
-      reportsDirectory: './tests/integration/coverage',
+      reportsDirectory: './tests/unit/coverage',
     },
   },
 });

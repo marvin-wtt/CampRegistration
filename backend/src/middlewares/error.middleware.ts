@@ -16,43 +16,62 @@ const statusToString = (statusCode: number): string => {
   return httpStatus[statusCode as keyof typeof httpStatus] as string;
 };
 
-const getStatusCode = (err: Record<string, unknown>): number => {
-  if (typeof err.statusCode === 'number') {
-    return err.statusCode;
-  }
+const getStack = (err: unknown): string | undefined =>
+  isObject(err) && typeof err.stack === 'string' ? err.stack : undefined;
 
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    return httpStatus.BAD_REQUEST;
-  }
+// Prisma failures that indicate a bug or infrastructure problem rather than a
+// faulty request. Their details must not leak to the client.
+const isInternalPrismaError = (err: unknown): boolean =>
+  err instanceof Prisma.PrismaClientUnknownRequestError ||
+  err instanceof Prisma.PrismaClientValidationError ||
+  err instanceof Prisma.PrismaClientRustPanicError ||
+  err instanceof Prisma.PrismaClientInitializationError;
 
-  return httpStatus.INTERNAL_SERVER_ERROR;
-};
-
-export const errorConverter: ErrorRequestHandler = (
-  err: unknown,
-  _req,
-  _res,
-  next,
-) => {
+const toApiError = (err: unknown): ApiError => {
   if (err instanceof ApiError) {
-    next(err);
-    return;
+    return err;
+  }
+
+  // `findUniqueOrThrow` and friends throw a known request error (e.g. P2025)
+  // when the request targets a missing record — a client error, not a server
+  // fault. Map it to a client error without exposing the raw Prisma message.
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    return new ApiError(
+      httpStatus.BAD_REQUEST,
+      statusToString(httpStatus.BAD_REQUEST),
+      true,
+      getStack(err),
+    );
+  }
+
+  if (isInternalPrismaError(err)) {
+    return new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      undefined,
+      false,
+      getStack(err),
+    );
   }
 
   if (!isObject(err)) {
     const message = typeof err === 'string' ? err : undefined;
 
-    next(new ApiError(httpStatus.INTERNAL_SERVER_ERROR, message, false));
-    return;
+    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, message, false);
   }
 
-  const statusCode = getStatusCode(err);
+  const statusCode =
+    typeof err.statusCode === 'number'
+      ? err.statusCode
+      : httpStatus.INTERNAL_SERVER_ERROR;
   const message =
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
-  const stack = typeof err.stack === 'string' ? err.stack : undefined;
-  const isOperationalError = statusCode >= 400 && statusCode < 500;
+  const isOperational = statusCode >= 400 && statusCode < 500;
 
-  next(new ApiError(statusCode, message, isOperationalError, stack));
+  return new ApiError(statusCode, message, isOperational, getStack(err));
+};
+
+export const errorConverter: ErrorRequestHandler = (err, _req, _res, next) => {
+  next(toApiError(err));
 };
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
