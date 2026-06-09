@@ -28,6 +28,7 @@ import { MailableRegistry } from '#app/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
 import { slk } from 'survey-core';
 import { config } from '#core/ioc/facades';
+import logger from '#core/logger';
 
 export class RegistrationModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -83,11 +84,13 @@ export class RegistrationModule implements AppModule {
   private registerSurveyJsLicense() {
     const licenceKey = config().surveyjs.licenceKey;
     if (!licenceKey) {
-      console.warn(
+      logger.warn(
         'SurveyJS licence key is not set. PDF export may be watermarked.',
       );
       return;
     }
+
+    console.log(licenceKey);
 
     slk(licenceKey);
   }
