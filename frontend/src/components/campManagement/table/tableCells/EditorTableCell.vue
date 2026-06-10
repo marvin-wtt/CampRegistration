@@ -134,6 +134,7 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { usePermissions } from 'src/composables/permissions';
 import { useQuasar } from 'quasar';
 import { formatPersonName } from 'src/utils/formatters';
+import { deepToRaw } from 'src/utils/deepToRaw';
 
 const { props: cellProps, printing } = defineProps<TableCellProps>();
 
@@ -249,7 +250,7 @@ function onSave() {
   void registrationsStore
     .updateData(registrationId.value, {
       customData: updateObjectAtPath(
-        getExistingCustomData(),
+        structuredClone(deepToRaw(getExistingCustomData())),
         fieldName.value,
         modelValue.value,
       ),
