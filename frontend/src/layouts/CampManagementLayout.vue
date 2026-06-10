@@ -2,12 +2,15 @@
   <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
-    <q-header bordered>
-      <m-toolbar>
+    <q-header class="camp-header">
+      <m-toolbar
+        floating
+        vibrant
+        class="camp-toolbar"
+      >
         <m-btn
           v-if="showDrawer"
           icon="menu"
-          square
           round
           text
           @click="toggleDrawer"
@@ -20,20 +23,11 @@
           <router-link
             v-else
             :to="{ name: 'management' }"
-            style="text-decoration: none; color: inherit"
+            class="camp-title-link"
           >
             {{ to(title) }}
           </router-link>
         </q-toolbar-title>
-
-        <header-navigation :administration="administrator" />
-
-        <locale-switch
-          borderless
-          class="q-px-md gt-xs"
-          rounded
-          unelevated
-        />
 
         <profile-menu />
       </m-toolbar>
@@ -125,15 +119,12 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
-import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
@@ -147,7 +138,6 @@ const { to } = useObjectTranslation();
 const { can } = usePermissions();
 
 const authStore = useAuthStore();
-const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
 onMounted(async () => {
@@ -168,10 +158,6 @@ const title = computed(() => {
 
 const campName = computed<string | undefined>(() => {
   return to(campDetailStore.data?.name);
-});
-
-const administrator = computed<boolean>(() => {
-  return profileStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
@@ -415,6 +401,25 @@ statistics: 'Statistiky'
 tools: 'Nástroje'
 notifications: 'Oznámení'
 </i18n>
+
+<style scoped>
+/* Floating vibrant top app bar: let the page background show around the pill */
+.camp-header {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Stretch the floating toolbar to span the width, keeping the pill margins */
+.camp-header :deep(.q-toolbar--floating) {
+  width: calc(100% - 24px);
+  margin: 12px;
+}
+
+.camp-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+</style>
 
 <style>
 /* width */
