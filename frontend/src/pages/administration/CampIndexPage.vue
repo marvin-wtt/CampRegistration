@@ -544,7 +544,7 @@ function showCampForm(camp: Camp) {
   const routeData = router.resolve({
     name: 'camp',
     params: {
-      camp: camp.id,
+      campId: camp.id,
     },
   });
 

@@ -1,5 +1,5 @@
 import { Prisma } from '#generated/prisma/client.js';
-import prisma from './prisma.js';
+import prisma from '../client.js';
 
 export const CampManagerFactory = {
   build: (

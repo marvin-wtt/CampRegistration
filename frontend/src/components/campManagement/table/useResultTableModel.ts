@@ -71,13 +71,16 @@ export function useResultTableModel(
     return mapped.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   });
 
+  function applyTemplateSort(template: CTableTemplate) {
+    pagination.value.sortBy = template.sortBy ?? null;
+    pagination.value.descending = template.sortDirection === 'desc';
+  }
+
   function defaultTemplate(): CTableTemplate {
     const id = options.initialTemplateId ?? null;
     if (id) {
       const found = templateOptions.value.find((v) => v.id == id);
       if (found) {
-        pagination.value.sortBy = found.sortBy ?? null;
-        pagination.value.descending = found.sortDirection === 'desc';
         return found;
       }
     }
@@ -90,16 +93,19 @@ export function useResultTableModel(
 
   const template = ref<CTableTemplate>(defaultTemplate());
 
+  // Apply the sort order of the initial template since the watcher below only
+  // reacts to subsequent changes.
+  applyTemplateSort(template.value);
+
   watch(template, (newValue) => {
-    pagination.value.sortBy = newValue.sortBy ?? null;
-    pagination.value.descending = newValue.sortDirection === 'desc';
+    applyTemplateSort(newValue);
   });
 
   const rows = computed<Registration[]>(() => {
     let r = [...input.registrations.value];
 
     // Preset filter
-    if (template.value.filter !== undefined) {
+    if (template.value.filter != null) {
       const ex = new ExpressionEvaluator(template.value.filter);
       r = r.filter((row) => ex.evaluate(row));
     }

@@ -1,6 +1,6 @@
 import { Prisma } from '#generated/prisma/client';
 import { fakerEN as faker } from '@faker-js/faker';
-import prisma from './prisma.js';
+import prisma from '../client.js';
 
 export const NewsletterMessageFactory = {
   build: (

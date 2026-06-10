@@ -1,4 +1,4 @@
-import prisma from '../factories/prisma';
+import prisma from '../client';
 import userSeeder from './user.seeder';
 import campSeeder from './camp.seeder';
 import campManagerSeeder from './camp-manager.seeder';

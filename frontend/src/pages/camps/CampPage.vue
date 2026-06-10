@@ -127,7 +127,7 @@ async function init() {
   try {
     loading.value = true;
 
-    const id = route.params.camp;
+    const id = route.params.campId;
     if (typeof id !== 'string') {
       error.value = 'Invalid route params. Missing camp id.';
       return;

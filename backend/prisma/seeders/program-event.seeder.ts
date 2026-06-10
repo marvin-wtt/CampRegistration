@@ -1,4 +1,4 @@
-import { ProgramEventFactory } from '../factories/program-event.js';
+import { ProgramEventFactory } from '../factories/program-event.factory';
 import { Camp } from '#generated/prisma/client.js';
 
 type EventData = {

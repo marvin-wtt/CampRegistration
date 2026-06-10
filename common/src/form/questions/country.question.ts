@@ -37,6 +37,17 @@ const country: ICustomQuestionTypeConfiguration = {
         visibleIf: "{camp.countries} contains 'fr'",
       },
       {
+        value: 'gb',
+        text: {
+          de: 'Großbritannien',
+          en: 'Great Britain',
+          fr: 'Grande-Bretagne',
+          pl: 'Wielka Brytania',
+          cs: 'Velká Británie',
+        },
+        visibleIf: "{camp.countries} contains 'gb'",
+      },
+      {
         value: 'pl',
         text: {
           de: 'Polen',
