@@ -24,7 +24,7 @@ export type TableTemplateUpdateData = Partial<TableTemplateCreateData>;
 export interface TableColumnTemplate {
   name: string;
   label: string | Record<string, string>;
-  source?: 'form' | 'custom' | undefined;
+  source?: 'form' | 'custom' | 'computed' | 'meta' | undefined;
   field: string;
   required?: boolean | undefined;
   align?: 'left' | 'right' | 'center';
