@@ -307,12 +307,36 @@ watchEffect(() => {
   data.isArray = data.field.includes('.*');
 });
 
+const DEFAULT_RENDER_AS: Record<string, string> = {
+  // meta fields
+  status: 'status',
+  createdAt: 'date',
+  // computed fields
+  firstName: 'name',
+  lastName: 'name',
+  dateOfBirth: 'age',
+  'emails.*': 'email',
+  gender: 'gender',
+  address: 'address',
+  'address.country': 'country_flag',
+};
+
 watch(
   () => data.source,
   (source) => {
     data.field = '';
     data.renderAs = source === 'custom' ? 'editor' : 'default';
     fieldFilterOptions.value = fieldOptions.value;
+  },
+);
+
+watch(
+  () => data.field,
+  (field) => {
+    if (data.source !== 'meta' && data.source !== 'computed') {
+      return;
+    }
+    data.renderAs = DEFAULT_RENDER_AS[field] ?? 'default';
   },
 );
 
