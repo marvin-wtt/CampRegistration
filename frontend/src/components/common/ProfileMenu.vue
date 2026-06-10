@@ -226,7 +226,8 @@ const initials = computed<string>(() => {
 
   const parts = name.split(/\s+/).filter(Boolean);
   const first = parts[0]?.charAt(0) ?? '';
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
+  const last =
+    parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
 
   return (first + last).toUpperCase();
 });
