@@ -4,29 +4,29 @@
     :class="{ 'cursor-pointer': enabled }"
     @click="onCellClick()"
   >
-    <!-- Displayed value — stays in the layout flow so the column keeps its
-         natural width even while editing inline. -->
+    <!-- Displayed value (hidden while editing inline so the input takes the
+         cell and the row grows in height to fit it). -->
     <span
+      v-if="!(editMode && largeScreen)"
       class="ellipsis"
-      :class="{ 'editor-cell__value--hidden': editMode && largeScreen }"
     >
       {{ cellProps.value }}
     </span>
 
-    <!-- Inline editor (large screens) — rendered as an absolute overlay so it
-         never widens the column; it only grows rightward as far as needed. -->
+    <!-- Inline editor (large screens) — in-flow, so the row grows in height to
+         fit it while staying within the column's width. -->
     <q-input
-      v-if="editMode && largeScreen"
+      v-else
       v-model="modelValue"
       :disable="loading"
-      class="editor-inline-input"
+      class="editor-inline-input full-width"
       autofocus
       dense
       outlined
       hide-bottom-space
       @keydown.enter="onSave"
       @keydown.esc="onCancel"
-      @focusout="onCancel()"
+      @focusout="onBlurCommit()"
       @click.stop
     >
       <template #append>
@@ -36,6 +36,7 @@
           flat
           dense
           round
+          @mousedown.prevent
           @click.stop="onCancel"
         />
         <q-btn
@@ -47,7 +48,8 @@
           flat
           dense
           round
-          @click="onSave"
+          @mousedown.prevent
+          @click.stop="onSave"
         />
       </template>
     </q-input>
@@ -113,6 +115,12 @@
         </q-card-actions>
       </q-card>
     </q-popup-proxy>
+
+    <q-inner-loading
+      :showing="loading"
+      color="primary"
+      size="24px"
+    />
   </div>
 </template>
 
@@ -125,6 +133,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { usePermissions } from 'src/composables/permissions';
 import { useQuasar } from 'quasar';
+import { formatPersonName } from 'src/utils/formatters';
 
 const { props: cellProps, printing } = defineProps<TableCellProps>();
 
@@ -149,12 +158,14 @@ const fieldName = computed<string | undefined>(() => {
 });
 
 const registrationName = computed<string>(() => {
-  return [
+  const fullName = [
     cellProps.row.computedData.firstName,
     cellProps.row.computedData.lastName,
   ]
     .filter((name) => !!name)
     .join(' ');
+
+  return formatPersonName(fullName);
 });
 
 const largeScreen = computed<boolean>(() => quasar.screen.gt.sm);
@@ -209,6 +220,23 @@ function onCancel() {
   modelValue.value = getDefaultValue();
 
   editMode.value = false;
+}
+
+function onBlurCommit() {
+  if (loading.value) {
+    return;
+  }
+
+  // Auto-save when focus leaves the editor, but only if the value actually
+  // changed and the column config is valid — otherwise just close without an
+  // API call. The dirty check also stops the focusout fired while unmounting
+  // after Esc/✕ (which reset modelValue first) from re-saving.
+  if (error.value || modelValue.value === getDefaultValue()) {
+    onCancel();
+    return;
+  }
+
+  onSave();
 }
 
 function onSave() {
@@ -321,44 +349,37 @@ error:
 </i18n>
 
 <style lang="scss" scoped>
+// Anchor the q-inner-loading overlay shown while saving.
 .editor-cell {
   position: relative;
+  min-width: 8rem;
 }
 
-// Reserve the column width with the displayed value, but hide it visually while
-// the inline editor overlays the cell (keeps layout, avoids a flash of text
-// behind the input).
-.editor-cell__value--hidden {
-  visibility: hidden;
-}
-
-// The inline editor floats over the cell so it does not contribute to the
-// column's content width. It fills the cell and only expands rightward (over
-// the gutter / neighbouring cell) when the value needs more room than the
-// column currently provides.
+// The inline editor sits in the normal flow: the row grows in height to fit it.
+// min-width: 0 lets the field shrink to the column width so it does not widen
+// the column more than the input genuinely needs (the action buttons).
 .editor-inline-input {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  z-index: 2;
-  width: max-content;
-  min-width: max(100%, 8rem);
-  max-width: 24rem;
+  min-width: 8rem;
 
   :deep(.q-field__control) {
-    // Opaque background so the part extending past the cell does not reveal
-    // the content behind it.
-    background: #fff;
     padding: 0 4px 0 8px;
+  }
+
+  // In an auto-layout table the column is sized to the input's preferred width,
+  // which comes from the native input's default `size="20"` (~20 chars) and
+  // would inflate the column while editing. A *definite* width overrides that
+  // intrinsic width (a percentage width would be treated as the intrinsic ~20ch
+  // and not help). Setting it to a small value lets the column grow to at least
+  // that minimum so the editor stays usable on narrow columns; min-width: 100%
+  // (a percentage, so it contributes nothing to intrinsic sizing) then stretches
+  // the input to fill wider columns.
+  :deep(.q-field__native) {
+    width: 0;
+    min-width: 100%;
   }
 
   :deep(.q-field__append) {
     padding-left: 2px;
   }
-}
-
-.body--dark .editor-inline-input :deep(.q-field__control) {
-  background: #1d1d1d;
 }
 </style>
