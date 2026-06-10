@@ -1,9 +1,11 @@
 <template>
   <q-input
-    v-model="modelValue"
-    :model-modifiers="props.modelModifiers"
-    v-bind="$attrs"
+    v-model="text"
     type="textarea"
+    :error="error !== null"
+    :error-message="error ?? undefined"
+    v-bind="$attrs"
+    @blur="format"
   >
     <template
       v-for="(data, name, index) in $slots as unknown as QInputSlots"
@@ -19,51 +21,106 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { ref, watch } from 'vue';
 import { type QInputSlots } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
-interface Props {
-  modelValue: string | object | undefined;
-  modelModifiers?: Record<string, boolean>;
+defineOptions({
+  inheritAttrs: false,
+});
+
+const model = defineModel<object | undefined>();
+
+const { t } = useI18n();
+
+const text = ref<string>(stringify(model.value));
+const error = ref<string | null>(null);
+
+function stringify(value: unknown): string {
+  if (value === undefined) {
+    return '';
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return '';
+  }
 }
 
-const props = defineProps<Props>();
+watch(text, (value) => {
+  const trimmed = value.trim();
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void;
-}>();
+  if (trimmed === '') {
+    error.value = null;
+    model.value = undefined;
+    return;
+  }
 
-const modelValue = computed<string>({
-  get: () => JSON.stringify(props.modelValue),
-  set: (value: string) => emit('update:modelValue', JSON.parse(value)),
+  try {
+    model.value = JSON.parse(trimmed);
+    error.value = null;
+  } catch {
+    // Keep the invalid text so the user can fix it; just surface the error
+    //  and stop propagating a broken value to the parent.
+    error.value = t('error.invalid');
+  }
 });
+
+// Re-sync when the value is changed from the outside, but skip self-inflicted
+//  updates so the user's caret and partial edits are preserved while typing.
+watch(model, (value) => {
+  if (error.value !== null) {
+    return;
+  }
+
+  const current = text.value.trim() === '' ? undefined : safeParse(text.value);
+  if (JSON.stringify(current) === JSON.stringify(value)) {
+    return;
+  }
+
+  text.value = stringify(value);
+});
+
+function safeParse(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+}
+
+// Pretty-print valid JSON when the field loses focus.
+function format() {
+  if (error.value !== null) {
+    return;
+  }
+
+  text.value = stringify(model.value);
+}
 </script>
 
-<style scoped>
-.margin-between > * + * {
-  margin-top: 0.5rem;
-}
+<i18n lang="yaml" locale="en">
+error:
+  invalid: 'Invalid JSON'
+</i18n>
 
-.layer1,
-.layer2 {
-  grid-column: 1;
-  grid-row: 1;
-}
+<i18n lang="yaml" locale="de">
+error:
+  invalid: 'Ungültiges JSON'
+</i18n>
 
-.bounce-enter-active {
-  animation: bounce-in 0.5s;
-}
+<i18n lang="yaml" locale="fr">
+error:
+  invalid: 'JSON invalide'
+</i18n>
 
-.bounce-leave-active {
-  animation: bounce-in 0.5s reverse;
-}
+<i18n lang="yaml" locale="cs">
+error:
+  invalid: 'Neplatný JSON'
+</i18n>
 
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-</style>
+<i18n lang="yaml" locale="pl">
+error:
+  invalid: 'Nieprawidłowy JSON'
+</i18n>
