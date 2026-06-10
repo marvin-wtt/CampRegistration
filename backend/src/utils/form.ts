@@ -1,12 +1,67 @@
-import { SurveyModel } from 'survey-core';
+import { type ITheme, SurveyModel } from 'survey-core';
+import { SurveyPDF } from 'survey-pdf';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp } from '#generated/prisma/client.js';
+import type { Registration } from '#generated/prisma/client.js';
+import jsdom from 'jsdom';
+import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
+import { createMarkdownConverter } from '@camp-registration/common/utils';
+import { generateApiUrl } from '#utils/url';
+import { Mutex } from 'async-mutex';
 
-export const formUtils = (
-  camp: Camp & { freePlaces: number | Record<string, number> },
-  data?: unknown,
-) => {
+import 'survey-core/i18n';
+
+// Serializes PDF generation since survey-pdf relies on shared global state
+// (global.window / global.document) that concurrent calls would clobber.
+const pdfMutex = new Mutex();
+
+export function exportPDF(
+  camp: CampWithFreePlacesAndFiles,
+  registration: Registration,
+): Promise<ArrayBuffer> {
+  return pdfMutex.runExclusive(() => runExportPDF(camp, registration));
+}
+
+async function runExportPDF(
+  camp: CampWithFreePlacesAndFiles,
+  registration: Registration,
+): Promise<ArrayBuffer> {
+  const { window } = new jsdom.JSDOM();
+
+  const prevWindow = global.window;
+  const prevDocument = global.document;
+
+  // @ts-expect-error Required for survey-pdf, which expects a browser environment
+  global.window = window;
+  global.document = window.document;
+
+  try {
+    const surveyPDF = new SurveyPDF(camp.form);
+    surveyPDF.data = registration.data;
+    surveyPDF.locale = registration.locale;
+    surveyPDF.applyTheme(camp.themes.light as ITheme);
+    surveyPDF.readOnly = true;
+
+    const mdConverter = createMarkdownConverter();
+    surveyPDF.onTextMarkdown.add((_, options) => {
+      options.html = mdConverter.renderInline(options.text);
+    });
+
+    setVariables(
+      surveyPDF,
+      camp,
+      (id: string) => generateApiUrl(['files', id]),
+      camp.files,
+    );
+
+    return await surveyPDF.raw('arraybuffer');
+  } finally {
+    global.window = prevWindow;
+    global.document = prevDocument;
+  }
+}
+
+export const formUtils = (camp: CampWithFreePlacesAndFiles, data?: unknown) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';

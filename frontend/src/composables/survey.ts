@@ -5,10 +5,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
-import {
-  setVariables,
-  selectFilesByLocale,
-} from '@camp-registration/common/form';
+import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 import { PlainLight, PlainDark } from 'survey-core/themes';
 import { useAPIService } from 'src/services/APIService';
@@ -44,17 +41,7 @@ export function startAutoDataUpdate(
     }
 
     model.locale = locale;
-    setVariables(model, data);
-
-    // Build locale-aware _file variable object: {_file.rules}, {_file.toc}, etc.
-    if (data && files) {
-      const selected = selectFilesByLocale(files, locale);
-      const fileVars: Record<string, string> = {};
-      for (const [field, file] of Object.entries(selected)) {
-        fileVars[field] = api.getFileUrl(file.id);
-      }
-      model.setVariable('_file', fileVars);
-    }
+    setVariables(model, data, (id) => api.getFileUrl(id), files);
   };
 
   updateVariables(model, data.value, files.value, locale.value);

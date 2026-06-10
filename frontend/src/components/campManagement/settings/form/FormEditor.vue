@@ -7,16 +7,11 @@
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
-import 'survey-core/i18n/english';
-import 'survey-creator-core/i18n/english';
-import 'survey-core/i18n/german';
-import 'survey-creator-core/i18n/german';
-import 'survey-core/i18n/french';
-import 'survey-creator-core/i18n/french';
-import 'survey-core/i18n/polish';
-import 'survey-creator-core/i18n/polish';
-import 'survey-core/i18n/czech';
-import 'survey-creator-core/i18n/czech';
+import 'survey-core/i18n';
+// Json editor
+import 'ace-builds/src-noconflict/ace';
+import 'ace-builds/src-noconflict/ext-searchbox';
+import 'ace-builds/src-noconflict/theme-clouds_midnight';
 
 import { watch, watchEffect } from 'vue';
 import {
@@ -37,12 +32,15 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import SurveyCreatorTheme from 'survey-creator-core/themes';
-import { registerCreatorTheme } from 'survey-creator-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
-import { registerSurveyTheme } from 'survey-creator-core';
+import CreatorUIPresets from 'survey-creator-core/ui-presets';
+import {
+  registerSurveyTheme,
+  registerCreatorTheme,
+  registerUIPreset,
+} from 'survey-creator-core';
 import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from 'src/utils/markdown';
+import { createMarkdownConverter } from '@camp-registration/common/utils';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -51,7 +49,12 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
+import { useAPIService } from 'src/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
+import { AceJsonEditorModel } from 'survey-creator-core';
+
+AceJsonEditorModel.aceBasePath =
+  'https://unpkg.com/ace-builds/src-min-noconflict/';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -64,6 +67,7 @@ const props = defineProps<{
 
 const quasar = useQuasar();
 const { locale } = useI18n();
+const api = useAPIService();
 
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
@@ -114,7 +118,8 @@ const creatorOptions: ICreatorOptions = {
 const mdConverter = createMarkdownConverter();
 
 registerSurveyTheme(SurveyTheme);
-registerCreatorTheme(SurveyCreatorTheme);
+registerCreatorTheme(SurveyTheme);
+registerUIPreset(CreatorUIPresets);
 
 surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
@@ -145,23 +150,8 @@ watch(() => quasar.dark.isActive, applyCreatorTheme);
 applyCreatorTheme(quasar.dark.isActive);
 
 function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark
-    ? SurveyCreatorTheme.DefaultDark
-    : {
-        themeName: 'default-light',
-        cssVariables: {},
-      };
-
-  creator.applyCreatorTheme({
-    themeName: theme.themeName,
-    isLight: !isDark,
-    cssVariables: {
-      ...theme.cssVariables,
-      '--sjs-primary-background-500': undefined,
-      '--sjs-secondary-background-500': undefined,
-      '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
-    },
-  });
+  const theme = isDark ? SurveyTheme.DefaultDark : SurveyTheme.DefaultLight;
+  creator.applyCreatorTheme(theme);
 
   // TODO This is a workaround for the issue with the theme not being applied correctly
   // The value is null because the backend middleware
@@ -242,9 +232,10 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
-    setVariables(survey, props.camp);
+    const getFileUrl = (id: string) => api.getFileUrl(id);
+    setVariables(survey, props.camp, getFileUrl, props.files);
     survey.onLocaleChangedEvent.add((sender) => {
-      setVariables(sender, props.camp);
+      setVariables(sender, props.camp, getFileUrl, props.files);
     });
   }
 
@@ -316,9 +307,12 @@ creator.onOpenFileChooser.add((_, options) => {
 });
 
 const themes: {
+  light: ITheme;
   dark?: ITheme;
-  light?: ITheme;
-} = {};
+} = {
+  light: props.camp.themes['light'] ?? {},
+  dark: props.camp.themes['dark'] as ITheme,
+};
 let previousColorPalette: 'dark' | 'light' | undefined;
 creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
   const colorPalette = theme.colorPalette;
@@ -345,7 +339,7 @@ creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
 
   previousColorPalette = colorPalette;
 
-  const storedTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
+  const storedTheme = themes[colorPalette];
   if (storedTheme) {
     // Restore the stored theme for this palette, but preserve the current
     // themeName and isPanelless which must be the same across both palettes.

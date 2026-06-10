@@ -1,15 +1,12 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import {
-  type Camp,
-  Prisma,
-  type Registration,
-} from '#generated/prisma/client.js';
+import { Prisma, type Registration } from '#generated/prisma/client.js';
 import { formUtils } from '#utils/form';
 import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
 
 @injectable()
 export class RegistrationService extends BaseService {
@@ -59,7 +56,7 @@ export class RegistrationService extends BaseService {
   }
 
   async createRegistration(
-    camp: Camp & { freePlaces: number | Record<string, number> },
+    camp: CampWithFreePlacesAndFiles,
     data: Pick<Registration, 'data' | 'locale'>,
     fileField: string,
   ) {
@@ -146,7 +143,7 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationById(
-    camp: Camp & { freePlaces: number | Record<string, number> },
+    camp: CampWithFreePlacesAndFiles,
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
@@ -203,7 +200,7 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationsComputedDataByCamp(
-    camp: Camp & { freePlaces: number | Record<string, number> },
+    camp: CampWithFreePlacesAndFiles,
   ) {
     const form = formUtils(camp);
     const registrations = await this.queryRegistrations(camp.id);

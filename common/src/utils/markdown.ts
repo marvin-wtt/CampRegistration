@@ -6,11 +6,16 @@ export function createMarkdownConverter() {
   // Open all links in a new tab.
   // https://github.com/markdown-it/markdown-it/blob/master/docs/architecture.md#renderer
 
+  const linkOpenRuleFallback: (typeof converter.renderer.rules)[string] = (
+    tokens,
+    idx,
+    options,
+    _env,
+    self,
+  ) => self.renderToken(tokens, idx, options);
+
   const defaultRender =
-    converter.renderer.rules.link_open ||
-    function (tokens, idx, options, env, self) {
-      return self.renderToken(tokens, idx, options);
-    };
+    converter.renderer.rules.link_open ?? linkOpenRuleFallback;
 
   converter.renderer.rules.link_open = function (
     tokens,
