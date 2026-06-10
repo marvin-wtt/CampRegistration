@@ -7,16 +7,11 @@
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
-import 'survey-core/i18n/english';
-import 'survey-creator-core/i18n/english';
-import 'survey-core/i18n/german';
-import 'survey-creator-core/i18n/german';
-import 'survey-core/i18n/french';
-import 'survey-creator-core/i18n/french';
-import 'survey-core/i18n/polish';
-import 'survey-creator-core/i18n/polish';
-import 'survey-core/i18n/czech';
-import 'survey-creator-core/i18n/czech';
+import 'survey-core/i18n';
+// Json editor
+import 'ace-builds/src-noconflict/ace';
+import 'ace-builds/src-noconflict/ext-searchbox';
+import 'ace-builds/src-noconflict/theme-clouds_midnight';
 
 import { watch, watchEffect } from 'vue';
 import {
@@ -38,7 +33,12 @@ import {
   Serializer,
 } from 'survey-core';
 import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
-import { registerSurveyTheme } from 'survey-creator-core';
+import CreatorUIPresets from 'survey-creator-core/ui-presets';
+import {
+  registerSurveyTheme,
+  registerCreatorTheme,
+  registerUIPreset,
+} from 'survey-creator-core';
 import { surveyLocalization } from 'survey-core';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
@@ -51,6 +51,10 @@ import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
 import { useAPIService } from 'src/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
+import { AceJsonEditorModel } from 'survey-creator-core';
+
+AceJsonEditorModel.aceBasePath =
+  'https://unpkg.com/ace-builds/src-min-noconflict/';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -114,6 +118,8 @@ const creatorOptions: ICreatorOptions = {
 const mdConverter = createMarkdownConverter();
 
 registerSurveyTheme(SurveyTheme);
+registerCreatorTheme(SurveyTheme);
+registerUIPreset(CreatorUIPresets);
 
 surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
@@ -144,24 +150,8 @@ watch(() => quasar.dark.isActive, applyCreatorTheme);
 applyCreatorTheme(quasar.dark.isActive);
 
 function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark
-    ? {
-        themeName: 'default-dark',
-        cssVariables: {},
-      }
-    : {
-        themeName: 'default-light',
-        cssVariables: {},
-      };
-
-  creator.applyCreatorTheme({
-    themeName: theme.themeName,
-    isLight: !isDark,
-    cssVariables: {
-      ...theme.cssVariables,
-      //'--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
-    },
-  });
+  const theme = isDark ? SurveyTheme.DefaultDark : SurveyTheme.DefaultLight;
+  creator.applyCreatorTheme(theme);
 
   // TODO This is a workaround for the issue with the theme not being applied correctly
   // The value is null because the backend middleware

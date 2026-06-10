@@ -40,6 +40,7 @@
     "@tiptap/starter-kit": "^3.23.6",
     "@tiptap/vue-3": "^3.23.6",
     "@vue/eslint-config-prettier": "^10.2.0",
+    "ace-builds": "^1.44.0",
     "apexcharts": "^5.13.0",
     "axios": "^1.16.1",
     "dompurify": "^3.4.7",

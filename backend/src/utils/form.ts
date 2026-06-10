@@ -1,4 +1,4 @@
-import { SurveyModel } from 'survey-core';
+import { type ITheme, SurveyModel } from 'survey-core';
 import { SurveyPDF } from 'survey-pdf';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
@@ -8,6 +8,8 @@ import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
 import { generateApiUrl } from '#utils/url';
 import { Mutex } from 'async-mutex';
+
+import 'survey-core/i18n';
 
 // Serializes PDF generation since survey-pdf relies on shared global state
 // (global.window / global.document) that concurrent calls would clobber.
@@ -37,6 +39,7 @@ async function runExportPDF(
     const surveyPDF = new SurveyPDF(camp.form);
     surveyPDF.data = registration.data;
     surveyPDF.locale = registration.locale;
+    surveyPDF.applyTheme(camp.themes.light as ITheme);
     surveyPDF.readOnly = true;
 
     const mdConverter = createMarkdownConverter();
