@@ -17,6 +17,7 @@ import {
 } from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
 import { inject } from 'inversify';
+import { isDeepStrictEqual } from 'node:util';
 
 export class RegistrationController extends BaseController {
   constructor(
@@ -100,7 +101,10 @@ export class RegistrationController extends BaseController {
     );
 
     if (!suppressMessage) {
-      if (previousRegistration.data !== registration.data) {
+      if (
+        data !== undefined &&
+        !isDeepStrictEqual(previousRegistration.data, registration.data)
+      ) {
         await RegistrationUpdatedMessage.enqueueFor(camp, registration);
       }
 
