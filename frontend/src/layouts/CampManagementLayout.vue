@@ -20,7 +20,7 @@
           <router-link
             v-else
             :to="{ name: 'management' }"
-            class="camp-title-link"
+            class="header-link"
           >
             {{ to(title) }}
           </router-link>
@@ -409,7 +409,7 @@ notifications: 'Oznámení'
 </i18n>
 
 <style scoped>
-.camp-title-link {
+.header-link {
   text-decoration: none;
   color: inherit;
 }

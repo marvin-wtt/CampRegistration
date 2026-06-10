@@ -253,30 +253,23 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/settings',
-    component: () => import('layouts/CampManagementLayout.vue'),
+    component: () => import('layouts/AccountSettingsLayout.vue'),
     meta: {
       auth: true,
-      hideDrawer: true,
     },
     children: [
       {
-        path: '',
-        component: () => import('pages/settings/SettingsPage.vue'),
-        children: [
-          {
-            path: 'account',
-            component: () => import('pages/settings/AccountSettingsPage.vue'),
-          },
-          {
-            name: 'settings',
-            path: 'profile',
-            component: () => import('pages/settings/ProfileSettingsPage.vue'),
-          },
-          {
-            path: 'security',
-            component: () => import('pages/settings/SecuritySettingsPage.vue'),
-          },
-        ],
+        path: 'account',
+        component: () => import('pages/settings/AccountSettingsPage.vue'),
+      },
+      {
+        name: 'settings',
+        path: 'profile',
+        component: () => import('pages/settings/ProfileSettingsPage.vue'),
+      },
+      {
+        path: 'security',
+        component: () => import('pages/settings/SecuritySettingsPage.vue'),
       },
     ],
   },

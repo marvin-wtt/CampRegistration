@@ -8,7 +8,10 @@
         {{ t('title') }}
       </q-card-section>
 
-      <q-card-section class="q-gutter-sm">
+      <q-card-section
+        class="q-gutter-sm"
+        style="max-width: 500px"
+      >
         <q-input
           v-model="data.currentPassword"
           :label="t('field.currentPassword.label')"
