@@ -1,30 +1,31 @@
 <template>
-  <q-btn
+  <m-btn
     v-if="props.administration"
     :label="t('administration')"
     :to="{ name: 'administration' }"
     class="gt-sm"
-    flat
-    rounded
+    square
+    text
   />
-  <q-btn
+  <m-btn
     :label="t('newsletters')"
     :to="{ name: 'management.newsletters' }"
     class="gt-sm"
-    flat
-    rounded
+    square
+    text
   />
-  <q-btn
+  <m-btn
     :label="t('camps')"
     :to="{ name: 'management.camps' }"
     class="gt-sm"
-    flat
-    rounded
+    square
+    text
   />
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
 

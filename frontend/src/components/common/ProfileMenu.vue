@@ -5,8 +5,11 @@
     icon="account_circle"
     rounded
   >
-    <q-menu>
-      <q-list style="min-width: 100px">
+    <q-menu
+      anchor="bottom end"
+      self="top end"
+    >
+      <q-list style="min-width: 200px">
         <q-item>
           <q-item-section>
             <q-item-label>

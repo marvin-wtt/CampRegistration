@@ -3,6 +3,8 @@
 
 import { defineConfig } from '#q-app/wrappers';
 import { fileURLToPath } from 'node:url';
+import { freshPaint } from '@anoyomoose/q2-fresh-paint-core';
+import { md3eTheme } from '@anoyomoose/q2-fresh-paint-md3e';
 
 export default defineConfig((ctx) => {
   return {
@@ -13,6 +15,8 @@ export default defineConfig((ctx) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
+      '~@anoyomoose/q2-fresh-paint-md3e/boot',
+      'md3',
       'bus',
       'i18n',
       'language-pack',
@@ -91,6 +95,15 @@ export default defineConfig((ctx) => {
             ssr: ctx.modeName === 'ssr',
           },
         ],
+        freshPaint({
+          themes: [
+            md3eTheme({
+              sourceColor: '#4573ff',
+              scheme: 'tonalSpot',
+              contrastLevel: 0,
+            }),
+          ],
+        }),
       ],
     },
 

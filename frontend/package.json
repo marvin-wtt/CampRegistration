@@ -25,6 +25,8 @@
     "test:unit:ci": "vitest run"
   },
   "dependencies": {
+    "@anoyomoose/q2-fresh-paint-core": "^0.1.7",
+    "@anoyomoose/q2-fresh-paint-md3e": "^0.1.13",
     "@camp-registration/common": "*",
     "@floating-ui/dom": "^1.7.6",
     "@quasar/extras": "^1.18.0",

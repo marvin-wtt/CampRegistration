@@ -72,7 +72,7 @@ const items = [
     label: t('newsletters.label'),
     description: t('newsletters.description'),
     icon: 'mail',
-    color: 'teal',
+    color: 'tertiary',
     to: { name: 'management.newsletters' },
   },
 ] as const;

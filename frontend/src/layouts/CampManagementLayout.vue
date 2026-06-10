@@ -3,13 +3,13 @@
     <q-ajax-bar color="accent" />
 
     <q-header bordered>
-      <q-toolbar>
-        <q-btn
+      <m-toolbar>
+        <m-btn
           v-if="showDrawer"
-          dense
-          flat
           icon="menu"
+          square
           round
+          text
           @click="toggleDrawer"
         />
         <q-toolbar-title>
@@ -31,13 +31,12 @@
         <locale-switch
           borderless
           class="q-px-md gt-xs"
-          dense
           rounded
           unelevated
         />
 
         <profile-menu />
-      </q-toolbar>
+      </m-toolbar>
     </q-header>
 
     <q-drawer
@@ -46,6 +45,7 @@
       :breakpoint="599.99"
       :mini="miniState && floatingDrawer"
       :width="300"
+      :mini-width="96"
       bordered
       :mini-to-overlay="floatingDrawer"
       show-if-above
@@ -53,7 +53,7 @@
       @mouseleave="miniState = true"
       @mouseenter="miniState = false"
     >
-      <q-list padding>
+      <q-list class="q-list--rail">
         <q-item
           clickable
           v-ripple
@@ -136,6 +136,8 @@ import { useObjectTranslation } from 'src/composables/objectTranslation';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
+import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();
 const route = useRoute();

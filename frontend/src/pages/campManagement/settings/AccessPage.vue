@@ -7,6 +7,7 @@
       :loading
       :pagination
       class="absolute fit"
+      card-class="bg-default"
       flat
     >
       <template

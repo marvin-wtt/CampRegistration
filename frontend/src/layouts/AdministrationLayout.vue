@@ -41,14 +41,15 @@
       :breakpoint="599.99"
       :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
       :mini="miniState"
-      :width="220"
+      :width="300"
+      :mini-width="96"
       bordered
       mini-to-overlay
       show-if-above
       @mouseout="miniState = true"
       @mouseover="miniState = false"
     >
-      <q-list padding>
+      <q-list class="q-list--rail">
         <template
           v-for="item in filteredItems"
           :key="item.name"

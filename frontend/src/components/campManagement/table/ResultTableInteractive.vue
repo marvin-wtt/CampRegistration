@@ -6,6 +6,7 @@
     :rows-per-page-options="[0]"
     :title="t('title')"
     class="my-sticky-header-table"
+    card-class="bg-default"
     dense
     flat
     hide-bottom
@@ -262,7 +263,7 @@ function editTemplates() {
     .q-table__top,
     .q-table__bottom,
     thead tr:first-child th {
-      background-color: #fff;
+      background-color: var(--md3-background);
     }
   }
 }
@@ -272,7 +273,7 @@ function editTemplates() {
     .q-table__top,
     .q-table__bottom,
     thead tr:first-child th {
-      background-color: var(--q-dark);
+      background-color: var(--md3-background);
     }
   }
 }

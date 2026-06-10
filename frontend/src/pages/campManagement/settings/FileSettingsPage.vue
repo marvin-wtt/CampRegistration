@@ -6,6 +6,7 @@
       :loading
       :title="t('title')"
       class="absolute fit"
+      card-class="bg-default"
       flat
       :columns
       :rows
