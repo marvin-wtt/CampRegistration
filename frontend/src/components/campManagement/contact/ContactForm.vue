@@ -294,9 +294,10 @@ const priorityColor = computed<string | undefined>(() => {
 });
 
 const sendLabel = computed<string>(() => {
-  if (recipientCount.value > 0) {
+  if (recipientCount.value > 1) {
     return t('action.sendTo', { count: recipientCount.value });
   }
+
   return t('action.send');
 });
 
