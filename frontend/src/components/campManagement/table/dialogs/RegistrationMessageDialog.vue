@@ -2,6 +2,8 @@
   <q-dialog
     ref="dialogRef"
     :maximized="quasar.screen.lt.sm"
+    :full-height="quasar.screen.lt.sm"
+    :full-width="quasar.screen.lt.sm"
     @hide="onDialogHide"
   >
     <q-card class="column message-dialog-card">
