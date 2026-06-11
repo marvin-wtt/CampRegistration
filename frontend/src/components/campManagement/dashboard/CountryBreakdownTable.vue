@@ -1,7 +1,12 @@
 <template>
   <div>
-    <div class="text-subtitle1 text-weight-medium q-mb-sm">
-      {{ t('title') }}
+    <div class="q-mb-sm">
+      <div class="text-overline text-primary text-weight-bold">
+        {{ t('eyebrow') }}
+      </div>
+      <div class="text-h6 text-weight-bold">
+        {{ t('title') }}
+      </div>
     </div>
 
     <div class="row q-col-gutter-md">
@@ -13,7 +18,7 @@
         <q-card
           flat
           bordered
-          class="rounded-borders full-height country-card"
+          class="full-height country-card"
         >
           <q-card-section class="q-pb-sm">
             <!-- Header: flag + country -->
@@ -60,7 +65,7 @@
             <q-linear-progress
               :value="fillRatio(row)"
               :color="fillColor(row)"
-              track-color="grey-3"
+              track-color="grey-5"
               rounded
               size="8px"
               class="q-mt-xs"
@@ -172,11 +177,15 @@ function fillColor(row: CountryStats): string {
 
 <style scoped>
 .country-card {
-  transition: box-shadow 0.2s ease;
+  border-radius: 16px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .country-card:hover {
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 22px rgba(38, 50, 56, 0.09);
+  transform: translateY(-2px);
 }
 
 .country-flag {
@@ -192,10 +201,15 @@ function fillColor(row: CountryStats): string {
   text-align: center;
   line-height: 1.2;
 }
+
+:global(.body--dark) .country-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
 </style>
 
 <i18n lang="yaml" locale="en">
-title: 'By country'
+eyebrow: 'International overview'
+title: 'Registration by country'
 team: 'Team members'
 accepted: 'Accepted'
 free: 'Free'
@@ -204,7 +218,8 @@ waitlisted: 'Waitlist'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Nach Land'
+eyebrow: 'Internationale Übersicht'
+title: 'Anmeldungen nach Land'
 team: 'Teammitglieder'
 accepted: 'Bestätigt'
 free: 'Frei'
@@ -213,7 +228,8 @@ waitlisted: 'Warteliste'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Par pays'
+eyebrow: 'Aperçu international'
+title: 'Inscriptions par pays'
 team: "Membres de l'équipe"
 accepted: 'Acceptés'
 free: 'Libres'
@@ -222,7 +238,8 @@ waitlisted: "Liste d'attente"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Według kraju'
+eyebrow: 'Przegląd międzynarodowy'
+title: 'Rejestracje według kraju'
 team: 'Członkowie zespołu'
 accepted: 'Zaakceptowani'
 free: 'Wolne'
@@ -231,7 +248,8 @@ waitlisted: 'Lista rezerwowa'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Podle země'
+eyebrow: 'Mezinárodní přehled'
+title: 'Registrace podle země'
 team: 'Členové týmu'
 accepted: 'Přijatí'
 free: 'Volná'

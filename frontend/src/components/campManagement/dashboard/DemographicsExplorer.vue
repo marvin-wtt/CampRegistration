@@ -2,28 +2,48 @@
   <q-card
     flat
     bordered
-    class="rounded-borders"
+    class="demographics-card"
   >
-    <q-card-section class="q-pb-none">
-      <div class="text-subtitle1 text-weight-medium">{{ t('title') }}</div>
-      <div class="text-caption text-grey-6">{{ t('subtitle') }}</div>
+    <q-card-section class="demographics-header">
+      <div>
+        <div class="text-overline text-primary text-weight-bold">
+          {{ t('eyebrow') }}
+        </div>
+        <div class="text-h6 text-weight-bold">{{ t('title') }}</div>
+        <div class="text-caption text-grey-7">{{ t('subtitle') }}</div>
+      </div>
+      <q-chip
+        color="primary"
+        text-color="white"
+        icon="groups"
+        :label="
+          t('shown', { shown: filteredPeople.length, total: people.length })
+        "
+        class="q-ma-none"
+      />
     </q-card-section>
 
-    <q-card-section class="column q-gutter-md">
-      <!-- Controls: reads like "Show [Age] split by [Gender]" -->
-      <div class="row items-center q-gutter-sm">
-        <span class="text-body2 text-grey-8">{{ t('show') }}</span>
-        <q-select
-          v-model="xDimension"
-          :options="xOptions"
-          emit-value
-          map-options
-          outlined
-          dense
-          options-dense
-          style="min-width: 130px"
-        />
-        <span class="text-body2 text-grey-8">{{ t('splitBy') }}</span>
+    <q-separator />
+
+    <q-card-section class="demographics-controls">
+      <div class="control-block">
+        <div class="control-label">{{ t('viewBy') }}</div>
+        <div class="dimension-buttons">
+          <q-btn
+            v-for="option in xOptions"
+            :key="option.value"
+            :outline="xDimension !== option.value"
+            :unelevated="xDimension === option.value"
+            :color="xDimension === option.value ? 'primary' : 'grey-7'"
+            no-caps
+            :label="option.label"
+            @click="xDimension = option.value"
+          />
+        </div>
+      </div>
+
+      <div class="control-block breakdown-control">
+        <div class="control-label">{{ t('breakdown') }}</div>
         <q-select
           v-model="groupDimension"
           :options="groupOptions"
@@ -32,11 +52,8 @@
           outlined
           dense
           options-dense
-          style="min-width: 130px"
+          class="breakdown-select"
         />
-
-        <q-space class="gt-xs" />
-
         <q-toggle
           v-if="grouped"
           v-model="stacked"
@@ -44,16 +61,21 @@
           dense
         />
       </div>
+    </q-card-section>
 
-      <!-- Filters (only the dimensions not already on the axis) -->
-      <div
-        v-if="showGenderFilter || showCountryFilter"
-        class="row q-col-gutter-md"
-      >
-        <div
-          v-if="showGenderFilter"
-          class="col-12 col-sm-6"
-        >
+    <q-card-section
+      v-if="showGenderFilter || showCountryFilter"
+      class="filter-bar"
+    >
+      <div class="filter-label">
+        <q-icon
+          name="filter_alt"
+          size="18px"
+        />
+        <span>{{ t('filters') }}</span>
+      </div>
+      <div class="filter-fields">
+        <div v-if="showGenderFilter">
           <q-select
             v-model="genderFilter"
             :options="genderFilterOptions"
@@ -68,10 +90,7 @@
             options-dense
           />
         </div>
-        <div
-          v-if="showCountryFilter"
-          class="col-12 col-sm-6"
-        >
+        <div v-if="showCountryFilter">
           <q-select
             v-model="countryFilter"
             :options="countryFilterOptions"
@@ -87,8 +106,9 @@
           />
         </div>
       </div>
+    </q-card-section>
 
-      <!-- Chart -->
+    <q-card-section class="chart-section">
       <div class="dashboard-chart">
         <apexchart
           v-if="hasData"
@@ -316,7 +336,9 @@ const chartOptions = computed(() => {
       toolbar: { show: false },
       fontFamily: 'inherit',
       animations: { speed: 250 },
+      foreColor: quasar.dark.isActive ? '#bdbdbd' : '#616161',
     },
+    theme: { mode: quasar.dark.isActive ? 'dark' : 'light' },
     plotOptions: {
       bar: {
         horizontal: horizontal.value,
@@ -331,7 +353,10 @@ const chartOptions = computed(() => {
       position: 'top',
       horizontalAlign: 'left',
     },
-    grid: { strokeDashArray: 4 },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: quasar.dark.isActive ? '#424242' : '#e0e0e0',
+    },
     xaxis: {
       categories,
       title: { text: t(`dimension.${xDimension.value}`) },
@@ -356,13 +381,152 @@ const chartOptions = computed(() => {
 .dashboard-chart {
   min-height: 340px;
 }
+
+.demographics-card {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.demographics-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+}
+
+.demographics-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  gap: 24px;
+  padding: 16px 20px;
+}
+
+.control-block {
+  min-width: 0;
+}
+
+.control-label,
+.filter-label {
+  margin-bottom: 8px;
+  color: rgba(95, 95, 95, 0.9);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dimension-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.breakdown-control {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto;
+  align-items: end;
+  gap: 8px 16px;
+}
+
+.breakdown-control .control-label {
+  grid-column: 1 / -1;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 14px 20px;
+  background: rgba(127, 127, 127, 0.045);
+  border-block: 1px solid rgba(127, 127, 127, 0.14);
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+  margin-bottom: 0;
+}
+
+.filter-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.chart-section {
+  padding: 12px 20px 20px;
+}
+
+:global(.body--dark) .control-label,
+:global(.body--dark) .filter-label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+@media (max-width: 899px) {
+  .demographics-controls {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 599px) {
+  .demographics-header {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .demographics-controls {
+    padding: 16px;
+  }
+
+  .dimension-buttons > .q-btn {
+    flex: 1 1 auto;
+  }
+
+  .breakdown-control {
+    grid-template-columns: 1fr;
+  }
+
+  .breakdown-control .control-label {
+    grid-column: auto;
+  }
+
+  .filter-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .filter-label {
+    margin-top: 0;
+  }
+
+  .filter-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-section {
+    padding: 8px 8px 16px;
+  }
+
+  .dashboard-chart {
+    margin-inline: -8px;
+  }
+}
 </style>
 
 <i18n lang="yaml" locale="en">
+eyebrow: 'Group insights'
 title: 'Demographics'
 subtitle: 'Break down the group by age, gender and country.'
-show: 'Show'
-splitBy: 'split by'
+shown: '{shown} of {total} people'
+viewBy: 'View by'
+breakdown: 'Breakdown'
+filters: 'Filters'
 count: 'People'
 empty: 'No data to display.'
 unknown: 'Unknown'
@@ -387,10 +551,13 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+eyebrow: 'Einblicke in die Gruppe'
 title: 'Demografie'
 subtitle: 'Gruppe nach Alter, Geschlecht und Land aufschlüsseln.'
-show: 'Zeige'
-splitBy: 'aufgeteilt nach'
+shown: '{shown} von {total} Personen'
+viewBy: 'Ansicht nach'
+breakdown: 'Aufschlüsselung'
+filters: 'Filter'
 count: 'Personen'
 empty: 'Keine Daten vorhanden.'
 unknown: 'Unbekannt'
@@ -415,10 +582,13 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+eyebrow: 'Aperçu du groupe'
 title: 'Démographie'
 subtitle: 'Répartir le groupe par âge, genre et pays.'
-show: 'Afficher'
-splitBy: 'réparti par'
+shown: '{shown} personnes sur {total}'
+viewBy: 'Afficher par'
+breakdown: 'Répartition'
+filters: 'Filtres'
 count: 'Personnes'
 empty: 'Aucune donnée à afficher.'
 unknown: 'Inconnu'
@@ -443,10 +613,13 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+eyebrow: 'Informacje o grupie'
 title: 'Demografia'
 subtitle: 'Podziel grupę według wieku, płci i kraju.'
-show: 'Pokaż'
-splitBy: 'z podziałem na'
+shown: '{shown} z {total} osób'
+viewBy: 'Pokaż według'
+breakdown: 'Podział'
+filters: 'Filtry'
 count: 'Osoby'
 empty: 'Brak danych do wyświetlenia.'
 unknown: 'Nieznane'
@@ -471,10 +644,13 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+eyebrow: 'Informace o skupině'
 title: 'Demografie'
 subtitle: 'Rozdělte skupinu podle věku, pohlaví a země.'
-show: 'Zobrazit'
-splitBy: 'rozděleno podle'
+shown: '{shown} z {total} osob'
+viewBy: 'Zobrazit podle'
+breakdown: 'Rozdělení'
+filters: 'Filtry'
 count: 'Osoby'
 empty: 'Žádná data k zobrazení.'
 unknown: 'Neznámé'
