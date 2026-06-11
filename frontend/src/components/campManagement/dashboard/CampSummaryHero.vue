@@ -367,8 +367,7 @@ function daysFromNow(date: string): number {
   justify-content: center;
   padding: 20px;
   background: color-mix(in srgb, var(--md3-primary) 7%, var(--md3-surface));
-  border: 1px solid
-    color-mix(in srgb, var(--md3-primary) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md3-primary) 22%, transparent);
   border-radius: 12px;
 }
 

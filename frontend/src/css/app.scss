@@ -35,7 +35,9 @@
 }
 
 // Fix the active item color in rail mode for nested routes
-.body--dark .q-list--rail .q-item.q-router-link--active:not(.q-router-link--exact-active) {
+.body--dark
+  .q-list--rail
+  .q-item.q-router-link--active:not(.q-router-link--exact-active) {
   background-color: var(--md3-background);
   color: var(--md3-on-secondary-container);
 }

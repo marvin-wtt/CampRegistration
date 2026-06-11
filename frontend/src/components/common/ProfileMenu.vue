@@ -9,7 +9,9 @@
       size="34px"
       class="profile-avatar"
     >
-      <span v-if="initials">{{ initials }}</span>
+      <span v-if="initials">
+        {{ initials }}
+      </span>
       <q-icon
         v-else
         name="account_circle"
@@ -27,7 +29,9 @@
               size="40px"
               class="profile-avatar"
             >
-              <span v-if="initials">{{ initials }}</span>
+              <span v-if="initials">
+                {{ initials }}
+              </span>
               <q-icon
                 v-else
                 name="account_circle"
@@ -180,9 +184,9 @@
   <m-btn
     v-else
     :to="{ name: 'login' }"
-    :label="t('login')"
+    :aria-label="t('login')"
     :loading
-    text
+    icon="login"
   />
 </template>
 
