@@ -222,43 +222,6 @@ const items = computed<NavigationItemProps[]>(() => [
     icon: 'settings',
     to: { name: 'management.camp.settings' },
     separated: true,
-    children: [
-      {
-        name: 'access',
-        label: t('access'),
-        icon: 'key',
-        permission: 'camp.managers.view',
-        to: { name: 'management.camp.settings.access' },
-      },
-      {
-        name: 'edit',
-        label: t('edit'),
-        icon: 'edit',
-        permission: 'camp.edit',
-        to: { name: 'management.camp.settings.edit' },
-      },
-      {
-        name: 'email-templates',
-        label: t('email_templates'),
-        icon: 'email',
-        permission: 'camp.message_templates.view',
-        to: { name: 'management.camp.settings.emails' },
-      },
-      {
-        name: 'files',
-        label: t('files'),
-        icon: 'folder',
-        permission: 'camp.files.view',
-        to: { name: 'management.camp.settings.files' },
-      },
-      {
-        name: 'form',
-        label: t('form'),
-        icon: 'feed',
-        permission: 'camp.edit',
-        to: { name: 'management.camp.settings.form' },
-      },
-    ],
   },
 ]);
 
@@ -303,21 +266,13 @@ footer:
   imprint: 'Imprint'
   privacy_policy: 'Privacy Policy'
 
-access: 'Access'
 contact: 'Contact'
 dashboard: 'Dashboard'
-edit: 'Edit'
-email_templates: 'Email templates'
-files: 'Files'
-form: 'Registration Form'
-expenses: 'Expenses'
 participants: 'Participants'
 program_planner: 'Program'
 room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
-tools: 'Tools'
-notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -325,21 +280,14 @@ footer:
   imprint: 'Impressum'
   privacy_policy: 'Datenschutzerklärung'
 
-access: 'Zugriff'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
-edit: 'Bearbeiten'
-email_templates: 'E-Mail-Vorlagen'
-files: 'Dateien'
-expenses: 'Ausgaben'
-form: 'Anmeldeformular'
 participants: 'Teilnehmende'
 program_planner: 'Programm'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tools: 'Tools'
-notifications: 'Benachrichtigungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -347,21 +295,14 @@ footer:
   imprint: 'Mentions légales'
   privacy_policy: 'Politique de confidentialité'
 
-access: 'Accès'
 contact: 'Contacter'
 dashboard: 'Dashboard'
-edit: 'Modifier'
-email_templates: "Modèles d'e-mails"
-files: 'Fichiers'
-expenses: 'Dépenses'
-form: "formulaire d'inscription"
 participants: 'Participants'
 program_planner: 'Programme'
 room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tools: 'Tools'
-notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -369,21 +310,14 @@ footer:
   imprint: 'Nota prawna'
   privacy_policy: 'Polityka prywatności'
 
-access: 'Dostęp'
 contact: 'Kontakt'
 dashboard: 'Panel główny'
-edit: 'Edytuj'
-email_templates: 'Szablony e-maili'
-files: 'Pliki'
-expenses: 'Wydatki'
-form: 'Formularz rejestracyjny'
 participants: 'Uczestnicy'
 program_planner: 'Program'
 room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 tools: 'Narzędzia'
-notifications: 'Powiadomienia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -391,21 +325,14 @@ footer:
   imprint: 'Tiráž'
   privacy_policy: 'Zásady ochrany osobních údajů'
 
-access: 'Přístup'
 contact: 'Kontakt'
 dashboard: 'Přehled'
-edit: 'Upravit'
-email_templates: 'E-mailové šablony'
-files: 'Soubory'
-expenses: 'Výdaje'
-form: 'Registrační formulář'
 participants: 'Účastníci'
 program_planner: 'Program'
 room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 tools: 'Nástroje'
-notifications: 'Oznámení'
 </i18n>
 
 <style scoped>

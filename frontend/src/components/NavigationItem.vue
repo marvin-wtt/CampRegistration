@@ -48,18 +48,20 @@
     :to="props.to"
     @click.prevent="expanded = !expanded"
   >
-    <navigation-item
-      v-for="child in props.children"
-      :key="child.name"
-      :name="child.name"
-      :label="child.label"
-      :icon="child.icon"
-      :to="child.to"
-      :separated="child.separated"
-      :children="child.children"
-      :insert-level="0.2"
-      :preview="child.preview"
-    />
+    <div class="q-mt-sm">
+      <navigation-item
+        v-for="child in props.children"
+        :key="child.name"
+        :name="child.name"
+        :label="child.label"
+        :icon="child.icon"
+        :to="child.to"
+        :separated="child.separated"
+        :children="child.children"
+        :insert-level="0.2"
+        :preview="child.preview"
+      />
+    </div>
   </q-expansion-item>
 </template>
 
