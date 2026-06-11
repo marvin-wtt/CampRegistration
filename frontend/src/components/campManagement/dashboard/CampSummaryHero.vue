@@ -38,30 +38,34 @@
             {{ campName }}
           </h1>
           <div class="camp-meta">
-            <div class="meta-item">
-              <q-icon name="calendar_month" />
-              <span>{{ dateRange }}</span>
-            </div>
-            <div
+            <q-chip
+              outline
+              icon="calendar_month"
+              :label="dateRange"
+              class="meta-chip"
+            />
+            <q-chip
               v-if="location"
-              class="meta-item"
-            >
-              <q-icon name="location_on" />
-              <span>{{ location }}</span>
-            </div>
-            <div class="meta-item">
-              <q-icon name="cake" />
-              <span>
-                {{ t('ageRange', { min: camp?.minAge, max: camp?.maxAge }) }}
-              </span>
-            </div>
-            <div
+              outline
+              icon="location_on"
+              :label="location"
+              class="meta-chip"
+            />
+            <q-chip
+              outline
+              icon="cake"
+              :label="t('ageRange', { min: camp?.minAge, max: camp?.maxAge })"
+              class="meta-chip"
+            />
+            <q-chip
               v-if="countryNames"
-              class="meta-item countries"
+              outline
+              icon="public"
+              :label="countryNames"
+              class="meta-chip"
             >
-              <q-icon name="public" />
-              <span>{{ countryNames }}</span>
-            </div>
+              <q-tooltip>{{ countryNames }}</q-tooltip>
+            </q-chip>
           </div>
         </div>
       </div>
@@ -342,27 +346,18 @@ function daysFromNow(date: string): number {
 .camp-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 12px;
-  margin-top: 18px;
-  color: var(--md3-on-surface-variant);
-}
-
-.meta-item {
-  display: flex;
-  min-width: 0;
-  align-items: center;
   gap: 8px;
-  padding: 7px 11px;
-  font-size: 0.875rem;
-  background: var(--md3-surface-container-high);
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 10px;
+  margin-top: 18px;
 }
 
-.meta-item .q-icon {
-  flex: 0 0 auto;
+.meta-chip {
+  margin: 0;
+  max-width: 100%;
+  background: var(--md3-surface-container-high);
+}
+
+.meta-chip :deep(.q-chip__icon) {
   color: var(--md3-primary);
-  font-size: 18px;
 }
 
 .capacity-panel {
@@ -448,10 +443,6 @@ function daysFromNow(date: string): number {
 
   .camp-meta {
     margin-top: 4px;
-  }
-
-  .meta-item {
-    width: 100%;
   }
 
   .capacity-panel {

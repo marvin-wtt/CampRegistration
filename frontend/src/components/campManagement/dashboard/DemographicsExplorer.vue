@@ -134,7 +134,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type { Registration } from '@camp-registration/common/entities';
@@ -144,7 +144,7 @@ import {
 } from 'src/composables/campStatistics';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 
-const props = defineProps<{
+const { people } = defineProps<{
   people: Registration[];
 }>();
 
@@ -152,6 +152,42 @@ const { t, locale } = useI18n();
 const quasar = useQuasar();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
+
+// ApexCharts renders to SVG and needs concrete color values, so we read the
+// live MD3 design tokens off <body> instead of passing CSS variables. The
+// values swap when the dark-mode class toggles, so we re-read on that change.
+function readThemeColors() {
+  const styles = getComputedStyle(document.body);
+  const token = (name: string) => styles.getPropertyValue(name).trim();
+  return {
+    series: [
+      token('--md3-primary'),
+      token('--md3-tertiary'),
+      token('--md3-secondary'),
+      token('--md3-positive'),
+      token('--md3-info'),
+      token('--md3-warning'),
+      token('--md3-error'),
+    ].filter(Boolean),
+    foreColor: token('--md3-on-surface-variant'),
+    gridColor: token('--md3-outline-variant'),
+  };
+}
+
+const themeColors = ref(readThemeColors());
+
+watch(
+  () => quasar.dark.isActive,
+  () => {
+    void nextTick(() => {
+      themeColors.value = readThemeColors();
+    });
+  },
+);
+
+onMounted(() => {
+  themeColors.value = readThemeColors();
+});
 
 const xDimension = ref<Dimension>('age');
 const groupDimension = ref<Dimension | 'none'>('none');
@@ -243,7 +279,7 @@ function labelFor(dimension: Dimension, value: string): string {
 // --- Filtering -------------------------------------------------------------
 
 const filteredPeople = computed<Registration[]>(() => {
-  return props.people.filter((registration) => {
+  return people.filter((registration) => {
     if (genderFilter.value.length > 0) {
       const value = helper.gender(registration) ?? stats.UNKNOWN;
       if (!genderFilter.value.includes(value)) {
@@ -336,9 +372,11 @@ const chartOptions = computed(() => {
       toolbar: { show: false },
       fontFamily: 'inherit',
       animations: { speed: 250 },
-      foreColor: quasar.dark.isActive ? '#bdbdbd' : '#616161',
+      background: 'transparent',
+      foreColor: themeColors.value.foreColor,
     },
     theme: { mode: quasar.dark.isActive ? 'dark' : 'light' },
+    colors: themeColors.value.series,
     plotOptions: {
       bar: {
         horizontal: horizontal.value,
@@ -355,7 +393,7 @@ const chartOptions = computed(() => {
     },
     grid: {
       strokeDashArray: 4,
-      borderColor: quasar.dark.isActive ? '#424242' : '#e0e0e0',
+      borderColor: themeColors.value.gridColor,
     },
     xaxis: {
       categories,
@@ -371,6 +409,7 @@ const chartOptions = computed(() => {
       y: {
         formatter: (val: number) => `${Math.round(val)}`,
       },
+      theme: quasar.dark.isActive ? 'dark' : 'light',
     },
     noData: { text: t('empty') },
   };
@@ -409,7 +448,7 @@ const chartOptions = computed(() => {
 .control-label,
 .filter-label {
   margin-bottom: 8px;
-  color: rgba(95, 95, 95, 0.9);
+  color: var(--md3-on-surface-variant);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -439,8 +478,8 @@ const chartOptions = computed(() => {
   align-items: start;
   gap: 16px;
   padding: 14px 20px;
-  background: rgba(127, 127, 127, 0.045);
-  border-block: 1px solid rgba(127, 127, 127, 0.14);
+  background: var(--md3-surface-container-low);
+  border-block: 1px solid var(--md3-outline-variant);
 }
 
 .filter-label {
@@ -459,11 +498,6 @@ const chartOptions = computed(() => {
 
 .chart-section {
   padding: 12px 20px 20px;
-}
-
-:global(.body--dark) .control-label,
-:global(.body--dark) .filter-label {
-  color: rgba(255, 255, 255, 0.65);
 }
 
 @media (max-width: 899px) {
