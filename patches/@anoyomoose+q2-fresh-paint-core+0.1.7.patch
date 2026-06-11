@@ -1,0 +1,102 @@
+diff --git a/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js b/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js
+index 4497f9b..982d605 100644
+--- a/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js
++++ b/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js
+@@ -1,6 +1,6 @@
+ // src/vite-plugin.ts
+ import { existsSync as existsSync2, mkdirSync, writeFileSync, readFileSync, readdirSync } from "fs";
+-import { resolve as resolve2, dirname, basename } from "path";
++import { resolve as resolve2, dirname, basename, parse } from "path";
+ import { fileURLToPath, pathToFileURL } from "url";
+ 
+ // src/utils.ts
+@@ -16,6 +16,22 @@ function resolveStyleFile(dir, baseName) {
+ 
+ // src/vite-plugin.ts
+ var quasarVarsImportRe = /@import\s+['"].*quasar\/src\/css\/variables\.sass['"]\s*;?\s*\n/;
++function toPosixPath(p) {
++  return p.replace(/\\/g, "/");
++}
++function findPackageRoot(startDir) {
++  let dir = resolve2(startDir);
++  const { root: fsRoot } = parse(dir);
++  while (true) {
++    if (existsSync2(resolve2(dir, "package.json"))) {
++      return dir;
++    }
++    if (dir === fsRoot) {
++      return resolve2(startDir);
++    }
++    dir = dirname(dir);
++  }
++}
+ function applyStripRules(content, rules) {
+   let result = content.replace(/\r\n/g, "\n");
+   for (const rule of rules) {
+@@ -93,7 +109,7 @@ function freshPaint(options) {
+       };
+     },
+     configResolved(config) {
+-      appDir = config.root;
++      appDir = options.appDir ? resolve2(config.root, options.appDir) : findPackageRoot(config.root);
+       userThemeBaseDir = resolve2(appDir, options.userThemeDir ?? "src/theme");
+       const quasarDir = resolve2(appDir, ".quasar");
+       if (!existsSync2(quasarDir)) {
+@@ -111,22 +127,22 @@ function freshPaint(options) {
+         }
+         const userPreVarsFile = resolveStyleFile(userThemeDir, "variables.pre");
+         if (userPreVarsFile) {
+-          themeImports.push(userPreVarsFile);
++          themeImports.push(toPosixPath(userPreVarsFile));
+         }
+         if (theme.generateVariables && existsSync2(generatedVarsPath)) {
+-          themeImports.push(generatedVarsPath);
++          themeImports.push(toPosixPath(generatedVarsPath));
+         }
+         const userVarsFile = resolveStyleFile(userThemeDir, "variables");
+         if (userVarsFile) {
+-          themeImports.push(userVarsFile);
++          themeImports.push(toPosixPath(userVarsFile));
+         }
+         const pkgVarsFile = resolveStyleFile(theme.dir, "variables");
+         if (pkgVarsFile) {
+-          themeImports.push(pkgVarsFile);
++          themeImports.push(toPosixPath(pkgVarsFile));
+         }
+         const userPostVarsFile = resolveStyleFile(userThemeDir, "variables.post");
+         if (userPostVarsFile) {
+-          themeImports.push(userPostVarsFile);
++          themeImports.push(toPosixPath(userPostVarsFile));
+         }
+         const pkgOverrides = collectComponentOverrides(resolve2(theme.dir, "components"));
+         const userOverrides = collectComponentOverrides(resolve2(userThemeDir, "components"));
+@@ -134,17 +150,17 @@ function freshPaint(options) {
+         for (const name of allComponentNames) {
+           const chosenPath = userOverrides.get(name) ?? pkgOverrides.get(name);
+           if (chosenPath) {
+-            allComponentOverrideFiles.push(chosenPath);
++            allComponentOverrideFiles.push(toPosixPath(chosenPath));
+           }
+         }
+         const baseFile = resolveStyleFile(userThemeDir, "base") ?? resolveStyleFile(theme.dir, "base");
+         if (baseFile) {
+-          baseThemeFiles.push(baseFile);
++          baseThemeFiles.push(toPosixPath(baseFile));
+         }
+       }
+     },
+     transform(code, id) {
+-      const cleanId = id.split("?")[0];
++      const cleanId = toPosixPath(id.split("?")[0]);
+       const query = id.includes("?") ? id.split("?")[1] : "";
+       const isSassFile = /\.(sass|scss)$/.test(cleanId);
+       const isVueSassStyle = query.includes("lang.scss") || query.includes("lang.sass");
+@@ -195,7 +211,7 @@ function freshPaint(options) {
+     buildEnd() {
+       if (!hasEverMatchedQuasarImport) {
+         console.warn(
+-          "[fresh-paint] Warning: No Sass files contained Quasar's variable import. This may indicate a plugin ordering issue \u2014 ensure freshPaint() is registered after Quasar's Vite plugin."
++            "[fresh-paint] Warning: No Sass files contained Quasar's variable import. This may indicate a plugin ordering issue \u2014 ensure freshPaint() is registered after Quasar's Vite plugin."
+         );
+       }
+     }
