@@ -1,5 +1,14 @@
 // app global css in SCSS form
 
+// q-bar — used as dialog title headers; align with MD3 surface tokens
+// instead of the default flat grey. Explicit `bg-*` classes still win
+// because Quasar's color helpers use `!important`.
+.q-bar {
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+  padding: 0 16px;
+}
+
 // Header
 .body--light .q-header {
   background-color: #fff;
