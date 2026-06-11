@@ -167,7 +167,7 @@ useMeta(() => {
   };
 });
 
-const drawer = ref<boolean>(true);
+const drawer = ref<boolean>(false);
 
 const items = computed<NavigationItemProps[]>(() => [
   {
