@@ -36,15 +36,13 @@
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :mini="miniState && floatingDrawer"
+      :mini="floatingDrawer"
       :width="300"
       :mini-width="96"
       bordered
       :mini-to-overlay="floatingDrawer"
       show-if-above
       class="column no-wrap"
-      @mouseleave="miniState = true"
-      @mouseenter="miniState = false"
     >
       <q-list class="q-list--rail">
         <q-item
@@ -54,7 +52,7 @@
         >
           <q-item-section avatar>
             <q-icon
-              v-if="miniState && floatingDrawer"
+              v-if="floatingDrawer"
               name="home"
             />
             <q-icon
@@ -175,7 +173,6 @@ useMeta(() => {
 
 const drawer = ref<boolean>(false);
 const floatingDrawer = ref<boolean>(true);
-const miniState = ref<boolean>(true);
 
 watch(
   () => quasar.screen.lt.sm,
@@ -183,7 +180,6 @@ watch(
     // Reset drawer when screen size changes
     drawer.value = false;
     floatingDrawer.value = true;
-    miniState.value = true;
   },
 );
 
