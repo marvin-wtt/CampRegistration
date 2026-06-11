@@ -128,6 +128,12 @@ const routes: RouteRecordRaw[] = [
             },
             children: [
               {
+                path: 'dashboard',
+                name: 'management.camp.dashboard',
+                component: () =>
+                  import('pages/campManagement/CampDashboardPage.vue'),
+              },
+              {
                 path: 'participants',
                 name: 'management.camp.participants',
                 component: () =>

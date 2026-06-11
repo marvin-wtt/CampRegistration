@@ -189,6 +189,13 @@ watch(
 
 const items = computed<NavigationItemProps[]>(() => [
   {
+    name: 'dashboard',
+    label: t('dashboard'),
+    icon: 'dashboard',
+    permission: 'camp.registrations.view',
+    to: { name: 'management.camp.dashboard' },
+  },
+  {
     name: 'participants',
     label: t('participants'),
     icon: 'groups',

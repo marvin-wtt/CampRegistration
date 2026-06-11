@@ -13,6 +13,7 @@ export class RegistrationSeeder {
       await RegistrationFactory.create({
         camp: { connect: { id: this.camp.id } },
         country: faker.helpers.arrayElement(this.camp.countries),
+        gender: faker.helpers.arrayElement(['m', 'f']),
         dateOfBirth: faker.date.between({
           from: moment(this.camp.startAt)
             .subtract(this.camp.maxAge, 'years')
