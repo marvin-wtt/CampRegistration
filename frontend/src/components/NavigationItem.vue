@@ -23,10 +23,20 @@
       v-if="props.icon"
       avatar
     >
-      <q-icon :name="props.icon" />
+      <q-icon :name="props.icon">
+        <q-badge
+          v-if="props.preview"
+          color="secondary"
+          floating
+        />
+      </q-icon>
     </q-item-section>
 
     <q-item-section>
+      {{ props.label }}
+    </q-item-section>
+
+    <q-item-section side>
       <q-badge
         v-if="props.preview"
         align="top"
@@ -36,7 +46,6 @@
       >
         Preview
       </q-badge>
-      {{ props.label }}
     </q-item-section>
   </q-item>
 

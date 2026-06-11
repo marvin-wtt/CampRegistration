@@ -31,15 +31,12 @@
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :mini="miniState && floatingDrawer"
+      mini
       :width="300"
       :mini-width="96"
       bordered
-      :mini-to-overlay="floatingDrawer"
       show-if-above
       class="column no-wrap"
-      @mouseleave="miniState = true"
-      @mouseenter="miniState = false"
     >
       <q-list class="q-list--rail">
         <navigation-item
@@ -62,13 +59,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
@@ -77,7 +73,6 @@ import { usePermissions } from 'src/composables/permissions';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
-const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 const { can } = usePermissions();
@@ -103,18 +98,6 @@ const administrator = computed<boolean>(() => {
 });
 
 const drawer = ref<boolean>(false);
-const floatingDrawer = ref<boolean>(true);
-const miniState = ref<boolean>(true);
-
-watch(
-  () => quasar.screen.lt.sm,
-  () => {
-    // Reset drawer when screen size changes
-    drawer.value = false;
-    floatingDrawer.value = true;
-    miniState.value = true;
-  },
-);
 
 const items = computed<NavigationItemProps[]>(() => [
   {
@@ -162,11 +145,7 @@ function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
 }
 
 function toggleDrawer() {
-  if (quasar.screen.lt.sm) {
-    drawer.value = !drawer.value;
-  } else {
-    floatingDrawer.value = !floatingDrawer.value;
-  }
+  drawer.value = !drawer.value;
 }
 </script>
 

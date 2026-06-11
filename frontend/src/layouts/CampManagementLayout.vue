@@ -5,7 +5,15 @@
     <q-header bordered>
       <m-toolbar>
         <m-btn
-          v-if="showDrawer"
+          v-if="quasar.screen.gt.xs"
+          icon="arrow_back"
+          square
+          round
+          text
+          @click="navigateHome()"
+        />
+        <m-btn
+          v-else-if="showDrawer"
           icon="menu"
           square
           round
@@ -17,13 +25,7 @@
             v-if="campDetailStore.isLoading"
             type="text"
           />
-          <router-link
-            v-else
-            :to="{ name: 'management' }"
-            class="header-link"
-          >
-            {{ to(title) }}
-          </router-link>
+          {{ to(title) }}
         </q-toolbar-title>
 
         <header-navigation :administration="administrator" />
@@ -36,36 +38,30 @@
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :mini="floatingDrawer"
+      mini
       :width="300"
       :mini-width="96"
       bordered
-      :mini-to-overlay="floatingDrawer"
       show-if-above
       class="column no-wrap"
     >
       <q-list class="q-list--rail">
-        <q-item
-          clickable
-          v-ripple
-          @click="navigateHome"
-        >
-          <q-item-section avatar>
-            <q-icon
-              v-if="floatingDrawer"
-              name="home"
-            />
-            <q-icon
-              v-else
-              name="arrow_back"
-            />
-          </q-item-section>
-          <q-item-section>
-            {{ campName }}
-          </q-item-section>
-        </q-item>
+        <template v-if="quasar.screen.lt.sm">
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateHome"
+          >
+            <q-item-section avatar>
+              <q-icon name="arrow_back" />
+            </q-item-section>
+            <q-item-section>
+              {{ t('camps') }}
+            </q-item-section>
+          </q-item>
 
-        <q-separator spaced />
+          <q-separator spaced />
+        </template>
 
         <navigation-item
           v-for="(item, i) in filteredItems"
@@ -113,7 +109,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
@@ -171,17 +167,7 @@ useMeta(() => {
   };
 });
 
-const drawer = ref<boolean>(false);
-const floatingDrawer = ref<boolean>(true);
-
-watch(
-  () => quasar.screen.lt.sm,
-  () => {
-    // Reset drawer when screen size changes
-    drawer.value = false;
-    floatingDrawer.value = true;
-  },
-);
+const drawer = ref<boolean>(true);
 
 const items = computed<NavigationItemProps[]>(() => [
   {
@@ -252,14 +238,20 @@ const dev = computed<boolean>(() => {
 });
 
 function toggleDrawer() {
-  if (quasar.screen.lt.sm) {
-    drawer.value = !drawer.value;
-  } else {
-    floatingDrawer.value = !floatingDrawer.value;
-  }
+  drawer.value = !drawer.value;
 }
 
 function navigateHome() {
+  if (route.name === 'management') {
+    void router.push({ name: 'camps' });
+    return;
+  }
+
+  if (route.name === 'management.camps') {
+    void router.push({ name: 'management' });
+    return;
+  }
+
   void router.push({ name: 'management.camps' });
 }
 </script>
@@ -269,6 +261,7 @@ footer:
   imprint: 'Imprint'
   privacy_policy: 'Privacy Policy'
 
+camps: 'My Camps'
 contact: 'Contact'
 dashboard: 'Dashboard'
 participants: 'Participants'
@@ -283,6 +276,7 @@ footer:
   imprint: 'Impressum'
   privacy_policy: 'Datenschutzerklärung'
 
+camps: 'Meine Camps'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 participants: 'Teilnehmende'
@@ -298,6 +292,7 @@ footer:
   imprint: 'Mentions légales'
   privacy_policy: 'Politique de confidentialité'
 
+camps: 'Mes Camps'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 participants: 'Participants'
@@ -313,6 +308,7 @@ footer:
   imprint: 'Nota prawna'
   privacy_policy: 'Polityka prywatności'
 
+camps: 'Moje Campy'
 contact: 'Kontakt'
 dashboard: 'Panel główny'
 participants: 'Uczestnicy'
@@ -328,6 +324,7 @@ footer:
   imprint: 'Tiráž'
   privacy_policy: 'Zásady ochrany osobních údajů'
 
+camps: 'Moje Campy'
 contact: 'Kontakt'
 dashboard: 'Přehled'
 participants: 'Účastníci'

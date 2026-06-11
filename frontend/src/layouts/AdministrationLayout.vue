@@ -40,14 +40,12 @@
       v-model="drawer"
       :breakpoint="599.99"
       :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
-      :mini="miniState"
+      mini
       :width="300"
       :mini-width="96"
       bordered
       mini-to-overlay
       show-if-above
-      @mouseout="miniState = true"
-      @mouseover="miniState = false"
     >
       <q-list class="q-list--rail">
         <template
@@ -128,7 +126,6 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
-const miniState = ref<boolean>(true);
 
 const items: NavigationItemProps[] = [
   {
