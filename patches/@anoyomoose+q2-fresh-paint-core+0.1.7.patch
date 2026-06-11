@@ -1,5 +1,5 @@
 diff --git a/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js b/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js
-index 4497f9b..982d605 100644
+index 4497f9b..8d6fa5f 100644
 --- a/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js
 +++ b/node_modules/@anoyomoose/q2-fresh-paint-core/dist/index.js
 @@ -1,6 +1,6 @@
@@ -91,12 +91,3 @@ index 4497f9b..982d605 100644
        const query = id.includes("?") ? id.split("?")[1] : "";
        const isSassFile = /\.(sass|scss)$/.test(cleanId);
        const isVueSassStyle = query.includes("lang.scss") || query.includes("lang.sass");
-@@ -195,7 +211,7 @@ function freshPaint(options) {
-     buildEnd() {
-       if (!hasEverMatchedQuasarImport) {
-         console.warn(
--          "[fresh-paint] Warning: No Sass files contained Quasar's variable import. This may indicate a plugin ordering issue \u2014 ensure freshPaint() is registered after Quasar's Vite plugin."
-+            "[fresh-paint] Warning: No Sass files contained Quasar's variable import. This may indicate a plugin ordering issue \u2014 ensure freshPaint() is registered after Quasar's Vite plugin."
-         );
-       }
-     }
