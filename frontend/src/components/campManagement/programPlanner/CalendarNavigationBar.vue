@@ -4,10 +4,11 @@
     <q-btn-toggle
       v-model="plan"
       :options="planOptions"
-      rounded
+      spread
       dense
-      no-caps
+      rounded
       toggle-color="primary"
+      class="cal-nav__plan-toggle"
     />
 
     <!-- Center: prev / date label / next -->
@@ -241,6 +242,16 @@ function previous() {
 
   @media (min-width: 600px) {
     gap: 8px;
+  }
+
+  // MD3 segmented buttons reserve space for a selection checkmark on every
+  // segment, which makes this compact toggle too wide. Selection is already
+  // shown by the secondary-container fill, so drop the checkmark spacers.
+  &__plan-toggle {
+    :deep(.q-btn__content)::before,
+    :deep(.q-btn__content)::after {
+      display: none !important;
+    }
   }
 
   &__center {
