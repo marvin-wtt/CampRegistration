@@ -370,8 +370,8 @@ function goTo(routeName: string) {
 }
 
 .attention-card {
-  border-left: 4px solid var(--q-warning);
-  background: rgba(245, 166, 35, 0.055);
+  border-left: 4px solid var(--md3-warning);
+  background: color-mix(in srgb, var(--md3-warning) 7%, var(--md3-surface));
 }
 
 .attention-content {
@@ -398,8 +398,8 @@ function goTo(routeName: string) {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(127, 127, 127, 0.2);
+  background: var(--md3-surface);
+  border: 1px solid var(--md3-outline-variant);
   border-radius: 10px;
   transition:
     border-color 0.18s ease,
@@ -408,8 +408,8 @@ function goTo(routeName: string) {
 
 .attention-item:hover,
 .attention-item:focus-visible {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: var(--q-warning);
+  background: var(--md3-surface-container-high);
+  border-color: var(--md3-warning);
   outline: none;
 }
 
@@ -422,15 +422,6 @@ function goTo(routeName: string) {
 :global(.body--dark) .quick-action-card:hover,
 :global(.body--dark) .quick-action-card:focus-visible {
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
-}
-
-:global(.body--dark) .attention-item {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-:global(.body--dark) .attention-item:hover,
-:global(.body--dark) .attention-item:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 1199px) {

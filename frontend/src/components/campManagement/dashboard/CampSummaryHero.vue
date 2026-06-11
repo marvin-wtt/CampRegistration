@@ -4,111 +4,122 @@
     bordered
     class="hero-card"
   >
-    <q-card-section class="summary-header">
-      <div class="summary-title-row">
-        <div class="col">
+    <div class="hero-accent" />
+    <q-card-section class="hero-content">
+      <div class="hero-main">
+        <div class="status-chips">
+          <span
+            v-if="countdown"
+            class="status-pill countdown-pill"
+          >
+            <q-icon
+              name="schedule"
+              size="17px"
+            />
+            {{ countdown }}
+          </span>
+          <span
+            class="status-pill registration-pill"
+            :class="`registration-${registrationStatus.tone}`"
+          >
+            <q-icon
+              :name="registrationStatus.icon"
+              size="17px"
+            />
+            {{ registrationStatus.label }}
+          </span>
+        </div>
+
+        <div class="hero-copy">
           <div class="text-overline text-primary text-weight-bold">
             {{ t('campOverview') }}
           </div>
           <h1 class="camp-title text-h4 text-weight-bold q-my-none">
             {{ campName }}
           </h1>
-        </div>
-
-        <div class="status-chips">
-          <q-chip
-            v-if="countdown"
-            outline
-            color="primary"
-            icon="schedule"
-            :label="countdown"
-            class="q-ma-none"
-          />
-          <q-chip
-            :color="registrationStatus.color"
-            text-color="white"
-            :icon="registrationStatus.icon"
-            :label="registrationStatus.label"
-            class="q-ma-none"
-          />
-        </div>
-      </div>
-
-      <div class="camp-meta">
-        <div class="meta-item">
-          <q-icon name="calendar_month" />
-          <span>{{ dateRange }}</span>
-        </div>
-        <div
-          v-if="location"
-          class="meta-item"
-        >
-          <q-icon name="location_on" />
-          <span>{{ location }}</span>
-        </div>
-        <div class="meta-item">
-          <q-icon name="cake" />
-          <span>
-            {{ t('ageRange', { min: camp?.minAge, max: camp?.maxAge }) }}
-          </span>
-        </div>
-        <div
-          v-if="countryNames"
-          class="meta-item countries"
-        >
-          <q-icon name="public" />
-          <span>{{ countryNames }}</span>
-        </div>
-      </div>
-    </q-card-section>
-
-    <q-separator />
-
-    <q-card-section class="capacity-section">
-      <div class="capacity-copy">
-        <div class="text-caption text-grey-7 text-weight-medium">
-          {{ t('capacity') }}
-        </div>
-        <div class="row items-baseline q-gutter-xs">
-          <span class="text-h5 text-weight-bold">{{ capacity.accepted }}</span>
-          <template v-if="capacity.max != null">
-            <span class="text-body1 text-grey-6">/ {{ capacity.max }}</span>
-          </template>
-          <span class="text-body2 text-grey-7">{{ t('confirmed') }}</span>
+          <div class="camp-meta">
+            <div class="meta-item">
+              <q-icon name="calendar_month" />
+              <span>{{ dateRange }}</span>
+            </div>
+            <div
+              v-if="location"
+              class="meta-item"
+            >
+              <q-icon name="location_on" />
+              <span>{{ location }}</span>
+            </div>
+            <div class="meta-item">
+              <q-icon name="cake" />
+              <span>
+                {{ t('ageRange', { min: camp?.minAge, max: camp?.maxAge }) }}
+              </span>
+            </div>
+            <div
+              v-if="countryNames"
+              class="meta-item countries"
+            >
+              <q-icon name="public" />
+              <span>{{ countryNames }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div
-        v-if="capacity.max != null"
-        class="capacity-progress"
-      >
-        <div class="row items-center justify-between q-mb-sm">
-          <span class="text-body2 text-grey-7">
-            {{ t('filled', { n: percent }) }}
-          </span>
-          <span
-            class="text-body2 text-weight-bold"
+      <aside class="capacity-panel">
+        <div class="capacity-heading">
+          <div>
+            <div class="capacity-label">{{ t('capacity') }}</div>
+            <div class="capacity-value">
+              <span>{{ capacity.accepted }}</span>
+              <span
+                v-if="capacity.max != null"
+                class="capacity-max"
+              >
+                / {{ capacity.max }}
+              </span>
+            </div>
+          </div>
+          <div
+            v-if="capacity.max != null"
+            class="capacity-percent"
             :class="`text-${barColor}`"
           >
-            {{
-              over > 0 ? t('over', { n: over }) : t('free', { n: freeDisplay })
-            }}
-          </span>
+            {{ percent }}%
+          </div>
         </div>
-        <q-linear-progress
-          :value="ratio"
-          :color="barColor"
-          track-color="grey-5"
-          rounded
-          size="9px"
-        />
-      </div>
-      <div
-        v-else
-        class="text-body2 text-grey-7"
-      >
-        {{ t('capacityUnset') }}
-      </div>
+
+        <template v-if="capacity.max != null">
+          <q-linear-progress
+            :value="ratio"
+            :color="barColor"
+            track-color="grey-5"
+            rounded
+            size="10px"
+            class="capacity-bar"
+          />
+          <div class="capacity-footer">
+            <span>{{ t('confirmed') }}</span>
+            <span
+              class="text-weight-bold"
+              :class="`text-${barColor}`"
+            >
+              {{
+                over > 0
+                  ? t('over', { n: over })
+                  : t('free', { n: freeDisplay })
+              }}
+            </span>
+          </div>
+        </template>
+        <div
+          v-else
+          class="capacity-footer"
+        >
+          <span>{{ t('confirmed') }}</span>
+          <span>{{ t('capacityUnset') }}</span>
+        </div>
+      </aside>
     </q-card-section>
   </q-card>
 </template>
@@ -173,7 +184,7 @@ const countdown = computed<string | undefined>(() => {
 const registrationStatus = computed(() => {
   const c = camp.value;
   if (!c || (!c.registrationOpensAt && !c.registrationClosesAt)) {
-    return { label: t('registration.unset'), color: 'grey', icon: 'help' };
+    return { label: t('registration.unset'), tone: 'neutral', icon: 'help' };
   }
   const now = new Date();
   const opensAt = c.registrationOpensAt
@@ -186,16 +197,20 @@ const registrationStatus = computed(() => {
   if (opensAt && now < opensAt) {
     return {
       label: t('registration.upcoming'),
-      color: 'blue',
+      tone: 'info',
       icon: 'schedule',
     };
   }
   if (closesAt && now > closesAt) {
-    return { label: t('registration.closed'), color: 'grey-7', icon: 'lock' };
+    return {
+      label: t('registration.closed'),
+      tone: 'neutral',
+      icon: 'lock',
+    };
   }
   return {
     label: t('registration.open'),
-    color: 'positive',
+    tone: 'positive',
     icon: 'lock_open',
   };
 });
@@ -246,88 +261,209 @@ function daysFromNow(date: string): number {
 </script>
 
 <style scoped>
+/*
+ * Styling relies on the MD3 design tokens exposed by
+ * @anoyomoose/q2-fresh-paint-md3e (--md3-*). These switch automatically
+ * between light and dark, so no manual dark-mode overrides are needed.
+ */
 .hero-card {
+  position: relative;
   overflow: hidden;
   border-radius: 16px;
 }
 
-.summary-header,
-.capacity-section {
-  padding: 20px;
+.hero-accent {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 4px;
+  background: linear-gradient(90deg, var(--md3-primary), var(--md3-tertiary));
 }
 
-.summary-title-row {
+.hero-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+  gap: 24px;
+  align-items: stretch;
+  padding: 24px;
+}
+
+.hero-main {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .camp-title {
+  max-width: 900px;
   line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 
 .status-chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 8px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.countdown-pill {
+  color: var(--md3-on-primary-container);
+  background: var(--md3-primary-container);
+}
+
+.registration-positive {
+  color: var(--md3-on-positive-container);
+  background: var(--md3-positive-container);
+}
+
+.registration-info {
+  color: var(--md3-on-info-container);
+  background: var(--md3-info-container);
+}
+
+.registration-neutral {
+  color: var(--md3-on-surface-variant);
+  background: var(--md3-surface-container-highest);
 }
 
 .camp-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 24px;
-  margin-top: 16px;
-  color: rgba(75, 75, 75, 0.82);
+  gap: 10px 12px;
+  margin-top: 18px;
+  color: var(--md3-on-surface-variant);
 }
 
 .meta-item {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  padding: 7px 11px;
   font-size: 0.875rem;
+  background: var(--md3-surface-container-high);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 10px;
 }
 
 .meta-item .q-icon {
   flex: 0 0 auto;
-  color: var(--q-primary);
+  color: var(--md3-primary);
   font-size: 18px;
 }
 
-.capacity-section {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.55fr) minmax(260px, 1.45fr);
-  align-items: center;
-  gap: 24px;
-  background: rgba(127, 127, 127, 0.035);
+.capacity-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  background: color-mix(in srgb, var(--md3-primary) 7%, var(--md3-surface));
+  border: 1px solid
+    color-mix(in srgb, var(--md3-primary) 22%, transparent);
+  border-radius: 12px;
 }
 
-:global(.body--dark) .camp-meta {
-  color: rgba(255, 255, 255, 0.72);
+.capacity-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.capacity-label {
+  margin-bottom: 3px;
+  color: var(--md3-on-surface-variant);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.capacity-value {
+  color: var(--md3-on-surface);
+  font-size: 2.2rem;
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.capacity-max {
+  color: var(--md3-on-surface-variant);
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.capacity-percent {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.capacity-bar {
+  margin-top: 22px;
+}
+
+.capacity-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: var(--md3-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 899px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 @media (max-width: 599px) {
-  .summary-header,
-  .capacity-section {
-    padding: 16px;
-  }
-
-  .summary-title-row {
-    flex-direction: column;
+  .hero-content {
+    gap: 18px;
+    padding: 18px;
   }
 
   .camp-title {
-    font-size: 1.65rem;
+    font-size: 1.6rem;
   }
 
-  .status-chips {
-    justify-content: flex-start;
+  .hero-main {
+    gap: 16px;
   }
 
-  .capacity-section {
-    grid-template-columns: 1fr;
-    gap: 14px;
+  .camp-meta {
+    margin-top: 4px;
+  }
+
+  .meta-item {
+    width: 100%;
+  }
+
+  .capacity-panel {
+    padding: 16px;
+  }
+
+  .capacity-value {
+    font-size: 2rem;
+  }
+
+  .capacity-bar {
+    margin-top: 16px;
   }
 }
 </style>
