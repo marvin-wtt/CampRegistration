@@ -32,11 +32,11 @@
           <q-btn
             v-for="option in xOptions"
             :key="option.value"
+            :label="option.label"
             :outline="xDimension !== option.value"
             :unelevated="xDimension === option.value"
             :color="xDimension === option.value ? 'primary' : 'grey-7'"
             no-caps
-            :label="option.label"
             @click="xDimension = option.value"
           />
         </div>
@@ -50,6 +50,7 @@
           emit-value
           map-options
           outlined
+          rounded
           dense
           options-dense
           class="breakdown-select"
@@ -86,6 +87,7 @@
             emit-value
             map-options
             outlined
+            rounded
             dense
             options-dense
           />
@@ -101,6 +103,7 @@
             emit-value
             map-options
             outlined
+            rounded
             dense
             options-dense
           />
