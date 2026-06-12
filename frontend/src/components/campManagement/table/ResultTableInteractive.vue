@@ -1,10 +1,10 @@
 <template>
   <div class="participants-view column no-wrap">
     <!-- Header -->
-    <div class="row items-end justify-between q-col-gutter-y-sm">
-      <div class="col-12 col-sm">
-        <div class="row items-center q-gutter-x-sm">
-          <div class="text-h5 text-weight-medium">
+    <div class="row items-center justify-between no-wrap">
+      <div class="col header-text">
+        <div class="row items-center no-wrap q-gutter-x-sm">
+          <div class="text-h5 text-weight-medium ellipsis">
             {{ t('title') }}
           </div>
           <q-badge
@@ -13,35 +13,113 @@
             :label="countLabel"
           />
         </div>
-        <div class="text-body2 text-grey-6 q-mt-xs">
+        <div class="text-body2 text-grey-6 q-mt-xs gt-xs">
           {{ t('subtitle') }}
         </div>
       </div>
 
-      <div class="col-12 col-sm-auto row items-center q-gutter-x-sm">
-        <q-btn
-          v-if="canEditTemplates"
-          :aria-label="t('action.edit_templates')"
-          icon="edit_note"
-          class="header-action-btn"
-          flat
-          round
-          @click="editTemplates"
-        >
-          <q-tooltip>{{ t('action.edit_templates') }}</q-tooltip>
-        </q-btn>
+      <div class="col-auto row items-center no-wrap q-gutter-x-sm">
+        <!-- On phones the actions shrink to icon buttons and a menu -->
+        <template v-if="quasar.screen.xs">
+          <q-btn
+            :aria-label="t('filter.search')"
+            icon="search"
+            class="header-action-btn"
+            :class="{ 'header-action-btn--active': mobileSearchActive }"
+            flat
+            round
+            @click="toggleMobileSearch"
+          />
 
-        <m-btn
-          :label="t('action.print')"
-          color="primary"
-          icon="print"
-          @click="openPrintDialog"
-        />
+          <q-btn
+            v-if="countries.length > 1"
+            :aria-label="t('filter.country')"
+            icon="filter_list"
+            class="header-action-btn"
+            :class="{ 'header-action-btn--active': activeCountryCount > 0 }"
+            flat
+            round
+            @click="filterSheetOpen = true"
+          >
+            <q-badge
+              v-if="activeCountryCount > 0"
+              rounded
+              floating
+              class="filter-btn-badge"
+              :label="activeCountryCount"
+            />
+          </q-btn>
+
+          <q-btn
+            :aria-label="t('action.menu')"
+            icon="more_vert"
+            class="header-action-btn"
+            flat
+            round
+          >
+            <q-menu>
+              <q-list style="min-width: 180px">
+                <q-item
+                  v-close-popup
+                  clickable
+                  @click="openPrintDialog"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      name="print"
+                      size="sm"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('action.print') }}
+                  </q-item-section>
+                </q-item>
+                <q-item
+                  v-if="canEditTemplates"
+                  v-close-popup
+                  clickable
+                  @click="editTemplates"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      name="edit_note"
+                      size="sm"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('action.edit_templates') }}
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </template>
+
+        <template v-else>
+          <q-btn
+            v-if="canEditTemplates"
+            :aria-label="t('action.edit_templates')"
+            icon="edit_note"
+            class="header-action-btn"
+            flat
+            round
+            @click="editTemplates"
+          >
+            <q-tooltip>{{ t('action.edit_templates') }}</q-tooltip>
+          </q-btn>
+
+          <m-btn
+            :label="t('action.print')"
+            color="primary"
+            icon="print"
+            @click="openPrintDialog"
+          />
+        </template>
       </div>
     </div>
 
     <!-- Toolbar -->
-    <div class="row items-center q-col-gutter-sm q-mt-md">
+    <div class="toolbar-row row items-center q-col-gutter-x-sm">
       <div class="col-12 col-sm-auto">
         <q-select
           v-model="template"
@@ -80,8 +158,12 @@
         </q-select>
       </div>
 
-      <div class="col-12 col-sm">
+      <div
+        v-if="!quasar.screen.xs || mobileSearchOpen"
+        class="col-12 col-sm"
+      >
         <q-input
+          ref="searchInputRef"
           v-model="searchFilter"
           :placeholder="t('filter.search')"
           class="toolbar-field search-field"
@@ -99,15 +181,12 @@
         </q-input>
       </div>
 
+      <!-- Country filter chips; on phones the filter lives in a bottom sheet -->
       <div
-        v-if="countries.length > 1"
+        v-if="countries.length > 1 && !quasar.screen.xs"
         class="col-12 col-sm-auto"
       >
-        <!-- Country filter chips -->
-        <div
-          v-if="!quasar.screen.xs"
-          class="row items-center q-gutter-xs"
-        >
+        <div class="row items-center q-gutter-xs">
           <q-chip
             v-for="country in countries"
             :key="country"
@@ -129,25 +208,6 @@
             />
           </q-chip>
         </div>
-
-        <!-- On phones, the country filter moves into a bottom sheet -->
-        <q-btn
-          v-else
-          class="filter-btn full-width"
-          outline
-          rounded
-          no-caps
-          icon="filter_list"
-          :label="t('filter.country')"
-          @click="filterSheetOpen = true"
-        >
-          <q-badge
-            v-if="activeCountryCount > 0"
-            rounded
-            class="filter-btn-badge q-ml-sm"
-            :label="activeCountryCount"
-          />
-        </q-btn>
       </div>
     </div>
 
@@ -155,7 +215,7 @@
     <q-card
       flat
       bordered
-      class="table-card col q-mt-md"
+      class="table-card col"
     >
       <q-table
         v-show="rows.length > 0"
@@ -289,7 +349,7 @@
 </template>
 
 <script lang="ts" setup>
-import { type QTableColumn, useQuasar } from 'quasar';
+import { type QInput, type QTableColumn, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import type {
@@ -308,7 +368,7 @@ import BottomSheet from 'components/BottomSheet.vue';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
 import PrintTableDialog from 'components/campManagement/table/dialogs/PrintTableDialog.vue';
-import { computed, ref, toRef } from 'vue';
+import { computed, nextTick, ref, toRef } from 'vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { questions, registrations, templates, camp } = defineProps<{
@@ -354,6 +414,27 @@ const {
 );
 
 const filterSheetOpen = ref<boolean>(false);
+
+const searchInputRef = ref<QInput | null>(null);
+const mobileSearchOpen = ref<boolean>(false);
+
+const mobileSearchActive = computed<boolean>(() => {
+  return mobileSearchOpen.value || (searchFilter.value?.trim().length ?? 0) > 0;
+});
+
+function toggleMobileSearch() {
+  if (mobileSearchOpen.value) {
+    mobileSearchOpen.value = false;
+    // Closing the row also clears the query so no invisible filter remains
+    searchFilter.value = '';
+    return;
+  }
+
+  mobileSearchOpen.value = true;
+  void nextTick(() => {
+    searchInputRef.value?.focus();
+  });
+}
 
 const canEditTemplates = computed<boolean>(() => {
   return (
@@ -469,8 +550,22 @@ function editTemplates() {
   font-weight: 600;
 }
 
+.header-text {
+  min-width: 0;
+}
+
 .header-action-btn {
   color: var(--md3-on-surface-variant);
+}
+
+.header-action-btn--active {
+  color: var(--md3-primary);
+}
+
+.toolbar-row {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  row-gap: 8px;
 }
 
 .toolbar-field :deep(.q-field__control) {
@@ -507,10 +602,6 @@ function editTemplates() {
 
 .chip-flag {
   width: 18px;
-}
-
-.filter-btn {
-  color: var(--md3-on-surface-variant);
 }
 
 .filter-btn-badge {
@@ -556,6 +647,15 @@ function editTemplates() {
 }
 
 @media (max-width: 599px) {
+  .participants-view {
+    padding: 12px;
+  }
+
+  .toolbar-row {
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
   .search-field {
     max-width: none;
   }
@@ -575,6 +675,7 @@ action:
   print: 'Print'
   edit_templates: 'Edit templates'
   clear_filters: 'Clear filters'
+  menu: 'Actions'
 
 filter:
   country: 'Country'
@@ -599,6 +700,7 @@ action:
   print: 'Drucken'
   edit_templates: 'Vorlagen bearbeiten'
   clear_filters: 'Filter zurücksetzen'
+  menu: 'Aktionen'
 
 filter:
   country: 'Land'
@@ -623,6 +725,7 @@ action:
   print: 'Imprimer'
   edit_templates: 'Modifier les modèles'
   clear_filters: 'Effacer les filtres'
+  menu: 'Actions'
 
 filter:
   country: 'Pays'
@@ -647,6 +750,7 @@ action:
   print: 'Drukuj'
   edit_templates: 'Edytuj szablony'
   clear_filters: 'Wyczyść filtry'
+  menu: 'Akcje'
 
 filter:
   country: 'Kraj'
@@ -671,6 +775,7 @@ action:
   print: 'Tisk'
   edit_templates: 'Upravit šablony'
   clear_filters: 'Zrušit filtry'
+  menu: 'Akce'
 
 filter:
   country: 'Země'
