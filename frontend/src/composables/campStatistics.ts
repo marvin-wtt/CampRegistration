@@ -139,7 +139,9 @@ export function useCampStatistics() {
     if (!camp) {
       return [];
     }
-    return (camp.countries ?? []).map((country) => {
+
+    const countries = camp.countries.sort() ?? [];
+    return countries.map((country) => {
       const inCountry = participants.value.filter(
         (r) => helper.country(r) === country,
       );
@@ -171,7 +173,7 @@ export function useCampStatistics() {
         values.add(value);
       }
     }
-    return [...values].sort();
+    return [...values].sort().reverse();
   });
 
   // --- Age banding ---------------------------------------------------------
