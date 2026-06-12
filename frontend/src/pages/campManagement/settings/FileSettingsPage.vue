@@ -166,6 +166,12 @@
                   >
                     {{ file.name }}
                   </a>
+                  <q-badge
+                    v-if="file.locale"
+                    rounded
+                    class="locale-badge"
+                    :label="file.locale.toUpperCase()"
+                  />
                 </q-item-label>
                 <q-item-label class="file-caption ellipsis">
                   {{ formatBytes(file.size) }}
@@ -183,11 +189,6 @@
                   class="md3-chip field-chip"
                   icon="sell"
                   :label="file.field"
-                />
-                <q-chip
-                  v-if="file.locale"
-                  class="md3-chip locale-chip"
-                  :label="file.locale.toUpperCase()"
                 />
                 <q-chip
                   v-if="file.accessLevel"
@@ -577,6 +578,18 @@ function copyLink(url: string) {
 .file-name-link {
   color: inherit;
   text-decoration: none;
+}
+
+.locale-badge {
+  flex: none;
+  padding: 2px 8px;
+
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .file-name-link:hover {
