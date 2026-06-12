@@ -173,7 +173,7 @@ function can(...permissions: Tail<Parameters<typeof canFor>>): boolean {
 function resultsAction() {
   void withLoading(resultLoading, async () => {
     await router.push({
-      name: 'management.camp.participants',
+      name: 'management.camp',
       params: {
         campId: camp.id,
       },
