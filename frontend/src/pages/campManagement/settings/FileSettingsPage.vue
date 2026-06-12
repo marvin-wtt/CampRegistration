@@ -127,8 +127,8 @@ import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { usePermissions } from 'src/composables/permissions';
 
-const i18n = useI18n();
-const { t } = i18n;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t, te } = useI18n();
 const quasar = useQuasar();
 const campStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
@@ -245,9 +245,7 @@ function uploadFile() {
 
 function getUploadHint(field: string, locale?: string | null): string {
   const key = `virtual.upload_hint.${field}`;
-  const label = i18n.te(key)
-    ? t(key)
-    : t('virtual.upload_hint.default', { field });
+  const label = te(key) ? t(key) : t('virtual.upload_hint.default', { field });
 
   return locale ? `${label} (${locale})` : label;
 }

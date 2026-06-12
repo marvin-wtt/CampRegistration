@@ -136,10 +136,12 @@ import { useI18n } from 'vue-i18n';
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
 
-const [model, modifiers] = defineModel<ModelValueType>();
-const attrs = useAttrs();
-const slots = defineSlots<QInputSlots>();
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const { locale, t, te } = useI18n();
+const attrs = useAttrs();
+
+const [model, modifiers] = defineModel<ModelValueType>();
+const slots = defineSlots<QInputSlots>();
 
 const {
   label = '',
