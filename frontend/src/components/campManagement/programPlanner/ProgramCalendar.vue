@@ -1084,6 +1084,9 @@ function formatDate(date: Date): string {
   --calendar-border-section-dark: var(--md3-outline-variant) 1px dashed;
   --calendar-mini-range-connector-hover-border-dark: var(--md3-primary) 1px
     dashed;
+  --calendar-active-date-background: var(--md3-primary);
+  --calendar-active-date-color: white;
+  --calendar-active-date-background-dark: var(--md3-primary-container);
 }
 
 .droppable {
