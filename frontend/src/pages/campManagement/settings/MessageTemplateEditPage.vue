@@ -188,14 +188,14 @@ const TEMPLATE_ICONS: Record<string, string> = {
   registration_canceled: 'cancel',
 };
 
-const TEMPLATE_ORDER: string[] = [
+const TEMPLATE_ORDER = [
   'registration_submitted',
   'registration_confirmed',
   'registration_waitlisted',
   'registration_waitlist_accepted',
   'registration_updated',
   'registration_canceled',
-];
+] as const;
 
 const loading = computed<boolean>(() => {
   return isLoading.value || campDetailsStore.isLoading;
@@ -224,11 +224,15 @@ interface MappedTemplate {
 const templates = computed<MappedTemplate[]>(() => {
   const values = data.value;
   const countries = camp.value?.countries;
-  if (!values || !countries) {
+  const confirmationMode = camp.value?.confirmationMode;
+  if (!values || !countries || !confirmationMode) {
     return [];
   }
 
-  return TEMPLATE_ORDER.map((event) => ({
+  return TEMPLATE_ORDER.filter(
+    (event) =>
+      confirmationMode === 'MANUAL' || event !== 'registration_submitted',
+  ).map((event) => ({
     event,
     templates: countries.map((country) => {
       return {
