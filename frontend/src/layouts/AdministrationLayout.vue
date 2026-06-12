@@ -3,19 +3,19 @@
     <q-ajax-bar color="accent" />
 
     <q-header bordered>
-      <q-toolbar>
-        <q-btn
+      <m-toolbar>
+        <m-btn
           v-if="showDrawer"
-          dense
-          flat
           icon="menu"
+          square
           round
+          text
           @click="drawer = !drawer"
         />
         <q-toolbar-title>
           <router-link
             to="/"
-            style="text-decoration: none; color: inherit"
+            class="header-link"
           >
             {{ to(title) }}
           </router-link>
@@ -32,14 +32,13 @@
         />
 
         <profile-menu />
-      </q-toolbar>
+      </m-toolbar>
     </q-header>
 
     <q-drawer
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
       mini
       :width="300"
       :mini-width="96"
@@ -90,15 +89,16 @@ import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
-import { useMeta, useQuasar } from 'quasar';
+import { useMeta } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
-const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
@@ -267,5 +267,12 @@ settings: 'Nastavení'
 }
 
 ::-webkit-scrollbar-corner {
+}
+</style>
+
+<style scoped>
+.header-link {
+  text-decoration: none;
+  color: inherit;
 }
 </style>
