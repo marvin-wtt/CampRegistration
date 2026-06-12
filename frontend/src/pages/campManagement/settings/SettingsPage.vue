@@ -1,7 +1,7 @@
 <template>
   <q-page
     padding
-    class="row justify-center"
+    class="settings-page row justify-center"
   >
     <div class="col-12 col-sm-10 col-md-8 col-lg-6 column q-gutter-y-lg">
       <div>
@@ -128,6 +128,15 @@ const filteredItems = computed<SettingsItem[]>(() => {
 });
 </script>
 
+<style scoped>
+/* The default page padding feels cramped under the app bar on phones. */
+@media (max-width: 599px) {
+  .settings-page {
+    padding-top: 24px;
+  }
+}
+</style>
+
 <i18n lang="yaml" locale="en">
 title: 'Settings'
 subtitle: 'Configure your camp.'
@@ -136,10 +145,10 @@ access:
   description: 'Manage who can view and edit this camp.'
 edit:
   label: 'Edit'
-  description: 'Edit the general details and theme of this camp.'
+  description: 'Edit the general details of this camp.'
 form:
   label: 'Registration Form'
-  description: 'Design and customize the registration form.'
+  description: 'Design and customize the registration form and theme.'
 emails:
   label: 'Email templates'
   description: 'Manage the email templates sent to participants.'
@@ -156,10 +165,10 @@ access:
   description: 'Verwalte, wer dieses Camp ansehen und bearbeiten kann.'
 edit:
   label: 'Bearbeiten'
-  description: 'Bearbeite die allgemeinen Angaben und das Design dieses Camps.'
+  description: 'Bearbeite die allgemeinen Angaben dieses Camps.'
 form:
   label: 'Anmeldeformular'
-  description: 'Gestalte und passe das Anmeldeformular an.'
+  description: 'Gestalte und passe das Anmeldeformular und das Design an.'
 emails:
   label: 'E-Mail-Vorlagen'
   description: 'Verwalte die an Teilnehmende versendeten E-Mail-Vorlagen.'
@@ -176,10 +185,10 @@ access:
   description: 'Gérez qui peut consulter et modifier ce camp.'
 edit:
   label: 'Modifier'
-  description: 'Modifiez les informations générales et le thème de ce camp.'
+  description: 'Modifiez les informations générales de ce camp.'
 form:
   label: "Formulaire d'inscription"
-  description: "Concevez et personnalisez le formulaire d'inscription."
+  description: "Concevez et personnalisez le formulaire d'inscription et le thème."
 emails:
   label: "Modèles d'e-mails"
   description: "Gérez les modèles d'e-mails envoyés aux participants."
@@ -196,10 +205,10 @@ access:
   description: 'Zarządzaj tym, kto może przeglądać i edytować ten obóz.'
 edit:
   label: 'Edytuj'
-  description: 'Edytuj ogólne dane i motyw tego obozu.'
+  description: 'Edytuj ogólne dane tego obozu.'
 form:
   label: 'Formularz rejestracyjny'
-  description: 'Zaprojektuj i dostosuj formularz rejestracyjny.'
+  description: 'Zaprojektuj i dostosuj formularz rejestracyjny i motyw.'
 emails:
   label: 'Szablony e-maili'
   description: 'Zarządzaj szablonami e-maili wysyłanymi do uczestników.'
@@ -216,10 +225,10 @@ access:
   description: 'Spravujte, kdo může tento tábor zobrazit a upravovat.'
 edit:
   label: 'Upravit'
-  description: 'Upravte obecné údaje a vzhled tohoto tábora.'
+  description: 'Upravte obecné údaje tohoto tábora.'
 form:
   label: 'Registrační formulář'
-  description: 'Navrhněte a přizpůsobte registrační formulář.'
+  description: 'Navrhněte a přizpůsobte registrační formulář a vzhled.'
 emails:
   label: 'E-mailové šablony'
   description: 'Spravujte e-mailové šablony zasílané účastníkům.'

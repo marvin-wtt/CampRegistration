@@ -4,7 +4,7 @@
     :prevent-leave
     :error
     :loading
-    class="row justify-center"
+    class="camp-edit-page row justify-center"
   >
     <q-form
       greedy
@@ -581,6 +581,13 @@ async function onSubmit() {
   max-width: 1100px;
   /* Reserve space so the last card never hides behind the floating bar. */
   padding-bottom: 88px;
+}
+
+/* The default page padding feels cramped under the app bar on phones. */
+@media (max-width: 599px) {
+  .camp-edit-page {
+    padding-top: 24px;
+  }
 }
 
 .section-card {
