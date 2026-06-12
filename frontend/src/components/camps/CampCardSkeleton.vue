@@ -1,82 +1,88 @@
 <template>
-  <q-card class="camp-card">
-    <!-- Image -->
-    <q-card-section class="col q-pa-none">
-      <q-skeleton height="200px" />
-    </q-card-section>
+  <q-card class="camp-card-skeleton">
+    <!-- Banner -->
+    <q-skeleton
+      square
+      height="120px"
+    />
 
     <!-- Content -->
-    <div class="col">
-      <q-card-section class="column items-start">
-        <div class="col text-caption">
-          <q-skeleton
-            type="text"
-            width="150px"
-          />
-        </div>
-        <div class="col text-h5">
-          <q-skeleton
-            type="text"
-            width="200px"
-          />
-        </div>
-        <div class="col text-caption">
-          <q-skeleton
-            type="text"
-            width="100px"
-          />
-        </div>
-      </q-card-section>
-      <q-card-section class="column q-pt-none">
-        <div class="row">
-          <q-icon
-            name="place"
-            size="sm"
-          />
-          <q-skeleton
-            type="text"
-            width="150px"
-          />
-        </div>
-        <div class="row">
-          <q-icon
-            name="person"
-            size="sm"
-          />
-          <q-skeleton
-            type="text"
-            width="50px"
-          />
-        </div>
-        <div class="row">
-          <q-icon
-            name="language"
-            size="sm"
-          />
-          <q-skeleton
-            type="text"
-            width="30px"
-          />
-        </div>
-        <div class="row">
-          <q-icon
-            name="attach_money"
-            size="sm"
-          />
-          <q-skeleton
-            type="text"
-            width="40px"
-          />
-        </div>
-      </q-card-section>
-    </div>
+    <q-card-section class="camp-card-skeleton__body">
+      <q-skeleton
+        type="text"
+        width="45%"
+        height="14px"
+      />
+      <q-skeleton
+        type="text"
+        width="80%"
+        height="26px"
+      />
+      <q-skeleton
+        type="text"
+        width="55%"
+        height="16px"
+      />
+
+      <div class="camp-card-skeleton__meta">
+        <q-skeleton
+          type="text"
+          width="65%"
+          height="16px"
+        />
+        <q-skeleton
+          type="text"
+          width="40%"
+          height="16px"
+        />
+      </div>
+
+      <div class="camp-card-skeleton__footer">
+        <q-skeleton
+          type="text"
+          width="56px"
+          height="22px"
+        />
+        <q-skeleton
+          type="circle"
+          size="20px"
+        />
+      </div>
+    </q-card-section>
   </q-card>
 </template>
 
 <script lang="ts" setup></script>
 
 <style scoped>
-.camp-card {
-  width: 300px;
+.camp-card-skeleton {
+  min-width: 0;
+  border-radius: 16px;
+  overflow: hidden;
+
+  background: var(--md3-surface-container-low);
+  box-shadow: none;
+}
+
+.camp-card-skeleton__body {
+  padding: 16px;
+}
+
+.camp-card-skeleton__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  margin-top: 14px;
+}
+
+.camp-card-skeleton__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--md3-outline-variant);
 }
 </style>
