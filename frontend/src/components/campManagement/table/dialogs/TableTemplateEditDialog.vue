@@ -16,11 +16,10 @@
         <translated-input
           v-model="template.title"
           :label="t('fields.title.label')"
-          :hint="t('fields.title.hint')"
+          :locales="camp.locales"
           hide-bottom-space
           outlined
           rounded
-          :locales="camp.locales"
         />
 
         <a class="text-h6">
