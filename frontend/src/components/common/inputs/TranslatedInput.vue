@@ -4,7 +4,7 @@
       class="col"
       style="display: grid"
     >
-      <transition name="bounce">
+      <transition name="translation-fade">
         <!-- Single input -->
         <div
           v-if="!useTranslations || !enabled"
@@ -32,64 +32,74 @@
         <!-- Translated input -->
         <div
           v-else
-          class="layer2"
+          class="layer2 row no-wrap items-stretch"
         >
-          <template v-if="modifiers.number">
-            <!-- Numeric inputs -->
-            <q-input
-              v-for="(locale, index) in locales"
-              :key="index"
-              v-model.number="translations[locale]"
-              :label="`${label} (${locale})`"
-              clearable
-              v-bind="attrs"
-              @clear="clearTranslation(locale)"
-            >
-              <template #prepend>
-                <country-icon :locale="locale" />
-              </template>
+          <!-- Field icon rendered once for the whole locale group -->
+          <div
+            v-if="$slots.before"
+            class="column justify-center translation-before"
+          >
+            <slot name="before" />
+          </div>
 
-              <!-- Parent slots -->
-              <template
-                v-for="(data, name, slotIndex) in slots"
-                :key="slotIndex"
-                #[name]
+          <div class="translation-group column col">
+            <template v-if="modifiers.number">
+              <!-- Numeric inputs -->
+              <q-input
+                v-for="(locale, index) in locales"
+                :key="index"
+                v-model.number="translations[locale]"
+                :label="label"
+                clearable
+                v-bind="attrs"
+                @clear="clearTranslation(locale)"
               >
-                <slot
-                  :name="name"
-                  v-bind="data"
-                />
-              </template>
-            </q-input>
-          </template>
-          <!-- Other inputs -->
-          <template v-else>
-            <q-input
-              v-for="(locale, index) in locales"
-              :key="index"
-              v-model="translations[locale]"
-              :label="`${label} (${locale})`"
-              clearable
-              v-bind="attrs"
-              @clear="clearTranslation(locale)"
-            >
-              <template #prepend>
-                <country-icon :locale="locale" />
-              </template>
+                <template #prepend>
+                  <country-icon :locale="locale" />
+                </template>
 
-              <!-- Parent slots -->
-              <template
-                v-for="(data, name, slotIndex) in slots"
-                :key="slotIndex"
-                #[name]
+                <!-- Parent slots (locale flag replaces the field icon here) -->
+                <template
+                  v-for="(data, name, slotIndex) in translatedSlots"
+                  :key="slotIndex"
+                  #[name]
+                >
+                  <slot
+                    :name="name"
+                    v-bind="data"
+                  />
+                </template>
+              </q-input>
+            </template>
+            <!-- Other inputs -->
+            <template v-else>
+              <q-input
+                v-for="(locale, index) in locales"
+                :key="index"
+                v-model="translations[locale]"
+                :label="label"
+                clearable
+                v-bind="attrs"
+                @clear="clearTranslation(locale)"
               >
-                <slot
-                  :name="name"
-                  v-bind="data"
-                />
-              </template>
-            </q-input>
-          </template>
+                <template #prepend>
+                  <country-icon :locale="locale" />
+                </template>
+
+                <!-- Parent slots (locale flag replaces the field icon here) -->
+                <template
+                  v-for="(data, name, slotIndex) in translatedSlots"
+                  :key="slotIndex"
+                  #[name]
+                >
+                  <slot
+                    :name="name"
+                    v-bind="data"
+                  />
+                </template>
+              </q-input>
+            </template>
+          </div>
         </div>
       </transition>
     </div>
@@ -97,7 +107,7 @@
     <!-- Actions -->
     <div
       v-if="enabled && !always"
-      class="col-shrink column justify-center q-pl-sm"
+      class="col-shrink column actions q-pl-sm"
     >
       <translation-toggle-btn v-model="useTranslations" />
     </div>
@@ -137,6 +147,14 @@ const translations = ref<Translations>(defaultTranslations());
 
 const enabled = computed<boolean>(() => {
   return locales.length > 1;
+});
+
+// In translated mode the per-locale flag stands in for the field icon, so the
+// parent's `before` slot is dropped to avoid doubling up glyphs on every row.
+const translatedSlots = computed<Partial<QInputSlots>>(() => {
+  const rest: Partial<QInputSlots> = { ...slots };
+  delete rest.before;
+  return rest;
 });
 
 function defaultUseTranslations(): boolean {
@@ -225,30 +243,54 @@ watch(
 </script>
 
 <style scoped>
-.margin-between > * + * {
-  margin-top: 0.5rem;
-}
-
 .layer1,
 .layer2 {
   grid-column: 1;
   grid-row: 1;
 }
 
-.bounce-enter-active {
-  animation: bounce-in 0.5s;
+/* Group the per-locale fields into one unit with a subtle MD3 outline rule. */
+.translation-group {
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--md3-outline-variant);
 }
 
-.bounce-leave-active {
-  animation: bounce-in 0.5s reverse;
+/* The field icon sits once to the left of the whole locale group. Match
+   Quasar's field marginal font-size so the icon isn't shrunk to base text size
+   once rendered outside the q-field context. */
+.translation-before {
+  padding-right: 12px;
+  font-size: 24px;
+  color: var(--md3-on-surface-variant);
 }
 
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-  }
-  100% {
-    transform: scale(1);
-  }
+/* Center the toggle against the whole group, matching the field icon on the
+   left — it governs all locales, so it reads as a group-level control. */
+.actions {
+  justify-content: center;
+}
+
+/* MD3 fade-through: the outgoing layer fades out quickly while the incoming
+   layer fades in and lifts. Both layers share one grid cell, so they
+   cross-fade without absolute positioning. */
+.translation-fade-enter-active {
+  transition:
+    opacity 0.21s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.21s cubic-bezier(0.2, 0, 0, 1);
+  transition-delay: 0.09s;
+}
+
+.translation-fade-leave-active {
+  transition: opacity 0.09s cubic-bezier(0.3, 0, 1, 1);
+}
+
+.translation-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.translation-fade-leave-to {
+  opacity: 0;
 }
 </style>
