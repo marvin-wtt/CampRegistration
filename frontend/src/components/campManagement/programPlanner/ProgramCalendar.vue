@@ -1087,7 +1087,8 @@ function formatDate(date: Date): string {
 }
 
 .droppable {
-  box-shadow: inset 0 0 0 1px rgba(0, 140, 200, 0.8);
+  box-shadow: inset 0 0 0 1px var(--md3-primary);
+  background: color-mix(in srgb, var(--md3-primary) 8%, transparent);
 }
 
 .cal-create-overlay {
@@ -1117,9 +1118,9 @@ function formatDate(date: Date): string {
   position: absolute;
   left: 2px;
   right: 2px;
-  background-color: rgba(33, 150, 243, 0.15);
-  border: 1px solid rgba(33, 150, 243, 0.5);
-  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--md3-primary) 12%, transparent);
+  border: 1px solid var(--md3-primary);
+  border-radius: 6px;
   pointer-events: none;
   z-index: 1;
 }
@@ -1129,17 +1130,21 @@ function formatDate(date: Date): string {
   left: 2px;
   right: 2px;
   border: 2px dashed;
-  border-radius: 3px;
+  border-radius: 6px;
   pointer-events: none;
   z-index: 1;
 }
 
+// Diagonal hatching marks hours outside the camp period as unavailable;
+// derived from on-surface so it adapts to both light and dark themes
 .cal-outside-camp {
-  background-color: rgba(0, 0, 0, 0.08);
-
-  .body--dark & {
-    background-color: rgba(255, 255, 255, 0.25);
-  }
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--md3-on-surface) 4%, transparent),
+    color-mix(in srgb, var(--md3-on-surface) 4%, transparent) 4px,
+    color-mix(in srgb, var(--md3-on-surface) 10%, transparent) 4px,
+    color-mix(in srgb, var(--md3-on-surface) 10%, transparent) 8px
+  );
 }
 </style>
 

@@ -263,18 +263,14 @@ function previous() {
     min-width: 0;
   }
 
-  &__date {
+  &__date-btn {
     font-size: 13px;
     font-weight: 600;
-    text-align: center;
     white-space: nowrap;
-    padding: 0 4px;
-    user-select: none;
-    color: #424242;
+    color: var(--md3-on-surface);
 
     @media (min-width: 600px) {
       font-size: 14px;
-      padding: 0 8px;
       min-width: 140px;
     }
   }
@@ -293,11 +289,18 @@ function previous() {
     display: flex;
     align-items: center;
 
+    padding: 0 2px;
+    border: 1px solid var(--md3-outline-variant);
+    border-radius: 999px;
+
+    color: var(--md3-on-surface-variant);
+
     &-val {
       font-size: 13px;
       font-weight: 600;
-      color: #424242;
-      min-width: 26px;
+      font-variant-numeric: tabular-nums;
+      color: var(--md3-on-surface);
+      min-width: 28px;
       text-align: center;
       user-select: none;
     }
