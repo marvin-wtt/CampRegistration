@@ -2,11 +2,12 @@
   <page-state-handler
     :error
     :loading
-    class="relative-position"
+    class="column"
   >
     <contact-form
-      class="absolute fit"
+      class="col"
       :registrations
+      standalone
     />
   </page-state-handler>
 </template>
