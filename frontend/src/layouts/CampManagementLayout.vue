@@ -24,8 +24,12 @@
           <q-skeleton
             v-if="campDetailStore.isLoading"
             type="text"
+            height="2.5em"
+            width="15em"
           />
-          {{ to(title) }}
+          <template v-else>
+            {{ to(title) }}
+          </template>
         </q-toolbar-title>
 
         <header-navigation :administration="administrator" />
