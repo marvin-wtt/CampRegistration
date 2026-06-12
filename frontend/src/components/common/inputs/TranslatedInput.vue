@@ -55,7 +55,15 @@
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
-                  <country-icon :locale="locale" />
+                  <div class="locale-marker row items-center no-wrap">
+                    <country-icon :locale="locale" />
+                    <span class="locale-code">
+                      {{ locale.toUpperCase() }}
+                    </span>
+                    <q-tooltip>
+                      {{ localeName(locale) }}
+                    </q-tooltip>
+                  </div>
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -83,7 +91,11 @@
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
-                  <country-icon :locale="locale" />
+                  <div class="locale-marker row items-center no-wrap">
+                    <country-icon :locale="locale" />
+                    <span class="locale-code">{{ locale.toUpperCase() }}</span>
+                    <q-tooltip>{{ localeName(locale) }}</q-tooltip>
+                  </div>
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -127,7 +139,7 @@ type ModelValueType = undefined | null | string | number | Translations;
 const [model, modifiers] = defineModel<ModelValueType>();
 const attrs = useAttrs();
 const slots = defineSlots<QInputSlots>();
-const { locale } = useI18n();
+const { locale, t, te } = useI18n();
 
 const {
   label = '',
@@ -156,6 +168,13 @@ const translatedSlots = computed<Partial<QInputSlots>>(() => {
   delete rest.before;
   return rest;
 });
+
+// Localized country/language name for the locale marker tooltip; falls back to
+// the uppercased code when no global `country.*` key exists for the value.
+function localeName(value: string): string {
+  const key = `country.${value.toLowerCase()}`;
+  return te(key) ? t(key) : value.toUpperCase();
+}
 
 function defaultUseTranslations(): boolean {
   if (model.value == null) {
@@ -262,6 +281,19 @@ watch(
 .translation-before {
   padding-right: 12px;
   font-size: 24px;
+  color: var(--md3-on-surface-variant);
+}
+
+/* Per-locale marker: flag + uppercase code, with the full name in a tooltip. */
+.locale-marker {
+  gap: 6px;
+  cursor: default;
+}
+
+.locale-code {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--md3-on-surface-variant);
 }
 
