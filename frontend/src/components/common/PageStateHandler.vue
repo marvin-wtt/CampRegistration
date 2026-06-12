@@ -21,19 +21,29 @@
         v-else-if="pageError"
         name="error"
       >
-        <div class="text-center self-center">
+        <div class="text-center self-center column items-center q-gutter-y-md">
           <q-icon
-            name="error"
-            size="xl"
+            name="error_outline"
+            size="80px"
+            color="negative"
           />
-          <p class="text-h4">
-            {{ errorMessage || t('error') }}
+          <p class="text-h5 q-mb-none">
+            {{ t('error.title') }}
+          </p>
+          <p
+            v-if="errorMessage"
+            class="text-body2 text-grey-7 q-mb-none"
+          >
+            {{ errorMessage }}
           </p>
 
           <q-btn
+            :label="t('error.retry')"
             icon="refresh"
-            round
             color="primary"
+            rounded
+            unelevated
+            no-caps
             @click="refreshPage()"
           />
         </div>
@@ -143,15 +153,21 @@ function refreshPage() {
 }
 
 onErrorCaptured((err) => {
-  // TODO Handle gracefully
-  localError.value = err.name + ': ' + err.message;
+  // eslint-disable-next-line no-console
+  console.error('PageStateHandler captured an error:', err);
+  localError.value = err.message;
+  // Stop the error from propagating further up the component tree so the
+  // rest of the app keeps working while this page shows the error state.
+  return false;
 });
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-error: 'Error'
+error:
+  title: 'Something went wrong'
+  retry: 'Retry'
 leave:
   title: 'Unsaved changes'
   message: 'You have unsaved changes. These changes will be lost if you proceed.'
@@ -160,7 +176,9 @@ leave:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-error: 'Fehler'
+error:
+  title: 'Etwas ist schiefgelaufen'
+  retry: 'Erneut versuchen'
 leave:
   title: 'Ungespeicherte Änderungen'
   message: 'Sie haben ungespeicherte Änderungen. Diese gehen verloren, wenn Sie fortfahren.'
@@ -169,7 +187,9 @@ leave:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-error: 'Erreur'
+error:
+  title: 'Une erreur est survenue'
+  retry: 'Réessayer'
 leave:
   title: 'Modifications non enregistrées'
   message: 'Vous avez des modifications non enregistrées. Elles seront perdues si vous continuez.'
@@ -178,7 +198,9 @@ leave:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-error: 'Błąd'
+error:
+  title: 'Coś poszło nie tak'
+  retry: 'Spróbuj ponownie'
 leave:
   title: 'Niezapisane zmiany'
   message: 'Masz niezapisane zmiany. Zostaną one utracone, jeśli będziesz kontynuować.'
@@ -187,7 +209,9 @@ leave:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-error: 'Chyba'
+error:
+  title: 'Něco se pokazilo'
+  retry: 'Zkusit znovu'
 leave:
   title: 'Neuložené změny'
   message: 'Máte neuložené změny. Pokud budete pokračovat, budou ztraceny.'
