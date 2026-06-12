@@ -48,129 +48,142 @@
             <div class="text-subtitle2 text-weight-bold">
               {{ t('section.' + section.key) }}
             </div>
-            <span class="count-badge">{{ section.managers.length }}</span>
+            <q-badge
+              rounded
+              class="count-badge"
+              :label="section.managers.length"
+            />
           </div>
         </q-card-section>
 
         <q-card-section class="q-px-none q-pb-xs">
-          <div
-            v-for="manager in section.managers"
-            :key="manager.id"
-            class="member-row"
-          >
-            <div
-              class="member-avatar"
-              :class="roleClass(manager.role)"
+          <q-list>
+            <q-item
+              v-for="manager in section.managers"
+              :key="manager.id"
+              class="member-row"
             >
-              <q-icon
-                v-if="section.key === 'invitations'"
-                name="mail_outline"
-                size="20px"
-              />
-              <template v-else>
-                {{ initials(manager) }}
-              </template>
-            </div>
-
-            <div class="member-identity">
-              <div class="member-name">
-                <span class="ellipsis">
-                  {{ manager.name ?? manager.email }}
-                </span>
-                <span
-                  v-if="userEmail === manager.email"
-                  class="md3-chip you-chip"
+              <q-item-section avatar>
+                <q-avatar
+                  size="44px"
+                  font-size="15px"
+                  class="member-avatar"
+                  :class="roleClass(manager.role)"
                 >
-                  {{ t('you') }}
+                  <q-icon
+                    v-if="section.key === 'invitations'"
+                    name="mail_outline"
+                    size="20px"
+                  />
+                  <template v-else>
+                    {{ initials(manager) }}
+                  </template>
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label class="member-name">
+                  <span class="ellipsis">
+                    {{ manager.name ?? manager.email }}
+                  </span>
+                  <q-chip
+                    v-if="userEmail === manager.email"
+                    :label="t('you')"
+                    class="md3-chip you-chip"
+                  />
+                </q-item-label>
+                <q-item-label
+                  v-if="manager.name"
+                  class="member-email ellipsis"
+                >
+                  {{ manager.email }}
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section
+                side
+                class="member-meta"
+              >
+                <q-chip
+                  class="md3-chip role-chip"
+                  :class="roleClass(manager.role)"
+                  :label="t('role.' + manager.role.toLowerCase())"
+                />
+                <q-chip
+                  v-if="isExpired(manager)"
+                  class="md3-chip expired-chip"
+                  icon="schedule"
+                  :label="t('expiry.expired')"
+                />
+                <span
+                  v-else-if="manager.expiresAt"
+                  class="member-expiry"
+                >
+                  <q-icon
+                    name="schedule"
+                    size="14px"
+                  />
+                  {{
+                    t('expiry.until', {
+                      date: d(manager.expiresAt, 'dateTime'),
+                    })
+                  }}
                 </span>
-              </div>
-              <div
-                v-if="manager.name"
-                class="member-email ellipsis"
-              >
-                {{ manager.email }}
-              </div>
-            </div>
+              </q-item-section>
 
-            <q-btn
-              v-if="canManage(manager)"
-              :aria-label="t('action.menu')"
-              icon="more_vert"
-              class="member-actions"
-              flat
-              round
-              size="sm"
-            >
-              <q-menu>
-                <q-list style="min-width: 180px">
-                  <q-item
-                    v-if="can('camp.managers.edit')"
-                    clickable
-                    v-close-popup
-                    @click="showEditDialog(manager)"
-                  >
-                    <q-item-section avatar>
-                      <q-icon
-                        name="edit"
-                        size="sm"
-                      />
-                    </q-item-section>
-                    <q-item-section>
-                      {{ t('action.edit') }}
-                    </q-item-section>
-                  </q-item>
-                  <q-item
-                    v-if="can('camp.managers.delete')"
-                    clickable
-                    v-close-popup
-                    class="text-negative"
-                    @click="showDeleteDialog(manager)"
-                  >
-                    <q-item-section avatar>
-                      <q-icon
-                        name="delete"
-                        size="sm"
-                      />
-                    </q-item-section>
-                    <q-item-section>
-                      {{ t('action.delete') }}
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
-
-            <div class="member-meta">
-              <span
-                class="md3-chip role-chip"
-                :class="roleClass(manager.role)"
+              <q-item-section
+                v-if="canManage(manager)"
+                side
+                class="member-actions"
               >
-                {{ t('role.' + manager.role.toLowerCase()) }}
-              </span>
-              <span
-                v-if="isExpired(manager)"
-                class="md3-chip expired-chip"
-              >
-                <q-icon
-                  name="schedule"
-                  size="14px"
-                />
-                {{ t('expiry.expired') }}
-              </span>
-              <span
-                v-else-if="manager.expiresAt"
-                class="member-expiry"
-              >
-                <q-icon
-                  name="schedule"
-                  size="14px"
-                />
-                {{
-                  t('expiry.until', { date: d(manager.expiresAt, 'dateTime') })
-                }}
-              </span>
-            </div>
-          </div>
+                <q-btn
+                  :aria-label="t('action.menu')"
+                  icon="more_vert"
+                  flat
+                  round
+                  size="sm"
+                >
+                  <q-menu>
+                    <q-list style="min-width: 180px">
+                      <q-item
+                        v-if="can('camp.managers.edit')"
+                        clickable
+                        v-close-popup
+                        @click="showEditDialog(manager)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="edit"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.edit') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-if="can('camp.managers.delete')"
+                        clickable
+                        v-close-popup
+                        class="text-negative"
+                        @click="showDeleteDialog(manager)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="delete"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.delete') }}
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
+              </q-item-section>
+            </q-item>
+          </q-list>
         </q-card-section>
       </q-card>
 
@@ -396,23 +409,17 @@ function showDeleteDialog(manager: CampManager) {
 
 .count-badge {
   min-width: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
+  padding: 2px 8px;
+  justify-content: center;
 
   background: var(--md3-surface-container-high);
   color: var(--md3-on-surface-variant);
 
   font-size: 12px;
   font-weight: 600;
-  line-height: 20px;
-  text-align: center;
 }
 
 .member-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
   padding: 12px 16px;
 }
 
@@ -420,27 +427,18 @@ function showDeleteDialog(manager: CampManager) {
   border-top: 1px solid var(--md3-outline-variant);
 }
 
-.member-avatar {
-  flex: none;
-  order: 1;
-
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.member-row .q-item__section--avatar {
+  min-width: 0;
+  padding-right: 12px;
 }
 
-.member-identity {
-  flex: 1 1 auto;
-  order: 2;
-  min-width: 0;
+.member-row .q-item__section--side {
+  padding-left: 12px;
+}
+
+.member-avatar {
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .member-name {
@@ -458,16 +456,14 @@ function showDeleteDialog(manager: CampManager) {
 }
 
 .member-meta {
-  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
-  order: 3;
 }
 
 .member-actions {
-  order: 4;
   color: var(--md3-on-surface-variant);
 }
 
@@ -482,17 +478,17 @@ function showDeleteDialog(manager: CampManager) {
 }
 
 .md3-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-
   height: 24px;
+  margin: 0;
   padding: 0 10px;
   border-radius: 8px;
 
   font-size: 12px;
   font-weight: 500;
-  white-space: nowrap;
+}
+
+.md3-chip :deep(.q-icon) {
+  font-size: 14px;
 }
 
 .you-chip {
@@ -540,7 +536,7 @@ function showDeleteDialog(manager: CampManager) {
 
   .member-meta {
     order: 5;
-    flex-basis: 100%;
+    flex: 0 0 100%;
     justify-content: flex-start;
     padding-left: 56px;
   }
