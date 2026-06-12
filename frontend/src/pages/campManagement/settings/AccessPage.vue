@@ -165,7 +165,9 @@
                   name="schedule"
                   size="14px"
                 />
-                {{ t('expiry.until', { date: d(manager.expiresAt, 'dateTime') }) }}
+                {{
+                  t('expiry.until', { date: d(manager.expiresAt, 'dateTime') })
+                }}
               </span>
             </div>
           </div>
@@ -288,8 +290,7 @@ function sortManagers(managers: CampManager[]): CampManager[] {
 
   return [...managers].sort((a, b) => {
     return (
-      rank(a) - rank(b) ||
-      (a.name ?? a.email).localeCompare(b.name ?? b.email)
+      rank(a) - rank(b) || (a.name ?? a.email).localeCompare(b.name ?? b.email)
     );
   });
 }
@@ -302,15 +303,14 @@ function roleClass(role: string): string {
 function initials(manager: CampManager): string {
   const parts = (manager.name ?? manager.email).trim().split(/\s+/);
   const first = parts[0]?.charAt(0) ?? '';
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
+  const last =
+    parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
 
   return (first + last).toUpperCase();
 }
 
 function isExpired(manager: CampManager): boolean {
-  return (
-    manager.expiresAt != null && new Date(manager.expiresAt) < new Date()
-  );
+  return manager.expiresAt != null && new Date(manager.expiresAt) < new Date();
 }
 
 function canManage(manager: CampManager): boolean {
