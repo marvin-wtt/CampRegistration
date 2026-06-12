@@ -265,6 +265,12 @@ function logout() {
 }
 </script>
 
+<style>
+.q-menu {
+  max-height: 80vh;
+}
+</style>
+
 <style scoped>
 .profile-avatar {
   background: var(--md3-tertiary-container);
