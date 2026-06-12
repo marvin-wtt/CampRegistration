@@ -1073,6 +1073,19 @@ function formatDate(date: Date): string {
 </script>
 
 <style lang="scss">
+.q-calendar {
+  --calendar-current-color-dark: var(--md3-outline-variant);
+  --calendar-mini-range-connector-color-dark: var(--md3-outline-variant);
+  --calendar-mini-range-firstlast-label-background-dark: var(
+    --md3-outline-variant
+  );
+  --calendar-border-dark: var(--md3-outline-variant) 1px solid;
+  --calendar-border-current-dark: var(--md3-outline-variant) 2px solid;
+  --calendar-border-section-dark: var(--md3-outline-variant) 1px dashed;
+  --calendar-mini-range-connector-hover-border-dark: var(--md3-primary) 1px
+    dashed;
+}
+
 .droppable {
   box-shadow: inset 0 0 0 1px rgba(0, 140, 200, 0.8);
 }
