@@ -151,7 +151,7 @@ watch(selected, (val) => {
   }
 });
 
-const columns: QTableColumn[] = [
+const columns = computed<QTableColumn[]>(() => [
   { name: 'name', label: t('column.name'), field: 'name', align: 'left' },
   { name: 'link', label: t('column.link'), field: 'href', align: 'center' },
   { name: 'field', label: t('column.field'), field: 'field', align: 'left' },
@@ -170,7 +170,7 @@ const columns: QTableColumn[] = [
   },
   { name: 'type', label: t('column.type'), field: 'type', align: 'left' },
   { name: 'size', label: t('column.size'), field: 'size', align: 'left' },
-];
+]);
 
 const rows = computed(() => {
   const fileRows = (campFileStore.data ?? []).map(mapFileRow);
