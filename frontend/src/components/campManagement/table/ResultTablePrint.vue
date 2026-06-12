@@ -101,6 +101,7 @@ const { pagination, rows, columns, renderers } = useResultTableModel(
 
 .print-table {
   height: auto;
+  background: white;
 
   .q-table__top,
   .q-table__bottom {
@@ -113,6 +114,7 @@ const { pagination, rows, columns, renderers } = useResultTableModel(
 
   thead tr th {
     position: static;
+    background: white;
   }
 }
 </style>
