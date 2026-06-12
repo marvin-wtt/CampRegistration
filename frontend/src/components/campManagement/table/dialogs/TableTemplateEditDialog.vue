@@ -32,6 +32,7 @@
           addable
           editable
           deletable
+          sortable
           bordered
           separator
           dense

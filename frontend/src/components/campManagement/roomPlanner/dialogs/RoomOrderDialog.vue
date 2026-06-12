@@ -13,6 +13,7 @@
         <sortable-list
           v-slot="slotProps"
           v-model="modifiedRooms"
+          sortable
           bordered
           separator
         >
