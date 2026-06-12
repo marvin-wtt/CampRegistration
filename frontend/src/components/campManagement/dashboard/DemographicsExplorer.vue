@@ -113,7 +113,7 @@
 
     <q-card-section class="chart-section">
       <div class="dashboard-chart">
-        <apexchart
+        <apex-chart
           v-if="hasData"
           type="bar"
           height="340"
@@ -137,6 +137,8 @@
 </template>
 
 <script lang="ts" setup>
+import ApexChart from 'vue3-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
@@ -362,7 +364,7 @@ const chartSeries = computed(() => {
   }));
 });
 
-const chartOptions = computed(() => {
+const chartOptions = computed<ApexOptions>(() => {
   const categories = crossTab.value.categories.map((c) =>
     labelFor(xDimension.value, c),
   );
@@ -403,7 +405,7 @@ const chartOptions = computed(() => {
       title: { text: t(`dimension.${xDimension.value}`) },
     },
     yaxis: {
-      title: { text: horizontal.value ? undefined : t('count') },
+      title: { text: horizontal.value ? '' : t('count') },
       labels: {
         formatter: (val: number) => `${Math.round(val)}`,
       },
