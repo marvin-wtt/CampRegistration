@@ -30,6 +30,26 @@ export interface ResultTableModelOptions {
   initialTemplateId?: string | null;
 }
 
+function matchesSearch(value: unknown, search: string): boolean {
+  if (value == null) {
+    return false;
+  }
+  if (typeof value === 'string') {
+    return value.toLowerCase().includes(search);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).toLowerCase().includes(search);
+  }
+  if (Array.isArray(value)) {
+    return value.some((entry) => matchesSearch(entry, search));
+  }
+  if (typeof value === 'object') {
+    return Object.values(value).some((entry) => matchesSearch(entry, search));
+  }
+
+  return false;
+}
+
 export function useResultTableModel(
   input: ResultTableModelInput,
   options: ResultTableModelOptions = {},
@@ -42,6 +62,8 @@ export function useResultTableModel(
   });
 
   const countryFilter = ref<string[] | undefined>([]);
+
+  const searchFilter = ref<string | null>('');
 
   const countries = computed(() => input.camp.value.countries);
 
@@ -136,6 +158,21 @@ export function useResultTableModel(
       });
     }
 
+    // Free-text search across the values of the visible template columns
+    const search = searchFilter.value?.trim().toLowerCase() ?? '';
+    if (search.length > 0) {
+      const fields = template.value.columns.map((column) => column.field);
+      r = r.filter((row) =>
+        fields.some((field) => {
+          const value =
+            typeof field === 'function'
+              ? field(row)
+              : objectValueByPath(field, row);
+          return matchesSearch(value, search);
+        }),
+      );
+    }
+
     return r;
   });
 
@@ -198,6 +235,7 @@ export function useResultTableModel(
     columns,
     renderers,
     countryFilter,
+    searchFilter,
     countries,
   };
 }

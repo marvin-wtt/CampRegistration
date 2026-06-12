@@ -1,54 +1,67 @@
 <template>
-  <q-table
-    v-model:pagination="pagination"
-    :columns="columns as QTableColumn[]"
-    :rows
-    :rows-per-page-options="[0]"
-    :title="t('title')"
-    class="my-sticky-header-table"
-    card-class="bg-default"
-    dense
-    flat
-    hide-bottom
-    row-key="name"
-    virtual-scroll
-    :virtual-scroll-slice-size="10"
-    binary-state-sort
-  >
-    <template #top-right>
-      <div class="fit row no-wrap justify-end">
-        <!-- Filter -->
-        <q-select
-          v-if="countries.length > 1 && !quasar.screen.xs"
-          v-model="countryFilter"
-          :label="t('filter.country')"
-          :options="countries"
-          borderless
-          rounded
-          clearable
-          dense
-          multiple
-          style="min-width: 100px"
-        >
-          <template #prepend>
-            <q-avatar icon="filter_list" />
-          </template>
-        </q-select>
+  <div class="participants-view column no-wrap">
+    <!-- Header -->
+    <div class="row items-end justify-between q-col-gutter-y-sm">
+      <div class="col-12 col-sm">
+        <div class="row items-center q-gutter-x-sm">
+          <div class="text-h5 text-weight-medium">
+            {{ t('title') }}
+          </div>
+          <q-badge
+            rounded
+            class="count-badge"
+            :label="countLabel"
+          />
+        </div>
+        <div class="text-body2 text-grey-6 q-mt-xs">
+          {{ t('subtitle') }}
+        </div>
+      </div>
 
-        <!-- Templates -->
+      <div class="col-12 col-sm-auto row items-center q-gutter-x-sm">
+        <q-btn
+          v-if="canEditTemplates"
+          :aria-label="t('action.edit_templates')"
+          icon="edit_note"
+          class="header-action-btn"
+          flat
+          round
+          @click="editTemplates"
+        >
+          <q-tooltip>{{ t('action.edit_templates') }}</q-tooltip>
+        </q-btn>
+
+        <m-btn
+          :label="t('action.print')"
+          color="primary"
+          icon="print"
+          @click="openPrintDialog"
+        />
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="row items-center q-col-gutter-sm q-mt-md">
+      <div class="col-12 col-sm-auto">
         <q-select
           v-model="template"
           :label="t('template')"
           :options="templateOptions"
-          borderless
-          rounded
+          class="toolbar-field template-select"
+          outlined
           dense
+          options-dense
           map-options
           option-label="title"
           option-value="id"
-          style="min-width: 150px"
           @update:model-value="onTemplateChange"
         >
+          <template #prepend>
+            <q-icon
+              name="table_chart"
+              size="20px"
+            />
+          </template>
           <template #selected-item="scope">
             {{ to(scope.opt.title) }}
           </template>
@@ -65,97 +78,214 @@
             </q-item>
           </template>
         </q-select>
+      </div>
 
-        <q-btn
+      <div class="col-12 col-sm">
+        <q-input
+          v-model="searchFilter"
+          :placeholder="t('filter.search')"
+          class="toolbar-field search-field"
+          outlined
           dense
-          flat
-          round
-          icon="more_vert"
+          clearable
+          debounce="200"
         >
-          <q-menu>
-            <q-list
-              class="text-no-wrap"
-              style="min-width: 100px"
-            >
-              <!-- Edit templates -->
-              <q-item
-                v-if="
-                  can('camp.table_templates.create') ||
-                  can('camp.table_templates.edit') ||
-                  can('camp.table_templates.delete')
-                "
-                v-close-popup
-                clickable
-                @click="editTemplates"
-              >
-                <q-item-section avatar>
-                  <q-icon name="edit" />
-                </q-item-section>
-                <q-item-section>
-                  {{ t('menu.edit_templates') }}
-                </q-item-section>
-              </q-item>
+          <template #prepend>
+            <q-icon
+              name="search"
+              size="20px"
+            />
+          </template>
+        </q-input>
+      </div>
 
-              <q-separator />
+      <div
+        v-if="countries.length > 1"
+        class="col-12 col-sm-auto"
+      >
+        <!-- Country filter chips -->
+        <div
+          v-if="!quasar.screen.xs"
+          class="row items-center q-gutter-xs"
+        >
+          <q-chip
+            v-for="country in countries"
+            :key="country"
+            clickable
+            class="filter-chip"
+            :class="{ 'filter-chip--active': isCountryActive(country) }"
+            @click="toggleCountry(country)"
+          >
+            <country-icon
+              :country
+              class="chip-flag q-mr-xs"
+            />
+            {{ countryLabel(country) }}
+            <q-icon
+              v-if="isCountryActive(country)"
+              name="check"
+              size="16px"
+              class="q-ml-xs"
+            />
+          </q-chip>
+        </div>
 
-              <!-- Print -->
-              <q-item
-                v-close-popup
-                clickable
-                @click="openPrintDialog"
-              >
-                <q-item-section avatar>
-                  <q-icon name="print" />
-                </q-item-section>
-                <q-item-section>
-                  {{ t('menu.print') }}
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
+        <!-- On phones, the country filter moves into a bottom sheet -->
+        <q-btn
+          v-else
+          class="filter-btn full-width"
+          outline
+          rounded
+          no-caps
+          icon="filter_list"
+          :label="t('filter.country')"
+          @click="filterSheetOpen = true"
+        >
+          <q-badge
+            v-if="activeCountryCount > 0"
+            rounded
+            class="filter-btn-badge q-ml-sm"
+            :label="activeCountryCount"
+          />
         </q-btn>
       </div>
-    </template>
+    </div>
 
-    <template
-      v-for="column in columns"
-      :key="column.name"
-      #[`header-cell-${column.name}`]="columnProps"
+    <!-- Table -->
+    <q-card
+      flat
+      bordered
+      class="table-card col q-mt-md"
     >
-      <q-th
-        :auto-width="column.shrink"
-        :props="columnProps"
-        style="vertical-align: bottom"
+      <q-table
+        v-show="rows.length > 0"
+        v-model:pagination="pagination"
+        :columns="columns as QTableColumn[]"
+        :rows
+        :rows-per-page-options="[0]"
+        class="participants-table absolute fit"
+        flat
+        hide-bottom
+        row-key="id"
+        virtual-scroll
+        :virtual-scroll-slice-size="10"
+        binary-state-sort
       >
-        <a
-          :class="
-            'headerVertical' in column && column.headerVertical
-              ? 'text-vertical'
-              : ''
-          "
+        <template
+          v-for="column in columns"
+          :key="column.name"
+          #[`header-cell-${column.name}`]="columnProps"
         >
-          {{ to(columnProps.col.label) }}
-        </a>
-      </q-th>
-    </template>
+          <q-th
+            :auto-width="column.shrink"
+            :props="columnProps"
+            style="vertical-align: bottom"
+          >
+            <a
+              :class="
+                'headerVertical' in column && column.headerVertical
+                  ? 'text-vertical'
+                  : ''
+              "
+            >
+              {{ to(columnProps.col.label) }}
+            </a>
+          </q-th>
+        </template>
 
-    <template
-      v-for="[key, renderer] in renderers"
-      :key
-      #[`body-cell-${key}`]="rendererProps"
-    >
-      <q-td
-        :props="rendererProps"
-        :key
+        <template
+          v-for="[key, renderer] in renderers"
+          :key
+          #[`body-cell-${key}`]="rendererProps"
+        >
+          <q-td
+            :props="rendererProps"
+            :key
+          >
+            <table-cell-wrapper
+              :renderer
+              :camp
+              :props="rendererProps as QTableBodyCellProps"
+            />
+          </q-td>
+        </template>
+      </q-table>
+
+      <!-- Empty / no-match state -->
+      <div
+        v-if="rows.length === 0"
+        class="absolute fit column flex-center text-center q-pa-xl"
       >
-        <table-cell-wrapper
-          :renderer
-          :camp
-          :props="rendererProps as QTableBodyCellProps"
+        <q-icon
+          :name="registrations.length === 0 ? 'groups' : 'search_off'"
+          size="56px"
+          class="empty-icon"
         />
-      </q-td>
-    </template>
-  </q-table>
+        <div class="text-subtitle1 text-weight-medium q-mt-md">
+          {{
+            registrations.length === 0 ? t('empty.title') : t('no_match.title')
+          }}
+        </div>
+        <div class="text-body2 text-grey-6 q-mt-xs">
+          {{
+            registrations.length === 0
+              ? t('empty.message')
+              : t('no_match.message')
+          }}
+        </div>
+        <m-btn
+          v-if="registrations.length > 0 && hasActiveFilters"
+          :label="t('action.clear_filters')"
+          color="primary"
+          icon="filter_list_off"
+          class="q-mt-md"
+          text
+          @click="clearFilters"
+        />
+      </div>
+    </q-card>
+
+    <!-- Mobile country filter sheet -->
+    <bottom-sheet v-model="filterSheetOpen">
+      <div class="row items-center justify-between q-mb-sm">
+        <div class="text-subtitle1 text-weight-medium">
+          {{ t('filter.country') }}
+        </div>
+        <q-btn
+          v-if="activeCountryCount > 0"
+          :label="t('filter.reset')"
+          color="primary"
+          flat
+          dense
+          no-caps
+          @click="countryFilter = []"
+        />
+      </div>
+
+      <q-list>
+        <q-item
+          v-for="country in countries"
+          :key="country"
+          clickable
+          @click="toggleCountry(country)"
+        >
+          <q-item-section avatar>
+            <country-icon :country />
+          </q-item-section>
+          <q-item-section>
+            {{ countryLabel(country) }}
+          </q-item-section>
+          <q-item-section side>
+            <q-checkbox
+              :model-value="isCountryActive(country)"
+              class="no-pointer-events"
+              dense
+            />
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </bottom-sheet>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -173,10 +303,13 @@ import { usePermissions } from 'src/composables/permissions';
 import { useTemplateStore } from 'stores/template-store';
 import TableTemplateIndexDialog from 'components/campManagement/table/dialogs/TableTemplateIndexDialog.vue';
 import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
+import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import BottomSheet from 'components/BottomSheet.vue';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
 import PrintTableDialog from 'components/campManagement/table/dialogs/PrintTableDialog.vue';
-import { toRef } from 'vue';
+import { computed, ref, toRef } from 'vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { questions, registrations, templates, camp } = defineProps<{
   questions: TableColumnTemplate[];
@@ -189,7 +322,7 @@ const emit = defineEmits<{
   (e: 'export', templateIds: string[]): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
@@ -206,6 +339,7 @@ const {
   columns,
   renderers,
   countryFilter,
+  searchFilter,
   countries,
 } = useResultTableModel(
   {
@@ -218,6 +352,67 @@ const {
     initialTemplateId: route.hash.length > 1 ? route.hash.substring(1) : null,
   },
 );
+
+const filterSheetOpen = ref<boolean>(false);
+
+const canEditTemplates = computed<boolean>(() => {
+  return (
+    can('camp.table_templates.create') ||
+    can('camp.table_templates.edit') ||
+    can('camp.table_templates.delete')
+  );
+});
+
+const countLabel = computed<string>(() => {
+  const total = registrations.length;
+
+  return rows.value.length === total
+    ? String(total)
+    : `${rows.value.length} / ${total}`;
+});
+
+const activeCountryCount = computed<number>(() => {
+  return countryFilter.value?.length ?? 0;
+});
+
+const hasActiveFilters = computed<boolean>(() => {
+  return (
+    (searchFilter.value?.trim().length ?? 0) > 0 || activeCountryCount.value > 0
+  );
+});
+
+const regionNames = computed(() => {
+  try {
+    return new Intl.DisplayNames([locale.value], { type: 'region' });
+  } catch {
+    return null;
+  }
+});
+
+function countryLabel(country: string): string {
+  const upper = country.toUpperCase();
+  try {
+    return regionNames.value?.of(upper) ?? upper;
+  } catch {
+    return upper;
+  }
+}
+
+function isCountryActive(country: string): boolean {
+  return countryFilter.value?.includes(country) ?? false;
+}
+
+function toggleCountry(country: string) {
+  const current = countryFilter.value ?? [];
+  countryFilter.value = current.includes(country)
+    ? current.filter((value) => value !== country)
+    : [...current, country];
+}
+
+function clearFilters() {
+  searchFilter.value = '';
+  countryFilter.value = [];
+}
 
 function onTemplateChange() {
   void router.replace({ hash: `#${template.value?.id}` });
@@ -251,47 +446,122 @@ function editTemplates() {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+.participants-view {
+  padding: 16px;
+}
+
+@media (min-width: 600px) {
+  .participants-view {
+    padding: 24px;
+  }
+}
+
+.count-badge {
+  min-width: 20px;
+  padding: 2px 8px;
+  justify-content: center;
+
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.header-action-btn {
+  color: var(--md3-on-surface-variant);
+}
+
+.toolbar-field :deep(.q-field__control) {
+  border-radius: 12px;
+}
+
+.template-select {
+  min-width: 220px;
+}
+
+.search-field {
+  max-width: 360px;
+}
+
+.filter-chip {
+  height: 32px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.filter-chip--active {
+  border-color: transparent;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.chip-flag {
+  width: 18px;
+}
+
+.filter-btn {
+  color: var(--md3-on-surface-variant);
+}
+
+.filter-btn-badge {
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+}
+
+.table-card {
+  position: relative;
+  min-height: 0;
+  border-radius: 16px;
+  background: var(--md3-surface);
+  overflow: hidden;
+}
+
+.participants-table {
+  background: transparent;
+
+  :deep(thead tr th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    background: var(--md3-surface);
+    color: var(--md3-on-surface-variant);
+    font-weight: 600;
+  }
+
+  :deep(tbody tr:hover td) {
+    background: var(--md3-surface-container);
+  }
+}
+
 .text-vertical {
   vertical-align: bottom;
   writing-mode: vertical-rl;
   transform: rotate(-180deg);
 }
 
-.body--light {
-  .my-sticky-header-table {
-    .q-table__top,
-    .q-table__bottom,
-    thead tr:first-child th {
-      background-color: var(--md3-background);
-    }
-  }
+.empty-icon {
+  color: var(--md3-on-surface-variant);
+  opacity: 0.6;
 }
 
-.body--dark {
-  .my-sticky-header-table {
-    .q-table__top,
-    .q-table__bottom,
-    thead tr:first-child th {
-      background-color: var(--md3-background);
-    }
-  }
-}
-
-.my-sticky-header-table {
-  height: 310px;
-
-  thead tr th {
-    position: sticky;
-    z-index: 1;
+@media (max-width: 599px) {
+  .search-field {
+    max-width: none;
   }
 
-  thead tr:first-child th {
-    top: 0;
-  }
-
-  &.q-table--loading thead tr:last-child th {
-    top: 48px;
+  .template-select {
+    min-width: 0;
   }
 }
 </style>
@@ -299,59 +569,119 @@ function editTemplates() {
 <i18n lang="yaml" locale="en">
 template: 'Template'
 title: 'Participants'
+subtitle: 'Browse, filter, and print the registrations of this camp.'
 
-menu:
-  print: 'Print tables'
+action:
+  print: 'Print'
   edit_templates: 'Edit templates'
+  clear_filters: 'Clear filters'
 
 filter:
   country: 'Country'
+  search: 'Search participants'
+  reset: 'Reset'
+
+empty:
+  title: 'No participants yet'
+  message: 'Registrations will show up here as soon as they are submitted.'
+
+no_match:
+  title: 'No matching participants'
+  message: 'Try adjusting the search or filters.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
 title: 'Teilnehmende'
+subtitle: 'Durchsuchen, filtern und drucken Sie die Anmeldungen dieses Camps.'
 
-menu:
-  print: 'Tabellen drucken'
+action:
+  print: 'Drucken'
   edit_templates: 'Vorlagen bearbeiten'
+  clear_filters: 'Filter zurücksetzen'
 
 filter:
   country: 'Land'
+  search: 'Teilnehmende suchen'
+  reset: 'Zurücksetzen'
+
+empty:
+  title: 'Noch keine Teilnehmenden'
+  message: 'Anmeldungen erscheinen hier, sobald sie eingereicht wurden.'
+
+no_match:
+  title: 'Keine passenden Teilnehmenden'
+  message: 'Passen Sie die Suche oder die Filter an.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 template: 'Modèle'
 title: 'Participants'
+subtitle: 'Parcourez, filtrez et imprimez les inscriptions de ce camp.'
 
-menu:
-  print: 'Imprimer les tableaux'
+action:
+  print: 'Imprimer'
   edit_templates: 'Modifier les modèles'
+  clear_filters: 'Effacer les filtres'
 
 filter:
   country: 'Pays'
+  search: 'Rechercher des participants'
+  reset: 'Réinitialiser'
+
+empty:
+  title: 'Aucun participant pour le moment'
+  message: 'Les inscriptions apparaîtront ici dès qu’elles seront soumises.'
+
+no_match:
+  title: 'Aucun participant correspondant'
+  message: 'Essayez d’ajuster la recherche ou les filtres.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 template: 'Szablon'
 title: 'Uczestnicy'
+subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego obozu.'
 
-menu:
-  print: 'Wydrukuj tabele'
+action:
+  print: 'Drukuj'
   edit_templates: 'Edytuj szablony'
+  clear_filters: 'Wyczyść filtry'
 
 filter:
   country: 'Kraj'
+  search: 'Szukaj uczestników'
+  reset: 'Resetuj'
+
+empty:
+  title: 'Brak uczestników'
+  message: 'Zgłoszenia pojawią się tutaj po ich przesłaniu.'
+
+no_match:
+  title: 'Brak pasujących uczestników'
+  message: 'Spróbuj zmienić wyszukiwanie lub filtry.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 template: 'Šablona'
 title: 'Účastníci'
+subtitle: 'Procházejte, filtrujte a tiskněte přihlášky tohoto tábora.'
 
-menu:
-  print: 'Tisknout tabulky'
+action:
+  print: 'Tisk'
   edit_templates: 'Upravit šablony'
+  clear_filters: 'Zrušit filtry'
 
 filter:
   country: 'Země'
+  search: 'Hledat účastníky'
+  reset: 'Obnovit'
+
+empty:
+  title: 'Zatím žádní účastníci'
+  message: 'Přihlášky se zde zobrazí, jakmile budou odeslány.'
+
+no_match:
+  title: 'Žádní odpovídající účastníci'
+  message: 'Zkuste upravit vyhledávání nebo filtry.'
 </i18n>
