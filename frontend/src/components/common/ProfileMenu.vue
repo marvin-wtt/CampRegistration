@@ -209,7 +209,6 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-// TODO Read from config
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
