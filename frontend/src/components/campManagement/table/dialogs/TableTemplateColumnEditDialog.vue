@@ -336,6 +336,8 @@ watch(
     if (data.source !== 'meta' && data.source !== 'computed') {
       return;
     }
+    console.log('Updating renderAs based on field', field);
+
     data.renderAs = DEFAULT_RENDER_AS[field] ?? 'default';
   },
 );
@@ -470,18 +472,30 @@ function fieldFilterFn(val: string, update: (a: () => void) => void) {
   });
 }
 
-function updateFieldPath() {
-  if (!data.source || data.source === 'meta') return;
-  const prefix = FIELD_MAP[data.source];
-  if (prefix && data.field.length > 0 && !data.field.startsWith(`${prefix}.`)) {
-    data.field = `${prefix}.${data.field}`;
+function updateFieldPath(): string {
+  if (!data.source || data.source === 'meta') {
+    return data.field;
   }
+
+  const prefix = FIELD_MAP[data.source];
+  if (
+    !prefix ||
+    data.field.length === 0 ||
+    data.field.startsWith(`${prefix}.`)
+  ) {
+    return data.field;
+  }
+
+  return `${prefix}.${data.field}`;
 }
 
 function onOKClick(): void {
   updateFieldPath();
 
-  onDialogOK(data);
+  onDialogOK({
+    ...data,
+    field: updateFieldPath(),
+  });
 }
 </script>
 
