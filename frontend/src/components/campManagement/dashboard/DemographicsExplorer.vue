@@ -55,11 +55,18 @@
           options-dense
           class="breakdown-select"
         />
-        <q-toggle
+        <q-btn-toggle
           v-if="grouped"
           v-model="stacked"
-          :label="t('stack.stacked')"
+          :options="stackOptions"
+          :aria-label="t('stack.label')"
+          toggle-color="primary"
+          color="grey-7"
+          unelevated
+          rounded
           dense
+          no-caps
+          class="layout-toggle"
         />
       </div>
     </q-card-section>
@@ -195,8 +202,8 @@ onMounted(() => {
 });
 
 const xDimension = ref<Dimension>('age');
-const groupDimension = ref<Dimension | 'none'>('none');
-const stacked = ref<boolean>(true);
+const groupDimension = ref<Dimension | 'none'>('country');
+const stacked = ref<boolean>(false);
 const genderFilter = ref<string[]>([]);
 const countryFilter = ref<string[]>([]);
 
@@ -220,6 +227,11 @@ const xOptions = computed(() =>
     value,
   })),
 );
+
+const stackOptions = computed(() => [
+  { label: t('stack.grouped'), value: false, icon: 'bar_chart' },
+  { label: t('stack.stacked'), value: true, icon: 'stacked_bar_chart' },
+]);
 
 const groupOptions = computed(() => [
   { label: t('dimension.none'), value: 'none' as const },
@@ -477,6 +489,11 @@ const chartOptions = computed<ApexOptions>(() => {
   grid-column: 1 / -1;
 }
 
+.layout-toggle {
+  align-self: end;
+  border: 1px solid var(--md3-outline-variant);
+}
+
 .filter-bar {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -575,6 +592,8 @@ dimension:
   gender: 'Gender'
   country: 'Country'
 stack:
+  label: 'Bar layout'
+  grouped: 'Grouped'
   stacked: 'Stacked'
 filter:
   gender: 'Filter by gender'
@@ -606,6 +625,8 @@ dimension:
   gender: 'Geschlecht'
   country: 'Land'
 stack:
+  label: 'Balken-Layout'
+  grouped: 'Gruppiert'
   stacked: 'Gestapelt'
 filter:
   gender: 'Nach Geschlecht filtern'
@@ -637,6 +658,8 @@ dimension:
   gender: 'Genre'
   country: 'Pays'
 stack:
+  label: 'Disposition des barres'
+  grouped: 'Groupé'
   stacked: 'Empilé'
 filter:
   gender: 'Filtrer par genre'
@@ -668,6 +691,8 @@ dimension:
   gender: 'Płeć'
   country: 'Kraj'
 stack:
+  label: 'Układ słupków'
+  grouped: 'Zgrupowane'
   stacked: 'Skumulowane'
 filter:
   gender: 'Filtruj według płci'
@@ -699,6 +724,8 @@ dimension:
   gender: 'Pohlaví'
   country: 'Země'
 stack:
+  label: 'Rozložení sloupců'
+  grouped: 'Seskupené'
   stacked: 'Skládané'
 filter:
   gender: 'Filtrovat podle pohlaví'
