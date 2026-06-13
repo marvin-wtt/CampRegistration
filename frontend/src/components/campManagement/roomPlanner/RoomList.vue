@@ -129,6 +129,8 @@ const {
   editable = false,
   deletable = false,
   assignable = false,
+  skipGenderFilter = false,
+  skipRoleFilter = false,
 } = defineProps<{
   room: RoomWithRoommates;
   name: string | Record<string, string>;
@@ -136,6 +138,8 @@ const {
   editable?: boolean;
   deletable?: boolean;
   assignable?: boolean;
+  skipGenderFilter?: boolean;
+  skipRoleFilter?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -198,7 +202,7 @@ const isParticipantRoom = computed<boolean | undefined>(() => {
 
 const options = computed<Roommate[]>(() => {
   const genderFilter = (roomMate: Roommate | null): boolean => {
-    if (roomGender.value === undefined) {
+    if (skipGenderFilter || roomGender.value === undefined) {
       return true;
     }
 
@@ -208,7 +212,7 @@ const options = computed<Roommate[]>(() => {
   };
 
   const roleFilter = (roomMate: Roommate | null): boolean => {
-    if (isParticipantRoom.value === undefined) {
+    if (skipRoleFilter || isParticipantRoom.value === undefined) {
       return true;
     }
 

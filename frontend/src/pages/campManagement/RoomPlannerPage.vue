@@ -26,10 +26,69 @@
         </div>
 
         <div
-          v-if="can('camp.rooms.edit')"
+          v-if="can('camp.rooms.edit') || can('camp.rooms.beds.edit')"
           class="col-12 col-sm-auto row items-center no-wrap q-gutter-x-sm"
         >
           <q-btn
+            v-if="can('camp.rooms.beds.edit')"
+            class="header-action-btn"
+            icon="tune"
+            flat
+            round
+            :aria-label="t('action.settings')"
+          >
+            <q-tooltip>{{ t('action.settings') }}</q-tooltip>
+
+            <q-menu
+              anchor="bottom right"
+              self="top right"
+            >
+              <q-list class="settings-list">
+                <q-item-label header>
+                  {{ t('settings.title') }}
+                </q-item-label>
+
+                <div class="settings-warning">
+                  <q-icon
+                    name="warning_amber"
+                    size="18px"
+                  />
+                  <span>{{ t('settings.warning') }}</span>
+                </div>
+
+                <q-item tag="label">
+                  <q-item-section>
+                    <q-item-label>
+                      {{ t('settings.skipGenderFilter.label') }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ t('settings.skipGenderFilter.caption') }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle v-model="settings.skipGenderFilter" />
+                  </q-item-section>
+                </q-item>
+
+                <q-item tag="label">
+                  <q-item-section>
+                    <q-item-label>
+                      {{ t('settings.skipRoleFilter.label') }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ t('settings.skipRoleFilter.caption') }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle v-model="settings.skipRoleFilter" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+
+          <q-btn
+            v-if="can('camp.rooms.edit')"
             class="header-action-btn"
             icon="swap_vert"
             flat
@@ -42,9 +101,11 @@
           </q-btn>
 
           <m-btn
+            v-if="can('camp.rooms.edit')"
             :label="t('action.add')"
             color="primary"
             icon="add"
+            :disabled="loading"
             @click="addRoom"
           />
         </div>
@@ -61,6 +122,17 @@
             size="16px"
           />
           {{ t('stats.beds', { occupied: occupiedBeds, total: totalBeds }) }}
+        </div>
+
+        <div
+          v-if="missingBeds > 0"
+          class="stat-chip stat-chip--negative"
+        >
+          <q-icon
+            name="warning_amber"
+            size="16px"
+          />
+          {{ t('stats.missingBeds', { count: missingBeds }) }}
         </div>
 
         <div
@@ -172,6 +244,8 @@
           :editable="can('camp.rooms.edit')"
           :deletable="can('camp.rooms.delete')"
           :assignable="can('camp.rooms.beds.edit')"
+          :skip-gender-filter="settings.skipGenderFilter"
+          :skip-role-filter="settings.skipRoleFilter"
           @edit="editRoom(room)"
           @delete="deleteRoom(room.id)"
           @update="(position, val) => onBedUpdate(room, position, val)"
@@ -189,7 +263,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
@@ -225,6 +299,44 @@ const { can } = usePermissions();
 
 const addLoading = ref(false);
 
+interface PlannerSettings {
+  skipGenderFilter: boolean;
+  skipRoleFilter: boolean;
+}
+
+const SETTINGS_KEY = 'room-planner-settings';
+
+function loadSettings(): PlannerSettings {
+  const defaults: PlannerSettings = {
+    skipGenderFilter: false,
+    skipRoleFilter: false,
+  };
+
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) {
+      return {
+        ...defaults,
+        ...JSON.parse(stored),
+      };
+    }
+  } catch {
+    // Ignore invalid stored settings and fall back to defaults
+  }
+
+  return defaults;
+}
+
+const settings = reactive<PlannerSettings>(loadSettings());
+
+watch(
+  settings,
+  () => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings }));
+  },
+  { deep: true },
+);
+
 const {
   data,
   isLoading,
@@ -237,8 +349,6 @@ const {
   requestPending,
   checkNotNullWithError,
 } = useServiceHandler<Room[]>();
-
-// TODO Inform camp bus go update or update registrations
 
 onMounted(async () => {
   await registrationsStore.fetchData();
@@ -280,6 +390,12 @@ const occupiedBeds = computed<number>(() => {
     (sum, room) => sum + room.beds.filter((bed) => !!bed.person).length,
     0,
   );
+});
+
+const missingBeds = computed<number>(() => {
+  const required = occupiedBeds.value + availablePeople.value.length;
+
+  return Math.max(0, required - totalBeds.value);
 });
 
 const availablePeople = computed<Roommate[]>(() => {
@@ -339,11 +455,16 @@ function editRoom(room: RoomWithRoommates): void {
       component: RoomEditDialog,
       componentProps: {
         room: roomUpdate,
+        capacity: room.beds.length,
+        minCapacity: Math.max(
+          room.beds.filter((bed) => bed.person != null).length,
+          1,
+        ),
         locales,
       },
     })
-    .onOk((payload: RoomUpdateData) => {
-      void updateRoom(room.id, payload);
+    .onOk((payload: RoomUpdateData & { capacity: number }) => {
+      void updateRoom(room, payload);
     });
 }
 
@@ -384,20 +505,37 @@ async function createRoom(
 }
 
 async function updateRoom(
-  roomId: string,
-  updateData: RoomUpdateData,
+  room: RoomWithRoommates,
+  { capacity, ...updateData }: RoomUpdateData & { capacity: number },
 ): Promise<Room | undefined> {
   const campId = queryParam('campId');
 
   return withProgressNotification('update', async () => {
-    const room = await apiService.updateRoom(campId, roomId, updateData);
+    let updatedRoom = await apiService.updateRoom(campId, room.id, updateData);
 
-    const index = data.value?.findIndex((value) => value.id === roomId);
-    if (index !== undefined && index != -1) {
-      data.value?.splice(index, 1, room);
+    const diff = capacity - room.beds.length;
+    if (diff > 0) {
+      for (let i = 0; i < diff; i++) {
+        await apiService.createBed(campId, room.id);
+      }
+    } else if (diff < 0) {
+      // Remove empty beds only, starting from the last one
+      const removableBeds = room.beds.filter((bed) => !bed.person).slice(diff);
+      for (const bed of removableBeds) {
+        await apiService.deleteBed(campId, room.id, bed.id);
+      }
     }
 
-    return room;
+    if (diff !== 0) {
+      updatedRoom = await apiService.fetchRoom(campId, room.id);
+    }
+
+    const index = data.value?.findIndex((value) => value.id === room.id);
+    if (index !== undefined && index != -1) {
+      data.value?.splice(index, 1, updatedRoom);
+    }
+
+    return updatedRoom;
   });
 }
 
@@ -589,6 +727,40 @@ function findRegistrationById(registrationId: string | null) {
   color: var(--md3-positive);
 }
 
+.stat-chip--negative {
+  border-color: transparent;
+
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
+.settings-list {
+  min-width: 300px;
+  max-width: 360px;
+}
+
+.settings-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.settings-warning .q-icon {
+  flex-shrink: 0;
+
+  margin-top: 1px;
+}
+
 .unassigned-list {
   min-width: 220px;
   max-height: 320px;
@@ -597,7 +769,7 @@ function findRegistrationById(registrationId: string | null) {
 
 .room-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
   align-items: start;
 
@@ -636,11 +808,23 @@ subtitle: 'Assign participants and staff to rooms and beds.'
 action:
   add: 'Add room'
   reorder: 'Reorder rooms'
+  settings: 'Planner settings'
 
 stats:
   beds: '{occupied} of {total} beds filled'
+  missingBeds: '{count} beds missing'
   unassigned: '{count} waiting for a bed'
   allAssigned: 'Everyone has a bed'
+
+settings:
+  title: 'Assignment filters'
+  skipGenderFilter:
+    label: 'Skip gender filter'
+    caption: 'Suggest people regardless of the gender of the room'
+  skipRoleFilter:
+    label: 'Skip role filter'
+    caption: 'Allow mixing participants and staff in a room'
+  warning: 'These filters prevent accidentally mixing genders or roles within a room. Skipping them is usually a bad idea — only do so in exceptional cases.'
 
 empty:
   title: 'No rooms yet'
@@ -676,11 +860,23 @@ subtitle: 'Teilnehmende und Betreuende auf Zimmer und Betten verteilen.'
 action:
   add: 'Zimmer hinzufügen'
   reorder: 'Zimmer sortieren'
+  settings: 'Planer-Einstellungen'
 
 stats:
   beds: '{occupied} von {total} Betten belegt'
+  missingBeds: '{count} Betten fehlen'
   unassigned: '{count} ohne Bett'
   allAssigned: 'Alle haben ein Bett'
+
+settings:
+  title: 'Zuweisungsfilter'
+  skipGenderFilter:
+    label: 'Geschlechterfilter überspringen'
+    caption: 'Personen unabhängig vom Geschlecht des Zimmers vorschlagen'
+  skipRoleFilter:
+    label: 'Rollenfilter überspringen'
+    caption: 'Teilnehmende und Betreuende in einem Zimmer mischen'
+  warning: 'Diese Filter verhindern, dass Geschlechter oder Rollen in einem Zimmer versehentlich gemischt werden. Das Überspringen ist meist keine gute Idee — nur in Ausnahmefällen verwenden.'
 
 empty:
   title: 'Noch keine Zimmer'
@@ -716,11 +912,23 @@ subtitle: 'Répartissez les participants et les encadrants dans les chambres.'
 action:
   add: 'Ajouter une chambre'
   reorder: 'Réorganiser les chambres'
+  settings: 'Paramètres du planificateur'
 
 stats:
   beds: '{occupied} lits occupés sur {total}'
+  missingBeds: '{count} lits manquants'
   unassigned: '{count} sans lit'
   allAssigned: 'Tout le monde a un lit'
+
+settings:
+  title: "Filtres d'attribution"
+  skipGenderFilter:
+    label: 'Ignorer le filtre de genre'
+    caption: 'Proposer des personnes quel que soit le genre de la chambre'
+  skipRoleFilter:
+    label: 'Ignorer le filtre de rôle'
+    caption: 'Mélanger participants et encadrants dans une chambre'
+  warning: "Ces filtres évitent de mélanger par erreur les genres ou les rôles dans une chambre. Les ignorer est généralement une mauvaise idée — à n'utiliser que dans des cas exceptionnels."
 
 empty:
   title: 'Pas encore de chambres'
@@ -756,11 +964,23 @@ subtitle: 'Przydziel uczestników i kadrę do pokoi i łóżek.'
 action:
   add: 'Dodaj pokój'
   reorder: 'Zmień kolejność pokoi'
+  settings: 'Ustawienia planera'
 
 stats:
   beds: 'Zajęte łóżka: {occupied} z {total}'
+  missingBeds: 'Brakuje łóżek: {count}'
   unassigned: '{count} bez łóżka'
   allAssigned: 'Wszyscy mają łóżko'
+
+settings:
+  title: 'Filtry przydzielania'
+  skipGenderFilter:
+    label: 'Pomiń filtr płci'
+    caption: 'Proponuj osoby niezależnie od płci pokoju'
+  skipRoleFilter:
+    label: 'Pomiń filtr roli'
+    caption: 'Pozwól mieszać uczestników i kadrę w pokoju'
+  warning: 'Te filtry zapobiegają przypadkowemu mieszaniu płci lub ról w pokoju. Ich pomijanie jest zwykle złym pomysłem — używaj tylko w wyjątkowych przypadkach.'
 
 empty:
   title: 'Brak pokoi'
@@ -796,11 +1016,23 @@ subtitle: 'Rozdělte účastníky a vedoucí do pokojů a lůžek.'
 action:
   add: 'Přidat pokoj'
   reorder: 'Změnit pořadí pokojů'
+  settings: 'Nastavení plánovače'
 
 stats:
   beds: 'Obsazeno {occupied} z {total} lůžek'
+  missingBeds: 'Chybí lůžka: {count}'
   unassigned: '{count} bez lůžka'
   allAssigned: 'Všichni mají lůžko'
+
+settings:
+  title: 'Filtry přiřazování'
+  skipGenderFilter:
+    label: 'Přeskočit filtr pohlaví'
+    caption: 'Navrhovat osoby bez ohledu na pohlaví pokoje'
+  skipRoleFilter:
+    label: 'Přeskočit filtr rolí'
+    caption: 'Povolit míchání účastníků a vedoucích v pokoji'
+  warning: 'Tyto filtry brání nechtěnému míchání pohlaví nebo rolí v pokoji. Jejich přeskočení obvykle není dobrý nápad — používejte jen ve výjimečných případech.'
 
 empty:
   title: 'Zatím žádné pokoje'
