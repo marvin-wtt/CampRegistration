@@ -630,6 +630,12 @@ function editTemplates() {
     font-weight: 600;
   }
 
+  :deep(tbody td) {
+    height: 36px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
   :deep(tbody tr:hover td) {
     background: var(--md3-surface-container);
   }
