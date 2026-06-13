@@ -111,6 +111,11 @@ const loading = computed<boolean>(() => {
   min-width: 0;
 }
 
+/* Clear the floating toolbar so the title isn't crowded against it */
+.camp-index__header {
+  margin-top: 1rem;
+}
+
 .camp-index__subtitle {
   color: var(--md3-on-surface-variant);
 }

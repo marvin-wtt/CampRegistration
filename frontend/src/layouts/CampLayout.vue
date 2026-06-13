@@ -1,48 +1,55 @@
 <template>
   <q-layout view="hHh Lpr fff">
-    <!-- Floating brand instead of a full-width app bar -->
-    <div class="camp-nav fixed-top-left q-ma-md row items-center no-wrap">
-      <q-btn
-        v-if="showBackToCamps"
-        :to="{ name: 'camps' }"
-        class="camp-back"
-        icon="arrow_back"
-        round
-        unelevated
-        :aria-label="t('back_to_camps')"
-      >
-        <q-tooltip>{{ t('back_to_camps') }}</q-tooltip>
-      </q-btn>
-      <router-link
-        to="/"
-        class="camp-brand row items-center no-wrap"
-        :aria-label="t('app_name')"
-      >
-        <q-avatar
-          size="36px"
-          class="camp-brand__logo"
-        >
-          <!-- TODO: replace with the camp organizer logo once available -->
-          <q-icon name="cabin" />
-        </q-avatar>
-        <span class="camp-brand__name text-weight-medium q-ml-sm gt-xs">
-          {{ t('app_name') }}
-        </span>
-      </router-link>
-    </div>
+    <!--
+      Floating brand + controls instead of a full-width app bar.
+      Desktop: two detached corner pills. Mobile: merged into a single bar
+      (the wrapper becomes the pill, the children drop their own surfaces).
+    -->
+    <header class="camp-header fixed-top">
+      <div class="camp-header__inner row items-center no-wrap justify-between">
+        <nav class="camp-nav row items-center no-wrap">
+          <q-btn
+            v-if="showBackToCamps"
+            :to="{ name: 'camps' }"
+            class="camp-back"
+            icon="arrow_back"
+            round
+            unelevated
+            :aria-label="t('back_to_camps')"
+          >
+            <q-tooltip>{{ t('back_to_camps') }}</q-tooltip>
+          </q-btn>
+          <router-link
+            to="/"
+            class="camp-brand row items-center no-wrap"
+            :aria-label="t('app_name')"
+          >
+            <q-avatar
+              size="36px"
+              class="camp-brand__logo"
+            >
+              <!-- TODO: replace with the brand logo once available -->
+              <q-icon name="cabin" />
+            </q-avatar>
+            <span class="camp-brand__name text-weight-medium q-ml-sm">
+              {{ t('app_name') }}
+            </span>
+          </router-link>
+        </nav>
 
-    <!-- Compact floating controls instead of a full-width app bar -->
-    <m-toolbar
-      floating
-      class="camp-toolbar fixed-top-right q-ma-md"
-    >
-      <locale-switch
-        flat
-        round
-        dense
-      />
-      <profile-menu />
-    </m-toolbar>
+        <m-toolbar
+          floating
+          class="camp-toolbar"
+        >
+          <locale-switch
+            flat
+            round
+            dense
+          />
+          <profile-menu />
+        </m-toolbar>
+      </div>
+    </header>
 
     <q-page-container class="camp-page-container">
       <router-view v-slot="{ Component }">
@@ -115,13 +122,29 @@ useMeta(() => {
 </script>
 
 <style scoped>
-.camp-toolbar {
+.camp-header {
   z-index: 2000;
+  padding: 1rem;
+  /* Let clicks pass through the empty strip between the two pills */
+  pointer-events: none;
+}
+
+.camp-header__inner {
+  gap: 0.5rem;
 }
 
 .camp-nav {
-  z-index: 2000;
   gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.camp-toolbar {
+  pointer-events: auto;
+}
+
+/* The header padding owns the outer spacing, not the floating toolbar */
+.camp-toolbar.q-toolbar--floating {
+  margin: 0;
 }
 
 .camp-brand {
@@ -161,6 +184,40 @@ useMeta(() => {
  */
 .camp-page-container :deep(.q-page) {
   padding-top: 4rem;
+}
+
+/* Mobile: merge brand and controls into a single floating app bar */
+@media (max-width: 599.98px) {
+  .camp-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .camp-header__inner {
+    pointer-events: auto;
+    background: var(--md3-surface-container);
+    border-radius: 999px;
+    padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.18),
+      0 1px 3px 1px rgba(0, 0, 0, 0.12);
+  }
+
+  .camp-nav {
+    gap: 0;
+  }
+
+  .camp-brand,
+  .camp-back {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .camp-toolbar.q-toolbar--floating {
+    background: transparent;
+    box-shadow: none;
+    min-height: 0;
+    padding: 0;
+  }
 }
 
 .camp-footer__link {
