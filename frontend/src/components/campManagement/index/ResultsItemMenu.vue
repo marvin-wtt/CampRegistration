@@ -18,24 +18,6 @@
       </q-item>
 
       <q-item
-        v-if="!active && can('camp.edit')"
-        v-close-popup
-        v-ripple
-        class="text-warning"
-        clickable
-        @click="emit('enable')"
-      >
-        <q-item-section avatar>
-          <q-icon name="publish" />
-        </q-item-section>
-        <q-item-section>
-          <q-item-label>
-            {{ t('action.enable') }}
-          </q-item-label>
-        </q-item-section>
-      </q-item>
-
-      <q-item
         v-if="can('camp.edit')"
         v-close-popup
         clickable
@@ -47,24 +29,6 @@
         <q-item-section>
           <q-item-label>
             {{ t('action.edit') }}
-          </q-item-label>
-        </q-item-section>
-      </q-item>
-
-      <q-item
-        v-if="active && can('camp.edit')"
-        v-close-popup
-        v-ripple
-        class="text-warning"
-        clickable
-        @click="emit('disable')"
-      >
-        <q-item-section avatar>
-          <q-icon name="unpublished" />
-        </q-item-section>
-        <q-item-section>
-          <q-item-label>
-            {{ t('action.disable') }}
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -104,8 +68,6 @@ const { camp, active = false } = defineProps<{
 const emit = defineEmits<{
   (e: 'share'): void;
   (e: 'edit'): void;
-  (e: 'enable'): void;
-  (e: 'disable'): void;
   (e: 'delete'): void;
 }>();
 
