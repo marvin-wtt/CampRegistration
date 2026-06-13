@@ -3,7 +3,7 @@
 import stores from './stores';
 
 export default {
-  app_name: 'Camp Registration Service',
+  //app_name: '',
 
   stores,
 
