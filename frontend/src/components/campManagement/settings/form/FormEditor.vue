@@ -80,6 +80,7 @@ function hideProperty(className: string, propertyName: string) {
 }
 
 hideProperty('survey', 'cookieName');
+hideProperty('survey', 'widthMode');
 hideProperty('survey', 'completedBeforeHtml');
 hideProperty('survey', 'readOnly');
 hideProperty('survey', 'partialSendEnabled');
