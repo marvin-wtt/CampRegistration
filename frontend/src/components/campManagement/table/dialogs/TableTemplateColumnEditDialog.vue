@@ -336,7 +336,6 @@ watch(
     if (data.source !== 'meta' && data.source !== 'computed') {
       return;
     }
-    console.log('Updating renderAs based on field', field);
 
     data.renderAs = DEFAULT_RENDER_AS[field] ?? 'default';
   },
