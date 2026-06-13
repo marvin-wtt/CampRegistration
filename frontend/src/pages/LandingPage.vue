@@ -830,7 +830,7 @@ hero:
   eyebrow: 'Free & open-source camp management'
   title: 'Run your camp,'
   title_highlight: 'not your paperwork'
-  subtitle: 'Inscriva brings registrations, participants, rooms, program, and communication together in one place — built by camp organizers, for camp organizers.'
+  subtitle: '@:app_name brings registrations, participants, rooms, program, and communication together in one place — built by camp organizers, for camp organizers.'
 participants:
   title: 'Joining a camp?'
   text: 'Find your camp and register online in a few minutes — no account required.'
@@ -843,7 +843,7 @@ organizers:
   action_authed: 'Open management'
   action_login: 'Sign in'
 feature:
-  title: 'Why organize with Inscriva?'
+  title: 'Why organize with @:app_name?'
   subtitle: "Because spreadsheets, paper forms, and email chains don't scale to a whole camp."
   forms:
     title: 'Dynamic registration forms'
@@ -894,13 +894,13 @@ step:
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Your camp, your data — your server, if you want'
-  text: 'Inscriva is fully open source. Use it right here, or self-host the entire platform on your own infrastructure — so participant data never leaves your hands.'
+  text: '@:app_name is fully open source. Use it right here, or self-host the entire platform on your own infrastructure — so participant data never leaves your hands.'
   point_1: 'AGPLv3-licensed with no vendor lock-in'
   point_2: 'Deploys in minutes with Docker'
   point_3: 'Full control over your participants’ data'
   action: 'View on GitHub'
   terminal_comment: 'on your own server'
-  terminal_done: 'Inscriva is running'
+  terminal_done: '@:app_name is running'
 cta:
   title: 'Ready for a calmer camp season?'
   text: 'Create your first camp in minutes — free of charge.'
@@ -914,7 +914,7 @@ hero:
   eyebrow: 'Kostenlose Open-Source-Camp-Verwaltung'
   title: 'Organisiere dein Camp,'
   title_highlight: 'nicht deinen Papierkram'
-  subtitle: 'Inscriva vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Camp-Organisatoren für Camp-Organisatoren entwickelt.'
+  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Camp-Organisatoren für Camp-Organisatoren entwickelt.'
 participants:
   title: 'Du möchtest an einem Camp teilnehmen?'
   text: 'Finde dein Camp und melde dich in wenigen Minuten online an — ganz ohne Konto.'
@@ -927,7 +927,7 @@ organizers:
   action_authed: 'Zur Verwaltung'
   action_login: 'Anmelden'
 feature:
-  title: 'Warum mit Inscriva organisieren?'
+  title: 'Warum mit @:app_name organisieren?'
   subtitle: 'Weil Tabellen, Papierformulare und E-Mail-Ketten bei einem ganzen Camp an ihre Grenzen kommen.'
   forms:
     title: 'Dynamische Anmeldeformulare'
@@ -978,13 +978,13 @@ step:
 selfhost:
   eyebrow: 'Open Source · AGPLv3'
   title: 'Dein Camp, deine Daten — auf Wunsch dein Server'
-  text: 'Inscriva ist vollständig Open Source. Nutze es direkt hier oder hoste die gesamte Plattform auf deiner eigenen Infrastruktur — Teilnehmerdaten bleiben so komplett in deiner Hand.'
+  text: '@:app_name ist vollständig Open Source. Nutze es direkt hier oder hoste die gesamte Plattform auf deiner eigenen Infrastruktur — Teilnehmerdaten bleiben so komplett in deiner Hand.'
   point_1: 'AGPLv3-lizenziert, kein Vendor-Lock-in'
   point_2: 'In Minuten mit Docker installiert'
   point_3: 'Volle Kontrolle über die Daten deiner Teilnehmenden'
   action: 'Auf GitHub ansehen'
   terminal_comment: 'auf deinem eigenen Server'
-  terminal_done: 'Inscriva läuft'
+  terminal_done: '@:app_name läuft'
 cta:
   title: 'Bereit für eine entspanntere Camp-Saison?'
   text: 'Erstelle dein erstes Camp in wenigen Minuten — völlig kostenlos.'
@@ -998,7 +998,7 @@ hero:
   eyebrow: 'Gestion de camps gratuite et open source'
   title: 'Organisez votre camp,'
   title_highlight: 'pas votre paperasse'
-  subtitle: 'Inscriva réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs de camps, pour des organisateurs de camps.'
+  subtitle: '@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs de camps, pour des organisateurs de camps.'
 participants:
   title: 'Vous participez à un camp ?'
   text: 'Trouvez votre camp et inscrivez-vous en ligne en quelques minutes — sans créer de compte.'
@@ -1011,7 +1011,7 @@ organizers:
   action_authed: 'Accéder à la gestion'
   action_login: 'Se connecter'
 feature:
-  title: 'Pourquoi organiser avec Inscriva ?'
+  title: 'Pourquoi organiser avec @:app_name ?'
   subtitle: "Parce que les tableurs, les formulaires papier et les chaînes d'e-mails ne suffisent plus pour tout un camp."
   forms:
     title: "Formulaires d'inscription dynamiques"
@@ -1062,13 +1062,13 @@ step:
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Votre camp, vos données — votre serveur si vous le souhaitez'
-  text: 'Inscriva est entièrement open source. Utilisez-le ici même, ou hébergez la plateforme complète sur votre propre infrastructure — les données des participants restent entre vos mains.'
+  text: '@:app_name est entièrement open source. Utilisez-le ici même, ou hébergez la plateforme complète sur votre propre infrastructure — les données des participants restent entre vos mains.'
   point_1: 'Sous licence AGPLv3, sans dépendance à un fournisseur'
   point_2: 'Déployé en quelques minutes avec Docker'
   point_3: 'Contrôle total sur les données de vos participants'
   action: 'Voir sur GitHub'
   terminal_comment: 'sur votre propre serveur'
-  terminal_done: 'Inscriva est en ligne'
+  terminal_done: '@:app_name est en ligne'
 cta:
   title: 'Prêt pour une saison de camp plus sereine ?'
   text: 'Créez votre premier camp en quelques minutes — gratuitement.'
@@ -1082,7 +1082,7 @@ hero:
   eyebrow: 'Darmowe zarządzanie obozami, open source'
   title: 'Organizuj obóz,'
   title_highlight: 'nie papierkową robotę'
-  subtitle: 'Inscriva łączy rejestracje, uczestników, pokoje, program i komunikację w jednym miejscu — stworzona przez organizatorów obozów dla organizatorów obozów.'
+  subtitle: '@:app_name łączy rejestracje, uczestników, pokoje, program i komunikację w jednym miejscu — stworzona przez organizatorów obozów dla organizatorów obozów.'
 participants:
   title: 'Chcesz pojechać na obóz?'
   text: 'Znajdź swój obóz i zapisz się online w kilka minut — bez zakładania konta.'
@@ -1095,7 +1095,7 @@ organizers:
   action_authed: 'Przejdź do zarządzania'
   action_login: 'Zaloguj się'
 feature:
-  title: 'Dlaczego Inscriva?'
+  title: 'Dlaczego @:app_name?'
   subtitle: 'Bo arkusze kalkulacyjne, papierowe formularze i łańcuszki e-maili nie wystarczają na cały obóz.'
   forms:
     title: 'Dynamiczne formularze rejestracyjne'
@@ -1146,13 +1146,13 @@ step:
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Twój obóz, Twoje dane — i Twój serwer, jeśli chcesz'
-  text: 'Inscriva jest w pełni otwartym oprogramowaniem. Korzystaj z niej tutaj albo hostuj całą platformę na własnej infrastrukturze — dane uczestników pozostają w Twoich rękach.'
+  text: '@:app_name jest w pełni otwartym oprogramowaniem. Korzystaj z niej tutaj albo hostuj całą platformę na własnej infrastrukturze — dane uczestników pozostają w Twoich rękach.'
   point_1: 'Licencja AGPLv3, bez uzależnienia od dostawcy'
   point_2: 'Wdrożenie w kilka minut dzięki Dockerowi'
   point_3: 'Pełna kontrola nad danymi uczestników'
   action: 'Zobacz na GitHubie'
   terminal_comment: 'na Twoim własnym serwerze'
-  terminal_done: 'Inscriva działa'
+  terminal_done: '@:app_name działa'
 cta:
   title: 'Gotowi na spokojniejszy sezon obozowy?'
   text: 'Utwórz swój pierwszy obóz w kilka minut — zupełnie za darmo.'
@@ -1166,7 +1166,7 @@ hero:
   eyebrow: 'Bezplatná open-source správa táborů'
   title: 'Organizujte tábor,'
   title_highlight: 'ne papírování'
-  subtitle: 'Inscriva spojuje registrace, účastníky, pokoje, program a komunikaci na jednom místě — vytvořena organizátory táborů pro organizátory táborů.'
+  subtitle: '@:app_name spojuje registrace, účastníky, pokoje, program a komunikaci na jednom místě — vytvořena organizátory táborů pro organizátory táborů.'
 participants:
   title: 'Chcete jet na tábor?'
   text: 'Najděte svůj tábor a přihlaste se online během několika minut — bez nutnosti účtu.'
@@ -1179,7 +1179,7 @@ organizers:
   action_authed: 'Přejít do správy'
   action_login: 'Přihlásit se'
 feature:
-  title: 'Proč Inscriva?'
+  title: 'Proč @:app_name?'
   subtitle: 'Protože tabulky, papírové formuláře a e-mailové řetězce na celý tábor nestačí.'
   forms:
     title: 'Dynamické registrační formuláře'
@@ -1230,13 +1230,13 @@ step:
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Váš tábor, vaše data — a klidně i váš server'
-  text: 'Inscriva je plně open source. Používejte ji přímo zde, nebo si celou platformu provozujte na vlastní infrastruktuře — data účastníků zůstanou ve vašich rukou.'
+  text: '@:app_name je plně open source. Používejte ji přímo zde, nebo si celou platformu provozujte na vlastní infrastruktuře — data účastníků zůstanou ve vašich rukou.'
   point_1: 'Licence AGPLv3 bez závislosti na dodavateli'
   point_2: 'Nasazení během několika minut s Dockerem'
   point_3: 'Plná kontrola nad daty účastníků'
   action: 'Zobrazit na GitHubu'
   terminal_comment: 'na vašem vlastním serveru'
-  terminal_done: 'Inscriva běží'
+  terminal_done: '@:app_name běží'
 cta:
   title: 'Připraveni na klidnější táborovou sezónu?'
   text: 'Vytvořte svůj první tábor během několika minut — zcela zdarma.'
