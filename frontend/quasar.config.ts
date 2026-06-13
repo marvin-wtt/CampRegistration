@@ -99,6 +99,10 @@ export default defineConfig((ctx) => {
               sourceColor: '#4573ff',
               scheme: 'tonalSpot',
               contrastLevel: 0,
+              // MD3 maps the warning role to tone 40 in light mode, which turns
+              // the default yellow seed (#F2C037) into an olive/brown (#835500).
+              // An orange seed lands on a clean burnt-orange (#a04100) instead.
+              warningColor: '#FB8C00',
             }),
           ],
         }),
