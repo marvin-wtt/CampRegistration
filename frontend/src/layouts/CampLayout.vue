@@ -1,22 +1,35 @@
 <template>
   <q-layout view="hHh Lpr fff">
     <!-- Floating brand instead of a full-width app bar -->
-    <router-link
-      to="/"
-      class="camp-brand fixed-top-left q-ma-md row items-center no-wrap"
-      :aria-label="t('app_name')"
-    >
-      <q-avatar
-        size="36px"
-        class="camp-brand__logo"
+    <div class="camp-nav fixed-top-left q-ma-md row items-center no-wrap">
+      <q-btn
+        v-if="showBackToCamps"
+        :to="{ name: 'camps' }"
+        class="camp-back"
+        icon="arrow_back"
+        round
+        unelevated
+        :aria-label="t('back_to_camps')"
       >
-        <!-- TODO: replace with the camp organizer logo once available -->
-        <q-icon name="cabin" />
-      </q-avatar>
-      <span class="camp-brand__name text-weight-medium q-ml-sm gt-xs">
-        {{ t('app_name') }}
-      </span>
-    </router-link>
+        <q-tooltip>{{ t('back_to_camps') }}</q-tooltip>
+      </q-btn>
+      <router-link
+        to="/"
+        class="camp-brand row items-center no-wrap"
+        :aria-label="t('app_name')"
+      >
+        <q-avatar
+          size="36px"
+          class="camp-brand__logo"
+        >
+          <!-- TODO: replace with the camp organizer logo once available -->
+          <q-icon name="cabin" />
+        </q-avatar>
+        <span class="camp-brand__name text-weight-medium q-ml-sm gt-xs">
+          {{ t('app_name') }}
+        </span>
+      </router-link>
+    </div>
 
     <!-- Compact floating controls instead of a full-width app bar -->
     <m-toolbar
@@ -71,7 +84,8 @@ import { useMeta } from 'quasar';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import HelpFab from 'components/FeedbackFab.vue';
 import { storeToRefs } from 'pinia';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
@@ -79,11 +93,14 @@ import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+const route = useRoute();
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
 const { data: camp } = storeToRefs(campDetailStore);
 
 const year = new Date().getFullYear();
+
+const showBackToCamps = computed<boolean>(() => route.name === 'camp');
 
 onMounted(async () => {
   await Promise.allSettled([authStore.init()]);
@@ -102,11 +119,23 @@ useMeta(() => {
   z-index: 2000;
 }
 
-.camp-brand {
+.camp-nav {
   z-index: 2000;
+  gap: 0.5rem;
+}
+
+.camp-brand {
   padding: 0.25rem 0.75rem 0.25rem 0.25rem;
   border-radius: 1.5rem;
   text-decoration: none;
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 1px 3px 1px rgba(0, 0, 0, 0.12);
+}
+
+.camp-back {
   color: var(--md3-on-surface);
   background: var(--md3-surface-container);
   box-shadow:
@@ -125,14 +154,13 @@ useMeta(() => {
 }
 
 /*
- * Below `md` the page content spans the full width and would otherwise slide
- * under the floating brand/controls. Reserve clearance on the page itself so the
- * (full-bleed) background colour still fills behind the pills without a seam.
+ * Page content would otherwise slide under the floating brand/controls — even on
+ * wide viewports the content columns leave less side margin than the pills are
+ * wide. Reserve clearance on the page itself so the (full-bleed) background
+ * colour still fills behind the pills without a seam.
  */
-@media (max-width: 1023.98px) {
-  .camp-page-container :deep(.q-page) {
-    padding-top: 4rem;
-  }
+.camp-page-container :deep(.q-page) {
+  padding-top: 4rem;
 }
 
 .camp-footer__link {
@@ -187,6 +215,7 @@ useMeta(() => {
 
 <i18n lang="yaml" locale="en">
 camps: 'Camps'
+back_to_camps: 'Back to all camps'
 footer:
   label: 'Legal'
   imprint: 'Imprint'
@@ -195,6 +224,7 @@ footer:
 
 <i18n lang="yaml" locale="de">
 camps: 'Camps'
+back_to_camps: 'Zurück zu allen Camps'
 footer:
   label: 'Rechtliches'
   imprint: 'Impressum'
@@ -203,6 +233,7 @@ footer:
 
 <i18n lang="yaml" locale="fr">
 camps: 'Camps'
+back_to_camps: 'Retour à tous les camps'
 footer:
   label: 'Mentions légales'
   imprint: 'Mentions légales'
@@ -211,6 +242,7 @@ footer:
 
 <i18n lang="yaml" locale="pl">
 camps: 'Obozy'
+back_to_camps: 'Powrót do wszystkich obozów'
 footer:
   label: 'Informacje prawne'
   imprint: 'Nota prawna'
@@ -219,6 +251,7 @@ footer:
 
 <i18n lang="yaml" locale="cs">
 camps: 'Tábory'
+back_to_camps: 'Zpět na všechny tábory'
 footer:
   label: 'Právní informace'
   imprint: 'Tiráž'

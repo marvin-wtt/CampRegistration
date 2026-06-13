@@ -37,6 +37,18 @@
         />
       </div>
 
+      <div class="camp-card-skeleton__capacity">
+        <q-skeleton
+          type="text"
+          width="35%"
+          height="12px"
+        />
+        <q-skeleton
+          type="rect"
+          height="6px"
+        />
+      </div>
+
       <div class="camp-card-skeleton__footer">
         <q-skeleton
           type="text"
@@ -74,6 +86,18 @@
   gap: 6px;
 
   margin-top: 14px;
+}
+
+.camp-card-skeleton__capacity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  margin-top: 14px;
+}
+
+.camp-card-skeleton__capacity .q-skeleton--type-rect {
+  border-radius: 3px;
 }
 
 .camp-card-skeleton__footer {
