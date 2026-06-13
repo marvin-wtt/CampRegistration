@@ -68,7 +68,8 @@
           </span>
           <span class="mgmt-card__capacity-count">
             <template v-if="capacity.free !== null">
-              {{ capacity.used }}<span class="mgmt-card__capacity-max">/{{ capacity.max }}</span>
+              {{ capacity.used
+              }}<span class="mgmt-card__capacity-max">/{{ capacity.max }}</span>
             </template>
             <template v-else>
               {{ t('capacity.max', { count: capacity.max }) }}
@@ -224,9 +225,7 @@ const relLabel = computed<string>(() => {
     return t('phase.ongoing');
   }
   const target =
-    phase.value === 'upcoming'
-      ? new Date(camp.startAt)
-      : new Date(camp.endAt);
+    phase.value === 'upcoming' ? new Date(camp.startAt) : new Date(camp.endAt);
   return relativeTime(target);
 });
 
@@ -277,8 +276,7 @@ const registrationOpen = computed<boolean>(() => {
   }
   const now = new Date();
   return (
-    (!camp.registrationOpensAt ||
-      now >= new Date(camp.registrationOpensAt)) &&
+    (!camp.registrationOpensAt || now >= new Date(camp.registrationOpensAt)) &&
     (!camp.registrationClosesAt || now <= new Date(camp.registrationClosesAt))
   );
 });
@@ -595,6 +593,10 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+
+  /* Pin the lower block (capacity + status + nav) to the bottom so cards
+     stay aligned even when the title or timing wraps to two lines */
+  margin-top: auto;
 }
 
 .mgmt-card__capacity {
@@ -729,7 +731,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   flex-wrap: wrap;
   gap: 8px;
 
-  margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid var(--md3-outline-variant);
 }
@@ -819,7 +820,7 @@ registration:
 phase:
   ongoing: 'En cours'
 action:
-  more: 'Plus d''actions'
+  more: "Plus d'actions"
 status:
   open: 'Inscription ouverte'
   closes: 'Ferme le {date}'

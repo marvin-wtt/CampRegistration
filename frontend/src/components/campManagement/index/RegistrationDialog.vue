@@ -303,7 +303,7 @@ quick:
 schedule:
   label: 'Ou planifier'
 field:
-  opens: "Ouvre le"
+  opens: 'Ouvre le'
   closes: 'Ferme le'
 validation:
   order: "L'heure de fermeture doit être postérieure à l'heure d'ouverture"
