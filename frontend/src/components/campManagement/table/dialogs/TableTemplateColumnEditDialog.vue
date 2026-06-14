@@ -103,6 +103,23 @@
           rounded
         />
 
+        <q-list
+          v-if="customOptionsComponent"
+          bordered
+          class="rounded-borders"
+        >
+          <q-expansion-item
+            :label="t('field.renderOptions.label')"
+            class="q-mb-sm"
+          >
+            <q-separator />
+            <component
+              :is="customOptionsComponent"
+              v-model="data.renderOptions"
+            />
+          </q-expansion-item>
+        </q-list>
+
         <q-select
           v-model="data.align"
           :label="t('field.align.label')"
@@ -189,8 +206,7 @@
 
             <!-- render options -->
             <q-list
-              v-if="data.renderAs"
-              bordered
+              v-if="data.renderAs && !customOptionsComponent"
               class="rounded-borders"
             >
               <q-expansion-item
@@ -237,7 +253,14 @@
 <script lang="ts" setup>
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref, watch, watchEffect } from 'vue';
+import {
+  type Component,
+  computed,
+  reactive,
+  ref,
+  watch,
+  watchEffect,
+} from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
@@ -310,7 +333,7 @@ watchEffect(() => {
 const DEFAULT_RENDER_AS: Record<string, string> = {
   // meta fields
   status: 'status',
-  createdAt: 'date',
+  createdAt: 'time_ago',
   // computed fields
   firstName: 'name',
   lastName: 'name',
@@ -341,6 +364,11 @@ watch(
   },
 );
 
+watch(
+  () => data.renderAs,
+  () => (data.renderOptions = undefined),
+);
+
 const alignOptions = computed<QSelectOption[]>(() => {
   return [
     {
@@ -366,6 +394,14 @@ const renderOptions = computed<BaseComponent[] | undefined>(() => {
   const renderer = ComponentRegistry.get(data.renderAs);
 
   return renderer?.options.customOptions;
+});
+
+const customOptionsComponent = computed<Component | undefined>(() => {
+  if (!data.renderAs) {
+    return undefined;
+  }
+
+  return ComponentRegistry.get(data.renderAs)?.options.customOptionsComponent;
 });
 
 const renderAsOptions = computed<QSelectOption[]>(() => {

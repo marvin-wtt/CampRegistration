@@ -239,6 +239,7 @@
           <q-th
             :auto-width="column.shrink"
             :props="columnProps"
+            :class="{ 'sticky-action': column.name === '_action' }"
             style="vertical-align: bottom"
           >
             <a
@@ -261,6 +262,7 @@
           <q-td
             :props="rendererProps"
             :key
+            :class="{ 'sticky-action': key === '_action' }"
           >
             <table-cell-wrapper
               :renderer
@@ -638,6 +640,21 @@ function editTemplates() {
 
   :deep(tbody tr:hover td) {
     background: var(--md3-surface-container);
+  }
+
+  // Keep the actions column reachable without scrolling on wide tables
+  :deep(th.sticky-action),
+  :deep(td.sticky-action) {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--md3-surface);
+    border-left: 1px solid var(--md3-outline-variant);
+  }
+
+  // The corner cell must stay above both sticky axes
+  :deep(thead tr th.sticky-action) {
+    z-index: 2;
   }
 }
 
