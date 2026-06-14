@@ -11,7 +11,10 @@
         {{ t('title') }}
       </q-card-section>
 
-      <q-card-section class="q-gutter-sm">
+      <q-card-section
+        class="q-gutter-sm"
+        style="max-width: 500px"
+      >
         <q-input
           v-model="data.email"
           :label="t('field.email.label')"

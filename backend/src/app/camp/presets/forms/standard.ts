@@ -2,7 +2,6 @@ export default {
   locale: 'de',
   title: '{camp.name}',
   description: '{camp.startAtDate} - {camp.endAtDate}',
-  logoWidth: 'auto',
   logoHeight: '80px',
   logoPosition: 'right',
   completedHtml: {
@@ -17,14 +16,6 @@ export default {
   pages: [
     {
       name: 'p_overview',
-      title: {
-        en: 'Information',
-        de: 'Informationen',
-        fr: 'Informations',
-        pl: 'Informacje',
-        cs: 'Informace',
-        default: 'Information',
-      },
       elements: [
         {
           type: 'expression',
@@ -108,17 +99,17 @@ export default {
           campDataType: 'role',
         },
       ],
+      title: {
+        en: 'Information',
+        de: 'Informationen',
+        fr: 'Informations',
+        pl: 'Informacje',
+        cs: 'Informace',
+        default: 'Information',
+      },
     },
     {
       name: 'p_general_information',
-      title: {
-        en: 'General Information',
-        de: 'Allgemeine Informationen',
-        fr: 'Informations générales',
-        pl: 'Informacje ogólne',
-        cs: 'Obecné informace',
-        default: 'General Information',
-      },
       elements: [
         {
           type: 'text',
@@ -242,17 +233,17 @@ export default {
           },
         },
       ],
+      title: {
+        en: 'General Information',
+        de: 'Allgemeine Informationen',
+        fr: 'Informations générales',
+        pl: 'Informacje ogólne',
+        cs: 'Obecné informace',
+        default: 'General Information',
+      },
     },
     {
       name: 'p_contact',
-      title: {
-        en: 'Contact Information',
-        de: 'Kontaktinformationen',
-        fr: 'Coordonnées',
-        pl: 'Dane kontaktowe',
-        cs: 'Kontaktní údaje',
-        default: 'Contact Information',
-      },
       elements: [
         {
           type: 'address',
@@ -349,18 +340,17 @@ export default {
           ],
         },
       ],
+      title: {
+        en: 'Contact Information',
+        de: 'Kontaktinformationen',
+        fr: 'Coordonnées',
+        pl: 'Dane kontaktowe',
+        cs: 'Kontaktní údaje',
+        default: 'Contact Information',
+      },
     },
     {
       name: 'p_guardian',
-      title: {
-        en: 'Information about legal guardians',
-        de: 'Informationen über Sorgeberechtigten',
-        fr: 'Informations sur les tuteurs légaux',
-        pl: 'Informacje o opiekunach prawnych',
-        cs: 'Informace o zákonných zástupcích',
-        default: 'Information about legal guardians',
-      },
-      visibleIf: '{isminor}',
       elements: [
         {
           type: 'text',
@@ -408,17 +398,18 @@ export default {
           autocomplete: 'email',
         },
       ],
+      visibleIf: '{isminor}',
+      title: {
+        en: 'Information about legal guardians',
+        de: 'Informationen über Sorgeberechtigten',
+        fr: 'Informations sur les tuteurs légaux',
+        pl: 'Informacje o opiekunach prawnych',
+        cs: 'Informace o zákonných zástupcích',
+        default: 'Information about legal guardians',
+      },
     },
     {
       name: 'p_emergency_contact',
-      title: {
-        en: 'Emergency contacts',
-        de: 'Notfallkontakte',
-        fr: "Contacts en cas d'urgence",
-        pl: 'Kontakty awaryjne',
-        cs: 'Kontakty pro nouzi',
-        default: 'Emergency contacts',
-      },
       elements: [
         {
           type: 'paneldynamic',
@@ -503,7 +494,7 @@ export default {
           panelCount: 1,
           minPanelCount: 1,
           maxPanelCount: 3,
-          panelAddText: {
+          addPanelText: {
             en: 'Add contact',
             de: 'Kontakt hinzufügen',
             fr: 'Ajouter un contact',
@@ -513,18 +504,17 @@ export default {
           },
         },
       ],
+      title: {
+        en: 'Emergency contacts',
+        de: 'Notfallkontakte',
+        fr: "Contacts en cas d'urgence",
+        pl: 'Kontakty awaryjne',
+        cs: 'Kontakty pro nouzi',
+        default: 'Emergency contacts',
+      },
     },
     {
       name: 'p_permissions',
-      title: {
-        en: 'Permissions',
-        de: 'Berechtigungen',
-        fr: 'Autorisations',
-        pl: 'Uprawnienia',
-        cs: 'Oprávnění',
-        default: 'Permissions',
-      },
-      visibleIf: '{isminor}',
       elements: [
         {
           type: 'boolean',
@@ -651,17 +641,18 @@ export default {
           },
         },
       ],
+      visibleIf: '{isminor}',
+      title: {
+        en: 'Permissions',
+        de: 'Berechtigungen',
+        fr: 'Autorisations',
+        pl: 'Uprawnienia',
+        cs: 'Oprávnění',
+        default: 'Permissions',
+      },
     },
     {
       name: 'p_additional_information',
-      title: {
-        en: 'Additional Information',
-        de: 'Weitere Informationen',
-        fr: 'Informations supplémentaires',
-        pl: 'Dodatkowe informacje',
-        cs: 'Další informace',
-        default: 'Additional Information',
-      },
       elements: [
         {
           type: 'text',
@@ -725,17 +716,17 @@ export default {
           },
         },
       ],
+      title: {
+        en: 'Additional Information',
+        de: 'Weitere Informationen',
+        fr: 'Informations supplémentaires',
+        pl: 'Dodatkowe informacje',
+        cs: 'Další informace',
+        default: 'Additional Information',
+      },
     },
     {
       name: 'p_consent',
-      title: {
-        en: 'Consents',
-        fr: 'Approbations',
-        de: 'Zustimmung',
-        pl: 'Zgody',
-        cs: 'Souhlasy',
-        default: 'Consents',
-      },
       elements: [
         {
           type: 'boolean',
@@ -881,24 +872,26 @@ export default {
           ],
         },
       ],
+      title: {
+        en: 'Consents',
+        fr: 'Approbations',
+        de: 'Zustimmung',
+        pl: 'Zgody',
+        cs: 'Souhlasy',
+        default: 'Consents',
+      },
     },
   ],
   calculatedValues: [
-    {
-      name: 'isadult',
-      expression: 'isAdult({date_of_birth}, {camp.startAt})',
-    },
-    {
-      name: 'isminor',
-      expression: 'isMinor({date_of_birth}, {camp.startAt})',
-    },
+    { name: 'isadult', expression: 'isAdult({date_of_birth}, {camp.startAt})' },
+    { name: 'isminor', expression: 'isMinor({date_of_birth}, {camp.startAt})' },
     {
       name: 'waitingList',
       expression: 'isWaitingList({camp.freePlaces}, {country})',
     },
   ],
-  showQuestionNumbers: 'off',
-  showProgressBar: 'bottom',
+  showProgressBar: true,
+  progressBarLocation: 'bottom',
   completeText: {
     en: 'Register for a fee',
     de: 'Kostenpflichtig Anmelden',
@@ -907,5 +900,5 @@ export default {
     cs: 'Zaregistrovat se (placeně)',
     default: 'Register for a fee',
   },
-  widthMode: 'responsive',
+  headerView: 'advanced',
 };

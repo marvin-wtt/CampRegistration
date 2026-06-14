@@ -1,114 +1,322 @@
 <template>
-  <page-state-handler :error>
-    <q-table
-      v-model:selected="selected"
-      v-model:pagination="pagination"
-      :loading
-      :title="t('title')"
-      class="absolute fit"
-      flat
-      :columns
-      :rows
-      row-key="id"
-      selection="multiple"
-      virtual-scroll
-      :rows-per-page-options="[0]"
-    >
-      <template #top-right>
-        <div class="q-gutter-sm">
-          <template v-if="selected.length === 0">
-            <q-btn
-              v-if="can('camp.files.create')"
-              :label="t('action.upload')"
-              icon="cloud_upload"
-              color="primary"
-              rounded
-              :loading="uploadOngoing"
-              @click="uploadFile"
-            />
-          </template>
-          <template v-else>
-            <q-btn
-              :label="t('action.download')"
-              icon="cloud_download"
-              color="primary"
-              rounded
-              :disable="deletionOngoing"
-              @click="downloadFiles"
-            />
-            <q-btn
-              v-if="selected.length === 1 && can('camp.files.create')"
-              :label="t('action.replace')"
-              icon="cloud_upload"
-              color="primary"
-              rounded
-              :disable="deletionOngoing"
-              @click="openReplaceDialog(selected[0]!)"
-            />
-            <q-btn
-              v-if="can('camp.files.delete')"
-              :label="t('action.delete')"
-              icon="delete"
-              color="negative"
-              rounded
-              :loading="deletionOngoing"
-              @click="deleteFiles"
-            />
-          </template>
+  <page-state-handler
+    padding
+    :error
+    :loading
+    class="files-page row justify-center"
+  >
+    <div class="files-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
+      <!-- Header -->
+      <div class="row items-end justify-between q-col-gutter-y-sm">
+        <div class="col-12 col-sm">
+          <div class="text-h5 text-weight-medium">
+            {{ t('title') }}
+          </div>
+          <div class="text-body2 text-grey-6 q-mt-xs">
+            {{ t('subtitle') }}
+          </div>
         </div>
-      </template>
 
-      <!-- Selection: hide checkbox for virtual rows -->
-      <template #body-selection="props">
-        <q-td v-if="!props.row._virtual">
-          <q-checkbox
-            v-model="props.selected"
-            dense
-          />
-        </q-td>
-        <q-td v-else />
-      </template>
-
-      <!-- Name: upload action for virtual rows, file link for real rows -->
-      <template #body-cell-name="props">
-        <q-td :props="props">
-          <q-btn
-            v-if="props.row._virtual"
-            :label="getUploadHint(props.row.field, props.row.locale)"
+        <div
+          v-if="can('camp.files.create')"
+          class="col-12 col-sm-auto"
+        >
+          <m-btn
+            :label="t('action.upload')"
+            :loading="uploadOngoing"
+            color="primary"
             icon="cloud_upload"
-            color="warning"
-            no-caps
-            rounded
-            flat
-            dense
-            class="q-px-xs"
-            @click="uploadForSlot(props.row.field, props.row.locale)"
+            @click="uploadFile"
           />
-          <a
-            v-else
-            :href="props.row.href"
-            target="_blank"
-            style="text-decoration: none; color: inherit"
-          >
-            {{ props.value }}
-          </a>
-        </q-td>
-      </template>
+        </div>
+      </div>
 
-      <!-- Link: hidden for virtual rows -->
-      <template #body-cell-link="props">
-        <q-td :props="props">
-          <q-btn
-            v-if="!props.row._virtual"
-            icon="share"
-            size="sm"
-            rounded
-            dense
-            @click="copyLink(props.value)"
+      <!-- Missing documents -->
+      <q-card
+        v-if="missingDocuments.length > 0"
+        flat
+        bordered
+        class="section-card"
+      >
+        <q-card-section class="q-pb-none">
+          <div class="row items-center no-wrap q-gutter-sm">
+            <q-icon
+              name="upload_file"
+              color="primary"
+              size="20px"
+            />
+            <div class="text-subtitle2 text-weight-bold">
+              {{ t('section.missing') }}
+            </div>
+            <q-badge
+              rounded
+              class="count-badge"
+              :label="missingDocuments.length"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-px-none q-pb-xs">
+          <q-list>
+            <q-item
+              v-for="doc in missingDocuments"
+              :key="doc.id"
+              clickable
+              class="file-row file-row--clickable"
+              @click="uploadForSlot(doc.field, doc.locale)"
+            >
+              <q-item-section avatar>
+                <q-avatar
+                  size="44px"
+                  rounded
+                  class="file-tile tile--missing"
+                >
+                  <q-icon
+                    name="cloud_upload"
+                    size="20px"
+                  />
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label class="file-name">
+                  <span class="ellipsis">
+                    {{ getUploadHint(doc.field, doc.locale) }}
+                  </span>
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section
+                side
+                class="file-meta"
+              >
+                <q-chip
+                  v-if="doc.locale"
+                  class="md3-chip locale-chip"
+                  :label="doc.locale.toUpperCase()"
+                />
+              </q-item-section>
+
+              <q-item-section
+                side
+                class="file-chevron"
+              >
+                <q-icon
+                  name="chevron_right"
+                  size="20px"
+                />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+
+      <!-- Files -->
+      <q-card
+        v-if="files.length > 0"
+        flat
+        bordered
+        class="section-card"
+      >
+        <q-card-section class="q-pb-none">
+          <div class="row items-center no-wrap q-gutter-sm">
+            <q-icon
+              name="folder"
+              color="primary"
+              size="20px"
+            />
+            <div class="text-subtitle2 text-weight-bold">
+              {{ t('section.files') }}
+            </div>
+            <q-badge
+              rounded
+              class="count-badge"
+              :label="files.length"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-px-none q-pb-xs">
+          <q-list>
+            <q-item
+              v-for="file in files"
+              :key="file.id"
+              class="file-row"
+            >
+              <q-item-section avatar>
+                <q-avatar
+                  size="44px"
+                  rounded
+                  class="file-tile"
+                  :class="fileTileClass(file.type)"
+                >
+                  <q-icon
+                    :name="fileIcon(file.type)"
+                    size="20px"
+                  />
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label class="file-name">
+                  <a
+                    :href="campFileStore.getUrl(file.id)"
+                    target="_blank"
+                    class="file-name-link ellipsis"
+                  >
+                    {{ file.name }}
+                  </a>
+                  <q-badge
+                    v-if="file.locale"
+                    rounded
+                    class="locale-badge"
+                    :label="file.locale.toUpperCase()"
+                  />
+                </q-item-label>
+                <q-item-label class="file-caption ellipsis">
+                  {{ formatBytes(file.size) }}
+                  ·
+                  {{ formatUtcDateTime(file.createdAt) }}
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section
+                side
+                class="file-meta"
+              >
+                <q-chip
+                  v-if="file.field"
+                  class="md3-chip field-chip"
+                  icon="sell"
+                  :label="file.field"
+                />
+                <q-chip
+                  v-if="file.accessLevel"
+                  class="md3-chip"
+                  :class="
+                    file.accessLevel === 'public'
+                      ? 'access-chip--public'
+                      : 'access-chip--private'
+                  "
+                  :icon="file.accessLevel === 'public' ? 'public' : 'lock'"
+                  :label="t('access_level.' + file.accessLevel)"
+                />
+              </q-item-section>
+
+              <q-item-section
+                side
+                class="file-buttons"
+              >
+                <q-btn
+                  :aria-label="t('action.copy_link')"
+                  icon="link"
+                  class="file-action-btn"
+                  flat
+                  round
+                  size="sm"
+                  @click="copyLink(campFileStore.getUrl(file.id))"
+                >
+                  <q-tooltip>{{ t('action.copy_link') }}</q-tooltip>
+                </q-btn>
+
+                <q-btn
+                  :aria-label="t('action.menu')"
+                  icon="more_vert"
+                  class="file-action-btn"
+                  flat
+                  round
+                  size="sm"
+                >
+                  <q-menu>
+                    <q-list style="min-width: 180px">
+                      <q-item
+                        clickable
+                        v-close-popup
+                        @click="downloadFile(file)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="cloud_download"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.download') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-if="can('camp.files.create')"
+                        clickable
+                        v-close-popup
+                        @click="openReplaceDialog(file)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="cloud_upload"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.replace') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-if="can('camp.files.delete')"
+                        clickable
+                        v-close-popup
+                        class="text-negative"
+                        @click="showDeleteDialog(file)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="delete"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.delete') }}
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+
+      <!-- Empty state -->
+      <q-card
+        v-if="files.length === 0 && missingDocuments.length === 0"
+        flat
+        bordered
+        class="section-card"
+      >
+        <q-card-section class="column items-center text-center q-pa-xl">
+          <q-icon
+            name="cloud_upload"
+            size="56px"
+            class="empty-icon"
           />
-        </q-td>
-      </template>
-    </q-table>
+          <div class="text-subtitle1 text-weight-medium q-mt-md">
+            {{ t('empty.title') }}
+          </div>
+          <div class="text-body2 text-grey-6 q-mt-xs">
+            {{ t('empty.message') }}
+          </div>
+          <m-btn
+            v-if="can('camp.files.create')"
+            :label="t('action.upload')"
+            :loading="uploadOngoing"
+            color="primary"
+            icon="cloud_upload"
+            class="q-mt-md"
+            @click="uploadFile"
+          />
+        </q-card-section>
+      </q-card>
+    </div>
   </page-state-handler>
 </template>
 
@@ -116,8 +324,7 @@
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
-import { type QTableColumn } from 'quasar';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
@@ -125,9 +332,10 @@ import { formatBytes } from 'src/utils/formatters/formatBytes';
 import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { usePermissions } from 'src/composables/permissions';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
-const i18n = useI18n();
-const { t } = i18n;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t, te } = useI18n();
 const quasar = useQuasar();
 const campStore = useCampDetailsStore();
 const campFileStore = useCampFilesStore();
@@ -138,76 +346,36 @@ onMounted(async () => {
 });
 
 const uploadOngoing = ref(false);
-const deletionOngoing = ref(false);
-const selected = ref([]);
-const pagination = ref({ rowsPerPage: 0 });
 
-watch(selected, (val) => {
-  const filtered = val.filter((row: { _virtual?: boolean }) => !row._virtual);
+const files = computed<ServiceFile[]>(() => campFileStore.data ?? []);
 
-  if (filtered.length !== val.length) {
-    selected.value = filtered;
-  }
-});
+interface MissingDocument {
+  id: string;
+  field: string;
+  locale: string | null;
+}
 
-const columns: QTableColumn[] = [
-  { name: 'name', label: t('column.name'), field: 'name', align: 'left' },
-  { name: 'link', label: t('column.link'), field: 'href', align: 'center' },
-  { name: 'field', label: t('column.field'), field: 'field', align: 'left' },
-  { name: 'locale', label: t('column.locale'), field: 'locale', align: 'left' },
-  {
-    name: 'access',
-    label: t('column.access_level'),
-    field: 'accessLevel',
-    align: 'left',
-  },
-  {
-    name: 'last_modified',
-    label: t('column.last_modified'),
-    field: 'createdAt',
-    align: 'left',
-  },
-  { name: 'type', label: t('column.type'), field: 'type', align: 'left' },
-  { name: 'size', label: t('column.size'), field: 'size', align: 'left' },
-];
-
-const rows = computed(() => {
-  const fileRows = (campFileStore.data ?? []).map(mapFileRow);
-
+const missingDocuments = computed<MissingDocument[]>(() => {
   if (!can('camp.files.create')) {
-    return fileRows;
+    return [];
   }
 
-  const pendingRows = campFileStore.pendingSlots.map((slot) => ({
-    _virtual: true as const,
+  const pending = campFileStore.pendingSlots.map((slot) => ({
     id: `__pending__${slot}`,
     field: slot,
     locale: null,
-    name: '',
-    href: '',
-    type: '',
-    size: '',
-    accessLevel: '',
-    createdAt: '',
   }));
 
-  const missingLocaleRows = campFileStore.slotsWithMissingLocales.flatMap(
+  const missingLocales = campFileStore.slotsWithMissingLocales.flatMap(
     ({ slot, missingLocales }) =>
       missingLocales.map((locale) => ({
-        _virtual: true as const,
         id: `__missing__${slot}__${locale}`,
         field: slot,
         locale,
-        name: '',
-        href: '',
-        type: '',
-        size: '',
-        accessLevel: '',
-        createdAt: '',
       })),
   );
 
-  return [...fileRows, ...pendingRows, ...missingLocaleRows];
+  return [...pending, ...missingLocales];
 });
 
 const loading = computed<boolean>(
@@ -218,15 +386,32 @@ const error = computed<string | null>(
   () => campStore.error || campFileStore.error,
 );
 
-function mapFileRow(file: ServiceFile) {
-  return {
-    ...file,
-    _virtual: false as const,
-    size: formatBytes(file.size),
-    accessLevel: file.accessLevel ? t(`access_level.${file.accessLevel}`) : '',
-    createdAt: formatUtcDateTime(file.createdAt),
-    href: campFileStore.getUrl(file.id),
-  };
+function fileIcon(type: string): string {
+  if (type.startsWith('image/')) {
+    return 'image';
+  }
+  if (type === 'application/pdf') {
+    return 'picture_as_pdf';
+  }
+  if (type.startsWith('video/')) {
+    return 'movie';
+  }
+  if (type.startsWith('audio/')) {
+    return 'audiotrack';
+  }
+
+  return 'description';
+}
+
+function fileTileClass(type: string): string {
+  if (type.startsWith('image/') || type.startsWith('video/')) {
+    return 'tile--media';
+  }
+  if (type === 'application/pdf') {
+    return 'tile--document';
+  }
+
+  return 'tile--other';
 }
 
 function openDialog(componentProps?: Record<string, unknown>) {
@@ -244,9 +429,7 @@ function uploadFile() {
 
 function getUploadHint(field: string, locale?: string | null): string {
   const key = `virtual.upload_hint.${field}`;
-  const label = i18n.te(key)
-    ? t(key)
-    : t('virtual.upload_hint.default', { field });
+  const label = te(key) ? t(key) : t('virtual.upload_hint.default', { field });
 
   return locale ? `${label} (${locale})` : label;
 }
@@ -259,19 +442,30 @@ function openReplaceDialog(file: ServiceFile) {
   openDialog({ fileToReplace: file });
 }
 
-function deleteFiles() {
-  selected.value
-    .filter((row: { _virtual: boolean }) => !row._virtual)
-    .forEach((value: ServiceFile) => {
-      void campFileStore.deleteEntry(value.id);
+function showDeleteDialog(file: ServiceFile) {
+  quasar
+    .dialog({
+      title: t('dialog.delete.title'),
+      message: t('dialog.delete.message', { name: file.name }),
+      cancel: {
+        label: t('dialog.delete.cancel'),
+        color: 'primary',
+        rounded: true,
+        outline: true,
+      },
+      ok: {
+        label: t('dialog.delete.ok'),
+        color: 'negative',
+        rounded: true,
+      },
+    })
+    .onOk(() => {
+      void campFileStore.deleteEntry(file.id);
     });
-  selected.value = [];
 }
 
-function downloadFiles() {
-  selected.value
-    .filter((row: { _virtual: boolean }) => !row._virtual)
-    .forEach((file) => void campFileStore.downloadFile(file));
+function downloadFile(file: ServiceFile) {
+  void campFileStore.downloadFile(file);
 }
 
 function copyLink(url: string) {
@@ -292,30 +486,229 @@ function copyLink(url: string) {
 }
 </script>
 
+<style scoped>
+.files-content {
+  max-width: 960px;
+  padding-bottom: 24px;
+}
+
+/* The default page padding feels cramped under the app bar on phones. */
+@media (max-width: 599px) {
+  .files-page {
+    padding-top: 24px;
+  }
+}
+
+.section-card {
+  border-radius: 16px;
+}
+
+.count-badge {
+  min-width: 20px;
+  padding: 2px 8px;
+  justify-content: center;
+
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.file-row {
+  padding: 12px 16px;
+}
+
+.file-row + .file-row {
+  border-top: 1px solid var(--md3-outline-variant);
+}
+
+.file-row .q-item__section--avatar {
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.file-row .q-item__section--side {
+  padding-left: 12px;
+}
+
+.file-row--clickable {
+  transition: background-color 0.15s ease;
+}
+
+.file-row--clickable:hover,
+.file-row--clickable:focus-visible {
+  background: var(--md3-surface-container);
+  outline: none;
+}
+
+.file-tile {
+  border-radius: 12px;
+}
+
+.tile--document {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.tile--media {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
+.tile--other {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+}
+
+.tile--missing {
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 0;
+  font-weight: 500;
+}
+
+.file-name-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.locale-badge {
+  flex: none;
+  padding: 2px 8px;
+
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.file-name-link:hover {
+  text-decoration: underline;
+}
+
+.file-caption {
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+}
+
+.file-meta {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-buttons {
+  flex-direction: row;
+  align-items: center;
+}
+
+.file-action-btn {
+  color: var(--md3-on-surface-variant);
+}
+
+.file-chevron {
+  color: var(--md3-on-surface-variant);
+}
+
+.md3-chip {
+  height: 24px;
+  margin: 0;
+  padding: 0 10px;
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.md3-chip :deep(.q-icon) {
+  font-size: 14px;
+}
+
+.field-chip {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.locale-chip {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+}
+
+.access-chip--public {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
+.access-chip--private {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+}
+
+.empty-icon {
+  color: var(--md3-on-surface-variant);
+  opacity: 0.6;
+}
+
+/* On phones the chips drop to a full-width second line, aligned with the
+   text column next to the tile. */
+@media (max-width: 599px) {
+  .file-row {
+    flex-wrap: wrap;
+  }
+
+  .file-meta {
+    order: 5;
+    flex: 0 0 100%;
+    justify-content: flex-start;
+    padding-left: 56px;
+  }
+}
+</style>
+
 <i18n lang="yaml" locale="en">
 title: 'Files'
+subtitle: 'Upload and manage documents for this camp.'
 
 action:
   delete: 'Delete'
   download: 'Download'
   upload: 'Upload'
   replace: 'Replace'
+  copy_link: 'Copy link'
+  menu: 'Actions'
+
+section:
+  files: 'Files'
+  missing: 'Missing documents'
+
+dialog:
+  delete:
+    title: 'Delete file'
+    message: 'Do you really want to delete "{name}"?'
+    cancel: 'Cancel'
+    ok: 'Delete'
+
+empty:
+  title: 'No files yet'
+  message: 'Upload documents such as camp rules or terms & conditions.'
 
 virtual:
   upload_hint:
     rules: 'Upload Camp Rules'
     toc: 'Upload Terms & Conditions'
     default: 'Upload {field}'
-
-column:
-  access_level: 'Access'
-  field: 'Identifier'
-  last_modified: 'Last Modified'
-  link: 'Link'
-  locale: 'Language'
-  name: 'Name'
-  size: 'Size'
-  type: 'Type'
 
 access_level:
   public: 'Public'
@@ -329,28 +722,36 @@ notification:
 
 <i18n lang="yaml" locale="de">
 title: 'Dateien'
+subtitle: 'Laden Sie Dokumente für dieses Camp hoch und verwalten Sie sie.'
 
 action:
   delete: 'Löschen'
   download: 'Herunterladen'
   upload: 'Hochladen'
   replace: 'Ersetzen'
+  copy_link: 'Link kopieren'
+  menu: 'Aktionen'
+
+section:
+  files: 'Dateien'
+  missing: 'Fehlende Dokumente'
+
+dialog:
+  delete:
+    title: 'Datei löschen'
+    message: 'Möchten Sie „{name}“ wirklich löschen?'
+    cancel: 'Abbrechen'
+    ok: 'Löschen'
+
+empty:
+  title: 'Noch keine Dateien'
+  message: 'Laden Sie Dokumente wie Campregeln oder AGB hoch.'
 
 virtual:
   upload_hint:
     rules: 'Campregeln hochladen'
     toc: 'AGB hochladen'
     default: '{field} hochladen'
-
-column:
-  access_level: 'Zugriff'
-  field: 'Kennung'
-  last_modified: 'Zuletzt geändert'
-  link: 'Link'
-  locale: 'Sprache'
-  name: 'Name'
-  size: 'Größe'
-  type: 'Typ'
 
 access_level:
   public: 'Öffentlich'
@@ -364,28 +765,36 @@ notification:
 
 <i18n lang="yaml" locale="fr">
 title: 'Fichiers'
+subtitle: 'Téléversez et gérez les documents de ce camp.'
 
 action:
   delete: 'Supprimer'
   download: 'Télécharger'
   upload: 'Téléverser'
   replace: 'Remplacer'
+  copy_link: 'Copier le lien'
+  menu: 'Actions'
+
+section:
+  files: 'Fichiers'
+  missing: 'Documents manquants'
+
+dialog:
+  delete:
+    title: 'Supprimer le fichier'
+    message: 'Voulez-vous vraiment supprimer « {name} » ?'
+    cancel: 'Annuler'
+    ok: 'Supprimer'
+
+empty:
+  title: 'Aucun fichier pour le moment'
+  message: 'Téléversez des documents comme le règlement ou les conditions générales.'
 
 virtual:
   upload_hint:
     rules: 'Téléverser le règlement'
     toc: 'Téléverser les conditions générales'
     default: 'Téléverser {field}'
-
-column:
-  access_level: 'Accès'
-  field: 'Identifiant'
-  last_modified: 'Dernière modification'
-  link: 'Lien'
-  locale: 'Langue'
-  name: 'Nom'
-  size: 'Taille'
-  type: 'Type'
 
 access_level:
   public: 'Public'
@@ -399,28 +808,36 @@ notification:
 
 <i18n lang="yaml" locale="pl">
 title: 'Pliki'
+subtitle: 'Przesyłaj i zarządzaj dokumentami tego obozu.'
 
 action:
   delete: 'Usuń'
   download: 'Pobierz'
   upload: 'Prześlij'
   replace: 'Zastąp'
+  copy_link: 'Kopiuj link'
+  menu: 'Akcje'
+
+section:
+  files: 'Pliki'
+  missing: 'Brakujące dokumenty'
+
+dialog:
+  delete:
+    title: 'Usuń plik'
+    message: 'Czy na pewno chcesz usunąć „{name}”?'
+    cancel: 'Anuluj'
+    ok: 'Usuń'
+
+empty:
+  title: 'Brak plików'
+  message: 'Prześlij dokumenty, takie jak regulamin lub warunki uczestnictwa.'
 
 virtual:
   upload_hint:
     rules: 'Prześlij regulamin'
     toc: 'Prześlij warunki uczestnictwa'
     default: 'Prześlij {field}'
-
-column:
-  access_level: 'Dostęp'
-  field: 'Identyfikator'
-  last_modified: 'Ostatnia modyfikacja'
-  link: 'Link'
-  locale: 'Język'
-  name: 'Nazwa'
-  size: 'Rozmiar'
-  type: 'Typ'
 
 access_level:
   public: 'Publiczny'
@@ -434,28 +851,36 @@ notification:
 
 <i18n lang="yaml" locale="cs">
 title: 'Soubory'
+subtitle: 'Nahrávejte a spravujte dokumenty tohoto tábora.'
 
 action:
   delete: 'Smazat'
   download: 'Stáhnout'
   upload: 'Nahrát'
   replace: 'Nahradit'
+  copy_link: 'Kopírovat odkaz'
+  menu: 'Akce'
+
+section:
+  files: 'Soubory'
+  missing: 'Chybějící dokumenty'
+
+dialog:
+  delete:
+    title: 'Smazat soubor'
+    message: 'Opravdu chcete smazat „{name}“?'
+    cancel: 'Zrušit'
+    ok: 'Smazat'
+
+empty:
+  title: 'Zatím žádné soubory'
+  message: 'Nahrajte dokumenty, jako jsou táborová pravidla nebo obchodní podmínky.'
 
 virtual:
   upload_hint:
     rules: 'Nahrát táborová pravidla'
     toc: 'Nahrát obchodní podmínky'
     default: 'Nahrát {field}'
-
-column:
-  access_level: 'Přístup'
-  field: 'Identifikátor'
-  last_modified: 'Naposledy změněno'
-  link: 'Odkaz'
-  locale: 'Jazyk'
-  name: 'Název'
-  size: 'Velikost'
-  type: 'Typ'
 
 access_level:
   public: 'Veřejný'

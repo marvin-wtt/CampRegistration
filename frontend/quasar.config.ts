@@ -3,6 +3,8 @@
 
 import { defineConfig } from '#q-app/wrappers';
 import { fileURLToPath } from 'node:url';
+import { freshPaint } from '@anoyomoose/q2-fresh-paint-core';
+import { md3eTheme } from '@anoyomoose/q2-fresh-paint-md3e';
 
 export default defineConfig((ctx) => {
   return {
@@ -13,12 +15,12 @@ export default defineConfig((ctx) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
+      '~@anoyomoose/q2-fresh-paint-md3e/boot',
       'bus',
       'i18n',
       'language-pack',
       'axios',
       'surveyJS',
-      'apexcharts',
       'notify-defaults',
     ],
 
@@ -91,6 +93,19 @@ export default defineConfig((ctx) => {
             ssr: ctx.modeName === 'ssr',
           },
         ],
+        freshPaint({
+          themes: [
+            md3eTheme({
+              sourceColor: '#4573ff',
+              scheme: 'tonalSpot',
+              contrastLevel: 0,
+              // MD3 maps the warning role to tone 40 in light mode, which turns
+              // the default yellow seed (#F2C037) into an olive/brown (#835500).
+              // An orange seed lands on a clean burnt-orange (#a04100) instead.
+              warningColor: '#FB8C00',
+            }),
+          ],
+        }),
       ],
     },
 
@@ -121,7 +136,7 @@ export default defineConfig((ctx) => {
       // you can manually specify Quasar components/directives to be available everywhere:
       //
       // components: [],
-      // directives: [],
+      directives: ['TouchPan'],
 
       // Quasar plugins
       plugins: ['Dialog', 'Notify', 'Loading', 'Meta'],

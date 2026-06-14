@@ -2,30 +2,35 @@
   <q-layout view="hHh Lpr lff">
     <q-ajax-bar color="accent" />
 
-    <q-header bordered>
-      <q-toolbar>
+    <!-- Top bar: only on mobile, where the rail is hidden. -->
+    <q-header
+      v-if="quasar.screen.lt.sm"
+      bordered
+    >
+      <m-toolbar>
+        <m-btn
+          icon="arrow_back"
+          square
+          round
+          text
+          :aria-label="t('back')"
+          @click="navigateHome"
+        />
         <q-toolbar-title>
-          <router-link
-            :to="{ name: 'management.newsletters' }"
-            style="text-decoration: none; color: inherit"
-          >
-            {{ t('title') }}
-          </router-link>
+          {{ t('title') }}
         </q-toolbar-title>
 
-        <header-navigation :administration="administrator" />
-
-        <locale-switch
-          borderless
-          class="q-px-md gt-xs"
-          dense
-          rounded
-          unelevated
-        />
-
         <profile-menu />
-      </q-toolbar>
+      </m-toolbar>
     </q-header>
+
+    <!-- Newsletters has no sub-navigation, so on large screens it uses floating
+         controls (back + profile) instead of a rail, keeping the profile in the
+         same bottom-left spot as every other layout. -->
+    <layout-floating-controls
+      v-if="quasar.screen.gt.xs"
+      :back-to="{ name: 'management' }"
+    />
 
     <q-page-container>
       <router-view v-slot="{ Component }">
@@ -38,26 +43,24 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
-import { useMeta } from 'quasar';
+import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
+import { useMeta, useQuasar } from 'quasar';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import { useProfileStore } from 'stores/profile-store';
-import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
+import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
+const quasar = useQuasar();
+const router = useRouter();
 const { t } = useI18n();
 
 const authStore = useAuthStore();
-const profileStore = useProfileStore();
 
 onMounted(async () => {
   await authStore.init();
-});
-
-const administrator = computed<boolean>(() => {
-  return profileStore.user?.role === 'ADMIN';
 });
 
 useMeta(() => {
@@ -66,26 +69,35 @@ useMeta(() => {
     titleTemplate: (title) => `${title} | ${t('app_name')}`,
   };
 });
+
+function navigateHome() {
+  void router.push({ name: 'management' });
+}
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
+back: 'Back'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
+back: 'Zurück'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Newsletters'
+back: 'Retour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Newslettery'
+back: 'Wstecz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Newslettery'
+back: 'Zpět'
 </i18n>
 
 <style>

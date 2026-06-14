@@ -123,8 +123,13 @@ const hasEmail = computed<boolean>(() => {
 let templatesFetch: Promise<MessageTemplate[]> | null = null;
 
 function ensureTemplates(): Promise<MessageTemplate[]> {
+  const campId = campData.value?.id;
+  if (!campId) {
+    return Promise.resolve([]);
+  }
+
   templatesFetch ??= messageTemplateService
-    .fetchMessageTemplates(campData.value.id)
+    .fetchMessageTemplates(campId)
     .catch(() => []);
 
   return templatesFetch;
@@ -244,7 +249,7 @@ option:
   sendMessageDisabled: 'No email address available'
   edit: 'Edit'
   delete: 'Delete'
-  accept: 'Accept registration'
+  accept: 'Accept'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -254,7 +259,7 @@ option:
   sendMessageDisabled: 'Keine E-Mail-Adresse verfügbar'
   edit: 'Bearbeiten'
   delete: 'Löschen'
-  accept: 'Anmeldung akzeptieren'
+  accept: 'Akzeptieren'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -264,7 +269,7 @@ option:
   sendMessageDisabled: 'Aucune adresse e-mail disponible'
   edit: 'Modifier'
   delete: 'Supprimer'
-  accept: "Accepter l'inscription"
+  accept: 'Accepter'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -274,7 +279,7 @@ option:
   sendMessageDisabled: 'Brak dostępnego adresu e-mail'
   edit: 'Edytuj'
   delete: 'Usuń'
-  accept: 'Akceptuj zgłoszenie'
+  accept: 'Akceptuj'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -284,7 +289,7 @@ option:
   sendMessageDisabled: 'Není k dispozici žádná e-mailová adresa'
   edit: 'Upravit'
   delete: 'Smazat'
-  accept: 'Přijmout registraci'
+  accept: 'Přijmout'
 </i18n>
 
 <style scoped></style>

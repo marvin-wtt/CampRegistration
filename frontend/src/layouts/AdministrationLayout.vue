@@ -2,53 +2,46 @@
   <q-layout view="hHh Lpr lff">
     <q-ajax-bar color="accent" />
 
-    <q-header bordered>
-      <q-toolbar>
-        <q-btn
+    <!-- Top bar: only on mobile, where rails are hidden off-canvas. On large
+         screens every page uses a left rail that carries the profile. -->
+    <q-header
+      v-if="quasar.screen.lt.sm"
+      bordered
+    >
+      <m-toolbar>
+        <m-btn
           v-if="showDrawer"
-          dense
-          flat
           icon="menu"
+          square
           round
+          text
           @click="drawer = !drawer"
         />
         <q-toolbar-title>
           <router-link
             to="/"
-            style="text-decoration: none; color: inherit"
+            class="header-link"
           >
             {{ to(title) }}
           </router-link>
         </q-toolbar-title>
 
-        <header-navigation :administration="administrator" />
-
-        <locale-switch
-          borderless
-          class="q-px-md gt-xs"
-          dense
-          rounded
-          unelevated
-        />
-
         <profile-menu />
-      </q-toolbar>
+      </m-toolbar>
     </q-header>
 
     <q-drawer
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :class="quasar.dark.isActive ? 'bg-grey-10' : 'bg-grey-4'"
-      :mini="miniState"
-      :width="220"
+      mini
+      :width="300"
+      :mini-width="96"
       bordered
-      mini-to-overlay
       show-if-above
-      @mouseout="miniState = true"
-      @mouseover="miniState = false"
+      class="column no-wrap"
     >
-      <q-list padding>
+      <q-list class="q-list--rail">
         <template
           v-for="item in filteredItems"
           :key="item.name"
@@ -73,7 +66,24 @@
           />
         </template>
       </q-list>
+
+      <q-space />
+
+      <!-- Rail footer: profile (desktop only — mobile uses the top bar) -->
+      <div
+        v-if="quasar.screen.gt.xs"
+        class="rail-footer row justify-center q-py-sm"
+      >
+        <profile-menu />
+      </div>
     </q-drawer>
+
+    <!-- Admin home has no rail nav: use floating controls so the profile stays
+         in the same bottom-left spot as every other large screen. -->
+    <layout-floating-controls
+      v-if="!showDrawer && quasar.screen.gt.xs"
+      :back-to="{ name: 'management' }"
+    />
 
     <q-page-container>
       <router-view v-slot="{ Component }">
@@ -89,15 +99,15 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
-import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
+import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
-import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useAuthStore } from 'stores/auth-store';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -105,7 +115,6 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const authStore = useAuthStore();
-const profileStore = useProfileStore();
 
 onMounted(async () => {
   await authStore.init();
@@ -127,7 +136,6 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
-const miniState = ref<boolean>(true);
 
 const items: NavigationItemProps[] = [
   {
@@ -172,10 +180,6 @@ const filteredItems = computed<NavigationItemProps[]>(() => {
   return items.filter((item) => {
     return !item.preview;
   });
-});
-
-const administrator = computed<boolean>(() => {
-  return profileStore.user?.role === 'ADMIN';
 });
 
 const dev = computed<boolean>(() => {
@@ -269,5 +273,12 @@ settings: 'Nastavení'
 }
 
 ::-webkit-scrollbar-corner {
+}
+</style>
+
+<style scoped>
+.header-link {
+  text-decoration: none;
+  color: inherit;
 }
 </style>

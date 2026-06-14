@@ -4,10 +4,11 @@
     <q-btn-toggle
       v-model="plan"
       :options="planOptions"
-      rounded
+      spread
       dense
-      no-caps
+      rounded
       toggle-color="primary"
+      class="cal-nav__plan-toggle"
     />
 
     <!-- Center: prev / date label / next -->
@@ -76,6 +77,57 @@
           @click="daysRange = Math.min(maxDays, daysRange + 1)"
         />
       </div>
+
+      <q-btn
+        icon="help_outline"
+        flat
+        round
+        :dense="quasar.screen.gt.xs"
+      >
+        <q-tooltip>{{ t('help.tooltip') }}</q-tooltip>
+        <q-menu
+          anchor="bottom right"
+          self="top right"
+        >
+          <div class="cal-help__panel">
+            <div class="text-subtitle2 q-mb-sm">{{ t('help.title') }}</div>
+
+            <template v-if="quasar.screen.gt.xs">
+              <div class="cal-help__section-label">
+                {{ t('help.keyboard') }}
+              </div>
+              <div
+                v-for="(row, i) in keyboardShortcuts"
+                :key="`k${i}`"
+                class="cal-help__row"
+              >
+                <div class="cal-help__keys">
+                  <kbd
+                    v-for="key in row.keys"
+                    :key="key"
+                    class="cal-help__kbd"
+                  >
+                    {{ key }}
+                  </kbd>
+                </div>
+                <div class="cal-help__desc">{{ row.label }}</div>
+              </div>
+
+              <q-separator class="q-my-sm" />
+            </template>
+
+            <div class="cal-help__section-label">{{ t('help.mouse') }}</div>
+            <ul class="cal-help__list">
+              <li
+                v-for="(row, i) in mouseShortcuts"
+                :key="`m${i}`"
+              >
+                {{ row }}
+              </li>
+            </ul>
+          </div>
+        </q-menu>
+      </q-btn>
 
       <q-btn
         icon="print"
@@ -155,6 +207,23 @@ const planOptions = computed(() => {
     },
   ];
 });
+
+const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => [
+  { keys: ['←', '→'], label: t('help.shortcuts.navigate') },
+  { keys: ['Esc'], label: t('help.shortcuts.deselect') },
+  { keys: ['P'], label: t('help.shortcuts.switchPlan') },
+  { keys: ['Del'], label: t('help.shortcuts.delete') },
+  { keys: ['Ctrl', 'Z'], label: t('help.shortcuts.undo') },
+]);
+
+const mouseShortcuts = computed<string[]>(() => [
+  t('help.shortcuts.create'),
+  t('help.shortcuts.move'),
+  t('help.shortcuts.copy'),
+  t('help.shortcuts.unschedule'),
+  t('help.shortcuts.resize'),
+  t('help.shortcuts.allDay'),
+]);
 
 const maxDays = computed<number>(() => {
   return daysBetweenDates(new Date(start), new Date(end)) + 1;
@@ -243,6 +312,16 @@ function previous() {
     gap: 8px;
   }
 
+  // MD3 segmented buttons reserve space for a selection checkmark on every
+  // segment, which makes this compact toggle too wide. Selection is already
+  // shown by the secondary-container fill, so drop the checkmark spacers.
+  &__plan-toggle {
+    :deep(.q-btn__content)::before,
+    :deep(.q-btn__content)::after {
+      display: none !important;
+    }
+  }
+
   &__center {
     display: flex;
     align-items: center;
@@ -252,18 +331,14 @@ function previous() {
     min-width: 0;
   }
 
-  &__date {
+  &__date-btn {
     font-size: 13px;
     font-weight: 600;
-    text-align: center;
     white-space: nowrap;
-    padding: 0 4px;
-    user-select: none;
-    color: #424242;
+    color: var(--md3-on-surface);
 
     @media (min-width: 600px) {
       font-size: 14px;
-      padding: 0 8px;
       min-width: 140px;
     }
   }
@@ -282,14 +357,81 @@ function previous() {
     display: flex;
     align-items: center;
 
+    padding: 0 2px;
+    border: 1px solid var(--md3-outline-variant);
+    border-radius: 999px;
+
+    color: var(--md3-on-surface-variant);
+
     &-val {
       font-size: 13px;
       font-weight: 600;
-      color: #424242;
-      min-width: 26px;
+      font-variant-numeric: tabular-nums;
+      color: var(--md3-on-surface);
+      min-width: 28px;
       text-align: center;
       user-select: none;
     }
+  }
+}
+
+.cal-help__panel {
+  padding: 12px 16px;
+  max-width: 320px;
+}
+
+.cal-help__section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--md3-on-surface-variant);
+  margin-bottom: 6px;
+}
+
+.cal-help__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.cal-help__keys {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 76px;
+}
+
+.cal-help__kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  border: 1px solid var(--md3-outline-variant);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.cal-help__desc {
+  font-size: 13px;
+  color: var(--md3-on-surface);
+}
+
+.cal-help__list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--md3-on-surface);
+
+  li {
+    padding: 2px 0;
   }
 }
 </style>
@@ -302,6 +444,23 @@ plan:
 options:
   print: 'Print calendar'
   settings: 'Calendar settings'
+help:
+  tooltip: 'Shortcuts & tips'
+  title: 'Shortcuts & tips'
+  keyboard: 'Keyboard'
+  mouse: 'Mouse & drag'
+  shortcuts:
+    navigate: 'Previous / next days'
+    deselect: 'Deselect event'
+    switchPlan: "Switch selected event's plan"
+    delete: 'Delete selected event'
+    undo: 'Undo last change'
+    create: 'Drag over free space to create an event'
+    move: 'Drag an event to move it'
+    copy: 'Hold Ctrl / ⌘ while dragging to copy'
+    unschedule: 'Drag onto "Unscheduled" to remove from the plan'
+    resize: "Drag an event's bottom edge to resize"
+    allDay: 'Click a day header to add an all-day event'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -312,6 +471,23 @@ plan:
 options:
   print: 'Kalender drucken'
   settings: 'Kalendereinstellungen'
+help:
+  tooltip: 'Tastenkürzel & Tipps'
+  title: 'Tastenkürzel & Tipps'
+  keyboard: 'Tastatur'
+  mouse: 'Maus & Ziehen'
+  shortcuts:
+    navigate: 'Vorherige / nächste Tage'
+    deselect: 'Ereignis abwählen'
+    switchPlan: 'Plan des gewählten Ereignisses wechseln'
+    delete: 'Gewähltes Ereignis löschen'
+    undo: 'Letzte Änderung rückgängig machen'
+    create: 'Über freie Fläche ziehen, um ein Ereignis zu erstellen'
+    move: 'Ereignis ziehen, um es zu verschieben'
+    copy: 'Strg / ⌘ beim Ziehen halten, um zu kopieren'
+    unschedule: 'Auf "Ungeplant" ziehen, um aus dem Plan zu entfernen'
+    resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern'
+    allDay: 'Tagesüberschrift anklicken, um ein ganztägiges Ereignis hinzuzufügen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -322,6 +498,23 @@ plan:
 options:
   print: 'Imprimer le calendrier'
   settings: 'Paramètres du calendrier'
+help:
+  tooltip: 'Raccourcis et astuces'
+  title: 'Raccourcis et astuces'
+  keyboard: 'Clavier'
+  mouse: 'Souris et glisser'
+  shortcuts:
+    navigate: 'Jours précédents / suivants'
+    deselect: "Désélectionner l'événement"
+    switchPlan: "Changer le plan de l'événement sélectionné"
+    delete: "Supprimer l'événement sélectionné"
+    undo: 'Annuler la dernière modification'
+    create: 'Glisser sur un espace libre pour créer un événement'
+    move: 'Glisser un événement pour le déplacer'
+    copy: 'Maintenir Ctrl / ⌘ en glissant pour copier'
+    unschedule: 'Glisser sur "Non planifié" pour retirer du plan'
+    resize: "Glisser le bord inférieur d'un événement pour le redimensionner"
+    allDay: "Cliquer sur l'en-tête d'un jour pour ajouter un événement sur la journée"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -332,6 +525,23 @@ plan:
 options:
   print: 'Drukuj kalendarz'
   settings: 'Ustawienia kalendarza'
+help:
+  tooltip: 'Skróty i wskazówki'
+  title: 'Skróty i wskazówki'
+  keyboard: 'Klawiatura'
+  mouse: 'Mysz i przeciąganie'
+  shortcuts:
+    navigate: 'Poprzednie / następne dni'
+    deselect: 'Odznacz wydarzenie'
+    switchPlan: 'Zmień plan wybranego wydarzenia'
+    delete: 'Usuń wybrane wydarzenie'
+    undo: 'Cofnij ostatnią zmianę'
+    create: 'Przeciągnij po wolnym miejscu, aby utworzyć wydarzenie'
+    move: 'Przeciągnij wydarzenie, aby je przenieść'
+    copy: 'Przytrzymaj Ctrl / ⌘ podczas przeciągania, aby skopiować'
+    unschedule: 'Przeciągnij na "Niezaplanowane", aby usunąć z planu'
+    resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar'
+    allDay: 'Kliknij nagłówek dnia, aby dodać wydarzenie całodniowe'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -342,4 +552,21 @@ plan:
 options:
   print: 'Vytisknout kalendář'
   settings: 'Nastavení kalendáře'
+help:
+  tooltip: 'Zkratky a tipy'
+  title: 'Zkratky a tipy'
+  keyboard: 'Klávesnice'
+  mouse: 'Myš a tažení'
+  shortcuts:
+    navigate: 'Předchozí / další dny'
+    deselect: 'Zrušit výběr události'
+    switchPlan: 'Změnit plán vybrané události'
+    delete: 'Smazat vybranou událost'
+    undo: 'Vrátit poslední změnu'
+    create: 'Tažením přes volné místo vytvoříte událost'
+    move: 'Tažením události ji přesunete'
+    copy: 'Podržte Ctrl / ⌘ při tažení pro kopírování'
+    unschedule: 'Přetažením na "Neplánované" odeberete z plánu'
+    resize: 'Tažením dolního okraje události změníte velikost'
+    allDay: 'Kliknutím na záhlaví dne přidáte celodenní událost'
 </i18n>

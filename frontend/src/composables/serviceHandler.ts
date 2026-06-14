@@ -321,6 +321,9 @@ export function useServiceNotifications(storeName?: string) {
     const progressOptions = options.progress ?? {};
     progressOptions.group = false;
     progressOptions.position = progressOptions.position ?? 'top';
+    progressOptions.color = progressOptions.color ?? 'inverse-surface';
+    progressOptions.textColor =
+      progressOptions.textColor ?? 'inverse-on-surface';
     progressOptions.timeout = 0;
     progressOptions.spinner = true;
     progressOptions.message =
@@ -330,11 +333,17 @@ export function useServiceNotifications(storeName?: string) {
     //
     const successOptions = defaultSuccessOptions(operation, options.success);
     successOptions.spinner = false;
+    successOptions.type = 'positive';
+    successOptions.color = successOptions.color ?? 'positive';
+    successOptions.textColor = successOptions.textColor ?? 'white';
     successOptions.timeout = successOptions.timeout ?? 2500;
 
     //
     const errorOptions = defaultErrorOptions(operation, options.error);
     errorOptions.spinner = false;
+    errorOptions.type = 'negative';
+    errorOptions.color = errorOptions.color ?? 'negative';
+    errorOptions.textColor = errorOptions.textColor ?? 'white';
     errorOptions.timeout = errorOptions.timeout ?? 2500;
 
     return {

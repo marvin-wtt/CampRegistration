@@ -17,10 +17,10 @@
         <q-item
           v-for="item in items"
           :key="item.name"
+          :to="item.to"
           v-ripple
           clickable
           class="q-py-md"
-          @click="router.push(item.to)"
         >
           <q-item-section avatar>
             <q-avatar
@@ -53,12 +53,11 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 
 const { t } = useI18n();
-const router = useRouter();
 
-const items = [
+const items = computed(() => [
   {
     name: 'camps',
     label: t('camps.label'),
@@ -72,10 +71,10 @@ const items = [
     label: t('newsletters.label'),
     description: t('newsletters.description'),
     icon: 'mail',
-    color: 'teal',
+    color: 'tertiary',
     to: { name: 'management.newsletters' },
   },
-] as const;
+]);
 </script>
 
 <i18n lang="yaml" locale="en">

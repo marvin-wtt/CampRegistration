@@ -1,172 +1,146 @@
 <template>
   <page-state-handler
-    :error
-    class="row justify-center"
     padding
+    :error="pageError"
+    :loading
+    class="templates-page row justify-center"
   >
-    <div class="column col-sm-12 col-md-9 col-lg-8 col-xl-6">
-      <div class="q-pa-sm">
-        <p class="text-h4 text-bold">
-          {{ t('page.title') }}
-        </p>
-        <p class="text-subtitle2">
-          {{ t('page.description') }}
-        </p>
+    <div
+      class="templates-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg"
+    >
+      <!-- Header -->
+      <div class="row items-end justify-between q-col-gutter-y-sm">
+        <div class="col-12 col-sm">
+          <div class="text-h5 text-weight-medium">
+            {{ t('page.title') }}
+          </div>
+          <div class="text-body2 text-grey-6 q-mt-xs">
+            {{ t('page.description') }}
+          </div>
+        </div>
       </div>
 
-      <q-list v-if="loading || !camp">
-        <q-item
-          v-for="i in 6"
-          :key="i"
-        >
-          <q-item-section avatar>
-            <q-skeleton
-              type="circle"
-              size="30px"
-            />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>
-              <q-skeleton
-                type="text"
-                width="200px"
-              />
-            </q-item-label>
-            <q-item-label caption>
-              <q-skeleton
-                type="text"
-                width="500px"
-              />
-            </q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-skeleton
-              type="circle"
-              size="30px"
-            />
-          </q-item-section>
-        </q-item>
-      </q-list>
-
-      <q-list v-else>
-        <q-expansion-item
-          v-for="{ event: eventName, templates: eventTemplates } in templates"
-          :key="eventName"
-          :content-inset-level="1"
-          expand-separator
-          group="templates"
-        >
-          <template #header>
-            <q-item-section avatar>
-              <q-icon
-                :name="TEMPLATE_ICONS[eventName] ?? 'mail_outline'"
-                color="primary"
-              />
-            </q-item-section>
-
-            <q-item-section>
-              <q-item-label>
-                {{ t(`template.${eventName ?? 'default'}.label`) }}
-              </q-item-label>
-              <q-item-label caption>
-                {{ t(`template.${eventName ?? 'default'}.description`) }}
-              </q-item-label>
-            </q-item-section>
-          </template>
-
-          <q-list>
-            <q-item
-              v-for="{
-                country,
-                template,
-                loading: templateLoading,
-              } in eventTemplates"
-              :key="country"
-              :clickable="!!template && !templateLoading"
-              :aria-label="!!template ? t('action.edit') : undefined"
-              @click="editTemplate(template)"
-            >
+      <!-- Registration events -->
+      <q-card
+        flat
+        bordered
+        class="section-card"
+      >
+        <q-list class="q-py-xs">
+          <q-expansion-item
+            v-for="{ event: eventName, templates: eventTemplates } in templates"
+            :key="eventName"
+            :content-inset-level="1"
+            expand-separator
+            group="templates"
+          >
+            <template #header>
               <q-item-section avatar>
-                <country-icon :country />
+                <q-icon
+                  :name="TEMPLATE_ICONS[eventName] ?? 'mail_outline'"
+                  color="primary"
+                />
               </q-item-section>
 
               <q-item-section>
-                {{ t(`template.${eventName ?? 'default'}.label`) }}
-                ({{ country }})
+                <q-item-label>
+                  {{ t(`template.${eventName ?? 'default'}.label`) }}
+                </q-item-label>
+                <q-item-label caption>
+                  {{ t(`template.${eventName ?? 'default'}.description`) }}
+                </q-item-label>
               </q-item-section>
+            </template>
 
-              <q-item-section side>
-                <template v-if="template?.id">
-                  <q-btn
-                    v-if="
-                      can('camp.message_templates.edit') ||
-                      can('camp.message_templates.delete')
-                    "
-                    icon="more_vert"
-                    round
-                    dense
-                    unelevated
-                    :loading
-                    :disable="loading"
-                    @click.stop
-                  >
-                    <q-menu>
-                      <q-list style="min-width: 200px">
-                        <q-item
-                          v-if="can('camp.message_templates.edit')"
-                          clickable
-                          v-close-popup
-                          @click="editTemplate(template)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon name="edit" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
+            <q-list>
+              <q-item
+                v-for="{ country, template } in eventTemplates"
+                :key="country"
+                :clickable="!!template"
+                :aria-label="!!template ? t('action.edit') : undefined"
+                @click="editTemplate(template)"
+              >
+                <q-item-section avatar>
+                  <country-icon :country />
+                </q-item-section>
+
+                <q-item-section>
+                  {{ t(`template.${eventName ?? 'default'}.label`) }}
+                  ({{ country }})
+                </q-item-section>
+
+                <q-item-section side>
+                  <template v-if="template?.id">
+                    <q-btn
+                      v-if="
+                        can('camp.message_templates.edit') ||
+                        can('camp.message_templates.delete')
+                      "
+                      :aria-label="t('action.menu')"
+                      icon="more_vert"
+                      flat
+                      round
+                      size="sm"
+                      @click.stop
+                    >
+                      <q-menu>
+                        <q-list style="min-width: 180px">
+                          <q-item
+                            v-if="can('camp.message_templates.edit')"
+                            clickable
+                            v-close-popup
+                            @click="editTemplate(template)"
+                          >
+                            <q-item-section avatar>
+                              <q-icon
+                                name="edit"
+                                size="sm"
+                              />
+                            </q-item-section>
+                            <q-item-section>
                               {{ t('action.edit') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-                        <q-item
-                          v-if="can('camp.message_templates.delete')"
-                          clickable
-                          v-close-popup
-                          @click="deleteTemplate(template.id)"
-                        >
-                          <q-item-section avatar>
-                            <q-icon
-                              name="delete"
-                              color="negative"
-                            />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label class="text-negative">
+                            </q-item-section>
+                          </q-item>
+                          <q-item
+                            v-if="can('camp.message_templates.delete')"
+                            clickable
+                            v-close-popup
+                            class="text-negative"
+                            @click="deleteTemplate(template.id)"
+                          >
+                            <q-item-section avatar>
+                              <q-icon
+                                name="delete"
+                                size="sm"
+                              />
+                            </q-item-section>
+                            <q-item-section>
                               {{ t('action.delete') }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-                      </q-list>
-                    </q-menu>
-                  </q-btn>
-                </template>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-menu>
+                    </q-btn>
+                  </template>
 
-                <template v-else>
-                  <q-btn
-                    v-if="can('camp.message_templates.create')"
-                    :aria-label="t('action.add')"
-                    icon="add"
-                    color="primary"
-                    round
-                    dense
-                    unelevated
-                    @click="addTemplate(eventName, country)"
-                  />
-                </template>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-expansion-item>
-      </q-list>
+                  <template v-else>
+                    <q-btn
+                      v-if="can('camp.message_templates.create')"
+                      :aria-label="t('action.add')"
+                      icon="add"
+                      color="primary"
+                      round
+                      dense
+                      unelevated
+                      @click="addTemplate(eventName, country)"
+                    />
+                  </template>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+        </q-list>
+      </q-card>
     </div>
   </page-state-handler>
 </template>
@@ -214,17 +188,21 @@ const TEMPLATE_ICONS: Record<string, string> = {
   registration_canceled: 'cancel',
 };
 
-const TEMPLATE_ORDER: string[] = [
+const TEMPLATE_ORDER = [
   'registration_submitted',
   'registration_confirmed',
   'registration_waitlisted',
   'registration_waitlist_accepted',
   'registration_updated',
   'registration_canceled',
-];
+] as const;
 
 const loading = computed<boolean>(() => {
-  return isLoading.value;
+  return isLoading.value || campDetailsStore.isLoading;
+});
+
+const pageError = computed<string | null>(() => {
+  return error.value ?? campDetailsStore.error;
 });
 
 async function loadData() {
@@ -239,7 +217,6 @@ interface MappedTemplate {
   event: string;
   templates: {
     country: string;
-    loading: boolean;
     template: MessageTemplate | undefined;
   }[];
 }
@@ -247,11 +224,15 @@ interface MappedTemplate {
 const templates = computed<MappedTemplate[]>(() => {
   const values = data.value;
   const countries = camp.value?.countries;
-  if (!values || !countries) {
+  const confirmationMode = camp.value?.confirmationMode;
+  if (!values || !countries || !confirmationMode) {
     return [];
   }
 
-  return TEMPLATE_ORDER.map((event) => ({
+  return TEMPLATE_ORDER.filter(
+    (event) =>
+      confirmationMode === 'MANUAL' || event !== 'registration_submitted',
+  ).map((event) => ({
     event,
     templates: countries.map((country) => {
       return {
@@ -259,7 +240,6 @@ const templates = computed<MappedTemplate[]>(() => {
         template: values.find(
           (t) => t.event === event && t.country === country,
         ),
-        loading: false,
       };
     }),
   }));
@@ -368,13 +348,30 @@ async function deleteTemplate(id: string | undefined) {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.templates-content {
+  max-width: 960px;
+  padding-bottom: 24px;
+}
+
+/* The default page padding feels cramped under the app bar on phones. */
+@media (max-width: 599px) {
+  .templates-page {
+    padding-top: 24px;
+  }
+}
+
+.section-card {
+  border-radius: 16px;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 action:
   add: 'Add template'
   edit: 'Edit template'
   delete: 'Delete template'
+  menu: 'Actions'
 
 page:
   title: 'Registration Events'
@@ -417,6 +414,7 @@ action:
   add: 'Vorlage hinzufügen'
   edit: 'Vorlage bearbeiten'
   delete: 'Vorlage löschen'
+  menu: 'Aktionen'
 
 page:
   title: 'Anmeldeereignisse'
@@ -459,6 +457,7 @@ action:
   add: 'Ajouter un modèle'
   edit: 'Modifier le modèle'
   delete: 'Supprimer le modèle'
+  menu: 'Actions'
 
 page:
   title: "Événements d'Inscription"
@@ -501,6 +500,7 @@ action:
   add: 'Dodaj szablon'
   edit: 'Edytuj szablon'
   delete: 'Usuń szablon'
+  menu: 'Akcje'
 
 page:
   title: 'Zdarzenia rejestracji'
@@ -543,6 +543,7 @@ action:
   add: 'Přidat šablonu'
   edit: 'Upravit šablonu'
   delete: 'Smazat šablonu'
+  menu: 'Akce'
 
 page:
   title: 'Události registrace'

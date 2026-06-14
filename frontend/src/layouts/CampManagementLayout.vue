@@ -2,82 +2,83 @@
   <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
-    <q-header bordered>
-      <q-toolbar>
-        <q-btn
+    <!-- Top bar: mobile only. On large screens pages use either a left rail
+         or floating controls, both of which carry the profile. -->
+    <q-header
+      v-if="quasar.screen.lt.sm"
+      bordered
+    >
+      <m-toolbar>
+        <m-btn
           v-if="showDrawer"
-          dense
-          flat
           icon="menu"
+          square
           round
+          text
           @click="toggleDrawer"
         />
-        <q-toolbar-title>
-          <q-skeleton
-            v-if="campDetailStore.isLoading"
-            type="text"
-          />
-          <router-link
-            v-else
-            :to="{ name: 'management' }"
-            style="text-decoration: none; color: inherit"
-          >
-            {{ to(title) }}
-          </router-link>
-        </q-toolbar-title>
-
-        <header-navigation :administration="administrator" />
-
-        <locale-switch
-          borderless
-          class="q-px-md gt-xs"
-          dense
-          rounded
-          unelevated
+        <m-btn
+          v-else-if="!isLanding"
+          icon="arrow_back"
+          square
+          round
+          text
+          :aria-label="t('back')"
+          @click="navigateHome()"
         />
 
+        <!-- Camp context (mobile): name doubles as a camp switcher -->
+        <template v-if="showDrawer">
+          <camp-switcher />
+          <q-space />
+        </template>
+
+        <!-- Outside a camp: plain app title -->
+        <q-toolbar-title v-else>
+          {{ to(title) }}
+        </q-toolbar-title>
+
         <profile-menu />
-      </q-toolbar>
+      </m-toolbar>
     </q-header>
 
     <q-drawer
       v-if="showDrawer"
       v-model="drawer"
       :breakpoint="599.99"
-      :mini="miniState && floatingDrawer"
+      mini
       :width="300"
+      :mini-width="96"
       bordered
-      :mini-to-overlay="floatingDrawer"
       show-if-above
       class="column no-wrap"
-      @mouseleave="miniState = true"
-      @mouseenter="miniState = false"
     >
-      <q-list padding>
-        <q-item
-          clickable
-          v-ripple
-          @click="navigateHome"
-        >
-          <q-item-section avatar>
-            <q-icon
-              v-if="miniState && floatingDrawer"
-              name="home"
-            />
-            <q-icon
-              v-else
-              name="arrow_back"
-            />
-          </q-item-section>
-          <q-item-section>
-            {{ campName }}
-          </q-item-section>
-        </q-item>
+      <!-- Rail header: camp switcher (desktop only — mobile uses the top bar) -->
+      <div
+        v-if="quasar.screen.gt.xs"
+        class="rail-header row justify-center q-py-sm"
+      >
+        <camp-switcher rail />
+      </div>
 
-        <q-separator spaced />
+      <q-separator
+        v-if="quasar.screen.gt.xs"
+        inset
+      />
 
+      <q-list class="q-list--rail">
+        <template v-if="permissionsLoading">
+          <navigation-item-skeleton
+            v-for="(item, i) in items"
+            :key="item.name"
+            :label="item.label"
+            :separated="item.separated"
+            :first="i === 0"
+          />
+        </template>
         <navigation-item
           v-for="(item, i) in filteredItems"
+          v-else
           :key="item.name"
           v-bind="item"
           :first="i === 0"
@@ -86,30 +87,22 @@
 
       <q-space />
 
-      <q-list padding>
-        <q-item
-          clickable
-          :to="{ name: 'imprint' }"
-        >
-          <q-item-section>
-            <q-item-label>
-              {{ t('footer.imprint') }}
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-
-        <q-item
-          clickable
-          :to="{ name: 'privacy-policy' }"
-        >
-          <q-item-section>
-            <q-item-label>
-              {{ t('footer.privacy_policy') }}
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-      </q-list>
+      <!-- Rail footer: profile (desktop only — mobile uses the top bar) -->
+      <div
+        v-if="quasar.screen.gt.xs"
+        class="rail-footer row justify-center q-py-sm"
+      >
+        <profile-menu />
+      </div>
     </q-drawer>
+
+    <!-- No-drawer pages on large screens (camps grid, landing) get floating
+         controls instead of a rail, keeping the profile bottom-left. The
+         landing is home, so it shows no back button. -->
+    <layout-floating-controls
+      v-if="!showDrawer && quasar.screen.gt.xs"
+      :back-to="isLanding ? { name: 'camps' } : { name: 'management' }"
+    />
 
     <q-page-container>
       <router-view v-slot="{ Component }">
@@ -122,20 +115,24 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
-import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
+import NavigationItemSkeleton from 'components/NavigationItemSkeleton.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
+import CampSwitcher from 'components/layout/CampSwitcher.vue';
+import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
+import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();
 const route = useRoute();
@@ -147,17 +144,24 @@ const { can } = usePermissions();
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
+const assignedCampsStore = useAssignedCampsStore();
 
 onMounted(async () => {
   await authStore.init();
 
   if (route.params.campId) {
     await campDetailStore.fetchData();
+    void assignedCampsStore.fetchData();
   }
 });
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
+});
+
+// The landing/home hub keeps a full-width top bar instead of a rail.
+const isLanding = computed<boolean>(() => {
+  return route.name === 'management';
 });
 
 const title = computed(() => {
@@ -168,10 +172,6 @@ const campName = computed<string | undefined>(() => {
   return to(campDetailStore.data?.name);
 });
 
-const administrator = computed<boolean>(() => {
-  return profileStore.user?.role === 'ADMIN';
-});
-
 useMeta(() => {
   return {
     title: to(title.value),
@@ -180,20 +180,15 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
-const floatingDrawer = ref<boolean>(true);
-const miniState = ref<boolean>(true);
-
-watch(
-  () => quasar.screen.lt.sm,
-  () => {
-    // Reset drawer when screen size changes
-    drawer.value = false;
-    floatingDrawer.value = true;
-    miniState.value = true;
-  },
-);
 
 const items = computed<NavigationItemProps[]>(() => [
+  {
+    name: 'dashboard',
+    label: t('dashboard'),
+    icon: 'dashboard',
+    permission: 'camp.registrations.view',
+    to: { name: 'management.camp.dashboard' },
+  },
   {
     name: 'participants',
     label: t('participants'),
@@ -228,45 +223,18 @@ const items = computed<NavigationItemProps[]>(() => [
     icon: 'settings',
     to: { name: 'management.camp.settings' },
     separated: true,
-    children: [
-      {
-        name: 'access',
-        label: t('access'),
-        icon: 'key',
-        permission: 'camp.managers.view',
-        to: { name: 'management.camp.settings.access' },
-      },
-      {
-        name: 'edit',
-        label: t('edit'),
-        icon: 'edit',
-        permission: 'camp.edit',
-        to: { name: 'management.camp.settings.edit' },
-      },
-      {
-        name: 'email-templates',
-        label: t('email_templates'),
-        icon: 'email',
-        permission: 'camp.message_templates.view',
-        to: { name: 'management.camp.settings.emails' },
-      },
-      {
-        name: 'files',
-        label: t('files'),
-        icon: 'folder',
-        permission: 'camp.files.view',
-        to: { name: 'management.camp.settings.files' },
-      },
-      {
-        name: 'form',
-        label: t('form'),
-        icon: 'feed',
-        permission: 'camp.edit',
-        to: { name: 'management.camp.settings.form' },
-      },
-    ],
   },
 ]);
+
+// Permission checks key off the loaded profile (campAccess) and the active
+// camp id. Until both have resolved, `can()` returns false for everything, so
+// show skeleton nav items rather than a misleadingly empty rail.
+const permissionsLoading = computed<boolean>(() => {
+  return (
+    profileStore.user === undefined ||
+    (route.params.campId !== undefined && campDetailStore.data === undefined)
+  );
+});
 
 const filteredItems = computed<NavigationItemProps[]>(() => {
   return filterItems(items.value);
@@ -274,7 +242,6 @@ const filteredItems = computed<NavigationItemProps[]>(() => {
 
 function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
   return navItems
-    .filter((item) => dev.value || !item.preview)
     .filter((item) => !item.permission || can(item.permission))
     .map((item) => {
       if ('children' in item && item.children !== undefined) {
@@ -287,131 +254,87 @@ function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
     });
 }
 
-const dev = computed<boolean>(() => {
-  return process.env.NODE_ENV === 'development';
-});
-
 function toggleDrawer() {
-  if (quasar.screen.lt.sm) {
-    drawer.value = !drawer.value;
-  } else {
-    floatingDrawer.value = !floatingDrawer.value;
-  }
+  drawer.value = !drawer.value;
 }
 
 function navigateHome() {
+  if (route.name === 'management') {
+    void router.push({ name: 'camps' });
+    return;
+  }
+
+  if (route.name === 'management.camps') {
+    void router.push({ name: 'management' });
+    return;
+  }
+
   void router.push({ name: 'management.camps' });
 }
 </script>
 
 <i18n lang="yaml" locale="en">
-footer:
-  imprint: 'Imprint'
-  privacy_policy: 'Privacy Policy'
-
-access: 'Access'
+back: 'Back'
 contact: 'Contact'
 dashboard: 'Dashboard'
-edit: 'Edit'
-email_templates: 'Email templates'
-files: 'Files'
-form: 'Registration Form'
-expenses: 'Expenses'
 participants: 'Participants'
 program_planner: 'Program'
 room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
-tools: 'Tools'
-notifications: 'Notifications'
+switch_camp: 'Switch camp'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-footer:
-  imprint: 'Impressum'
-  privacy_policy: 'Datenschutzerklärung'
-
-access: 'Zugriff'
+back: 'Zurück'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
-edit: 'Bearbeiten'
-email_templates: 'E-Mail-Vorlagen'
-files: 'Dateien'
-expenses: 'Ausgaben'
-form: 'Anmeldeformular'
 participants: 'Teilnehmende'
 program_planner: 'Programm'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
+switch_camp: 'Camp wechseln'
 tools: 'Tools'
-notifications: 'Benachrichtigungen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-footer:
-  imprint: 'Mentions légales'
-  privacy_policy: 'Politique de confidentialité'
-
-access: 'Accès'
+back: 'Retour'
 contact: 'Contacter'
 dashboard: 'Dashboard'
-edit: 'Modifier'
-email_templates: "Modèles d'e-mails"
-files: 'Fichiers'
-expenses: 'Dépenses'
-form: "formulaire d'inscription"
 participants: 'Participants'
 program_planner: 'Programme'
 room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
+switch_camp: 'Changer de camp'
 tools: 'Tools'
-notifications: 'Notifications'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-footer:
-  imprint: 'Nota prawna'
-  privacy_policy: 'Polityka prywatności'
-
-access: 'Dostęp'
+back: 'Wstecz'
 contact: 'Kontakt'
 dashboard: 'Panel główny'
-edit: 'Edytuj'
-email_templates: 'Szablony e-maili'
-files: 'Pliki'
-expenses: 'Wydatki'
-form: 'Formularz rejestracyjny'
 participants: 'Uczestnicy'
 program_planner: 'Program'
 room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
+switch_camp: 'Zmień obóz'
 tools: 'Narzędzia'
-notifications: 'Powiadomienia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-footer:
-  imprint: 'Tiráž'
-  privacy_policy: 'Zásady ochrany osobních údajů'
-
-access: 'Přístup'
+back: 'Zpět'
 contact: 'Kontakt'
 dashboard: 'Přehled'
-edit: 'Upravit'
-email_templates: 'E-mailové šablony'
-files: 'Soubory'
-expenses: 'Výdaje'
-form: 'Registrační formulář'
 participants: 'Účastníci'
 program_planner: 'Program'
 room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
+switch_camp: 'Změnit tábor'
 tools: 'Nástroje'
-notifications: 'Oznámení'
 </i18n>
 
 <style>

@@ -15,7 +15,10 @@
         {{ t('description') }}
       </q-card-section>
 
-      <q-card-section class="q-gutter-sm">
+      <q-card-section
+        class="q-gutter-sm"
+        style="max-width: 500px"
+      >
         <qr-code
           :value="url"
           :margin="2"

@@ -206,7 +206,15 @@ export default [
           pl: 'Opuścić',
         },
         field: 'data.permission_leave',
-        renderAs: 'permission_leave',
+        renderAs: 'icon_mapping',
+        renderOptions: {
+          mappings: [
+            { value: '2', icon: 'person', color: 'positive' },
+            { value: '1', icon: 'groups', color: 'warning' },
+            { value: '0', icon: 'close', color: 'negative' },
+          ],
+          fallback: { icon: 'question_mark', color: 'grey' },
+        },
         align: 'center',
         shrink: true,
         headerVertical: true,

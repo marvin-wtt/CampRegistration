@@ -1,18 +1,45 @@
 <template>
-  <q-btn
+  <m-btn
     v-if="authenticated"
-    flat
-    icon="account_circle"
-    rounded
+    round
+    text
+    :aria-label="t('account')"
   >
-    <q-menu>
-      <q-list style="min-width: 100px">
-        <q-item>
+    <q-avatar
+      size="34px"
+      class="profile-avatar"
+    >
+      <span v-if="initials">
+        {{ initials }}
+      </span>
+      <q-icon
+        v-else
+        name="account_circle"
+      />
+    </q-avatar>
+
+    <q-menu
+      anchor="bottom end"
+      self="top end"
+    >
+      <q-list style="min-width: 240px">
+        <q-item class="profile-header">
+          <q-item-section avatar>
+            <q-avatar
+              size="40px"
+              class="profile-avatar"
+            >
+              <span v-if="initials">
+                {{ initials }}
+              </span>
+              <q-icon
+                v-else
+                name="account_circle"
+              />
+            </q-avatar>
+          </q-item-section>
           <q-item-section>
             <q-item-label>
-              {{ t('username') }}
-            </q-item-label>
-            <q-item-label caption>
               {{ profile?.name }}
             </q-item-label>
             <q-item-label caption>
@@ -21,7 +48,7 @@
           </q-item-section>
         </q-item>
 
-        <q-separator />
+        <q-separator spaced />
 
         <q-item
           v-close-popup
@@ -84,7 +111,7 @@
           </q-item-section>
         </q-item>
 
-        <q-separator />
+        <q-separator spaced />
 
         <q-item
           v-close-popup
@@ -106,6 +133,9 @@
           <q-item-section>
             {{ t('language') }}
           </q-item-section>
+          <q-item-section side>
+            <country-icon :locale="locale" />
+          </q-item-section>
 
           <q-menu
             anchor="top start"
@@ -117,6 +147,7 @@
                 v-for="localeOption in locales"
                 :key="localeOption.value"
                 clickable
+                :active="locale === localeOption.value"
                 @click="updateLocale(localeOption.value)"
               >
                 <q-item-section avatar>
@@ -132,7 +163,7 @@
           </q-menu>
         </q-item>
 
-        <q-separator />
+        <q-separator spaced />
 
         <q-item
           v-close-popup
@@ -148,15 +179,14 @@
         </q-item>
       </q-list>
     </q-menu>
-  </q-btn>
+  </m-btn>
 
-  <q-btn
+  <m-btn
     v-else
     :to="{ name: 'login' }"
-    :label="t('login')"
+    :aria-label="t('login')"
     :loading
-    rounded
-    flat
+    icon="login"
   />
 </template>
 
@@ -168,6 +198,7 @@ import { useQuasar } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
 import { useProfileStore } from 'stores/profile-store';
 import { useAuthStore } from 'stores/auth-store';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const profileStore = useProfileStore();
 const authStore = useAuthStore();
@@ -178,7 +209,6 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-// TODO Read from config
 const locales = computed(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
@@ -189,6 +219,20 @@ const locales = computed(() => [
 
 const profile = computed<Profile | undefined>(() => {
   return profileStore.user;
+});
+
+const initials = computed<string>(() => {
+  const name = profile.value?.name?.trim();
+  if (!name) {
+    return '';
+  }
+
+  const parts = name.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.charAt(0) ?? '';
+  const last =
+    parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
+
+  return (first + last).toUpperCase();
 });
 
 const loading = computed<boolean>(() => {
@@ -220,7 +264,24 @@ function logout() {
 }
 </script>
 
-<style scoped></style>
+<style>
+.q-menu {
+  max-height: 80vh;
+}
+</style>
+
+<style scoped>
+.profile-avatar {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.profile-header {
+  pointer-events: none;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 account: 'Account'

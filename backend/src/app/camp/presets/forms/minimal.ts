@@ -2,7 +2,6 @@ export default {
   locale: 'en',
   title: '{camp.name}',
   description: '{camp.startAtDate} - {camp.endAtDate}',
-  logoWidth: 'auto',
   logoHeight: '80px',
   logoPosition: 'right',
   completedHtml: {
@@ -374,8 +373,8 @@ export default {
       expression: 'isWaitingList({camp.freePlaces}, {country})',
     },
   ],
-  showQuestionNumbers: 'off',
-  showProgressBar: 'bottom',
+  showProgressBar: true,
+  progressBarLocation: 'bottom',
   completeText: {
     en: 'Complete Registration',
     de: 'Anmeldung abschließen',
@@ -384,5 +383,5 @@ export default {
     cs: 'Dokončit registraci',
     default: 'Complete Registration',
   },
-  widthMode: 'responsive',
+  headerView: 'advanced',
 };
