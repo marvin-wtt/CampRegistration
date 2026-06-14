@@ -541,9 +541,10 @@ export default [
           cs: 'Jméno',
           pl: 'Imię',
         },
-        field: 'data.guardian_first_name',
+        field: 'data.guardian.*.first_name',
         renderAs: 'name',
         align: 'left',
+        isArray: true,
       },
       {
         name: 'guardian_last_name',
@@ -554,9 +555,10 @@ export default [
           cs: 'Příjmení',
           pl: 'Nazwisko',
         },
-        field: 'data.guardian_last_name',
+        field: 'data.guardian.*.last_name',
         renderAs: 'name',
         align: 'left',
+        isArray: true,
       },
       {
         name: 'guardian_email',

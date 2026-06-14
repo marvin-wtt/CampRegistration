@@ -538,7 +538,7 @@ export default {
             default:
               'There are no contacts yet. Click on the button below to add a new contact.',
           },
-          panelCount: 1,
+          panelCount: 2,
           minPanelCount: 1,
           maxPanelCount: 3,
           addPanelText: {
