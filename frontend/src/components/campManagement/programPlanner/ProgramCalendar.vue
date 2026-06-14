@@ -132,6 +132,7 @@
                   height: `${timeDurationHeight(dragHoverPreview.duration)}px`,
                   backgroundColor: hexToRgba(dragHoverPreview.color, 0.2),
                   borderColor: hexToRgba(dragHoverPreview.color, 0.7),
+                  ...dragPreviewSideStyle,
                 }"
               />
 
@@ -654,12 +655,26 @@ interface DragHoverPreview {
   startTime: string;
   duration: number;
   color: string;
+  plan: 'a' | 'b' | 'both';
 }
 
 const dragHoverPreview = ref<DragHoverPreview | null>(null);
 let draggingEventDuration = 60;
 let draggingEventColor = '#2196F3';
+let draggingEventPlan: 'a' | 'b' | 'both' = 'both';
 let draggingGrabOffset = 0;
+
+// Mirror CalendarItem's side placement: in both-plans view, a single-plan
+// event occupies the left (a) or right (b) half of the column.
+const dragPreviewSideStyle = computed(() => {
+  const preview = dragHoverPreview.value;
+  if (!preview || !viewBoth.value || preview.plan === 'both') {
+    return {};
+  }
+  return preview.plan === 'b'
+    ? { left: 'calc(50% + 2px)', right: 'auto', width: 'calc(50% - 4px)' }
+    : { left: '2px', right: 'auto', width: 'calc(50% - 4px)' };
+});
 
 let previewRafId: number | null = null;
 let pendingPreview: DragHoverPreview | null | undefined = undefined;
@@ -822,6 +837,7 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
 
   draggingEventDuration = event.duration ?? 60;
   draggingEventColor = event.color ?? '#2196F3';
+  draggingEventPlan = event.plan;
   draggingGrabOffset =
     parseInt(e.dataTransfer.getData('text/grab-offset')) || 0;
 
@@ -855,6 +871,7 @@ function onDragEnter(
       startTime,
       duration: draggingEventDuration,
       color: draggingEventColor,
+      plan: draggingEventPlan,
     });
   } else {
     schedulePreviewUpdate(null);
