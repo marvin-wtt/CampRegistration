@@ -1,7 +1,7 @@
 import {
   type PageModel,
   type PanelModel,
-  Question,
+  type Question,
   QuestionPanelDynamicModel,
   type QuestionSelectBase,
   SurveyModel,
@@ -77,9 +77,6 @@ function collectSelectData(
     parentTitle,
   );
   const result: SelectData[] = [{ label, value }];
-
-  console.log(question.getValueName());
-  console.log(getNestedQuestions(question).length);
 
   // Collect nested questions if present
   result.push(
