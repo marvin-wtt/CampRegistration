@@ -10,7 +10,6 @@ import {
   selectFilesByLocale,
 } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
-import { PlainLight, PlainDark } from 'survey-core/themes';
 import { useAPIService } from 'src/services/APIService';
 import { md3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
 
@@ -82,13 +81,13 @@ export const startAutoThemeUpdate = (
 
     let theme: ITheme;
     if (colorPlatte in themes) {
-      theme = themes[colorPlatte] ?? md3SurveyThemes[colorPlatte];
+      theme = themes[colorPlatte]!;
     } else if (colorPlatte === 'dark' && 'light' in themes) {
       // Try light mode first
       theme = themes.light;
     } else {
       // Apply default theme
-      theme = colorPlatte === 'dark' ? PlainDark : PlainLight;
+      theme = md3SurveyThemes[colorPlatte];
     }
 
     model.applyTheme(theme);
