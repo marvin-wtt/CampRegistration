@@ -140,7 +140,7 @@ export function useCampStatistics() {
       return [];
     }
 
-    const countries = camp.countries.sort() ?? [];
+    const countries = [...camp.countries].sort();
     return countries.map((country) => {
       const inCountry = participants.value.filter(
         (r) => helper.country(r) === country,

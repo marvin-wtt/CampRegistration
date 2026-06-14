@@ -80,7 +80,7 @@
               <div class="stat-tile">
                 <div
                   class="text-weight-medium"
-                  :class="(row.free ?? 0 > 0) ? 'text-positive' : 'text-grey-7'"
+                  :class="(row.free ?? 0) > 0 ? 'text-positive' : 'text-grey-7'"
                 >
                   {{ row.free ?? '—' }}
                 </div>

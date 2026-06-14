@@ -160,18 +160,24 @@ const currentlyOpen = computed<boolean>(() => {
     return false;
   }
   const now = new Date();
-  return (opens === null || now >= opens) && (closes === null || now <= closes);
+  // Open within [opensAt, closesAt): inclusive start, exclusive end so a camp
+  // closed "now" reads as closed immediately.
+  return (opens === null || now >= opens) && (closes === null || now < closes);
 });
 
 function openNow() {
-  opensAt.value = new Date().toISOString();
-  closesAt.value = null;
+  const now = new Date();
+  opensAt.value = now.toISOString();
+  // Drop a closing date that is in the past or now so the camp reads as open
+  if (closesAt.value && new Date(closesAt.value) <= now) {
+    closesAt.value = null;
+  }
 }
 
 function closeNow() {
   const now = new Date();
-  // Drop a future opening date so the camp reads as closed right away
-  if (opensAt.value && new Date(opensAt.value) > now) {
+  // Drop an opening date that is in the future or now so the camp reads as closed
+  if (opensAt.value && new Date(opensAt.value) >= now) {
     opensAt.value = null;
   }
   closesAt.value = now.toISOString();

@@ -222,8 +222,11 @@ const registrationStore = useRegistrationsStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
 
-const { data: camp, isLoading: campLoading, error: campError } =
-  storeToRefs(campDetailsStore);
+const {
+  data: camp,
+  isLoading: campLoading,
+  error: campError,
+} = storeToRefs(campDetailsStore);
 const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
 
