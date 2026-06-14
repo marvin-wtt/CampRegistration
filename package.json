@@ -40,8 +40,5 @@
     "nodemailer-mock": {
       "nodemailer": "^8.0.4"
     }
-  },
-  "dependencies": {
-    "happy-dom": "^20.8.9"
   }
 }
