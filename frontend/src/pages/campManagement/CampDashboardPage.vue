@@ -96,7 +96,7 @@
               :key="item.key"
               type="button"
               class="attention-item"
-              @click="goToParticipants"
+              @click="goToTemplate(item.template)"
             >
               <div class="attention-icon row items-center justify-center">
                 <q-icon
@@ -208,6 +208,11 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useCampStatistics } from 'src/composables/campStatistics';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import {
+  LOCAL_TEMPLATE_AGE,
+  LOCAL_TEMPLATE_MISSING,
+  LOCAL_TEMPLATE_PENDING,
+} from 'components/campManagement/table/localTableTemplates';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -295,6 +300,7 @@ const attentionItems = computed(() => {
       count: pending,
       icon: 'hourglass_top',
       color: 'orange',
+      template: LOCAL_TEMPLATE_PENDING,
     },
     {
       key: 'missing',
@@ -302,6 +308,7 @@ const attentionItems = computed(() => {
       count: missingInfo,
       icon: 'contact_mail',
       color: 'red',
+      template: LOCAL_TEMPLATE_MISSING,
     },
     {
       key: 'age',
@@ -309,14 +316,18 @@ const attentionItems = computed(() => {
       count: ageOutOfRange,
       icon: 'cake',
       color: 'deep-orange',
+      template: LOCAL_TEMPLATE_AGE,
     },
   ];
 
   return items.filter((item) => item.count > 0);
 });
 
-function goToParticipants() {
-  goTo('management.camp.participants');
+function goToTemplate(template: string) {
+  void router.push({
+    name: 'management.camp.participants',
+    query: { template },
+  });
 }
 
 function goTo(routeName: string) {

@@ -411,7 +411,14 @@ const {
     camp: toRef(() => camp),
   },
   {
-    initialTemplateId: route.hash.length > 1 ? route.hash.substring(1) : null,
+    // A `?template=` query param (used by dashboard deep links, including the
+    // hidden attention templates) takes precedence over the `#id` hash.
+    initialTemplateId:
+      typeof route.query.template === 'string' && route.query.template.length > 0
+        ? route.query.template
+        : route.hash.length > 1
+          ? route.hash.substring(1)
+          : null,
   },
 );
 

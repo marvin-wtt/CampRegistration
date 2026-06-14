@@ -16,6 +16,10 @@ import type {
   CTableTemplate,
   CTableColumnTemplate,
 } from 'src/types/CTableTemplate';
+import {
+  buildLocalTableTemplates,
+  type LocalTableTemplate,
+} from 'components/campManagement/table/localTableTemplates';
 
 type Pagination = Exclude<QTable['pagination'], undefined>;
 
@@ -67,15 +71,31 @@ export function useResultTableModel(
 
   const countries = computed(() => input.camp.value.countries);
 
-  const templateOptions = computed<CTableTemplate[]>(() => {
-    const mapped: CTableTemplate[] = input.templates.value.map((template) => ({
+  function mapTemplate(
+    template: TableTemplate | LocalTableTemplate,
+  ): CTableTemplate {
+    return {
       ...template,
       columns: template.columns.map((column) => ({
         ...column,
         field: (row: unknown) => objectValueByPath(column.field, row),
         fieldName: column.field,
       })),
-    }));
+    };
+  }
+
+  // Includes hidden, local templates so they stay resolvable by id (e.g. as a
+  // dashboard route target) even though they are kept out of the picker below.
+  const allTemplates = computed<CTableTemplate[]>(() => {
+    const mapped: CTableTemplate[] = input.templates.value.map(mapTemplate);
+
+    // Hidden, frontend-only templates used as deep-link targets.
+    for (const local of buildLocalTableTemplates(
+      registrationAccessor,
+      input.camp.value,
+    )) {
+      mapped.push(mapTemplate(local));
+    }
 
     // Default template to show all information
     mapped.push({
@@ -93,6 +113,10 @@ export function useResultTableModel(
     return mapped.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   });
 
+  const templateOptions = computed<CTableTemplate[]>(() =>
+    allTemplates.value.filter((template) => !template.hidden),
+  );
+
   function applyTemplateSort(template: CTableTemplate) {
     pagination.value.sortBy = template.sortBy ?? null;
     pagination.value.descending = template.sortDirection === 'desc';
@@ -101,7 +125,8 @@ export function useResultTableModel(
   function defaultTemplate(): CTableTemplate {
     const id = options.initialTemplateId ?? null;
     if (id) {
-      const found = templateOptions.value.find((v) => v.id == id);
+      // Resolve against all templates so hidden, local targets can be selected.
+      const found = allTemplates.value.find((v) => v.id == id);
       if (found) {
         return found;
       }
@@ -138,6 +163,12 @@ export function useResultTableModel(
       template.value.filterStatus.length > 0
     ) {
       r = r.filter((row) => template.value.filterStatus?.includes(row.status));
+    }
+
+    // Local (frontend-only) predicate, e.g. "missing contact details"
+    if (template.value.localFilter) {
+      const predicate = template.value.localFilter;
+      r = r.filter((row) => predicate(row));
     }
 
     // Role
