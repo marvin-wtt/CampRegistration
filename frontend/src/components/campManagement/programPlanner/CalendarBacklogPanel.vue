@@ -89,22 +89,31 @@
       class="backlog__head"
       @click="collapsed = !collapsed"
     >
-      <q-icon
-        name="inbox"
-        size="20px"
-      />
-      <span
-        v-if="!collapsed"
-        class="backlog__head-label text-body2 text-weight-medium q-ml-xs"
-      >
-        {{ t('title') }}
+      <span class="backlog__head-icon">
+        <q-icon
+          name="inbox"
+          size="20px"
+        />
+        <q-badge
+          v-if="collapsed && filteredEvents.length"
+          :label="filteredEvents.length"
+          color="primary"
+          floating
+          class="backlog__head-icon-badge"
+        />
       </span>
-      <q-badge
-        v-if="filteredEvents.length"
-        :label="filteredEvents.length"
-        color="primary"
-        class="q-ml-xs"
-      />
+      <template v-if="!collapsed">
+        <span class="backlog__head-label text-body2 text-weight-medium q-ml-xs">
+          {{ t('title') }}
+        </span>
+        <q-badge
+          v-if="filteredEvents.length"
+          :label="filteredEvents.length"
+          color="primary"
+          class="q-ml-xs"
+        />
+      </template>
+
       <q-space v-if="!collapsed" />
       <q-btn
         v-if="!collapsed"
@@ -304,6 +313,20 @@ function onDrop(e: DragEvent) {
   &:hover {
     background: color-mix(in srgb, var(--md3-on-surface) 8%, transparent);
   }
+}
+
+.backlog__head-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.backlog__head-icon-badge {
+  top: -6px;
+  right: -8px;
+  padding: 2px 4px;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .backlog__head-label {
