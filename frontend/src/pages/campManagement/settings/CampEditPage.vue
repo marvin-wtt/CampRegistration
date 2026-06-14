@@ -542,7 +542,7 @@ function clone(value: CampDetails): CampDetails {
 }
 
 function initialValue(): CampDetails {
-  return clone(data.value!);
+  return clone(data.value);
 }
 
 function onReset() {

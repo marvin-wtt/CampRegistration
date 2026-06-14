@@ -29,7 +29,13 @@ const NAME_COLUMNS: TableColumnTemplate[] = [
   {
     name: 'first_name',
     field: 'computedData.firstName',
-    label: { en: 'First Name', de: 'Vorname', fr: 'Prénom', cs: 'Jméno', pl: 'Imię' },
+    label: {
+      en: 'First Name',
+      de: 'Vorname',
+      fr: 'Prénom',
+      cs: 'Jméno',
+      pl: 'Imię',
+    },
     align: 'left',
     sortable: true,
     renderAs: 'name',
@@ -62,7 +68,13 @@ const COUNTRY_COLUMN: TableColumnTemplate = {
 const EMAIL_COLUMN: TableColumnTemplate = {
   name: 'email',
   field: 'computedData.emails',
-  label: { en: 'E-Mail', de: 'E-Mail', fr: 'E-Mail', cs: 'E-Mail', pl: 'E-Mail' },
+  label: {
+    en: 'E-Mail',
+    de: 'E-Mail',
+    fr: 'E-Mail',
+    cs: 'E-Mail',
+    pl: 'E-Mail',
+  },
   align: 'left',
   sortable: false,
   renderAs: 'email',
@@ -134,7 +146,12 @@ export function buildLocalTableTemplates(
       sortBy: 'created_at',
       sortDirection: 'asc',
       localFilter: isParticipant,
-      columns: [...NAME_COLUMNS, COUNTRY_COLUMN, REGISTERED_COLUMN, STATUS_COLUMN],
+      columns: [
+        ...NAME_COLUMNS,
+        COUNTRY_COLUMN,
+        REGISTERED_COLUMN,
+        STATUS_COLUMN,
+      ],
     },
     {
       id: LOCAL_TEMPLATE_MISSING,
