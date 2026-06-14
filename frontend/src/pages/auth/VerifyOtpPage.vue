@@ -54,6 +54,7 @@
             class="full-width"
             data-test="submit"
             rounded
+            unelevated
           />
         </q-card-actions>
 

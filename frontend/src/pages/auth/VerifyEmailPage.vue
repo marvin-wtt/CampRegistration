@@ -66,6 +66,7 @@
             :to="{ name: 'login' }"
             rounded
             outline
+            unelevated
           />
         </q-card-section>
       </q-form>

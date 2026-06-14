@@ -96,6 +96,7 @@
             class="full-width"
             data-test="submit"
             rounded
+            unelevated
           />
         </q-card-actions>
 
@@ -116,6 +117,7 @@
             :to="{ name: 'register' }"
             rounded
             outline
+            unelevated
           />
         </q-card-section>
       </q-form>
