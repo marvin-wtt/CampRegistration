@@ -10,11 +10,17 @@ import type { Prisma } from '#generated/prisma/client.js';
  * with the renderer for each column held under `columns[].renderAs`.
  */
 
+// The old permission_leave renderer matched both the numeric values (2/1/0)
+// and their legacy string aliases (alone/group/none), so reproduce both here —
+// otherwise rows storing the string form would fall through to the fallback.
 const RENDER_OPTIONS = {
   mappings: [
     { value: '2', icon: 'person', color: 'positive' },
+    { value: 'alone', icon: 'person', color: 'positive' },
     { value: '1', icon: 'groups', color: 'warning' },
+    { value: 'group', icon: 'groups', color: 'warning' },
     { value: '0', icon: 'close', color: 'negative' },
+    { value: 'none', icon: 'close', color: 'negative' },
   ],
   fallback: { icon: 'question_mark', color: 'grey' },
 } as const;
