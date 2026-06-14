@@ -464,7 +464,7 @@ function editRoom(room: RoomWithRoommates): void {
           room.beds.filter((bed) => bed.person != null).length,
           1,
         ),
-        locales,
+        locales: locales.value,
       },
     })
     .onOk((payload: RoomUpdateData & { capacity: number }) => {
@@ -587,9 +587,10 @@ async function updateBed(
     return;
   }
 
+  let succeeded = false;
   await asyncUpdate(() => {
-    return withErrorNotification('update-bed', () => {
-      const updatedBed = apiService.updateBed(
+    return withErrorNotification('update-bed', async () => {
+      const updatedBed = await apiService.updateBed(
         campId,
         roomId,
         bedId,
@@ -600,11 +601,18 @@ async function updateBed(
       // The registration store will contains the room as well
       registrationsStore.invalidate();
 
+      succeeded = true;
       return updatedBed;
     });
   });
 
-  // Optimistic update
+  // withErrorNotification swallows request failures, so only update the local
+  // state once the request actually succeeded — otherwise a rejected request
+  // would leave a phantom assignment in the UI that was never persisted.
+  if (!succeeded) {
+    return;
+  }
+
   data.value = data.value!.map((r) => {
     if (r.id !== roomId) {
       return r;

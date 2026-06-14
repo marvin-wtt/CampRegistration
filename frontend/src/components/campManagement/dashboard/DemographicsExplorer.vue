@@ -203,7 +203,7 @@ onMounted(() => {
 
 const xDimension = ref<Dimension>('age');
 const groupDimension = ref<Dimension | 'none'>(
-  stats.hasMultipleCountries ? 'country' : 'gender',
+  stats.hasMultipleCountries.value ? 'country' : 'gender',
 );
 const stacked = ref<boolean>(false);
 const genderFilter = ref<string[]>([]);
