@@ -22,7 +22,12 @@ interface Md3Resolver {
   /** A solid color token. */
   color(token: string, mode: Md3Mode, fallback: string): string;
   /** A token rendered with the given opacity. */
-  rgba(token: string, mode: Md3Mode, fallbackRgb: string, opacity: number): string;
+  rgba(
+    token: string,
+    mode: Md3Mode,
+    fallbackRgb: string,
+    opacity: number,
+  ): string;
   /** A token tinted down to `percent` opacity over a transparent base. */
   mix(token: string, mode: Md3Mode, fallback: string, percent: number): string;
 }
@@ -333,7 +338,11 @@ const createMd3SurveyTheme = (mode: Md3Mode, r: Md3Resolver): ITheme => {
       '--sjs-shadow-inner': `inset 0px 0px 0px 1px ${r.color('outline', mode, isLight ? '#79747e' : '#938f99')}`,
       '--sjs-shadow-inner-reset': 'inset 0px 0px 0px 0px transparent',
 
-      '--sjs-special-red': r.color('error', mode, isLight ? '#ba1a1a' : '#ffb4ab'),
+      '--sjs-special-red': r.color(
+        'error',
+        mode,
+        isLight ? '#ba1a1a' : '#ffb4ab',
+      ),
       '--sjs-special-red-light': r.rgba(
         'error',
         mode,
@@ -363,7 +372,11 @@ const createMd3SurveyTheme = (mode: Md3Mode, r: Md3Resolver): ITheme => {
         isLight ? '#ffffff' : '#0c3900',
       ),
 
-      '--sjs-special-blue': r.color('info', mode, isLight ? '#00677e' : '#7bd1ee'),
+      '--sjs-special-blue': r.color(
+        'info',
+        mode,
+        isLight ? '#00677e' : '#7bd1ee',
+      ),
       '--sjs-special-blue-light': r.mix(
         'info',
         mode,
