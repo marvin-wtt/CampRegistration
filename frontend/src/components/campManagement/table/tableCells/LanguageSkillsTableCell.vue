@@ -87,7 +87,12 @@ const skills = computed<Skill[]>(() => {
 
 function languageName(code: string): string {
   const tag = code.replace('_', '-').split('-')[0] ?? code;
-  return languageNames.value?.of(tag) ?? code.toUpperCase();
+  try {
+    // Intl.DisplayNames.of throws a RangeError on structurally invalid tags.
+    return languageNames.value?.of(tag) ?? code.toUpperCase();
+  } catch {
+    return code.toUpperCase();
+  }
 }
 
 // Maps a stored skill value (CEFR code, descriptive word, legacy number, or
