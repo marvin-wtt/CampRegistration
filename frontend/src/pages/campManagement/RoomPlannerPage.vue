@@ -7,8 +7,8 @@
   >
     <div class="planner-content col-12 col-md-11 col-lg-10 column no-wrap">
       <!-- Header -->
-      <div class="row items-end justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm header-text">
+      <div class="header row items-start justify-between no-wrap">
+        <div class="header-text col">
           <div class="row items-center no-wrap q-gutter-x-sm">
             <div class="text-h5 text-weight-medium ellipsis">
               {{ t('title') }}
@@ -25,16 +25,14 @@
           </div>
         </div>
 
-        <div
-          v-if="can('camp.rooms.edit') || can('camp.rooms.beds.edit')"
-          class="col-12 col-sm-auto row items-center no-wrap q-gutter-x-sm"
-        >
-          <q-btn
+        <!-- Page actions -->
+        <div class="header-actions row items-center no-wrap q-gutter-x-xs">
+          <m-btn
             v-if="can('camp.rooms.beds.edit')"
-            class="header-action-btn"
             icon="tune"
-            flat
+            square
             round
+            text
             :aria-label="t('action.settings')"
           >
             <q-tooltip>{{ t('action.settings') }}</q-tooltip>
@@ -85,20 +83,20 @@
                 </q-item>
               </q-list>
             </q-menu>
-          </q-btn>
+          </m-btn>
 
-          <q-btn
+          <m-btn
             v-if="can('camp.rooms.edit')"
-            class="header-action-btn"
             icon="swap_vert"
-            flat
+            square
             round
+            text
             :disable="rooms.length < 2"
             :aria-label="t('action.reorder')"
             @click="orderRooms"
           >
             <q-tooltip>{{ t('action.reorder') }}</q-tooltip>
-          </q-btn>
+          </m-btn>
 
           <m-btn
             v-if="can('camp.rooms.edit')"
@@ -670,12 +668,27 @@ function findRegistrationById(registrationId: string | null) {
   min-width: 0;
 }
 
+.header {
+  gap: 12px 16px;
+}
+
 .header-text {
   min-width: 0;
 }
 
-.header-action-btn {
-  color: var(--md3-on-surface-variant);
+.header-actions {
+  flex-shrink: 0;
+}
+
+/* Let actions wrap beneath the title on narrow screens */
+@media (max-width: 599px) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
 }
 
 .count-badge {
