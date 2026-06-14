@@ -186,6 +186,20 @@ useMeta(() => {
   padding-top: 4rem;
 }
 
+/*
+ * When the survey renders an advanced header, let its coloured background bleed
+ * all the way to the top behind the floating controls instead of leaving a
+ * page-coloured strip above it. The toolbar clearance moves from the page onto
+ * the header itself, so the header content (title/logo) still clears the pills.
+ */
+.camp-page-container :deep(.q-page:has(.sv-header)) {
+  padding-top: 0;
+}
+
+.camp-page-container :deep(.sv-header) {
+  padding-top: 4rem;
+}
+
 /* Mobile: merge brand and controls into a single floating app bar */
 @media (max-width: 599.98px) {
   .camp-header {
