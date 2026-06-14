@@ -68,7 +68,6 @@
         :separated="child.separated"
         :children="child.children"
         :insert-level="0.2"
-        :preview="child.preview"
       />
     </div>
   </q-expansion-item>

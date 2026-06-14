@@ -42,7 +42,7 @@
     >
       <q-list class="q-list--rail">
         <template
-          v-for="item in filteredItems"
+          v-for="item in items"
           :key="item.name"
         >
           <navigation-item
@@ -51,7 +51,6 @@
             :name="item.name"
             :label="item.label"
             :separated="item.separated"
-            :preview="item.preview"
           />
           <navigation-item
             v-else
@@ -60,7 +59,6 @@
             :icon="item.icon"
             :to="item.to"
             :separated="item.separated"
-            :preview="item.preview"
             :children="item.children"
           />
         </template>
@@ -170,29 +168,7 @@ const items: NavigationItemProps[] = [
     icon: 'queue',
     to: { name: 'administration.queues' },
   },
-  {
-    name: 'settings',
-    label: t('settings'),
-    icon: 'settings',
-    to: { name: 'administration.settings' },
-    preview: true,
-    separated: true,
-  },
 ];
-
-const filteredItems = computed<NavigationItemProps[]>(() => {
-  if (dev.value) {
-    return items;
-  }
-
-  return items.filter((item) => {
-    return !item.preview;
-  });
-});
-
-const dev = computed<boolean>(() => {
-  return process.env.NODE_ENV === 'development';
-});
 </script>
 
 <i18n lang="yaml" locale="en">
