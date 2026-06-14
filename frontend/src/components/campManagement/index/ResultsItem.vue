@@ -423,7 +423,7 @@ function shareAction() {
 function editAction() {
   void withLoading(editLoading, async () => {
     await router.push({
-      name: 'management.camp.settings.edit',
+      name: 'management.camp.settings',
       params: {
         campId: camp.id,
       },
