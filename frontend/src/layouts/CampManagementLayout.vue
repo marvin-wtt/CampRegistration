@@ -20,19 +20,73 @@
           text
           @click="toggleDrawer"
         />
-        <q-toolbar-title>
+        <!-- Camp context: name doubles as a camp switcher -->
+        <template v-if="showDrawer">
           <q-skeleton
             v-if="campDetailStore.isLoading"
-            type="text"
+            type="rect"
             height="2.5em"
-            width="15em"
+            width="12em"
+            class="q-ml-xs"
           />
-          <template v-else>
-            {{ to(title) }}
-          </template>
-        </q-toolbar-title>
+          <m-btn
+            v-else
+            tonal
+            no-caps
+            no-morph
+            icon-right="arrow_drop_down"
+            :label="campName || t('app_name')"
+            class="camp-switcher"
+          >
+            <q-menu
+              anchor="bottom start"
+              self="top start"
+            >
+              <q-list style="min-width: 240px">
+                <q-item-label header>
+                  {{ t('switch_camp') }}
+                </q-item-label>
 
-        <header-navigation :administration="administrator" />
+                <q-item
+                  v-for="camp in otherCamps"
+                  :key="camp.id"
+                  v-close-popup
+                  clickable
+                  @click="switchCamp(camp.id)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="cabin" />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ to(camp.name) }}
+                  </q-item-section>
+                </q-item>
+
+                <q-separator spaced />
+
+                <q-item
+                  v-close-popup
+                  clickable
+                  :to="{ name: 'management.camps' }"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="grid_view" />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('camps') }}
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </m-btn>
+
+          <q-space />
+        </template>
+
+        <!-- Outside a camp: plain app title -->
+        <q-toolbar-title v-else>
+          {{ to(title) }}
+        </q-toolbar-title>
 
         <profile-menu />
       </m-toolbar>
@@ -117,13 +171,13 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
-import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import { useProfileStore } from 'stores/profile-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import type { Camp } from '@camp-registration/common/entities';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
@@ -137,14 +191,15 @@ const { to } = useObjectTranslation();
 const { can } = usePermissions();
 
 const authStore = useAuthStore();
-const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
+const assignedCampsStore = useAssignedCampsStore();
 
 onMounted(async () => {
   await authStore.init();
 
   if (route.params.campId) {
     await campDetailStore.fetchData();
+    void assignedCampsStore.fetchData();
   }
 });
 
@@ -160,9 +215,22 @@ const campName = computed<string | undefined>(() => {
   return to(campDetailStore.data?.name);
 });
 
-const administrator = computed<boolean>(() => {
-  return profileStore.user?.role === 'ADMIN';
+const otherCamps = computed<Camp[]>(() => {
+  return (assignedCampsStore.data ?? []).filter(
+    (camp) => camp.id !== route.params.campId,
+  );
 });
+
+function switchCamp(campId: string) {
+  if (campId === route.params.campId || !route.name) {
+    return;
+  }
+
+  void router.push({
+    name: route.name,
+    params: { ...route.params, campId },
+  });
+}
 
 useMeta(() => {
   return {
@@ -273,6 +341,7 @@ program_planner: 'Program'
 room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
+switch_camp: 'Switch camp'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -288,6 +357,7 @@ program_planner: 'Programm'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
+switch_camp: 'Camp wechseln'
 tools: 'Tools'
 </i18n>
 
@@ -304,6 +374,7 @@ program_planner: 'Programme'
 room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
+switch_camp: 'Changer de camp'
 tools: 'Tools'
 </i18n>
 
@@ -320,6 +391,7 @@ program_planner: 'Program'
 room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
+switch_camp: 'Zmień obóz'
 tools: 'Narzędzia'
 </i18n>
 
@@ -336,6 +408,7 @@ program_planner: 'Program'
 room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
+switch_camp: 'Změnit tábor'
 tools: 'Nástroje'
 </i18n>
 
