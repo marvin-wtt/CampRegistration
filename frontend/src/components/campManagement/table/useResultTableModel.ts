@@ -113,7 +113,7 @@ export function useResultTableModel(
     return mapped.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   });
 
-  const templateOptions = computed<CTableTemplate[]>(() =>
+  const visibleTemplates = computed<CTableTemplate[]>(() =>
     allTemplates.value.filter((template) => !template.hidden),
   );
 
@@ -132,13 +132,27 @@ export function useResultTableModel(
       }
     }
 
-    if (templateOptions.value.length === 0) {
+    if (visibleTemplates.value.length === 0) {
       throw new Error('No templates available');
     }
-    return templateOptions.value[0]!;
+    return visibleTemplates.value[0]!;
   }
 
   const template = ref<CTableTemplate>(defaultTemplate());
+
+  // The active template may be hidden (e.g. resolved from a dashboard deep
+  // link); keep it in the select options so its label can still be rendered
+  // instead of leaving the picker showing a blank selection.
+  const templateOptions = computed<CTableTemplate[]>(() => {
+    const visible = visibleTemplates.value;
+    if (
+      template.value.hidden &&
+      !visible.some((t) => t.id === template.value.id)
+    ) {
+      return [...visible, template.value];
+    }
+    return visible;
+  });
 
   // Apply the sort order of the initial template since the watcher below only
   // reacts to subsequent changes.
