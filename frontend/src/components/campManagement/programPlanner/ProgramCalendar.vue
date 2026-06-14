@@ -1079,6 +1079,7 @@ function formatDate(date: Date): string {
   --calendar-mini-range-firstlast-label-background-dark: var(
     --md3-outline-variant
   );
+  --calendar-border: var(--md3-outline-variant) 1px solid;
   --calendar-border-dark: var(--md3-outline-variant) 1px solid;
   --calendar-border-current-dark: var(--md3-outline-variant) 2px solid;
   --calendar-border-section-dark: var(--md3-outline-variant) 1px dashed;
