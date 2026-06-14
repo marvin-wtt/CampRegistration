@@ -4,7 +4,6 @@ interface BaseProps {
   header?: boolean;
   name: string;
   label?: string | undefined;
-  preview?: boolean | undefined;
   separated?: boolean | undefined;
   insertLevel?: number | undefined;
   permission?: Permission | undefined;

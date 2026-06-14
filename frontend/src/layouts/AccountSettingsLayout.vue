@@ -2,7 +2,12 @@
   <q-layout view="hHh Lpr lFf">
     <q-ajax-bar color="accent" />
 
-    <q-header bordered>
+    <!-- Top bar: only when there is no rail or on mobile, where the rail is
+         hidden off-canvas. On desktop the rail carries nav + profile. -->
+    <q-header
+      v-if="!showDrawer || quasar.screen.lt.sm"
+      bordered
+    >
       <m-toolbar>
         <m-btn
           v-if="showDrawer"
@@ -21,8 +26,6 @@
           </router-link>
         </q-toolbar-title>
 
-        <header-navigation :administration="administrator" />
-
         <profile-menu />
       </m-toolbar>
     </q-header>
@@ -38,7 +41,34 @@
       show-if-above
       class="column no-wrap"
     >
+      <!-- Rail header: back to the app (desktop only — mobile uses the top bar) -->
+      <div
+        v-if="quasar.screen.gt.xs"
+        class="rail-header row justify-center q-py-sm"
+      >
+        <m-btn
+          icon="arrow_back"
+          round
+          text
+          :aria-label="t('back')"
+          @click="navigateBack()"
+        >
+          <q-tooltip
+            anchor="center right"
+            self="center left"
+          >
+            {{ t('back') }}
+          </q-tooltip>
+        </m-btn>
+      </div>
+
       <q-list class="q-list--rail">
+        <q-separator
+          v-if="quasar.screen.gt.xs"
+          inset
+          class="rail-separator"
+        />
+
         <navigation-item
           v-for="(item, i) in filteredItems"
           :key="item.name"
@@ -46,6 +76,16 @@
           :first="i === 0"
         />
       </q-list>
+
+      <q-space />
+
+      <!-- Rail footer: profile (desktop only — mobile uses the top bar) -->
+      <div
+        v-if="quasar.screen.gt.xs"
+        class="rail-footer row justify-center q-py-sm"
+      >
+        <profile-menu />
+      </div>
     </q-drawer>
 
     <q-page-container>
@@ -63,22 +103,22 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from 'components/NavigationItem.vue';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
-import HeaderNavigation from 'components/layout/HeaderNavigation.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import { useProfileStore } from 'stores/profile-store';
+import { useQuasar } from 'quasar';
 import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
 import { usePermissions } from 'src/composables/permissions';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
+const quasar = useQuasar();
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { can } = usePermissions();
 
 const authStore = useAuthStore();
-const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 
 onMounted(async () => {
@@ -91,10 +131,6 @@ onMounted(async () => {
 
 const showDrawer = computed<boolean>(() => {
   return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
-});
-
-const administrator = computed<boolean>(() => {
-  return profileStore.user?.role === 'ADMIN';
 });
 
 const drawer = ref<boolean>(false);
@@ -147,10 +183,20 @@ function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
 function toggleDrawer() {
   drawer.value = !drawer.value;
 }
+
+function navigateBack() {
+  if (window.history.state?.back) {
+    router.back();
+    return;
+  }
+
+  void router.push('/');
+}
 </script>
 
 <i18n lang="yaml" locale="en">
 account: 'Account'
+back: 'Back'
 preferences: 'Preferences'
 profile: 'Profile'
 security: 'Security'
@@ -158,6 +204,7 @@ security: 'Security'
 
 <i18n lang="yaml" locale="de">
 account: 'Konto'
+back: 'Zurück'
 preferences: 'Präferenzen'
 profile: 'Profil'
 security: 'Sicherheit'
@@ -165,6 +212,7 @@ security: 'Sicherheit'
 
 <i18n lang="yaml" locale="fr">
 account: 'Compte'
+back: 'Retour'
 preferences: 'Préférences'
 profile: 'Profil'
 security: 'Sécurité'
@@ -172,6 +220,7 @@ security: 'Sécurité'
 
 <i18n lang="yaml" locale="pl">
 account: 'Konto'
+back: 'Wstecz'
 preferences: 'Preferencje'
 profile: 'Profil'
 security: 'Bezpieczeństwo'
@@ -179,6 +228,7 @@ security: 'Bezpieczeństwo'
 
 <i18n lang="yaml" locale="cs">
 account: 'Účet'
+back: 'Zpět'
 preferences: 'Předvolby'
 profile: 'Profil'
 security: 'Zabezpečení'
