@@ -173,16 +173,19 @@ const countdown = computed<string | undefined>(() => {
   if (!camp.value) {
     return undefined;
   }
+  const now = Date.now();
+  const startAt = new Date(camp.value.startAt).getTime();
+  const endAt = new Date(camp.value.endAt).getTime();
+
+  // The camp has already started: it is either in progress or over.
+  if (now >= startAt) {
+    return now <= endAt ? t('countdown.running') : t('countdown.over');
+  }
+
+  // The camp is still upcoming: count the calendar days until it starts.
   const days = daysFromNow(camp.value.startAt);
-  if (days > 0) {
-    return t('countdown.until', { days });
-  }
-  if (days === 0) {
-    return t('countdown.today');
-  }
-  return daysFromNow(camp.value.endAt) >= 0
-    ? t('countdown.running')
-    : t('countdown.over');
+
+  return days <= 0 ? t('countdown.today') : t('countdown.until', { days });
 });
 
 const registrationStatus = computed(() => {
@@ -259,8 +262,21 @@ const barColor = computed<string>(() => {
 });
 
 function daysFromNow(date: string): number {
-  const diff = new Date(date).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const target = new Date(date);
+  const now = new Date();
+  // Compare calendar days, ignoring the time of day, so a camp starting later
+  // today resolves to 0 rather than rounding up to a full day.
+  const startOfTarget = Date.UTC(
+    target.getFullYear(),
+    target.getMonth(),
+    target.getDate(),
+  );
+  const startOfToday = Date.UTC(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  return Math.round((startOfTarget - startOfToday) / (1000 * 60 * 60 * 24));
 }
 </script>
 
