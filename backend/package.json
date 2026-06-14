@@ -33,14 +33,14 @@
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/marvin-wtt/CampRegistration",
     "directory": "backend"
   },
   "engines": {
-    "node": ">=22 <25"
+    "node": ">=22"
   },
   "imports": {
     "#app/*": "./src/app/*.js",
