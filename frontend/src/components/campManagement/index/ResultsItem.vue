@@ -49,7 +49,6 @@
           @edit="editAction"
           @delete="deleteAction"
           @share="shareAction"
-          @results="openCamp"
         />
       </q-btn>
     </div>
