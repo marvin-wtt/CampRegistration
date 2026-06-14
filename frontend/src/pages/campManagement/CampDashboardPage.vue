@@ -222,12 +222,17 @@ const registrationStore = useRegistrationsStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
 
-const { data: camp } = storeToRefs(campDetailsStore);
-const { isLoading: registrationsLoading, error } =
+const { data: camp, isLoading: campLoading, error: campError } =
+  storeToRefs(campDetailsStore);
+const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
 
 const loading = computed<boolean>(
-  () => registrationsLoading.value || camp.value == null,
+  () => registrationsLoading.value || campLoading.value,
+);
+
+const error = computed<string | null>(
+  () => campError.value ?? registrationsError.value,
 );
 
 onMounted(() => {
