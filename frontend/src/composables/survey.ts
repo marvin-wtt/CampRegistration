@@ -77,12 +77,12 @@ export const startAutoThemeUpdate = (
       return;
     }
 
-    const themes = md3SurveyThemes;
+    const themes = data.themes;
     const colorPlatte = dark ? 'dark' : 'light';
 
     let theme: ITheme;
     if (colorPlatte in themes) {
-      theme = themes[colorPlatte]!;
+      theme = themes[colorPlatte] ?? md3SurveyThemes[colorPlatte];
     } else if (colorPlatte === 'dark' && 'light' in themes) {
       // Try light mode first
       theme = themes.light;
