@@ -550,6 +550,11 @@ function onBacklogAdd() {
 }
 
 function onMoveToBacklog(id: string) {
+  // Dropping on the backlog removes the dragged item from the calendar DOM,
+  // which can suppress its `dragend` event — clear lingering drag state here.
+  clearDragHighlight();
+  cancelPreviewUpdate(null);
+  isDraggingEvent.value = false;
   emit('update', id, { date: null, time: null });
 }
 
@@ -824,6 +829,9 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   const onDragEnd = () => {
     isDraggingEvent.value = false;
     cancelPreviewUpdate(null);
+    // Drops outside the calendar (e.g. the backlog) never fire the calendar's
+    // drop/leave handlers, so clear any lingering cell highlight here.
+    clearDragHighlight();
     document.removeEventListener('dragend', onDragEnd);
   };
   document.addEventListener('dragend', onDragEnd);
