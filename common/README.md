@@ -1,6 +1,30 @@
 # Camp Registration Common
 
-The common package provides components and functionality that are used by both the frontend and the backend.
+`@camp-registration/common` — shared code used by both the
+[frontend](../frontend) and the [backend](../backend). It contains the TypeScript
+types, entities, form definitions (including the custom SurveyJS questions), and
+the RBAC permission definitions.
+
+> This package **must be built before** the backend or frontend, as both depend on
+> its compiled output.
+
+## Exports
+
+The package exposes three entry points (see the `exports` field in
+`package.json`):
+
+- `@camp-registration/common/entities` — shared entity types
+- `@camp-registration/common/form` — form definitions and custom questions
+- `@camp-registration/common/permissions` — RBAC permission definitions
+
+## Development
+
+```bash
+npm run build        # Compile TypeScript to ./dist
+npm run test         # Run unit tests (Vitest)
+npm run lint         # Run ESLint
+npm run format       # Format with Prettier
+```
 
 ## Form
 
@@ -99,3 +123,8 @@ All functions return null in case of invalid input parameters. This might be eva
 | htmlDate       | date: string                                                | string         | Formats a date to the html date format (YYYY-MM-DD)               |
 | translate \| t | value: string \| object, locale?: string, fallback?: string | string \| null | Searches for a translation in an object                           |
 | isWaitingList  | freePlaces: number \| Record<string, number>                | boolean        | Indicates, if the registration will be placed on the waiting list |
+
+## License
+
+Licensed under the [GNU Affero General Public License v3.0](../LICENSE)
+(AGPL-3.0-only).
