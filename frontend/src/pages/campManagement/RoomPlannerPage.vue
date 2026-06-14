@@ -100,12 +100,16 @@
 
           <m-btn
             v-if="can('camp.rooms.edit')"
-            :label="t('action.add')"
+            :label="isMobile ? undefined : t('action.add')"
+            :round="isMobile"
+            :aria-label="t('action.add')"
             color="primary"
             icon="add"
             :disabled="loading"
             @click="addRoom"
-          />
+          >
+            <q-tooltip v-if="isMobile">{{ t('action.add') }}</q-tooltip>
+          </m-btn>
         </div>
       </div>
 
@@ -296,6 +300,8 @@ const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 
 const addLoading = ref(false);
+
+const isMobile = computed<boolean>(() => quasar.screen.lt.sm);
 
 interface PlannerSettings {
   skipGenderFilter: boolean;
@@ -678,17 +684,6 @@ function findRegistrationById(registrationId: string | null) {
 
 .header-actions {
   flex-shrink: 0;
-}
-
-/* Let actions wrap beneath the title on narrow screens */
-@media (max-width: 599px) {
-  .header {
-    flex-wrap: wrap;
-  }
-
-  .header-actions {
-    margin-left: auto;
-  }
 }
 
 .count-badge {
