@@ -12,6 +12,7 @@ import {
 import { useQuasar } from 'quasar';
 import { PlainLight, PlainDark } from 'survey-core/themes';
 import { useAPIService } from 'src/services/APIService';
+import { md3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
 
 export function startAutoDataUpdate(
   model: SurveyModel,
@@ -76,7 +77,7 @@ export const startAutoThemeUpdate = (
       return;
     }
 
-    const themes = data?.themes;
+    const themes = md3SurveyThemes;
     const colorPlatte = dark ? 'dark' : 'light';
 
     let theme: ITheme;
