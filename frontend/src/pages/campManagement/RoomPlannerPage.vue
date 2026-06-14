@@ -8,7 +8,7 @@
     <div class="planner-content col-12 col-md-11 col-lg-10 column no-wrap">
       <!-- Header -->
       <div class="header row items-start justify-between no-wrap">
-        <div class="header-text col">
+        <div class="header-text col page-title">
           <div class="row items-center no-wrap q-gutter-x-sm">
             <div class="text-h5 text-weight-medium ellipsis">
               {{ t('title') }}

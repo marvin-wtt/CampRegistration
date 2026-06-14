@@ -54,6 +54,14 @@
   background: var(--md3-background);
 }
 
+// Page title blocks sit flush against the content's left edge, which feels
+// cramped next to the rail. The cards/lists/forms below carry their own
+// borders and padding, so only the bare title (and its subtitle) needs a
+// small left inset. Apply to the element wrapping the page title.
+.page-title {
+  padding-left: 8px;
+}
+
 .body--light {
   .q-item.q-router-link--active:not(.q-router-link--exact-active) {
     background-color: $grey-4;

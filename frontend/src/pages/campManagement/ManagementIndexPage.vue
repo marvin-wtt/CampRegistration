@@ -4,7 +4,7 @@
     class="row justify-center"
   >
     <div class="col-12 col-sm-10 col-md-8 col-lg-6 column q-gutter-y-lg">
-      <div>
+      <div class="page-title">
         <div class="text-h5 text-weight-medium">{{ t('title') }}</div>
         <div class="text-body2 text-grey-6 q-mt-xs">{{ t('subtitle') }}</div>
       </div>

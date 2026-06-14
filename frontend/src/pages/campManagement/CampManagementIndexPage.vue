@@ -8,7 +8,7 @@
     <div class="camp-mgmt col-12 col-md-11 col-lg-10 col-xl-8 column no-wrap">
       <!-- Header -->
       <div class="camp-mgmt__header row items-start justify-between no-wrap">
-        <div class="col">
+        <div class="col page-title">
           <div class="text-h5 text-weight-medium">
             {{ t('title') }}
           </div>

@@ -8,7 +8,7 @@
     <div class="files-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
       <!-- Header -->
       <div class="row items-end justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm">
+        <div class="col-12 col-sm page-title">
           <div class="text-h5 text-weight-medium">
             {{ t('title') }}
           </div>

@@ -13,7 +13,7 @@
       @submit="onSubmit"
     >
       <!-- Header -->
-      <div>
+      <div class="page-title">
         <div class="text-h5 text-weight-medium">
           {{ t('title.edit') }}
         </div>

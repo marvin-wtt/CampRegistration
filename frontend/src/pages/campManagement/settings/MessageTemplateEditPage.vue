@@ -10,7 +10,7 @@
     >
       <!-- Header -->
       <div class="row items-end justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm">
+        <div class="col-12 col-sm page-title">
           <div class="text-h5 text-weight-medium">
             {{ t('page.title') }}
           </div>
