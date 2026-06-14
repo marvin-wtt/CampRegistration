@@ -104,7 +104,6 @@
             :loading
             data-test="submit"
             rounded
-            unelevated
           />
         </q-card-actions>
 

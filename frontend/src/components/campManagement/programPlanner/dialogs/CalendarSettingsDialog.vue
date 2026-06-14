@@ -56,7 +56,6 @@
                         color="primary"
                         flat
                         rounded
-                        unelevated
                       />
                     </div>
                   </q-time>
@@ -96,7 +95,6 @@
                         color="primary"
                         flat
                         rounded
-                        unelevated
                       />
                     </div>
                   </q-time>
@@ -114,19 +112,17 @@
         <!-- action buttons -->
         <q-card-actions align="right">
           <q-btn
-            :label="t('actions.cancel')"
             type="reset"
-            color="primary"
             outline
             rounded
-            unelevated
+            color="primary"
+            :label="t('actions.cancel')"
           />
           <q-btn
-            :label="t('actions.save')"
             type="submit"
-            color="primary"
             rounded
-            unelevated
+            color="primary"
+            :label="t('actions.save')"
           />
         </q-card-actions>
       </q-form>
