@@ -37,7 +37,6 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import { DefaultLight, DefaultDark } from 'survey-creator-core/themes';
 import { surveyLocalization } from 'survey-core';
 import { createMarkdownConverter } from 'src/utils/markdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
@@ -50,6 +49,7 @@ import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
 import { createStaticMd3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
+import { md3CreatorThemes } from 'src/lib/surveyJs/themes/md3-creator';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -148,18 +148,9 @@ watch(() => quasar.dark.isActive, applyCreatorTheme);
 applyCreatorTheme(quasar.dark.isActive);
 
 function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark ? DefaultDark : DefaultLight;
+  const theme = isDark ? md3CreatorThemes.dark : md3CreatorThemes.light;
 
-  creator.applyCreatorTheme({
-    themeName: theme.themeName,
-    isLight: !isDark,
-    cssVariables: {
-      ...theme.cssVariables,
-      '--sjs-primary-background-500': undefined,
-      '--sjs-secondary-background-500': undefined,
-      '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
-    },
-  });
+  creator.applyCreatorTheme(theme);
 
   // TODO This is a workaround for the issue with the theme not being applied correctly
   // The value is null because the backend middleware
