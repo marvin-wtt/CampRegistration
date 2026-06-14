@@ -23,8 +23,12 @@ export class RegistrationSeeder {
             .toDate(),
         }),
         createdAt: faker.date.between({
-          from: moment(this.camp.startAt).subtract(60, 'days').toDate(),
-          to: moment(this.camp.startAt).subtract(30, 'days').toDate(),
+          from: moment
+            .min(moment(this.camp.startAt).subtract(60, 'days'), moment())
+            .toDate(),
+          to: moment
+            .min(moment(this.camp.startAt).subtract(30, 'days'), moment())
+            .toDate(),
         }),
         ...data,
       });
