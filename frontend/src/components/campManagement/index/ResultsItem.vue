@@ -801,8 +801,8 @@ status:
 dialog:
   delete:
     title: 'Camp löschen'
-    message: 'Sind Sie sicher, dass Sie dieses Camp löschen möchten? Alle Anmeldungen gehen verloren. Dieses Camp kann nicht als Vorlage für zukünftige Lager verwendet werden.'
-    label: 'Camp Name'
+    message: 'Sind Sie sicher, dass Sie dieses Camp löschen möchten? Alle Anmeldungen gehen verloren. Dieses Camp kann nicht als Vorlage für zukünftige Camps verwendet werden.'
+    label: 'Camp-Name'
 notification:
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
