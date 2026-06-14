@@ -1,12 +1,16 @@
 <template>
-  <q-layout view="hHh Lpr lFf">
+  <q-layout
+    view="hHh Lpr lFf"
+    @scroll="onScroll"
+  >
     <q-ajax-bar color="accent" />
 
     <!-- Top bar: mobile only. On large screens pages use either a left rail
          or floating controls, both of which carry the profile. -->
     <q-header
       v-if="quasar.screen.lt.sm"
-      bordered
+      class="app-top-bar"
+      :class="{ 'app-top-bar--scrolled': scrolled }"
     >
       <m-toolbar>
         <m-btn
@@ -28,15 +32,8 @@
         />
 
         <!-- Camp context (mobile): name doubles as a camp switcher -->
-        <template v-if="showDrawer">
-          <camp-switcher />
-          <q-space />
-        </template>
-
-        <!-- Outside a camp: plain app title -->
-        <q-toolbar-title v-else>
-          {{ to(title) }}
-        </q-toolbar-title>
+        <camp-switcher v-if="showDrawer" />
+        <q-space />
 
         <profile-menu />
       </m-toolbar>
@@ -180,6 +177,15 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
+
+// Top app bar elevates once content scrolls beneath it (MD3 small top app bar).
+const scrolled = ref<boolean>(false);
+
+function onScroll(info: { position: { top: number } | number }) {
+  const top =
+    typeof info.position === 'number' ? info.position : info.position.top;
+  scrolled.value = top > 0;
+}
 
 const items = computed<NavigationItemProps[]>(() => [
   {

@@ -1,12 +1,16 @@
 <template>
-  <q-layout view="hHh Lpr lFf">
+  <q-layout
+    view="hHh Lpr lFf"
+    @scroll="onScroll"
+  >
     <q-ajax-bar color="accent" />
 
     <!-- Top bar: only when there is no rail or on mobile, where the rail is
          hidden off-canvas. On desktop the rail carries nav + profile. -->
     <q-header
       v-if="!showDrawer || quasar.screen.lt.sm"
-      bordered
+      class="app-top-bar"
+      :class="{ 'app-top-bar--scrolled': scrolled }"
     >
       <m-toolbar>
         <m-btn
@@ -17,14 +21,7 @@
           text
           @click="toggleDrawer"
         />
-        <q-toolbar-title>
-          <router-link
-            to="/"
-            class="header-link"
-          >
-            {{ t('app_name') }}
-          </router-link>
-        </q-toolbar-title>
+        <q-space />
 
         <profile-menu />
       </m-toolbar>
@@ -135,6 +132,15 @@ const showDrawer = computed<boolean>(() => {
 
 const drawer = ref<boolean>(false);
 
+// Top app bar elevates once content scrolls beneath it (MD3 small top app bar).
+const scrolled = ref<boolean>(false);
+
+function onScroll(info: { position: { top: number } | number }) {
+  const top =
+    typeof info.position === 'number' ? info.position : info.position.top;
+  scrolled.value = top > 0;
+}
+
 const items = computed<NavigationItemProps[]>(() => [
   {
     name: 'profile',
@@ -233,13 +239,6 @@ preferences: 'Předvolby'
 profile: 'Profil'
 security: 'Zabezpečení'
 </i18n>
-
-<style scoped>
-.header-link {
-  text-decoration: none;
-  color: inherit;
-}
-</style>
 
 <style>
 /* width */

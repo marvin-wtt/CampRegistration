@@ -1,12 +1,16 @@
 <template>
-  <q-layout view="hHh Lpr lff">
+  <q-layout
+    view="hHh Lpr lff"
+    @scroll="onScroll"
+  >
     <q-ajax-bar color="accent" />
 
     <!-- Top bar: only on mobile, where rails are hidden off-canvas. On large
          screens every page uses a left rail that carries the profile. -->
     <q-header
       v-if="quasar.screen.lt.sm"
-      bordered
+      class="app-top-bar"
+      :class="{ 'app-top-bar--scrolled': scrolled }"
     >
       <m-toolbar>
         <m-btn
@@ -18,12 +22,7 @@
           @click="drawer = !drawer"
         />
         <q-toolbar-title>
-          <router-link
-            to="/"
-            class="header-link"
-          >
-            {{ to(title) }}
-          </router-link>
+          {{ to(title) }}
         </q-toolbar-title>
 
         <profile-menu />
@@ -136,6 +135,15 @@ useMeta(() => {
 });
 
 const drawer = ref<boolean>(false);
+
+// Top app bar elevates once content scrolls beneath it (MD3 small top app bar).
+const scrolled = ref<boolean>(false);
+
+function onScroll(info: { position: { top: number } | number }) {
+  const top =
+    typeof info.position === 'number' ? info.position : info.position.top;
+  scrolled.value = top > 0;
+}
 
 const items: NavigationItemProps[] = [
   {
@@ -273,12 +281,5 @@ settings: 'Nastavení'
 }
 
 ::-webkit-scrollbar-corner {
-}
-</style>
-
-<style scoped>
-.header-link {
-  text-decoration: none;
-  color: inherit;
 }
 </style>

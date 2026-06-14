@@ -1,11 +1,15 @@
 <template>
-  <q-layout view="hHh Lpr lff">
+  <q-layout
+    view="hHh Lpr lff"
+    @scroll="onScroll"
+  >
     <q-ajax-bar color="accent" />
 
     <!-- Top bar: only on mobile, where the rail is hidden. -->
     <q-header
       v-if="quasar.screen.lt.sm"
-      bordered
+      class="app-top-bar"
+      :class="{ 'app-top-bar--scrolled': scrolled }"
     >
       <m-toolbar>
         <m-btn
@@ -43,7 +47,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ProfileMenu from 'components/common/ProfileMenu.vue';
 import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
@@ -72,6 +76,15 @@ useMeta(() => {
 
 function navigateHome() {
   void router.push({ name: 'management' });
+}
+
+// Top app bar elevates once content scrolls beneath it (MD3 small top app bar).
+const scrolled = ref<boolean>(false);
+
+function onScroll(info: { position: { top: number } | number }) {
+  const top =
+    typeof info.position === 'number' ? info.position : info.position.top;
+  scrolled.value = top > 0;
 }
 </script>
 
