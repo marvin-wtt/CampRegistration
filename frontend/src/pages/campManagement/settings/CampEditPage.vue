@@ -7,6 +7,7 @@
     class="camp-edit-page row justify-center"
   >
     <q-form
+      v-if="camp"
       greedy
       class="camp-edit col-12 col-md-11 col-lg-10 column q-gutter-y-lg"
       @reset="onReset"
@@ -498,7 +499,7 @@ const { t } = useI18n();
 const campStore = useCampDetailsStore();
 const { data, error, isLoading } = storeToRefs(campStore);
 
-const camp = ref<CampDetails>(initialValue());
+const camp = ref<CampDetails | undefined>(initialValue());
 const updating = ref<boolean>(false);
 
 onMounted(async () => {
@@ -541,8 +542,8 @@ function clone(value: CampDetails): CampDetails {
   return cloned;
 }
 
-function initialValue(): CampDetails {
-  return clone(data.value);
+function initialValue(): CampDetails | undefined {
+  return data.value ? clone(data.value) : undefined;
 }
 
 function onReset() {
