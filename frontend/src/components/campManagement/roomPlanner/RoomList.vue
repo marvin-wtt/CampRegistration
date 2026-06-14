@@ -102,7 +102,7 @@
       <room-list-item
         v-for="(_, index) in room.beds"
         :key="index"
-        v-model="room.beds[index]!.person"
+        :model-value="room.beds[index]!.person"
         :options
         :assignable
         :position="index + 1"
