@@ -493,7 +493,6 @@ const chartOptions = computed<ApexOptions>(() => {
 
 .layout-toggle {
   align-self: end;
-  border: 1px solid var(--md3-outline-variant);
 }
 
 .filter-bar {
