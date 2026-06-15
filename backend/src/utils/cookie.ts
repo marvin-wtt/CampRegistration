@@ -2,7 +2,11 @@ import config from '#config';
 import type { CookieOptions, Request, Response } from 'express';
 import { randomBytes } from 'node:crypto';
 
-const secure = config.env !== 'development';
+// Derive cookie security from the actual scheme the app is served over, not the
+// environment. Over plain HTTP (local dev and the e2e suite on http://localhost)
+// `Secure`/`__Host-` cookies are dropped by the browser, which would break the
+// CSRF double-submit flow. Only real HTTPS deployments get them.
+const secure = new URL(config.origin).protocol === 'https:';
 
 export function secureCookieOptions(
   options?: Partial<CookieOptions>,
