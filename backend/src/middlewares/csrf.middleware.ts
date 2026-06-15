@@ -63,7 +63,7 @@ const { doubleCsrfProtection } = doubleCsrf({
   cookieName: secureCookieName('x-csrf-token'),
   cookieOptions: secureCookieOptions(),
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
-  skipCsrfProtection: (req) => !config.csrf.enabled || isCsrfExempt(req),
+  skipCsrfProtection: isCsrfExempt,
 });
 
 export const csrfProtection = [csrfSession, doubleCsrfProtection];

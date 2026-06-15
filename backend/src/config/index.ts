@@ -40,10 +40,6 @@ const config = {
     maxFileSize: env.MAX_FILE_SIZE,
   },
   csrf: {
-    // CSRF protection is disabled in the automated test environment so the
-    // integration suite can exercise endpoints without juggling tokens. The
-    // protection itself is covered by a dedicated test that re-enables it.
-    enabled: env.NODE_ENV !== 'test',
     secret: env.CSRF_SECRET,
   },
   redis: {
