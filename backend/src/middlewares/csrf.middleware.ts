@@ -16,6 +16,7 @@ declare module 'express-serve-static-core' {
 
 const CSRF_SESSION_COOKIE_NAME = 'csrf-session';
 
+// Using a separate cookie because the session id races between all initial requests.
 export function csrfSession(req: Request, res: Response, next: NextFunction) {
   req.csrfSessionId = createCookieIfMissing(req, res, CSRF_SESSION_COOKIE_NAME);
   next();

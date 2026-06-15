@@ -18,6 +18,10 @@ import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import { secureCookieOptions } from '#utils/cookie';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from '#app/auth/auth.cookies';
 
 @injectable()
 export class AuthController extends BaseController {
@@ -163,10 +167,10 @@ export class AuthController extends BaseController {
     if (
       cookies &&
       typeof cookies === 'object' &&
-      'refreshToken' in cookies &&
-      typeof cookies.refreshToken === 'string'
+      REFRESH_TOKEN_COOKIE in cookies &&
+      typeof cookies[REFRESH_TOKEN_COOKIE] === 'string'
     ) {
-      return cookies.refreshToken;
+      return cookies[REFRESH_TOKEN_COOKIE];
     }
 
     return null;
@@ -242,14 +246,14 @@ export class AuthController extends BaseController {
 
   setAuthCookies(res: Response, tokens: AuthTokensResponse) {
     res.cookie(
-      'accessToken',
+      ACCESS_TOKEN_COOKIE,
       tokens.access.token,
       secureCookieOptions({ expires: tokens.access.expires }),
     );
 
     if (tokens.refresh) {
       res.cookie(
-        'refreshToken',
+        REFRESH_TOKEN_COOKIE,
         tokens.refresh.token,
         secureCookieOptions({ expires: tokens.refresh.expires }),
       );
@@ -257,8 +261,8 @@ export class AuthController extends BaseController {
   }
 
   destroyAuthCookies = (res: Response) => {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie(ACCESS_TOKEN_COOKIE);
+    res.clearCookie(REFRESH_TOKEN_COOKIE);
   };
 
   getCsrfToken(req: Request, res: Response) {
