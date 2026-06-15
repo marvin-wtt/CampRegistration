@@ -1,26 +1,37 @@
 import { doubleCsrf } from 'csrf-csrf';
 import { ExtractJwt } from 'passport-jwt';
 import config from '#config/index';
+import type { NextFunction, Response, Request } from 'express';
+import {
+  createCookieIfMissing,
+  SECURE_COOKIE_OPTIONS,
+  secureCookieName,
+} from '#utils/cookie';
 
-const secure = config.env !== 'development';
+declare module 'express-serve-static-core' {
+  interface Request {
+    csrfSessionId?: string | undefined;
+  }
+}
+
+export function csrfSession(req: Request, res: Response, next: NextFunction) {
+  req.csrfSessionId = createCookieIfMissing(req, res, 'session');
+  next();
+}
+
 const jwtFromHeader = ExtractJwt.fromAuthHeaderAsBearerToken();
 
 const { doubleCsrfProtection } = doubleCsrf({
   getSecret: () => config.csrf.secret,
   getSessionIdentifier: (req) => {
-    if (!req.sessionId) {
+    if (!req.csrfSessionId) {
       throw new Error('Session ID is not set for the request.');
     }
 
-    return req.sessionId;
+    return req.csrfSessionId;
   },
-  cookieName: secure ? '__Host-x-csrf-token' : 'x-csrf-token',
-  cookieOptions: {
-    httpOnly: true,
-    sameSite: 'strict',
-    path: '/',
-    secure,
-  },
+  cookieName: secureCookieName('x-csrf-token'),
+  cookieOptions: SECURE_COOKIE_OPTIONS,
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
   skipCsrfProtection: (req) => {
     if (req.isUnauthenticated()) {

@@ -3,6 +3,7 @@ import { AuthController } from '#app/auth/auth.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
+import { csrfSession } from '#middlewares/csrf.middleware';
 
 export class AuthRouter extends ModuleRouter {
   protected registerBindings() {
@@ -44,6 +45,10 @@ export class AuthRouter extends ModuleRouter {
       '/verify-email',
       controller(authController, 'verifyEmail'),
     );
-    this.router.get('/csrf-token', controller(authController, 'getCsrfToken'));
+    this.router.get(
+      '/csrf-token',
+      csrfSession,
+      controller(authController, 'getCsrfToken'),
+    );
   }
 }
