@@ -14,7 +14,7 @@ import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import { StorageFile } from '#core/storage/storage';
-import { selectFilesByLocale } from '@camp-registration/common/form';
+import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
 
@@ -240,13 +240,7 @@ export class FileService extends BaseService {
       },
     });
 
-    if (files.length === 0) {
-      return null;
-    }
-
-    const selected = selectFilesByLocale(files, locale ?? 'en');
-
-    return selected[slot];
+    return selectFileByLocale(files, locale ?? 'en') ?? null;
   }
 
   async queryModelFiles(
