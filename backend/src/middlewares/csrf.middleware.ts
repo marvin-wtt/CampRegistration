@@ -1,5 +1,4 @@
 import { doubleCsrf } from 'csrf-csrf';
-import { ExtractJwt } from 'passport-jwt';
 import config from '#config/index';
 import type { NextFunction, Response, Request } from 'express';
 import {
@@ -7,6 +6,10 @@ import {
   secureCookieOptions,
   secureCookieName,
 } from '#utils/cookie';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from '#app/auth/auth.cookies';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -22,7 +25,13 @@ export function csrfSession(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-const jwtFromHeader = ExtractJwt.fromAuthHeaderAsBearerToken();
+const AUTH_COOKIE_NAMES = [ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE] as const;
+function hasAuthCookie(req: Request): boolean {
+  return AUTH_COOKIE_NAMES.some((name) => {
+    const value: unknown = req.cookies[name];
+    return typeof value === 'string' && value.length > 0;
+  });
+}
 
 const { doubleCsrfProtection } = doubleCsrf({
   getSecret: () => config.csrf.secret,
@@ -37,12 +46,10 @@ const { doubleCsrfProtection } = doubleCsrf({
   cookieOptions: secureCookieOptions(),
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
   skipCsrfProtection: (req) => {
-    if (req.isUnauthenticated()) {
-      return true;
-    }
-
-    // Only skip for Bearer token auth — non-browser clients can't be CSRF-attacked
-    return jwtFromHeader(req) !== null;
+    // Any request carrying auth cookies can be CSRF-able,
+    // even on public routes and even if Passport treats it as unauthenticated
+    // because the access token is expired.
+    return !hasAuthCookie(req);
   },
 });
 
