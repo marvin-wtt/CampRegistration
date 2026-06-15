@@ -47,6 +47,8 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
+import { addFileSlotResolver } from 'src/composables/survey';
+import { useAPIService } from 'src/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
 import { createStaticMd3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
 import { md3CreatorThemes } from 'src/lib/surveyJs/themes/md3-creator';
@@ -62,6 +64,7 @@ const props = defineProps<{
 
 const quasar = useQuasar();
 const { locale } = useI18n();
+const api = useAPIService();
 
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
@@ -232,6 +235,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     setVariables(survey, props.camp);
+    addFileSlotResolver(survey, props.camp.id, api);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.camp);
     });

@@ -1,15 +1,18 @@
-import type { ServiceFile } from '../entities/index.js';
+interface LocalizedFile {
+  field: string | null;
+  locale: string | null;
+}
 
 /**
  * Selects the best-matching file per field for a given locale.
  * Priority: exact locale match > language prefix match > default (null locale).
  * Files that don't match at all are excluded.
  */
-export function selectFilesByLocale(
-  files: ServiceFile[],
+export function selectFilesByLocale<T extends LocalizedFile>(
+  files: T[],
   locale: string,
-): Record<string, ServiceFile> {
-  const result: Record<string, ServiceFile> = {};
+): Record<string, T> {
+  const result: Record<string, T> = {};
 
   for (const file of files) {
     if (!file.field) {
@@ -21,7 +24,7 @@ export function selectFilesByLocale(
       continue;
     }
 
-    const current = result[file.field] as ServiceFile | undefined;
+    const current = result[file.field] as T | undefined;
     if (!current || score > localeScore(current.locale, locale)) {
       result[file.field] = file;
     }

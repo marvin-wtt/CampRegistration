@@ -287,4 +287,89 @@ describe('/api/v1/files/', () => {
         .expect('Location', `/api/v1/files/${file.id}`);
     });
   });
+
+  describe('GET /api/v1/camps/:campId/files/slots/:slot', () => {
+    it('should stream the public file matching the slot without authentication', async () => {
+      const camp = await CampFactory.create({ public: true });
+      const fileName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', fileName);
+      await FileFactory.create({
+        camp: { connect: { id: camp.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        name: fileName,
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
+        .expect(200);
+    });
+
+    it('should select the locale-specific file when a locale is requested', async () => {
+      const camp = await CampFactory.create({ public: true });
+
+      const defaultName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', defaultName);
+      await FileFactory.create({
+        camp: { connect: { id: camp.id } },
+        field: 'rules',
+        locale: null,
+        accessLevel: 'public',
+        originalName: 'default.pdf',
+        name: defaultName,
+      });
+
+      const localizedName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', localizedName);
+      await FileFactory.create({
+        camp: { connect: { id: camp.id } },
+        field: 'rules',
+        locale: 'de',
+        accessLevel: 'public',
+        originalName: 'localized.pdf',
+        name: localizedName,
+      });
+
+      const response = await request()
+        .get(`/api/v1/camps/${camp.id}/files/slots/rules?locale=de`)
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('localized.pdf');
+    });
+
+    it('should respond with `403` when the matching file is private and the user is anonymous', async () => {
+      const camp = await CampFactory.create({ public: true });
+      await FileFactory.create({
+        camp: { connect: { id: camp.id } },
+        field: 'rules',
+        accessLevel: 'private',
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
+        .expect(403);
+    });
+
+    it('should respond with `409` when the matching file is not ready', async () => {
+      const camp = await CampFactory.create({ public: true });
+      await FileFactory.create({
+        camp: { connect: { id: camp.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        uploadStatus: 'PENDING',
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
+        .expect(409);
+    });
+
+    it('should respond with `404` when no file matches the slot', async () => {
+      const camp = await CampFactory.create({ public: true });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/files/slots/unknown`)
+        .expect(404);
+    });
+  });
 });

@@ -1,42 +1,29 @@
 import type { ITheme, SurveyModel } from 'survey-core';
-import type {
-  CampDetails,
-  ServiceFile,
-} from '@camp-registration/common/entities';
+import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
-import {
-  setVariables,
-  selectFilesByLocale,
-} from '@camp-registration/common/form';
+import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
-import { useAPIService } from 'src/services/APIService';
+import type { useAPIService } from 'src/services/APIService';
 import { md3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
 
 export function startAutoDataUpdate(
   model: SurveyModel,
   data: Ref<CampDetails | undefined>,
-  files: Ref<ServiceFile[] | undefined>,
 ) {
-  const api = useAPIService();
   const { locale } = useI18n();
 
   watch(locale, (value) => {
-    updateVariables(model, data.value, files.value, value);
+    updateVariables(model, data.value, value);
   });
 
   watch(data, (value) => {
-    updateVariables(model, value, files.value, locale.value);
-  });
-
-  watch(files, (value) => {
-    updateVariables(model, data.value, value, locale.value);
+    updateVariables(model, value, locale.value);
   });
 
   const updateVariables = (
     model: SurveyModel | undefined,
     data: CampDetails | undefined,
-    files: ServiceFile[] | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -45,19 +32,31 @@ export function startAutoDataUpdate(
 
     model.locale = locale;
     setVariables(model, data);
-
-    // Build locale-aware _file variable object: {_file.rules}, {_file.toc}, etc.
-    if (data && files) {
-      const selected = selectFilesByLocale(files, locale);
-      const fileVars: Record<string, string> = {};
-      for (const [field, file] of Object.entries(selected)) {
-        fileVars[field] = api.getFileUrl(file.id);
-      }
-      model.setVariable('_file', fileVars);
-    }
   };
 
-  updateVariables(model, data.value, files.value, locale.value);
+  updateVariables(model, data.value, locale.value);
+}
+
+/**
+ * Resolves {_file.<slot>} placeholders to a deterministic, locale-aware URL that
+ * the backend redirects to the matching file. No file list is fetched up front;
+ * the browser only requests a file when a link/image actually renders.
+ */
+export function addFileSlotResolver(
+  model: SurveyModel,
+  campId: string,
+  api: ReturnType<typeof useAPIService>,
+) {
+  model.onProcessDynamicText.add((sender, options) => {
+    if (options.isExists) {
+      return;
+    }
+    if (!options.name.startsWith('_file.')) {
+      return;
+    }
+    const slot = options.name.slice('_file.'.length);
+    options.value = api.getCampFileSlotUrl(campId, slot, sender.locale);
+  });
 }
 
 export const startAutoThemeUpdate = (

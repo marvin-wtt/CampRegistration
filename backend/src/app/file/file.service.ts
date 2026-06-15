@@ -10,10 +10,11 @@ import { BaseService } from '#core/base/BaseService';
 import { fileNameExtension } from '#utils/file';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import { StorageFile } from '#core/storage/storage';
+import { selectFilesByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
 
@@ -220,6 +221,32 @@ export class FileService extends BaseService {
         [`${modelName}Id`]: modelId,
       },
     });
+  }
+
+  /**
+   * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
+   * and locale. The slot maps to the file's `field` column. Readiness and access
+   * are not checked here — that is the caller's (guard/stream) responsibility.
+   */
+  async getModelFileForSlot(
+    model: ModelData,
+    slot: string,
+    locale: string | undefined,
+  ): Promise<File | null> {
+    const files = await this.prisma.file.findMany({
+      where: {
+        [`${model.name}Id`]: model.id,
+        field: slot,
+      },
+    });
+
+    if (files.length === 0) {
+      return null;
+    }
+
+    const selected = selectFilesByLocale(files, locale ?? 'en');
+
+    return selected[slot];
   }
 
   async queryModelFiles(
