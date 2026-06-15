@@ -1,4 +1,4 @@
-import { api } from 'boot/axios';
+import { api, ensureCsrfToken } from 'boot/axios';
 import type {
   AuthTokens,
   Authentication,
@@ -151,12 +151,9 @@ export function useAuthService() {
   }
 
   async function requestCsrfToken(): Promise<void> {
-    const response = await api.get('auth/csrf-token');
-
-    const csrfToken = response?.data.csrfToken;
-    if (csrfToken !== undefined && typeof csrfToken === 'string') {
-      api.defaults.headers.common['x-csrf-token'] = csrfToken;
-    }
+    // Delegates to the shared bootstrap in boot/axios so the session cookie and
+    // CSRF token are established exactly once and stay in sync across callers.
+    await ensureCsrfToken();
   }
 
   function setOnUnauthenticated(handler: () => unknown) {

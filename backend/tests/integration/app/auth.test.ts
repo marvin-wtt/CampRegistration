@@ -21,6 +21,7 @@ import {
   verifyToken,
 } from './utils/token.js';
 import { request } from '../utils/request.js';
+import { randomUUID } from 'node:crypto';
 import * as OTPAuth from 'otpauth';
 import { expectEmailTo } from '../utils/mail.js';
 import { wait } from '../utils/wait.js';
@@ -1258,6 +1259,99 @@ describe('/api/v1/auth', async () => {
         .expect(200);
 
       expect(body).toHaveProperty('csrfToken');
+    });
+  });
+
+  describe('CSRF protection', () => {
+    // The cookie value of a freshly generated token is identical to the token
+    // returned in the response body, so the body value can be replayed as both
+    // the `x-csrf-token` header and the CSRF cookie.
+    const getCsrfToken = async (sessionId: string): Promise<string> => {
+      const { body } = await request()
+        .get('/api/v1/auth/csrf-token')
+        .set('Cookie', ['__Host-session=' + sessionId, 'session=' + sessionId])
+        .expect(200);
+
+      return body.csrfToken as string;
+    };
+
+    it('should accept a cookie-authenticated mutation when the CSRF token matches the session', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const sessionId = randomUUID();
+      const csrfToken = await getCsrfToken(sessionId);
+
+      await request()
+        .patch('/api/v1/profile')
+        .set('Cookie', [
+          '__Host-session=' + sessionId,
+          'session=' + sessionId,
+          'accessToken=' + accessToken,
+          '__Host-x-csrf-token=' + csrfToken,
+          'x-csrf-token=' + csrfToken,
+        ])
+        .set('x-csrf-token', csrfToken)
+        .send({ name: 'Updated Name' })
+        .expect(200);
+    });
+
+    it('should reject a cookie-authenticated mutation when the CSRF token was issued for a different session', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const tokenSessionId = randomUUID();
+      const requestSessionId = randomUUID();
+      // Token (and cookie) are bound to `tokenSessionId` ...
+      const csrfToken = await getCsrfToken(tokenSessionId);
+
+      // ... but the request is sent under a different session id. This mimics
+      // the cold-start race where concurrent cookie-less requests each mint a
+      // diverging session id, leaving the CSRF token bound to a session that no
+      // longer matches the surviving `__Host-session` cookie.
+      const { body } = await request()
+        .patch('/api/v1/profile')
+        .set('Cookie', [
+          '__Host-session=' + requestSessionId,
+          'session=' + requestSessionId,
+          'accessToken=' + accessToken,
+          '__Host-x-csrf-token=' + csrfToken,
+          'x-csrf-token=' + csrfToken,
+        ])
+        .set('x-csrf-token', csrfToken)
+        .send({ name: 'Updated Name' })
+        .expect(403);
+
+      // The frontend relies on this stable error code to recover by fetching a
+      // fresh token and retrying the request.
+      expect(body).toHaveProperty('errorCode', 'EBADCSRFTOKEN');
+    });
+
+    it('should reject a cookie-authenticated mutation without a CSRF token', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const sessionId = randomUUID();
+
+      const { body } = await request()
+        .patch('/api/v1/profile')
+        .set('Cookie', [
+          '__Host-session=' + sessionId,
+          'session=' + sessionId,
+          'accessToken=' + accessToken,
+        ])
+        .send({ name: 'Updated Name' })
+        .expect(403);
+
+      expect(body).toHaveProperty('errorCode', 'EBADCSRFTOKEN');
+    });
+
+    it('should not require a CSRF token for bearer-authenticated requests', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .patch('/api/v1/profile')
+        .auth(accessToken, { type: 'bearer' })
+        .send({ name: 'Updated Name' })
+        .expect(200);
     });
   });
 });
