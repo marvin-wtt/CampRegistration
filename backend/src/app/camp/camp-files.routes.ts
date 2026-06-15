@@ -6,6 +6,7 @@ import { campManager } from '#app/campManager/camp-manager.guard';
 import fileAccessGuard from '#app/file/file.guard';
 import { controller } from '#utils/bindController';
 import { catchMiddlewareAsync } from '#utils/catchAsync';
+import validator from '#app/file/file.validation';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
@@ -69,19 +70,16 @@ export class CampFilesRouter extends ModuleRouter {
 
   private resolveSlotFile = catchMiddlewareAsync(async (req) => {
     const camp = req.modelOrFail('camp');
-    const slot = Array.isArray(req.params.slot)
-      ? req.params.slot[0]
-      : req.params.slot;
-    const locale =
-      typeof req.query.locale === 'string' ? req.query.locale : undefined;
+    const {
+      params: { slot },
+      query: { locale },
+    } = await req.validate(validator.slotFile);
 
-    const file = slot
-      ? await this.fileService.getModelFileForSlot(
-          { id: camp.id, name: 'camp' },
-          slot,
-          locale,
-        )
-      : null;
+    const file = await this.fileService.getModelFileForSlot(
+      { id: camp.id, name: 'camp' },
+      slot,
+      locale,
+    );
 
     if (!file) {
       throw new ApiError(httpStatus.NOT_FOUND, 'No file found for slot');

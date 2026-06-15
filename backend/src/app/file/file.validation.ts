@@ -17,6 +17,17 @@ const show = z.object({
   }),
 });
 
+const slotFile = z.object({
+  params: z.object({
+    slot: z.string().min(1),
+  }),
+  query: z
+    .object({
+      locale: z.string(),
+    })
+    .partial(),
+});
+
 const index = z.object({
   query: z
     .object({
@@ -48,6 +59,7 @@ const destroy = z.object({
 export default {
   stream,
   show,
+  slotFile,
   index,
   store,
   destroy,
