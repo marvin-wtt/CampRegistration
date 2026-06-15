@@ -1,4 +1,4 @@
-import type { CampDataType } from '../CampDataType';
+import type { CampDataType } from './CampDataType';
 
 export const address: CampDataType = {
   element: {
