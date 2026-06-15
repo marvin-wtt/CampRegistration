@@ -15,7 +15,7 @@ declare module 'express-serve-static-core' {
 }
 
 export function csrfSession(req: Request, res: Response, next: NextFunction) {
-  req.csrfSessionId = createCookieIfMissing(req, res, 'session');
+  req.csrfSessionId = createCookieIfMissing(req, res, 'csrf-session');
   next();
 }
 
@@ -43,4 +43,4 @@ const { doubleCsrfProtection } = doubleCsrf({
   },
 });
 
-export const csrfProtection = doubleCsrfProtection;
+export const csrfProtection = [csrfSession, doubleCsrfProtection];
