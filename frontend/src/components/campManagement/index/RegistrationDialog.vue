@@ -177,9 +177,14 @@ function openNow() {
 function closeNow() {
   const now = new Date();
   // Drop an opening date that is in the future or now so the camp reads as closed
-  if (opensAt.value && new Date(opensAt.value) >= now) {
+  const ONE_MINUTE = 60 * 1000;
+  if (
+    opensAt.value &&
+    new Date(opensAt.value).getTime() >= now.getTime() - ONE_MINUTE
+  ) {
     opensAt.value = null;
   }
+
   closesAt.value = now.toISOString();
 }
 
