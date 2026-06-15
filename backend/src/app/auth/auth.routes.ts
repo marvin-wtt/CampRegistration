@@ -45,10 +45,6 @@ export class AuthRouter extends ModuleRouter {
       '/verify-email',
       controller(authController, 'verifyEmail'),
     );
-    this.router.get(
-      '/csrf-token',
-      csrfSession,
-      controller(authController, 'getCsrfToken'),
-    );
+    this.router.get('/csrf-token', controller(authController, 'getCsrfToken'));
   }
 }
