@@ -77,6 +77,22 @@ export const firstName: CampDataType = {
   },
 };
 
+export const gender: CampDataType = {
+  element: {
+    value: 'gender',
+    text: {
+      en: 'Gender',
+      de: 'Geschlecht',
+      fr: 'Sexe',
+      pl: 'Płeć',
+      cs: 'Pohlaví',
+    },
+  },
+  fit: (obj) => {
+    return ['dropdown', 'radiogroup', 'buttongroup'].includes(obj.getType());
+  },
+};
+
 export const lastName: CampDataType = {
   element: {
     value: 'last_name',
