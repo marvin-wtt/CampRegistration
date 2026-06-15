@@ -191,6 +191,8 @@ const commonCssVariables = {
   '--sjs-article-font-default-fontStretch': 'normal',
   '--sjs-article-font-default-paragraphIndent': '0px',
   '--sjs-article-font-default-textCase': 'none',
+
+  '--sjs-header-backcolor': 'var(--sjs-primary-backcolor)',
 } satisfies Record<string, string>;
 
 const createMd3SurveyTheme = (mode: Md3Mode, r: Md3Resolver): ITheme => {
