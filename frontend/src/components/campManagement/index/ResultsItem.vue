@@ -20,8 +20,21 @@
       </span>
 
       <div class="mgmt-card__heading">
-        <div class="mgmt-card__title ellipsis-2-lines">
+        <div
+          ref="titleRef"
+          class="mgmt-card__title ellipsis-2-lines"
+          @mouseenter="onTitleEnter"
+          @mouseleave="showTitleTooltip = false"
+        >
           {{ to(camp.name) }}
+          <q-tooltip
+            v-model="showTitleTooltip"
+            no-parent-event
+            anchor="bottom start"
+            self="top start"
+          >
+            {{ to(camp.name) }}
+          </q-tooltip>
         </div>
         <div class="mgmt-card__timing">
           <span class="mgmt-card__dates">{{ dateRange }}</span>
@@ -164,6 +177,15 @@ const { canFor } = usePermissions();
 const { camp } = defineProps<{
   camp: Camp;
 }>();
+
+const titleRef = ref<HTMLElement>();
+const showTitleTooltip = ref<boolean>(false);
+
+function onTitleEnter() {
+  const el = titleRef.value;
+  // Only show the tooltip when the title is actually clamped/truncated.
+  showTitleTooltip.value = !!el && el.scrollHeight > el.clientHeight;
+}
 
 const tones = ['primary', 'secondary', 'tertiary'] as const;
 
