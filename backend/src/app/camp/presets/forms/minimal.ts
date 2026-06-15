@@ -164,18 +164,8 @@ export default {
                 default: 'female',
               },
             },
-            {
-              value: 'd',
-              text: {
-                en: 'diverse',
-                de: 'divers',
-                fr: 'divers',
-                pl: 'inne',
-                cs: 'jiné',
-                default: 'divers',
-              },
-            },
           ],
+          campDataType: 'gender',
           autocomplete: 'sex',
         },
         {
@@ -384,4 +374,5 @@ export default {
     default: 'Complete Registration',
   },
   headerView: 'advanced',
+  widthMode: 'static',
 };
