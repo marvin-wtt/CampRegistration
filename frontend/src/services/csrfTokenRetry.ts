@@ -103,5 +103,30 @@ export default (axiosClient: AxiosInstance, options: RetryOptions) => {
     });
   };
 
+  // Prime the CSRF token before the first state-changing request. Without this
+  // the happy path would always incur a 403 + retry round-trip (and race the
+  // token fetch on initial page load), which e2e flows that assert on the first
+  // request — e.g. submitting a camp registration — depend on not happening.
+  const SAFE_METHODS = new Set(['get', 'head', 'options']);
+  axiosClient.interceptors.request.use(async (config) => {
+    const method = (config.method ?? 'get').toLowerCase();
+    const hasToken =
+      config.headers.has(CSRF_TOKEN_HEADER) ||
+      axiosClient.defaults.headers.common[CSRF_TOKEN_HEADER] != null;
+
+    if (SAFE_METHODS.has(method) || hasToken) {
+      return config;
+    }
+
+    await options.handleTokenRefresh();
+
+    const token = axiosClient.defaults.headers.common[CSRF_TOKEN_HEADER];
+    if (token != null) {
+      config.headers.set(CSRF_TOKEN_HEADER, token);
+    }
+
+    return config;
+  });
+
   axiosClient.interceptors.response.use(undefined, interceptor);
 };

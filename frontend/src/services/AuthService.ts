@@ -13,6 +13,10 @@ export type CustomRequestConfig = AxiosRequestConfig & {
   _csrfRetry?: boolean | undefined;
 };
 
+// De-duplicates concurrent token requests so a burst of requests (or a cold
+// start priming the token) only triggers a single fetch and one session cookie.
+let pendingCsrfToken: Promise<void> | null = null;
+
 function isCsrfError(error: AxiosError): boolean {
   if (error.response?.status !== 403) {
     return false;
@@ -169,16 +173,23 @@ export function useAuthService() {
     return response?.data;
   }
 
-  async function requestCsrfToken(): Promise<void> {
-    const response = await api.get('auth/csrf-token', {
-      // Avoid retrying the token request itself on a CSRF error.
-      _csrfRetry: true,
-    } as CustomRequestConfig);
+  function requestCsrfToken(): Promise<void> {
+    pendingCsrfToken ??= api
+      .get('auth/csrf-token', {
+        // Avoid retrying the token request itself on a CSRF error.
+        _csrfRetry: true,
+      } as CustomRequestConfig)
+      .then((response) => {
+        const csrfToken: unknown = response?.data?.csrfToken;
+        if (typeof csrfToken === 'string') {
+          api.defaults.headers.common['x-csrf-token'] = csrfToken;
+        }
+      })
+      .finally(() => {
+        pendingCsrfToken = null;
+      });
 
-    const csrfToken: unknown = response?.data?.csrfToken;
-    if (typeof csrfToken === 'string') {
-      api.defaults.headers.common['x-csrf-token'] = csrfToken;
-    }
+    return pendingCsrfToken;
   }
 
   function setOnUnauthenticated(handler: () => unknown) {
