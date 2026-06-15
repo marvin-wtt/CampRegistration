@@ -1,12 +1,10 @@
 <template>
-  <!-- Mobile: fixed FAB + bottom-sheet dialog -->
+  <!-- Mobile: fixed FAB + bottom sheet -->
   <template v-if="quasar.screen.xs">
     <q-btn
       class="backlog-fab"
       round
       size="md"
-      color="white"
-      text-color="primary"
       icon="inbox"
       @click="mobileOpen = true"
     >
@@ -18,80 +16,59 @@
       />
     </q-btn>
 
-    <q-dialog
-      v-model="mobileOpen"
-      position="bottom"
-    >
-      <q-card
-        :style="{
-          width: '90vw',
-          borderBottomLeftRadius: '0px !important',
-          borderBottomRightRadius: '0px !important',
-        }"
-      >
-        <q-card-section class="row items-center">
-          <span class="text-h6">{{ t('title') }}</span>
-          <q-badge
-            v-if="filteredEvents.length"
-            :label="filteredEvents.length"
-            color="primary"
-            class="q-ml-sm"
-          />
-          <q-space />
-          <q-btn
-            icon="add"
-            flat
-            round
-            @click="onMobileAdd"
-          >
-            <q-tooltip>{{ t('add') }}</q-tooltip>
-          </q-btn>
-          <q-btn
-            v-close-popup
-            icon="close"
-            flat
-            round
-          />
-        </q-card-section>
+    <bottom-sheet v-model="mobileOpen">
+      <div class="row items-center q-mb-sm">
+        <span class="text-subtitle1 text-weight-medium">{{ t('title') }}</span>
+        <q-badge
+          v-if="filteredEvents.length"
+          :label="filteredEvents.length"
+          color="primary"
+          class="q-ml-sm"
+        />
+        <q-space />
+        <q-btn
+          icon="add"
+          flat
+          round
+          dense
+          @click="onMobileAdd"
+        >
+          <q-tooltip>{{ t('add') }}</q-tooltip>
+        </q-btn>
+      </div>
 
-        <q-separator />
-
-        <q-scroll-area style="height: min(50vh, 400px)">
-          <div class="q-pa-md column q-gutter-y-sm">
-            <div
-              v-if="!filteredEvents.length"
-              class="text-body2 text-grey text-center q-pa-lg"
-            >
-              {{ t('empty') }}
-            </div>
-            <div
-              v-for="event in filteredEvents"
-              :key="event.id"
-              class="backlog-card"
-              :style="{ borderLeftColor: event.color ?? '#9E9E9E' }"
-            >
-              <div class="backlog-card__title text-body2">
-                {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
-              </div>
-              <q-icon
-                v-if="event.plan !== 'both'"
-                :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
-                size="14px"
-                color="grey-6"
-                class="q-mt-xs"
-              />
-              <calendar-item-popup
-                :event="event"
-                @edit="emit('edit', event)"
-                @delete="emit('delete', event)"
-                @duplicate="emit('duplicate', event)"
-                @schedule="onMobileSchedule(event)"
-              />
-            </div>
+      <div class="column q-gutter-y-sm">
+        <div
+          v-if="!filteredEvents.length"
+          class="backlog__empty text-body2 text-center q-pa-lg"
+        >
+          {{ t('empty') }}
+        </div>
+        <div
+          v-for="event in filteredEvents"
+          :key="event.id"
+          class="backlog-card"
+          :style="{ borderLeftColor: event.color ?? '#9E9E9E' }"
+        >
+          <div class="backlog-card__title text-body2">
+            {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
           </div>
-        </q-scroll-area>
-      </q-card>
-    </q-dialog>
+          <q-icon
+            v-if="event.plan !== 'both'"
+            :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
+            size="14px"
+            class="backlog-card__plan-icon q-mt-xs"
+          />
+          <calendar-item-popup
+            :event="event"
+            @edit="emit('edit', event)"
+            @delete="emit('delete', event)"
+            @duplicate="emit('duplicate', event)"
+            @schedule="onMobileSchedule(event)"
+          />
+        </div>
+      </div>
+    </bottom-sheet>
   </template>
 
   <!-- Desktop: collapsible sidebar -->
@@ -112,22 +89,31 @@
       class="backlog__head"
       @click="collapsed = !collapsed"
     >
-      <q-icon
-        name="inbox"
-        size="20px"
-      />
-      <span
-        v-if="!collapsed"
-        class="backlog__head-label text-body2 text-weight-medium q-ml-xs"
-      >
-        {{ t('title') }}
+      <span class="backlog__head-icon">
+        <q-icon
+          name="inbox"
+          size="20px"
+        />
+        <q-badge
+          v-if="collapsed && filteredEvents.length"
+          :label="filteredEvents.length"
+          color="primary"
+          floating
+          class="backlog__head-icon-badge"
+        />
       </span>
-      <q-badge
-        v-if="filteredEvents.length"
-        :label="filteredEvents.length"
-        color="primary"
-        class="q-ml-xs"
-      />
+      <template v-if="!collapsed">
+        <span class="backlog__head-label text-body2 text-weight-medium q-ml-xs">
+          {{ t('title') }}
+        </span>
+        <q-badge
+          v-if="filteredEvents.length"
+          :label="filteredEvents.length"
+          color="primary"
+          class="q-ml-xs"
+        />
+      </template>
+
       <q-space v-if="!collapsed" />
       <q-btn
         v-if="!collapsed"
@@ -154,7 +140,7 @@
     >
       <div
         v-if="!filteredEvents.length"
-        class="text-caption text-grey text-center q-pa-md"
+        class="backlog__empty text-caption text-center q-pa-md"
       >
         {{ t('empty') }}
       </div>
@@ -173,8 +159,7 @@
           v-if="event.plan !== 'both'"
           :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
           size="10px"
-          color="grey-6"
-          class="q-mt-xs"
+          class="backlog-card__plan-icon q-mt-xs"
         />
         <calendar-item-popup
           :event="event"
@@ -195,6 +180,7 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
+import BottomSheet from 'components/BottomSheet.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
@@ -278,7 +264,12 @@ function onDrop(e: DragEvent) {
   bottom: 80px;
   right: 16px;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 8px 3px rgba(0, 0, 0, 0.15);
 }
 
 // Desktop sidebar
@@ -286,90 +277,107 @@ function onDrop(e: DragEvent) {
   display: flex;
   flex-direction: column;
   // flex: 0 0 <size> prevents grow/shrink so re-expanding never outgrows the layout
-  flex: 0 0 220px;
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
-  transition: flex-basis 0.2s ease;
+  flex: 0 0 228px;
+  border-left: 1px solid var(--md3-outline-variant);
+  background: var(--md3-surface-container-low);
+  transition:
+    flex-basis 0.25s cubic-bezier(0.2, 0, 0, 1),
+    background 0.15s;
   overflow: hidden;
 
   &--collapsed {
-    flex: 0 0 36px;
+    flex: 0 0 40px;
   }
 
   &--dragover {
-    background: rgba(33, 150, 243, 0.06);
-    box-shadow: inset 0 0 0 2px rgba(33, 150, 243, 0.5);
-  }
-
-  .body--dark & {
-    border-left-color: rgba(255, 255, 255, 0.12);
+    background: color-mix(
+      in srgb,
+      var(--md3-primary) 8%,
+      var(--md3-surface-container-low)
+    );
+    box-shadow: inset 0 0 0 2px var(--md3-primary);
   }
 }
 
 .backlog__head {
   display: flex;
   align-items: center;
-  padding: 6px 8px;
+  padding: 6px 10px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--md3-outline-variant);
+  color: var(--md3-on-surface-variant);
   flex-shrink: 0;
   user-select: none;
-  min-height: 36px;
+  min-height: 40px;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: color-mix(in srgb, var(--md3-on-surface) 8%, transparent);
   }
+}
 
-  .body--dark & {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
+.backlog__head-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
 
-    &:hover {
-      background: rgba(255, 255, 255, 0.04);
-    }
-  }
+.backlog__head-icon-badge {
+  top: -6px;
+  right: -8px;
+  padding: 2px 4px;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .backlog__head-label {
   white-space: nowrap;
+  color: var(--md3-on-surface);
+}
+
+.backlog__empty {
+  color: var(--md3-on-surface-variant);
 }
 
 .backlog__body {
   flex: 1;
   overflow-y: auto;
-  padding: 4px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .backlog-card {
   position: relative;
-  padding: 6px 8px;
-  border-left: 3px solid #9e9e9e;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.03);
+  padding: 8px 10px;
+  border: 1px solid var(--md3-outline-variant);
+  border-left: 4px solid #9e9e9e;
+  border-radius: 10px;
+  background: var(--md3-surface);
+  color: var(--md3-on-surface);
   cursor: grab;
   min-width: 0;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--md3-surface-container);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
   &:active {
     cursor: grabbing;
-  }
-
-  .body--dark & {
-    background: rgba(255, 255, 255, 0.04);
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
   }
 }
 
 .backlog-card__title {
   word-break: break-word;
   line-height: 1.3;
+}
+
+.backlog-card__plan-icon {
+  color: var(--md3-on-surface-variant);
 }
 </style>
 

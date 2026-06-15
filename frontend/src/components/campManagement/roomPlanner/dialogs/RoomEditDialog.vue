@@ -24,6 +24,23 @@
             rounded
             :locales="props.locales"
           />
+
+          <q-input
+            v-model.number="modifiedRoom.capacity"
+            type="number"
+            :label="t('fields.capacity.label')"
+            :hint="t('fields.capacity.hint')"
+            :rules="[
+              (val: number | undefined) =>
+                !!val || t('fields.capacity.rules.required'),
+              (val: number) => val > 0 || t('fields.capacity.rules.positive'),
+              (val: number) =>
+                val >= props.minCapacity ||
+                t('fields.capacity.rules.min', { min: props.minCapacity }),
+            ]"
+            outlined
+            rounded
+          />
         </q-card-section>
 
         <!-- action buttons -->
@@ -55,7 +72,9 @@ import type { Room, Translatable } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
 const props = defineProps<{
-  room: Room;
+  room: Pick<Room, 'name'>;
+  capacity: number;
+  minCapacity: number;
   locales?: string[];
 }>();
 
@@ -65,8 +84,9 @@ const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const modifiedRoom = reactive<{ name: Translatable }>({
+const modifiedRoom = reactive<{ name: Translatable; capacity: number }>({
   name: props.room.name,
+  capacity: props.capacity,
 });
 
 function onOKClick(): void {
@@ -88,6 +108,13 @@ fields:
     label: 'Name'
     rules:
       required: 'Name is required'
+  capacity:
+    label: 'Number of beds'
+    hint: 'Only empty beds can be removed'
+    rules:
+      required: 'Beds is required'
+      positive: 'Room must have at least one bed'
+      min: 'At least {min} beds are occupied'
 
 action:
   save: 'Save'
@@ -101,6 +128,13 @@ fields:
     label: 'Name'
     rules:
       required: 'Name ist erforderlich'
+  capacity:
+    label: 'Anzahl der Betten'
+    hint: 'Nur freie Betten können entfernt werden'
+    rules:
+      required: 'Betten sind erforderlich'
+      positive: 'Zimmer muss mindestens ein Bett haben'
+      min: 'Mindestens {min} Betten sind belegt'
 
 action:
   save: 'Speichern'
@@ -114,6 +148,13 @@ fields:
     label: 'Nom'
     rules:
       required: 'Le nom est requis'
+  capacity:
+    label: 'Nombre de lits'
+    hint: 'Seuls les lits libres peuvent être supprimés'
+    rules:
+      required: 'Le nombre de lits est requis'
+      positive: 'La chambre doit avoir au moins un lit'
+      min: 'Au moins {min} lits sont occupés'
 
 action:
   save: 'Enregistrer'
@@ -127,6 +168,13 @@ fields:
     label: 'Nazwa'
     rules:
       required: 'Nazwa jest wymagana'
+  capacity:
+    label: 'Liczba łóżek'
+    hint: 'Można usunąć tylko wolne łóżka'
+    rules:
+      required: 'Liczba łóżek jest wymagana'
+      positive: 'Pokój musi mieć co najmniej jedno łóżko'
+      min: 'Co najmniej {min} łóżek jest zajętych'
 
 action:
   save: 'Zapisz'
@@ -140,6 +188,13 @@ fields:
     label: 'Název'
     rules:
       required: 'Název je povinný'
+  capacity:
+    label: 'Počet lůžek'
+    hint: 'Odstranit lze pouze volná lůžka'
+    rules:
+      required: 'Počet lůžek je povinný'
+      positive: 'Pokoj musí mít alespoň jedno lůžko'
+      min: 'Alespoň {min} lůžek je obsazeno'
 
 action:
   save: 'Uložit'

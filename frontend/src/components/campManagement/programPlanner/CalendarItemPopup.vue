@@ -3,8 +3,12 @@
     transition-show="scale"
     transition-hide="fade"
     :offset="[10, 10]"
+    class="event-popup-menu"
   >
-    <q-card style="min-width: 300px">
+    <q-card
+      flat
+      class="event-popup"
+    >
       <q-card-actions align="right">
         <q-btn
           v-if="!event.date"
@@ -183,7 +187,27 @@ function onDuplicate() {
 }
 </script>
 
-<style scoped></style>
+<style>
+/* The QMenu container clips its content at the default 4px radius;
+   round it to match the card inside. Unscoped because the menu is
+   teleported outside this component. */
+.q-menu.event-popup-menu {
+  border-radius: 16px;
+}
+</style>
+
+<style scoped>
+.event-popup {
+  min-width: 300px;
+  max-width: 380px;
+
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 16px;
+
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 plan:

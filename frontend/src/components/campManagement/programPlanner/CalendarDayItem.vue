@@ -92,15 +92,23 @@ const badgeStyles = computed<StyleValue>(() => ({
 .cal-day-event {
   display: flex;
   align-items: center;
-  border-radius: 3px;
+  border-radius: 6px;
   padding: 2px 6px;
   margin: 2px 2px;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
 
   &--selected {
-    outline: 2px solid white;
-    outline-offset: 1px;
+    // Two-tone ring: surface-colored gap keeps the primary ring visible
+    // regardless of the user-chosen event color
+    box-shadow:
+      0 0 0 2px var(--md3-surface),
+      0 0 0 4px var(--md3-primary);
   }
 
   &__title {

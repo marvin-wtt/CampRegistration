@@ -258,7 +258,15 @@ class TableTemplateSeeder extends BaseSeeder {
             label: { en: 'Leave', de: 'Verlassen', fr: 'Sortie' },
             align: 'left',
             sortable: true,
-            renderAs: 'permission_leave',
+            renderAs: 'icon_mapping',
+            renderOptions: {
+              mappings: [
+                { value: '2', icon: 'person', color: 'positive' },
+                { value: '1', icon: 'groups', color: 'warning' },
+                { value: '0', icon: 'close', color: 'negative' },
+              ],
+              fallback: { icon: 'question_mark', color: 'grey' },
+            },
           },
         ],
         order: 3,

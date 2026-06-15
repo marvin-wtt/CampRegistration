@@ -137,7 +137,7 @@ const route = useRoute();
 
 const email = ref<string>('');
 const password = ref<string>('');
-const remember = ref<boolean>(route.query.remember === 'true');
+const remember = ref<boolean>(true);
 
 const authStore = useAuthStore();
 const { loading } = storeToRefs(authStore);

@@ -10,6 +10,7 @@ interface ComponentOptions {
   label?: string | Record<string, string>;
   internal?: boolean;
   customOptions?: BaseComponent[];
+  customOptionsComponent?: Component;
 }
 
 interface ComponentEntry {

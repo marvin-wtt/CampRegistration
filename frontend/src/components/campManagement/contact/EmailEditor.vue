@@ -483,21 +483,15 @@ function onAddToken() {
 
 /* Basic editor styles */
 .floating-menu {
-  border: 1px solid gray;
+  border: 1px solid var(--md3-outline-variant);
   border-radius: 20px;
-}
-
-.body--light .floating-menu {
-  background-color: $grey-3;
-}
-
-.body--dark .floating-menu {
-  background-color: $grey-7;
+  background-color: var(--md3-surface-container);
 }
 
 .variable {
-  border-width: 1px;
-  border-style: solid;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
   display: inline-flex;
   align-items: center;
   border-radius: 4px;
@@ -505,49 +499,19 @@ function onAddToken() {
   font-size: 0.9em;
   transition: background-color 0.2s;
 
+  &:hover {
+    background-color: var(--md3-surface-container-high);
+  }
+
   .variable-label {
     font-weight: bold;
+    color: var(--md3-on-surface-variant);
   }
 
   .variable-category {
     margin-right: 4px;
     font-style: italic;
-  }
-}
-
-.body--light .variable {
-  background-color: $grey-1;
-  border-color: $grey-3;
-  color: black;
-
-  &:hover {
-    background-color: $grey-4;
-  }
-
-  .variable-label {
-    color: $grey-7;
-  }
-
-  .variable-category {
-    color: $primary;
-  }
-}
-
-.body--dark .variable {
-  background-color: $dark;
-  border-color: $grey-7;
-  color: white;
-
-  &:hover {
-    background-color: $grey-9;
-  }
-
-  .variable-label {
-    color: $grey-2;
-  }
-
-  .variable-category {
-    color: $primary;
+    color: var(--md3-primary);
   }
 }
 
@@ -613,17 +577,17 @@ function onAddToken() {
 
   /* Code and preformatted text styles */
   code {
-    background-color: $primary;
+    background-color: var(--md3-primary-container);
     border-radius: 0.4rem;
-    color: black;
+    color: var(--md3-on-primary-container);
     font-size: 0.85rem;
     padding: 0.25em 0.3em;
   }
 
   pre {
-    background: black;
+    background: var(--md3-surface-container-highest);
     border-radius: 0.5rem;
-    color: white;
+    color: var(--md3-on-surface);
     font-family: 'JetBrainsMono', monospace;
     margin: 1.5rem 0;
     padding: 0.75rem 1rem;
@@ -637,48 +601,33 @@ function onAddToken() {
   }
 
   blockquote {
-    border-left: 3px solid $grey-3;
+    border-left: 3px solid var(--md3-outline-variant);
     margin: 1.5rem 0;
     padding-left: 1rem;
   }
 
   hr {
     border: none;
-    border-top: 1px solid $grey-2;
+    border-top: 1px solid var(--md3-outline-variant);
     margin: 2rem 0;
   }
 
   /* Placeholder (at the top) */
   p.is-editor-empty:first-child::before {
-    color: var(--gray-4);
+    color: var(--md3-on-surface-variant);
     content: attr(data-placeholder);
     float: left;
     height: 0;
     pointer-events: none;
   }
-
-  /* Placeholder (on every new line) */
-  /*.is-empty::before {
-    color: $grey-4;
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
-  }*/
 }
 
 /* Bubble menu */
-.body--light .bubble-menu {
-  background: white;
-}
-
-.body--dark .bubble-menu {
-  background: $dark;
-}
-
 .bubble-menu {
-  border: 1px solid gray;
+  border: 1px solid var(--md3-outline-variant);
   border-radius: 20px;
+  background: var(--md3-surface-container);
+  z-index: 1;
 }
 
 /* Transitions */

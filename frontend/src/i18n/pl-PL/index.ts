@@ -1,7 +1,7 @@
 import stores from './stores';
 
 export default {
-  app_name: 'Serwis rejestracji obozów',
+  //app_name: '',
 
   stores,
 

@@ -37,10 +37,6 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import SurveyCreatorTheme from 'survey-creator-core/themes';
-import { registerCreatorTheme } from 'survey-creator-core';
-import SurveyTheme from 'survey-core/themes'; // An object that contains all theme configurations
-import { registerSurveyTheme } from 'survey-creator-core';
 import { surveyLocalization } from 'survey-core';
 import { createMarkdownConverter } from 'src/utils/markdown';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
@@ -51,7 +47,11 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
+import { addFileSlotResolver } from 'src/composables/survey';
+import { useAPIService } from 'src/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
+import { createStaticMd3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
+import { md3CreatorThemes } from 'src/lib/surveyJs/themes/md3-creator';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -64,6 +64,7 @@ const props = defineProps<{
 
 const quasar = useQuasar();
 const { locale } = useI18n();
+const api = useAPIService();
 
 // Custom properties
 PropertyGridEditorCollection.register(campDataMapping);
@@ -80,6 +81,7 @@ function hideProperty(className: string, propertyName: string) {
 }
 
 hideProperty('survey', 'cookieName');
+hideProperty('survey', 'widthMode');
 hideProperty('survey', 'completedBeforeHtml');
 hideProperty('survey', 'readOnly');
 hideProperty('survey', 'partialSendEnabled');
@@ -113,15 +115,19 @@ const creatorOptions: ICreatorOptions = {
 
 const mdConverter = createMarkdownConverter();
 
-registerSurveyTheme(SurveyTheme);
-registerCreatorTheme(SurveyCreatorTheme);
-
 surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
+// Frozen, resolve-on-load MD3 snapshot used as the editable default whenever a
+// camp has no saved theme. The editor parses color values back into its pickers,
+// so it must be fed literals — not the var()-based runtime themes.
+const md3DefaultThemes = createStaticMd3SurveyThemes();
+creator.themeEditor.addTheme(md3DefaultThemes.light);
+creator.themeEditor.addTheme(md3DefaultThemes.dark);
+
 creator.JSON = props.camp.form;
-creator.theme = props.camp.themes['light'] ?? {};
+creator.theme = props.camp.themes['light'] ?? md3DefaultThemes.light;
 
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
@@ -145,23 +151,9 @@ watch(() => quasar.dark.isActive, applyCreatorTheme);
 applyCreatorTheme(quasar.dark.isActive);
 
 function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark
-    ? SurveyCreatorTheme.DefaultDark
-    : {
-        themeName: 'default-light',
-        cssVariables: {},
-      };
+  const theme = isDark ? md3CreatorThemes.dark : md3CreatorThemes.light;
 
-  creator.applyCreatorTheme({
-    themeName: theme.themeName,
-    isLight: !isDark,
-    cssVariables: {
-      ...theme.cssVariables,
-      '--sjs-primary-background-500': undefined,
-      '--sjs-secondary-background-500': undefined,
-      '--sjs-special-background': isDark ? '#121212' : '#FFFFFF',
-    },
-  });
+  creator.applyCreatorTheme(theme);
 
   // TODO This is a workaround for the issue with the theme not being applied correctly
   // The value is null because the backend middleware
@@ -185,7 +177,7 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
 
   // Internal variables start with _
   if (options.value.startsWith('_')) {
-    options.error = 'Zero is not allowed here.';
+    options.error = 'Underscore is not allowed here.';
     return;
   }
 
@@ -243,6 +235,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     setVariables(survey, props.camp);
+    addFileSlotResolver(survey, props.camp.id, api);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.camp);
     });
@@ -313,50 +306,6 @@ creator.onOpenFileChooser.add((_, options) => {
     .onCancel(() => {
       options.callback([]);
     });
-});
-
-const themes: {
-  dark?: ITheme;
-  light?: ITheme;
-} = {};
-let previousColorPalette: 'dark' | 'light' | undefined;
-creator.themeEditor.onThemeSelected.add(({ themeModel }, { theme }) => {
-  const colorPalette = theme.colorPalette;
-  if (!colorPalette || (colorPalette !== 'dark' && colorPalette !== 'light')) {
-    return;
-  }
-
-  if (colorPalette === previousColorPalette) {
-    themes[colorPalette] = theme;
-    // Keep themeName and isPanelless in sync with the other palette's stored theme
-    const otherPalette = colorPalette === 'dark' ? 'light' : 'dark';
-    const otherTheme = themes[otherPalette];
-    if (otherTheme) {
-      themes[otherPalette] = {
-        ...otherTheme,
-        ...(theme.themeName !== undefined && { themeName: theme.themeName }),
-        ...(theme.isPanelless !== undefined && {
-          isPanelless: theme.isPanelless,
-        }),
-      };
-    }
-    return;
-  }
-
-  previousColorPalette = colorPalette;
-
-  const storedTheme = themes[colorPalette] ?? props.camp.themes[colorPalette];
-  if (storedTheme) {
-    // Restore the stored theme for this palette, but preserve the current
-    // themeName and isPanelless which must be the same across both palettes.
-    themeModel.setTheme({
-      ...storedTheme,
-      ...(theme.themeName !== undefined && { themeName: theme.themeName }),
-      ...(theme.isPanelless !== undefined && {
-        isPanelless: theme.isPanelless,
-      }),
-    });
-  }
 });
 
 creator.onElementAllowOperations.add((_, options) => {

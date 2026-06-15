@@ -1,4 +1,4 @@
-import type { CampDataType } from '../CampDataType';
+import type { CampDataType } from './CampDataType';
 
 export const address: CampDataType = {
   element: {
@@ -74,6 +74,22 @@ export const firstName: CampDataType = {
     return (
       obj.getType() === 'text' && obj.getPropertyValue('inputType') === 'text'
     );
+  },
+};
+
+export const gender: CampDataType = {
+  element: {
+    value: 'gender',
+    text: {
+      en: 'Gender',
+      de: 'Geschlecht',
+      fr: 'Sexe',
+      pl: 'Płeć',
+      cs: 'Pohlaví',
+    },
+  },
+  fit: (obj) => {
+    return ['dropdown', 'radiogroup', 'buttongroup'].includes(obj.getType());
   },
 };
 

@@ -1,23 +1,19 @@
 <template>
-  <span>
+  <span class="age-cell">
     {{ age }}
+
+    <!-- Cake icon sits next to the number so it stays visible in wide columns -->
+    <q-icon
+      v-if="hasBirthDay"
+      class="age-cell__cake"
+      color="red"
+      name="cake"
+    />
 
     <q-tooltip>
       {{ birthday }}
     </q-tooltip>
   </span>
-
-  <!-- Special badge if birthday during time period -->
-  <q-badge
-    v-if="hasBirthDay"
-    color="transparent"
-    floating
-  >
-    <q-icon
-      color="red"
-      name="cake"
-    />
-  </q-badge>
 </template>
 
 <script lang="ts" setup>
@@ -103,4 +99,14 @@ function isBirthdayInRange(
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.age-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &__cake {
+    font-size: 1.1em;
+  }
+}
+</style>

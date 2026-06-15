@@ -1,44 +1,34 @@
 <template>
-  <q-item>
-    <q-item-section>
-      <q-select
-        v-model="value"
-        :options="options"
-        clearable
-        outlined
-        rounded
-        disable
-      >
-        <template #selected>
-          <q-skeleton
-            type="text"
-            width="8rem"
-          />
-        </template>
-
-        <template #option="scope">
-          <q-item v-bind="scope.itemProps">
-            <q-item-section>
-              <q-item-label>
-                <q-skeleton
-                  type="text"
-                  width="8rem"
-                />
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </template>
-      </q-select>
-    </q-item-section>
-  </q-item>
+  <div class="bed-row-skeleton">
+    <q-skeleton
+      type="circle"
+      size="32px"
+    />
+    <q-skeleton
+      type="text"
+      class="bed-row-skeleton__name"
+      :width="nameWidth"
+    />
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
-
-const value = ref<string>('');
-
-const options = ref(['']);
+const { nameWidth = '60%' } = defineProps<{
+  nameWidth?: string;
+}>();
 </script>
 
-<style scoped></style>
+<style scoped>
+.bed-row-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-height: 44px;
+  padding: 6px 8px;
+}
+
+.bed-row-skeleton__name {
+  font-size: 14px;
+}
+</style>

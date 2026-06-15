@@ -16,6 +16,10 @@ import type {
   CTableTemplate,
   CTableColumnTemplate,
 } from 'src/types/CTableTemplate';
+import {
+  buildLocalTableTemplates,
+  type LocalTableTemplate,
+} from 'components/campManagement/table/localTableTemplates';
 
 type Pagination = Exclude<QTable['pagination'], undefined>;
 
@@ -28,6 +32,26 @@ export interface ResultTableModelInput {
 
 export interface ResultTableModelOptions {
   initialTemplateId?: string | null;
+}
+
+function matchesSearch(value: unknown, search: string): boolean {
+  if (value == null) {
+    return false;
+  }
+  if (typeof value === 'string') {
+    return value.toLowerCase().includes(search);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).toLowerCase().includes(search);
+  }
+  if (Array.isArray(value)) {
+    return value.some((entry) => matchesSearch(entry, search));
+  }
+  if (typeof value === 'object') {
+    return Object.values(value).some((entry) => matchesSearch(entry, search));
+  }
+
+  return false;
 }
 
 export function useResultTableModel(
@@ -43,17 +67,35 @@ export function useResultTableModel(
 
   const countryFilter = ref<string[] | undefined>([]);
 
+  const searchFilter = ref<string | null>('');
+
   const countries = computed(() => input.camp.value.countries);
 
-  const templateOptions = computed<CTableTemplate[]>(() => {
-    const mapped: CTableTemplate[] = input.templates.value.map((template) => ({
+  function mapTemplate(
+    template: TableTemplate | LocalTableTemplate,
+  ): CTableTemplate {
+    return {
       ...template,
       columns: template.columns.map((column) => ({
         ...column,
         field: (row: unknown) => objectValueByPath(column.field, row),
         fieldName: column.field,
       })),
-    }));
+    };
+  }
+
+  // Includes hidden, local templates so they stay resolvable by id (e.g. as a
+  // dashboard route target) even though they are kept out of the picker below.
+  const allTemplates = computed<CTableTemplate[]>(() => {
+    const mapped: CTableTemplate[] = input.templates.value.map(mapTemplate);
+
+    // Hidden, frontend-only templates used as deep-link targets.
+    for (const local of buildLocalTableTemplates(
+      registrationAccessor,
+      input.camp.value,
+    )) {
+      mapped.push(mapTemplate(local));
+    }
 
     // Default template to show all information
     mapped.push({
@@ -71,6 +113,10 @@ export function useResultTableModel(
     return mapped.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   });
 
+  const visibleTemplates = computed<CTableTemplate[]>(() =>
+    allTemplates.value.filter((template) => !template.hidden),
+  );
+
   function applyTemplateSort(template: CTableTemplate) {
     pagination.value.sortBy = template.sortBy ?? null;
     pagination.value.descending = template.sortDirection === 'desc';
@@ -79,19 +125,34 @@ export function useResultTableModel(
   function defaultTemplate(): CTableTemplate {
     const id = options.initialTemplateId ?? null;
     if (id) {
-      const found = templateOptions.value.find((v) => v.id == id);
+      // Resolve against all templates so hidden, local targets can be selected.
+      const found = allTemplates.value.find((v) => v.id == id);
       if (found) {
         return found;
       }
     }
 
-    if (templateOptions.value.length === 0) {
+    if (visibleTemplates.value.length === 0) {
       throw new Error('No templates available');
     }
-    return templateOptions.value[0]!;
+    return visibleTemplates.value[0]!;
   }
 
   const template = ref<CTableTemplate>(defaultTemplate());
+
+  // The active template may be hidden (e.g. resolved from a dashboard deep
+  // link); keep it in the select options so its label can still be rendered
+  // instead of leaving the picker showing a blank selection.
+  const templateOptions = computed<CTableTemplate[]>(() => {
+    const visible = visibleTemplates.value;
+    if (
+      template.value.hidden &&
+      !visible.some((t) => t.id === template.value.id)
+    ) {
+      return [...visible, template.value];
+    }
+    return visible;
+  });
 
   // Apply the sort order of the initial template since the watcher below only
   // reacts to subsequent changes.
@@ -118,6 +179,12 @@ export function useResultTableModel(
       r = r.filter((row) => template.value.filterStatus?.includes(row.status));
     }
 
+    // Local (frontend-only) predicate, e.g. "missing contact details"
+    if (template.value.localFilter) {
+      const predicate = template.value.localFilter;
+      r = r.filter((row) => predicate(row));
+    }
+
     // Role
     if (template.value.filterRoles) {
       r = r.filter((row) => {
@@ -134,6 +201,21 @@ export function useResultTableModel(
         const country = registrationAccessor.country(value);
         return country && countryFilter.value?.includes(country);
       });
+    }
+
+    // Free-text search across the values of the visible template columns
+    const search = searchFilter.value?.trim().toLowerCase() ?? '';
+    if (search.length > 0) {
+      const fields = template.value.columns.map((column) => column.field);
+      r = r.filter((row) =>
+        fields.some((field) => {
+          const value =
+            typeof field === 'function'
+              ? field(row)
+              : objectValueByPath(field, row);
+          return matchesSearch(value, search);
+        }),
+      );
     }
 
     return r;
@@ -198,6 +280,7 @@ export function useResultTableModel(
     columns,
     renderers,
     countryFilter,
+    searchFilter,
     countries,
   };
 }

@@ -1,51 +1,73 @@
 <template>
-  <q-list
-    bordered
-    padding
-  >
-    <q-item dense>
-      <q-item-section>
-        <q-item-label>
-          <q-skeleton
-            type="text"
-            width="8rem"
-          />
-        </q-item-label>
-      </q-item-section>
+  <div class="room-card-skeleton">
+    <div class="room-card-skeleton__header">
+      <q-skeleton
+        type="text"
+        width="7rem"
+        class="room-card-skeleton__name"
+      />
+      <q-skeleton
+        type="QChip"
+        width="40px"
+        height="20px"
+      />
+    </div>
 
-      <q-item-section side>
-        <q-btn
-          flat
-          rounded
-          dense
-          disable
-          icon="more_vert"
-        />
-      </q-item-section>
-    </q-item>
-
-    <room-list-item-skeleton
-      v-for="index in props.capacity"
-      :key="index"
-      :options="options"
-      :position="index + 1"
+    <q-skeleton
+      type="rect"
+      height="4px"
+      class="room-card-skeleton__meter"
     />
-  </q-list>
+
+    <div class="room-card-skeleton__beds">
+      <room-list-item-skeleton
+        v-for="index in capacity"
+        :key="index"
+        :name-width="`${45 + ((index * 17) % 35)}%`"
+      />
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
 import RoomListItemSkeleton from 'components/campManagement/roomPlanner/RoomListItemSkeleton.vue';
 
-interface Props {
+const { capacity } = defineProps<{
   capacity: number;
-}
-
-const props = defineProps<Props>();
-
-const options = computed<unknown[]>(() => {
-  return [];
-});
+}>();
 </script>
 
-<style scoped></style>
+<style scoped>
+.room-card-skeleton {
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 16px;
+
+  background: var(--md3-surface);
+}
+
+.room-card-skeleton__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  padding: 12px 16px 10px;
+}
+
+.room-card-skeleton__name {
+  font-size: 15px;
+}
+
+.room-card-skeleton__meter {
+  margin: 0 16px;
+  border-radius: 999px;
+}
+
+.room-card-skeleton__beds {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px;
+}
+</style>

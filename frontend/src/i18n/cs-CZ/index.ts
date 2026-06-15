@@ -3,7 +3,7 @@
 import stores from './stores';
 
 export default {
-  app_name: 'Služba registrace táborů',
+  //app_name: '',
 
   stores,
 
