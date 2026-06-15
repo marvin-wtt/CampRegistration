@@ -4,7 +4,7 @@ import config from '#config/index';
 import type { NextFunction, Response, Request } from 'express';
 import {
   createCookieIfMissing,
-  SECURE_COOKIE_OPTIONS,
+  secureCookieOptions,
   secureCookieName,
 } from '#utils/cookie';
 
@@ -14,8 +14,10 @@ declare module 'express-serve-static-core' {
   }
 }
 
+const CSRF_SESSION_COOKIE_NAME = 'csrf-session';
+
 export function csrfSession(req: Request, res: Response, next: NextFunction) {
-  req.csrfSessionId = createCookieIfMissing(req, res, 'csrf-session');
+  req.csrfSessionId = createCookieIfMissing(req, res, CSRF_SESSION_COOKIE_NAME);
   next();
 }
 
@@ -31,7 +33,7 @@ const { doubleCsrfProtection } = doubleCsrf({
     return req.csrfSessionId;
   },
   cookieName: secureCookieName('x-csrf-token'),
-  cookieOptions: SECURE_COOKIE_OPTIONS,
+  cookieOptions: secureCookieOptions(),
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
   skipCsrfProtection: (req) => {
     if (req.isUnauthenticated()) {

@@ -4,12 +4,17 @@ import { randomBytes } from 'node:crypto';
 
 const secure = config.env !== 'development';
 
-export const SECURE_COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  sameSite: 'strict',
-  path: '/',
-  secure,
-};
+export function secureCookieOptions(
+  options?: Partial<CookieOptions>,
+): CookieOptions {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    path: '/',
+    secure,
+    ...options,
+  };
+}
 
 export function secureCookieName(name: string): string {
   return secure ? `__Host-${name}` : name;
@@ -28,7 +33,7 @@ export function createCookieIfMissing(
   }
 
   const sessionId = randomBytes(16).toString('hex');
-  res.cookie(cookieName, sessionId, SECURE_COOKIE_OPTIONS);
+  res.cookie(cookieName, sessionId, secureCookieOptions());
 
   return sessionId;
 }

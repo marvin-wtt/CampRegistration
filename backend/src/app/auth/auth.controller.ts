@@ -4,7 +4,7 @@ import { UserService } from '#app/user/user.service';
 import { TokenService } from '#app/token/token.service';
 import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
 import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import authResource from './auth.resource.js';
@@ -17,6 +17,7 @@ import {
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
+import { secureCookieOptions } from '#utils/cookie';
 
 @injectable()
 export class AuthController extends BaseController {
@@ -240,27 +241,18 @@ export class AuthController extends BaseController {
   }
 
   setAuthCookies(res: Response, tokens: AuthTokensResponse) {
-    const httpOnly = true;
-    const secure = this.config.env !== 'development';
-    const sameSite = 'strict';
-    const path = '/';
-
-    res.cookie('accessToken', tokens.access.token, {
-      httpOnly,
-      secure,
-      path,
-      expires: tokens.access.expires,
-      sameSite,
-    });
+    res.cookie(
+      'accessToken',
+      tokens.access.token,
+      secureCookieOptions({ expires: tokens.access.expires }),
+    );
 
     if (tokens.refresh) {
-      res.cookie('refreshToken', tokens.refresh.token, {
-        httpOnly,
-        secure,
-        path,
-        expires: tokens.refresh.expires,
-        sameSite,
-      });
+      res.cookie(
+        'refreshToken',
+        tokens.refresh.token,
+        secureCookieOptions({ expires: tokens.refresh.expires }),
+      );
     }
   }
 
