@@ -13,7 +13,7 @@ import 'survey-core/survey-core.min.css';
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
 import { onMounted, ref, toRef, watchEffect } from 'vue';
-vimport { SurveyModel } from 'survey-core';
+import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import {
   startAutoDataUpdate,

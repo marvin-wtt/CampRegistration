@@ -1,7 +1,10 @@
 import { type ITheme, SurveyModel } from 'survey-core';
 import { SurveyPDF } from 'survey-pdf';
 import type { Question } from 'survey-core';
-import { setVariables } from '@camp-registration/common/form';
+import {
+  selectFileByLocale,
+  setVariables,
+} from '@camp-registration/common/form';
 import type { Registration } from '#generated/prisma/client.js';
 import jsdom from 'jsdom';
 import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
@@ -47,11 +50,11 @@ async function runExportPDF(
       options.html = mdConverter.renderInline(options.text);
     });
 
-    setVariables(
-      surveyPDF,
-      camp,
-      (id: string) => generateApiUrl(['files', id]),
-      camp.files,
+    setVariables(surveyPDF, camp);
+
+    surveyPDF.setVariable(
+      '_file',
+      getFilesUrlByField(camp.files, surveyPDF.locale),
     );
 
     return await surveyPDF.raw('arraybuffer');
@@ -59,6 +62,28 @@ async function runExportPDF(
     global.window = prevWindow;
     global.document = prevDocument;
   }
+}
+
+type File = CampWithFreePlacesAndFiles['files'][number];
+type FileWithField = File & { field: string };
+function getFilesUrlByField(
+  files: File[],
+  locale = 'en',
+): Record<string, string> {
+  const filesByField = Object.groupBy(
+    files.filter((file): file is FileWithField => file.field !== null),
+    (file) => file.field,
+  );
+
+  const urlsByField: Record<string, string> = {};
+  for (const [field, fieldFiles = []] of Object.entries(filesByField)) {
+    const file = selectFileByLocale(fieldFiles, locale);
+    if (file) {
+      urlsByField[field] = generateApiUrl(['files', file.id]);
+    }
+  }
+
+  return urlsByField;
 }
 
 export const formUtils = (camp: CampWithFreePlacesAndFiles, data?: unknown) => {

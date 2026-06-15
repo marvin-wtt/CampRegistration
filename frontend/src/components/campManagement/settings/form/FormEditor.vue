@@ -233,11 +233,10 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
-    const getFileUrl = (id: string) => api.getFileUrl(id);
-    setVariables(survey, props.camp, getFileUrl, props.files);
+    setVariables(survey, props.camp);
     addFileSlotResolver(survey, props.camp.id, api);
     survey.onLocaleChangedEvent.add((sender) => {
-      setVariables(sender, props.camp, getFileUrl, props.files);
+      setVariables(sender, props.camp);
     });
   }
 

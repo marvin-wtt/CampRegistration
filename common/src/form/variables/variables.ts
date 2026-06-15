@@ -1,5 +1,4 @@
 import { SurveyModel } from 'survey-core';
-import { type FileEntry, setFileVariables } from '../files.js';
 
 type Translatable<T = string> = T | Record<string, T>;
 
@@ -18,12 +17,7 @@ export interface Data {
   freePlaces: Translatable<number> | null;
 }
 
-export const setVariables = (
-  model: SurveyModel,
-  data: Data | undefined,
-  getFileUrl?: (id: string) => string,
-  files?: FileEntry[],
-) => {
+export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   if (!data) {
     return;
   }
@@ -47,10 +41,6 @@ export const setVariables = (
   model.setVariable('camp.freePlaces', data.freePlaces);
 
   model.setVariable('_validationEnabled', model.validationEnabled);
-
-  if (getFileUrl && files?.length) {
-    setFileVariables(model, files, model.locale, getFileUrl);
-  }
 };
 
 const converter = (locale: string) => {
