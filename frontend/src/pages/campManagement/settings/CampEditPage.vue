@@ -347,7 +347,7 @@
                   (val?: string | null) =>
                     !val ||
                     !camp.registrationClosesAt ||
-                    val < camp.registrationClosesAt ||
+                    new Date(val) < new Date(camp.registrationClosesAt) ||
                     t('validation.registrationOpensAt.before_close'),
                 ]"
                 clearable
@@ -369,7 +369,7 @@
                   (val?: string | null) =>
                     !val ||
                     !camp.registrationOpensAt ||
-                    val > camp.registrationOpensAt ||
+                    new Date(val) > new Date(camp.registrationOpensAt) ||
                     t('validation.registrationClosesAt.after_open'),
                 ]"
                 clearable
