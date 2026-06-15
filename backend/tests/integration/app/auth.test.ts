@@ -348,6 +348,7 @@ describe('/api/v1/auth', async () => {
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -364,6 +365,7 @@ describe('/api/v1/auth', async () => {
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -402,6 +404,7 @@ describe('/api/v1/auth', async () => {
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -595,6 +598,7 @@ describe('/api/v1/auth', async () => {
 
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
+          .set('X-Client-Type', 'web')
           .send({
             otp: totp,
             token,
@@ -623,6 +627,7 @@ describe('/api/v1/auth', async () => {
 
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
+          .set('X-Client-Type', 'web')
           .send({
             otp: totp,
             token,
@@ -836,6 +841,7 @@ describe('/api/v1/auth', async () => {
 
       const { headers } = await request()
         .post(`/api/v1/auth/refresh-tokens/`)
+        .set('X-Client-Type', 'web')
         .send(data)
         .expect(200);
 

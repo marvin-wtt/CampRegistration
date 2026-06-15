@@ -19,6 +19,9 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Add a custom header to identify the client type (e.g., web, mobile, etc.)
+api.defaults.headers.common['X-Client-Type'] = 'web';
+
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 

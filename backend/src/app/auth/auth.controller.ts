@@ -94,7 +94,7 @@ export class AuthController extends BaseController {
       return;
     }
 
-    await this.sendAuthResponse(res, user.id, remember);
+    await this.sendAuthResponse(req, res, user.id, remember);
   }
 
   async verifyOTP(req: Request, res: Response) {
@@ -106,14 +106,20 @@ export class AuthController extends BaseController {
     const user = await this.userService.getUserByIdOrFail(userId);
     this.totpService.verifyTOTP(user, otp);
 
-    await this.sendAuthResponse(res, userId, remember);
+    await this.sendAuthResponse(req, res, userId, remember);
   }
 
-  async sendAuthResponse(res: Response, userId: string, remember: boolean) {
+  async sendAuthResponse(
+    req: Request,
+    res: Response,
+    userId: string,
+    remember: boolean,
+  ) {
     const user = await this.userService.updateUserLastSeenByIdWithCamps(userId);
 
     const tokens = await this.tokenService.generateAuthTokens(user, remember);
-    this.setAuthCookies(res, tokens);
+
+    this.setAuthCookies(req, res, tokens);
 
     res.json(
       authResource({
@@ -157,7 +163,7 @@ export class AuthController extends BaseController {
 
     const tokens = await this.authService.refreshAuth(refreshToken);
     this.destroyAuthCookies(res);
-    this.setAuthCookies(res, tokens);
+    this.setAuthCookies(req, res, tokens);
 
     res.json({ ...tokens });
   }
@@ -244,7 +250,11 @@ export class AuthController extends BaseController {
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
-  setAuthCookies(res: Response, tokens: AuthTokensResponse) {
+  setAuthCookies(req: Request, res: Response, tokens: AuthTokensResponse) {
+    if (req.headers['x-client-type'] !== 'web') {
+      return;
+    }
+
     res.cookie(
       ACCESS_TOKEN_COOKIE,
       tokens.access.token,

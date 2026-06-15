@@ -4,12 +4,25 @@ import type {
   Authentication,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
+import csrfTokenRetry from 'src/services/csrfTokenRetry';
 import { type AxiosError, type AxiosRequestConfig, isAxiosError } from 'axios';
 
 export type CustomRequestConfig = AxiosRequestConfig & {
   _skipRetry?: boolean;
   _skipAuthenticationHandler?: boolean | undefined;
+  _csrfRetry?: boolean | undefined;
 };
+
+function isCsrfError(error: AxiosError): boolean {
+  if (error.response?.status !== 403) {
+    return false;
+  }
+
+  const message: unknown = (error.response.data as { message?: unknown })
+    ?.message;
+
+  return typeof message === 'string' && /csrf/i.test(message);
+}
 
 export type CustomAxiosError = AxiosError & {
   config: CustomRequestConfig;
@@ -32,6 +45,12 @@ export function useAuthService() {
   authRefreshToken(api, {
     handleTokenRefresh: refreshTokens,
     shouldIntercept: (error) => error.response?.status === 401,
+  });
+
+  // Retry failed requests after fetching a new CSRF token
+  csrfTokenRetry(api, {
+    handleTokenRefresh: requestCsrfToken,
+    shouldIntercept: isCsrfError,
   });
 
   let onUnauthenticated: (() => unknown) | undefined = undefined;
@@ -151,10 +170,13 @@ export function useAuthService() {
   }
 
   async function requestCsrfToken(): Promise<void> {
-    const response = await api.get('auth/csrf-token');
+    const response = await api.get('auth/csrf-token', {
+      // Avoid retrying the token request itself on a CSRF error.
+      _csrfRetry: true,
+    } as CustomRequestConfig);
 
-    const csrfToken = response?.data.csrfToken;
-    if (csrfToken !== undefined && typeof csrfToken === 'string') {
+    const csrfToken: unknown = response?.data?.csrfToken;
+    if (typeof csrfToken === 'string') {
       api.defaults.headers.common['x-csrf-token'] = csrfToken;
     }
   }
