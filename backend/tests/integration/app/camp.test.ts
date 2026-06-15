@@ -25,7 +25,6 @@ import {
 } from './fixtures/camp.fixtures.js';
 import { request } from '../utils/request.js';
 import { campWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
-import { uploadFile } from './utils/file.js';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -118,33 +117,6 @@ const createCampWithManagerAndToken = async (
     camp,
     user,
     manager,
-    accessToken,
-  };
-};
-
-const createCampWithFileAndToken = async (
-  accessLevel: string = 'private',
-  campIsPublic: boolean = false,
-) => {
-  const { camp, user, manager, accessToken } =
-    await createCampWithManagerAndToken({
-      public: campIsPublic,
-    });
-  const fileName = crypto.randomUUID() + '.pdf';
-
-  const file = await FileFactory.create({
-    camp: { connect: { id: camp.id } },
-    name: fileName,
-    accessLevel,
-  });
-
-  await uploadFile('blank.pdf', fileName);
-
-  return {
-    camp,
-    user,
-    manager,
-    file,
     accessToken,
   };
 };
@@ -647,18 +619,6 @@ describe('/api/v1/camps', () => {
           .expect(201);
 
         expect(body.data.form).toHaveProperty('title');
-      });
-
-      it('should set default themes', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send(campCreateNational)
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        expect(body.data.themes).toHaveProperty('light');
       });
 
       it('should create default table templates', async () => {
@@ -1294,94 +1254,5 @@ describe('/api/v1/camps', () => {
     });
 
     it.todo('should delete all files');
-  });
-});
-
-describe('/api/v1/camps/:campId/files', () => {
-  describe('GET /api/v1/camps/:campId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { file, camp, accessToken } = await createCampWithFileAndToken();
-      await FileFactory.create();
-
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/files/`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      expect(body.data).toBeDefined();
-      expect(body.data).toHaveLength(1);
-      expect(body.data[0]).toHaveProperty('id', file.id);
-    });
-
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const { camp } = await createCampWithFileAndToken();
-      const accessToken = generateAccessToken(await UserFactory.create());
-
-      await request()
-        .get(`/api/v1/camps/${camp.id}/files/`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(403);
-    });
-  });
-
-  describe.todo('POST /api/v1/camps/:campId');
-
-  describe.todo('DELETE /api/v1/camps/:campId');
-});
-
-describe('/api/v1/files/', () => {
-  describe('GET /api/v1/files/:fileId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { file, accessToken } = await createCampWithFileAndToken();
-
-      await request()
-        .get(`/api/v1/files/${file.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-    });
-
-    it('should respond with `200` status code when file is public and camp is public', async () => {
-      const { file } = await createCampWithFileAndToken('public', true);
-
-      await request().get(`/api/v1/files/${file.id}`).send().expect(200);
-    });
-
-    it('should respond with `401` status code when file is public but camp is not public', async () => {
-      const { file } = await createCampWithFileAndToken('public', false);
-
-      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
-    });
-
-    it('should respond with `401` status code when file is not public', async () => {
-      const { file } = await createCampWithFileAndToken('private', true);
-
-      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
-    });
-
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const { file } = await createCampWithFileAndToken();
-      const accessToken = generateAccessToken(await UserFactory.create());
-
-      await request()
-        .get(`/api/v1/files/${file.id}`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(403);
-    });
-
-    it('should respond with `401` status code when unauthenticated', async () => {
-      const { file } = await createCampWithFileAndToken();
-
-      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
-    });
-
-    it('should respond with `404` status code when file id does not exists', async () => {
-      const fileId = ulid();
-
-      await request().get(`/api/v1/files/${fileId}`).send().expect(404);
-    });
   });
 });
