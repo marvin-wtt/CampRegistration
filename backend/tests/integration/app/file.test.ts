@@ -410,7 +410,7 @@ describe('/api/v1/files/', () => {
       );
     });
 
-    it('should respond with `403` when the matching file is private and the user is anonymous', async () => {
+    it('should respond with `401` when the matching file is private and the user is anonymous', async () => {
       const camp = await CampFactory.create({ public: true });
       await FileFactory.create({
         camp: { connect: { id: camp.id } },
@@ -420,7 +420,7 @@ describe('/api/v1/files/', () => {
 
       await request()
         .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
-        .expect(403);
+        .expect(401);
     });
 
     it('should respond with `409` when the matching file is not ready', async () => {
