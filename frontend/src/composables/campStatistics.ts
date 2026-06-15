@@ -106,7 +106,12 @@ export function useCampStatistics() {
     free: sumTranslatableNumber(campDetailsStore.data?.freePlaces),
   }));
 
-  /** Distinct country codes actually present across all registrations. */
+  /**
+   * Country codes to show: the camp's configured countries plus any extra
+   * country appearing in the data. Configured countries are kept even when no
+   * one has registered yet, so they surface as an explicit zero rather than
+   * looking absent. Camp order is preserved, data-only countries are appended.
+   */
   const presentCountries = computed<string[]>(() => {
     const fromCamp = campDetailsStore.data?.countries ?? [];
     const fromData = registrations.value
@@ -119,9 +124,7 @@ export function useCampStatistics() {
         order.push(country);
       }
     }
-    // Keep only countries that appear in the data, preserving camp order.
-    const present = new Set(fromData);
-    return order.filter((c) => present.has(c));
+    return order;
   });
 
   const hasMultipleCountries = computed<boolean>(
@@ -166,14 +169,14 @@ export function useCampStatistics() {
 
   /** Distinct gender values present across all registrations. */
   const presentGenders = computed<string[]>(() => {
-    const values = new Set<string>();
+    const values = new Set<string>(['m', 'f']);
     for (const registration of registrations.value) {
       const value = helper.gender(registration);
       if (value) {
         values.add(value);
       }
     }
-    return [...values].sort().reverse();
+    return [...values];
   });
 
   // --- Age banding ---------------------------------------------------------
