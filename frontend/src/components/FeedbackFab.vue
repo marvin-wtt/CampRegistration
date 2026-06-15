@@ -38,10 +38,9 @@
 
         <q-card-actions>
           <q-btn
+            :label="t('action.send')"
             class="full-width"
             icon="send"
-            :label="t('action.send')"
-            color="primary"
             rounded
             @click="send"
           />

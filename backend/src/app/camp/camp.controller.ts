@@ -57,8 +57,8 @@ export class CampController extends BaseController {
       {
         page: query.page,
         limit: query.limit,
-        sortBy: query.sortBy,
-        sortType: query.sortType,
+        sortBy: query.sortBy ?? 'startAt',
+        sortType: query.sortType ?? 'asc',
       },
     );
 

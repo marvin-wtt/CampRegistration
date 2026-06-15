@@ -2,6 +2,8 @@
   <q-dialog
     ref="dialogRef"
     :maximized="quasar.screen.lt.sm"
+    :full-height="quasar.screen.lt.sm"
+    :full-width="quasar.screen.lt.sm"
     @hide="onDialogHide"
   >
     <q-card class="column message-dialog-card">
@@ -24,7 +26,7 @@
       </q-bar>
 
       <contact-form
-        class="col-grow"
+        class="col"
         :registrations
         :initial-contacts="initialContacts"
         @sent="onDialogOK"
@@ -83,6 +85,7 @@ function contactType(reg: Registration): Exclude<Contact['type'], 'group'> {
   width: min(800px, 95vw);
   max-width: 95vw;
   height: min(800px, 90vh);
+  overflow: hidden;
 }
 </style>
 

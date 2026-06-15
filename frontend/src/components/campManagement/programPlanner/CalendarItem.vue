@@ -88,7 +88,7 @@ function onDragStart(e: DragEvent) {
       height: `${rect.height}px`,
       backgroundColor: event.color ?? '#2196F3',
       borderLeft: '3px solid rgba(0,0,0,0.2)',
-      borderRadius: '3px',
+      borderRadius: '6px',
       color: 'white',
       fontSize: '13px',
       fontWeight: '600',
@@ -192,15 +192,23 @@ function startResize(e: MouseEvent) {
 .cal-event {
   position: absolute;
   margin: 1px 2px;
-  border-radius: 3px;
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   border-left: 3px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
 
   &--selected {
-    outline: 2px solid white;
-    outline-offset: 1px;
+    // Two-tone ring: surface-colored gap keeps the primary ring visible
+    // regardless of the user-chosen event color
+    box-shadow:
+      0 0 0 2px var(--md3-surface),
+      0 0 0 4px var(--md3-primary);
   }
 
   &__inner {
@@ -225,11 +233,24 @@ function startResize(e: MouseEvent) {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 6px;
+    height: 8px;
     cursor: ns-resize;
-    background: rgba(0, 0, 0, 0.15);
     opacity: 0;
     transition: opacity 0.15s ease;
+
+    // Centered grip pill instead of a full-width dark strip
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+    }
 
     @media (hover: none) {
       display: none;

@@ -2,6 +2,7 @@ import {
   type PageModel,
   type PanelModel,
   type Question,
+  QuestionPanelDynamicModel,
   type QuestionSelectBase,
   SurveyModel,
 } from 'survey-core';
@@ -79,12 +80,22 @@ function collectSelectData(
 
   // Collect nested questions if present
   result.push(
-    ...question
-      .getNestedQuestions()
-      .flatMap((child) => collectSelectData(child, value, label)),
+    ...getNestedQuestions(question).flatMap((child) =>
+      collectSelectData(child, value, label),
+    ),
   );
 
   return result;
+}
+
+function getNestedQuestions(question: Question): Question[] {
+  if (question instanceof QuestionPanelDynamicModel) {
+    return question.template.questions.flatMap((q) =>
+      q.getNestedQuestions(false, true, true),
+    );
+  }
+
+  return question.getNestedQuestions();
 }
 
 export function extractFormFields(form: object, prefix?: string): SelectData[] {
@@ -115,9 +126,9 @@ function getNestedQuestion(
     }
 
     if (question.getType() === 'paneldynamic') {
-      question = (question.getPanel() as PanelModel).getQuestionByValueName(
-        key,
-      );
+      question = (
+        question.getPanels()[0] as PanelModel | undefined
+      )?.getQuestionByValueName(key);
       continue;
     }
 
@@ -163,9 +174,8 @@ function getQuestionOptions(
       return acc;
     }
 
-    acc[choice.value] = choice.locText
-      ? choice.locText.getJson()
-      : (choice.text ?? choice.value);
+    acc[choice.value] =
+      choice.locText?.getJson() ?? choice.text ?? choice.value;
 
     return acc;
   }, {});

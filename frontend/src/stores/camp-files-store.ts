@@ -23,6 +23,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     isLoading,
     error,
     reset,
+    invalidate,
     withProgressNotification,
     withErrorNotification,
     checkNotNullWithNotification,
@@ -34,13 +35,8 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     reset();
   });
 
-  campBus.on('change', (_camp, oldCamp) => {
-    // Prevent reset when this is the initial page load
-    if (!oldCamp) {
-      return;
-    }
-
-    reset();
+  campBus.on('change', () => {
+    invalidate();
   });
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.

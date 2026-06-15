@@ -22,9 +22,10 @@
               (val: string | Record<string, string> | undefined) =>
                 !!val || t('fields.name.rules.required'),
             ]"
+            :locales="locales"
+            hide-bottom-space
             outlined
             rounded
-            :locales="props.locales"
           />
 
           <q-input
@@ -69,26 +70,19 @@ import { reactive } from 'vue';
 import type { RoomCreateData } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 
-const props = defineProps<{
+const { locales } = defineProps<{
   locales?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { t } = useI18n();
-
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-// dialogRef      - Vue ref to be applied to QDialog
-// onDialogHide   - Function to be used as handler for @hide on QDialog
-// onDialogOK     - Function to call to settle dialog with "ok" outcome
-//                    example: onDialogOK() - no payload
-//                    example: onDialogOK({ /*...*/ }) - with payload
-// onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const room = reactive<RoomCreateData>({
   name: '',
-  capacity: 0,
+  capacity: 4,
 });
 
 function onOKClick(): void {

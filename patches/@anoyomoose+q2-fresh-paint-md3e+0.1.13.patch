@@ -1,0 +1,13 @@
+diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDate.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDate.scss
+index ea55db5..74acf20 100644
+--- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDate.scss
++++ b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDate.scss
+@@ -18,6 +18,8 @@
+   background: var(--md3-surface-container-high);
+   border-radius: $md3-corner-extra-large;
+   box-shadow: none; // picker is used inside a dialog that supplies elevation
++  width: 328px;
++  min-width: 328px;
+ }
+ 
+ // === Header ===

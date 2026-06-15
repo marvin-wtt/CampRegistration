@@ -52,6 +52,17 @@ export function useFileService() {
     });
   }
 
+  function getCampFileSlotUrl(
+    campId: string,
+    slot: string,
+    locale: string,
+  ): string {
+    return api.getUri({
+      url: `camps/${campId}/files/slots/${slot}/`,
+      params: { locale },
+    });
+  }
+
   return {
     fetchCampFiles,
     createCampFile,
@@ -59,5 +70,6 @@ export function useFileService() {
     deleteCampFile,
     downloadFile,
     getFileUrl,
+    getCampFileSlotUrl,
   };
 }

@@ -1,154 +1,181 @@
 <template>
   <q-form
     ref="formRef"
-    class="column q-pa-md q-gutter-y-sm"
+    class="contact-form"
+    :class="{ 'contact-form--standalone': standalone }"
     @submit="send()"
     @reset="reset()"
   >
-    <!-- ── Header: recipient + optional fields + subject ── -->
-    <div class="column q-gutter-y-xs">
-      <contact-select
-        v-model="to"
-        :label="t('input.to.label')"
-        :registrations
-        :rules="[
-          (val?: Contact[]) =>
-            (!!val && val.length > 0) || t('input.to.rule.required'),
-        ]"
-        hide-bottom-space
-        :disable="sendInProgress"
-        outlined
-        rounded
-        dense
-      />
+    <div class="composer">
+      <div
+        v-if="standalone"
+        class="composer-heading"
+      >
+        <div>
+          <div class="text-h5 text-weight-medium">
+            {{ t('heading.title') }}
+          </div>
+          <div class="text-body2 text-grey-6">
+            {{ t('heading.caption') }}
+          </div>
+        </div>
+        <q-chip
+          v-if="recipientCount"
+          dense
+          color="primary"
+          text-color="white"
+          icon="group"
+        >
+          {{ recipientCount }}
+        </q-chip>
+      </div>
 
-      <div class="row items-start q-gutter-x-xs">
-        <q-input
-          v-model="replyTo"
-          type="email"
-          :label="t('input.replyTo.label')"
+      <div class="composer-fields">
+        <contact-select
+          v-model="to"
+          :label="t('input.to.label')"
+          :registrations
           :rules="[
-            (val?: string) => !!val || t('input.replyTo.required'),
-            (val?: string) =>
-              !val ||
-              /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
-              t('input.replyTo.rule.invalid'),
+            (val?: Contact[]) =>
+              (!!val && val.length > 0) || t('input.to.rule.required'),
           ]"
           hide-bottom-space
           :disable="sendInProgress"
           outlined
           rounded
           dense
-          class="col"
-        >
-          <template
-            v-if="suggestedReplyTo && suggestedReplyTo !== replyTo"
-            #append
-          >
-            <q-btn
-              icon="autorenew"
-              size="xs"
-              flat
-              round
-              :disable="sendInProgress"
-              @click.stop="replyTo = suggestedReplyTo"
-            >
-              <q-tooltip>
-                {{ t('input.replyTo.suggestion', { email: suggestedReplyTo }) }}
-              </q-tooltip>
-            </q-btn>
-          </template>
-        </q-input>
+        />
 
-        <q-select
-          v-model="priority"
-          :options="priorityOptions"
+        <div class="composer-meta">
+          <q-input
+            v-model="replyTo"
+            type="email"
+            :label="t('input.replyTo.label')"
+            :rules="[
+              (val?: string) => !!val || t('input.replyTo.required'),
+              (val?: string) =>
+                !val ||
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
+                t('input.replyTo.rule.invalid'),
+            ]"
+            hide-bottom-space
+            :disable="sendInProgress"
+            outlined
+            rounded
+            dense
+          >
+            <template
+              v-if="suggestedReplyTo && suggestedReplyTo !== replyTo"
+              #append
+            >
+              <q-btn
+                icon="autorenew"
+                size="xs"
+                flat
+                round
+                :disable="sendInProgress"
+                @click.stop="replyTo = suggestedReplyTo"
+              >
+                <q-tooltip>
+                  {{
+                    t('input.replyTo.suggestion', { email: suggestedReplyTo })
+                  }}
+                </q-tooltip>
+              </q-btn>
+            </template>
+          </q-input>
+
+          <q-select
+            v-model="priority"
+            :label="t('input.priority')"
+            :options="priorityOptions"
+            :disable="sendInProgress"
+            outlined
+            rounded
+            dense
+            emit-value
+            map-options
+            class="priority-select"
+          >
+            <template #prepend>
+              <q-icon
+                :name="priorityIcon"
+                :color="priorityColor"
+                size="xs"
+              />
+            </template>
+          </q-select>
+        </div>
+
+        <registration-email-editor
+          v-model="subject"
+          :label="t('input.subject.label')"
+          :form="campDetailsStore.data?.form"
+          :rules="[
+            (val?: string) =>
+              (!!val && val.length > 0) || t('input.subject.rule.required'),
+          ]"
+          hide-bottom-space
           :disable="sendInProgress"
+          rounded
+          outlined
+          single-line
+          plain-text
+        />
+      </div>
+
+      <q-separator />
+
+      <div class="composer-message">
+        <registration-email-editor
+          v-model="text"
+          :label="t('input.message.label')"
+          :form="campDetailsStore.data?.form"
+          :rules="[
+            (val?: string) =>
+              (!!val && val.length > 0) || t('input.message.required'),
+          ]"
+          hide-bottom-space
+          :disable="sendInProgress"
+          class="message-editor"
+          rounded
+          outlined
+        />
+      </div>
+
+      <div class="composer-actions">
+        <file-input
+          v-model="attachments"
+          :label="t('input.attachments')"
+          :disable="sendInProgress"
+          max-file-size="20000000"
+          max-total-size="20000000"
+          multiple
+          append
+          use-chips
           outlined
           rounded
           dense
-          emit-value
-          map-options
-          class="priority-select"
+          class="attachment-input"
+          @rejected="onAttachmentRejected"
         >
           <template #prepend>
-            <q-icon
-              :name="priorityIcon"
-              :color="priorityColor"
-              size="xs"
-            />
+            <q-icon name="attach_file" />
           </template>
-        </q-select>
+        </file-input>
+
+        <q-btn
+          :label="sendLabel"
+          :loading="sendInProgress"
+          type="submit"
+          icon-right="send"
+          color="primary"
+          rounded
+          unelevated
+          no-caps
+          class="send-button"
+        />
       </div>
-
-      <registration-email-editor
-        v-model="subject"
-        :label="t('input.subject.label')"
-        :form="campDetailsStore.data?.form"
-        :rules="[
-          (val?: string) =>
-            (!!val && val.length > 0) || t('input.subject.rule.required'),
-        ]"
-        hide-bottom-space
-        :disable="sendInProgress"
-        rounded
-        outlined
-        single-line
-        plain-text
-      />
-    </div>
-
-    <q-separator />
-
-    <!-- ── Body: message editor fills remaining space ── -->
-    <registration-email-editor
-      v-model="text"
-      :label="t('input.message.label')"
-      :form="campDetailsStore.data?.form"
-      :rules="[
-        (val?: string) =>
-          (!!val && val.length > 0) || t('input.message.required'),
-      ]"
-      hide-bottom-space
-      :disable="sendInProgress"
-      class="col-grow"
-      rounded
-      outlined
-    />
-
-    <div
-      class="row items-center q-gutter-xs"
-      style="flex-wrap: wrap"
-    >
-      <file-input
-        v-model="attachments"
-        :label="t('input.attachments')"
-        :disable="sendInProgress"
-        max-file-size="20000000"
-        max-total-size="20000000"
-        multiple
-        append
-        use-chips
-        outlined
-        rounded
-        dense
-        style="flex: 1 0 auto; max-width: 100%"
-        @rejected="onAttachmentRejected"
-      >
-        <template #prepend>
-          <q-icon name="attach_file" />
-        </template>
-      </file-input>
-
-      <q-btn
-        :label="sendLabel"
-        :loading="sendInProgress"
-        type="submit"
-        icon="send"
-        color="primary"
-        rounded
-        style="margin-left: auto"
-      />
     </div>
   </q-form>
 </template>
@@ -169,9 +196,14 @@ import FileInput, {
   type FileInputModel,
 } from 'components/common/inputs/FileInput.vue';
 
-const { registrations, initialContacts } = defineProps<{
+const {
+  registrations,
+  initialContacts,
+  standalone = false,
+} = defineProps<{
   registrations: Registration[];
   initialContacts?: Contact[];
+  standalone?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -386,12 +418,124 @@ function reset() {
 </script>
 
 <style scoped>
+.contact-form {
+  display: flex;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.contact-form--standalone {
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  padding: 24px;
+}
+
+.composer {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--md3-surface);
+  flex: 1 1 0;
+  flex-direction: column;
+}
+
+.composer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px 8px;
+  gap: 16px;
+}
+
+.composer-fields {
+  display: flex;
+  padding: 16px 20px;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.composer-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 10px;
+}
+
 .priority-select {
-  min-width: 110px;
+  min-width: 0;
+}
+
+.composer-message {
+  display: flex;
+  min-height: 0;
+  padding: 16px 20px;
+  flex: 1 1 auto;
+}
+
+.message-editor {
+  min-height: 160px;
+  flex: 1 1 auto;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 16px;
+  gap: 12px;
+}
+
+.attachment-input {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+.send-button {
+  min-width: 128px;
+  min-height: 40px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 599px) {
+  .contact-form--standalone {
+    padding: 16px;
+  }
+
+  .composer-heading {
+    padding: 16px 16px 10px;
+  }
+
+  .composer-fields {
+    padding: 12px 16px;
+  }
+
+  .composer-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .composer-message {
+    padding: 12px 16px;
+  }
+
+  .composer-actions {
+    align-items: stretch;
+    padding: 10px 16px 16px;
+    flex-direction: column;
+  }
+
+  .send-button {
+    width: 100%;
+  }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
+heading:
+  title: 'Send a message'
+  caption: 'Compose an email for one or more registrations.'
+
 action:
   send: 'Send'
   sendTo: 'Send ({count})'
@@ -439,6 +583,10 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+heading:
+  title: 'Nachricht senden'
+  caption: 'Verfasse eine E-Mail für eine oder mehrere Anmeldungen.'
+
 action:
   send: 'Senden'
   sendTo: 'Senden ({count})'
@@ -486,6 +634,10 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+heading:
+  title: 'Envoyer un message'
+  caption: 'Rédigez un e-mail pour une ou plusieurs inscriptions.'
+
 action:
   send: 'Envoyer'
   sendTo: 'Envoyer ({count})'
@@ -533,6 +685,10 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+heading:
+  title: 'Wyślij wiadomość'
+  caption: 'Napisz wiadomość e-mail do jednego lub kilku zgłoszeń.'
+
 action:
   send: 'Wyślij'
   sendTo: 'Wyślij ({count})'
@@ -580,6 +736,10 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+heading:
+  title: 'Odeslat zprávu'
+  caption: 'Napište e-mail pro jednu nebo více registrací.'
+
 action:
   send: 'Odeslat'
   sendTo: 'Odeslat ({count})'

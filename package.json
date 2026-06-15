@@ -2,6 +2,7 @@
   "name": "camp-registration",
   "version": "0.0.1",
   "scripts": {
+    "prepare": "patch-package",
     "build": "npm run build --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
     "migrate": "npm run migrate --workspaces --if-present",
@@ -11,13 +12,13 @@
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
   "private": true,
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/marvin-wtt/CampRegistration"
   },
   "engines": {
-    "node": ">=22 <25"
+    "node": ">=22"
   },
   "workspaces": [
     "common",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "npm-run-all": "^4.1.5",
+    "patch-package": "^8.0.1",
     "rimraf": "^6.0.1"
   },
   "overrides": {
@@ -38,8 +40,5 @@
     "nodemailer-mock": {
       "nodemailer": "^8.0.4"
     }
-  },
-  "dependencies": {
-    "happy-dom": "^20.8.9"
   }
 }

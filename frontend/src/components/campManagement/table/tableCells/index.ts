@@ -10,10 +10,11 @@ import FileTableCell from 'components/campManagement/table/tableCells/FileTableC
 import GenderTableCell from 'components/campManagement/table/tableCells/GenderTableCell.vue';
 import HiddenTextTableCell from 'components/campManagement/table/tableCells/HiddenTextTableCell.vue';
 import IconTableCell from 'components/campManagement/table/tableCells/IconTableCell.vue';
+import IconMappingTableCell from 'components/campManagement/table/tableCells/IconMappingTableCell.vue';
+import IconMappingOptionsEditor from 'components/campManagement/table/tableCells/IconMappingOptionsEditor.vue';
 import IndexTableCell from 'components/campManagement/table/tableCells/IndexTableCell.vue';
 import LanguageSkillsTableCell from 'components/campManagement/table/tableCells/LanguageSkillsTableCell.vue';
 import NameTableCell from 'components/campManagement/table/tableCells/NameTableCell.vue';
-import PermissionLeaveTableCell from 'components/campManagement/table/tableCells/PermissionLeaveTableCell.vue';
 import PhoneNumberTableCell from 'components/campManagement/table/tableCells/PhoneNumberTableCell.vue';
 import TextTableCell from 'components/campManagement/table/tableCells/TextTableCell.vue';
 import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
@@ -115,6 +116,16 @@ const components = () => {
       fr: 'Icône',
     },
   });
+  TableComponentRegistry.register('icon_mapping', IconMappingTableCell, {
+    label: {
+      en: 'Icon Mapping',
+      de: 'Symbol-Zuordnung',
+      fr: 'Correspondance d’icônes',
+      pl: 'Przypisanie ikon',
+      cs: 'Přiřazení ikon',
+    },
+    customOptionsComponent: IconMappingOptionsEditor,
+  });
   TableComponentRegistry.register('index', IndexTableCell, {
     internal: true,
   });
@@ -132,12 +143,6 @@ const components = () => {
       fr: 'Nom',
     },
   });
-  // TODO Can this be replaces with icon?
-  TableComponentRegistry.register(
-    'permission_leave',
-    PermissionLeaveTableCell,
-    {},
-  );
   TableComponentRegistry.register('phone_number', PhoneNumberTableCell, {
     label: {
       en: 'Phone Number',

@@ -1,5 +1,14 @@
 // app global css in SCSS form
 
+// q-bar — used as dialog title headers; align with MD3 surface tokens
+// instead of the default flat grey. Explicit `bg-*` classes still win
+// because Quasar's color helpers use `!important`.
+.q-bar {
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+  padding: 0 16px;
+}
+
 // Header
 .body--light .q-header {
   background-color: #fff;
@@ -11,26 +20,46 @@
   color: white;
 }
 
-// Rounded borders
-.q-notification {
-  border-radius: 30px !important;
+// Mobile top app bar — a clean docked (sticky) bar that blends with the page
+// surface at rest and tints to surface-container with a soft elevation once
+// content scrolls beneath it (MD3 small top app bar behaviour). Used by the
+// authenticated layouts on small screens.
+.q-header.app-top-bar {
+  background: var(--md3-surface);
+  color: var(--md3-on-surface);
+  box-shadow: none;
+  border: none;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.q-list,
-.q-card,
-.q-banner,
-.q-menu {
-  border-radius: 30px !important;
+.q-header.app-top-bar .q-toolbar {
+  background: transparent;
 }
 
-.q-item:not(.q-list--separator) {
-  border-radius: 30px !important;
-  margin: 0 2px;
+.q-header.app-top-bar.app-top-bar--scrolled {
+  background: var(--md3-surface-container);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px 2px rgba(0, 0, 0, 0.15);
 }
 
 .q-item.q-router-link--exact-active {
   background-color: $primary;
   color: white;
+}
+
+.bg-default {
+  background: var(--md3-background);
+}
+
+// Page title blocks sit flush against the content's left edge, which feels
+// cramped next to the rail. The cards/lists/forms below carry their own
+// borders and padding, so only the bare title (and its subtitle) needs a
+// small left inset. Apply to the element wrapping the page title.
+.page-title {
+  padding-left: 8px;
 }
 
 .body--light {
@@ -45,4 +74,12 @@
     background-color: $grey-9;
     color: white;
   }
+}
+
+// Fix the active item color in rail mode for nested routes
+.body--dark
+  .q-list--rail
+  .q-item.q-router-link--active:not(.q-router-link--exact-active) {
+  background-color: var(--md3-background);
+  color: var(--md3-on-secondary-container);
 }

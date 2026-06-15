@@ -1,5 +1,6 @@
 import { api } from 'boot/axios';
 import type {
+  Bed,
   Room,
   RoomCreateData,
   RoomUpdateData,
@@ -59,6 +60,12 @@ export function useRoomService() {
     await api.delete(`camps/${campId}/rooms/${id}/`);
   }
 
+  async function createBed(campId: string, roomId: string): Promise<Bed> {
+    const response = await api.post(`camps/${campId}/rooms/${roomId}/beds/`);
+
+    return response?.data?.data;
+  }
+
   async function updateBed(
     campId: string,
     roomId: string,
@@ -70,6 +77,14 @@ export function useRoomService() {
     });
   }
 
+  async function deleteBed(
+    campId: string,
+    roomId: string,
+    bedId: string,
+  ): Promise<void> {
+    await api.delete(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`);
+  }
+
   return {
     fetchRooms,
     bulkUpdateRooms,
@@ -77,6 +92,8 @@ export function useRoomService() {
     createRoom,
     updateRoom,
     deleteRoom,
+    createBed,
     updateBed,
+    deleteBed,
   };
 }

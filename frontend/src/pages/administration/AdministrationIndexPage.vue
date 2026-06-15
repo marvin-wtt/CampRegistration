@@ -64,7 +64,7 @@ const items = [
     label: t('users.label'),
     description: t('users.description'),
     icon: 'people',
-    color: 'indigo',
+    color: 'primary',
     to: { name: 'administration.users' },
   },
   {
@@ -72,7 +72,7 @@ const items = [
     label: t('camps.label'),
     description: t('camps.description'),
     icon: 'holiday_village',
-    color: 'primary',
+    color: 'secondary',
     to: { name: 'administration.camps' },
   },
   {
@@ -80,7 +80,7 @@ const items = [
     label: t('newsletters.label'),
     description: t('newsletters.description'),
     icon: 'mail',
-    color: 'teal',
+    color: 'tertiary',
     to: { name: 'administration.newsletters' },
   },
   {
@@ -88,7 +88,7 @@ const items = [
     label: t('queues.label'),
     description: t('queues.description'),
     icon: 'queue',
-    color: 'deep-orange',
+    color: 'info',
     to: { name: 'administration.queues' },
   },
 ] as const;

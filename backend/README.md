@@ -1,165 +1,175 @@
 # Camp Registration Backend
 
-The Camp Registration Backend is a RESTful API service that powers the Camp Registration system. It provides endpoints for managing camps, registrations, users, and other related entities.
+`@camp-registration/api` — a RESTful API service that powers the Camp Registration
+system. It provides endpoints for managing camps, registrations, participants,
+room assignments, users, files, and email notifications.
 
 ## Technologies
 
-- **Node.js**: v22+ runtime environment
-- **TypeScript**: For type-safe code
-- **Express.js**: Web framework for building the API
-- **Prisma ORM**: Database access and migrations
-- **MySQL**: Database
-- **Passport.js**: Authentication
-- **Vitest**: Testing framework
-- **Winston**: Logging
-- **Nodemailer**: Email sending
-- **MJML**: Email template rendering
-- **Zod**: Schema validation
+- **Node.js** v22+ with **TypeScript** (ESM)
+- **Express 5** — web framework
+- **Prisma ORM** — database access and migrations (MySQL / MariaDB)
+- **InversifyJS** — dependency injection
+- **BullMQ** — background job queue (Redis-backed)
+- **Passport.js** + JWT — authentication, with TOTP 2FA
+- **Zod** — schema validation
+- **Nodemailer** + **MJML** — email sending and templating
+- **Winston** — logging
+- **Vitest** + **Supertest** — testing
 
 ## Prerequisites
 
-- Node.js v22+
-- MySQL >= 8.0.1 | MariaDB >= 10.6
-- npm or yarn
+- Node.js `>=22`
+- MySQL >= 8.0.1 or MariaDB >= 10.6
+- Redis 7 — optional, only required when `QUEUE_DRIVER=redis`
 
-## Setup and Installation
+The easiest way to get the database, a dev mail server (and optionally Redis)
+running is the Docker Compose setup documented in the
+[root README](../README.md#local-services).
 
-1. Clone the repository:
+## Setup
 
-   ```bash
-   git clone https://github.com/marvin-wtt/CampRegistration.git
-   cd CampRegistration/backend
-   ```
-
-2. Install dependencies:
+1. Install dependencies (preferably from the repository root so the workspace is
+   linked):
 
    ```bash
    npm install
    ```
 
-3. Set up environment variables:
-   - Copy `.env.dev` to `.env`
-   - Update the database connection string and other configuration values
+2. Configure environment variables:
 
-4. Set up the database:
    ```bash
+   cp .env.dev .env
+   ```
+
+   Update the database connection string and other values to match your
+   environment.
+
+3. Build the [`common`](../common) workspace, then set up the database:
+
+   ```bash
+   npm run build --workspace common
    npm run db:migrate
    npm run db:seed
    ```
 
 ## Configuration
 
-The application uses environment variables for configuration. Key variables include:
+The application is configured through environment variables. Key variables
+include:
 
-- `DATABASE_URL`: MySQL connection string
-- `JWT_SECRET`: Secret for JWT tokens
-- `JWT_ACCESS_EXPIRATION_MINUTES`: JWT access token expiration
-- `JWT_REFRESH_EXPIRATION_DAYS`: JWT refresh token expiration
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`: Email server configuration
-- `FRONTEND_URL`: URL of the frontend application
+- `APP_PORT`, `APP_URL`, `APP_NAME` — application host configuration
+- `DATABASE_URL` — MySQL / MariaDB connection string
+- `SHADOW_DATABASE_URL` — shadow database used by Prisma migrations
+- `JWT_SECRET`, `CSRF_SECRET` — security secrets
+- `QUEUE_DRIVER` — queue backend (`database` or `redis`)
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD` —
+  email server configuration
+- `EMAIL_FROM`, `EMAIL_REPLY_TO`, `EMAIL_ADMIN` — email addresses
 
-See `.env.dev` for a complete list of configuration options.
+See `.env.dev` for the complete list of options.
 
 ## Development
-
-To start the development server:
 
 ```bash
 npm run dev
 ```
 
-This will:
+This compiles the MJML email templates (in watch mode) and starts the server with
+hot reloading. The dev server also generates the Prisma client as part of the
+build step.
 
-1. Generate Prisma client
-2. Compile email templates
-3. Start the server with hot-reloading
-
-### Code Style and Linting
-
-The project uses ESLint and Prettier for code style and linting:
+### Linting and Formatting
 
 ```bash
-# Run linter
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Format code
-npm run format
+npm run lint        # Run ESLint
+npm run lint:fix    # Fix lint issues
+npm run format      # Format with Prettier
 ```
 
-## Database Management
+## Database
 
-Prisma is used for database management:
+Prisma manages the schema and migrations. The schema lives in
+`prisma/schema.prisma`.
 
 ```bash
-# Apply migrations
-npm run db:migrate
-
-# Reset database (caution: deletes all data)
-npm run db:reset
-
-# Seed database with initial data
-npm run db:seed
-
-# Open Prisma Studio (database GUI)
-npm run db:studio
+npm run db:migrate   # Apply migrations (prisma migrate deploy)
+npm run migrate      # Apply schema + data migrations
+npm run db:seed      # Seed initial data
+npm run db:reset     # DESTRUCTIVE — drops and recreates the schema
+npm run db:studio    # Open Prisma Studio (database GUI)
 ```
+
+> Primary keys are **ULID strings** (26 chars), never integers. Multilingual
+> fields are stored as **JSON columns**. After changing `schema.prisma`, run
+> `prisma migrate dev` — never edit the generated migration SQL by hand.
 
 ## Testing
 
-The project includes unit and integration tests:
-
 ```bash
-# Run all tests
-npm run test
-
-# Run unit tests
-npm run test:unit
-
-# Run integration tests
-npm run test:int
-
-# Run tests with UI
-npm run test:unit:ui
-npm run test:int:ui
+npm run test         # Integration tests
+npm run test:unit    # Unit tests
+npm run test:int     # Integration tests
+npm run test:unit:ui # Unit tests with the Vitest UI
+npm run test:int:ui  # Integration tests with the Vitest UI
 ```
+
+- **Unit tests** mock dependencies (`vitest-mock-extended`) and perform no real
+  I/O.
+- **Integration tests** require MariaDB. They run against a separate database
+  (port 3307) and execute serially; migrations are applied automatically before
+  the suite.
 
 ## Building for Production
 
-To build the application for production:
-
 ```bash
-npm run build
+npm run build       # Generate Prisma client, compile TypeScript, build email views
+npm run production   # Run the production build
 ```
 
-To run the production build:
+## Architecture
 
-```bash
-npm run production
+### Module System
+
+Each feature is an `AppModule` with four responsibilities:
+
+```ts
+class ExampleModule implements AppModule {
+  bindContainers(container: Container): void {} // DI bindings
+  configure(app: Application): void {} // middleware
+  registerRoutes(app: Application): void {} // mount router
+  registerPermissions(): void {} // RBAC permissions
+}
 ```
 
-## Project Structure
+### Request Flow
 
-- `src/app`: Application modules organized by domain
-- `src/config`: Configuration files
-- `src/core`: Core functionality and shared components
-- `src/guards`: Authentication/authorization guards
-- `src/i18n`: Internationalization support
-- `src/jobs`: Background jobs or scheduled tasks
-- `src/middlewares`: Express middleware
-- `src/routes`: API route definitions
-- `src/types`: TypeScript type definitions
-- `src/utils`: Utility functions
-- `src/views`: View templates (for emails)
-- `prisma`: Database schema and migrations
-- `tests`: Test files
+```
+Request → Router → Controller → Service (business logic) → Prisma → Response
+```
 
-## API Documentation
+- Services are decorated with `@injectable()` and injected via the constructor
+  using `@inject(TYPES.ServiceName)`. All bindings are singletons; symbols live in
+  `src/container/types.ts`.
+- Routers extend `ModuleRouter` and use model binding for route params
+  (`:campId` → `Camp` entity).
+- Throw `ApiError` from services; centralized error middleware handles the
+  response.
+- Authorization uses RBAC permission guards — never write ad-hoc role checks.
+  System roles: `USER`, `ADMIN`. Camp-scoped roles: `DIRECTOR`, `COORDINATOR`,
+  `COUNSELOR`, `VIEWER`.
 
-API documentation is available at `/api-docs` when running the server in development mode.
+### Email
+
+- MJML templates live in `src/views/emails/`.
+- Use the `Mailable` pattern and register each mailable in the mailable registry.
+- In development, outgoing email is captured by MailDev at http://localhost:1080.
+
+### Path Alias
+
+`#*` maps to `src/*` (see the `imports` field in `package.json`).
 
 ## License
 
-This project is licensed under the MIT License.
+Licensed under the [GNU Affero General Public License v3.0](../LICENSE)
+(AGPL-3.0-only).

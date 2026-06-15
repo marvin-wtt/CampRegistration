@@ -16,7 +16,6 @@
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <!-- File -->
-          <!-- TODO Maybe add reject message -->
           <q-file
             v-model="fileData.file"
             :label="t('fields.file.label')"
@@ -31,6 +30,7 @@
             :max-file-size="100e6"
             accept="image/*, application/pdf"
             @update:model-value="onFileUpdate"
+            @rejected="onFileRejected"
           >
             <template #prepend>
               <q-icon
@@ -75,6 +75,7 @@
               :options="localeOptions"
               :label="t('fields.locale.label')"
               :hint="t('fields.locale.hint')"
+              :readonly="initialLocale !== null"
               emit-value
               map-options
               outlined
@@ -90,6 +91,7 @@
                 (val?: string) =>
                   !!val || t('fields.access_level.rules.required'),
               ]"
+              :readonly="isReplaceMode"
               emit-value
               map-options
               outlined
@@ -133,7 +135,12 @@
 </template>
 
 <script lang="ts" setup>
-import { type QSelectOption, useDialogPluginComponent } from 'quasar';
+import {
+  type QSelectOption,
+  type QRejectedEntry,
+  useDialogPluginComponent,
+  useQuasar,
+} from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref } from 'vue';
 import type {
@@ -156,6 +163,7 @@ const campFileStore = useCampFilesStore();
 const campStore = useCampDetailsStore();
 
 const { t } = useI18n();
+const quasar = useQuasar();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -217,6 +225,23 @@ function onFileUpdate() {
   }
 }
 
+function onFileRejected(rejectedEntries: QRejectedEntry[]) {
+  const reasons = new Set(
+    rejectedEntries.map((entry) => entry.failedPropValidation),
+  );
+
+  const message = reasons.has('max-file-size')
+    ? t('fields.file.rejected.max_file_size')
+    : reasons.has('accept')
+      ? t('fields.file.rejected.accept')
+      : t('fields.file.rejected.generic');
+
+  quasar.notify({
+    type: 'negative',
+    message,
+  });
+}
+
 async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
@@ -255,6 +280,10 @@ fields:
     label: 'File'
     rules:
       required: 'Please select a file to upload'
+    rejected:
+      max_file_size: 'The file is too large. The maximum file size is 100 MB.'
+      accept: 'This file type is not allowed. Please select an image or PDF.'
+      generic: 'The selected file could not be added.'
   locale:
     label: 'Language'
     hint: 'Leave as default to apply to all languages'
@@ -295,6 +324,10 @@ fields:
     label: 'Datei'
     rules:
       required: 'Bitte wählen Sie eine Datei zum Hochladen aus'
+    rejected:
+      max_file_size: 'Die Datei ist zu groß. Die maximale Dateigröße beträgt 100 MB.'
+      accept: 'Dieser Dateityp ist nicht zulässig. Bitte wählen Sie ein Bild oder PDF.'
+      generic: 'Die ausgewählte Datei konnte nicht hinzugefügt werden.'
   locale:
     label: 'Sprache'
     hint: 'Leer lassen, um auf alle Sprachen anzuwenden'
@@ -335,6 +368,10 @@ fields:
     label: 'Fichier'
     rules:
       required: 'Veuillez sélectionner un fichier à téléverser'
+    rejected:
+      max_file_size: 'Le fichier est trop volumineux. La taille maximale est de 100 Mo.'
+      accept: "Ce type de fichier n'est pas autorisé. Veuillez sélectionner une image ou un PDF."
+      generic: "Le fichier sélectionné n'a pas pu être ajouté."
   locale:
     label: 'Langue'
     hint: 'Laisser par défaut pour appliquer à toutes les langues'
@@ -375,6 +412,10 @@ fields:
     label: 'Plik'
     rules:
       required: 'Wybierz plik do przesłania'
+    rejected:
+      max_file_size: 'Plik jest za duży. Maksymalny rozmiar pliku to 100 MB.'
+      accept: 'Ten typ pliku jest niedozwolony. Wybierz obraz lub plik PDF.'
+      generic: 'Nie udało się dodać wybranego pliku.'
   locale:
     label: 'Język'
     hint: 'Pozostaw domyślnie, aby zastosować do wszystkich języków'
@@ -415,6 +456,10 @@ fields:
     label: 'Soubor'
     rules:
       required: 'Vyberte soubor k nahrání'
+    rejected:
+      max_file_size: 'Soubor je příliš velký. Maximální velikost souboru je 100 MB.'
+      accept: 'Tento typ souboru není povolen. Vyberte obrázek nebo PDF.'
+      generic: 'Vybraný soubor se nepodařilo přidat.'
   locale:
     label: 'Jazyk'
     hint: 'Ponechte výchozí pro použití ve všech jazycích'

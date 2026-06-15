@@ -132,6 +132,7 @@
                   height: `${timeDurationHeight(dragHoverPreview.duration)}px`,
                   backgroundColor: hexToRgba(dragHoverPreview.color, 0.2),
                   borderColor: hexToRgba(dragHoverPreview.color, 0.7),
+                  ...dragPreviewSideStyle,
                 }"
               />
 
@@ -550,6 +551,11 @@ function onBacklogAdd() {
 }
 
 function onMoveToBacklog(id: string) {
+  // Dropping on the backlog removes the dragged item from the calendar DOM,
+  // which can suppress its `dragend` event — clear lingering drag state here.
+  clearDragHighlight();
+  cancelPreviewUpdate(null);
+  isDraggingEvent.value = false;
   emit('update', id, { date: null, time: null });
 }
 
@@ -649,12 +655,26 @@ interface DragHoverPreview {
   startTime: string;
   duration: number;
   color: string;
+  plan: 'a' | 'b' | 'both';
 }
 
 const dragHoverPreview = ref<DragHoverPreview | null>(null);
 let draggingEventDuration = 60;
 let draggingEventColor = '#2196F3';
+let draggingEventPlan: 'a' | 'b' | 'both' = 'both';
 let draggingGrabOffset = 0;
+
+// Mirror CalendarItem's side placement: in both-plans view, a single-plan
+// event occupies the left (a) or right (b) half of the column.
+const dragPreviewSideStyle = computed(() => {
+  const preview = dragHoverPreview.value;
+  if (!preview || !viewBoth.value || preview.plan === 'both') {
+    return {};
+  }
+  return preview.plan === 'b'
+    ? { left: 'calc(50% + 2px)', right: 'auto', width: 'calc(50% - 4px)' }
+    : { left: '2px', right: 'auto', width: 'calc(50% - 4px)' };
+});
 
 let previewRafId: number | null = null;
 let pendingPreview: DragHoverPreview | null | undefined = undefined;
@@ -817,6 +837,7 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
 
   draggingEventDuration = event.duration ?? 60;
   draggingEventColor = event.color ?? '#2196F3';
+  draggingEventPlan = event.plan;
   draggingGrabOffset =
     parseInt(e.dataTransfer.getData('text/grab-offset')) || 0;
 
@@ -824,6 +845,9 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   const onDragEnd = () => {
     isDraggingEvent.value = false;
     cancelPreviewUpdate(null);
+    // Drops outside the calendar (e.g. the backlog) never fire the calendar's
+    // drop/leave handlers, so clear any lingering cell highlight here.
+    clearDragHighlight();
     document.removeEventListener('dragend', onDragEnd);
   };
   document.addEventListener('dragend', onDragEnd);
@@ -847,6 +871,7 @@ function onDragEnter(
       startTime,
       duration: draggingEventDuration,
       color: draggingEventColor,
+      plan: draggingEventPlan,
     });
   } else {
     schedulePreviewUpdate(null);
@@ -1073,8 +1098,26 @@ function formatDate(date: Date): string {
 </script>
 
 <style lang="scss">
+.q-calendar {
+  --calendar-current-color-dark: var(--md3-outline-variant);
+  --calendar-mini-range-connector-color-dark: var(--md3-outline-variant);
+  --calendar-mini-range-firstlast-label-background-dark: var(
+    --md3-outline-variant
+  );
+  --calendar-border: var(--md3-outline-variant) 1px solid;
+  --calendar-border-dark: var(--md3-outline-variant) 1px solid;
+  --calendar-border-current-dark: var(--md3-outline-variant) 2px solid;
+  --calendar-border-section-dark: var(--md3-outline-variant) 1px dashed;
+  --calendar-mini-range-connector-hover-border-dark: var(--md3-primary) 1px
+    dashed;
+  --calendar-active-date-background: var(--md3-primary);
+  --calendar-active-date-color: white;
+  --calendar-active-date-background-dark: var(--md3-primary-container);
+}
+
 .droppable {
-  box-shadow: inset 0 0 0 1px rgba(0, 140, 200, 0.8);
+  box-shadow: inset 0 0 0 1px var(--md3-primary);
+  background: color-mix(in srgb, var(--md3-primary) 8%, transparent);
 }
 
 .cal-create-overlay {
@@ -1104,9 +1147,9 @@ function formatDate(date: Date): string {
   position: absolute;
   left: 2px;
   right: 2px;
-  background-color: rgba(33, 150, 243, 0.15);
-  border: 1px solid rgba(33, 150, 243, 0.5);
-  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--md3-primary) 12%, transparent);
+  border: 1px solid var(--md3-primary);
+  border-radius: 6px;
   pointer-events: none;
   z-index: 1;
 }
@@ -1116,17 +1159,21 @@ function formatDate(date: Date): string {
   left: 2px;
   right: 2px;
   border: 2px dashed;
-  border-radius: 3px;
+  border-radius: 6px;
   pointer-events: none;
   z-index: 1;
 }
 
+// Diagonal hatching marks hours outside the camp period as unavailable;
+// derived from on-surface so it adapts to both light and dark themes
 .cal-outside-camp {
-  background-color: rgba(0, 0, 0, 0.08);
-
-  .body--dark & {
-    background-color: rgba(255, 255, 255, 0.25);
-  }
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--md3-on-surface) 4%, transparent),
+    color-mix(in srgb, var(--md3-on-surface) 4%, transparent) 4px,
+    color-mix(in srgb, var(--md3-on-surface) 10%, transparent) 4px,
+    color-mix(in srgb, var(--md3-on-surface) 10%, transparent) 8px
+  );
 }
 </style>
 

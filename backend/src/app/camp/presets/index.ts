@@ -2,7 +2,6 @@ import standardForm from './forms/standard.js';
 import minimalForm from './forms/minimal.js';
 import standardTableTemplates from './tableTemplates/standard.js';
 import minimalTableTemplates from './tableTemplates/minimal.js';
-import themes from './themes.js';
 
 export type Preset = 'standard' | 'minimal';
 
@@ -16,12 +15,12 @@ export const CAMP_PRESETS: Record<Preset, CampPreset> = {
   minimal: {
     form: minimalForm,
     tableTemplates: minimalTableTemplates,
-    themes,
+    themes: {},
   },
   standard: {
     form: standardForm,
     tableTemplates: standardTableTemplates,
-    themes,
+    themes: {},
   },
 };
 

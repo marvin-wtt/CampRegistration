@@ -14,6 +14,7 @@ import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import { StorageFile } from '#core/storage/storage';
+import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
 
@@ -220,6 +221,26 @@ export class FileService extends BaseService {
         [`${modelName}Id`]: modelId,
       },
     });
+  }
+
+  /**
+   * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
+   * and locale. The slot maps to the file's `field` column. Readiness and access
+   * are not checked here — that is the caller's (guard/stream) responsibility.
+   */
+  async getModelFileForSlot(
+    model: ModelData,
+    slot: string,
+    locale: string | undefined,
+  ): Promise<File | null> {
+    const files = await this.prisma.file.findMany({
+      where: {
+        [`${model.name}Id`]: model.id,
+        field: slot,
+      },
+    });
+
+    return selectFileByLocale(files, locale ?? 'en') ?? null;
   }
 
   async queryModelFiles(
