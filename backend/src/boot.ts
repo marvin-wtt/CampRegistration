@@ -13,6 +13,7 @@ import { FeedbackModule } from '#app/feedback/feedback.module';
 import { ProfileModule } from '#app/profile/profile.module';
 import { TotpModule } from '#app/totp/totp.module';
 import { UserModule } from '#app/user/user.module';
+import { SetupModule } from '#app/setup/setup.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
@@ -43,6 +44,7 @@ const loadModules = () =>
     new QueueModule(),
     new TokenModule(),
     new AuthModule(),
+    new SetupModule(),
     new TotpModule(),
     new ProfileModule(),
     new FileModule(),
