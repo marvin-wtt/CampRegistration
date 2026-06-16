@@ -188,7 +188,7 @@
       </section>
 
       <section class="dashboard-section">
-        <demographics-explorer :people="stats.participants.value" />
+        <demographics-explorer :people="stats.acceptedParticipants.value" />
       </section>
     </div>
   </page-state-handler>
