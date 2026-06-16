@@ -49,7 +49,7 @@
     </q-card>
   </q-page>
 
-  <registration-form
+  <user-registration-form
     v-else
     icon="admin_panel_settings"
     :title="t('title')"
@@ -68,9 +68,9 @@ import { useQuasar } from 'quasar';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { isSetupRequired } from 'src/services/SetupService';
-import RegistrationForm, {
+import UserRegistrationForm, {
   type RegistrationCredentials,
-} from 'components/auth/RegistrationForm.vue';
+} from '../../components/auth/UserRegistrationForm.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();

@@ -19,6 +19,7 @@
 
       <q-form
         class="column no-wrap"
+        data-test="registration-form"
         @submit="onSubmit"
       >
         <q-card-section
@@ -141,21 +142,21 @@ export interface RegistrationCredentials {
   password: string;
 }
 
-withDefaults(
-  defineProps<{
-    icon: string;
-    title: string;
-    submitLabel: string;
-    subtitle?: string;
-    loading?: boolean;
-    error?: string | null;
-  }>(),
-  {
-    subtitle: undefined,
-    loading: false,
-    error: null,
-  },
-);
+const {
+  icon,
+  title,
+  submitLabel,
+  subtitle,
+  loading = false,
+  error = null,
+} = defineProps<{
+  icon: string;
+  title: string;
+  submitLabel: string;
+  subtitle?: string;
+  loading?: boolean;
+  error?: string | null;
+}>();
 
 const emit = defineEmits<{
   submit: [credentials: RegistrationCredentials];
