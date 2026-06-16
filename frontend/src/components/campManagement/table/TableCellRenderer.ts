@@ -1,14 +1,18 @@
 import { type Component } from 'vue';
 import type { CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 export class TableCellRenderer {
-  private readonly _component: Component;
+  private readonly _component: Component<TableCellProps>;
   private readonly _column: CTableColumnTemplate;
   private _hideEvaluator?: ExpressionEvaluator;
   private _showEvaluator?: ExpressionEvaluator;
 
-  constructor(component: Component, column: CTableColumnTemplate) {
+  constructor(
+    component: Component<TableCellProps>,
+    column: CTableColumnTemplate,
+  ) {
     this._component = component;
     this._column = column;
 
@@ -25,7 +29,7 @@ export class TableCellRenderer {
     }
   }
 
-  get component(): Component {
+  get component(): Component<TableCellProps> {
     return this._component;
   }
 
