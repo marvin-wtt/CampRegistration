@@ -5,20 +5,17 @@ import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
 
-type MaybeLazyComponent =
-  | Component<TableCellProps>
-  | (() => Component<TableCellProps>);
+type MaybeLazyComponent<T> = Component<T> | (() => Component<T>);
 
 interface ComponentOptions {
   editable?: false | object;
-  label?: string | Record<string, string>;
   internal?: boolean;
   customOptions?: BaseComponent[];
   customOptionsComponent?: Component<TableCellOptionsProps>;
 }
 
 interface ComponentEntry {
-  component: MaybeLazyComponent;
+  component: MaybeLazyComponent<TableCellProps>;
   options: ComponentOptions;
 }
 
