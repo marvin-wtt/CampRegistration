@@ -68,7 +68,7 @@ export function useCampStatistics() {
   const helper = useRegistrationHelper();
 
   const registrations = computed<Registration[]>(
-    () => registrationStore.data ?? [],
+    () => registrationStore.data?.filter((r) => r.status === 'ACCEPTED') ?? [],
   );
 
   const participants = computed<Registration[]>(() =>
