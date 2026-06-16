@@ -64,6 +64,37 @@ onMounted(async () => {
     0 6px 20px rgba(0, 0, 0, 0.18) !important;
 }
 
+/* On phones the card goes full-bleed: it fills the whole viewport so the
+   gradient backdrop isn't visible as bands around a floating card. Larger
+   screens keep the floating, rounded card centred on the gradient. */
+@media (max-width: 599.98px) {
+  .auth-card {
+    min-height: 100dvh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* The card already fills the height, so no extra vertical centring band. */
+  .auth-layout .q-page.content-center {
+    align-content: stretch;
+  }
+
+  /* The gradient header grows to fill the top of the screen (reaching the very
+     top edge), carrying the avatar down to just above the form. A matching
+     flexible spacer at the bottom balances it, so the content sits vertically
+     centred between equal gradient (top) and surface (bottom) areas. */
+  .auth-card-header {
+    flex: 1 1 0;
+    min-height: 100px;
+  }
+
+  .auth-card::after {
+    content: '';
+    flex: 1 1 0;
+  }
+}
+
 .auth-card-header {
   height: 100px;
   flex-shrink: 0;
