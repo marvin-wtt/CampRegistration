@@ -286,7 +286,8 @@ const { camp, column } = defineProps<{
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { t } = useI18n();
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t, te } = useI18n();
 const { to } = useObjectTranslation();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -427,7 +428,7 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
     }
 
     return {
-      label: to(options.label) || key,
+      label: te(`cellType.${key}`) ? t(`cellType.${key}`) : key,
       value: key,
     };
   })
@@ -637,6 +638,26 @@ field:
   showIf:
     label: 'Show if'
     hint: 'Expression when to show the cell'
+
+cellType:
+  status: 'Status'
+  address: 'Address'
+  age: 'Age'
+  country_flag: 'Country Flag'
+  date: 'Date'
+  default: 'Default'
+  email: 'Email'
+  file: 'File'
+  form_select: 'Form Select'
+  gender: 'Gender'
+  hidden_text: 'Hidden Text'
+  icon_mapping: 'Icon Mapping'
+  language_skills: 'Language Skills'
+  name: 'Name'
+  phone_number: 'Phone Number'
+  text: 'Text'
+  time_ago: 'Time Ago'
+  translated_value: 'Translated Value'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -725,6 +746,26 @@ field:
   showIf:
     label: 'Anzeigen wenn'
     hint: 'Ausdruck, wenn die Zelle angezeigt werden soll'
+
+cellType:
+  status: 'Status'
+  address: 'Adresse'
+  age: 'Alter'
+  country_flag: 'Länderflagge'
+  date: 'Datum'
+  default: 'Standard'
+  email: 'E-Mail'
+  file: 'Datei'
+  form_select: 'Formularauswahl'
+  gender: 'Geschlecht'
+  hidden_text: 'Versteckter Text'
+  icon_mapping: 'Symbol-Zuordnung'
+  language_skills: 'Sprachkenntnisse'
+  name: 'Name'
+  phone_number: 'Telefonnummer'
+  text: 'Text'
+  time_ago: 'Vor (Zeit)'
+  translated_value: 'Übersetzter Wert'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -813,6 +854,26 @@ field:
   showIf:
     label: 'Afficher si'
     hint: "Expression lorsqu'il faut"
+
+cellType:
+  status: 'Statut'
+  address: 'Adresse'
+  age: 'Âge'
+  country_flag: 'Drapeau du pays'
+  date: 'Date'
+  default: 'Défaut'
+  email: 'E-mail'
+  file: 'Fichier'
+  form_select: 'Sélection de formulaire'
+  gender: 'Sexe'
+  hidden_text: 'Texte caché'
+  icon_mapping: 'Correspondance d’icônes'
+  language_skills: 'Compétences linguistiques'
+  name: 'Nom'
+  phone_number: 'Numéro de téléphone'
+  text: 'Texte'
+  time_ago: 'Temps écoulé'
+  translated_value: 'Valeur traduite'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -901,6 +962,26 @@ field:
   showIf:
     label: 'Pokaż, jeśli'
     hint: 'Wyrażenie określające, kiedy komórka ma być pokazana'
+
+cellType:
+  status: 'Status'
+  address: 'Adres'
+  age: 'Wiek'
+  country_flag: 'Flaga kraju'
+  date: 'Data'
+  default: 'Domyślny'
+  email: 'E-mail'
+  file: 'Plik'
+  form_select: 'Wybór z formularza'
+  gender: 'Płeć'
+  hidden_text: 'Ukryty tekst'
+  icon_mapping: 'Przypisanie ikon'
+  language_skills: 'Znajomość języków'
+  name: 'Imię i nazwisko'
+  phone_number: 'Numer telefonu'
+  text: 'Tekst'
+  time_ago: 'Czas względny'
+  translated_value: 'Przetłumaczona wartość'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -989,4 +1070,24 @@ field:
   showIf:
     label: 'Zobrazit, pokud'
     hint: 'Výraz určující, kdy se buňka má zobrazit'
+
+cellType:
+  status: 'Stav'
+  address: 'Adresa'
+  age: 'Věk'
+  country_flag: 'Vlajka země'
+  date: 'Datum'
+  default: 'Výchozí'
+  email: 'E-mail'
+  file: 'Soubor'
+  form_select: 'Výběr z formuláře'
+  gender: 'Pohlaví'
+  hidden_text: 'Skrytý text'
+  icon_mapping: 'Přiřazení ikon'
+  language_skills: 'Jazykové znalosti'
+  name: 'Jméno'
+  phone_number: 'Telefonní číslo'
+  text: 'Text'
+  time_ago: 'Relativní čas'
+  translated_value: 'Přeložená hodnota'
 </i18n>

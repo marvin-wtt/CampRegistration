@@ -23,8 +23,8 @@ import EditorTableCell from 'components/campManagement/table/tableCells/EditorTa
 import FormSelectTableCell from 'components/campManagement/table/tableCells/FormSelectTableCell.vue';
 import StatusTableCell from 'components/campManagement/table/tableCells/StatusTableCell.vue';
 
-// TODO Add custom config options
-// TODO Add translations for pl and cs
+// Labels for the (non-internal) cell types live in the i18n blocks of
+// TableTemplateColumnEditDialog.vue, keyed by the registry name (`cellType.<name>`).
 const components = () => {
   TableComponentRegistry.register('editor', EditorTableCell, {
     internal: true,
@@ -32,149 +32,32 @@ const components = () => {
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,
   });
-  TableComponentRegistry.register('status', StatusTableCell, {
-    label: {
-      en: 'Status',
-      de: 'Status',
-      fr: 'Status',
-    },
-  });
-  TableComponentRegistry.register('address', AddressTableCell, {
-    label: {
-      en: 'Address',
-      de: 'Adresse',
-      fr: 'Adresse',
-    },
-  });
-  TableComponentRegistry.register('age', AgeTableCell, {
-    label: {
-      en: 'Age',
-      de: 'Alter',
-      fr: 'Áge',
-    },
-  });
-  TableComponentRegistry.register('country_flag', CountryFlagTableCell, {
-    label: {
-      en: 'Country Flag',
-      de: 'Länderflagge',
-      fr: 'Drapeau du Pays',
-    },
-  });
-  TableComponentRegistry.register('date', DateTableCell, {
-    label: {
-      en: 'Date',
-      de: 'Datum',
-      fr: 'Date',
-    },
-  });
-  TableComponentRegistry.register('default', DefaultTableCell, {
-    label: {
-      en: 'Default',
-      de: 'Standard',
-      fr: 'Défaut',
-    },
-  });
-  TableComponentRegistry.register('email', EmailTableCell, {
-    label: {
-      en: 'Email',
-      de: 'E-Mail',
-      fr: 'E-Mail',
-    },
-  });
-  TableComponentRegistry.register('file', FileTableCell, {
-    label: {
-      en: 'File',
-      de: 'Datei',
-      fr: 'Ficher',
-    },
-  });
-  TableComponentRegistry.register('form_select', FormSelectTableCell, {
-    label: {
-      en: 'Form Select',
-      de: 'Formular Auswahl',
-      fr: 'Sélection de Formulaire',
-    },
-  });
-  TableComponentRegistry.register('gender', GenderTableCell, {
-    label: {
-      en: 'gender',
-      de: 'Geschlecht',
-      fr: 'Sexe',
-    },
-  });
-  TableComponentRegistry.register('hidden_text', HiddenTextTableCell, {
-    label: {
-      en: 'Hidden Text',
-      de: 'Versteckter Text',
-      fr: 'Texte Caché',
-    },
-  });
+  TableComponentRegistry.register('status', StatusTableCell);
+  TableComponentRegistry.register('address', AddressTableCell);
+  TableComponentRegistry.register('age', AgeTableCell);
+  TableComponentRegistry.register('country_flag', CountryFlagTableCell);
+  TableComponentRegistry.register('date', DateTableCell);
+  TableComponentRegistry.register('default', DefaultTableCell);
+  TableComponentRegistry.register('email', EmailTableCell);
+  TableComponentRegistry.register('file', FileTableCell);
+  TableComponentRegistry.register('form_select', FormSelectTableCell);
+  TableComponentRegistry.register('gender', GenderTableCell);
+  TableComponentRegistry.register('hidden_text', HiddenTextTableCell);
   TableComponentRegistry.register('icon', IconTableCell, {
-    label: {
-      en: 'Icon',
-      de: 'Symbol',
-      fr: 'Icône',
-    },
+    internal: true, // Component should be removed as it is included in icon mapping
   });
   TableComponentRegistry.register('icon_mapping', IconMappingTableCell, {
-    label: {
-      en: 'Icon Mapping',
-      de: 'Symbol-Zuordnung',
-      fr: 'Correspondance d’icônes',
-      pl: 'Przypisanie ikon',
-      cs: 'Přiřazení ikon',
-    },
     customOptionsComponent: IconMappingOptionsEditor,
   });
   TableComponentRegistry.register('index', IndexTableCell, {
     internal: true,
   });
-  TableComponentRegistry.register('language_skills', LanguageSkillsTableCell, {
-    label: {
-      en: 'Language Skills',
-      de: 'Sprachkenntnisse',
-      fr: 'Compétences linguistiques',
-    },
-  });
-  TableComponentRegistry.register('name', NameTableCell, {
-    label: {
-      en: 'Name',
-      de: 'Name',
-      fr: 'Nom',
-    },
-  });
-  TableComponentRegistry.register('phone_number', PhoneNumberTableCell, {
-    label: {
-      en: 'Phone Number',
-      de: 'Telefonnummer',
-      fr: 'Numéro de Téléphone',
-    },
-  });
-  TableComponentRegistry.register('text', TextTableCell, {
-    label: {
-      en: 'Text',
-      de: 'Text',
-      fr: 'Texte',
-    },
-  });
-  TableComponentRegistry.register('time_ago', TimeAgoTableCell, {
-    label: {
-      en: 'Time Ago',
-      de: 'Vor (Zeit)',
-      fr: 'Avant (Temps)',
-    },
-  });
-  TableComponentRegistry.register(
-    'translated_value',
-    TranslatedValueTableCell,
-    {
-      label: {
-        en: 'Translated value',
-        de: 'Übersetzter Wert',
-        fr: 'Valeur traduite',
-      },
-    },
-  );
+  TableComponentRegistry.register('language_skills', LanguageSkillsTableCell);
+  TableComponentRegistry.register('name', NameTableCell);
+  TableComponentRegistry.register('phone_number', PhoneNumberTableCell);
+  TableComponentRegistry.register('text', TextTableCell);
+  TableComponentRegistry.register('time_ago', TimeAgoTableCell);
+  TableComponentRegistry.register('translated_value', TranslatedValueTableCell);
 };
 
 export default components;
