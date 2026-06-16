@@ -128,10 +128,10 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Bienvenue'
-subtitle: "Créez le compte administrateur pour terminer la configuration de cette instance."
+subtitle: 'Créez le compte administrateur pour terminer la configuration de cette instance.'
 completed:
   title: 'Configuration terminée'
-  message: "Cette instance possède déjà un administrateur. Connectez-vous pour continuer."
+  message: 'Cette instance possède déjà un administrateur. Connectez-vous pour continuer.'
 action:
   create: "Créer l'administrateur"
   login: 'Aller à la connexion'
