@@ -23,8 +23,11 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     services:
-      mariadb:
-        image: mariadb:10.11.15
+      # Use MySQL (not MariaDB) as the shadow database. Prisma's `mysql` provider
+      # models native MySQL JSON, but MariaDB aliases JSON to LONGTEXT, which makes
+      # `migrate diff` report a spurious "type changed" on every JSON column.
+      mysql:
+        image: mysql:8
         env:
           MYSQL_DATABASE: shadow_db
           MYSQL_ROOT_PASSWORD: admin123
