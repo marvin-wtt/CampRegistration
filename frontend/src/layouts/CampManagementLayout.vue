@@ -102,9 +102,16 @@
     />
 
     <q-page-container>
+      <!-- Key by campId so switching camps remounts the page (re-running its
+           onMounted data fetch). Without this, Vue reuses the component instance
+           on param-only navigation and pages keep showing the previous camp's
+           data. -->
       <router-view v-slot="{ Component }">
         <transition name="fade">
-          <component :is="Component" />
+          <component
+            :is="Component"
+            :key="campKey"
+          />
         </transition>
       </router-view>
     </q-page-container>
@@ -150,6 +157,13 @@ onMounted(async () => {
     await campDetailStore.fetchData();
     void assignedCampsStore.fetchData();
   }
+});
+
+// Drives the router-view :key — changes only when the active camp changes, so
+// pages remount (and refetch) on camp switch but not on intra-camp navigation.
+const campKey = computed<string | undefined>(() => {
+  const campId = route.params.campId;
+  return Array.isArray(campId) ? campId[0] : campId;
 });
 
 const showDrawer = computed<boolean>(() => {
