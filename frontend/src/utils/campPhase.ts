@@ -2,7 +2,7 @@ import type { Camp } from '@camp-registration/common/entities';
 
 export type CampPhase = 'ongoing' | 'upcoming' | 'past' | 'archived';
 
-const FOUR_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
+const SIX_WEEKS_MS = 6 * 7 * 24 * 60 * 60 * 1000;
 
 function isRegistrationOpen(camp: Camp): boolean {
   if (!camp.registrationOpensAt && !camp.registrationClosesAt) {
@@ -26,7 +26,7 @@ export function phaseOf(camp: Camp): CampPhase {
     return 'ongoing';
   }
   // Ended — archive once registration is closed and it ended a while ago
-  if (!isRegistrationOpen(camp) && now - end > FOUR_WEEKS_MS) {
+  if (!isRegistrationOpen(camp) && now - end > SIX_WEEKS_MS) {
     return 'archived';
   }
   return 'past';

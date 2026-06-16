@@ -82,6 +82,7 @@
           v-if="archivedCamps.length"
           :header="t('group.archived')"
           icon="inventory_2"
+          :hint="t('group.archivedHint')"
           :camps="archivedCamps"
           collapsible
         />
@@ -222,6 +223,7 @@ group:
   upcoming: 'Upcoming'
   past: 'Past'
   archived: 'Archived'
+  archivedHint: 'Camps are archived automatically once they ended more than 6 weeks ago and registration is closed.'
 action:
   create: 'Create camp'
 empty:
@@ -237,6 +239,7 @@ group:
   upcoming: 'Anstehend'
   past: 'Vergangen'
   archived: 'Archiviert'
+  archivedHint: 'Camps werden automatisch archiviert, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
 action:
   create: 'Camp erstellen'
 empty:
@@ -252,6 +255,7 @@ group:
   upcoming: 'À venir'
   past: 'Passés'
   archived: 'Archivés'
+  archivedHint: 'Les camps sont archivés automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
 action:
   create: 'Créer un camp'
 empty:
@@ -267,6 +271,7 @@ group:
   upcoming: 'Nadchodzące'
   past: 'Zakończone'
   archived: 'Zarchiwizowane'
+  archivedHint: 'Obozy są archiwizowane automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
 action:
   create: 'Utwórz obóz'
 empty:
@@ -282,6 +287,7 @@ group:
   upcoming: 'Nadcházející'
   past: 'Minulé'
   archived: 'Archivované'
+  archivedHint: 'Tábory se archivují automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
 action:
   create: 'Vytvořit tábor'
 empty:
