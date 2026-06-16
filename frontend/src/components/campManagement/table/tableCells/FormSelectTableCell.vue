@@ -12,20 +12,15 @@ const { props: cellProps, camp } = defineProps<TableCellProps>();
 const { to } = useObjectTranslation();
 
 const text = computed<unknown>(() => {
-  const value = cellProps.value;
+  const value = String(cellProps.value);
   const path = cellProps.col.fieldName;
-
   if (!path?.startsWith('data.')) {
-    return value;
-  }
-
-  if (!value || typeof value !== 'string' || typeof path !== 'string') {
     return value;
   }
 
   const options = FormSelectCache.get(camp, path.substring(5));
   if (!options || !(value in options)) {
-    return value;
+    return cellProps.value;
   }
 
   return to(options[value]);
