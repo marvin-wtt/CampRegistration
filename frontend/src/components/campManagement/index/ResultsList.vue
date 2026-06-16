@@ -23,6 +23,20 @@
         class="results-section__count"
         :label="camps.length"
       />
+      <q-icon
+        v-if="hint"
+        name="info"
+        size="18px"
+        class="results-section__icon"
+        @click.stop
+      >
+        <q-tooltip
+          max-width="280px"
+          class="text-body2"
+        >
+          {{ hint }}
+        </q-tooltip>
+      </q-icon>
 
       <template v-if="collapsible">
         <q-space />
@@ -58,11 +72,13 @@ const {
   camps,
   header,
   icon = '',
+  hint = '',
   collapsible = false,
 } = defineProps<{
   camps: Camp[];
   header: string;
   icon?: string;
+  hint?: string;
   collapsible?: boolean;
 }>();
 

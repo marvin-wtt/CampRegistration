@@ -5,7 +5,7 @@
     </q-item-label>
 
     <q-item
-      v-for="camp in otherCamps"
+      v-for="camp in activeCamps"
       :key="camp.id"
       v-close-popup
       clickable
@@ -18,6 +18,28 @@
         {{ to(camp.name) }}
       </q-item-section>
     </q-item>
+
+    <q-expansion-item
+      v-if="archivedCamps.length"
+      icon="inventory_2"
+      :label="t('archived')"
+    >
+      <q-item
+        v-for="camp in archivedCamps"
+        :key="camp.id"
+        v-close-popup
+        clickable
+        :inset-level="0.5"
+        @click="switchCamp(camp.id)"
+      >
+        <q-item-section avatar>
+          <q-icon name="cabin" />
+        </q-item-section>
+        <q-item-section>
+          {{ to(camp.name) }}
+        </q-item-section>
+      </q-item>
+    </q-expansion-item>
 
     <q-separator spaced />
 
@@ -42,6 +64,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAssignedCampsStore } from 'stores/assigned-camps-store';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { isCampArchived } from 'src/utils/campPhase';
 import type { Camp } from '@camp-registration/common/entities';
 
 const route = useRoute();
@@ -52,10 +75,18 @@ const { to } = useObjectTranslation();
 const assignedCampsStore = useAssignedCampsStore();
 
 const otherCamps = computed<Camp[]>(() => {
-  return (assignedCampsStore.data ?? []).filter(
-    (camp) => camp.id !== route.params.campId,
-  );
+  return (assignedCampsStore.data ?? [])
+    .filter((camp) => camp.id !== route.params.campId)
+    .sort((a, b) => b.startAt.localeCompare(a.startAt));
 });
+
+const activeCamps = computed<Camp[]>(() =>
+  otherCamps.value.filter((camp) => !isCampArchived(camp)),
+);
+
+const archivedCamps = computed<Camp[]>(() =>
+  otherCamps.value.filter((camp) => isCampArchived(camp)),
+);
 
 function switchCamp(campId: string) {
   if (campId === route.params.campId || !route.name) {
@@ -72,24 +103,29 @@ function switchCamp(campId: string) {
 <i18n lang="yaml" locale="en">
 camps: 'My Camps'
 switch_camp: 'Switch camp'
+archived: 'Archived'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 camps: 'Meine Camps'
 switch_camp: 'Camp wechseln'
+archived: 'Archiviert'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 camps: 'Mes Camps'
 switch_camp: 'Changer de camp'
+archived: 'Archivés'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 camps: 'Moje Campy'
 switch_camp: 'Zmień obóz'
+archived: 'Zarchiwizowane'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 camps: 'Moje Campy'
 switch_camp: 'Změnit tábor'
+archived: 'Archivované'
 </i18n>
