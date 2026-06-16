@@ -36,6 +36,6 @@ export class SetupController extends BaseController {
 
     // Establish a session immediately so the new admin lands logged in.
     res.status(httpStatus.CREATED);
-    await this.authController.sendAuthResponse(req, res, user.id, true);
+    await this.authController.sendAuthResponse(res, user.id, true);
   }
 }
