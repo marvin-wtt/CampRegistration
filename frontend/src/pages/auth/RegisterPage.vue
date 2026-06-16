@@ -1,5 +1,5 @@
 <template>
-  <registration-form
+  <user-registration-form
     icon="how_to_reg"
     :title="t('title')"
     :submit-label="t('action.register')"
@@ -20,16 +20,16 @@
         />
       </q-card-section>
     </template>
-  </registration-form>
+  </user-registration-form>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
-import RegistrationForm, {
+import UserRegistrationForm, {
   type RegistrationCredentials,
-} from 'components/auth/RegistrationForm.vue';
+} from '../../components/auth/UserRegistrationForm.vue';
 
 const { t } = useI18n();
 

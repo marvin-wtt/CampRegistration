@@ -1,19 +1,17 @@
 <template>
   <q-page
-    v-if="state === 'checking'"
+    v-if="state !== 'open'"
     class="row items-center justify-center"
+    :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
     <q-spinner
+      v-if="state === 'checking'"
       color="primary"
       size="48px"
     />
-  </q-page>
 
-  <q-page
-    v-else-if="state === 'completed'"
-    class="row justify-center content-center"
-  >
     <q-card
+      v-else
       class="auth-card col-xs-12 col-sm-8 col-md-6 col-lg-4"
       :flat="quasar.screen.lt.sm"
     >
@@ -51,7 +49,7 @@
     </q-card>
   </q-page>
 
-  <registration-form
+  <user-registration-form
     v-else
     icon="admin_panel_settings"
     :title="t('title')"
@@ -70,9 +68,9 @@ import { useQuasar } from 'quasar';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { isSetupRequired } from 'src/services/SetupService';
-import RegistrationForm, {
+import UserRegistrationForm, {
   type RegistrationCredentials,
-} from 'components/auth/RegistrationForm.vue';
+} from '../../components/auth/UserRegistrationForm.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
