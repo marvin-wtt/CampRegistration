@@ -116,6 +116,8 @@
             <component
               :is="customOptionsComponent"
               v-model="data.renderOptions"
+              :camp="camp"
+              :field="data.field"
             />
           </q-expansion-item>
         </q-list>
@@ -275,6 +277,7 @@ import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 import type { PartialBy } from 'src/types';
 import { deepToRaw } from 'src/utils/deepToRaw';
+import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
 
 const { camp, column } = defineProps<{
   column: TableColumnTemplate;
@@ -330,20 +333,6 @@ watchEffect(() => {
   data.isArray = data.field.includes('.*');
 });
 
-const DEFAULT_RENDER_AS: Record<string, string> = {
-  // meta fields
-  status: 'status',
-  createdAt: 'time_ago',
-  // computed fields
-  firstName: 'name',
-  lastName: 'name',
-  dateOfBirth: 'age',
-  'emails.*': 'email',
-  gender: 'gender',
-  address: 'address',
-  'address.country': 'country_flag',
-};
-
 watch(
   () => data.source,
   (source) => {
@@ -356,11 +345,33 @@ watch(
 watch(
   () => data.field,
   (field) => {
-    if (data.source !== 'meta' && data.source !== 'computed') {
+    if (data.source === 'computed') {
+      applyRenderer(field, {
+        firstName: 'name',
+        lastName: 'name',
+        dateOfBirth: 'age',
+        'emails.*': 'email',
+        gender: 'gender',
+        address: 'address',
+        'address.country': 'country_flag',
+      });
       return;
     }
 
-    data.renderAs = DEFAULT_RENDER_AS[field] ?? 'default';
+    if (data.source === 'meta') {
+      applyRenderer(field, {
+        status: 'status',
+        room: 'room',
+      });
+      return;
+    }
+
+    if (data.source === 'form') {
+      if (FormSelectCache.get(camp, field) != null) {
+        data.renderAs = 'form_select';
+        return;
+      }
+    }
   },
 );
 
@@ -368,6 +379,10 @@ watch(
   () => data.renderAs,
   () => (data.renderOptions = undefined),
 );
+
+function applyRenderer(field: string, renderers: Record<string, string>) {
+  data.renderAs = renderers[field] ?? 'default';
+}
 
 const alignOptions = computed<QSelectOption[]>(() => {
   return [
