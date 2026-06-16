@@ -52,9 +52,9 @@ const { to } = useObjectTranslation();
 const assignedCampsStore = useAssignedCampsStore();
 
 const otherCamps = computed<Camp[]>(() => {
-  return (assignedCampsStore.data ?? []).filter(
-    (camp) => camp.id !== route.params.campId,
-  );
+  return (assignedCampsStore.data ?? [])
+    .filter((camp) => camp.id !== route.params.campId)
+    .sort((a, b) => b.startAt.localeCompare(a.startAt));
 });
 
 function switchCamp(campId: string) {
