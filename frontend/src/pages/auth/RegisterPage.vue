@@ -1,229 +1,55 @@
 <template>
-  <q-page
-    class="row justify-center"
-    :class="quasar.screen.gt.xs ? 'content-center' : ''"
+  <registration-form
+    icon="how_to_reg"
+    :title="t('title')"
+    :submit-label="t('action.register')"
+    :loading="loading"
+    :error="error"
+    @submit="onSubmit"
   >
-    <q-card
-      class="auth-card col-xs-12 col-sm-8 col-md-6 col-lg-4"
-      :flat="quasar.screen.lt.sm"
-    >
-      <div class="auth-card-header">
-        <q-avatar
-          icon="how_to_reg"
-          color="white"
-          text-color="primary"
-          size="64px"
-          class="auth-card-avatar"
+    <template #footer>
+      <q-card-section class="text-center q-pt-sm q-pb-lg">
+        <q-btn
+          color="primary"
+          size="lg"
+          class="full-width"
+          :label="t('action.login')"
+          :to="{ name: 'login' }"
+          rounded
+          outline
         />
-      </div>
-
-      <q-form
-        class="column no-wrap"
-        data-test="registration-form"
-        @submit="register"
-      >
-        <q-card-section
-          class="text-h5 text-weight-bold text-center q-pt-xl q-pb-none"
-        >
-          {{ t('title') }}
-        </q-card-section>
-
-        <q-card-section class="q-gutter-md">
-          <q-input
-            v-model="name"
-            :label="t('field.name.label')"
-            :rules="[(val?: string) => !!val || t('field.name.rule.required')]"
-            hide-bottom-space
-            data-test="name"
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="person" />
-            </template>
-          </q-input>
-
-          <q-input
-            v-model="email"
-            :label="t('field.email.label')"
-            type="email"
-            autocomplete="email"
-            :rules="[(val?: string) => !!val || t('field.email.rule.required')]"
-            hide-bottom-space
-            data-test="email"
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="alternate_email" />
-            </template>
-          </q-input>
-
-          <q-input
-            v-model="password"
-            :label="t('field.password.label')"
-            type="password"
-            autocomplete="new-password"
-            :rules="passwordRules"
-            hide-bottom-space
-            data-test="password"
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="key" />
-            </template>
-          </q-input>
-
-          <q-input
-            v-model="confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            :rules="[
-              (val?: string) =>
-                val === password || t('field.confirm-password.rule.identical'),
-            ]"
-            :label="t('field.confirm-password.label')"
-            data-test="confirm-password"
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="key" />
-            </template>
-          </q-input>
-        </q-card-section>
-
-        <q-card-actions class="q-px-md q-pb-none">
-          <q-btn
-            :label="t('action.register')"
-            type="submit"
-            color="primary"
-            size="lg"
-            class="full-width"
-            :loading
-            data-test="submit"
-            rounded
-          />
-        </q-card-actions>
-
-        <q-card-section
-          v-if="error"
-          class="text-negative text-center text-bold q-py-sm"
-          data-test="error"
-        >
-          {{ error }}
-        </q-card-section>
-
-        <q-card-section class="text-center q-pt-sm q-pb-lg">
-          <q-btn
-            color="primary"
-            size="lg"
-            class="full-width"
-            :label="t('action.login')"
-            :to="{ name: 'login' }"
-            rounded
-            outline
-          />
-        </q-card-section>
-      </q-form>
-    </q-card>
-  </q-page>
+      </q-card-section>
+    </template>
+  </registration-form>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from 'stores/auth-store';
 import { storeToRefs } from 'pinia';
-import { useQuasar } from 'quasar';
+import RegistrationForm, {
+  type RegistrationCredentials,
+} from 'components/auth/RegistrationForm.vue';
 
-const quasar = useQuasar();
 const { t } = useI18n();
 
-const name = ref<string>('');
-const email = ref<string>('');
-const password = ref<string>('');
-const confirmPassword = ref<string>('');
-
 const authStore = useAuthStore();
-const { loading } = storeToRefs(authStore);
-
-const error = computed(() => {
-  return authStore.error;
-});
+const { loading, error } = storeToRefs(authStore);
 
 // Suppress any previous errors
 authStore.reset();
 
-const passwordRequirements = {
-  min: 8,
-  max: 26,
-  lowerCase: 1,
-  upperCase: 1,
-  symbol: 1,
-  numeric: 1,
-  requirementCount: 3,
-};
-
-const passwordRules = [
-  (val: string) =>
-    val.length >= passwordRequirements.min ||
-    t('field.password.rule.minLength', { min: passwordRequirements.min }),
-  (val: string) =>
-    val.length <= passwordRequirements.max ||
-    t('field.password.rule.maxLength', { max: passwordRequirements.max }),
-  (val: string) =>
-    (val.match(/[a-z]/g) || []).length >= passwordRequirements.lowerCase ||
-    t('field.password.rule.lowerCase', {
-      count: passwordRequirements.lowerCase,
-    }),
-  (val: string) =>
-    (val.match(/[A-Z]/g) || []).length >= passwordRequirements.upperCase ||
-    t('field.password.rule.upperCase', {
-      count: passwordRequirements.upperCase,
-    }),
-  (val: string) =>
-    (val.match(/[!@#$%^&*()\-_=+[\\\]{}|;:",.<>?]/g) || []).length >=
-      passwordRequirements.symbol ||
-    t('field.password.rule.symbol', { count: passwordRequirements.symbol }),
-  (val: string) =>
-    (val.match(/[0-9]/g) || []).length >= passwordRequirements.numeric ||
-    t('field.password.rule.numeric', { count: passwordRequirements.numeric }),
-];
-
-function register() {
-  void authStore.register(name.value, email.value, password.value);
+function onSubmit(credentials: RegistrationCredentials) {
+  void authStore.register(
+    credentials.name,
+    credentials.email,
+    credentials.password,
+  );
 }
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Register'
-
-field:
-  name:
-    label: 'First and last name'
-    rule:
-      required: 'You must provide a name'
-  email:
-    label: 'Email'
-    rule:
-      required: 'You must provide a valid email'
-  password:
-    label: 'Password'
-    rule:
-      minLength: 'Minimum length is {min}'
-      maxLength: 'Maximum length is {max}'
-      lowerCase: 'At least {count} lowercase letter(s) required'
-      upperCase: 'At least {count} uppercase letter(s) required'
-      symbol: 'At least {count} symbol(s) required'
-      numeric: 'At least {count} number(s) required'
-      requirementCount: 'At least {count} out of 4 character types required'
-  confirm-password:
-    label: 'Confirm Password'
-    rule:
-      identical: 'Password does not match'
-
 action:
   login: 'Login'
   register: 'Register'
@@ -231,31 +57,6 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Registrieren'
-
-field:
-  name:
-    label: 'Vor- und Nachname'
-    rule:
-      required: 'Sie müssen einen Namen angeben'
-  email:
-    label: 'E-Mail'
-    rule:
-      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
-  password:
-    label: 'Passwort'
-    rule:
-      minLength: 'Die Mindestlänge beträgt {min}'
-      maxLength: 'Die Maximallänge beträgt {max}'
-      lowerCase: 'Mindestens {count} Kleinbuchstabe(n) erforderlich'
-      upperCase: 'Mindestens {count} Großbuchstabe(n) erforderlich'
-      symbol: 'Mindestens {count} Symbol(e) erforderlich'
-      numeric: 'Mindestens {count} Zahl(en) erforderlich'
-      requirementCount: 'Mindestens {count} von 4 Zeichenarten erforderlich'
-  confirm-password:
-    label: 'Passwort bestätigen'
-    rule:
-      identical: 'Passwörter stimmen nicht überein'
-
 action:
   login: 'Anmelden'
   register: 'Registrieren'
@@ -263,31 +64,6 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Inscription'
-
-fields:
-  name:
-    label: 'Nom et prénom'
-    rule:
-      required: 'Vous devez fournir un nom'
-  email:
-    label: 'E-mail'
-    rule:
-      required: 'Vous devez fournir une adresse e-mail valide'
-  password:
-    label: 'Mot de passe'
-    rule:
-      minLength: 'La longueur minimale est de {min}'
-      maxLength: 'La longueur maximale est de {max}'
-      lowerCase: 'Au moins {count} lettre(s) minuscule(s) requise(s)'
-      upperCase: 'Au moins {count} lettre(s) majuscule(s) requise(s)'
-      symbol: 'Au moins {count} symbole(s) requis'
-      numeric: 'Au moins {count} chiffre(s) requis'
-      requirementCount: 'Au moins {count} des 4 types de caractères requis'
-  confirm-password:
-    label: 'Confirmer le mot de passe'
-    rule:
-      identical: 'Les mots de passe ne correspondent pas'
-
 action:
   login: 'Connexion'
   register: "S'inscrire"
@@ -295,31 +71,6 @@ action:
 
 <i18n lang="yaml" locale="pl">
 title: 'Zarejestruj się'
-
-field:
-  name:
-    label: 'Imię i nazwisko'
-    rule:
-      required: 'Musisz podać imię i nazwisko'
-  email:
-    label: 'E-mail'
-    rule:
-      required: 'Musisz podać prawidłowy adres e-mail'
-  password:
-    label: 'Hasło'
-    rule:
-      minLength: 'Minimalna długość to {min}'
-      maxLength: 'Maksymalna długość to {max}'
-      lowerCase: 'Wymagana co najmniej {count} mała litera'
-      upperCase: 'Wymagana co najmniej {count} wielka litera'
-      symbol: 'Wymagany co najmniej {count} symbol'
-      numeric: 'Wymagana co najmniej {count} cyfra'
-      requirementCount: 'Wymagane co najmniej {count} z 4 typów znaków'
-  confirm-password:
-    label: 'Potwierdź hasło'
-    rule:
-      identical: 'Hasła nie są identyczne'
-
 action:
   login: 'Zaloguj się'
   register: 'Zarejestruj się'
@@ -327,31 +78,6 @@ action:
 
 <i18n lang="yaml" locale="cs">
 title: 'Registrovat se'
-
-field:
-  name:
-    label: 'Jméno a příjmení'
-    rule:
-      required: 'Musíte zadat jméno a příjmení'
-  email:
-    label: 'E-mail'
-    rule:
-      required: 'Musíte zadat platnou e-mailovou adresu'
-  password:
-    label: 'Heslo'
-    rule:
-      minLength: 'Minimální délka je {min}'
-      maxLength: 'Maximální délka je {max}'
-      lowerCase: 'Je vyžadováno alespoň {count} malé písmeno'
-      upperCase: 'Je vyžadováno alespoň {count} velké písmeno'
-      symbol: 'Je vyžadován alespoň {count} symbol'
-      numeric: 'Je vyžadována alespoň {count} číslice'
-      requirementCount: 'Je vyžadováno alespoň {count} ze 4 typů znaků'
-  confirm-password:
-    label: 'Potvrďte heslo'
-    rule:
-      identical: 'Hesla se neshodují'
-
 action:
   login: 'Přihlásit se'
   register: 'Registrovat se'
