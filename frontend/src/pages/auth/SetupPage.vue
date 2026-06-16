@@ -1,20 +1,17 @@
 <template>
   <q-page
-    v-if="state === 'checking'"
+    v-if="state !== 'open'"
     class="row items-center justify-center"
+    :class="quasar.screen.gt.xs ? 'content-center' : ''"
   >
     <q-spinner
+      v-if="state === 'checking'"
       color="primary"
       size="48px"
     />
-  </q-page>
 
-  <q-page
-    v-else-if="state === 'completed'"
-    class="row justify-center"
-    :class="quasar.screen.gt.xs ? 'content-center' : ''"
-  >
     <q-card
+      v-else
       class="auth-card col-xs-12 col-sm-8 col-md-6 col-lg-4"
       :flat="quasar.screen.lt.sm"
     >
