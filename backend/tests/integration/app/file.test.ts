@@ -31,10 +31,9 @@ const createCampWithManagerAndToken = async (
 
 const createCampWithFileAndToken = async (
   accessLevel: string = 'private',
-  campIsPublic: boolean = false,
 ) => {
   const { camp, user, manager, accessToken } =
-    await createCampWithManagerAndToken({ public: campIsPublic });
+    await createCampWithManagerAndToken();
   const fileName = crypto.randomUUID() + '.pdf';
 
   const file = await FileFactory.create({
@@ -160,20 +159,14 @@ describe('/api/v1/files/', () => {
         .expect(200);
     });
 
-    it('should respond with `200` status code when file is public and camp is public', async () => {
-      const { file } = await createCampWithFileAndToken('public', true);
+    it('should respond with `200` status code when file is public', async () => {
+      const { file } = await createCampWithFileAndToken('public');
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(200);
     });
 
-    it('should respond with `401` status code when file is public but camp is not public', async () => {
-      const { file } = await createCampWithFileAndToken('public', false);
-
-      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
-    });
-
     it('should respond with `401` status code when file is not public', async () => {
-      const { file } = await createCampWithFileAndToken('private', true);
+      const { file } = await createCampWithFileAndToken('private');
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(401);
     });
