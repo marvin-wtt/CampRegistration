@@ -79,10 +79,10 @@
 <script lang="ts" generic="T extends object" setup>
 const {
   keyName = 'id',
-  addable = true,
-  editable = true,
-  deletable = true,
-  sortable = true,
+  addable = false,
+  editable = false,
+  deletable = false,
+  sortable = false,
 
   bordered = false,
   dense = false,

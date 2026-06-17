@@ -8,6 +8,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus } from 'src/composables/bus';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useProfileStore } from 'stores/profile-store';
+import { createInitialAdmin } from 'src/services/SetupService';
+import { isCustomAxiosError } from 'src/services/AuthService';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -217,6 +219,37 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  async function setup(
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<'ok' | 'closed'> {
+    let outcome: 'ok' | 'closed' = 'ok';
+
+    await errorOnFailure(async () => {
+      // The web client is CSRF-protected, and init() (which normally seeds the
+      // token) does not run on the setup screen — fetch one explicitly.
+      await apiService.requestCsrfToken();
+
+      try {
+        const result = await createInitialAdmin(name, email, password);
+
+        await handleAuthentication(result);
+      } catch (e) {
+        // Instance already has an admin: setup is closed. Report it to the
+        // caller (the setup page handles the redirect) without surfacing an
+        // error message.
+        if (isCustomAxiosError(e) && e.response?.status === 403) {
+          outcome = 'closed';
+          return;
+        }
+        throw e;
+      }
+    });
+
+    return outcome;
+  }
+
   async function forgotPassword(email: string) {
     await withResultNotification('forgot-password', async () => {
       await apiService.forgotPassword(email);
@@ -270,6 +303,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     register,
+    setup,
     forgotPassword,
     resetPassword,
     verifyEmail,

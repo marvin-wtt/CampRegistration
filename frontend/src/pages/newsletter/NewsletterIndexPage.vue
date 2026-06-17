@@ -6,7 +6,7 @@
   >
     <div class="column col-sm-10 col-md-9 col-lg-8 col-12">
       <div class="row justify-between items-center q-mb-lg">
-        <div class="text-h5 text-weight-medium">
+        <div class="text-h5 text-weight-medium page-title">
           {{ t('title') }}
         </div>
         <q-btn

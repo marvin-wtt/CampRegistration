@@ -1,8 +1,5 @@
 <template>
-  <q-page
-    class="row justify-center"
-    :class="quasar.screen.gt.xs ? 'content-center' : ''"
-  >
+  <q-page class="row justify-center content-center">
     <q-card
       class="auth-card col-xs-12 col-sm-8 col-md-6 col-lg-4"
       :flat="quasar.screen.lt.sm"

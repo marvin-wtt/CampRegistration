@@ -147,6 +147,66 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - Backend translations: `backend/src/i18n/{locale}/`
 - Every user-facing string must be added to **all** locale files
 
+### MD3 Styling (Material Design 3 Expressive)
+
+The frontend is themed with **`@anoyomoose/q2-fresh-paint-md3e`**, a Quasar app
+extension that restyles the standard Quasar components to MD3 Expressive and adds
+a few MD3-specific components. It is wired up in `frontend/quasar.config.ts`:
+
+- The `md3e/boot` boot file and the `freshPaint({ themes: [md3eTheme(...)] })` Vite
+  plugin generate the theme from a single `sourceColor` seed (`tonalSpot` scheme).
+- A `prefer-color-scheme`-driven light/dark theme is generated automatically;
+  Quasar's `dark: 'auto'` follows it. **Do not hardcode light/dark colors** — use
+  tokens so both modes work.
+
+**Design tokens — use `var(--md3-*)` for all colors.** Most existing custom CSS
+already does this. The full token set lives in the package's `dist/theme/base.scss`; 
+common families:
+
+- **Color roles**: `--md3-primary`, `--md3-on-primary`, `--md3-primary-container`,
+  `--md3-on-primary-container` (and the same for `secondary`, `tertiary`, `error`,
+  `warning`, `positive`, `info`).
+- **Surfaces**: `--md3-surface`, `--md3-surface-container-lowest|low|/-high|-highest`,
+  `--md3-surface-variant`, `--md3-background`, `--md3-on-surface`,
+  `--md3-on-surface-variant`, `--md3-outline`, `--md3-outline-variant`.
+- **RGB triplets** (for `rgba(...)`): e.g. `--md3-primary-rgb`, `--md3-surface-rgb`.
+- Each color token also has explicit `--md3-<role>--light` / `--md3-<role>--dark`
+  variants; the un-suffixed name is the auto-switching alias — prefer it.
+
+**Utility classes** (no custom CSS needed for these):
+
+- Shape: `.rounded-none|xs|sm|md|lg|lg-inc|xl|xl-inc|xxl|full`
+- Elevation: `.elevation-0` … `.elevation-5`
+- Opt-outs: `.no-morph` (disable button shape-morph on press), `.no-widening`
+  (disable button-group widening). Shape tokens are also Sass vars
+  (`$md3-corner-*`, `$md3-easing-*`) for use inside `<style lang="scss">`.
+
+**MD3 components** — import from subpaths (these are *not* auto-registered):
+
+```ts
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+// also available: Md3eBtnGroup, Md3eFab, Md3eFabAction, Md3eSlider
+```
+
+- **`<m-btn>`** — drop-in QBtn replacement. Color shortcuts (`primary`,
+  `secondary`, `tertiary`, `error`) and variants (`elevated`, `tonal`, `text`).
+  Supports toggle/selection via `v-model` (boolean, single-select with `value`, or
+  multi-select with an array). `elevated`/`tonal`/toggle buttons only support the
+  four shortcut colors; use `allow-color` + `color="…"` to bypass for others.
+- **`<m-toolbar>`** — QToolbar wrapper with `floating`, `vibrant`, `vertical`,
+  `surface`, `no-gap` variants. All QBtn/QToolbar props and slots pass through.
+- Every styling shortcut is also a plain CSS class (`.q-btn--toggle`,
+  `.q-toolbar--floating`, …), so a vanilla QBtn/QToolbar can opt in without the
+  wrapper.
+- Icons use standard `material-icons` names (`icon="add"`, `icon="more_vert"`),
+  **not** the `sym_r_*` names shown in the package's own JSDoc examples.
+
+**SurveyJS theming**: `frontend/src/lib/surveyJs/themes/md3.ts` maps the same MD3
+tokens onto SurveyJS. `varResolver` emits live `var(--md3-*)` references for
+rendered surveys; `createStaticResolver()` (in `md3-creator.ts`) bakes computed
+literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
+
 ## Testing
 
 - **Unit tests** (backend): mock dependencies with `vitest-mock-extended`; no real I/O
@@ -162,3 +222,4 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 5. **Type imports**: use `import type` for type-only imports (ESLint enforced)
 6. **InversifyJS**: every new service needs `@injectable()` and registration in `bindContainers`
 7. **Permissions**: use RBAC guards, not manual role checks
+8. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>` and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`

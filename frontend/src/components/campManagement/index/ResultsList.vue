@@ -1,137 +1,147 @@
 <template>
-  <q-list
-    padding
-    separator
-  >
-    <q-item class="no-border">
-      <q-item-section>
-        <q-item-label class="text-h6">
-          {{ header }}
-        </q-item-label>
-      </q-item-section>
-
-      <q-item-section
-        v-if="active"
-        side
-        top
-      >
-        <q-item-label caption>
-          <q-btn
-            :label="quasar.screen.gt.xs ? t('action.create') : ''"
-            icon="add"
-            outline
-            :rounded="quasar.screen.gt.xs"
-            :round="quasar.screen.lt.sm"
-            @click="onCreateCamp()"
-          />
-        </q-item-label>
-      </q-item-section>
-    </q-item>
-
-    <q-separator />
-
-    <template v-if="loading">
-      <results-item-skeleton
-        v-for="index in 3"
-        :key="index"
-      />
-    </template>
-
-    <q-item
-      v-if="camps.length === 0"
-      class="text-center vertical-middle"
+  <section class="results-section">
+    <div
+      class="results-section__header row items-center no-wrap q-gutter-x-sm"
+      :class="{ 'results-section__header--clickable': collapsible }"
+      :role="collapsible ? 'button' : undefined"
+      :tabindex="collapsible ? 0 : undefined"
+      :aria-expanded="collapsible ? open : undefined"
+      @click="toggle"
+      @keyup.enter="toggle"
     >
-      <q-item-section v-if="active">
-        {{ t('no_data.open') }}
-      </q-item-section>
-      <q-item-section v-else>
-        {{ t('no_data.closed') }}
-      </q-item-section>
-    </q-item>
+      <q-icon
+        v-if="icon"
+        :name="icon"
+        size="20px"
+        class="results-section__icon"
+      />
+      <div class="text-subtitle1 text-weight-medium">
+        {{ header }}
+      </div>
+      <q-badge
+        rounded
+        class="results-section__count"
+        :label="camps.length"
+      />
+      <q-icon
+        v-if="hint"
+        name="info"
+        size="18px"
+        class="results-section__icon"
+        @click.stop
+      >
+        <q-tooltip
+          max-width="280px"
+          class="text-body2"
+        >
+          {{ hint }}
+        </q-tooltip>
+      </q-icon>
 
-    <results-item
-      v-else
-      v-for="camp in camps"
-      :key="camp.id"
-      :camp
-      :active
-    />
-  </q-list>
+      <template v-if="collapsible">
+        <q-space />
+        <q-icon
+          :name="open ? 'expand_less' : 'expand_more'"
+          size="22px"
+          class="results-section__icon"
+        />
+      </template>
+    </div>
+
+    <q-slide-transition>
+      <div
+        v-show="open"
+        class="results-grid"
+      >
+        <results-item
+          v-for="camp in camps"
+          :key="camp.id"
+          :camp
+        />
+      </div>
+    </q-slide-transition>
+  </section>
 </template>
 
 <script lang="ts" setup>
 import ResultsItem from 'components/campManagement/index/ResultsItem.vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useI18n } from 'vue-i18n';
-import ResultsItemSkeleton from 'components/campManagement/index/ResultsItemSkeleton.vue';
-import CampCreateDialog from 'components/campManagement/index/CampCreateDialog.vue';
-import { useQuasar } from 'quasar';
-
-const { t } = useI18n();
-const quasar = useQuasar();
+import { ref } from 'vue';
 
 const {
   camps,
   header,
-  active = false,
-  loading = false,
+  icon = '',
+  hint = '',
+  collapsible = false,
 } = defineProps<{
   camps: Camp[];
   header: string;
-  active?: boolean;
-  loading?: boolean;
+  icon?: string;
+  hint?: string;
+  collapsible?: boolean;
 }>();
 
-function onCreateCamp() {
-  quasar.dialog({
-    component: CampCreateDialog,
-  });
+const open = ref<boolean>(!collapsible);
+
+function toggle() {
+  if (collapsible) {
+    open.value = !open.value;
+  }
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.results-section {
+  margin-top: 28px;
+}
 
-<i18n lang="yaml" locale="en">
-no_data:
-  open: 'There are no camps currently open for registration. Create a new camp to get started.'
-  closed: 'There are no camps closed for registration.'
+.results-section__header {
+  min-width: 0;
+}
 
-action:
-  create: 'Create new'
-</i18n>
+.results-section__header--clickable {
+  cursor: pointer;
+  user-select: none;
 
-<i18n lang="yaml" locale="de">
-no_data:
-  open: 'Es gibt derzeit keine Camps, die für die Anmeldung geöffnet sind. Erstelle ein neues Camp, um zu beginnen.'
-  closed: 'Es gibt keine Camps, die für die Anmeldung geschlossen sind.'
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: 12px;
 
-action:
-  create: 'Neu erstellen'
-</i18n>
+  transition: background 0.15s ease;
+}
 
-<i18n lang="yaml" locale="fr">
-no_data:
-  open: "Il n'y a actuellement aucun camp ouvert à l'inscription. Créez un nouveau camp pour commencer."
-  closed: "Il n'y a pas de camps fermés à l'inscription."
+.results-section__header--clickable:hover {
+  background: var(--md3-surface-container-high);
+}
 
-action:
-  create: 'Créer un nouveau'
-</i18n>
+.results-section__header--clickable:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+}
 
-<i18n lang="yaml" locale="pl">
-no_data:
-  open: 'Obecnie nie ma obozów otwartych do rejestracji. Utwórz nowy obóz, aby rozpocząć.'
-  closed: 'Nie ma obozów, które zostały zamknięte dla rejestracji.'
+.results-section__icon {
+  color: var(--md3-on-surface-variant);
+}
 
-action:
-  create: 'Utwórz nowe'
-</i18n>
+.results-section__count {
+  min-width: 20px;
+  padding: 2px 8px;
+  justify-content: center;
 
-<i18n lang="yaml" locale="cs">
-no_data:
-  open: 'Momentálně nejsou žádné tábory otevřené pro registraci. Vytvořte nový tábor, abyste mohli začít.'
-  closed: 'Nejsou žádné tábory, které by byly uzavřeny pro registraci.'
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
 
-action:
-  create: 'Vytvořit nový'
-</i18n>
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+
+  margin-top: 16px;
+}
+</style>

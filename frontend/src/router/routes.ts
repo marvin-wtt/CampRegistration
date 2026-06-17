@@ -6,9 +6,9 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/CampLayout.vue'),
     children: [
       {
-        // Same as /camps
         path: '',
-        component: () => import('pages/camps/CampIndexPage.vue'),
+        name: 'home',
+        component: () => import('pages/LandingPage.vue'),
       },
       {
         path: 'camps',
@@ -16,7 +16,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'camps',
-            component: () => import('pages/camps/CampIndexPage.vue'),
+            component: () => import('pages/camps/CampsPublicPage.vue'),
           },
           {
             path: ':campId',
@@ -24,6 +24,27 @@ const routes: RouteRecordRaw[] = [
             component: () => import('pages/camps/CampPage.vue'),
           },
         ],
+      },
+      {
+        path: 'imprint',
+        name: 'imprint',
+        component: () => import('pages/legal/ImprintPage.vue'),
+      },
+      {
+        path: 'privacy-policy',
+        name: 'privacy-policy',
+        component: () => import('pages/legal/PrivacyPolicyPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/setup',
+    component: () => import('layouts/AuthenticationLayout.vue'),
+    children: [
+      {
+        name: 'setup',
+        path: '',
+        component: () => import('pages/auth/SetupPage.vue'),
       },
     ],
   },
@@ -128,6 +149,12 @@ const routes: RouteRecordRaw[] = [
             },
             children: [
               {
+                path: 'dashboard',
+                name: 'management.camp.dashboard',
+                component: () =>
+                  import('pages/campManagement/CampDashboardPage.vue'),
+              },
+              {
                 path: 'participants',
                 name: 'management.camp.participants',
                 component: () =>
@@ -152,10 +179,13 @@ const routes: RouteRecordRaw[] = [
               },
               {
                 path: 'settings',
-                name: 'management.camp.settings',
-                component: () =>
-                  import('pages/campManagement/settings/SettingsPage.vue'),
                 children: [
+                  {
+                    path: '',
+                    name: 'management.camp.settings',
+                    component: () =>
+                      import('pages/campManagement/settings/SettingsPage.vue'),
+                  },
                   {
                     path: 'access',
                     name: 'management.camp.settings.access',
@@ -166,7 +196,7 @@ const routes: RouteRecordRaw[] = [
                     path: 'edit',
                     name: 'management.camp.settings.edit',
                     component: () =>
-                      import('pages/campManagement/settings/EditCampPage.vue'),
+                      import('pages/campManagement/settings/CampEditPage.vue'),
                   },
                   {
                     path: 'emails',
@@ -253,30 +283,23 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/settings',
-    component: () => import('layouts/CampManagementLayout.vue'),
+    component: () => import('layouts/AccountSettingsLayout.vue'),
     meta: {
       auth: true,
-      hideDrawer: true,
     },
     children: [
       {
-        path: '',
-        component: () => import('pages/settings/SettingsPage.vue'),
-        children: [
-          {
-            path: 'account',
-            component: () => import('pages/settings/AccountSettingsPage.vue'),
-          },
-          {
-            name: 'settings',
-            path: 'profile',
-            component: () => import('pages/settings/ProfileSettingsPage.vue'),
-          },
-          {
-            path: 'security',
-            component: () => import('pages/settings/SecuritySettingsPage.vue'),
-          },
-        ],
+        path: 'account',
+        component: () => import('pages/settings/AccountSettingsPage.vue'),
+      },
+      {
+        name: 'settings',
+        path: 'profile',
+        component: () => import('pages/settings/ProfileSettingsPage.vue'),
+      },
+      {
+        path: 'security',
+        component: () => import('pages/settings/SecuritySettingsPage.vue'),
       },
     ],
   },

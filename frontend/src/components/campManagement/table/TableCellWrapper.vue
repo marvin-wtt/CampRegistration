@@ -14,6 +14,7 @@
         :camp
         :options="renderer.options"
         :printing
+        :grid-mode="gridMode"
         :props="{
           ...cellProps,
           value,
@@ -33,6 +34,7 @@
       :camp
       :options="renderer.options"
       :printing
+      :grid-mode="gridMode"
       :props="cellProps"
     />
   </template>
@@ -49,10 +51,12 @@ const {
   camp,
   props: cellProps,
   printing = false,
+  gridMode = false,
 } = defineProps<{
   renderer: TableCellRenderer;
   camp: CampDetails;
   printing?: boolean;
+  gridMode?: boolean;
   props: QTableBodyCellProps;
 }>();
 

@@ -1,8 +1,14 @@
 <template>
+  <span
+    v-if="gridMode && empty"
+    class="cell-placeholder"
+  >
+    —
+  </span>
+
   <div
-    class="fit"
-    @mouseenter="containerHover = true"
-    @mouseleave="containerHover = false"
+    class="text-cell fit"
+    :class="{ 'text-cell--expandable': isTruncated }"
   >
     {{ truncatedText }}
 
@@ -10,12 +16,15 @@
       {{ `(+${extraWords})` }}
     </template>
 
-    <q-popup-proxy v-model="bannerVisible">
+    <!-- Opens on click/tap on both desktop and mobile; renders as a centered
+         dialog on small screens for easy reading and dismissal. -->
+    <q-popup-proxy
+      v-if="isTruncated"
+      :breakpoint="600"
+    >
       <q-banner
         dense
-        style="max-width: 500px"
-        @mouseenter="bannerHover = true"
-        @mouseleave="bannerHover = false"
+        class="text-cell__banner"
       >
         {{ cellProps.value }}
       </q-banner>
@@ -24,12 +33,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 
 const { props: cellProps, options } = defineProps<TableCellProps>();
-const containerHover = ref<boolean>(false);
-const bannerHover = ref<boolean>(false);
 
 const defaultLimit = 25;
 
@@ -39,12 +46,6 @@ const limit = computed<number>(() => {
   }
 
   return defaultLimit;
-});
-
-const bannerVisible = computed<boolean>(() => {
-  // Banner hover might behave weird when trying to hover the element below
-  // return extraWords.value > 0 && (containerHover.value || bannerHover.value);
-  return extraWords.value > 0 && containerHover.value;
 });
 
 const isTruncated = computed<boolean>(() => {
@@ -82,9 +83,39 @@ const extraWords = computed<number>(() => {
 
   return value.trim().length - text.length;
 });
+
+const empty = computed<boolean>(() => {
+  const value = cellProps.value;
+
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === 'string' && value.trim().length === 0)
+  );
+});
 </script>
 
 <style lang="scss" scoped>
+.text-cell {
+  display: flex;
+  align-items: center;
+}
+
+.text-cell--expandable {
+  cursor: pointer;
+}
+
+.text-cell__banner {
+  max-width: 500px;
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  // In dialog mode (small screens) fill the available width for easy reading.
+  .q-dialog & {
+    max-width: 90vw;
+  }
+}
+
 .body--light {
   a {
     color: #000;

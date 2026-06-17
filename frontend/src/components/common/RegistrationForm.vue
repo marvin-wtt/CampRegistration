@@ -12,26 +12,25 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from 'src/utils/markdown';
-import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
+import { onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
+  addFileSlotResolver,
 } from 'src/composables/survey';
-import type {
-  CampDetails,
-  ServiceFile,
-} from '@camp-registration/common/entities';
+import type { CampDetails } from '@camp-registration/common/entities';
+import { useAPIService } from 'src/services/APIService';
 
 const mdConverter = createMarkdownConverter();
 
 const { locale } = useI18n();
+const api = useAPIService();
 
 interface Props {
   data?: object;
   campDetails: CampDetails;
-  files?: ServiceFile[];
   submitFn: (
     id: string,
     formData: Record<string, unknown>,
@@ -69,13 +68,9 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
-const files = computed<ServiceFile[] | undefined>(() => {
-  return props.files;
-});
-
 onMounted(() => {
   // Auto variables update on locale change
-  startAutoDataUpdate(model, campData, files);
+  startAutoDataUpdate(model, campData);
   startAutoThemeUpdate(model, campData, bgColor);
 });
 
@@ -150,6 +145,10 @@ function createModel(campId: string, form: object): SurveyModel {
       input.placeholder = 'yyyy-mm-dd';
     });
   });
+
+  // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
+  addFileSlotResolver(survey, campId, api);
+
   // Send data to server
   survey.onComplete.add(async (sender, options) => {
     options.showSaveInProgress();

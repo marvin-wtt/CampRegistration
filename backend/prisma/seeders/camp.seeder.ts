@@ -59,11 +59,12 @@ class CampSeeder extends BaseSeeder {
     const exampleCamp = await CampFactory.create({
       id: '01K9ATF1H9KD1K6H12F3YK8RWR',
       public: true,
+      confirmationMode: 'MANUAL',
       countries: ['gb', 'fr'],
       name: { gb: 'Summer Camp', fr: 'Colonie de vacances' },
       organizer: { gb: 'Youth Adventures UK', fr: 'Aventures Jeunesse' },
       contactEmail: { gb: 'camp-gb@example.com', fr: 'camp-fr@example.com' },
-      maxParticipants: { gb: 25, fr: 25 },
+      maxParticipants: { gb: 24, fr: 25 },
       minAge: 7,
       maxAge: 12,
       startAt: '2026-11-17T15:00:00.000Z',
@@ -991,21 +992,21 @@ class CampSeeder extends BaseSeeder {
       updatedAt: '2025-11-05T20:14:01.950Z',
     });
 
-    await new RegistrationSeeder(exampleCamp).seed(25, {
+    await new RegistrationSeeder(exampleCamp).seed(24, {
       country: 'gb',
-      status: 'ACCEPTED',
-    });
-    await new RegistrationSeeder(exampleCamp).seed(8, {
-      country: 'gb',
-      status: 'WAITLISTED',
-    });
-    await new RegistrationSeeder(exampleCamp).seed(25, {
-      country: 'fr',
       status: 'ACCEPTED',
     });
     await new RegistrationSeeder(exampleCamp).seed(5, {
-      country: 'fr',
+      country: 'gb',
       status: 'WAITLISTED',
+    });
+    await new RegistrationSeeder(exampleCamp).seed(20, {
+      country: 'fr',
+      status: 'ACCEPTED',
+    });
+    await new RegistrationSeeder(exampleCamp).seed(3, {
+      country: 'fr',
+      status: 'PENDING',
     });
     await new ProgramEventSeeder(exampleCamp).seed();
   }

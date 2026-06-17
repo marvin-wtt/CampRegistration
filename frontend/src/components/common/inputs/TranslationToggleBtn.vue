@@ -3,7 +3,9 @@
     :icon
     :aria-label="label"
     round
-    outline
+    :outline="!model"
+    :unelevated="model"
+    :class="{ 'translation-toggle--active': model }"
     @click="model = !model"
   >
     <q-tooltip>
@@ -61,4 +63,10 @@ action:
   disable: 'Nepoužívat překlady'
 </i18n>
 
-<style scoped></style>
+<style scoped>
+/* MD3 filled-tonal treatment while translations are active. */
+.translation-toggle--active {
+  background-color: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+</style>

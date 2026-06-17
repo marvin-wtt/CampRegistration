@@ -5,231 +5,264 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
+      <q-form
+        @submit="onOKClick"
+        @reset="onDialogCancel"
+        @validation-error="advanced = true"
+      >
+        <q-card-section class="text-h6">
+          {{ t('title') }}
+        </q-card-section>
 
-      <q-card-section class="q-pt-none q-gutter-y-sm column">
-        <translated-input
-          v-model="data.label"
-          :label="t('field.label.label')"
-          :locales="camp.locales"
-          outlined
-          rounded
-        />
+        <q-card-section class="q-pt-none q-gutter-y-sm column">
+          <translated-input
+            v-model="data.label"
+            :label="t('field.label.label')"
+            :locales="camp.locales"
+            :rules="[
+              (val: string | Record<string, string> | undefined) =>
+                !!val || t('field.label.rules.required'),
+            ]"
+            outlined
+            rounded
+          />
 
-        <q-select
-          v-model="data.source"
-          :label="t('field.source.label')"
-          :options="sourceOptions"
-          map-options
-          emit-value
-          outlined
-          rounded
-        >
-          <template #option="scope">
-            <q-item v-bind="scope.itemProps">
-              <q-item-section>
-                <q-item-label>{{ scope.opt.label }}</q-item-label>
-                <q-item-label caption>{{ scope.opt.description }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
-        </q-select>
-
-        <q-select
-          v-if="!data.source || data.source === 'form'"
-          v-model="data.field"
-          :label="t('field.field.label')"
-          :hint="t('field.field.hint')"
-          :options="fieldFilterOptions"
-          emit-value
-          use-input
-          hide-bottom-space
-          outlined
-          rounded
-          @new-value="createField"
-          @filter="fieldFilterFn"
-        >
-          <template #option="scope">
-            <q-item v-bind="scope.itemProps">
-              <q-item-section>
-                <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
-                <q-item-label caption>{{ scope.opt.value }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
-
-          <template #append>
-            <q-icon
-              v-if="data.field"
-              name="close"
-              class="cursor-pointer"
-              @click.stop.prevent="data.field = ''"
-            />
-          </template>
-        </q-select>
-
-        <q-select
-          v-else-if="data.source === 'computed' || data.source === 'meta'"
-          v-model="data.field"
-          :label="t('field.field.label')"
-          :options="fieldOptions"
-          emit-value
-          map-options
-          clearable
-          outlined
-          rounded
-        />
-
-        <q-input
-          v-else
-          v-model="data.field"
-          :label="t('field.field.label')"
-          outlined
-          rounded
-        />
-
-        <q-select
-          v-if="data.source !== 'custom'"
-          v-model="data.renderAs"
-          :label="t('field.renderAs.label')"
-          :hint="t('field.renderAs.hint')"
-          :options="renderAsOptions"
-          clearable
-          emit-value
-          map-options
-          outlined
-          rounded
-        />
-
-        <q-select
-          v-model="data.align"
-          :label="t('field.align.label')"
-          :hint="t('field.hideIf.hint')"
-          :options="alignOptions"
-          emit-value
-          map-options
-          outlined
-          rounded
-        />
-
-        <toggle-item
-          v-model="data.sortable"
-          :label="t('field.sortable.label')"
-          :hint="t('field.sortable.hint')"
-        />
-
-        <q-btn
-          :label="advanced ? t('advanced.hide') : t('advanced.show')"
-          :icon="advanced ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-          color="grey"
-          flat
-          dense
-          rounded
-          class="full-width"
-          @click="advanced = !advanced"
-        />
-
-        <!-- Advanced options -->
-        <q-slide-transition>
-          <div
-            v-show="advanced"
-            class="q-gutter-y-sm column no-wrap"
+          <q-select
+            v-model="data.source"
+            :label="t('field.source.label')"
+            :options="sourceOptions"
+            map-options
+            emit-value
+            outlined
+            rounded
           >
-            <toggle-item
-              v-if="showIsArray"
-              v-model="data.isArray"
-              :label="t('field.isArray.label')"
-              :hint="t('field.isArray.hint')"
-            />
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label caption>
+                    {{ scope.opt.description }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
-            <toggle-item
-              v-model="data.headerVertical"
-              :label="t('field.headerVertical.label')"
-              :hint="t('field.headerVertical.hint')"
-            />
+          <q-select
+            v-if="!data.source || data.source === 'form'"
+            v-model="data.field"
+            :label="t('field.field.label')"
+            :hint="t('field.field.hint')"
+            :options="fieldFilterOptions"
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            emit-value
+            use-input
+            hide-bottom-space
+            outlined
+            rounded
+            @new-value="createField"
+            @filter="fieldFilterFn"
+          >
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ to(scope.opt.label) }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.value }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
 
-            <toggle-item
-              v-model="data.shrink"
-              :label="t('field.shrink.label')"
-              :hint="t('field.shrink.hint')"
-            />
+            <template #append>
+              <q-icon
+                v-if="data.field"
+                name="close"
+                class="cursor-pointer"
+                @click.stop.prevent="data.field = ''"
+              />
+            </template>
+          </q-select>
 
-            <q-input
-              v-model="data.name"
-              :label="t('field.name.label')"
-              :hint="t('field.name.hint')"
-              :rules="[
-                (val: string) => !!val || t('field.name.rules.required'),
-                (val: string) =>
-                  !/\s/.test(val) || t('field.name.rules.no_spaces'),
-              ]"
-              outlined
-              rounded
-            />
+          <q-select
+            v-else-if="data.source === 'computed' || data.source === 'meta'"
+            v-model="data.field"
+            :label="t('field.field.label')"
+            :options="fieldOptions"
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            emit-value
+            map-options
+            clearable
+            outlined
+            rounded
+          />
 
-            <q-input
-              v-model="data.hideIf"
-              :label="t('field.hideIf.label')"
-              :hint="t('field.hideIf.hint')"
-              clearable
-              outlined
-              rounded
-            />
+          <q-input
+            v-else
+            v-model="data.field"
+            :label="t('field.field.label')"
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            outlined
+            rounded
+          />
 
-            <q-input
-              v-model="data.showIf"
-              :label="t('field.showIf.label')"
-              :hint="t('field.showIf.hint')"
-              clearable
-              outlined
-              rounded
-            />
+          <q-select
+            v-if="data.source !== 'custom'"
+            v-model="data.renderAs"
+            :label="t('field.renderAs.label')"
+            :hint="t('field.renderAs.hint')"
+            :options="renderAsOptions"
+            clearable
+            emit-value
+            map-options
+            outlined
+            rounded
+          />
 
-            <!-- render options -->
-            <q-list
-              v-if="data.renderAs"
-              bordered
-              class="rounded-borders"
+          <q-list
+            v-if="customOptionsComponent"
+            bordered
+            class="rounded-borders"
+          >
+            <q-expansion-item
+              :label="t('field.renderOptions.label')"
+              class="q-mb-sm"
             >
-              <q-expansion-item
-                :label="t('field.renderOptions.label')"
-                :caption="t('field.renderOptions.hint')"
+              <q-separator />
+              <component
+                :is="customOptionsComponent"
+                v-model="data.renderOptions"
+                :camp="camp"
+                :field="data.field"
+              />
+            </q-expansion-item>
+          </q-list>
+
+          <q-select
+            v-model="data.align"
+            :label="t('field.align.label')"
+            :hint="t('field.hideIf.hint')"
+            :options="alignOptions"
+            emit-value
+            map-options
+            outlined
+            rounded
+          />
+
+          <toggle-item
+            v-model="data.sortable"
+            :label="t('field.sortable.label')"
+            :hint="t('field.sortable.hint')"
+          />
+
+          <q-btn
+            :label="advanced ? t('advanced.hide') : t('advanced.show')"
+            :icon="advanced ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+            color="grey"
+            flat
+            dense
+            rounded
+            class="full-width"
+            @click="advanced = !advanced"
+          />
+
+          <!-- Advanced options -->
+          <q-slide-transition>
+            <div
+              v-show="advanced"
+              class="q-gutter-y-sm column no-wrap"
+            >
+              <toggle-item
+                v-if="showIsArray"
+                v-model="data.isArray"
+                :label="t('field.isArray.label')"
+                :hint="t('field.isArray.hint')"
+              />
+
+              <toggle-item
+                v-model="data.headerVertical"
+                :label="t('field.headerVertical.label')"
+                :hint="t('field.headerVertical.hint')"
+              />
+
+              <toggle-item
+                v-model="data.shrink"
+                :label="t('field.shrink.label')"
+                :hint="t('field.shrink.hint')"
+              />
+
+              <q-input
+                v-model="data.name"
+                :label="t('field.name.label')"
+                :hint="t('field.name.hint')"
+                :rules="[
+                  (val: string) => !!val || t('field.name.rules.required'),
+                  (val: string) =>
+                    !/\s/.test(val) || t('field.name.rules.no_spaces'),
+                ]"
+                outlined
+                rounded
+              />
+
+              <q-input
+                v-model="data.hideIf"
+                :label="t('field.hideIf.label')"
+                :hint="t('field.hideIf.hint')"
+                clearable
+                outlined
+                rounded
+              />
+
+              <q-input
+                v-model="data.showIf"
+                :label="t('field.showIf.label')"
+                :hint="t('field.showIf.hint')"
+                clearable
+                outlined
+                rounded
+              />
+
+              <!-- render options -->
+              <q-list
+                v-if="data.renderAs && !customOptionsComponent"
+                class="rounded-borders"
               >
-                <dynamic-input-group
-                  v-if="renderOptions"
-                  v-model="data.renderOptions"
-                  :elements="renderOptions"
-                />
+                <q-expansion-item
+                  :label="t('field.renderOptions.label')"
+                  :caption="t('field.renderOptions.hint')"
+                >
+                  <dynamic-input-group
+                    v-if="renderOptions"
+                    v-model="data.renderOptions"
+                    :elements="renderOptions"
+                  />
 
-                <json-input
-                  v-else
-                  v-model="data.renderOptions"
-                  filled
-                />
-              </q-expansion-item>
-            </q-list>
-          </div>
-        </q-slide-transition>
-      </q-card-section>
+                  <json-input
+                    v-else
+                    v-model="data.renderOptions"
+                    filled
+                  />
+                </q-expansion-item>
+              </q-list>
+            </div>
+          </q-slide-transition>
+        </q-card-section>
 
-      <!-- action buttons -->
-      <q-card-actions align="right">
-        <q-btn
-          color="primary"
-          :label="t('action.cancel')"
-          outline
-          rounded
-          @click="onDialogCancel"
-        />
-        <q-btn
-          color="primary"
-          :label="t('action.ok')"
-          rounded
-          @click="onOKClick"
-        />
-      </q-card-actions>
+        <!-- action buttons -->
+        <q-card-actions align="right">
+          <q-btn
+            type="reset"
+            color="primary"
+            :label="t('action.cancel')"
+            outline
+            rounded
+          />
+          <q-btn
+            type="submit"
+            color="primary"
+            :label="t('action.ok')"
+            rounded
+          />
+        </q-card-actions>
+      </q-form>
     </q-card>
   </q-dialog>
 </template>
@@ -237,7 +270,14 @@
 <script lang="ts" setup>
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref, watch, watchEffect } from 'vue';
+import {
+  type Component,
+  computed,
+  reactive,
+  ref,
+  watch,
+  watchEffect,
+} from 'vue';
 import type {
   CampDetails,
   TableColumnTemplate,
@@ -252,6 +292,7 @@ import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 import type { PartialBy } from 'src/types';
 import { deepToRaw } from 'src/utils/deepToRaw';
+import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
 
 const { camp, column } = defineProps<{
   column: TableColumnTemplate;
@@ -260,7 +301,8 @@ const { camp, column } = defineProps<{
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { t } = useI18n();
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t, te } = useI18n();
 const { to } = useObjectTranslation();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -307,20 +349,6 @@ watchEffect(() => {
   data.isArray = data.field.includes('.*');
 });
 
-const DEFAULT_RENDER_AS: Record<string, string> = {
-  // meta fields
-  status: 'status',
-  createdAt: 'date',
-  // computed fields
-  firstName: 'name',
-  lastName: 'name',
-  dateOfBirth: 'age',
-  'emails.*': 'email',
-  gender: 'gender',
-  address: 'address',
-  'address.country': 'country_flag',
-};
-
 watch(
   () => data.source,
   (source) => {
@@ -333,12 +361,44 @@ watch(
 watch(
   () => data.field,
   (field) => {
-    if (data.source !== 'meta' && data.source !== 'computed') {
+    if (data.source === 'computed') {
+      applyRenderer(field, {
+        firstName: 'name',
+        lastName: 'name',
+        dateOfBirth: 'age',
+        'emails.*': 'email',
+        gender: 'gender',
+        address: 'address',
+        'address.country': 'country_flag',
+      });
       return;
     }
-    data.renderAs = DEFAULT_RENDER_AS[field] ?? 'default';
+
+    if (data.source === 'meta') {
+      applyRenderer(field, {
+        status: 'status',
+        room: 'room',
+      });
+      return;
+    }
+
+    if (data.source === 'form') {
+      if (FormSelectCache.get(camp, field) != null) {
+        data.renderAs = 'form_select';
+        return;
+      }
+    }
   },
 );
+
+watch(
+  () => data.renderAs,
+  () => (data.renderOptions = undefined),
+);
+
+function applyRenderer(field: string, renderers: Record<string, string>) {
+  data.renderAs = renderers[field] ?? 'default';
+}
 
 const alignOptions = computed<QSelectOption[]>(() => {
   return [
@@ -367,6 +427,14 @@ const renderOptions = computed<BaseComponent[] | undefined>(() => {
   return renderer?.options.customOptions;
 });
 
+const customOptionsComponent = computed<Component | undefined>(() => {
+  if (!data.renderAs) {
+    return undefined;
+  }
+
+  return ComponentRegistry.get(data.renderAs)?.options.customOptionsComponent;
+});
+
 const renderAsOptions = computed<QSelectOption[]>(() => {
   return Array.from(ComponentRegistry.all().entries(), ([key, value]) => {
     const options = value.options;
@@ -375,7 +443,7 @@ const renderAsOptions = computed<QSelectOption[]>(() => {
     }
 
     return {
-      label: to(options.label) || key,
+      label: te(`cellType.${key}`) ? t(`cellType.${key}`) : key,
       value: key,
     };
   })
@@ -470,18 +538,30 @@ function fieldFilterFn(val: string, update: (a: () => void) => void) {
   });
 }
 
-function updateFieldPath() {
-  if (!data.source || data.source === 'meta') return;
-  const prefix = FIELD_MAP[data.source];
-  if (prefix && data.field.length > 0 && !data.field.startsWith(`${prefix}.`)) {
-    data.field = `${prefix}.${data.field}`;
+function updateFieldPath(): string {
+  if (!data.source || data.source === 'meta') {
+    return data.field;
   }
+
+  const prefix = FIELD_MAP[data.source];
+  if (
+    !prefix ||
+    data.field.length === 0 ||
+    data.field.startsWith(`${prefix}.`)
+  ) {
+    return data.field;
+  }
+
+  return `${prefix}.${data.field}`;
 }
 
 function onOKClick(): void {
   updateFieldPath();
 
-  onDialogOK(data);
+  onDialogOK({
+    ...data,
+    field: updateFieldPath(),
+  });
 }
 </script>
 
@@ -508,6 +588,8 @@ field:
   label:
     label: 'Label'
     hint: ''
+    rules:
+      required: 'Label must not be empty'
   source:
     label: 'Source'
     options:
@@ -526,6 +608,8 @@ field:
   field:
     label: 'Field'
     hint: 'Name of corresponding form field'
+    rules:
+      required: 'Field must not be empty'
     options:
       createdAt: 'Creation date'
       room: 'Room'
@@ -573,6 +657,26 @@ field:
   showIf:
     label: 'Show if'
     hint: 'Expression when to show the cell'
+
+cellType:
+  status: 'Status'
+  address: 'Address'
+  age: 'Age'
+  country_flag: 'Country Flag'
+  date: 'Date'
+  default: 'Default'
+  email: 'Email'
+  file: 'File'
+  form_select: 'Form Select'
+  gender: 'Gender'
+  hidden_text: 'Hidden Text'
+  icon_mapping: 'Icon Mapping'
+  language_skills: 'Language Skills'
+  name: 'Name'
+  phone_number: 'Phone Number'
+  text: 'Text'
+  time_ago: 'Time Ago'
+  translated_value: 'Translated Value'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -596,6 +700,8 @@ field:
   label:
     label: 'Label'
     hint: ''
+    rules:
+      required: 'Label darf nicht leer sein'
   source:
     label: 'Quelle'
     options:
@@ -614,6 +720,8 @@ field:
   field:
     label: 'Feld'
     hint: 'Name des entsprechenden Formularfelds'
+    rules:
+      required: 'Feld darf nicht leer sein'
     options:
       createdAt: 'Erstellungsdatum'
       room: 'Raum'
@@ -661,6 +769,26 @@ field:
   showIf:
     label: 'Anzeigen wenn'
     hint: 'Ausdruck, wenn die Zelle angezeigt werden soll'
+
+cellType:
+  status: 'Status'
+  address: 'Adresse'
+  age: 'Alter'
+  country_flag: 'Länderflagge'
+  date: 'Datum'
+  default: 'Standard'
+  email: 'E-Mail'
+  file: 'Datei'
+  form_select: 'Formularauswahl'
+  gender: 'Geschlecht'
+  hidden_text: 'Versteckter Text'
+  icon_mapping: 'Symbol-Zuordnung'
+  language_skills: 'Sprachkenntnisse'
+  name: 'Name'
+  phone_number: 'Telefonnummer'
+  text: 'Text'
+  time_ago: 'Vor (Zeit)'
+  translated_value: 'Übersetzter Wert'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -684,6 +812,8 @@ field:
   label:
     label: 'Libellé'
     hint: ''
+    rules:
+      required: 'Le libellé ne doit pas être vide'
   source:
     label: 'Source'
     options:
@@ -702,6 +832,8 @@ field:
   field:
     label: 'Champ'
     hint: 'Nom du champ de formulaire correspondant'
+    rules:
+      required: 'Le champ ne doit pas être vide'
     options:
       createdAt: 'Date de création'
       room: 'Salle'
@@ -749,6 +881,26 @@ field:
   showIf:
     label: 'Afficher si'
     hint: "Expression lorsqu'il faut"
+
+cellType:
+  status: 'Statut'
+  address: 'Adresse'
+  age: 'Âge'
+  country_flag: 'Drapeau du pays'
+  date: 'Date'
+  default: 'Défaut'
+  email: 'E-mail'
+  file: 'Fichier'
+  form_select: 'Sélection de formulaire'
+  gender: 'Sexe'
+  hidden_text: 'Texte caché'
+  icon_mapping: 'Correspondance d’icônes'
+  language_skills: 'Compétences linguistiques'
+  name: 'Nom'
+  phone_number: 'Numéro de téléphone'
+  text: 'Texte'
+  time_ago: 'Temps écoulé'
+  translated_value: 'Valeur traduite'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -772,6 +924,8 @@ field:
   label:
     label: 'Etykieta'
     hint: ''
+    rules:
+      required: 'Etykieta nie może być pusta'
   source:
     label: 'Źródło'
     options:
@@ -790,6 +944,8 @@ field:
   field:
     label: 'Pole'
     hint: 'Nazwa odpowiedniego pola formularza'
+    rules:
+      required: 'Pole nie może być puste'
     options:
       createdAt: 'Data utworzenia'
       room: 'Pokój'
@@ -837,6 +993,26 @@ field:
   showIf:
     label: 'Pokaż, jeśli'
     hint: 'Wyrażenie określające, kiedy komórka ma być pokazana'
+
+cellType:
+  status: 'Status'
+  address: 'Adres'
+  age: 'Wiek'
+  country_flag: 'Flaga kraju'
+  date: 'Data'
+  default: 'Domyślny'
+  email: 'E-mail'
+  file: 'Plik'
+  form_select: 'Wybór z formularza'
+  gender: 'Płeć'
+  hidden_text: 'Ukryty tekst'
+  icon_mapping: 'Przypisanie ikon'
+  language_skills: 'Znajomość języków'
+  name: 'Imię i nazwisko'
+  phone_number: 'Numer telefonu'
+  text: 'Tekst'
+  time_ago: 'Czas względny'
+  translated_value: 'Przetłumaczona wartość'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -860,6 +1036,8 @@ field:
   label:
     label: 'Popisek'
     hint: ''
+    rules:
+      required: 'Popisek nesmí být prázdný'
   source:
     label: 'Zdroj'
     options:
@@ -878,6 +1056,8 @@ field:
   field:
     label: 'Pole'
     hint: 'Název odpovídajícího pole ve formuláři'
+    rules:
+      required: 'Pole nesmí být prázdné'
     options:
       createdAt: 'Datum vytvoření'
       room: 'Pokoj'
@@ -925,4 +1105,24 @@ field:
   showIf:
     label: 'Zobrazit, pokud'
     hint: 'Výraz určující, kdy se buňka má zobrazit'
+
+cellType:
+  status: 'Stav'
+  address: 'Adresa'
+  age: 'Věk'
+  country_flag: 'Vlajka země'
+  date: 'Datum'
+  default: 'Výchozí'
+  email: 'E-mail'
+  file: 'Soubor'
+  form_select: 'Výběr z formuláře'
+  gender: 'Pohlaví'
+  hidden_text: 'Skrytý text'
+  icon_mapping: 'Přiřazení ikon'
+  language_skills: 'Jazykové znalosti'
+  name: 'Jméno'
+  phone_number: 'Telefonní číslo'
+  text: 'Text'
+  time_ago: 'Relativní čas'
+  translated_value: 'Přeložená hodnota'
 </i18n>
