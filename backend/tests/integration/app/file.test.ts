@@ -29,9 +29,7 @@ const createCampWithManagerAndToken = async (
   return { camp, user, manager, accessToken };
 };
 
-const createCampWithFileAndToken = async (
-  accessLevel: string = 'private',
-) => {
+const createCampWithFileAndToken = async (accessLevel: string = 'private') => {
   const { camp, user, manager, accessToken } =
     await createCampWithManagerAndToken();
   const fileName = crypto.randomUUID() + '.pdf';
