@@ -13,10 +13,6 @@ export type CustomRequestConfig = AxiosRequestConfig & {
   _csrfRetry?: boolean | undefined;
 };
 
-// De-duplicates concurrent token requests so a burst of requests (or a cold
-// start priming the token) only triggers a single fetch and one session cookie.
-let pendingCsrfToken: Promise<void> | null = null;
-
 function isCsrfError(error: AxiosError): boolean {
   if (error.response?.status !== 403) {
     return false;

@@ -1292,34 +1292,22 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('CSRF protection', () => {
-    // The cookie value of a freshly generated token is identical to the token
-    // returned in the response body, so the body value can be replayed as both
-    // the `x-csrf-token` header and the CSRF cookie.
-    const getCsrfToken = async (sessionId: string): Promise<string> => {
-      const { body } = await request()
-        .get('/api/v1/auth/csrf-token')
-        .set('Cookie', ['__Host-session=' + sessionId, 'session=' + sessionId])
-        .expect(200);
-
-      return body.csrfToken as string;
-    };
-
+    // Only web clients (`X-Client-Type: web`) are subject to CSRF protection.
+    // The shared `request()` helper defaults mutations to a non-web client (and
+    // would therefore exempt them), so every test here opts back in explicitly.
+    // `fetchCsrf()` returns the token together with the cookies it is bound to
+    // (notably the dedicated `csrf-session` cookie), which must be forwarded for
+    // the double-submit check to pass.
     it('should accept a cookie-authenticated mutation when the CSRF token matches the session', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
-      const sessionId = randomUUID();
-      const csrfToken = await getCsrfToken(sessionId);
+      const { token, cookies } = await fetchCsrf();
 
       await request()
         .patch('/api/v1/profile')
-        .set('Cookie', [
-          '__Host-session=' + sessionId,
-          'session=' + sessionId,
-          'accessToken=' + accessToken,
-          '__Host-x-csrf-token=' + csrfToken,
-          'x-csrf-token=' + csrfToken,
-        ])
-        .set('x-csrf-token', csrfToken)
+        .set('X-Client-Type', 'web')
+        .set('Cookie', [...cookies, 'accessToken=' + accessToken])
+        .set('x-csrf-token', token)
         .send({ name: 'Updated Name' })
         .expect(200);
     });
@@ -1327,25 +1315,23 @@ describe('/api/v1/auth', async () => {
     it('should reject a cookie-authenticated mutation when the CSRF token was issued for a different session', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
-      const tokenSessionId = randomUUID();
-      const requestSessionId = randomUUID();
-      // Token (and cookie) are bound to `tokenSessionId` ...
-      const csrfToken = await getCsrfToken(tokenSessionId);
+      const { token, cookies } = await fetchCsrf();
 
-      // ... but the request is sent under a different session id. This mimics
-      // the cold-start race where concurrent cookie-less requests each mint a
-      // diverging session id, leaving the CSRF token bound to a session that no
-      // longer matches the surviving `__Host-session` cookie.
+      // Keep the token and its double-submit cookie, but swap out the
+      // `csrf-session` cookie it was bound to. This mimics the cold-start race
+      // where the surviving session cookie no longer matches the session the
+      // token was minted for, which must be rejected.
+      const tamperedCookies = cookies.map((cookie) =>
+        cookie.startsWith('csrf-session=')
+          ? 'csrf-session=' + randomUUID()
+          : cookie,
+      );
+
       const { body } = await request()
         .patch('/api/v1/profile')
-        .set('Cookie', [
-          '__Host-session=' + requestSessionId,
-          'session=' + requestSessionId,
-          'accessToken=' + accessToken,
-          '__Host-x-csrf-token=' + csrfToken,
-          'x-csrf-token=' + csrfToken,
-        ])
-        .set('x-csrf-token', csrfToken)
+        .set('X-Client-Type', 'web')
+        .set('Cookie', [...tamperedCookies, 'accessToken=' + accessToken])
+        .set('x-csrf-token', token)
         .send({ name: 'Updated Name' })
         .expect(403);
 
@@ -1357,15 +1343,11 @@ describe('/api/v1/auth', async () => {
     it('should reject a cookie-authenticated mutation without a CSRF token', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
-      const sessionId = randomUUID();
 
       const { body } = await request()
         .patch('/api/v1/profile')
-        .set('Cookie', [
-          '__Host-session=' + sessionId,
-          'session=' + sessionId,
-          'accessToken=' + accessToken,
-        ])
+        .set('X-Client-Type', 'web')
+        .set('Cookie', ['accessToken=' + accessToken])
         .send({ name: 'Updated Name' })
         .expect(403);
 
@@ -1376,8 +1358,11 @@ describe('/api/v1/auth', async () => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);
 
+      // Force the web client type so the only thing exempting the request is the
+      // Bearer authorization header.
       await request()
         .patch('/api/v1/profile')
+        .set('X-Client-Type', 'web')
         .auth(accessToken, { type: 'bearer' })
         .send({ name: 'Updated Name' })
         .expect(200);

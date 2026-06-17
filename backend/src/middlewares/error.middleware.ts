@@ -100,7 +100,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   const response = {
     code: statusCode,
     message,
-    ...(err.code !== undefined && { errorCode: err.code }),
+    ...(err.isOperational && err.code !== undefined && { errorCode: err.code }),
     ...(config.env === 'development' && { stack: err.stack }),
   };
 
