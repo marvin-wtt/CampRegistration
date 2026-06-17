@@ -401,6 +401,23 @@ error:
   min-width: 8rem;
 }
 
+// Editability affordance: highlight the cell on hover when it can be edited.
+.editor-cell.cursor-pointer {
+  border-radius: 4px;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    background: rgba(var(--md3-primary-rgb), 0.1);
+    box-shadow: inset 0 0 0 1px var(--md3-primary);
+
+    .editor-edit-icon {
+      color: var(--md3-primary);
+    }
+  }
+}
+
 // Outside the table (e.g. row card dialog) there is no cell height to fill, so
 // give the row a tappable height of its own instead of relying on full-height.
 .editor-cell--grid {

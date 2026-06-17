@@ -262,7 +262,8 @@
               (details: TouchHoldDetails) => onRowHold(details, bodyProps.row)
             "
             :props="bodyProps"
-            class="participant-row cursor-pointer"
+            class="participant-row"
+            :class="{ 'cursor-pointer': quasar.screen.xs }"
             @click="onRowClick($event, bodyProps.row)"
             @contextmenu="onRowContext($event, bodyProps.row)"
           >
@@ -679,11 +680,10 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
     return;
   }
 
-  // On larger screens every column is already visible, so a click just opens
-  // the action menu at the cursor. On phones the table is condensed, so a tap
-  // opens the full row card instead.
+  // The full row card is a phone affordance; on larger screens every column is
+  // already visible and actions live in the action column / context menu, so a
+  // left click does nothing.
   if (!quasar.screen.xs) {
-    openRowMenu(evt, row);
     return;
   }
 
