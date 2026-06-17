@@ -23,7 +23,9 @@ export class MessageTemplateModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    registerFileGuard('messageTemplate', messageTemplateFileGuard);
+    registerFileGuard('messageTemplate', {
+      view: messageTemplateFileGuard,
+    });
 
     router.useRouter(
       '/camps/:campId/message-templates',

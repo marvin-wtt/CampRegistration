@@ -50,6 +50,18 @@ const store = z.object({
   }),
 });
 
+const update = z.object({
+  params: z.object({
+    fileId: z.ulid(),
+  }),
+  body: z.object({
+    name: z.string().optional(),
+    field: z.string().optional(),
+    locale: z.string().nullable().optional(),
+    accessLevel: z.string().optional(),
+  }),
+});
+
 const destroy = z.object({
   params: z.object({
     fileId: z.ulid(),
@@ -62,5 +74,6 @@ export default {
   slotFile,
   index,
   store,
+  update,
   destroy,
 };

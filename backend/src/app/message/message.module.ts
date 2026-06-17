@@ -21,7 +21,9 @@ export class MessageModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    registerFileGuard('message', messageFileGuard);
+    registerFileGuard('message', {
+      view: messageFileGuard,
+    });
 
     router.useRouter('/camps/:campId/messages', new MessageRouter());
   }

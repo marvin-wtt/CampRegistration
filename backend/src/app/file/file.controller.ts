@@ -103,7 +103,24 @@ export class FileController extends BaseController {
     res.status(httpStatus.CREATED).resource(new FileResource(data));
   }
 
+  async update(req: Request, res: Response) {
+    const {
+      body: { accessLevel, field, locale, name },
+    } = await req.validate(validator.update);
+    const file = req.modelOrFail('file');
+
+    const updatedFile = await this.fileService.updateFile(file.id, {
+      accessLevel,
+      field,
+      locale,
+      name,
+    });
+
+    res.resource(new FileResource(updatedFile));
+  }
+
   async destroy(req: Request, res: Response) {
+    await req.validate(validator.destroy);
     const file = req.modelOrFail('file');
 
     await this.fileService.deleteFile(file.id);

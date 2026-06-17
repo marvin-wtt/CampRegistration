@@ -32,5 +32,15 @@ export class FileRouter extends ModuleRouter {
       multipart('file'),
       controller(this.fileController, 'store'),
     );
+    this.router.patch(
+      '/:fileId',
+      guard(fileAccessGuard),
+      controller(this.fileController, 'update'),
+    );
+    this.router.delete(
+      '/:fileId',
+      guard(fileAccessGuard),
+      controller(this.fileController, 'destroy'),
+    );
   }
 }
