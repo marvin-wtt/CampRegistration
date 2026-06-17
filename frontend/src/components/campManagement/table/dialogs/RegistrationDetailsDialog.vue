@@ -111,7 +111,7 @@
             </q-list>
 
             <!-- Contact -->
-            <template v-if="registration.computedData.emails?.length">
+            <template v-if="emails?.length">
               <q-separator inset />
               <q-list>
                 <q-item-label header>
@@ -133,7 +133,7 @@
                       {{ t('field.email') }}
                     </q-item-label>
                     <q-item-label
-                      v-for="email in registration.computedData.emails"
+                      v-for="email in emails"
                       :key="email"
                     >
                       <a
@@ -255,6 +255,7 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Registration } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { formatPersonName } from 'src/utils/formatters';
 import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -272,7 +273,20 @@ const personName = computed<string>(() => {
   const firstName = registration.computedData.firstName?.trim() ?? '';
   const lastName = registration.computedData.lastName?.trim() ?? '';
   const fullName = `${firstName} ${lastName}`.trim();
-  return fullName.length > 0 ? fullName : '?';
+
+  return fullName.length > 0 ? formatPersonName(fullName) : '?';
+});
+
+const emails = computed<string[] | null>(() => {
+  const values = registration.computedData.emails;
+
+  if (!values) {
+    return null;
+  }
+
+  const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+  return [...new Set(values.map(normalizeEmail).filter(Boolean))];
 });
 
 const hasAddress = computed<boolean>(() => {
