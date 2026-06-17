@@ -5,6 +5,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import { useI18n } from 'vue-i18n';
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t, te } = useI18n();
 
 const { props: cellProps } = defineProps<TableCellProps>();
 
@@ -40,7 +44,10 @@ const address = computed<string>(() => {
   }
 
   if ('country' in value && typeof value.country === 'string') {
-    address += ', ' + value.country;
+    address +=
+      ', ' + te(`country.${value.country}`)
+        ? t(`country.${value.country}`)
+        : value.country;
   }
 
   return address;

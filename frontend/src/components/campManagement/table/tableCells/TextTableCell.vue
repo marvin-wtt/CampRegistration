@@ -1,4 +1,11 @@
 <template>
+  <span
+    v-if="gridMode && empty"
+    class="cell-placeholder"
+  >
+    —
+  </span>
+
   <div
     class="text-cell fit"
     :class="{ 'text-cell--expandable': isTruncated }"
@@ -75,6 +82,16 @@ const extraWords = computed<number>(() => {
   }
 
   return value.trim().length - text.length;
+});
+
+const empty = computed<boolean>(() => {
+  const value = cellProps.value;
+
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === 'string' && value.trim().length === 0)
+  );
 });
 </script>
 

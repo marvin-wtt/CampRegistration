@@ -220,7 +220,7 @@
       <q-table
         v-show="rows.length > 0"
         v-model:pagination="pagination"
-        :columns="columns as QTableColumn[]"
+        :columns="displayColumns as QTableColumn[]"
         :rows
         :rows-per-page-options="[0]"
         class="participants-table absolute fit"
@@ -232,14 +232,16 @@
         binary-state-sort
       >
         <template
-          v-for="column in columns"
+          v-for="column in displayColumns"
           :key="column.name"
           #[`header-cell-${column.name}`]="columnProps"
         >
           <q-th
             :auto-width="column.shrink"
             :props="columnProps"
-            :class="{ 'sticky-action': column.name === '_action' }"
+            :class="{
+              'sticky-action': column.name === '_action' && !quasar.screen.xs,
+            }"
             style="vertical-align: bottom"
           >
             <a
@@ -254,24 +256,53 @@
           </q-th>
         </template>
 
-        <template
-          v-for="[key, renderer] in renderers"
-          :key
-          #[`body-cell-${key}`]="rendererProps"
-        >
-          <q-td
-            :props="rendererProps"
-            :key
-            :class="{ 'sticky-action': key === '_action' }"
+        <template #body="bodyProps">
+          <q-tr
+            v-touch-hold="
+              (details: TouchHoldDetails) => onRowHold(details, bodyProps.row)
+            "
+            :props="bodyProps"
+            class="participant-row cursor-pointer"
+            @click="onRowClick($event, bodyProps.row)"
+            @contextmenu="onRowContext($event, bodyProps.row)"
           >
-            <table-cell-wrapper
-              :renderer
-              :camp
-              :props="rendererProps as QTableBodyCellProps"
-            />
-          </q-td>
+            <q-td
+              v-for="col in bodyProps.cols"
+              :key="col.name"
+              :props="bodyProps"
+              :class="{
+                'sticky-action': col.name === '_action' && !quasar.screen.xs,
+              }"
+            >
+              <table-cell-wrapper
+                :renderer="renderers.get(col.name)!"
+                :camp
+                :props="bodyCellProps(bodyProps, col)"
+              />
+            </q-td>
+          </q-tr>
         </template>
       </q-table>
+
+      <!-- Shared row context menu (long-press on touch, right-click on desktop).
+           Anchored to a zero-size point at the cursor so that a tap anywhere
+           outside the menu (but still inside the table) dismisses it. -->
+      <div
+        ref="menuAnchorRef"
+        class="row-menu-anchor"
+        :style="menuAnchorStyle"
+      />
+      <q-menu
+        ref="rowMenuRef"
+        :target="menuTarget"
+        auto-close
+        no-parent-event
+      >
+        <registration-action-list
+          v-if="menuRow"
+          :registration="menuRow"
+        />
+      </q-menu>
 
       <!-- Empty / no-match state -->
       <div
@@ -351,7 +382,13 @@
 </template>
 
 <script lang="ts" setup>
-import { type QInput, type QTableColumn, useQuasar } from 'quasar';
+import {
+  type QInput,
+  type QMenu,
+  type QTableColumn,
+  type TouchHoldValue,
+  useQuasar,
+} from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import type {
@@ -368,8 +405,11 @@ import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.v
 import CountryIcon from 'components/common/localization/CountryIcon.vue';
 import BottomSheet from 'components/BottomSheet.vue';
 import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import type { CTableColumnTemplate } from 'src/types/CTableTemplate';
 import { useResultTableModel } from './useResultTableModel';
 import PrintTableDialog from 'components/campManagement/table/dialogs/PrintTableDialog.vue';
+import RegistrationActionList from 'components/campManagement/table/RegistrationActionList.vue';
+import RegistrationRowCardDialog from 'components/campManagement/table/dialogs/RegistrationRowCardDialog.vue';
 import { computed, nextTick, ref, toRef } from 'vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -535,6 +575,128 @@ function editTemplates() {
       void templateStore.updateCollection(payload);
     });
 }
+
+// --- Row interactions -------------------------------------------------------
+
+export type TouchHoldDetails = Parameters<NonNullable<TouchHoldValue>>[0];
+
+// Quasar augments body-slot columns with `value` at runtime; the static column
+// type does not expose it, so keep these structural shapes loose.
+interface BodyScope {
+  row: Registration;
+  rowIndex: number;
+}
+
+interface BodyCol {
+  name: string;
+  value?: unknown;
+}
+
+// The action column is shown on every screen size, but on phones it is no
+// longer pinned to the edge (see the `sticky-action` bindings) since the sticky
+// width is too costly there; it simply scrolls as a normal column.
+const displayColumns = computed<CTableColumnTemplate[]>(() => columns.value);
+
+// Whether the active template exposes row actions at all (drives the menu).
+const actionsEnabled = computed<boolean>(() => {
+  return columns.value.some((column) => column.name === '_action');
+});
+
+const rowMenuRef = ref<QMenu | null>(null);
+const menuRow = ref<Registration | null>(null);
+// A floating zero-size element placed at the cursor; the context menu anchors to
+// it instead of the table card, so taps outside the menu close it as expected.
+const menuAnchorRef = ref<HTMLElement | null>(null);
+const menuAnchorStyle = ref<Record<string, string>>({});
+const menuTarget = ref<true | HTMLElement>(true);
+
+function eventPoint(evt: Event): { x: number; y: number } {
+  const touch =
+    (evt as TouchEvent).changedTouches?.[0] ?? (evt as TouchEvent).touches?.[0];
+  if (touch) {
+    return { x: touch.clientX, y: touch.clientY };
+  }
+  const mouseEvt = evt as MouseEvent;
+  return { x: mouseEvt.clientX, y: mouseEvt.clientY };
+}
+
+function bodyCellProps(
+  bodyProps: BodyScope,
+  col: BodyCol,
+): QTableBodyCellProps {
+  return {
+    row: bodyProps.row,
+    rowIndex: bodyProps.rowIndex,
+    col,
+    value: col.value,
+    key: col.name,
+  } as unknown as QTableBodyCellProps;
+}
+
+function openRowMenu(evt: Event, row: Registration): void {
+  if (!actionsEnabled.value) {
+    return;
+  }
+
+  const { x, y } = eventPoint(evt);
+  menuAnchorStyle.value = {
+    position: 'fixed',
+    left: `${x}px`,
+    top: `${y}px`,
+  };
+  menuRow.value = row;
+  if (menuAnchorRef.value) {
+    menuTarget.value = menuAnchorRef.value;
+  }
+
+  // Let the anchor reposition (and the target watcher re-resolve) before showing.
+  void nextTick(() => rowMenuRef.value?.show());
+}
+
+function onRowHold(details: TouchHoldDetails, row: Registration): void {
+  if (!details.evt) {
+    return;
+  }
+
+  // touch-hold already cancels itself once the finger moves (i.e. scrolls).
+  openRowMenu(details.evt, row);
+}
+
+function onRowContext(evt: MouseEvent, row: Registration): void {
+  // Suppress the native context menu everywhere; on touch the long-press is
+  // handled by touch-hold so we only open the menu for real mouse right-clicks.
+  evt.preventDefault();
+  if (quasar.platform.is.mobile) {
+    return;
+  }
+  openRowMenu(evt, row);
+}
+
+function onRowClick(evt: MouseEvent, row: Registration): void {
+  // Let interactive cell content (links, buttons, inputs) handle their own taps.
+  const target = evt.target as HTMLElement | null;
+  if (target?.closest('a, button, input, .q-btn, [role="button"]')) {
+    return;
+  }
+
+  // On larger screens every column is already visible, so a click just opens
+  // the action menu at the cursor. On phones the table is condensed, so a tap
+  // opens the full row card instead.
+  if (!quasar.screen.xs) {
+    openRowMenu(evt, row);
+    return;
+  }
+
+  quasar.dialog({
+    component: RegistrationRowCardDialog,
+    componentProps: {
+      registration: row,
+      columns: columns.value,
+      renderers: renderers.value,
+      camp,
+    },
+  });
+}
 </script>
 
 <style lang="scss" scoped>
@@ -664,6 +826,13 @@ function editTemplates() {
   :deep(thead tr th.sticky-action) {
     z-index: 2;
   }
+}
+
+.row-menu-anchor {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
 .text-vertical {

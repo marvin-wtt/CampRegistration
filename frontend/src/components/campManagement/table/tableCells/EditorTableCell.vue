@@ -1,17 +1,32 @@
 <template>
   <div
     class="editor-cell row items-center no-wrap full-width full-height"
-    :class="{ 'cursor-pointer': enabled }"
+    :class="{ 'cursor-pointer': enabled, 'editor-cell--grid': gridMode }"
     @click="onCellClick()"
   >
     <!-- Displayed value (hidden while editing inline so the input takes the
          cell and the row grows in height to fit it). -->
-    <span
+    <div
       v-if="!(editMode && largeScreen)"
-      class="ellipsis"
+      class="row items-center no-wrap full-width"
     >
-      {{ cellProps.value }}
-    </span>
+      <div class="editor-value col ellipsis">
+        <default-table-cell
+          :props="cellProps"
+          :camp="camp"
+          :printing="printing"
+          :grid-mode="gridMode"
+        />
+      </div>
+
+      <!-- Edit affordance shown outside the table grid. -->
+      <q-icon
+        v-if="enabled && !printing"
+        class="editor-edit-icon"
+        name="edit"
+        size="18px"
+      />
+    </div>
 
     <!-- Inline editor (large screens) — in-flow, so the row grows in height to
          fit it while staying within the column's width. -->
@@ -57,8 +72,10 @@
     <!-- Popup editor (small screens) -->
     <q-popup-proxy
       v-if="enabled && !largeScreen"
-      v-model="editMode"
+      ref="popupRef"
       no-parent-event
+      @show="editMode = true"
+      @hide="editMode = false"
     >
       <q-card style="min-width: 280px">
         <q-card-section class="q-pb-none">
@@ -92,6 +109,8 @@
             dense
             rounded
             outlined
+            clearable
+            @clear="clearValue"
             @keydown.enter="onSave"
           />
         </q-card-section>
@@ -132,11 +151,17 @@ import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { usePermissions } from 'src/composables/permissions';
-import { useQuasar } from 'quasar';
+import { useQuasar, type QPopupProxy } from 'quasar';
 import { formatPersonName } from 'src/utils/formatters';
 import { deepToRaw } from 'src/utils/deepToRaw';
+import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 
-const { props: cellProps, printing } = defineProps<TableCellProps>();
+const {
+  props: cellProps,
+  camp,
+  printing,
+  gridMode = false,
+} = defineProps<TableCellProps>();
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -147,6 +172,8 @@ const registrationsStore = useRegistrationsStore();
 const editMode = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const modelValue = ref<string>(getDefaultValue());
+// QPopupProxy has no v-model; it must be opened/closed imperatively.
+const popupRef = ref<QPopupProxy | null>(null);
 
 const label = computed<string>(() => to(cellProps.col.label));
 
@@ -217,10 +244,23 @@ function getDefaultValue(): string {
   return 'Invalid value';
 }
 
+function closeEditor() {
+  if (largeScreen.value) {
+    editMode.value = false;
+  } else {
+    // The @hide handler resets editMode for the popup path.
+    popupRef.value?.hide();
+  }
+}
+
+function clearValue() {
+  modelValue.value = '';
+}
+
 function onCancel() {
   modelValue.value = getDefaultValue();
 
-  editMode.value = false;
+  closeEditor();
 }
 
 function onBlurCommit() {
@@ -256,7 +296,7 @@ function onSave() {
       ),
     })
     .then(() => {
-      editMode.value = false;
+      closeEditor();
     })
     .finally(() => {
       loading.value = false;
@@ -290,7 +330,12 @@ function onCellClick() {
     return;
   }
 
-  editMode.value = true;
+  if (largeScreen.value) {
+    editMode.value = true;
+  } else {
+    // QPopupProxy is opened imperatively (it has no v-model).
+    popupRef.value?.show();
+  }
 }
 </script>
 
@@ -354,6 +399,25 @@ error:
 .editor-cell {
   position: relative;
   min-width: 8rem;
+}
+
+// Outside the table (e.g. row card dialog) there is no cell height to fill, so
+// give the row a tappable height of its own instead of relying on full-height.
+.editor-cell--grid {
+  min-height: 36px;
+}
+
+// Let the value shrink so it ellipsizes instead of pushing the icon past the
+// trailing edge of the cell.
+.editor-value {
+  min-width: 0;
+}
+
+// Keep the edit affordance pinned to the trailing edge of the row.
+.editor-edit-icon {
+  flex: none;
+  margin-left: auto;
+  color: var(--md3-on-surface-variant);
 }
 
 // The inline editor sits in the normal flow: the row grows in height to fit it.
