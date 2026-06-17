@@ -1,12 +1,19 @@
 <template>
+  <span
+    v-if="gridMode && empty"
+    class="cell-placeholder"
+  >
+    —
+  </span>
+
   <div
     class="text-cell fit"
     :class="{ 'text-cell--expandable': isTruncated }"
   >
     {{ truncatedText }}
 
-    <template v-if="extraWords > 0">
-      {{ `(+${extraWords})` }}
+    <template v-if="extraCharacters > 0 && showExtra">
+      {{ `(+${extraCharacters})` }}
     </template>
 
     <!-- Opens on click/tap on both desktop and mobile; renders as a centered
@@ -28,17 +35,25 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TextOptions } from 'components/campManagement/table/tableCells/TextOptions';
 
-const { props: cellProps, options } = defineProps<TableCellProps>();
+const { props: cellProps, options } =
+  defineProps<TableCellProps<TextOptions>>();
 
-const defaultLimit = 25;
+const DEFAULT_LIMIT = 25;
+
+const config = computed<TextOptions>(() => {
+  return options as TextOptions;
+});
+
+const showExtra = computed<boolean>(() => config.value.showRemaining ?? true);
 
 const limit = computed<number>(() => {
   if (options && 'limit' in options && typeof options.limit === 'number') {
     return options.limit;
   }
 
-  return defaultLimit;
+  return config.value.maxLength ?? DEFAULT_LIMIT;
 });
 
 const isTruncated = computed<boolean>(() => {
@@ -66,7 +81,7 @@ const truncatedText = computed<unknown>(() => {
   return value;
 });
 
-const extraWords = computed<number>(() => {
+const extraCharacters = computed<number>(() => {
   const value = cellProps.value;
   const text = truncatedText.value;
 
@@ -75,6 +90,16 @@ const extraWords = computed<number>(() => {
   }
 
   return value.trim().length - text.length;
+});
+
+const empty = computed<boolean>(() => {
+  const value = cellProps.value;
+
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === 'string' && value.trim().length === 0)
+  );
 });
 </script>
 

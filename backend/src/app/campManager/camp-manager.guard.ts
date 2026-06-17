@@ -15,10 +15,6 @@ export const campManager = (
   };
 };
 
-export const campPublic = (req: Request): boolean => {
-  return req.modelOrFail('camp').public;
-};
-
 export const registrationOpen = (req: Request): boolean => {
   const camp = req.modelOrFail('camp');
   const { registrationOpensAt, registrationClosesAt } = camp;

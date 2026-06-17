@@ -251,6 +251,7 @@ const features = [
 ] as const;
 
 const extraChips = [
+  { name: 'responsive', icon: 'devices' },
   { name: 'languages', icon: 'translate' },
   { name: 'multilingual_forms', icon: 'language' },
   { name: 'files', icon: 'attach_file' },
@@ -874,6 +875,7 @@ feature:
     text: 'Invite counselors and coordinators with fine-grained roles and permissions, and manage the camp together.'
   more_label: 'Also included:'
   chip:
+    responsive: 'Works on desktop & mobile'
     languages: 'Five languages'
     multilingual_forms: 'Multilingual forms'
     files: 'File management'
@@ -958,6 +960,7 @@ feature:
     text: 'Lade Betreuer und Koordinatoren mit fein abgestuften Rollen und Berechtigungen ein und verwaltet das Camp gemeinsam.'
   more_label: 'Außerdem enthalten:'
   chip:
+    responsive: 'Läuft auf Desktop & Smartphone'
     languages: 'Fünf Sprachen'
     multilingual_forms: 'Mehrsprachige Formulare'
     files: 'Dateiverwaltung'
@@ -1042,6 +1045,7 @@ feature:
     text: 'Invitez animateurs et coordinateurs avec des rôles et permissions précis, et gérez le camp ensemble.'
   more_label: 'Également inclus :'
   chip:
+    responsive: 'Fonctionne sur ordinateur et mobile'
     languages: 'Cinq langues'
     multilingual_forms: 'Formulaires multilingues'
     files: 'Gestion des fichiers'
@@ -1126,6 +1130,7 @@ feature:
     text: 'Zapraszaj opiekunów i koordynatorów z precyzyjnymi rolami i uprawnieniami i zarządzajcie obozem wspólnie.'
   more_label: 'A do tego:'
   chip:
+    responsive: 'Działa na komputerze i telefonie'
     languages: 'Pięć języków'
     multilingual_forms: 'Wielojęzyczne formularze'
     files: 'Zarządzanie plikami'
@@ -1210,6 +1215,7 @@ feature:
     text: 'Zvěte vedoucí a koordinátory s jemně odstupňovanými rolemi a oprávněními a spravujte tábor společně.'
   more_label: 'A navíc:'
   chip:
+    responsive: 'Funguje na počítači i mobilu'
     languages: 'Pět jazyků'
     multilingual_forms: 'Vícejazyčné formuláře'
     files: 'Správa souborů'

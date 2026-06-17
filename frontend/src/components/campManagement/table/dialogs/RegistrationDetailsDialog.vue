@@ -3,32 +3,14 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card style="width: min(700px, 95vw); max-width: min(900px, 95vw)">
-      <!-- Header -->
-      <q-card-section class="row items-center no-wrap q-py-sm">
-        <q-icon
-          color="primary"
-          name="person"
-          size="sm"
-        />
-        <div class="col-shrink q-ml-sm text-h6 ellipsis">
-          {{ personName }}
-        </div>
-
-        <q-space />
-
-        <q-chip
-          :color="statusColor"
-          class="q-ml-sm q-mr-xs"
-          dense
-          size="md"
-          text-color="white"
-        >
-          {{ t(`status.${registration.status.toLowerCase()}`) }}
-        </q-chip>
-
+    <q-card
+      class="details-card rounded-xl"
+      style="width: min(700px, 95vw); max-width: min(900px, 95vw)"
+    >
+      <registration-dialog-header :registration="registration">
         <q-btn
           v-close-popup
+          class="header-btn"
           dense
           flat
           icon="close"
@@ -39,9 +21,7 @@
             {{ t('action.close') }}
           </q-tooltip>
         </q-btn>
-      </q-card-section>
-
-      <q-separator />
+      </registration-dialog-header>
 
       <q-scroll-area style="height: min(520px, 65vh)">
         <div class="row">
@@ -187,30 +167,14 @@
                     />
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label
-                      v-if="registration.computedData.address.street"
-                    >
-                      {{ registration.computedData.address.street }}
+                    <q-item-label v-if="street">
+                      {{ street }}
                     </q-item-label>
-                    <q-item-label
-                      v-if="
-                        registration.computedData.address.zipCode ||
-                        registration.computedData.address.city
-                      "
-                    >
-                      {{
-                        [
-                          registration.computedData.address.zipCode,
-                          registration.computedData.address.city,
-                        ]
-                          .filter(Boolean)
-                          .join(' ')
-                      }}
+                    <q-item-label v-if="city">
+                      {{ city }}
                     </q-item-label>
-                    <q-item-label
-                      v-if="registration.computedData.address.country"
-                    >
-                      {{ registration.computedData.address.country }}
+                    <q-item-label v-if="country">
+                      {{ country }}
                     </q-item-label>
                   </q-item-section>
                 </q-item>
@@ -291,10 +255,12 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Registration } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { t, locale } = useI18n();
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 
@@ -307,18 +273,6 @@ const personName = computed<string>(() => {
   const lastName = registration.computedData.lastName?.trim() ?? '';
   const fullName = `${firstName} ${lastName}`.trim();
   return fullName.length > 0 ? fullName : '?';
-});
-
-const statusColor = computed<string>(() => {
-  switch (registration.status) {
-    case 'ACCEPTED':
-      return 'positive';
-    case 'PENDING':
-      return 'info';
-    case 'WAITLISTED':
-    default:
-      return 'warning';
-  }
 });
 
 const hasAddress = computed<boolean>(() => {
@@ -371,6 +325,30 @@ const formattedCreatedAt = computed<string>(() => {
     hour: '2-digit',
     minute: '2-digit',
   });
+});
+
+const street = computed<string | null>(
+  () => registration.computedData.address.street,
+);
+
+const city = computed<string | null>(() => {
+  const zipCode = registration.computedData.address.zipCode;
+  const city = registration.computedData.address.city;
+
+  if (zipCode == null && city == null) {
+    return null;
+  }
+
+  return [zipCode, city].filter(Boolean).join(' ');
+});
+
+const country = computed<string | null>(() => {
+  const country = registration.computedData.address.country;
+  if (country == null) {
+    return country;
+  }
+
+  return te(`country.${country}`) ? t(`country.${country}`) : country;
 });
 </script>
 
@@ -565,9 +543,18 @@ action:
 </i18n>
 
 <style scoped>
+.details-card {
+  background: var(--md3-surface-container-low);
+  overflow: hidden;
+}
+
+.header-btn {
+  color: var(--md3-on-surface-variant);
+}
+
 @media (min-width: 600px) {
   .timeline-column {
-    border-left: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: 1px solid var(--md3-outline-variant);
   }
 }
 </style>

@@ -2,7 +2,7 @@ import type {
   Message,
   MessageCreateData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 
 export function useMessageService() {
   async function fetchMessages(campId: string): Promise<Message[]> {

@@ -10,6 +10,10 @@ import { VerifyEmailMessage } from '#app/auth/auth.messages';
 import { BaseController } from '#core/base/BaseController';
 import { isPasswordMatch } from '#core/encryption';
 import { inject, injectable } from 'inversify';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from '#app/auth/auth.cookies';
 
 @injectable()
 export class ProfileController extends BaseController {
@@ -82,8 +86,8 @@ export class ProfileController extends BaseController {
     await this.userService.deleteUserById(userId);
 
     // Clear auth cookies
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie(ACCESS_TOKEN_COOKIE);
+    res.clearCookie(REFRESH_TOKEN_COOKIE);
 
     res.status(httpStatus.NO_CONTENT).end();
   }

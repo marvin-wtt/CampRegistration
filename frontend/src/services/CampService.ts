@@ -5,7 +5,7 @@ import type {
   CampUpdateData,
   CampQuery,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 import { extendAxiosConfig } from 'src/services/AuthService';
 
 export function useCampService() {

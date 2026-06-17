@@ -4,7 +4,7 @@
 
     <!-- Cake icon sits next to the number so it stays visible in wide columns -->
     <q-icon
-      v-if="hasBirthDay"
+      v-if="hasBirthDay && showBirthday"
       class="age-cell__cake"
       color="red"
       name="cake"
@@ -20,9 +20,22 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { AgeOptions } from 'components/campManagement/table/tableCells/AgeOptions';
 
-const { props: cellProps, camp } = defineProps<TableCellProps>();
+const {
+  props: cellProps,
+  camp,
+  options,
+} = defineProps<TableCellProps<AgeOptions>>();
 const { d } = useI18n();
+
+const config = computed<AgeOptions>(() => {
+  return options as AgeOptions;
+});
+
+const showBirthday = computed<boolean>(() => {
+  return config.value.showBirthday ?? true;
+});
 
 const startAt = computed<Date>(() => {
   return new Date(camp.startAt);

@@ -16,7 +16,36 @@
     >
       <div class="row no-wrap items-center q-gutter-x-sm">
         <div class="col">
+          <q-select
+            v-if="valueOptions"
+            v-model="mapping.value"
+            :label="t('value.label')"
+            :hint="t('value.hint')"
+            :options="valueOptions"
+            emit-value
+            map-options
+            use-input
+            fill-input
+            hide-selected
+            hide-bottom-space
+            new-value-mode="add-unique"
+            outlined
+            rounded
+            dense
+            @new-value="createValue"
+          >
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.value }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
           <q-input
+            v-else
             v-model="mapping.value"
             :label="t('value.label')"
             outlined
@@ -75,6 +104,7 @@
         <icon-picker
           v-model="fallback.icon"
           :label="t('icon.label')"
+          clearable
         />
       </div>
       <div class="col-6">
@@ -88,33 +118,66 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import type { QSelectOption } from 'quasar';
+import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
 import IconPicker from 'components/common/inputs/IconPicker.vue';
 import SemanticColorSelect from 'components/common/inputs/SemanticColorSelect.vue';
+import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
+import { useObjectTranslation } from 'src/composables/objectTranslation';
+import type {
+  IconMappingOptions,
+  IconMapping,
+  IconMappingFallback,
+} from 'components/campManagement/table/tableCells/IconMappingOptions';
 
-interface Mapping {
-  value: string;
-  icon: string;
-  color: string;
-}
+const { camp, field } = defineProps<TableCellOptionsProps>();
 
-interface Fallback {
-  icon: string;
-  color: string;
-}
-
-const model = defineModel<Record<string, unknown> | undefined>();
+const model = defineModel<IconMappingOptions>();
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
 
-const mappings = ref<Mapping[]>([]);
-const fallback = ref<Fallback>({ icon: 'question_mark', color: 'grey' });
+// When the bound form field is a select question, offer its choices as value
+// suggestions. Custom values can still be added via `new-value-mode`. Falls back
+// to a free-text input when the field has no known choices.
+const valueOptions = computed<QSelectOption[] | undefined>(() => {
+  if (!camp || !field) {
+    return undefined;
+  }
+
+  const options = FormSelectCache.get(camp, field);
+  if (!options) {
+    return undefined;
+  }
+
+  return Object.entries(options).map(([value, label]) => ({
+    value,
+    label: to(label) || value,
+  }));
+});
+
+function createValue(
+  val: string,
+  done: (item: string, mode: 'add-unique') => void,
+): void {
+  const trimmed = val.trim();
+  if (trimmed) {
+    done(trimmed, 'add-unique');
+  }
+}
+
+const mappings = ref<IconMapping[]>([]);
+const fallback = ref<IconMappingFallback>({
+  icon: 'question_mark',
+  color: 'grey',
+});
 
 // Initialise local state from the stored render options.
 const stored = (model.value ?? {}) as {
-  mappings?: Partial<Mapping>[];
-  fallback?: Partial<Fallback>;
+  mappings?: Partial<IconMapping>[];
+  fallback?: Partial<IconMappingFallback>;
 };
 mappings.value = Array.isArray(stored.mappings)
   ? stored.mappings.map((m) => ({
@@ -123,8 +186,10 @@ mappings.value = Array.isArray(stored.mappings)
       color: m.color ?? 'primary',
     }))
   : [];
+// Default to a placeholder icon only for a brand-new mapping. Once a fallback is
+// stored, honor a cleared icon (undefined) so "no fallback icon" round-trips.
 fallback.value = {
-  icon: stored.fallback?.icon ?? 'question_mark',
+  icon: stored.fallback ? stored.fallback.icon : 'question_mark',
   color: stored.fallback?.color ?? 'grey',
 };
 
@@ -174,6 +239,7 @@ mappings:
   hint: 'Show an icon and color for each value. The first match is used.'
 value:
   label: 'Value'
+  hint: 'Pick a value or type a new one'
 icon:
   label: 'Icon'
 color:
@@ -192,6 +258,7 @@ mappings:
   hint: 'Symbol und Farbe je Wert anzeigen. Die erste Übereinstimmung wird verwendet.'
 value:
   label: 'Wert'
+  hint: 'Wert auswählen oder einen neuen eingeben'
 icon:
   label: 'Symbol'
 color:
@@ -210,6 +277,7 @@ mappings:
   hint: 'Affiche une icône et une couleur par valeur. La première correspondance est utilisée.'
 value:
   label: 'Valeur'
+  hint: 'Choisir une valeur ou en saisir une nouvelle'
 icon:
   label: 'Icône'
 color:
@@ -228,6 +296,7 @@ mappings:
   hint: 'Pokaż ikonę i kolor dla każdej wartości. Używane jest pierwsze dopasowanie.'
 value:
   label: 'Wartość'
+  hint: 'Wybierz wartość lub wpisz nową'
 icon:
   label: 'Ikona'
 color:
@@ -246,6 +315,7 @@ mappings:
   hint: 'Zobrazí ikonu a barvu pro každou hodnotu. Použije se první shoda.'
 value:
   label: 'Hodnota'
+  hint: 'Vyberte hodnotu nebo zadejte novou'
 icon:
   label: 'Ikona'
 color:

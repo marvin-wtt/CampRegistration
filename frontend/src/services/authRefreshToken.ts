@@ -2,8 +2,8 @@ import {
   type AxiosError,
   type AxiosInstance,
   type InternalAxiosRequestConfig,
-  isAxiosError,
 } from 'axios';
+import refreshRequestRetry from 'src/services/refreshRequestRetry';
 
 type CustomAxiosError = AxiosError & {
   config: InternalAxiosRequestConfig & {
@@ -18,80 +18,18 @@ interface RetryOptions {
   handleTokenRefresh: () => Promise<unknown>;
 }
 
-// https://gist.github.com/Godofbrowser/bf118322301af3fc334437c683887c5f
 export default (axiosClient: AxiosInstance, options: RetryOptions) => {
-  let isRefreshing = false;
-  let failedQueue: {
-    resolve: () => void;
-    reject: (error: unknown) => void;
-  }[] = [];
-
-  const processQueue = (error?: AxiosError) => {
-    failedQueue.forEach((prom) => {
-      if (error) {
-        prom.reject(error);
-      } else {
-        prom.resolve();
-      }
-    });
-
-    failedQueue = [];
-  };
-  const isCustomAxiosError = (error: unknown): error is CustomAxiosError => {
-    return isAxiosError(error);
-  };
-
-  const interceptor = (error: unknown) => {
-    if (!isCustomAxiosError(error)) {
-      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-      return Promise.reject(error);
-    }
-
-    if (!options.shouldIntercept(error)) {
-      return Promise.reject(error);
-    }
-
-    if (
-      error.config._retry ||
-      error.config._skipRetry ||
-      error.config._queued
-    ) {
-      return Promise.reject(error);
-    }
-
-    const originalRequest = error.config;
-    if (isRefreshing) {
-      return new Promise<void>((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      })
-        .then(() => {
-          originalRequest._queued = true;
-          return axiosClient.request(originalRequest);
-        })
-        .catch(() => {
-          return Promise.reject(error);
-        });
-    }
-
-    originalRequest._retry = true;
-    isRefreshing = true;
-
-    return new Promise((resolve, reject) => {
-      options
-        .handleTokenRefresh()
-        .then(() => {
-          processQueue();
-          resolve(axiosClient.request(originalRequest));
-        })
-        .catch((err) => {
-          processQueue(err);
-          reject(error);
-        })
-        .finally(() => {
-          isRefreshing = false;
-        });
-    });
-  };
-
-  axiosClient.interceptors.response.use(undefined, interceptor);
+  refreshRequestRetry<CustomAxiosError['config']>(axiosClient, {
+    ...options,
+    shouldSkipRetry: (config) =>
+      config._retry === true ||
+      config._skipRetry === true ||
+      config._queued === true,
+    markRetrying: (config) => {
+      config._retry = true;
+    },
+    markQueued: (config) => {
+      config._queued = true;
+    },
+  });
 };

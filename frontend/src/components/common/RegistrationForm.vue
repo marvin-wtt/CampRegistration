@@ -96,35 +96,39 @@ function createModel(campId: string, form: object): SurveyModel {
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
-    interface FileOption {
-      file: Pick<File, 'name' | 'type' | 'size'>;
-      content?: unknown;
-    }
+    try {
+      interface FileOption {
+        file: Pick<File, 'name' | 'type' | 'size'>;
+        content?: unknown;
+      }
 
-    const fileUploads = options.files.map(async (file) => {
-      const name = await props.uploadFileFn(file);
+      const fileUploads = options.files.map(async (file) => {
+        const name = await props.uploadFileFn(file);
 
-      return new File([file], name, {
-        type: file.type,
-        lastModified: file.lastModified,
+        return new File([file], name, {
+          type: file.type,
+          lastModified: file.lastModified,
+        });
       });
-    });
 
-    const files = await Promise.all(fileUploads);
+      const files = await Promise.all(fileUploads);
 
-    const readFileAsync = async (file: File): Promise<FileOption> => {
-      const textContent = await readFile(file);
-      return {
-        file: { name: file.name, type: file.type, size: file.size },
-        content: textContent,
+      const readFileAsync = async (file: File): Promise<FileOption> => {
+        const textContent = await readFile(file);
+        return {
+          file: { name: file.name, type: file.type, size: file.size },
+          content: textContent,
+        };
       };
-    };
 
-    const fileOptions: FileOption[] = await Promise.all<FileOption>(
-      files.map((file) => readFileAsync(file)),
-    );
+      const fileOptions: FileOption[] = await Promise.all<FileOption>(
+        files.map((file) => readFileAsync(file)),
+      );
 
-    options.callback('success', fileOptions);
+      options.callback('success', fileOptions);
+    } catch {
+      options.callback('error');
+    }
   });
   // Remove file from storage
   survey.onClearFiles.add((_, options) => {

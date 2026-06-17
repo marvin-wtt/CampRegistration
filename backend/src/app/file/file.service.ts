@@ -279,6 +279,26 @@ export class FileService extends BaseService {
     return this.storageRegistry.getStorage(file.storageLocation).stream(file);
   }
 
+  async updateFile(
+    id: string,
+    data: {
+      name?: string;
+      field?: string;
+      locale?: string | null;
+      accessLevel?: string;
+    },
+  ) {
+    return this.prisma.file.update({
+      where: { id },
+      data: {
+        originalName: data.name,
+        field: data.field,
+        locale: data.locale,
+        accessLevel: data.accessLevel,
+      },
+    });
+  }
+
   async deleteFile(id: string) {
     const file = await this.prisma.file.delete({
       where: {

@@ -265,7 +265,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
@@ -288,6 +288,7 @@ import { usePermissions } from 'src/composables/permissions';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { formatPersonName } from 'src/utils/formatters';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { useCampStorage } from 'src/composables/campStorage';
 import { useAPIService } from 'src/services/APIService';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -308,38 +309,10 @@ interface PlannerSettings {
   skipRoleFilter: boolean;
 }
 
-const SETTINGS_KEY = 'room-planner-settings';
-
-function loadSettings(): PlannerSettings {
-  const defaults: PlannerSettings = {
-    skipGenderFilter: false,
-    skipRoleFilter: false,
-  };
-
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    if (stored) {
-      return {
-        ...defaults,
-        ...JSON.parse(stored),
-      };
-    }
-  } catch {
-    // Ignore invalid stored settings and fall back to defaults
-  }
-
-  return defaults;
-}
-
-const settings = reactive<PlannerSettings>(loadSettings());
-
-watch(
-  settings,
-  () => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings }));
-  },
-  { deep: true },
-);
+const settings = useCampStorage<PlannerSettings>('room-planner-settings', {
+  skipGenderFilter: false,
+  skipRoleFilter: false,
+});
 
 const {
   data,

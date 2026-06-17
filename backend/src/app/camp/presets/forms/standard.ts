@@ -635,7 +635,7 @@ export default {
           isRequired: true,
           choices: [
             {
-              value: 2,
+              value: 'alone',
               text: {
                 en: 'Alone',
                 de: 'Alleine',
@@ -646,7 +646,7 @@ export default {
               },
             },
             {
-              value: 1,
+              value: 'group',
               text: {
                 en: 'In groups of at least 3 people',
                 de: 'In Gruppen von mindestens 3 Personen',
@@ -657,7 +657,7 @@ export default {
               },
             },
             {
-              value: 0,
+              value: 'none',
               text: {
                 en: 'No',
                 de: 'Nein',

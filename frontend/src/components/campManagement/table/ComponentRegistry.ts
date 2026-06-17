@@ -1,55 +1,69 @@
-import { type Component } from 'vue';
+import type { Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import components from 'components/campManagement/table/tableCells';
-import type { BaseComponent } from 'components/common/inputs/BaseComponent';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
 
-type MaybeLazyComponent = Component | (() => Component);
+type Options = object | undefined;
 
-interface ComponentOptions {
+type MaybeLazyComponent<T extends Options> =
+  | Component<TableCellProps<T>>
+  | (() => Component<TableCellProps<T>>);
+
+type TableCellOptionsComponentProps<T> = TableCellOptionsProps & {
+  modelValue?: T;
+};
+
+interface ComponentOptions<T extends Options> {
   editable?: false | object;
-  label?: string | Record<string, string>;
   internal?: boolean;
-  customOptions?: BaseComponent[];
-  customOptionsComponent?: Component;
+  optionsComponent?: Component<TableCellOptionsComponentProps<NoInfer<T>>>;
 }
 
-interface ComponentEntry {
-  component: MaybeLazyComponent;
-  options: ComponentOptions;
+interface ComponentEntry<T extends Options = undefined> {
+  component: MaybeLazyComponent<T>;
+  options: ComponentOptions<T>;
 }
 
-const componentMap: Map<string, ComponentEntry> = new Map<
-  string,
-  ComponentEntry
->();
+/**
+ * Entries stored in the registry have different generic types, so the
+ * concrete generic has to be erased after registration.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type StoredComponentEntry = ComponentEntry<any>;
+
+const componentMap = new Map<string, StoredComponentEntry>();
 
 const TableComponentRegistry = {
-  register: (
+  register<T extends Options = undefined>(
     name: string,
-    component: Component,
-    options: ComponentOptions = {},
-  ): void => {
-    componentMap.set(name, { component, options });
+    component: MaybeLazyComponent<T>,
+    options: ComponentOptions<NoInfer<T>> = {},
+  ): void {
+    componentMap.set(name, {
+      component,
+      options,
+    });
   },
 
-  get: (name: string): ComponentEntry | undefined => {
+  get(name: string): StoredComponentEntry | undefined {
     return componentMap.get(name);
   },
 
-  load: (name: string): ComponentEntry => {
-    const entry = componentMap.get(name);
-    if (!entry) {
-      return { component: DefaultTableCell, options: {} };
-    }
-
-    return entry;
+  load(name: string): StoredComponentEntry {
+    return (
+      componentMap.get(name) ?? {
+        component: DefaultTableCell,
+        options: {},
+      }
+    );
   },
 
-  all: (): Map<string, ComponentEntry> => {
+  all(): ReadonlyMap<string, StoredComponentEntry> {
     return componentMap;
   },
 
-  remove: (name: string): void => {
+  remove(name: string): void {
     componentMap.delete(name);
   },
 };

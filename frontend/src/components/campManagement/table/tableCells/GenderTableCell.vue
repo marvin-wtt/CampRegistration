@@ -1,38 +1,22 @@
 <template>
-  <q-icon
-    v-if="icon !== undefined"
-    :color="color"
-    :name="icon"
-    :size="size"
+  <!-- This is a simple wrapper around IconMappingTableCell that provides the specific configuration for rendering gender icons. -->
+  <icon-mapping-table-cell
+    v-bind="props"
+    :options="{
+      mappings: [
+        { value: 'm', icon: 'male', color: 'light-blue-6' },
+        { value: 'f', icon: 'female', color: 'pink-4' },
+        { value: 'd', icon: 'transgender', color: 'grey-4' },
+      ],
+    }"
   />
-
-  <a v-else>
-    {{ props.props.value }}
-  </a>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import IconMappingTableCell from 'components/campManagement/table/tableCells/IconMappingTableCell.vue';
 
 const props = defineProps<TableCellProps>();
-const icon = computed<string | undefined>(() => {
-  return props.props.value === 'm'
-    ? 'male'
-    : props.props.value === 'f'
-      ? 'female'
-      : undefined;
-});
-const color = computed<string | undefined>(() => {
-  return props.props.value === 'm'
-    ? 'light-blue-6'
-    : props.props.value === 'f'
-      ? 'pink-4'
-      : undefined;
-});
-const size = computed<string>(() => {
-  return props.props.dense ? 'xs' : 'md';
-});
 </script>
 
 <style scoped></style>

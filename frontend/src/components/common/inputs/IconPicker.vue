@@ -8,6 +8,7 @@
     hide-selected
     input-debounce="200"
     new-value-mode="add-unique"
+    :clearable="clearable"
     outlined
     rounded
     dense
@@ -56,6 +57,7 @@ import { materialIconNames } from 'src/utils/materialIcons';
 
 defineProps<{
   label?: string | undefined;
+  clearable?: boolean | undefined;
 }>();
 
 const model = defineModel<string | undefined>();

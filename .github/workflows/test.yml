@@ -23,21 +23,25 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     services:
-      mariadb:
-        image: mariadb:10.11.15
+      # Use MySQL (not MariaDB) as the shadow database. Prisma's `mysql` provider
+      # models native MySQL JSON, but MariaDB aliases JSON to LONGTEXT, which makes
+      # `migrate diff` report a spurious "type changed" on every JSON column.
+      mysql:
+        image: mysql:8
         env:
-          MYSQL_DATABASE: test_db
+          MYSQL_DATABASE: shadow_db
           MYSQL_ROOT_PASSWORD: admin123
         options: >-
-          --health-cmd "mysqladmin ping"
+          --health-cmd "mysqladmin ping -h 127.0.0.1 --silent"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 3
+          --health-retries 10
+          --health-start-period 30s
         ports:
           - 3306:3306
 
     env:
-      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
 
     steps:
       - name: Checkout code
@@ -47,16 +51,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: 'npm'
 
-      - name: Install prisma
-        run: npm i prisma
+      - name: Install dependencies
+        run: npm ci
 
       - name: Verify migrations
+        working-directory: backend
         run: >
-          npx prisma migrate diff \
-            --exit-code \
-            --from-migrations backend/prisma/migrations \
-            --to-schema backend/prisma/schema.prisma
+          npx prisma migrate diff
+          --exit-code
+          --from-migrations prisma/migrations
+          --to-schema prisma/schema.prisma
 
 
   test-common:

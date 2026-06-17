@@ -21,6 +21,8 @@ import {
   verifyToken,
 } from './utils/token.js';
 import { request } from '../utils/request.js';
+import { randomUUID } from 'node:crypto';
+import { fetchCsrf } from '../utils/csrf.js';
 import * as OTPAuth from 'otpauth';
 import { expectEmailTo } from '../utils/mail.js';
 import { wait } from '../utils/wait.js';
@@ -345,9 +347,13 @@ describe('/api/v1/auth', async () => {
 
     it('should set access token as cookie when successful', async () => {
       await createUser();
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -361,9 +367,13 @@ describe('/api/v1/auth', async () => {
 
     it('should not set refresh token as cookie without remember', async () => {
       await createUser();
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -400,8 +410,13 @@ describe('/api/v1/auth', async () => {
     it('should set access token and refresh token as cookie with remember when successful', async () => {
       await createUser();
 
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -593,8 +608,13 @@ describe('/api/v1/auth', async () => {
         const totp = generateTOTP(user);
         const token = generateOTPToken(user);
 
+        const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
+          .set('X-Client-Type', 'web')
+          .set('Cookie', csrfCookies)
+          .set('x-csrf-token', csrfToken)
           .send({
             otp: totp,
             token,
@@ -621,8 +641,13 @@ describe('/api/v1/auth', async () => {
         const totp = generateTOTP(user);
         const token = generateOTPToken(user);
 
+        const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
+          .set('X-Client-Type', 'web')
+          .set('Cookie', csrfCookies)
+          .set('x-csrf-token', csrfToken)
           .send({
             otp: totp,
             token,
@@ -834,8 +859,13 @@ describe('/api/v1/auth', async () => {
         refreshToken,
       };
 
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
       const { headers } = await request()
         .post(`/api/v1/auth/refresh-tokens/`)
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send(data)
         .expect(200);
 
@@ -1258,6 +1288,84 @@ describe('/api/v1/auth', async () => {
         .expect(200);
 
       expect(body).toHaveProperty('csrfToken');
+    });
+  });
+
+  describe('CSRF protection', () => {
+    // Only web clients (`X-Client-Type: web`) are subject to CSRF protection.
+    // The shared `request()` helper defaults mutations to a non-web client (and
+    // would therefore exempt them), so every test here opts back in explicitly.
+    // `fetchCsrf()` returns the token together with the cookies it is bound to
+    // (notably the dedicated `csrf-session` cookie), which must be forwarded for
+    // the double-submit check to pass.
+    it('should accept a cookie-authenticated mutation when the CSRF token matches the session', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const { token, cookies } = await fetchCsrf();
+
+      await request()
+        .patch('/api/v1/profile')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', [...cookies, 'accessToken=' + accessToken])
+        .set('x-csrf-token', token)
+        .send({ name: 'Updated Name' })
+        .expect(200);
+    });
+
+    it('should reject a cookie-authenticated mutation when the CSRF token was issued for a different session', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const { token, cookies } = await fetchCsrf();
+
+      // Keep the token and its double-submit cookie, but swap out the
+      // `csrf-session` cookie it was bound to. This mimics the cold-start race
+      // where the surviving session cookie no longer matches the session the
+      // token was minted for, which must be rejected.
+      const tamperedCookies = cookies.map((cookie) =>
+        cookie.startsWith('csrf-session=')
+          ? 'csrf-session=' + randomUUID()
+          : cookie,
+      );
+
+      const { body } = await request()
+        .patch('/api/v1/profile')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', [...tamperedCookies, 'accessToken=' + accessToken])
+        .set('x-csrf-token', token)
+        .send({ name: 'Updated Name' })
+        .expect(403);
+
+      // The frontend relies on this stable error code to recover by fetching a
+      // fresh token and retrying the request.
+      expect(body).toHaveProperty('errorCode', 'EBADCSRFTOKEN');
+    });
+
+    it('should reject a cookie-authenticated mutation without a CSRF token', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      const { body } = await request()
+        .patch('/api/v1/profile')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', ['accessToken=' + accessToken])
+        .send({ name: 'Updated Name' })
+        .expect(403);
+
+      expect(body).toHaveProperty('errorCode', 'EBADCSRFTOKEN');
+    });
+
+    it('should not require a CSRF token for bearer-authenticated requests', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      // Force the web client type so the only thing exempting the request is the
+      // Bearer authorization header.
+      await request()
+        .patch('/api/v1/profile')
+        .set('X-Client-Type', 'web')
+        .auth(accessToken, { type: 'bearer' })
+        .send({ name: 'Updated Name' })
+        .expect(200);
     });
   });
 });

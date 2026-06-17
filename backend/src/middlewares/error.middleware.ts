@@ -19,6 +19,9 @@ const statusToString = (statusCode: number): string => {
 const getStack = (err: unknown): string | undefined =>
   isObject(err) && typeof err.stack === 'string' ? err.stack : undefined;
 
+const getCode = (err: unknown): string | undefined =>
+  isObject(err) && typeof err.code === 'string' ? err.code : undefined;
+
 // Prisma failures that indicate a bug or infrastructure problem rather than a
 // faulty request. Their details must not leak to the client.
 const isInternalPrismaError = (err: unknown): boolean =>
@@ -67,7 +70,13 @@ const toApiError = (err: unknown): ApiError => {
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
   const isOperational = statusCode >= 400 && statusCode < 500;
 
-  return new ApiError(statusCode, message, isOperational, getStack(err));
+  return new ApiError(
+    statusCode,
+    message,
+    isOperational,
+    getStack(err),
+    getCode(err),
+  );
 };
 
 export const errorConverter: ErrorRequestHandler = (err, _req, _res, next) => {
@@ -91,6 +100,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   const response = {
     code: statusCode,
     message,
+    ...(err.isOperational && err.code !== undefined && { errorCode: err.code }),
     ...(config.env === 'development' && { stack: err.stack }),
   };
 

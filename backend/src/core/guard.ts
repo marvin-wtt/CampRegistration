@@ -2,7 +2,6 @@ import type { Request } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 export {
-  campPublic,
   registrationOpen,
   campManager,
 } from '#app/campManager/camp-manager.guard';

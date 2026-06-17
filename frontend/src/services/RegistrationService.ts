@@ -5,7 +5,7 @@ import type {
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 
 export function useRegistrationService() {
   async function fetchRegistrations(campId: string): Promise<Registration[]> {

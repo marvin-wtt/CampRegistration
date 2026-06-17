@@ -4,7 +4,7 @@ import type {
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 
 export function useMessageTemplateService() {
   async function fetchMessageTemplates(
