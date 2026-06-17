@@ -214,9 +214,23 @@ const fileData = reactive<ServiceFileFormData>({
 
 const loading = ref<boolean>(false);
 
-const isEditMode = computed(() => fileToEdit !== undefined);
+type DialogMode = 'upload' | 'replace' | 'edit';
 
-const isReplaceMode = computed(() => fileToReplace !== undefined);
+// Single source of truth for the dialog's mode. Title, submit label and the
+// submit dispatch all derive from this so they can never disagree.
+const mode = computed<DialogMode>(() => {
+  if (fileToEdit !== undefined) {
+    return 'edit';
+  }
+  if (fileToReplace !== undefined) {
+    return 'replace';
+  }
+  return 'upload';
+});
+
+const isEditMode = computed(() => mode.value === 'edit');
+
+const isReplaceMode = computed(() => mode.value === 'replace');
 
 const isSlotUploadMode = computed(() => initialField !== undefined);
 
@@ -229,7 +243,10 @@ const isFieldLocked = computed(
 );
 
 const isLocaleLocked = computed(
-  () => isReplaceMode.value || initialLocale !== undefined,
+  // Lock only when a concrete locale was supplied (e.g. replace, or a slot that
+  // targets a specific language). A locale-less slot (initialLocale === null)
+  // stays editable so the user can choose one.
+  () => isReplaceMode.value || initialLocale != null,
 );
 
 const isAccessLevelLocked = computed(
@@ -255,24 +272,11 @@ const hasDuplicateFieldLocale = computed<boolean>(() => {
   );
 });
 
-const dialogTitle = computed<string>(() => {
-  if (isEditMode.value) {
-    return t('title.edit');
-  }
-  if (isReplaceMode.value) {
-    return t('title.replace');
-  }
-  return t('title.upload');
-});
+const dialogTitle = computed<string>(() => t(`title.${mode.value}`));
 
 const submitLabel = computed<string>(() => {
-  if (isEditMode.value) {
-    return t('action.update');
-  }
-  if (isReplaceMode.value) {
-    return t('action.replace');
-  }
-  return t('action.upload');
+  const action = mode.value === 'edit' ? 'update' : mode.value;
+  return t(`action.${action}`);
 });
 
 const localeOptions = computed<QSelectOption<string | null>[]>(() => {
@@ -330,25 +334,22 @@ function stripExtension(fileName: string): string {
   return fileName.replace(/\.[^/.]+$/, '');
 }
 
+// Maps common document-name keywords (in any supported language) to the
+// conventional form-slot field they usually fill. Add new keywords or
+// languages in this single table.
+const CANONICAL_FIELD_SYNONYMS: Record<string, readonly string[]> = {
+  toc: ['toc', 'agb', 'terms', 'conditions'],
+  rules: ['rules', 'rule', 'regeln', 'ordnung'],
+};
+
 function createSuggestedFieldName(name: string): string {
   const slug = slugifyFieldName(name);
-  const words = slug.split('-');
+  const words = new Set(slug.split('-'));
 
-  if (
-    words.includes('toc') ||
-    words.includes('agb') ||
-    (words.includes('terms') && words.includes('conditions'))
-  ) {
-    return 'toc';
-  }
-
-  if (
-    words.includes('rules') ||
-    words.includes('rule') ||
-    words.includes('regeln') ||
-    words.includes('ordnung')
-  ) {
-    return 'rules';
+  for (const [field, synonyms] of Object.entries(CANONICAL_FIELD_SYNONYMS)) {
+    if (synonyms.some((synonym) => words.has(synonym))) {
+      return field;
+    }
   }
 
   return trimFieldName(slug);
@@ -403,11 +404,15 @@ async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
     const metadata = fileMetadata();
-    const file = fileToEdit
-      ? await campFileStore.updateEntry(fileToEdit.id, metadata)
-      : fileToReplace
-        ? await campFileStore.replaceFile(fileToReplace, createData(metadata))
-        : await campFileStore.createEntry(createData(metadata));
+
+    let file: ServiceFile;
+    if (fileToEdit) {
+      file = await campFileStore.updateEntry(fileToEdit.id, metadata);
+    } else if (fileToReplace) {
+      file = await campFileStore.replaceFile(fileToReplace, createData(metadata));
+    } else {
+      file = await campFileStore.createEntry(createData(metadata));
+    }
 
     onDialogOK(file);
   } finally {
