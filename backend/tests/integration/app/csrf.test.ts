@@ -74,4 +74,34 @@ describe('CSRF protection', () => {
       .send()
       .expect(204);
   });
+
+  it('should not establish a CSRF session on requests that do not issue a token', async () => {
+    // Only the token-issuing route may mint the `csrf-session` cookie. If other
+    // requests minted it too, concurrent cold-start requests would each emit a
+    // different session id and the browser would keep only the last — detaching
+    // an already-issued token from the surviving cookie (the first-registration
+    // 403 this guards against).
+    const res = await request().get('/api/v1/health');
+
+    const setCookie = (res.headers['set-cookie'] ?? []) as unknown as string[];
+    expect(setCookie.some((cookie) => cookie.startsWith('csrf-session='))).toBe(
+      false,
+    );
+  });
+
+  it('should keep an issued token valid across an intervening non-token request', async () => {
+    const { token, cookies } = await fetchCsrf();
+
+    // A request that does not issue a token must not rotate the session cookie,
+    // so the previously issued token stays bound to the same identifier.
+    await request().get('/api/v1/health').set('Cookie', cookies);
+
+    await request()
+      .post('/api/v1/auth/forgot-password')
+      .set('X-Client-Type', 'web')
+      .set('Cookie', cookies)
+      .set('x-csrf-token', token)
+      .send({ email: 'someone@email.net' })
+      .expect(204);
+  });
 });

@@ -3,6 +3,7 @@ import config from '#config/index';
 import type { NextFunction, Response, Request } from 'express';
 import {
   createCookieIfMissing,
+  getStringCookie,
   secureCookieOptions,
   secureCookieName,
 } from '#utils/cookie';
@@ -15,13 +16,25 @@ declare module 'express-serve-static-core' {
 
 const CSRF_SESSION_COOKIE_NAME = 'csrf-session';
 
-// CSRF uses its own session cookie instead of the general `session` cookie.
-// The auth/session cookie lifecycle is tied to login/logout (it gets cleared
-// and rotated), which would invalidate outstanding CSRF tokens mid-session.
-// A dedicated, long-lived identifier keeps issued tokens valid across auth
-// state changes and avoids the race where concurrent requests each mint a new
-// session id.
-export function csrfSession(req: Request, res: Response, next: NextFunction) {
+// Reads the existing CSRF session id but never mints one. Minting on every
+// request is racy: concurrent cold-start requests each generate a different id
+// and emit a competing `Set-Cookie`, leaving an issued token bound to an id the
+// surviving cookie no longer matches. The session is established only when a
+// token is issued — see `ensureCsrfSession`.
+export function csrfSession(req: Request, _res: Response, next: NextFunction) {
+  req.csrfSessionId =
+    getStringCookie(req, secureCookieName(CSRF_SESSION_COOKIE_NAME)) ??
+    undefined;
+  next();
+}
+
+// Mints the CSRF session cookie when missing. Mounted only on the token-issuing
+// route so the generated token has a stable identifier to bind to.
+export function ensureCsrfSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   req.csrfSessionId = createCookieIfMissing(req, res, CSRF_SESSION_COOKIE_NAME);
   next();
 }
@@ -53,13 +66,9 @@ export function isCsrfExempt(req: Request): boolean {
 
 const { doubleCsrfProtection } = doubleCsrf({
   getSecret: () => config.csrf.secret,
-  getSessionIdentifier: (req) => {
-    if (!req.csrfSessionId) {
-      throw new Error('Session ID is not set for the request.');
-    }
-
-    return req.csrfSessionId;
-  },
+  // Generation always runs after `ensureCsrfSession`; a missing id only occurs
+  // on validation, where the random string fails the HMAC check (403, not 500).
+  getSessionIdentifier: (req) => req.csrfSessionId ?? crypto.randomUUID(),
   cookieName: secureCookieName('x-csrf-token'),
   cookieOptions: secureCookieOptions(),
   getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
