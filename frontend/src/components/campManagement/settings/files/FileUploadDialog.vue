@@ -409,7 +409,10 @@ async function onOKClick(): Promise<void> {
     if (fileToEdit) {
       file = await campFileStore.updateEntry(fileToEdit.id, metadata);
     } else if (fileToReplace) {
-      file = await campFileStore.replaceFile(fileToReplace, createData(metadata));
+      file = await campFileStore.replaceFile(
+        fileToReplace,
+        createData(metadata),
+      );
     } else {
       file = await campFileStore.createEntry(createData(metadata));
     }
