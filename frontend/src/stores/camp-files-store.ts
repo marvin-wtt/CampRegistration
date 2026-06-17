@@ -99,6 +99,18 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     });
   });
 
+  // Number of files that need attention: one per declared-but-not-uploaded slot,
+  // plus one per missing locale on slots that already have files. A pending slot
+  // has no files at all, so the two sets are disjoint and can be summed.
+  const missingFilesCount = computed<number>(
+    () =>
+      pendingSlots.value.length +
+      slotsWithMissingLocales.value.reduce(
+        (sum, { missingLocales }) => sum + missingLocales.length,
+        0,
+      ),
+  );
+
   async function fetchData() {
     const campId = queryParam('campId');
 
@@ -187,6 +199,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     error,
     pendingSlots,
     slotsWithMissingLocales,
+    missingFilesCount,
     downloadFile,
     getUrl,
     fetchData,
