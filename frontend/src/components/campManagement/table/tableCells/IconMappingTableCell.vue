@@ -14,7 +14,8 @@ import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { IconMappingOptions } from 'components/campManagement/table/tableCells/IconMappingOptions';
 
-const { props: cellProps, options } = defineProps<TableCellProps>();
+const { props: cellProps, options } =
+  defineProps<TableCellProps<IconMappingOptions>>();
 
 const config = computed<IconMappingOptions>(() => {
   return options as IconMappingOptions;

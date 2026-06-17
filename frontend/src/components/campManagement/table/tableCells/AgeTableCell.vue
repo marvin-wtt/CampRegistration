@@ -22,7 +22,11 @@ import { useI18n } from 'vue-i18n';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { AgeOptions } from 'components/campManagement/table/tableCells/AgeOptions';
 
-const { props: cellProps, camp, options } = defineProps<TableCellProps>();
+const {
+  props: cellProps,
+  camp,
+  options,
+} = defineProps<TableCellProps<AgeOptions>>();
 const { d } = useI18n();
 
 const config = computed<AgeOptions>(() => {
