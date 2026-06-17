@@ -22,6 +22,8 @@ import TranslatedValueTableCell from 'components/campManagement/table/tableCells
 import EditorTableCell from 'components/campManagement/table/tableCells/EditorTableCell.vue';
 import FormSelectTableCell from 'components/campManagement/table/tableCells/FormSelectTableCell.vue';
 import StatusTableCell from 'components/campManagement/table/tableCells/StatusTableCell.vue';
+import AgeOptionsEditor from 'components/campManagement/table/tableCells/AgeOptionsEditor.vue';
+import TextOptionsEditor from 'components/campManagement/table/tableCells/TextOptionsEditor.vue';
 
 // Labels for the (non-internal) cell types live in the i18n blocks of
 // TableTemplateColumnEditDialog.vue, keyed by the registry name (`cellType.<name>`).
@@ -34,7 +36,9 @@ const components = () => {
   });
   TableComponentRegistry.register('status', StatusTableCell);
   TableComponentRegistry.register('address', AddressTableCell);
-  TableComponentRegistry.register('age', AgeTableCell);
+  TableComponentRegistry.register('age', AgeTableCell, {
+    optionsComponent: AgeOptionsEditor,
+  });
   TableComponentRegistry.register('country_flag', CountryFlagTableCell);
   TableComponentRegistry.register('date', DateTableCell);
   TableComponentRegistry.register('default', DefaultTableCell);
@@ -47,7 +51,7 @@ const components = () => {
     internal: true, // Component should be removed as it is included in icon mapping
   });
   TableComponentRegistry.register('icon_mapping', IconMappingTableCell, {
-    customOptionsComponent: IconMappingOptionsEditor,
+    optionsComponent: IconMappingOptionsEditor,
   });
   TableComponentRegistry.register('index', IndexTableCell, {
     internal: true,
@@ -55,7 +59,9 @@ const components = () => {
   TableComponentRegistry.register('language_skills', LanguageSkillsTableCell);
   TableComponentRegistry.register('name', NameTableCell);
   TableComponentRegistry.register('phone_number', PhoneNumberTableCell);
-  TableComponentRegistry.register('text', TextTableCell);
+  TableComponentRegistry.register('text', TextTableCell, {
+    optionsComponent: TextOptionsEditor,
+  });
   TableComponentRegistry.register('time_ago', TimeAgoTableCell);
   TableComponentRegistry.register('translated_value', TranslatedValueTableCell);
 };

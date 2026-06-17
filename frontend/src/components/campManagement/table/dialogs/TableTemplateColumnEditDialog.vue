@@ -229,14 +229,7 @@
                   :label="t('field.renderOptions.label')"
                   :caption="t('field.renderOptions.hint')"
                 >
-                  <dynamic-input-group
-                    v-if="renderOptions"
-                    v-model="data.renderOptions"
-                    :elements="renderOptions"
-                  />
-
                   <json-input
-                    v-else
                     v-model="data.renderOptions"
                     filled
                   />
@@ -417,22 +410,12 @@ const alignOptions = computed<QSelectOption[]>(() => {
   ];
 });
 
-const renderOptions = computed<BaseComponent[] | undefined>(() => {
-  if (!data.renderAs) {
-    return undefined;
-  }
-
-  const renderer = ComponentRegistry.get(data.renderAs);
-
-  return renderer?.options.customOptions;
-});
-
 const customOptionsComponent = computed<Component | undefined>(() => {
   if (!data.renderAs) {
     return undefined;
   }
 
-  return ComponentRegistry.get(data.renderAs)?.options.customOptionsComponent;
+  return ComponentRegistry.get(data.renderAs)?.options.optionsComponent;
 });
 
 const renderAsOptions = computed<QSelectOption[]>(() => {

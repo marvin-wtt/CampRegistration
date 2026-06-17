@@ -1,7 +1,6 @@
 import { type Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import components from 'components/campManagement/table/tableCells';
-import type { BaseComponent } from 'components/common/inputs/BaseComponent';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
 
@@ -10,8 +9,7 @@ type MaybeLazyComponent<T> = Component<T> | (() => Component<T>);
 interface ComponentOptions {
   editable?: false | object;
   internal?: boolean;
-  customOptions?: BaseComponent[];
-  customOptionsComponent?: Component<TableCellOptionsProps>;
+  optionsComponent?: Component<TableCellOptionsProps>;
 }
 
 interface ComponentEntry {
