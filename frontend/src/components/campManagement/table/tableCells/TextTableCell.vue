@@ -42,18 +42,14 @@ const { props: cellProps, options } =
 
 const DEFAULT_LIMIT = 25;
 
-const config = computed<TextOptions>(() => {
-  return options as TextOptions;
-});
-
-const showExtra = computed<boolean>(() => config.value.showRemaining ?? true);
+const showExtra = computed<boolean>(() => options?.showRemaining ?? true);
 
 const limit = computed<number>(() => {
   if (options && 'limit' in options && typeof options.limit === 'number') {
     return options.limit;
   }
 
-  return config.value.maxLength ?? DEFAULT_LIMIT;
+  return options?.maxLength ?? DEFAULT_LIMIT;
 });
 
 const isTruncated = computed<boolean>(() => {

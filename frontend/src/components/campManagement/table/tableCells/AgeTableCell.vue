@@ -22,19 +22,16 @@ import { useI18n } from 'vue-i18n';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { AgeOptions } from 'components/campManagement/table/tableCells/AgeOptions';
 
+const { d } = useI18n();
+
 const {
   props: cellProps,
   camp,
   options,
 } = defineProps<TableCellProps<AgeOptions>>();
-const { d } = useI18n();
-
-const config = computed<AgeOptions>(() => {
-  return options as AgeOptions;
-});
 
 const showBirthday = computed<boolean>(() => {
-  return config.value.showBirthday ?? true;
+  return options?.showBirthday ?? true;
 });
 
 const startAt = computed<Date>(() => {
