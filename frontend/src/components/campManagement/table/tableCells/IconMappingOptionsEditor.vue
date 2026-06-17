@@ -126,21 +126,15 @@ import IconPicker from 'components/common/inputs/IconPicker.vue';
 import SemanticColorSelect from 'components/common/inputs/SemanticColorSelect.vue';
 import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-
-interface Mapping {
-  value: string;
-  icon: string;
-  color: string;
-}
-
-interface Fallback {
-  icon: string | undefined;
-  color: string;
-}
+import type {
+  IconMappingOptions,
+  IconMapping,
+  IconMappingFallback,
+} from 'components/campManagement/table/tableCells/IconMappingOptions';
 
 const { camp, field } = defineProps<TableCellOptionsProps>();
 
-const model = defineModel<Record<string, unknown> | undefined>();
+const model = defineModel<IconMappingOptions>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
@@ -174,13 +168,16 @@ function createValue(
   }
 }
 
-const mappings = ref<Mapping[]>([]);
-const fallback = ref<Fallback>({ icon: 'question_mark', color: 'grey' });
+const mappings = ref<IconMapping[]>([]);
+const fallback = ref<IconMappingFallback>({
+  icon: 'question_mark',
+  color: 'grey',
+});
 
 // Initialise local state from the stored render options.
 const stored = (model.value ?? {}) as {
-  mappings?: Partial<Mapping>[];
-  fallback?: Partial<Fallback>;
+  mappings?: Partial<IconMapping>[];
+  fallback?: Partial<IconMappingFallback>;
 };
 mappings.value = Array.isArray(stored.mappings)
   ? stored.mappings.map((m) => ({
@@ -192,7 +189,7 @@ mappings.value = Array.isArray(stored.mappings)
 // Default to a placeholder icon only for a brand-new mapping. Once a fallback is
 // stored, honor a cleared icon (undefined) so "no fallback icon" round-trips.
 fallback.value = {
-  icon: stored.fallback ? (stored.fallback.icon ?? undefined) : 'question_mark',
+  icon: stored.fallback ? stored.fallback.icon : 'question_mark',
   color: stored.fallback?.color ?? 'grey',
 };
 

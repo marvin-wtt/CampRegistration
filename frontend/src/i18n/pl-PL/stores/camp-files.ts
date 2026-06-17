@@ -18,6 +18,11 @@ export default {
     success: 'Plik pomyślnie zastąpiony',
     error: 'Błąd podczas zastępowania pliku',
   },
+  update: {
+    progress: 'Aktualizowanie pliku...',
+    success: 'Plik pomyślnie zaktualizowany',
+    error: 'Błąd podczas aktualizowania pliku',
+  },
   download: {
     error: 'Błąd podczas pobierania pliku',
   },

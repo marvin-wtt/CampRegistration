@@ -18,6 +18,11 @@ export default {
     success: 'Fichier remplacé avec succès',
     error: 'Échec du remplacement du fichier',
   },
+  update: {
+    progress: 'Mise à jour du fichier en cours...',
+    success: 'Fichier mis à jour avec succès',
+    error: 'Échec de la mise à jour du fichier',
+  },
   download: {
     error: 'Échec du téléchargement du fichier',
   },

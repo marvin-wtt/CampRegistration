@@ -5,6 +5,7 @@ import { useAuthBus, useCampBus } from 'src/composables/bus';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import type {
   ServiceFileCreateData,
+  ServiceFileUpdateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { exportFile } from 'quasar';
@@ -135,24 +136,31 @@ export const useCampFilesStore = defineStore('campFiles', () => {
       const newFile = await apiService.createCampFile(campId, createData);
       data.value?.push(newFile);
 
-      await apiService.deleteCampFile(campId, oldFile.id);
+      await apiService.deleteFile(oldFile.id);
       data.value = data.value?.filter((f) => f.id !== oldFile.id);
 
       return newFile;
     });
   }
 
-  async function deleteEntry(id: string) {
-    const campId = queryParam('campId');
+  async function updateEntry(
+    id: string,
+    updateData: ServiceFileUpdateData,
+  ): Promise<ServiceFile> {
+    return withProgressNotification('update', async () => {
+      const file = await apiService.updateFile(id, updateData);
 
+      data.value = data.value?.map((entry) => (entry.id === id ? file : entry));
+
+      return file;
+    });
+  }
+
+  async function deleteEntry(id: string) {
     await withProgressNotification('delete', async () => {
-      await apiService.deleteCampFile(campId, id);
+      await apiService.deleteFile(id);
 
       data.value = data.value?.filter((file) => file.id !== id);
-
-      if (campStore.data?.id === id) {
-        campStore.reset();
-      }
     });
   }
 
@@ -184,6 +192,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     fetchData,
     createEntry,
     replaceFile,
+    updateEntry,
     deleteEntry,
   };
 });

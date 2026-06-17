@@ -24,13 +24,23 @@ export class FileRouter extends ModuleRouter {
   protected defineRoutes() {
     this.router.get(
       '/:fileId',
-      guard(fileAccessGuard),
+      guard(fileAccessGuard('view')),
       controller(this.fileController, 'stream'),
     );
     this.router.post(
       '/',
       multipart('file'),
       controller(this.fileController, 'store'),
+    );
+    this.router.patch(
+      '/:fileId',
+      guard(fileAccessGuard('edit')),
+      controller(this.fileController, 'update'),
+    );
+    this.router.delete(
+      '/:fileId',
+      guard(fileAccessGuard('delete')),
+      controller(this.fileController, 'destroy'),
     );
   }
 }

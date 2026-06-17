@@ -18,6 +18,11 @@ export default {
     success: 'File replaced successfully',
     error: 'Failed to replace file',
   },
+  update: {
+    progress: 'Updating file...',
+    success: 'File updated successfully',
+    error: 'Failed to update file',
+  },
   download: {
     error: 'Failed to download file',
   },

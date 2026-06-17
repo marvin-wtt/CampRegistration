@@ -1,6 +1,7 @@
 import { api } from 'boot/axios';
 import type {
   ServiceFileCreateData,
+  ServiceFileUpdateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
 
@@ -32,8 +33,17 @@ export function useFileService() {
     return response?.data?.data;
   }
 
-  async function deleteCampFile(campId: string, fileId: string): Promise<void> {
-    await api.delete(`camps/${campId}/files/${fileId}`);
+  async function updateFile(
+    fileId: string,
+    data: ServiceFileUpdateData,
+  ): Promise<ServiceFile> {
+    const response = await api.patch(`files/${fileId}/`, data);
+
+    return response?.data?.data;
+  }
+
+  async function deleteFile(fileId: string): Promise<void> {
+    await api.delete(`files/${fileId}`);
   }
 
   async function downloadFile(id: string): Promise<Blob> {
@@ -67,7 +77,8 @@ export function useFileService() {
     fetchCampFiles,
     createCampFile,
     createTemporaryFile,
-    deleteCampFile,
+    updateFile,
+    deleteFile,
     downloadFile,
     getFileUrl,
     getCampFileSlotUrl,

@@ -1,72 +1,108 @@
 import type { Request } from 'express';
-import { type GuardFn } from '#core/guard';
+import type { GuardFn } from '#core/guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 
-// Type definition for file guard resolver function
-export type FileGuardResolver = (req: Request) => Promise<GuardFn>;
+type File = Exclude<Request['models']['file'], undefined>;
 
-// Registry to store guard resolvers for different models
-const guardRegistry: Record<string, FileGuardResolver> = {};
+type MaybePromise<T> = T | Promise<T>;
 
-// Function to register a guard resolver for a specific model
-export function registerFileGuard(
-  modelId: string,
-  resolver: FileGuardResolver,
-): void {
-  if (modelId in guardRegistry) {
-    throw new Error(
-      `Guard resolver for model "${modelId}" is already registered.`,
+export type FileGuardResolver = (req: Request) => MaybePromise<GuardFn>;
+
+export type FileAccessType = 'view' | 'edit' | 'delete';
+
+export type FileGuardResolvers = Partial<
+  Record<FileAccessType, FileGuardResolver>
+>;
+
+interface FileGuardRegistration {
+  modelName: string;
+  resolvers: FileGuardResolvers;
+}
+
+const fileGuardRegistry = new Map<string, FileGuardResolvers>();
+
+function resolveFileGuardRegistration(
+  file: File,
+): FileGuardRegistration | null {
+  const registrations = Array.from(
+    fileGuardRegistry,
+    ([modelName, resolvers]) => ({
+      modelName,
+      resolvers,
+    }),
+  ).filter(({ modelName }) => {
+    const foreignKey = `${modelName}Id` as keyof typeof file;
+
+    return file[foreignKey] != null;
+  });
+
+  if (registrations.length > 1) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      `File "${file.id}" is linked to multiple registered models.`,
     );
   }
 
-  guardRegistry[modelId] = resolver;
+  return registrations[0] ?? null;
+}
+
+export function registerFileGuard(
+  modelName: string,
+  resolvers: FileGuardResolvers,
+): void {
+  if (fileGuardRegistry.has(modelName)) {
+    throw new Error(
+      `File guard resolver for model "${modelName}" is already registered.`,
+    );
+  }
+
+  fileGuardRegistry.set(modelName, resolvers);
 }
 
 export function unregisterAllFileGuards(): void {
-  Object.keys(guardRegistry).forEach((key) => {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete guardRegistry[key];
-  });
+  fileGuardRegistry.clear();
 }
 
-const fileAccessGuardResolver = async (req: Request): Promise<GuardFn> => {
+const allowGuard: GuardFn = () => true;
+
+async function resolveFileAccessGuard(
+  req: Request,
+  accessType: FileAccessType,
+): Promise<GuardFn> {
   const file = req.modelOrFail('file');
 
-  const guardModels = Object.keys(guardRegistry).filter((modelName) => {
-    const key = `${modelName}Id`;
+  const guardRegistration = resolveFileGuardRegistration(file);
 
-    return key in file && file[key as keyof typeof file];
-  });
-
-  if (guardModels.length === 0) {
-    // We can assume that is file is a tmp file.
-
-    // Temporary files are only accessible by the session that created them
+  if (guardRegistration === null) {
+    // Temporary files may only be accessed by the session that created them.
     if (file.field !== null && file.field === req.sessionId) {
-      return () => true;
+      return allowGuard;
     }
 
-    // It should never be accessed
-    throw new ApiError(httpStatus.LOCKED, 'File is not linked to any model.');
-  }
-
-  if (guardModels.length > 1) {
     throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      `Multiple models found for file: ${file.id}.`,
+      httpStatus.LOCKED,
+      `File "${file.id}" is not linked to a registered model.`,
     );
   }
 
-  const guardFm = guardRegistry[guardModels[0]];
+  const resolver = guardRegistration.resolvers[accessType];
+  if (resolver === undefined) {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      `Access type "${accessType}" is not allowed for files linked to model "${guardRegistration.modelName}".`,
+    );
+  }
 
-  return guardFm(req);
-};
+  return resolver(req);
+}
 
-const fileAccessGuard: GuardFn = async (req) => {
-  const guardFn = await fileAccessGuardResolver(req);
+export function fileAccessGuard(accessType: FileAccessType): GuardFn {
+  return async (req) => {
+    const guard = await resolveFileAccessGuard(req, accessType);
 
-  return guardFn(req);
-};
+    return guard(req);
+  };
+}
 
 export default fileAccessGuard;

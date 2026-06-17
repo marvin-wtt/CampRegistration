@@ -18,6 +18,11 @@ export default {
     success: 'Datei erfolgreich ersetzt',
     error: 'Fehler beim Ersetzen der Datei',
   },
+  update: {
+    progress: 'Datei wird aktualisiert...',
+    success: 'Datei erfolgreich aktualisiert',
+    error: 'Fehler beim Aktualisieren der Datei',
+  },
   download: {
     error: 'Fehler beim herunterladen der Datei',
   },

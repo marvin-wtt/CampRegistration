@@ -12,19 +12,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { IconMappingOptions } from 'components/campManagement/table/tableCells/IconMappingOptions';
 
-interface IconMapping {
-  value: string | number;
-  icon: string;
-  color: string;
-}
-
-interface IconMappingOptions {
-  mappings?: IconMapping[];
-  fallback?: { icon?: string; color?: string } | undefined;
-}
-
-const { props: cellProps, options } = defineProps<TableCellProps>();
+const { props: cellProps, options } =
+  defineProps<TableCellProps<IconMappingOptions>>();
 
 const config = computed<IconMappingOptions>(() => {
   return options as IconMappingOptions;

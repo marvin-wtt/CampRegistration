@@ -219,29 +219,6 @@
                 outlined
                 rounded
               />
-
-              <!-- render options -->
-              <q-list
-                v-if="data.renderAs && !customOptionsComponent"
-                class="rounded-borders"
-              >
-                <q-expansion-item
-                  :label="t('field.renderOptions.label')"
-                  :caption="t('field.renderOptions.hint')"
-                >
-                  <dynamic-input-group
-                    v-if="renderOptions"
-                    v-model="data.renderOptions"
-                    :elements="renderOptions"
-                  />
-
-                  <json-input
-                    v-else
-                    v-model="data.renderOptions"
-                    filled
-                  />
-                </q-expansion-item>
-              </q-list>
             </div>
           </q-slide-transition>
         </q-card-section>
@@ -284,12 +261,9 @@ import type {
 } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
-import type { BaseComponent } from 'components/common/inputs/BaseComponent';
-import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 import type { PartialBy } from 'src/types';
 import { deepToRaw } from 'src/utils/deepToRaw';
 import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
@@ -417,22 +391,12 @@ const alignOptions = computed<QSelectOption[]>(() => {
   ];
 });
 
-const renderOptions = computed<BaseComponent[] | undefined>(() => {
-  if (!data.renderAs) {
-    return undefined;
-  }
-
-  const renderer = ComponentRegistry.get(data.renderAs);
-
-  return renderer?.options.customOptions;
-});
-
 const customOptionsComponent = computed<Component | undefined>(() => {
   if (!data.renderAs) {
     return undefined;
   }
 
-  return ComponentRegistry.get(data.renderAs)?.options.customOptionsComponent;
+  return ComponentRegistry.get(data.renderAs)?.options.optionsComponent;
 });
 
 const renderAsOptions = computed<QSelectOption[]>(() => {
