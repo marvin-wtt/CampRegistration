@@ -4,7 +4,9 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 
-export interface TableCellProps<Options extends object = object> {
+export interface TableCellProps<
+  Options extends object | undefined = undefined,
+> {
   props: QTableBodyCellProps<unknown, Registration>;
   camp: CampDetails;
   options?: Options | undefined;

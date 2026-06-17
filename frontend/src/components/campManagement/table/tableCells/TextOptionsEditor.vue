@@ -29,7 +29,7 @@ import { ref, watch } from 'vue';
 
 const { t } = useI18n();
 
-const model = defineModel<TextOptions | undefined>();
+const model = defineModel<TextOptions>();
 
 defineProps<TableCellOptionsProps>();
 

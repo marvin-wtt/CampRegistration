@@ -15,7 +15,7 @@ import { ref, watch } from 'vue';
 
 const { t } = useI18n();
 
-const model = defineModel<AgeOptions | undefined>();
+const model = defineModel<AgeOptions>();
 
 defineProps<TableCellOptionsProps>();
 
