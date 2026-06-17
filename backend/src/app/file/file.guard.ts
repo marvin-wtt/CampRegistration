@@ -20,33 +20,7 @@ interface FileGuardRegistration {
   resolvers: FileGuardResolvers;
 }
 
-const REQUEST_METHOD_ACCESS_MAP = {
-  GET: 'view',
-  PATCH: 'edit',
-  PUT: 'edit',
-  DELETE: 'delete',
-} as const satisfies Record<string, FileAccessType>;
-
 const fileGuardRegistry = new Map<string, FileGuardResolvers>();
-
-type SupportedRequestMethod = keyof typeof REQUEST_METHOD_ACCESS_MAP;
-
-function isSupportedRequestMethod(
-  method: string,
-): method is SupportedRequestMethod {
-  return Object.hasOwn(REQUEST_METHOD_ACCESS_MAP, method);
-}
-
-function resolveAccessType(method: string): FileAccessType {
-  if (!isSupportedRequestMethod(method)) {
-    throw new ApiError(
-      httpStatus.METHOD_NOT_ALLOWED,
-      `Request method "${method}" is not supported for files.`,
-    );
-  }
-
-  return REQUEST_METHOD_ACCESS_MAP[method];
-}
 
 function resolveFileGuardRegistration(
   file: File,
@@ -92,8 +66,10 @@ export function unregisterAllFileGuards(): void {
 
 const allowGuard: GuardFn = () => true;
 
-async function resolveFileAccessGuard(req: Request): Promise<GuardFn> {
-  const accessType = resolveAccessType(req.method);
+async function resolveFileAccessGuard(
+  req: Request,
+  accessType: FileAccessType,
+): Promise<GuardFn> {
   const file = req.modelOrFail('file');
 
   const guardRegistration = resolveFileGuardRegistration(file);
@@ -121,10 +97,12 @@ async function resolveFileAccessGuard(req: Request): Promise<GuardFn> {
   return resolver(req);
 }
 
-const fileAccessGuard: GuardFn = async (req) => {
-  const guard = await resolveFileAccessGuard(req);
+export function fileAccessGuard(accessType: FileAccessType): GuardFn {
+  return async (req) => {
+    const guard = await resolveFileAccessGuard(req, accessType);
 
-  return guard(req);
-};
+    return guard(req);
+  };
+}
 
 export default fileAccessGuard;

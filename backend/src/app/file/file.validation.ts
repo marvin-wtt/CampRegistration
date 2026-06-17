@@ -43,7 +43,7 @@ const store = z.object({
     name: z.string().optional(),
     field: z.string().optional(),
     locale: z.string().nullable().optional(),
-    accessLevel: z.string().optional(),
+    accessLevel: z.enum(['private', 'public']).optional(),
   }),
   file: z.custom<Express.Multer.File>((file) => {
     return file !== undefined;
@@ -58,7 +58,7 @@ const update = z.object({
     name: z.string().optional(),
     field: z.string().optional(),
     locale: z.string().nullable().optional(),
-    accessLevel: z.string().optional(),
+    accessLevel: z.enum(['private', 'public']).optional(),
   }),
 });
 

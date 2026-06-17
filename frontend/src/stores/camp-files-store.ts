@@ -161,10 +161,6 @@ export const useCampFilesStore = defineStore('campFiles', () => {
       await apiService.deleteFile(id);
 
       data.value = data.value?.filter((file) => file.id !== id);
-
-      if (campStore.data?.id === id) {
-        campStore.reset();
-      }
     });
   }
 

@@ -37,17 +37,19 @@ export class CampFilesRouter extends ModuleRouter {
     this.router.get(
       '/slots/:slot',
       this.resolveSlotFile,
-      guard(fileAccessGuard),
+      guard(fileAccessGuard('view')),
       controller(fileController, 'stream'),
     );
 
     // These routes are used to redirect to the file API endpoint
-    // In the future, it should serve the file model instead
+    // In the future, it should serve the file model instead.
+    // Use 307/308 so non-GET methods (e.g. DELETE) are preserved across the
+    // redirect instead of being downgraded to GET by the client.
     this.router.get('/:fileId', (req, res) => {
       res.redirect('/api/v1/files/' + req.params.fileId);
     });
     this.router.delete('/:fileId', (req, res) => {
-      res.redirect('/api/v1/files/' + req.params.fileId);
+      res.redirect(307, '/api/v1/files/' + req.params.fileId);
     });
 
     this.router.get(
