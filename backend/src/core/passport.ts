@@ -11,18 +11,11 @@ import { TokenType } from '#generated/prisma/client.js';
 import passport from 'passport';
 import { UserService } from '#app/user/user.service';
 import { resolve } from '#core/ioc/container';
+import { ACCESS_TOKEN_COOKIE } from '#app/auth/auth.cookies';
+import { getStringCookie } from '#utils/cookie';
 
 function cookieExtractor(req: Request) {
-  const cookies: unknown = req.cookies;
-  if (
-    cookies &&
-    typeof cookies === 'object' &&
-    'accessToken' in cookies &&
-    typeof cookies.accessToken === 'string'
-  ) {
-    return cookies.accessToken;
-  }
-  return null;
+  return getStringCookie(req, ACCESS_TOKEN_COOKIE);
 }
 
 const jwtOptions = {

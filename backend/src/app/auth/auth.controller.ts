@@ -4,7 +4,7 @@ import { UserService } from '#app/user/user.service';
 import { TokenService } from '#app/token/token.service';
 import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
 import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import authResource from './auth.resource.js';
@@ -17,6 +17,11 @@ import {
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
+import { getStringCookie, secureCookieOptions } from '#utils/cookie';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from '#app/auth/auth.cookies';
 
 @injectable()
 export class AuthController extends BaseController {
@@ -89,7 +94,7 @@ export class AuthController extends BaseController {
       return;
     }
 
-    await this.sendAuthResponse(res, user.id, remember);
+    await this.sendAuthResponse(req, res, user.id, remember);
   }
 
   async verifyOTP(req: Request, res: Response) {
@@ -101,14 +106,20 @@ export class AuthController extends BaseController {
     const user = await this.userService.getUserByIdOrFail(userId);
     this.totpService.verifyTOTP(user, otp);
 
-    await this.sendAuthResponse(res, userId, remember);
+    await this.sendAuthResponse(req, res, userId, remember);
   }
 
-  async sendAuthResponse(res: Response, userId: string, remember: boolean) {
+  async sendAuthResponse(
+    req: Request,
+    res: Response,
+    userId: string,
+    remember: boolean,
+  ) {
     const user = await this.userService.updateUserLastSeenByIdWithCamps(userId);
 
     const tokens = await this.tokenService.generateAuthTokens(user, remember);
-    this.setAuthCookies(res, tokens);
+
+    this.setAuthCookies(req, res, tokens);
 
     res.json(
       authResource({
@@ -151,24 +162,18 @@ export class AuthController extends BaseController {
     }
 
     const tokens = await this.authService.refreshAuth(refreshToken);
-    this.destroyAuthCookies(res);
-    this.setAuthCookies(res, tokens);
+    // Only clear cookies for web clients — otherwise we'd destroy the cookies
+    // without `setAuthCookies` re-issuing them, logging the user out.
+    if (this.isWebClient(req)) {
+      this.destroyAuthCookies(res);
+      this.setAuthCookies(req, res, tokens);
+    }
 
     res.json({ ...tokens });
   }
 
   extractCookieRefreshToken(req: Request): string | null {
-    const cookies: unknown = req.cookies;
-    if (
-      cookies &&
-      typeof cookies === 'object' &&
-      'refreshToken' in cookies &&
-      typeof cookies.refreshToken === 'string'
-    ) {
-      return cookies.refreshToken;
-    }
-
-    return null;
+    return getStringCookie(req, REFRESH_TOKEN_COOKIE);
   }
 
   async forgotPassword(req: Request, res: Response) {
@@ -239,34 +244,37 @@ export class AuthController extends BaseController {
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
-  setAuthCookies(res: Response, tokens: AuthTokensResponse) {
-    const httpOnly = true;
-    const secure = this.config.env !== 'development';
-    const sameSite = 'strict';
-    const path = '/';
+  // A request belongs to the web client unless it explicitly identifies as a
+  // different client type. Mirrors `isCsrfExempt` so cookie-setting and CSRF
+  // exemption agree on what "web" means (a missing header counts as web).
+  isWebClient(req: Request): boolean {
+    const clientType = req.headers['x-client-type'];
+    return typeof clientType !== 'string' || clientType === 'web';
+  }
 
-    res.cookie('accessToken', tokens.access.token, {
-      httpOnly,
-      secure,
-      path,
-      expires: tokens.access.expires,
-      sameSite,
-    });
+  setAuthCookies(req: Request, res: Response, tokens: AuthTokensResponse) {
+    if (!this.isWebClient(req)) {
+      return;
+    }
+
+    res.cookie(
+      ACCESS_TOKEN_COOKIE,
+      tokens.access.token,
+      secureCookieOptions({ expires: tokens.access.expires }),
+    );
 
     if (tokens.refresh) {
-      res.cookie('refreshToken', tokens.refresh.token, {
-        httpOnly,
-        secure,
-        path,
-        expires: tokens.refresh.expires,
-        sameSite,
-      });
+      res.cookie(
+        REFRESH_TOKEN_COOKIE,
+        tokens.refresh.token,
+        secureCookieOptions({ expires: tokens.refresh.expires }),
+      );
     }
   }
 
   destroyAuthCookies = (res: Response) => {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie(ACCESS_TOKEN_COOKIE);
+    res.clearCookie(REFRESH_TOKEN_COOKIE);
   };
 
   getCsrfToken(req: Request, res: Response) {

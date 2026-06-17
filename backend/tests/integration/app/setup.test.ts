@@ -4,6 +4,7 @@ import prisma from '../utils/prisma.js';
 import { UserFactory } from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
 import { verifyToken } from './utils/token.js';
+import { fetchCsrf } from '../utils/csrf';
 
 describe('/api/v1/setup', () => {
   describe('GET /api/v1/setup', () => {
@@ -102,8 +103,13 @@ describe('/api/v1/setup', () => {
     });
 
     it('should set the access token as a cookie when successful', async () => {
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
       const { headers } = await request()
         .post('/api/v1/setup')
+        .set('X-Client-Type', 'web') // This header is required for the cookie to be set.
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send(validData)
         .expect(201);
 

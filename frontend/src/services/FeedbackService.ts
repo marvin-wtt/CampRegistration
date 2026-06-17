@@ -1,4 +1,4 @@
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 
 export function useFeedbackService() {
   async function sendFeedback(

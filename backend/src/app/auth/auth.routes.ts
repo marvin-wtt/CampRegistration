@@ -1,4 +1,5 @@
-import { auth, authLimiter, guest } from '#middlewares/index';
+import { auth, authLimiter, guest } from '#middlewares';
+import { ensureCsrfSession } from '#middlewares/csrf.middleware';
 import { AuthController } from '#app/auth/auth.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -10,7 +11,7 @@ export class AuthRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const authController = resolve(AuthController);
+    const authController: AuthController = resolve(AuthController);
 
     this.router.use(authLimiter);
 
@@ -44,6 +45,10 @@ export class AuthRouter extends ModuleRouter {
       '/verify-email',
       controller(authController, 'verifyEmail'),
     );
-    this.router.get('/csrf-token', controller(authController, 'getCsrfToken'));
+    this.router.get(
+      '/csrf-token',
+      ensureCsrfSession,
+      controller(authController, 'getCsrfToken'),
+    );
   }
 }

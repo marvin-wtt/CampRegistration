@@ -10,8 +10,10 @@ export default defineConfig({
     seed: 'tsx prisma/seeders/index.ts',
   },
   datasource: {
-    // Do not use the env helper function as the URL is not guaranteed to be set in CI environments
-    url: process.env.DATABASE_URL ?? '',
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL ?? '',
+    // Do not use the env helper function as the URL is not guaranteed to be set
+    // in CI environments. Pass `undefined` (not `''`) when unset: Prisma 7 treats
+    // an empty string as an invalid URL, but an omitted value as "not provided".
+    url: process.env.DATABASE_URL,
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });
