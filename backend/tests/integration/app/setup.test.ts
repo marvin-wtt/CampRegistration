@@ -104,6 +104,7 @@ describe('/api/v1/setup', () => {
     it('should set the access token as a cookie when successful', async () => {
       const { headers } = await request()
         .post('/api/v1/setup')
+        .set('X-Client-Type', 'web') // This header is required for the cookie to be set.
         .send(validData)
         .expect(201);
 
