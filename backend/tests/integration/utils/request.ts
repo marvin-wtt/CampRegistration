@@ -32,6 +32,22 @@ declare module 'supertest' {
   return this;
 };
 
+// Mutating methods default to a non-web client so requests are exempt from CSRF
+// protection (the real middleware stays active). Tests that exercise the web
+// client opt in with `.set('X-Client-Type', 'web')` and supply a CSRF token.
+const CSRF_RELEVANT_METHODS = ['post', 'put', 'patch', 'delete'] as const;
+
 export const request = () => {
-  return supertest(app!);
+  const agent = supertest(app!);
+
+  for (const method of CSRF_RELEVANT_METHODS) {
+    const original = (agent[method] as (url: string) => supertest.Test).bind(
+      agent,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (agent as any)[method] = (url: string) =>
+      original(url).set('X-Client-Type', 'app');
+  }
+
+  return agent;
 };

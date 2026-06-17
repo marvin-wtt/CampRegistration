@@ -22,6 +22,7 @@ import {
 } from './utils/token.js';
 import { request } from '../utils/request.js';
 import { randomUUID } from 'node:crypto';
+import { fetchCsrf } from '../utils/csrf.js';
 import * as OTPAuth from 'otpauth';
 import { expectEmailTo } from '../utils/mail.js';
 import { wait } from '../utils/wait.js';
@@ -346,9 +347,13 @@ describe('/api/v1/auth', async () => {
 
     it('should set access token as cookie when successful', async () => {
       await createUser();
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -362,9 +367,13 @@ describe('/api/v1/auth', async () => {
 
     it('should not set refresh token as cookie without remember', async () => {
       await createUser();
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
 
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -401,8 +410,13 @@ describe('/api/v1/auth', async () => {
     it('should set access token and refresh token as cookie with remember when successful', async () => {
       await createUser();
 
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
       const { headers } = await request()
         .post('/api/v1/auth/login')
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send({
           email: 'test@email.net',
           password: 'password',
@@ -594,8 +608,13 @@ describe('/api/v1/auth', async () => {
         const totp = generateTOTP(user);
         const token = generateOTPToken(user);
 
+        const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
+          .set('X-Client-Type', 'web')
+          .set('Cookie', csrfCookies)
+          .set('x-csrf-token', csrfToken)
           .send({
             otp: totp,
             token,
@@ -622,8 +641,13 @@ describe('/api/v1/auth', async () => {
         const totp = generateTOTP(user);
         const token = generateOTPToken(user);
 
+        const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
         const { body, headers } = await request()
           .post('/api/v1/auth/verify-otp')
+          .set('X-Client-Type', 'web')
+          .set('Cookie', csrfCookies)
+          .set('x-csrf-token', csrfToken)
           .send({
             otp: totp,
             token,
@@ -835,8 +859,13 @@ describe('/api/v1/auth', async () => {
         refreshToken,
       };
 
+      const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
+
       const { headers } = await request()
         .post(`/api/v1/auth/refresh-tokens/`)
+        .set('X-Client-Type', 'web')
+        .set('Cookie', csrfCookies)
+        .set('x-csrf-token', csrfToken)
         .send(data)
         .expect(200);
 

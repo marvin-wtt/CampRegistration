@@ -4,12 +4,29 @@ import type {
   Authentication,
 } from '@camp-registration/common/entities';
 import authRefreshToken from 'src/services/authRefreshToken';
+import csrfTokenRetry from 'src/services/csrfTokenRetry';
 import { type AxiosError, type AxiosRequestConfig, isAxiosError } from 'axios';
 
 export type CustomRequestConfig = AxiosRequestConfig & {
   _skipRetry?: boolean;
   _skipAuthenticationHandler?: boolean | undefined;
+  _csrfRetry?: boolean | undefined;
 };
+
+// De-duplicates concurrent token requests so a burst of requests (or a cold
+// start priming the token) only triggers a single fetch and one session cookie.
+let pendingCsrfToken: Promise<void> | null = null;
+
+function isCsrfError(error: AxiosError): boolean {
+  if (error.response?.status !== 403) {
+    return false;
+  }
+
+  const message: unknown = (error.response.data as { message?: unknown })
+    ?.message;
+
+  return typeof message === 'string' && /csrf/i.test(message);
+}
 
 export type CustomAxiosError = AxiosError & {
   config: CustomRequestConfig;
@@ -32,6 +49,12 @@ export function useAuthService() {
   authRefreshToken(api, {
     handleTokenRefresh: refreshTokens,
     shouldIntercept: (error) => error.response?.status === 401,
+  });
+
+  // Retry failed requests after fetching a new CSRF token
+  csrfTokenRetry(api, {
+    handleTokenRefresh: requestCsrfToken,
+    shouldIntercept: isCsrfError,
   });
 
   let onUnauthenticated: (() => unknown) | undefined = undefined;

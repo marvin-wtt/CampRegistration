@@ -1,4 +1,4 @@
-import { auth, authLimiter, guest } from '#middlewares/index';
+import { auth, authLimiter, guest } from '#middlewares';
 import { AuthController } from '#app/auth/auth.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -10,7 +10,7 @@ export class AuthRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const authController = resolve(AuthController);
+    const authController: AuthController = resolve(AuthController);
 
     this.router.use(authLimiter);
 
