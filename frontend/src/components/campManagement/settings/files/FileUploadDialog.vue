@@ -3,24 +3,25 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
+    <q-card class="q-dialog-plugin q-pb-none file-dialog">
       <q-form
         @submit="onOKClick"
         @reset="onCancelClick"
       >
         <q-card-section>
           <div class="text-h6">
-            {{ t('title') }}
+            {{ dialogTitle }}
           </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <!-- File -->
           <q-file
+            v-if="!isEditMode"
             v-model="fileData.file"
             :label="t('fields.file.label')"
             :rules="[
-              (val?: File) => !!val || t('fields.access_level.rules.required'),
+              (val?: File | null) => !!val || t('fields.file.rules.required'),
             ]"
             clearable
             bottom-slots
@@ -40,7 +41,7 @@
             </template>
           </q-file>
 
-          <template v-if="fileData.file">
+          <template v-if="showMetadataFields">
             <!-- Name -->
             <q-input
               v-model="fileData.name"
@@ -57,16 +58,24 @@
               v-model="fileData.field"
               :label="t('fields.field.label')"
               :hint="t('fields.field.hint')"
-              :readonly="isReplaceMode"
+              :maxlength="MAX_FIELD_LENGTH"
+              :readonly="isFieldLocked"
               :rules="[
                 (val?: string) => !!val || t('fields.field.rules.required'),
-                (val: string) =>
-                  isReplaceMode ||
-                  !fields.includes(val) ||
-                  t('fields.field.rules.unique'),
+                (val?: string) =>
+                  (val?.length ?? 0) <= MAX_FIELD_LENGTH ||
+                  t('fields.field.rules.max_length', {
+                    max: MAX_FIELD_LENGTH,
+                  }),
+                (val?: string) =>
+                  !val ||
+                  isValidFieldName(val) ||
+                  t('fields.field.rules.format'),
               ]"
+              counter
               outlined
               rounded
+              @blur="normalizeField"
             />
 
             <!-- Locale -->
@@ -75,12 +84,24 @@
               :options="localeOptions"
               :label="t('fields.locale.label')"
               :hint="t('fields.locale.hint')"
-              :readonly="initialLocale !== null"
+              :readonly="isLocaleLocked"
               emit-value
               map-options
               outlined
               rounded
             />
+
+            <q-banner
+              v-if="hasDuplicateFieldLocale"
+              dense
+              rounded
+              class="duplicate-warning"
+            >
+              <template #avatar>
+                <q-icon name="warning_amber" />
+              </template>
+              {{ t('fields.field_locale.warning') }}
+            </q-banner>
 
             <!-- Access -->
             <q-select
@@ -91,7 +112,7 @@
                 (val?: string) =>
                   !!val || t('fields.access_level.rules.required'),
               ]"
-              :readonly="isReplaceMode"
+              :readonly="isAccessLevelLocked"
               emit-value
               map-options
               outlined
@@ -126,7 +147,8 @@
             type="submit"
             rounded
             color="primary"
-            :label="t('action.ok')"
+            :label="submitLabel"
+            :loading="loading"
           />
         </q-card-actions>
       </q-form>
@@ -145,16 +167,29 @@ import { useI18n } from 'vue-i18n';
 import { computed, reactive, ref } from 'vue';
 import type {
   ServiceFileCreateData,
+  ServiceFileUpdateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { uniqueName } from 'src/utils/uniqueName';
 import { useCampFilesStore } from 'stores/camp-files-store';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 
-const { initialField, initialLocale, fileToReplace } = defineProps<{
+const MAX_FIELD_LENGTH = 40;
+const FALLBACK_FIELD_NAME = 'file';
+const FIELD_NAME_PATTERN = /^[a-z0-9_-]+$/;
+
+interface ServiceFileFormData {
+  name?: string | undefined;
+  field?: string | undefined;
+  locale?: string | null;
+  accessLevel?: 'private' | 'public' | undefined;
+  file?: File | null;
+}
+
+const { initialField, initialLocale, fileToReplace, fileToEdit } = defineProps<{
   initialField?: string;
   initialLocale?: string | null;
   fileToReplace?: ServiceFile;
+  fileToEdit?: ServiceFile;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -168,25 +203,76 @@ const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const fileData = reactive<ServiceFileCreateData>({
-  accessLevel: 'public',
-  field: fileToReplace?.field ?? initialField,
-  locale: fileToReplace?.locale ?? initialLocale ?? null,
-} as ServiceFileCreateData);
+const fileData = reactive<ServiceFileFormData>({
+  accessLevel: normalizeAccessLevel(
+    fileToEdit?.accessLevel ?? fileToReplace?.accessLevel,
+  ),
+  field: fileToEdit?.field ?? fileToReplace?.field ?? initialField,
+  locale: fileToEdit?.locale ?? fileToReplace?.locale ?? initialLocale ?? null,
+  name: fileToEdit?.name,
+});
 
 const loading = ref<boolean>(false);
 
-const isReplaceMode = computed(
-  () => fileToReplace !== undefined || initialField !== undefined,
+const isEditMode = computed(() => fileToEdit !== undefined);
+
+const isReplaceMode = computed(() => fileToReplace !== undefined);
+
+const isSlotUploadMode = computed(() => initialField !== undefined);
+
+const showMetadataFields = computed(
+  () => isEditMode.value || fileData.file != null,
 );
 
-const fields = computed<string[]>(() => {
-  if (isReplaceMode.value) {
-    return [];
+const isFieldLocked = computed(
+  () => isReplaceMode.value || isSlotUploadMode.value,
+);
+
+const isLocaleLocked = computed(
+  () => isReplaceMode.value || initialLocale !== undefined,
+);
+
+const isAccessLevelLocked = computed(
+  () => isReplaceMode.value || isSlotUploadMode.value,
+);
+
+const activeFileId = computed(() => fileToEdit?.id ?? fileToReplace?.id);
+
+const hasDuplicateFieldLocale = computed<boolean>(() => {
+  const field = fileData.field?.trim();
+  if (!field) {
+    return false;
   }
+
+  const locale = fileData.locale ?? null;
   const files = campFileStore.data ?? [];
 
-  return files.map((file) => file.field).filter((field) => field != null);
+  return files.some(
+    (file) =>
+      file.id !== activeFileId.value &&
+      file.field === field &&
+      file.locale === locale,
+  );
+});
+
+const dialogTitle = computed<string>(() => {
+  if (isEditMode.value) {
+    return t('title.edit');
+  }
+  if (isReplaceMode.value) {
+    return t('title.replace');
+  }
+  return t('title.upload');
+});
+
+const submitLabel = computed<string>(() => {
+  if (isEditMode.value) {
+    return t('action.update');
+  }
+  if (isReplaceMode.value) {
+    return t('action.replace');
+  }
+  return t('action.upload');
 });
 
 const localeOptions = computed<QSelectOption<string | null>[]>(() => {
@@ -214,15 +300,86 @@ const accessLevelOptions: AccessLevelOption[] = [
   },
 ];
 
+function normalizeAccessLevel(
+  accessLevel?: string | null,
+): 'private' | 'public' {
+  return accessLevel === 'private' ? 'private' : 'public';
+}
+
+function isValidFieldName(value: string): boolean {
+  return FIELD_NAME_PATTERN.test(value);
+}
+
 function onFileUpdate() {
+  if (!fileData.file) {
+    return;
+  }
+
+  const displayName = stripExtension(fileData.file.name);
+
   if (!fileData.name || fileData.name.trim().length === 0) {
-    fileData.name = fileData.file.name.replace(/\.[^/.]+$/, '');
+    fileData.name = displayName;
   }
 
   if (fileData.name && !fileData.field) {
-    const name = fileData.name.trim().toLowerCase().replaceAll(' ', '-');
-    fileData.field = uniqueName(name, fields.value);
+    fileData.field = createSuggestedFieldName(fileData.name);
   }
+}
+
+function stripExtension(fileName: string): string {
+  return fileName.replace(/\.[^/.]+$/, '');
+}
+
+function createSuggestedFieldName(name: string): string {
+  const slug = slugifyFieldName(name);
+  const words = slug.split('-');
+
+  if (
+    words.includes('toc') ||
+    words.includes('agb') ||
+    (words.includes('terms') && words.includes('conditions'))
+  ) {
+    return 'toc';
+  }
+
+  if (
+    words.includes('rules') ||
+    words.includes('rule') ||
+    words.includes('regeln') ||
+    words.includes('ordnung')
+  ) {
+    return 'rules';
+  }
+
+  return trimFieldName(slug);
+}
+
+function slugifyFieldName(value: string): string {
+  const slug = value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+
+  return slug || FALLBACK_FIELD_NAME;
+}
+
+function trimFieldName(value: string): string {
+  return value
+    .slice(0, MAX_FIELD_LENGTH)
+    .replace(/[-_]+$/g, '')
+    .replace(/^[-_]+/g, '');
+}
+
+function normalizeField() {
+  if (!fileData.field) {
+    return;
+  }
+
+  fileData.field = trimFieldName(slugifyFieldName(fileData.field));
 }
 
 function onFileRejected(rejectedEntries: QRejectedEntry[]) {
@@ -245,9 +402,12 @@ function onFileRejected(rejectedEntries: QRejectedEntry[]) {
 async function onOKClick(): Promise<void> {
   loading.value = true;
   try {
-    const file = fileToReplace
-      ? await campFileStore.replaceFile(fileToReplace, fileData)
-      : await campFileStore.createEntry(fileData);
+    const metadata = fileMetadata();
+    const file = fileToEdit
+      ? await campFileStore.updateEntry(fileToEdit.id, metadata)
+      : fileToReplace
+        ? await campFileStore.replaceFile(fileToReplace, createData(metadata))
+        : await campFileStore.createEntry(createData(metadata));
 
     onDialogOK(file);
   } finally {
@@ -255,15 +415,63 @@ async function onOKClick(): Promise<void> {
   }
 }
 
+function fileMetadata(): ServiceFileUpdateData {
+  const metadata: ServiceFileUpdateData = {
+    locale: fileData.locale ?? null,
+  };
+  const name = fileData.name?.trim();
+  const field = fileData.field?.trim();
+
+  if (name) {
+    metadata.name = name;
+  }
+  if (field) {
+    metadata.field = field;
+  }
+  if (fileData.accessLevel) {
+    metadata.accessLevel = fileData.accessLevel;
+  }
+
+  return metadata;
+}
+
+function createData(metadata: ServiceFileUpdateData): ServiceFileCreateData {
+  if (!fileData.file) {
+    throw new Error('No file selected');
+  }
+
+  return {
+    ...metadata,
+    file: fileData.file,
+  };
+}
+
 function onCancelClick() {
   onDialogCancel();
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.file-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: 560px;
+}
+
+.duplicate-warning {
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+}
+
+.duplicate-warning .q-icon {
+  color: inherit;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
-title: 'Upload file'
+title:
+  upload: 'Upload file'
+  replace: 'Replace file'
+  edit: 'Edit file'
 
 fields:
   access_level:
@@ -275,7 +483,10 @@ fields:
     hint: 'Used to reference the file in the form'
     rules:
       required: 'This field is required'
-      unique: 'Another file with this identifier already exists'
+      max_length: 'Use {max} characters or fewer'
+      format: 'Use lowercase letters, numbers, hyphens or underscores'
+  field_locale:
+    warning: 'Another file already uses this identifier and language. The newer file may hide the older one in forms.'
   file:
     label: 'File'
     rules:
@@ -294,7 +505,9 @@ fields:
       required: 'Please select the new file name'
 
 action:
-  ok: 'Upload'
+  upload: 'Upload'
+  replace: 'Replace'
+  update: 'Update'
   cancel: 'Cancel'
 
 access_level:
@@ -307,7 +520,10 @@ access_level:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Datei hochladen'
+title:
+  upload: 'Datei hochladen'
+  replace: 'Datei ersetzen'
+  edit: 'Datei bearbeiten'
 
 fields:
   access_level:
@@ -319,7 +535,10 @@ fields:
     hint: 'Wird verwendet, um auf die Datei im Formular zu verweisen'
     rules:
       required: 'Dieses Feld ist erforderlich'
-      unique: 'Eine Datei mit dieser Kennung existiert bereits'
+      max_length: 'Verwenden Sie höchstens {max} Zeichen'
+      format: 'Verwenden Sie Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
+  field_locale:
+    warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Die neuere Datei kann die ältere im Formular überdecken.'
   file:
     label: 'Datei'
     rules:
@@ -338,7 +557,9 @@ fields:
       required: 'Bitte geben Sie den neuen Dateinamen ein'
 
 action:
-  ok: 'Hochladen'
+  upload: 'Hochladen'
+  replace: 'Ersetzen'
+  update: 'Aktualisieren'
   cancel: 'Abbrechen'
 
 access_level:
@@ -351,7 +572,10 @@ access_level:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Téléverser un fichier'
+title:
+  upload: 'Téléverser un fichier'
+  replace: 'Remplacer le fichier'
+  edit: 'Modifier le fichier'
 
 fields:
   access_level:
@@ -363,7 +587,10 @@ fields:
     hint: 'Utilisé pour référencer le fichier dans le formulaire'
     rules:
       required: 'Ce champ est requis'
-      unique: 'Un autre fichier avec cet identifiant existe déjà'
+      max_length: 'Utilisez {max} caractères au maximum'
+      format: 'Utilisez des minuscules, des chiffres, des tirets ou des traits de soulignement'
+  field_locale:
+    warning: "Un autre fichier utilise déjà cet identifiant et cette langue. Le fichier le plus récent peut masquer l'ancien dans les formulaires."
   file:
     label: 'Fichier'
     rules:
@@ -382,7 +609,9 @@ fields:
       required: 'Veuillez choisir le nouveau nom de fichier'
 
 action:
-  ok: 'Téléverser'
+  upload: 'Téléverser'
+  replace: 'Remplacer'
+  update: 'Mettre à jour'
   cancel: 'Annuler'
 
 access_level:
@@ -395,7 +624,10 @@ access_level:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Prześlij plik'
+title:
+  upload: 'Prześlij plik'
+  replace: 'Zastąp plik'
+  edit: 'Edytuj plik'
 
 fields:
   access_level:
@@ -407,7 +639,10 @@ fields:
     hint: 'Używany do odwoływania się do pliku w formularzu'
     rules:
       required: 'To pole jest wymagane'
-      unique: 'Plik o tym identyfikatorze już istnieje'
+      max_length: 'Użyj maksymalnie {max} znaków'
+      format: 'Użyj małych liter, cyfr, łączników lub podkreśleń'
+  field_locale:
+    warning: 'Inny plik używa już tego identyfikatora i języka. Nowszy plik może ukryć starszy w formularzach.'
   file:
     label: 'Plik'
     rules:
@@ -426,7 +661,9 @@ fields:
       required: 'Podaj nową nazwę pliku'
 
 action:
-  ok: 'Prześlij'
+  upload: 'Prześlij'
+  replace: 'Zastąp'
+  update: 'Aktualizuj'
   cancel: 'Anuluj'
 
 access_level:
@@ -439,7 +676,10 @@ access_level:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Nahrát soubor'
+title:
+  upload: 'Nahrát soubor'
+  replace: 'Nahradit soubor'
+  edit: 'Upravit soubor'
 
 fields:
   access_level:
@@ -451,7 +691,10 @@ fields:
     hint: 'Používá se pro odkazování na soubor ve formuláři'
     rules:
       required: 'Toto pole je povinné'
-      unique: 'Soubor s tímto identifikátorem již existuje'
+      max_length: 'Použijte nejvýše {max} znaků'
+      format: 'Použijte malá písmena, číslice, pomlčky nebo podtržítka'
+  field_locale:
+    warning: 'Jiný soubor již používá tento identifikátor a jazyk. Novější soubor může ve formulářích skrýt starší.'
   file:
     label: 'Soubor'
     rules:
@@ -470,7 +713,9 @@ fields:
       required: 'Zadejte nový název souboru'
 
 action:
-  ok: 'Nahrát'
+  upload: 'Nahrát'
+  replace: 'Nahradit'
+  update: 'Aktualizovat'
   cancel: 'Zrušit'
 
 access_level:

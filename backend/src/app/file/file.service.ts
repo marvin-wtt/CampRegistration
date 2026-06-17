@@ -279,15 +279,17 @@ export class FileService extends BaseService {
 
   async updateFile(
     id: string,
-    data: Pick<
-      Prisma.FileUpdateInput,
-      'name' | 'field' | 'locale' | 'accessLevel'
-    >,
+    data: {
+      name?: string;
+      field?: string;
+      locale?: string | null;
+      accessLevel?: string;
+    },
   ) {
     return this.prisma.file.update({
       where: { id },
       data: {
-        name: data.name,
+        originalName: data.name,
         field: data.field,
         locale: data.locale,
         accessLevel: data.accessLevel,

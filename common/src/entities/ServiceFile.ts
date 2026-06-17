@@ -12,10 +12,13 @@ export interface ServiceFile extends Identifiable {
   url: string;
 }
 
-export interface ServiceFileCreateData {
+export interface ServiceFileUpdateData {
   name?: string;
   field?: string;
   locale?: string | null;
   accessLevel?: 'private' | 'public';
+}
+
+export interface ServiceFileCreateData extends ServiceFileUpdateData {
   file: File;
 }

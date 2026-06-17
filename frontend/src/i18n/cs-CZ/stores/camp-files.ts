@@ -18,6 +18,11 @@ export default {
     success: 'Soubor úspěšně nahrazen',
     error: 'Chyba při nahrazování souboru',
   },
+  update: {
+    progress: 'Aktualizace souboru...',
+    success: 'Soubor úspěšně aktualizován',
+    error: 'Chyba při aktualizaci souboru',
+  },
   download: {
     error: 'Chyba při stahování souboru',
   },

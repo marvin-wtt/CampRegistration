@@ -41,9 +41,12 @@ export class CampFilesRouter extends ModuleRouter {
       controller(fileController, 'stream'),
     );
 
-    // This route is used to redirect to the file API endpoint
+    // These routes are used to redirect to the file API endpoint
     // In the future, it should serve the file model instead
     this.router.get('/:fileId', (req, res) => {
+      res.redirect('/api/v1/files/' + req.params.fileId);
+    });
+    this.router.delete('/:fileId', (req, res) => {
       res.redirect('/api/v1/files/' + req.params.fileId);
     });
 
@@ -59,12 +62,6 @@ export class CampFilesRouter extends ModuleRouter {
       guard(campManager('camp.files.create')),
       multipart('file'),
       controller(fileController, 'store'),
-    );
-    this.router.delete(
-      '/:fileId',
-      auth(),
-      guard(campManager('camp.files.delete')),
-      controller(fileController, 'destroy'),
     );
   }
 
