@@ -281,8 +281,6 @@ import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
-import type { BaseComponent } from 'components/common/inputs/BaseComponent';
-import DynamicInputGroup from 'components/common/inputs/DynamicInputGroup.vue';
 import type { PartialBy } from 'src/types';
 import { deepToRaw } from 'src/utils/deepToRaw';
 import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
