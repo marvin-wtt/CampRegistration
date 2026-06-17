@@ -18,20 +18,16 @@ export type CustomAxiosError = AxiosError & {
 };
 
 let retryInterceptorsInstalled = false;
+let onUnauthenticated: (() => unknown) | undefined = undefined;
 
 function isCsrfError(error: AxiosError): boolean {
   if (error.response?.status !== 403) {
     return false;
   }
 
-  const data = error.response.data as
-    | { message?: unknown; errorCode?: unknown }
-    | undefined;
+  const data = error.response.data as { errorCode?: unknown } | undefined;
 
-  return (
-    data?.errorCode === 'EBADCSRFTOKEN' ||
-    (typeof data?.message === 'string' && /csrf/i.test(data.message))
-  );
+  return data?.errorCode === 'EBADCSRFTOKEN';
 }
 
 function installRetryInterceptors(
@@ -54,25 +50,9 @@ function installRetryInterceptors(
     shouldIntercept: isCsrfError,
   });
 
-  retryInterceptorsInstalled = true;
-}
-
-export const extendAxiosConfig = (
-  config: CustomRequestConfig,
-): CustomRequestConfig => {
-  return config;
-};
-
-export const isCustomAxiosError = (
-  error: unknown,
-): error is CustomAxiosError => {
-  return isAxiosError(error);
-};
-
-export function useAuthService() {
-  installRetryInterceptors(refreshTokens, requestCsrfToken);
-
-  let onUnauthenticated: (() => unknown) | undefined = undefined;
+  // Invoke the registered unauthenticated handler on 401. Installed once here
+  // (not per `useAuthService()` call) so the interceptor doesn't accumulate on
+  // the shared `api` instance every time a component resolves the service.
   // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
   api.interceptors.response.use(undefined, async (error) => {
     if (!isCustomAxiosError(error)) {
@@ -94,6 +74,24 @@ export function useAuthService() {
 
     return Promise.reject(error);
   });
+
+  retryInterceptorsInstalled = true;
+}
+
+export const extendAxiosConfig = (
+  config: CustomRequestConfig,
+): CustomRequestConfig => {
+  return config;
+};
+
+export const isCustomAxiosError = (
+  error: unknown,
+): error is CustomAxiosError => {
+  return isAxiosError(error);
+};
+
+export function useAuthService() {
+  installRetryInterceptors(refreshTokens, requestCsrfToken);
 
   async function login(
     email: string,
@@ -121,7 +119,10 @@ export function useAuthService() {
     const response = await api.post('auth/refresh-tokens', undefined, {
       _skipRetry: true,
       _skipAuthenticationHandler: true,
-    } as AxiosRequestConfig);
+      // We already primed the CSRF token above; don't let the CSRF retry
+      // interceptor re-fetch and replay this request on a 403.
+      _csrfRetry: true,
+    } as CustomRequestConfig);
 
     return response?.data;
   }

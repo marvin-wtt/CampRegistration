@@ -12,18 +12,10 @@ import passport from 'passport';
 import { UserService } from '#app/user/user.service';
 import { resolve } from '#core/ioc/container';
 import { ACCESS_TOKEN_COOKIE } from '#app/auth/auth.cookies';
+import { getStringCookie } from '#utils/cookie';
 
 function cookieExtractor(req: Request) {
-  const cookies: unknown = req.cookies;
-  if (
-    cookies &&
-    typeof cookies === 'object' &&
-    ACCESS_TOKEN_COOKIE in cookies &&
-    typeof cookies[ACCESS_TOKEN_COOKIE] === 'string'
-  ) {
-    return cookies[ACCESS_TOKEN_COOKIE];
-  }
-  return null;
+  return getStringCookie(req, ACCESS_TOKEN_COOKIE);
 }
 
 const jwtOptions = {

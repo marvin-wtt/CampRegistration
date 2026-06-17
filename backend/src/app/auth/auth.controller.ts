@@ -17,7 +17,7 @@ import {
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
-import { secureCookieOptions } from '#utils/cookie';
+import { getStringCookie, secureCookieOptions } from '#utils/cookie';
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -162,24 +162,18 @@ export class AuthController extends BaseController {
     }
 
     const tokens = await this.authService.refreshAuth(refreshToken);
-    this.destroyAuthCookies(res);
-    this.setAuthCookies(req, res, tokens);
+    // Only clear cookies for web clients — otherwise we'd destroy the cookies
+    // without `setAuthCookies` re-issuing them, logging the user out.
+    if (this.isWebClient(req)) {
+      this.destroyAuthCookies(res);
+      this.setAuthCookies(req, res, tokens);
+    }
 
     res.json({ ...tokens });
   }
 
   extractCookieRefreshToken(req: Request): string | null {
-    const cookies: unknown = req.cookies;
-    if (
-      cookies &&
-      typeof cookies === 'object' &&
-      REFRESH_TOKEN_COOKIE in cookies &&
-      typeof cookies[REFRESH_TOKEN_COOKIE] === 'string'
-    ) {
-      return cookies[REFRESH_TOKEN_COOKIE];
-    }
-
-    return null;
+    return getStringCookie(req, REFRESH_TOKEN_COOKIE);
   }
 
   async forgotPassword(req: Request, res: Response) {
@@ -250,8 +244,16 @@ export class AuthController extends BaseController {
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
+  // A request belongs to the web client unless it explicitly identifies as a
+  // different client type. Mirrors `isCsrfExempt` so cookie-setting and CSRF
+  // exemption agree on what "web" means (a missing header counts as web).
+  isWebClient(req: Request): boolean {
+    const clientType = req.headers['x-client-type'];
+    return typeof clientType !== 'string' || clientType === 'web';
+  }
+
   setAuthCookies(req: Request, res: Response, tokens: AuthTokensResponse) {
-    if (req.headers['x-client-type'] !== 'web') {
+    if (!this.isWebClient(req)) {
       return;
     }
 
