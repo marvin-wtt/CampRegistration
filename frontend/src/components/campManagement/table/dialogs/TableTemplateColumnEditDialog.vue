@@ -54,9 +54,7 @@
             :label="t('field.field.label')"
             :hint="t('field.field.hint')"
             :options="fieldFilterOptions"
-            :rules="[
-              (val: string) => !!val || t('field.field.rules.required'),
-            ]"
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             emit-value
             use-input
             hide-bottom-space
@@ -89,9 +87,7 @@
             v-model="data.field"
             :label="t('field.field.label')"
             :options="fieldOptions"
-            :rules="[
-              (val: string) => !!val || t('field.field.rules.required'),
-            ]"
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             emit-value
             map-options
             clearable
@@ -103,9 +99,7 @@
             v-else
             v-model="data.field"
             :label="t('field.field.label')"
-            :rules="[
-              (val: string) => !!val || t('field.field.rules.required'),
-            ]"
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             outlined
             rounded
           />
