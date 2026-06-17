@@ -19,9 +19,9 @@
         />
       </div>
 
-      <!-- Edit affordance shown outside the table grid. -->
+      <!-- Edit affordance for editable cells. -->
       <q-icon
-        v-if="enabled && !printing"
+        v-if="enabled"
         class="editor-edit-icon"
         name="edit"
         size="18px"
@@ -70,12 +70,9 @@
     </q-input>
 
     <!-- Popup editor (small screens) -->
-    <q-popup-proxy
+    <q-dialog
       v-if="enabled && !largeScreen"
-      ref="popupRef"
-      no-parent-event
-      @show="editMode = true"
-      @hide="editMode = false"
+      v-model="editMode"
     >
       <q-card style="min-width: 280px">
         <q-card-section class="q-pb-none">
@@ -133,7 +130,7 @@
           />
         </q-card-actions>
       </q-card>
-    </q-popup-proxy>
+    </q-dialog>
 
     <q-inner-loading
       :showing="loading"
@@ -151,7 +148,7 @@ import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { usePermissions } from 'src/composables/permissions';
-import { useQuasar, type QPopupProxy } from 'quasar';
+import { useQuasar } from 'quasar';
 import { formatPersonName } from 'src/utils/formatters';
 import { deepToRaw } from 'src/utils/deepToRaw';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
@@ -172,8 +169,6 @@ const registrationsStore = useRegistrationsStore();
 const editMode = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const modelValue = ref<string>(getDefaultValue());
-// QPopupProxy has no v-model; it must be opened/closed imperatively.
-const popupRef = ref<QPopupProxy | null>(null);
 
 const label = computed<string>(() => to(cellProps.col.label));
 
@@ -244,23 +239,13 @@ function getDefaultValue(): string {
   return 'Invalid value';
 }
 
-function closeEditor() {
-  if (largeScreen.value) {
-    editMode.value = false;
-  } else {
-    // The @hide handler resets editMode for the popup path.
-    popupRef.value?.hide();
-  }
-}
-
 function clearValue() {
   modelValue.value = '';
 }
 
 function onCancel() {
-  modelValue.value = getDefaultValue();
-
-  closeEditor();
+  // watch(editMode) discards the unsaved value when the editor closes.
+  editMode.value = false;
 }
 
 function onBlurCommit() {
@@ -296,7 +281,7 @@ function onSave() {
       ),
     })
     .then(() => {
-      closeEditor();
+      editMode.value = false;
     })
     .finally(() => {
       loading.value = false;
@@ -330,12 +315,8 @@ function onCellClick() {
     return;
   }
 
-  if (largeScreen.value) {
-    editMode.value = true;
-  } else {
-    // QPopupProxy is opened imperatively (it has no v-model).
-    popupRef.value?.show();
-  }
+  // editMode drives the inline editor (large screens) and the dialog (small).
+  editMode.value = true;
 }
 </script>
 
