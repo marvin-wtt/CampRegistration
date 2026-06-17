@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { QueueManager } from '#core/queue/QueueManager';
-import prisma from '#core/database';
+import { BaseService } from '#core/base/BaseService';
 
 export interface HealthStatus {
   status: 'ok' | 'degraded';
@@ -15,10 +15,12 @@ export type QueueCheckResult =
   | 'error';
 
 @injectable()
-export class HealthService {
+export class HealthService extends BaseService {
   constructor(
     @inject(QueueManager) private readonly queueManager: QueueManager,
-  ) {}
+  ) {
+    super();
+  }
 
   async check(): Promise<HealthStatus> {
     let healthy = true;
@@ -45,7 +47,7 @@ export class HealthService {
 
   private async checkDatabase(): Promise<'ok' | 'error'> {
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      await this.prisma.$queryRaw`SELECT 1`;
       return 'ok';
     } catch {
       return 'error';

@@ -96,7 +96,7 @@
               :key="item.key"
               type="button"
               class="attention-item"
-              @click="goToTemplate(item.template)"
+              @click="goToItem(item)"
             >
               <div class="attention-icon row items-center justify-center">
                 <q-icon
@@ -206,6 +206,7 @@ import CountryBreakdownTable from 'components/campManagement/dashboard/CountryBr
 import DemographicsExplorer from 'components/campManagement/dashboard/DemographicsExplorer.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
+import { useCampFilesStore } from 'stores/camp-files-store';
 import { useCampStatistics } from 'src/composables/campStatistics';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import {
@@ -219,6 +220,7 @@ const router = useRouter();
 
 const campDetailsStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
+const campFilesStore = useCampFilesStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
 
@@ -241,6 +243,7 @@ const error = computed<string | null>(
 onMounted(() => {
   void registrationStore.fetchData();
   void campDetailsStore.fetchData();
+  void campFilesStore.fetchData();
 });
 
 // Pending only matters when registrations are confirmed manually.
@@ -283,7 +286,19 @@ const quickActions = computed(() => [
   },
 ]);
 
-const attentionItems = computed(() => {
+interface AttentionItem {
+  key: string;
+  label: string;
+  count: number;
+  icon: string;
+  color: string;
+  // Deep-links into the participants table via a hidden local template…
+  template?: string;
+  // …or navigates to another management route (e.g. file settings).
+  route?: string;
+}
+
+const attentionItems = computed<AttentionItem[]>(() => {
   const participants = stats.participants.value;
   const camp = campDetailsStore.data;
 
@@ -301,7 +316,11 @@ const attentionItems = computed(() => {
     return age < camp.minAge || age > camp.maxAge;
   }).length;
 
-  const items = [
+  // Camp file slots that need attention: declared but not uploaded, plus slots
+  // missing a file for one of the camp's locales (see camp-files-store).
+  const missingFiles = campFilesStore.missingFilesCount;
+
+  const items: AttentionItem[] = [
     {
       key: 'pending',
       label: t('attention.pending'),
@@ -326,10 +345,28 @@ const attentionItems = computed(() => {
       color: 'deep-orange',
       template: LOCAL_TEMPLATE_AGE,
     },
+    {
+      key: 'files',
+      label: t('attention.files'),
+      count: missingFiles,
+      icon: 'upload_file',
+      color: 'blue',
+      route: 'management.camp.settings.files',
+    },
   ];
 
   return items.filter((item) => item.count > 0);
 });
+
+function goToItem(item: AttentionItem) {
+  if (item.template) {
+    goToTemplate(item.template);
+    return;
+  }
+  if (item.route) {
+    goTo(item.route);
+  }
+}
 
 function goToTemplate(template: string) {
   void router.push({
@@ -504,6 +541,7 @@ attention:
   pending: 'Pending confirmations'
   missing: 'Missing contact details'
   age: 'Age outside camp range'
+  files: 'Missing files'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -540,6 +578,7 @@ attention:
   pending: 'Ausstehende Bestätigungen'
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
+  files: 'Fehlende Dateien'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -576,6 +615,7 @@ attention:
   pending: 'Confirmations en attente'
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
+  files: 'Fichiers manquants'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -612,6 +652,7 @@ attention:
   pending: 'Oczekujące potwierdzenia'
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
+  files: 'Brakujące pliki'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -648,4 +689,5 @@ attention:
   pending: 'Čekající potvrzení'
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
+  files: 'Chybějící soubory'
 </i18n>
