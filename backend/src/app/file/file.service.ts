@@ -240,7 +240,13 @@ export class FileService extends BaseService {
       },
     });
 
-    return selectFileByLocale(files, locale ?? 'en') ?? null;
+    if (files.length === 0) {
+      return null;
+    }
+
+    // Select the best matching file for the locale.
+    // If no locale is given, default to English or fallback to the first file.
+    return selectFileByLocale(files, locale ?? 'en') ?? files[0];
   }
 
   async queryModelFiles(
