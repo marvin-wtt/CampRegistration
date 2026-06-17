@@ -134,7 +134,7 @@ import type {
 
 const { camp, field } = defineProps<TableCellOptionsProps>();
 
-const model = defineModel<IconMappingOptions | undefined>();
+const model = defineModel<IconMappingOptions>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();

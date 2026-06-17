@@ -37,7 +37,8 @@ import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { TextOptions } from 'components/campManagement/table/tableCells/TextOptions';
 
-const { props: cellProps, options } = defineProps<TableCellProps>();
+const { props: cellProps, options } =
+  defineProps<TableCellProps<TextOptions>>();
 
 const DEFAULT_LIMIT = 25;
 

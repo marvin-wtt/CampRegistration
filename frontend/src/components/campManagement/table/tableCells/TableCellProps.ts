@@ -4,10 +4,12 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 
-export interface TableCellProps {
+export interface TableCellProps<
+  Options extends object | undefined = undefined,
+> {
   props: QTableBodyCellProps<unknown, Registration>;
   camp: CampDetails;
-  options?: object | undefined;
+  options?: Options | undefined;
   printing: boolean;
   readonly?: boolean | undefined;
   // True when the cell is rendered outside the table grid (e.g. in the row
