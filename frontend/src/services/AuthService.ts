@@ -1,4 +1,4 @@
-import { api, ensureCsrfToken } from 'boot/axios';
+import { api, ensureCsrfToken } from 'src/services/api';
 import type {
   AuthTokens,
   Authentication,
@@ -190,8 +190,8 @@ export function useAuthService() {
   }
 
   async function requestCsrfToken(): Promise<void> {
-    // Delegates to the shared bootstrap in boot/axios so the session cookie and
-    // CSRF token are established exactly once and stay in sync across callers.
+    // Delegates to the shared bootstrap in services/api so the session cookie
+    // and CSRF token are established exactly once and stay in sync across callers.
     await ensureCsrfToken();
   }
 

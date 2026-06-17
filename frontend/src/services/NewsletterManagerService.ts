@@ -1,4 +1,4 @@
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 import type {
   NewsletterManager,
   NewsletterManagerCreateData,

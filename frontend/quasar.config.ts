@@ -19,7 +19,6 @@ export default defineConfig((ctx) => {
       'bus',
       'i18n',
       'language-pack',
-      'axios',
       'surveyJS',
       'notify-defaults',
     ],

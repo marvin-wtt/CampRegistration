@@ -4,7 +4,7 @@ import type {
   TotpDisableData,
   TotpEnableData,
 } from '@camp-registration/common/entities';
-import { api } from 'boot/axios';
+import { api } from 'src/services/api';
 
 export function useTotpService() {
   async function setupTotp(data: TotpSetupData): Promise<TotpData> {
