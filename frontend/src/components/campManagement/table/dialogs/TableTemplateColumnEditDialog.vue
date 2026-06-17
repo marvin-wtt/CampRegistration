@@ -219,22 +219,6 @@
                 outlined
                 rounded
               />
-
-              <!-- render options -->
-              <q-list
-                v-if="data.renderAs && !customOptionsComponent"
-                class="rounded-borders"
-              >
-                <q-expansion-item
-                  :label="t('field.renderOptions.label')"
-                  :caption="t('field.renderOptions.hint')"
-                >
-                  <json-input
-                    v-model="data.renderOptions"
-                    filled
-                  />
-                </q-expansion-item>
-              </q-list>
             </div>
           </q-slide-transition>
         </q-card-section>
@@ -277,7 +261,6 @@ import type {
 } from '@camp-registration/common/entities';
 import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
-import JsonInput from 'components/common/inputs/JsonInput.vue';
 import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
 import ToggleItem from 'components/common/ToggleItem.vue';
 import { extractFormFields } from 'src/utils/surveyJS';
