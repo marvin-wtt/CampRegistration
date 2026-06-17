@@ -2,15 +2,15 @@ import type { Camp, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import { FileService } from '#app/file/file.service.js';
-
-export interface CampWithFreePlaces extends Camp {
-  freePlaces: number | Record<string, number>;
-}
+import type {
+  CampWithFreePlacesAndFiles,
+  CampWithRegistrationAndFiles,
+} from './camp.types';
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyCampInput,
@@ -44,7 +44,10 @@ export class CampService extends BaseService {
   async getCampById(id: string) {
     const camp = await this.prisma.camp.findFirst({
       where: { id },
-      include: { ...this.campRegistrationInclude() },
+      include: {
+        ...this.campRegistrationInclude(),
+        files: { select: { id: true, field: true, locale: true } },
+      },
     });
 
     return camp === null ? null : enrichFreePlaces(camp);
@@ -257,8 +260,8 @@ export class CampService extends BaseService {
 }
 
 const enrichFreePlaces = (
-  camp: Camp & { registrations: { country: string | null }[] },
-): CampWithFreePlaces => {
+  camp: Camp & CampWithRegistrationAndFiles,
+): CampWithFreePlacesAndFiles => {
   if (typeof camp.maxParticipants === 'number') {
     return {
       ...camp,

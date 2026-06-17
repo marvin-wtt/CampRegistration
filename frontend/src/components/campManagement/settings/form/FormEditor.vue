@@ -7,16 +7,11 @@
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
-import 'survey-core/i18n/english';
-import 'survey-creator-core/i18n/english';
-import 'survey-core/i18n/german';
-import 'survey-creator-core/i18n/german';
-import 'survey-core/i18n/french';
-import 'survey-creator-core/i18n/french';
-import 'survey-core/i18n/polish';
-import 'survey-creator-core/i18n/polish';
-import 'survey-core/i18n/czech';
-import 'survey-creator-core/i18n/czech';
+import 'survey-core/i18n';
+// Json editor
+import 'ace-builds/src-noconflict/ace';
+import 'ace-builds/src-noconflict/ext-searchbox';
+import 'ace-builds/src-noconflict/theme-clouds_midnight';
 
 import { watch, watchEffect } from 'vue';
 import {
@@ -38,7 +33,7 @@ import {
   Serializer,
 } from 'survey-core';
 import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from 'src/utils/markdown';
+import { createMarkdownConverter } from '@camp-registration/common/utils';
 import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -52,6 +47,10 @@ import { useAPIService } from 'src/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
 import { createStaticMd3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
 import { md3CreatorThemes } from 'src/lib/surveyJs/themes/md3-creator';
+import { AceJsonEditorModel } from 'survey-creator-core';
+
+AceJsonEditorModel.aceBasePath =
+  'https://unpkg.com/ace-builds/src-min-noconflict/';
 
 const props = defineProps<{
   camp: CampDetails;
