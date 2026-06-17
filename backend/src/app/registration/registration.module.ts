@@ -47,7 +47,9 @@ export class RegistrationModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    registerFileGuard('registration', registrationFileGuard);
+    registerFileGuard('registration', {
+      view: registrationFileGuard,
+    });
 
     router.useRouter(
       '/camps/:campsId/registrations/:registrationId/files',

@@ -29,12 +29,9 @@ const createCampWithManagerAndToken = async (
   return { camp, user, manager, accessToken };
 };
 
-const createCampWithFileAndToken = async (
-  accessLevel: string = 'private',
-  campIsPublic: boolean = false,
-) => {
+const createCampWithFileAndToken = async (accessLevel: string = 'private') => {
   const { camp, user, manager, accessToken } =
-    await createCampWithManagerAndToken({ public: campIsPublic });
+    await createCampWithManagerAndToken();
   const fileName = crypto.randomUUID() + '.pdf';
 
   const file = await FileFactory.create({
@@ -160,20 +157,14 @@ describe('/api/v1/files/', () => {
         .expect(200);
     });
 
-    it('should respond with `200` status code when file is public and camp is public', async () => {
-      const { file } = await createCampWithFileAndToken('public', true);
+    it('should respond with `200` status code when file is public', async () => {
+      const { file } = await createCampWithFileAndToken('public');
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(200);
     });
 
-    it('should respond with `401` status code when file is public but camp is not public', async () => {
-      const { file } = await createCampWithFileAndToken('public', false);
-
-      await request().get(`/api/v1/files/${file.id}`).send().expect(401);
-    });
-
     it('should respond with `401` status code when file is not public', async () => {
-      const { file } = await createCampWithFileAndToken('private', true);
+      const { file } = await createCampWithFileAndToken('private');
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(401);
     });
@@ -200,6 +191,70 @@ describe('/api/v1/files/', () => {
     });
   });
 
+  describe('PATCH /api/v1/files/:fileId', () => {
+    it('should update file metadata when user can edit camp files', async () => {
+      const { file, accessToken } = await createCampWithFileAndToken();
+      const originalStorageName = file.name;
+
+      const { body } = await request()
+        .patch(`/api/v1/files/${file.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .send({
+          name: 'Updated Rules.pdf',
+          field: 'rules',
+          locale: 'de',
+          accessLevel: 'public',
+        })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.id', file.id);
+      expect(body).toHaveProperty('data.name', 'Updated Rules.pdf');
+      expect(body).toHaveProperty('data.field', 'rules');
+      expect(body).toHaveProperty('data.locale', 'de');
+      expect(body).toHaveProperty('data.accessLevel', 'public');
+
+      const updated = await prisma.file.findUnique({
+        where: { id: file.id },
+      });
+
+      expect(updated).toMatchObject({
+        originalName: 'Updated Rules.pdf',
+        field: 'rules',
+        locale: 'de',
+        accessLevel: 'public',
+      });
+      expect(updated?.name).toBe(originalStorageName);
+    });
+
+    it('should respond with `401` when not authenticated', async () => {
+      const { file } = await createCampWithFileAndToken();
+
+      await request()
+        .patch(`/api/v1/files/${file.id}`)
+        .send({ name: 'Updated Rules.pdf' })
+        .expect(401);
+    });
+
+    it('should respond with `403` when user lacks edit permission', async () => {
+      const { file } = await createCampWithFileAndToken();
+      if (!file.campId) {
+        throw new Error('Camp file expected');
+      }
+      const counselor = await UserFactory.create();
+      await CampManagerFactory.create({
+        camp: { connect: { id: file.campId } },
+        user: { connect: { id: counselor.id } },
+        role: 'COUNSELOR',
+      });
+
+      await request()
+        .patch(`/api/v1/files/${file.id}`)
+        .auth(generateAccessToken(counselor), { type: 'bearer' })
+        .send({ name: 'Updated Rules.pdf' })
+        .expect(403);
+    });
+  });
+
   describe('DELETE /api/v1/files/:fileId', () => {
     it('should respond with `204` and remove the file record', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
@@ -213,7 +268,7 @@ describe('/api/v1/files/', () => {
       });
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/files/${file.id}`)
+        .delete(`/api/v1/files/${file.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
@@ -235,7 +290,7 @@ describe('/api/v1/files/', () => {
       expect(verifyFileExists(fileName)).toBe(true);
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/files/${file.id}`)
+        .delete(`/api/v1/files/${file.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
@@ -256,7 +311,7 @@ describe('/api/v1/files/', () => {
       await FileFactory.create({ name: fileName });
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/files/${file1.id}`)
+        .delete(`/api/v1/files/${file1.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
@@ -270,9 +325,7 @@ describe('/api/v1/files/', () => {
         camp: { connect: { id: camp.id } },
       });
 
-      await request()
-        .delete(`/api/v1/camps/${camp.id}/files/${file.id}`)
-        .expect(401);
+      await request().delete(`/api/v1/files/${file.id}`).expect(401);
     });
 
     it('should respond with `403` when user lacks delete permission', async () => {
@@ -286,7 +339,7 @@ describe('/api/v1/files/', () => {
       });
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/files/${file.id}`)
+        .delete(`/api/v1/files/${file.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });

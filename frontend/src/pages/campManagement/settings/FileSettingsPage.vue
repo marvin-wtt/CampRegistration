@@ -78,7 +78,7 @@
                 </q-avatar>
               </q-item-section>
 
-              <q-item-section>
+              <q-item-section class="file-main">
                 <q-item-label class="file-name">
                   <span class="ellipsis">
                     {{ getUploadHint(doc.field, doc.locale) }}
@@ -157,7 +157,7 @@
                 </q-avatar>
               </q-item-section>
 
-              <q-item-section>
+              <q-item-section class="file-main">
                 <q-item-label class="file-name">
                   <a
                     :href="campFileStore.getUrl(file.id)"
@@ -242,6 +242,22 @@
                         </q-item-section>
                         <q-item-section>
                           {{ t('action.download') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-if="can('camp.files.edit')"
+                        clickable
+                        v-close-popup
+                        @click="openEditDialog(file)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="edit"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.edit') }}
                         </q-item-section>
                       </q-item>
                       <q-item
@@ -442,6 +458,10 @@ function openReplaceDialog(file: ServiceFile) {
   openDialog({ fileToReplace: file });
 }
 
+function openEditDialog(file: ServiceFile) {
+  openDialog({ fileToEdit: file });
+}
+
 function showDeleteDialog(file: ServiceFile) {
   quasar
     .dialog({
@@ -489,7 +509,12 @@ function copyLink(url: string) {
 <style scoped>
 .files-content {
   max-width: 960px;
+  min-width: 0;
   padding-bottom: 24px;
+}
+
+.page-title {
+  min-width: 0;
 }
 
 /* The default page padding feels cramped under the app bar on phones. */
@@ -516,6 +541,8 @@ function copyLink(url: string) {
 }
 
 .file-row {
+  align-items: flex-start;
+  min-width: 0;
   padding: 12px 16px;
 }
 
@@ -529,7 +556,13 @@ function copyLink(url: string) {
 }
 
 .file-row .q-item__section--side {
+  min-width: 0;
   padding-left: 12px;
+}
+
+.file-main {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .file-row--clickable {
@@ -572,10 +605,15 @@ function copyLink(url: string) {
   gap: 8px;
 
   min-width: 0;
+  max-width: 100%;
   font-weight: 500;
 }
 
 .file-name-link {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+
   color: inherit;
   text-decoration: none;
 }
@@ -607,6 +645,8 @@ function copyLink(url: string) {
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
+  max-width: 45%;
+  min-width: 0;
 }
 
 .file-buttons {
@@ -624,6 +664,7 @@ function copyLink(url: string) {
 
 .md3-chip {
   height: 24px;
+  max-width: 100%;
   margin: 0;
   padding: 0 10px;
   border-radius: 8px;
@@ -633,10 +674,20 @@ function copyLink(url: string) {
 }
 
 .md3-chip :deep(.q-icon) {
+  flex: none;
   font-size: 14px;
 }
 
+.md3-chip :deep(.q-chip__content) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .field-chip {
+  max-width: min(260px, 32vw);
+
   background: var(--md3-secondary-container);
   color: var(--md3-on-secondary-container);
 }
@@ -671,8 +722,13 @@ function copyLink(url: string) {
   .file-meta {
     order: 5;
     flex: 0 0 100%;
+    max-width: 100%;
     justify-content: flex-start;
     padding-left: 56px;
+  }
+
+  .field-chip {
+    max-width: 100%;
   }
 }
 </style>
@@ -684,6 +740,7 @@ subtitle: 'Upload and manage documents for this camp.'
 action:
   delete: 'Delete'
   download: 'Download'
+  edit: 'Edit'
   upload: 'Upload'
   replace: 'Replace'
   copy_link: 'Copy link'
@@ -727,6 +784,7 @@ subtitle: 'Laden Sie Dokumente für dieses Camp hoch und verwalten Sie sie.'
 action:
   delete: 'Löschen'
   download: 'Herunterladen'
+  edit: 'Bearbeiten'
   upload: 'Hochladen'
   replace: 'Ersetzen'
   copy_link: 'Link kopieren'
@@ -770,6 +828,7 @@ subtitle: 'Téléversez et gérez les documents de ce camp.'
 action:
   delete: 'Supprimer'
   download: 'Télécharger'
+  edit: 'Modifier'
   upload: 'Téléverser'
   replace: 'Remplacer'
   copy_link: 'Copier le lien'
@@ -813,6 +872,7 @@ subtitle: 'Przesyłaj i zarządzaj dokumentami tego obozu.'
 action:
   delete: 'Usuń'
   download: 'Pobierz'
+  edit: 'Edytuj'
   upload: 'Prześlij'
   replace: 'Zastąp'
   copy_link: 'Kopiuj link'
@@ -856,6 +916,7 @@ subtitle: 'Nahrávejte a spravujte dokumenty tohoto tábora.'
 action:
   delete: 'Smazat'
   download: 'Stáhnout'
+  edit: 'Upravit'
   upload: 'Nahrát'
   replace: 'Nahradit'
   copy_link: 'Kopírovat odkaz'
