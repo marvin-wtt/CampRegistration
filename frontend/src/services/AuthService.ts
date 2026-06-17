@@ -13,20 +13,49 @@ export type CustomRequestConfig = AxiosRequestConfig & {
   _csrfRetry?: boolean | undefined;
 };
 
+export type CustomAxiosError = AxiosError & {
+  config: CustomRequestConfig;
+};
+
+let retryInterceptorsInstalled = false;
+
 function isCsrfError(error: AxiosError): boolean {
   if (error.response?.status !== 403) {
     return false;
   }
 
-  const message: unknown = (error.response.data as { message?: unknown })
-    ?.message;
+  const data = error.response.data as
+    | { message?: unknown; errorCode?: unknown }
+    | undefined;
 
-  return typeof message === 'string' && /csrf/i.test(message);
+  return (
+    data?.errorCode === 'EBADCSRFTOKEN' ||
+    (typeof data?.message === 'string' && /csrf/i.test(data.message))
+  );
 }
 
-export type CustomAxiosError = AxiosError & {
-  config: CustomRequestConfig;
-};
+function installRetryInterceptors(
+  refreshTokens: () => Promise<AuthTokens>,
+  requestCsrfToken: () => Promise<void>,
+) {
+  if (retryInterceptorsInstalled) {
+    return;
+  }
+
+  // Retry failed requests after fetching a new refresh token
+  authRefreshToken(api, {
+    handleTokenRefresh: refreshTokens,
+    shouldIntercept: (error) => error.response?.status === 401,
+  });
+
+  // Retry failed requests after fetching a new CSRF token
+  csrfTokenRetry(api, {
+    handleTokenRefresh: requestCsrfToken,
+    shouldIntercept: isCsrfError,
+  });
+
+  retryInterceptorsInstalled = true;
+}
 
 export const extendAxiosConfig = (
   config: CustomRequestConfig,
@@ -41,17 +70,7 @@ export const isCustomAxiosError = (
 };
 
 export function useAuthService() {
-  // Retry failed requests after fetching a new refresh token
-  authRefreshToken(api, {
-    handleTokenRefresh: refreshTokens,
-    shouldIntercept: (error) => error.response?.status === 401,
-  });
-
-  // Retry failed requests after fetching a new CSRF token
-  csrfTokenRetry(api, {
-    handleTokenRefresh: requestCsrfToken,
-    shouldIntercept: isCsrfError,
-  });
+  installRetryInterceptors(refreshTokens, requestCsrfToken);
 
   let onUnauthenticated: (() => unknown) | undefined = undefined;
   // Interceptors are reversed for some reason. https://github.com/axios/axios/issues/1663
