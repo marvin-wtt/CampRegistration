@@ -9,6 +9,7 @@ services:
   # One-shot: applies schema + data migrations, then exits.
   migrate:
     image: *image
+    pull_policy: always
     command: npm run migrate
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -17,6 +18,7 @@ services:
 
   app:
     image: *image
+    pull_policy: always
     init: true
     depends_on:
       migrate:

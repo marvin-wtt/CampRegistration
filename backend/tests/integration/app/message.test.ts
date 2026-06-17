@@ -16,6 +16,14 @@ import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
 import { Registration } from '#generated/prisma/client';
+import Handlebars from 'handlebars';
+
+// The message body and subject are rendered with Handlebars, which HTML-escapes
+// interpolated values (e.g. `'` -> `&#x27;`, `&` -> `&amp;`). Faker-generated
+// fields such as the company name can contain those characters, so expected
+// values must be escaped the same way to avoid flaky comparisons.
+const esc = (value: unknown): string =>
+  Handlebars.escapeExpression(String(value));
 
 const crateCampWithManager = async (
   campCreateData?: Parameters<(typeof CampFactory)['create']>[0],
@@ -156,19 +164,19 @@ describe('/api/v1/camps/:campId/messages', () => {
 
       await assertMessages(body.data.id, [
         {
-          subject: `Hi, ${registrationA.data.first_name}, welcome to ${camp.name}`,
+          subject: `Hi, ${esc(registrationA.data.first_name)}, welcome to ${esc(camp.name as string)}`,
           body:
-            `Hello ${registrationA.data.first_name}, the min age is ${camp.minAge}. ` +
-            `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
+            `Hello ${esc(registrationA.data.first_name)}, the min age is ${esc(camp.minAge)}. ` +
+            `${esc(camp.maxAge)} ${esc(camp.maxParticipants as number)} ${esc(camp.location as string)} ${esc(camp.organizer as string)} ${esc(camp.price)}`,
           priority: 'high',
           replyTo: camp.contactEmail as string,
           emails: registrationA.emails!,
         },
         {
-          subject: `Hi, ${registrationB.data.first_name}, welcome to ${camp.name}`,
+          subject: `Hi, ${esc(registrationB.data.first_name)}, welcome to ${esc(camp.name as string)}`,
           body:
-            `Hello ${registrationB.data.first_name}, the min age is ${camp.minAge}. ` +
-            `${camp.maxAge} ${camp.maxParticipants} ${camp.location} ${camp.organizer} ${camp.price}`,
+            `Hello ${esc(registrationB.data.first_name)}, the min age is ${esc(camp.minAge)}. ` +
+            `${esc(camp.maxAge)} ${esc(camp.maxParticipants as number)} ${esc(camp.location as string)} ${esc(camp.organizer as string)} ${esc(camp.price)}`,
           priority: 'high',
           replyTo: camp.contactEmail as string,
           emails: registrationB.emails!,
@@ -242,8 +250,8 @@ describe('/api/v1/camps/:campId/messages', () => {
         registration: Registration,
         locale: string,
       ) => ({
-        subject: `Hi, ${registration.data.first_name}, welcome to ${campAttribute(camp.name, locale)}`,
-        body: `Hello ${registration.data.first_name}, ${campAttribute(camp.organizer, locale)} ${campAttribute(camp.location, locale)} ${campAttribute(camp.maxParticipants, locale).toString()}`,
+        subject: `Hi, ${esc(registration.data.first_name)}, welcome to ${esc(campAttribute(camp.name, locale))}`,
+        body: `Hello ${esc(registration.data.first_name)}, ${esc(campAttribute(camp.organizer, locale))} ${esc(campAttribute(camp.location, locale))} ${esc(campAttribute(camp.maxParticipants, locale))}`,
         priority: 'normal',
         replyTo: campAttribute(camp.contactEmail, locale),
         emails: registration.emails!,

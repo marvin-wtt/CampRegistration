@@ -68,7 +68,7 @@ export function useCampStatistics() {
   const helper = useRegistrationHelper();
 
   const registrations = computed<Registration[]>(
-    () => registrationStore.data?.filter((r) => r.status === 'ACCEPTED') ?? [],
+    () => registrationStore.data ?? [],
   );
 
   const participants = computed<Registration[]>(() =>
@@ -77,6 +77,15 @@ export function useCampStatistics() {
 
   const staff = computed<Registration[]>(() =>
     registrations.value.filter((r) => !helper.participant(r)),
+  );
+
+  /**
+   * Accepted participants only. Demographics (age/gender/country breakdowns)
+   * describe who is actually attending, so pending and waitlisted registrations
+   * are excluded here even though they still count toward {@link counts}.
+   */
+  const acceptedParticipants = computed<Registration[]>(() =>
+    participants.value.filter((r) => r.status === 'ACCEPTED'),
   );
 
   /** Non-participant registrations grouped by their role string. */
@@ -348,6 +357,7 @@ export function useCampStatistics() {
     UNKNOWN,
     registrations,
     participants,
+    acceptedParticipants,
     staff,
     staffByRole,
     counts,

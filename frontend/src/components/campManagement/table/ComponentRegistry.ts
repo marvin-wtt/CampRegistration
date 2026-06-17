@@ -2,19 +2,20 @@ import { type Component } from 'vue';
 import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 import components from 'components/campManagement/table/tableCells';
 import type { BaseComponent } from 'components/common/inputs/BaseComponent';
+import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
 
-type MaybeLazyComponent = Component | (() => Component);
+type MaybeLazyComponent<T> = Component<T> | (() => Component<T>);
 
 interface ComponentOptions {
   editable?: false | object;
-  label?: string | Record<string, string>;
   internal?: boolean;
   customOptions?: BaseComponent[];
-  customOptionsComponent?: Component;
+  customOptionsComponent?: Component<TableCellOptionsProps>;
 }
 
 interface ComponentEntry {
-  component: MaybeLazyComponent;
+  component: MaybeLazyComponent<TableCellProps>;
   options: ComponentOptions;
 }
 
@@ -26,7 +27,7 @@ const componentMap: Map<string, ComponentEntry> = new Map<
 const TableComponentRegistry = {
   register: (
     name: string,
-    component: Component,
+    component: Component<TableCellProps>,
     options: ComponentOptions = {},
   ): void => {
     componentMap.set(name, { component, options });

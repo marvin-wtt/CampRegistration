@@ -2,6 +2,7 @@ import {
   type PageModel,
   type PanelModel,
   type Question,
+  QuestionBooleanModel,
   QuestionPanelDynamicModel,
   type QuestionSelectBase,
   SurveyModel,
@@ -156,9 +157,24 @@ function isSelectQuestion(question: Question): question is QuestionSelectBase {
   return selectTypes.includes(question.getType());
 }
 
+function getBooleanOptions(
+  question: QuestionBooleanModel,
+): Record<string, string | Record<string, string>> {
+  return {
+    [String(question.valueTrue ?? true)]:
+      question.locLabelTrue?.getJson() ?? question.labelTrue,
+    [String(question.valueFalse ?? false)]:
+      question.locLabelFalse?.getJson() ?? question.labelFalse,
+  };
+}
+
 function getQuestionOptions(
   question: Question,
 ): Record<string, string | Record<string, string>> | undefined {
+  if (question instanceof QuestionBooleanModel) {
+    return getBooleanOptions(question);
+  }
+
   if (!isSelectQuestion(question)) {
     return undefined;
   }

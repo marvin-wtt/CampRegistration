@@ -209,9 +209,9 @@ export default [
         renderAs: 'icon_mapping',
         renderOptions: {
           mappings: [
-            { value: '2', icon: 'person', color: 'positive' },
-            { value: '1', icon: 'groups', color: 'warning' },
-            { value: '0', icon: 'close', color: 'negative' },
+            { value: 'alone', icon: 'directions_walk', color: 'positive' },
+            { value: 'group', icon: 'groups', color: 'warning' },
+            { value: 'none', icon: 'block', color: 'negative' },
           ],
           fallback: { icon: 'question_mark', color: 'grey' },
         },

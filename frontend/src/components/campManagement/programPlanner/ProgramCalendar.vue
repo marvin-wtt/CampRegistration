@@ -199,7 +199,7 @@ import type {
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import CalendarNavigationBar from 'components/campManagement/programPlanner/CalendarNavigationBar.vue';
 import CalendarItem from 'components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from 'components/campManagement/programPlanner/CalendarDayItem.vue';
@@ -211,6 +211,7 @@ import CalendarSettingsDialog from 'components/campManagement/programPlanner/dia
 import CalendarBacklogPanel from 'components/campManagement/programPlanner/CalendarBacklogPanel.vue';
 import { daysBetweenDates } from 'src/utils/date';
 import { openPrintIframe } from 'src/utils/printIframe';
+import { useCampStorage } from 'src/composables/campStorage';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -231,40 +232,12 @@ const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
 const activePlan = ref<'a' | 'b' | 'both'>('both');
 
-const SETTINGS_KEY = 'program-planner-settings';
-
-function loadSettings(): CalendarSettings {
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    if (stored) {
-      return {
-        dayStart: '07:00',
-        dayEnd: '23:00',
-        timeInterval: 30,
-        showAllTranslations: false,
-        ...JSON.parse(stored),
-      };
-    }
-  } catch {
-    // ignore
-  }
-  return {
-    dayStart: '08:00',
-    dayEnd: '21:00',
-    timeInterval: 30,
-    showAllTranslations: false,
-  };
-}
-
-const settings = reactive<CalendarSettings>(loadSettings());
-
-watch(
-  settings,
-  () => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings }));
-  },
-  { deep: true },
-);
+const settings = useCampStorage<CalendarSettings>('program-planner-settings', {
+  dayStart: '08:00',
+  dayEnd: '21:00',
+  timeInterval: 30,
+  showAllTranslations: false,
+});
 
 onMounted(() => {
   setTimeout(() => {
