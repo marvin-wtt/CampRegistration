@@ -23,6 +23,7 @@
               (val: string | Record<string, string> | undefined) =>
                 !!val || t('field.label.rules.required'),
             ]"
+            hide-bottom-space
             outlined
             rounded
           />
