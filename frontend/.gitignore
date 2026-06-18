@@ -38,3 +38,6 @@ yarn-error.log*
 
 # Test coverate
 /tests/coverage
+
+# i18n add-locale review reports (transient artifacts)
+/scripts/i18n/.add-locale-report.*.json
