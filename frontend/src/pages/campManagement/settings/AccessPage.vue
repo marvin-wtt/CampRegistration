@@ -216,6 +216,81 @@
           />
         </q-card-section>
       </q-card>
+
+      <!-- Role permissions reference -->
+      <q-card
+        flat
+        bordered
+        class="section-card"
+      >
+        <q-expansion-item
+          icon="security"
+          :label="t('permissions.title')"
+          expand-separator
+          header-class="pm-expansion-header"
+        >
+          <div class="pm-wrap">
+            <div class="pm-matrix">
+              <!-- Role header -->
+              <div class="pm-row pm-head">
+                <div class="pm-feature-col" />
+                <div
+                  v-for="role in ROLES"
+                  :key="role"
+                  class="pm-role-col"
+                >
+                  <span
+                    class="md3-chip role-chip"
+                    :class="roleClass(role)"
+                  >
+                    {{ t('role.' + role.toLowerCase()) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Feature rows -->
+              <div
+                v-for="group in permissionGroups"
+                :key="group.key"
+                class="pm-row"
+              >
+                <div class="pm-feature-col">
+                  <q-icon
+                    :name="group.icon"
+                    size="14px"
+                    class="pm-feature-icon"
+                  />
+                  <span>{{ t('permissions.group.' + group.key) }}</span>
+                </div>
+                <div
+                  v-for="role in ROLES"
+                  :key="role"
+                  class="pm-role-col"
+                >
+                  <div
+                    v-if="group.actions[role].length"
+                    class="pm-actions"
+                  >
+                    <q-icon
+                      v-for="action in group.actions[role]"
+                      :key="action"
+                      :name="actionIcon(action)"
+                      size="16px"
+                      class="pm-action-icon"
+                    >
+                      <q-tooltip>{{ t('permissions.action.' + action) }}</q-tooltip>
+                    </q-icon>
+                  </div>
+                  <span
+                    v-else
+                    class="pm-none"
+                  >—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </q-expansion-item>
+      </q-card>
     </div>
   </page-state-handler>
 </template>
@@ -238,6 +313,128 @@ import { useCampDetailsStore } from 'stores/camp-details-store';
 import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
 import { usePermissions } from 'src/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+
+const ROLES = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
+type Role = (typeof ROLES)[number];
+
+interface PermissionGroup {
+  key: string;
+  icon: string;
+  actions: Record<Role, string[]>;
+}
+
+const permissionGroups: PermissionGroup[] = [
+  {
+    key: 'camp',
+    icon: 'tune',
+    actions: {
+      DIRECTOR: ['view', 'edit', 'delete'],
+      COORDINATOR: ['view', 'edit'],
+      COUNSELOR: ['view'],
+      VIEWER: ['view'],
+    },
+  },
+  {
+    key: 'files',
+    icon: 'folder_open',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view', 'create', 'edit', 'delete'],
+      COUNSELOR: ['view'],
+      VIEWER: ['view'],
+    },
+  },
+  {
+    key: 'registrations',
+    icon: 'how_to_reg',
+    actions: {
+      DIRECTOR: ['view', 'edit', 'delete'],
+      COORDINATOR: ['view', 'edit', 'delete'],
+      COUNSELOR: ['view'],
+      VIEWER: ['view'],
+    },
+  },
+  {
+    key: 'managers',
+    icon: 'manage_accounts',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view'],
+      COUNSELOR: ['view'],
+      VIEWER: [],
+    },
+  },
+  {
+    key: 'messages',
+    icon: 'mail',
+    actions: {
+      DIRECTOR: ['view', 'create', 'delete'],
+      COORDINATOR: ['view', 'create', 'delete'],
+      COUNSELOR: [],
+      VIEWER: [],
+    },
+  },
+  {
+    key: 'message_templates',
+    icon: 'mark_email_read',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view', 'create', 'edit', 'delete'],
+      COUNSELOR: ['view'],
+      VIEWER: [],
+    },
+  },
+  {
+    key: 'table_templates',
+    icon: 'table_chart',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view', 'create', 'edit', 'delete'],
+      COUNSELOR: ['view'],
+      VIEWER: ['view'],
+    },
+  },
+  {
+    key: 'rooms',
+    icon: 'meeting_room',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view', 'create', 'edit', 'delete'],
+      COUNSELOR: ['view'],
+      VIEWER: ['view'],
+    },
+  },
+  {
+    key: 'beds',
+    icon: 'bed',
+    actions: {
+      DIRECTOR: ['create', 'edit', 'delete'],
+      COORDINATOR: ['create', 'edit', 'delete'],
+      COUNSELOR: ['edit'],
+      VIEWER: [],
+    },
+  },
+  {
+    key: 'program',
+    icon: 'event_note',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view', 'create', 'edit', 'delete'],
+      COUNSELOR: ['view'],
+      VIEWER: ['view'],
+    },
+  },
+];
+
+function actionIcon(action: string): string {
+  const icons: Record<string, string> = {
+    view: 'visibility',
+    create: 'add_circle',
+    edit: 'edit',
+    delete: 'delete',
+  };
+  return icons[action] ?? 'circle';
+}
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
@@ -527,6 +724,75 @@ function showDeleteDialog(manager: CampManager) {
   opacity: 0.6;
 }
 
+.pm-expansion-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.pm-wrap {
+  overflow-x: auto;
+  padding: 4px 16px 16px;
+}
+
+.pm-matrix {
+  min-width: 460px;
+}
+
+.pm-row {
+  display: flex;
+  align-items: center;
+}
+
+.pm-row + .pm-row {
+  border-top: 1px solid var(--md3-outline-variant);
+}
+
+.pm-head {
+  padding-bottom: 10px;
+}
+
+.pm-feature-col {
+  flex: 0 0 148px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px 9px 0;
+  font-size: 13px;
+  color: var(--md3-on-surface-variant);
+  white-space: nowrap;
+}
+
+.pm-feature-icon {
+  color: var(--md3-outline);
+  flex-shrink: 0;
+}
+
+.pm-role-col {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 4px;
+}
+
+.pm-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.pm-action-icon {
+  color: var(--md3-on-surface-variant);
+}
+
+.pm-none {
+  color: var(--md3-outline-variant);
+  font-size: 16px;
+  line-height: 1;
+}
+
 /* On phones the chips drop to a full-width second line, aligned with the
    text column next to the avatar. */
 @media (max-width: 599px) {
@@ -578,6 +844,25 @@ role:
   counselor: 'Counselor'
   director: 'Director'
   viewer: 'Viewer'
+
+permissions:
+  title: 'Role permissions'
+  group:
+    camp: 'Camp settings'
+    files: 'Files'
+    registrations: 'Registrations'
+    managers: 'Team access'
+    messages: 'Messages'
+    message_templates: 'Message templates'
+    table_templates: 'Table templates'
+    rooms: 'Rooms'
+    beds: 'Beds'
+    program: 'Program'
+  action:
+    view: 'View'
+    create: 'Create'
+    edit: 'Edit'
+    delete: 'Delete'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -615,43 +900,81 @@ role:
   counselor: 'Betreuer'
   director: 'Leiter'
   viewer: 'Betrachter'
+
+permissions:
+  title: 'Rollenberechtigungen'
+  group:
+    camp: 'Camp-Einstellungen'
+    files: 'Dateien'
+    registrations: 'Anmeldungen'
+    managers: 'Team-Zugriff'
+    messages: 'Nachrichten'
+    message_templates: 'Nachrichtenvorlagen'
+    table_templates: 'Tabellenvorlagen'
+    rooms: 'Räume'
+    beds: 'Betten'
+    program: 'Programm'
+  action:
+    view: 'Anzeigen'
+    create: 'Erstellen'
+    edit: 'Bearbeiten'
+    delete: 'Löschen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Gérer l’accès'
-subtitle: 'Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.'
+title: ‘Gérer l’accès’
+subtitle: ‘Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.’
 
 action:
-  add: 'Ajouter'
-  delete: 'Supprimer'
-  edit: 'Modifier'
-  menu: 'Actions'
+  add: ‘Ajouter’
+  delete: ‘Supprimer’
+  edit: ‘Modifier’
+  menu: ‘Actions’
 
 section:
-  members: 'Membres'
-  invitations: 'Invitations en attente'
+  members: ‘Membres’
+  invitations: ‘Invitations en attente’
 
 dialog:
   delete:
-    title: 'Révoquer l’accès'
-    message: 'Voulez-vous vraiment révoquer l’accès de cet utilisateur ?'
-    label: 'E-mail'
+    title: ‘Révoquer l’accès’
+    message: ‘Voulez-vous vraiment révoquer l’accès de cet utilisateur ?’
+    label: ‘E-mail’
 
 expiry:
-  until: 'Jusqu’au {date}'
-  expired: 'Expiré'
+  until: ‘Jusqu’au {date}’
+  expired: ‘Expiré’
 
 empty:
-  title: 'Personne n’a encore accès'
-  message: 'Invitez des membres de l’équipe pour gérer ce camp ensemble.'
+  title: ‘Personne n’a encore accès’
+  message: ‘Invitez des membres de l’équipe pour gérer ce camp ensemble.’
 
-you: 'Vous'
+you: ‘Vous’
 
 role:
-  coordinator: 'Coordinateur'
-  counselor: 'Conseiller'
-  director: 'Directeur'
-  viewer: 'Lecteur'
+  coordinator: ‘Coordinateur’
+  counselor: ‘Conseiller’
+  director: ‘Directeur’
+  viewer: ‘Lecteur’
+
+permissions:
+  title: ‘Permissions par rôle’
+  group:
+    camp: ‘Paramètres du camp’
+    files: ‘Fichiers’
+    registrations: ‘Inscriptions’
+    managers: ‘Accès équipe’
+    messages: ‘Messages’
+    message_templates: ‘Modèles de messages’
+    table_templates: ‘Modèles de tableaux’
+    rooms: ‘Chambres’
+    beds: ‘Lits’
+    program: ‘Programme’
+  action:
+    view: ‘Voir’
+    create: ‘Créer’
+    edit: ‘Modifier’
+    delete: ‘Supprimer’
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -689,6 +1012,25 @@ role:
   counselor: 'Opiekun'
   director: 'Kierownik'
   viewer: 'Podglądający'
+
+permissions:
+  title: 'Uprawnienia ról'
+  group:
+    camp: 'Ustawienia obozu'
+    files: 'Pliki'
+    registrations: 'Rejestracje'
+    managers: 'Dostęp zespołu'
+    messages: 'Wiadomości'
+    message_templates: 'Szablony wiadomości'
+    table_templates: 'Szablony tabel'
+    rooms: 'Pokoje'
+    beds: 'Łóżka'
+    program: 'Program'
+  action:
+    view: 'Podgląd'
+    create: 'Tworzenie'
+    edit: 'Edycja'
+    delete: 'Usuwanie'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -726,4 +1068,23 @@ role:
   counselor: 'Vedoucí'
   director: 'Ředitel'
   viewer: 'Pozorovatel'
+
+permissions:
+  title: 'Oprávnění rolí'
+  group:
+    camp: 'Nastavení tábora'
+    files: 'Soubory'
+    registrations: 'Registrace'
+    managers: 'Přístup týmu'
+    messages: 'Zprávy'
+    message_templates: 'Šablony zpráv'
+    table_templates: 'Šablony tabulek'
+    rooms: 'Pokoje'
+    beds: 'Lůžka'
+    program: 'Program'
+  action:
+    view: 'Zobrazit'
+    create: 'Vytvořit'
+    edit: 'Upravit'
+    delete: 'Smazat'
 </i18n>
