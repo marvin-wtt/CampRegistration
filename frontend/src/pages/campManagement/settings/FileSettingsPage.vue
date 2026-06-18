@@ -642,13 +642,21 @@ function copyLink(url: string) {
 
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
   font-weight: 500;
+}
+
+/* The text child (file name link or upload hint) must shrink so long names
+   truncate instead of widening the row; the locale badge stays at its size. */
+.file-name > .ellipsis,
+.file-name-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .file-name-link {
   display: block;
-  min-width: 0;
-  max-width: 100%;
 
   color: inherit;
   text-decoration: none;
