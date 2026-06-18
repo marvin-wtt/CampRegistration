@@ -334,7 +334,7 @@ function canManage(manager: CampManager): boolean {
 }
 
 function getRoleOptions(): QSelectOption[] {
-  const roles = ['VIEWER', 'COUNSELOR', 'COORDINATOR', 'DIRECTOR'] as const;
+  const roles = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
 
   return roles.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
