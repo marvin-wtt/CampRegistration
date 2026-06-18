@@ -105,11 +105,6 @@
                 class="member-meta"
               >
                 <q-chip
-                  class="md3-chip role-chip"
-                  :class="roleClass(manager.role)"
-                  :label="t('role.' + manager.role.toLowerCase())"
-                />
-                <q-chip
                   v-if="isExpired(manager)"
                   class="md3-chip expired-chip"
                   icon="schedule"
@@ -129,6 +124,11 @@
                     })
                   }}
                 </span>
+                <q-chip
+                  class="md3-chip role-chip"
+                  :class="roleClass(manager.role)"
+                  :label="t('role.' + manager.role.toLowerCase())"
+                />
               </q-item-section>
 
               <q-item-section
@@ -334,7 +334,7 @@ function canManage(manager: CampManager): boolean {
 }
 
 function getRoleOptions(): QSelectOption[] {
-  const roles = ['VIEWER', 'COUNSELOR', 'COORDINATOR', 'DIRECTOR'] as const;
+  const roles = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
 
   return roles.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
