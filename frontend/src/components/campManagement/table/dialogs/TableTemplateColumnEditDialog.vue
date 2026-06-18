@@ -23,6 +23,7 @@
               (val: string | Record<string, string> | undefined) =>
                 !!val || t('field.label.rules.required'),
             ]"
+            hide-bottom-space
             outlined
             rounded
           />
@@ -54,9 +55,9 @@
             :label="t('field.field.label')"
             :hint="t('field.field.hint')"
             :options="fieldFilterOptions"
-            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             emit-value
             use-input
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             hide-bottom-space
             outlined
             rounded
@@ -87,9 +88,10 @@
             v-model="data.field"
             :label="t('field.field.label')"
             :options="fieldOptions"
-            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             emit-value
             map-options
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            hide-bottom-space
             clearable
             outlined
             rounded
@@ -100,6 +102,7 @@
             v-model="data.field"
             :label="t('field.field.label')"
             :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            hide-bottom-space
             outlined
             rounded
           />
@@ -532,7 +535,7 @@ function onOKClick(): void {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit Template Column'
+title: 'Edit Column'
 
 action:
   ok: 'Ok'
@@ -644,7 +647,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Template-Spalte bearbeiten'
+title: 'Spalte bearbeiten'
 
 action:
   ok: 'Ok'
@@ -756,7 +759,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier la colonne de modèle'
+title: 'Modifier la colonne'
 
 action:
   ok: 'Ok'
@@ -868,7 +871,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Edytuj kolumnę szablonu'
+title: 'Edytuj kolumnę'
 
 action:
   ok: 'OK'
@@ -980,7 +983,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Upravit sloupec šablony'
+title: 'Upravit sloupec'
 
 action:
   ok: 'OK'

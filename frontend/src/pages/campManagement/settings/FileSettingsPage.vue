@@ -88,7 +88,7 @@
 
               <q-item-section
                 side
-                class="file-meta"
+                class="file-meta file-meta--inline"
               >
                 <q-chip
                   v-if="doc.locale"
@@ -166,17 +166,19 @@
                   >
                     {{ file.name }}
                   </a>
+                </q-item-label>
+                <q-item-label class="file-caption">
                   <q-badge
                     v-if="file.locale"
                     rounded
                     class="locale-badge"
                     :label="file.locale.toUpperCase()"
                   />
-                </q-item-label>
-                <q-item-label class="file-caption ellipsis">
-                  {{ formatBytes(file.size) }}
-                  ·
-                  {{ formatUtcDateTime(file.createdAt) }}
+                  <span class="ellipsis">
+                    {{ formatBytes(file.size) }}
+                    ·
+                    {{ formatUtcDateTime(file.createdAt) }}
+                  </span>
                 </q-item-label>
               </q-item-section>
 
@@ -208,18 +210,6 @@
                 class="file-buttons"
               >
                 <q-btn
-                  :aria-label="t('action.copy_link')"
-                  icon="link"
-                  class="file-action-btn"
-                  flat
-                  round
-                  size="sm"
-                  @click="copyLink(campFileStore.getUrl(file.id))"
-                >
-                  <q-tooltip>{{ t('action.copy_link') }}</q-tooltip>
-                </q-btn>
-
-                <q-btn
                   :aria-label="t('action.menu')"
                   icon="more_vert"
                   class="file-action-btn"
@@ -229,6 +219,21 @@
                 >
                   <q-menu>
                     <q-list style="min-width: 180px">
+                      <q-item
+                        clickable
+                        v-close-popup
+                        @click="copyLink(campFileStore.getUrl(file.id))"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="link"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.copy_link') }}
+                        </q-item-section>
+                      </q-item>
                       <q-item
                         clickable
                         v-close-popup
@@ -642,13 +647,22 @@ function copyLink(url: string) {
 
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
   font-weight: 500;
+}
+
+/* The text child (file name link or upload hint) must shrink so long names
+   truncate instead of widening the row; the locale badge stays at its size.
+   `flex-basis: 0` (not auto) keeps the name from contributing its full intrinsic
+   width, so it always truncates into the space left beside the badge. */
+.file-name > .ellipsis,
+.file-name-link {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .file-name-link {
   display: block;
-  min-width: 0;
-  max-width: 100%;
 
   color: inherit;
   text-decoration: none;
@@ -671,8 +685,17 @@ function copyLink(url: string) {
 }
 
 .file-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
   color: var(--md3-on-surface-variant);
   font-size: 12px;
+}
+
+.file-caption > .ellipsis {
+  min-width: 0;
 }
 
 .file-meta {
@@ -683,6 +706,11 @@ function copyLink(url: string) {
   gap: 8px;
   max-width: 45%;
   min-width: 0;
+
+  /* Quasar only sets border-box on html/body, not globally, so be explicit:
+     the mobile rule below adds padding-left to a flex: 0 0 100% section, which
+     would otherwise add on top of the 100% and overflow the row. */
+  box-sizing: border-box;
 }
 
 .file-buttons {
@@ -761,6 +789,16 @@ function copyLink(url: string) {
     max-width: 100%;
     justify-content: flex-start;
     padding-left: 56px;
+  }
+
+  /* Missing-document rows only carry a small locale chip, so keep it inline
+     next to the chevron instead of dropping it onto its own indented line. */
+  .file-meta--inline {
+    order: 0;
+    flex: 0 0 auto;
+    max-width: 50%;
+    justify-content: flex-end;
+    padding-left: 0;
   }
 
   .field-chip {

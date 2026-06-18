@@ -369,7 +369,7 @@ function roleFilterFn(value: string, update: (fn: () => void) => void) {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit Template'
+title: 'Edit Table'
 
 advanced:
   hide: 'Hide advanced options'
@@ -413,7 +413,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Vorlage bearbeiten'
+title: 'Tabelle bearbeiten'
 
 advanced:
   hide: 'Erweiterte Optionen ausblenden'
@@ -457,7 +457,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier le modèle'
+title: 'Modifier le tableau'
 
 advanced:
   hide: 'Masquer les options avancées'
@@ -501,7 +501,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Edytuj szablon'
+title: 'Edytuj tabelę'
 
 advanced:
   hide: 'Ukryj opcje zaawansowane'
@@ -545,7 +545,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Upravit šablonu'
+title: 'Upravit tabulku'
 
 advanced:
   hide: 'Skrýt pokročilé možnosti'
