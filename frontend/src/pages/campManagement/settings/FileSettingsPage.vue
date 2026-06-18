@@ -363,7 +363,43 @@ onMounted(async () => {
 
 const uploadOngoing = ref(false);
 
-const files = computed<ServiceFile[]>(() => campFileStore.data ?? []);
+const files = computed<ServiceFile[]>(() =>
+  sortFiles(campFileStore.data ?? []),
+);
+
+/**
+ * Presentational ordering for the file list:
+ * 1. Fielded slot documents (rules, toc, …) first, grouped by `field`.
+ * 2. Within a field, by `locale` so language variants cluster together.
+ * 3. Free uploads (no field) last, newest first.
+ * `id` is the final tiebreaker to keep the order stable across refetches.
+ */
+function sortFiles(list: ServiceFile[]): ServiceFile[] {
+  return [...list].sort((a, b) => {
+    if (!!a.field !== !!b.field) {
+      return a.field ? -1 : 1;
+    }
+
+    if (a.field && b.field) {
+      const byField = a.field.localeCompare(b.field);
+      if (byField !== 0) {
+        return byField;
+      }
+
+      const byLocale = (a.locale ?? '').localeCompare(b.locale ?? '');
+      if (byLocale !== 0) {
+        return byLocale;
+      }
+    } else {
+      const byDate = b.createdAt.localeCompare(a.createdAt);
+      if (byDate !== 0) {
+        return byDate;
+      }
+    }
+
+    return a.id.localeCompare(b.id);
+  });
+}
 
 interface MissingDocument {
   id: string;
