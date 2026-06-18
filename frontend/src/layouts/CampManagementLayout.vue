@@ -315,7 +315,6 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 switch_camp: 'Camp wechseln'
-tools: 'Tools'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -328,7 +327,6 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 switch_camp: 'Changer de camp'
-tools: 'Tools'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -341,7 +339,6 @@ room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 switch_camp: 'Zmień obóz'
-tools: 'Narzędzia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -354,7 +351,6 @@ room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 switch_camp: 'Změnit tábor'
-tools: 'Nástroje'
 </i18n>
 
 <style>

@@ -87,9 +87,6 @@ title: 'Edit Rooms'
 action:
   ok: 'Ok'
   cancel: 'Cancel'
-
-default:
-  title: 'New template'
 </i18n>
 
 <i18n lang="yaml" locale="de">
