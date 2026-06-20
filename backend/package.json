@@ -89,7 +89,7 @@
     "moment": "^2.30.1",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
-    "nodemailer": "^8.0.11",
+    "nodemailer": "^9.0.1",
     "otpauth": "^9.5.1",
     "package-directory": "^8.2.0",
     "passport": "^0.7.0",
