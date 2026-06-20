@@ -115,14 +115,14 @@ function levelToTier(value: unknown): number {
     return 0;
   }
 
-  switch (value.toUpperCase()) {
+  switch (value.trim().toUpperCase()) {
     case 'C2':
     case 'NATIVE':
-    case 'FLUENT':
     case 'MASTERY':
     case 'PROFICIENCY':
       return 6;
     case 'C1':
+    case 'FLUENT':
     case 'ADVANCED':
       return 5;
     case 'B2':
@@ -135,7 +135,7 @@ function levelToTier(value: unknown): number {
       return 3;
     case 'A2':
     case 'PRE-INTERMEDIATE':
-    case 'WASTAGE':
+    case 'WAYSTAGE':
     case 'BASIC':
       return 2;
     case 'A1':
