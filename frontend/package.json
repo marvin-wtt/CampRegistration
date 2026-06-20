@@ -15,7 +15,7 @@
     "postinstall": "quasar prepare",
     "clean": "quasar clean && rimraf ./node_modules/",
     "dev": "quasar dev",
-    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
+    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\" && npm run i18n:check",
     "i18n:check": "node scripts/i18n/check.mjs",
     "i18n:add-locale": "node scripts/i18n/add-locale.mjs",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
