@@ -14,12 +14,16 @@
     </div>
 
     <div
+      v-if="editable"
       class="cal-event__resize-handle"
       @mousedown.stop.prevent="startResize"
     />
 
     <calendar-item-popup
       :event="event"
+      :editable="editable"
+      :deletable="deletable"
+      :creatable="creatable"
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
@@ -39,6 +43,9 @@ const {
   viewBoth = false,
   showAllTranslations = false,
   selected = false,
+  editable = false,
+  deletable = false,
+  creatable = false,
   timeDurationHeight,
   timeStartPosition,
   snap,
@@ -47,6 +54,9 @@ const {
   viewBoth?: boolean;
   showAllTranslations?: boolean;
   selected?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
   timeStartPosition: (time?: string) => number;
   timeDurationHeight: (duration?: number) => number;
   snap?: number;
