@@ -24,8 +24,13 @@ const address = computed<string>(() => {
 
   const field = (key: string): string | undefined => {
     const raw = (value as Record<string, unknown>)[key];
+    if (typeof raw !== 'string') {
+      return undefined;
+    }
 
-    return typeof raw === 'string' && raw.trim() !== '' ? raw : undefined;
+    const trimmed = raw.trim();
+
+    return trimmed.length > 0 ? trimmed : undefined;
   };
 
   const translateCountry = (country: string): string => {
