@@ -1,7 +1,8 @@
 <template>
   <div
-    class="editor-cell row items-center no-wrap full-width full-height"
-    :class="{ 'cursor-pointer': enabled, 'editor-cell--grid': gridMode }"
+    v-if="enabled"
+    class="editor-cell row items-center no-wrap full-width full-height cursor-pointer"
+    :class="{ 'editor-cell--grid': gridMode }"
     @click="onCellClick()"
   >
     <!-- Displayed value (hidden while editing inline so the input takes the
@@ -21,7 +22,6 @@
 
       <!-- Edit affordance for editable cells. -->
       <q-icon
-        v-if="enabled"
         class="editor-edit-icon"
         name="edit"
         size="18px"
@@ -71,7 +71,7 @@
 
     <!-- Popup editor (small screens) -->
     <q-dialog
-      v-if="enabled && !largeScreen"
+      v-if="!largeScreen"
       v-model="editMode"
     >
       <q-card style="min-width: 280px">
@@ -138,6 +138,14 @@
       size="24px"
     />
   </div>
+
+  <default-table-cell
+    v-else
+    :props="cellProps"
+    :camp="camp"
+    :printing="printing"
+    :grid-mode="gridMode"
+  />
 </template>
 
 <script lang="ts" setup>
