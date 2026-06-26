@@ -6,6 +6,11 @@ export interface MessageTemplateQuery {
   hasEvent?: boolean | undefined;
 }
 
+export interface MessageTemplateRecipient {
+  registrationId: string;
+  to: string | null;
+}
+
 export interface MessageTemplate extends Identifiable {
   event: string | null;
   country: string | null;
@@ -14,6 +19,7 @@ export interface MessageTemplate extends Identifiable {
   replyTo: string | null;
   priority: string;
   attachments: ServiceFile[] | null;
+  recipients?: MessageTemplateRecipient[] | undefined;
   updatedAt: string | null;
   createdAt: string | null;
 }

@@ -4,6 +4,7 @@ import { MessageTemplateService } from './message-template.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
+import { FileResource } from '#app/file/file.resource';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 
@@ -29,12 +30,10 @@ export class MessageTemplateController extends BaseController {
       query: { hasEvent },
     } = await req.validate(validator.index);
 
-    let templates =
-      await this.messageTemplateService.queryMessageTemplates(campId);
-
-    if (hasEvent) {
-      templates = templates.filter((template) => !!template.event === hasEvent);
-    }
+    const templates = await this.messageTemplateService.queryMessageTemplates(
+      campId,
+      { hasEvent },
+    );
 
     res
       .status(httpStatus.OK)
@@ -99,5 +98,24 @@ export class MessageTemplateController extends BaseController {
     );
 
     res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  async duplicateAttachments(req: Request, res: Response) {
+    const {
+      params: { messageTemplateId, campId },
+    } = await req.validate(validator.duplicateAttachments);
+
+    const files =
+      await this.messageTemplateService.duplicateAttachmentsToSession(
+        campId,
+        messageTemplateId,
+        req.sessionId,
+      );
+
+    if (files === null) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Message template not found');
+    }
+
+    res.status(httpStatus.CREATED).resource(FileResource.collection(files));
   }
 }

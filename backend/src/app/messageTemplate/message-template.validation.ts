@@ -59,10 +59,18 @@ const destroy = z.object({
   }),
 });
 
+const duplicateAttachments = z.object({
+  params: z.object({
+    campId: z.ulid(),
+    messageTemplateId: z.ulid(),
+  }),
+});
+
 export default {
   show,
   index,
   store,
   update,
   destroy,
+  duplicateAttachments,
 };

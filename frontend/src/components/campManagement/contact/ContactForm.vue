@@ -7,29 +7,6 @@
     @reset="reset()"
   >
     <div class="composer">
-      <div
-        v-if="standalone"
-        class="composer-heading"
-      >
-        <div>
-          <div class="text-h5 text-weight-medium">
-            {{ t('heading.title') }}
-          </div>
-          <div class="text-body2 text-grey-6">
-            {{ t('heading.caption') }}
-          </div>
-        </div>
-        <q-chip
-          v-if="recipientCount"
-          dense
-          color="primary"
-          text-color="white"
-          icon="group"
-        >
-          {{ recipientCount }}
-        </q-chip>
-      </div>
-
       <div class="composer-fields">
         <contact-select
           v-model="to"
@@ -182,11 +159,17 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type { Registration } from '@camp-registration/common/entities';
-import type { Contact } from 'components/campManagement/contact/Contact';
+import type {
+  MessageTemplate,
+  Registration,
+} from '@camp-registration/common/entities';
+import type {
+  Contact,
+  ContactDraft,
+} from 'components/campManagement/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
 import { useCampDetailsStore } from 'stores/camp-details-store';
@@ -201,15 +184,17 @@ import { usePermissions } from 'src/composables/permissions';
 const {
   registrations,
   initialContacts,
+  draft = null,
   standalone = false,
 } = defineProps<{
   registrations: Registration[];
   initialContacts?: Contact[];
+  draft?: ContactDraft | null;
   standalone?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'sent'): void;
+  (e: 'sent', template: MessageTemplate): void;
 }>();
 
 const quasar = useQuasar();
@@ -382,7 +367,7 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    await withResultNotification('send', async () => {
+    const template = await withResultNotification('send', async () => {
       return apiService.createMessage(campId, {
         registrationIds: to.value.flatMap((contact) => {
           return contact.type === 'group'
@@ -401,11 +386,32 @@ async function send() {
 
     // Reset all fields on success
     reset();
-    emit('sent');
+    emit('sent', template);
   } finally {
     sendInProgress.value = false;
   }
 }
+
+// Loading a draft (e.g. resending a sent message) replaces the message content
+// but intentionally starts with an empty recipient list so the user chooses who
+// to send to. Attachments arrive pre-duplicated as fresh session files.
+watch(
+  () => draft,
+  (value) => {
+    if (!value) {
+      return;
+    }
+
+    to.value = initialContacts?.length ? [...initialContacts] : [];
+    subject.value = value.subject;
+    text.value = value.body;
+    priority.value = value.priority;
+    replyTo.value = value.replyTo ?? defaultReplyTo();
+    attachments.value = [...value.attachments];
+
+    void nextTick(() => formRef.value?.resetValidation());
+  },
+);
 
 function reset() {
   to.value = initialContacts?.length ? [...initialContacts] : [];
@@ -442,14 +448,6 @@ function reset() {
   background: var(--md3-surface);
   flex: 1 1 0;
   flex-direction: column;
-}
-
-.composer-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 24px 8px;
-  gap: 16px;
 }
 
 .composer-fields {
@@ -505,10 +503,6 @@ function reset() {
     padding: 16px;
   }
 
-  .composer-heading {
-    padding: 16px 16px 10px;
-  }
-
   .composer-fields {
     padding: 12px 16px;
   }
@@ -534,10 +528,6 @@ function reset() {
 </style>
 
 <i18n lang="yaml" locale="en">
-heading:
-  title: 'Send a message'
-  caption: 'Compose an email for one or more registrations.'
-
 action:
   send: 'Send'
   sendTo: 'Send ({count})'
@@ -585,10 +575,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-heading:
-  title: 'Nachricht senden'
-  caption: 'Verfasse eine E-Mail für eine oder mehrere Anmeldungen.'
-
 action:
   send: 'Senden'
   sendTo: 'Senden ({count})'
@@ -636,10 +622,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-heading:
-  title: 'Envoyer un message'
-  caption: 'Rédigez un e-mail pour une ou plusieurs inscriptions.'
-
 action:
   send: 'Envoyer'
   sendTo: 'Envoyer ({count})'
@@ -687,10 +669,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-heading:
-  title: 'Wyślij wiadomość'
-  caption: 'Napisz wiadomość e-mail do jednego lub kilku zgłoszeń.'
-
 action:
   send: 'Wyślij'
   sendTo: 'Wyślij ({count})'
@@ -738,10 +716,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-heading:
-  title: 'Odeslat zprávu'
-  caption: 'Napište e-mail pro jednu nebo více registrací.'
-
 action:
   send: 'Odeslat'
   sendTo: 'Odeslat ({count})'
