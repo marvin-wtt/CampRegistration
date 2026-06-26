@@ -105,11 +105,12 @@ export class MessageTemplateController extends BaseController {
       params: { messageTemplateId, campId },
     } = await req.validate(validator.duplicateAttachments);
 
-    const files = await this.messageTemplateService.duplicateAttachmentsToSession(
-      campId,
-      messageTemplateId,
-      req.sessionId,
-    );
+    const files =
+      await this.messageTemplateService.duplicateAttachmentsToSession(
+        campId,
+        messageTemplateId,
+        req.sessionId,
+      );
 
     if (files === null) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Message template not found');

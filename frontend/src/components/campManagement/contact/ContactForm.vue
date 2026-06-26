@@ -526,7 +526,6 @@ function reset() {
 </style>
 
 <i18n lang="yaml" locale="en">
-
 action:
   send: 'Send'
   sendTo: 'Send ({count})'
@@ -574,7 +573,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-
 action:
   send: 'Senden'
   sendTo: 'Senden ({count})'
@@ -622,7 +620,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-
 action:
   send: 'Envoyer'
   sendTo: 'Envoyer ({count})'
@@ -670,7 +667,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-
 action:
   send: 'Wyślij'
   sendTo: 'Wyślij ({count})'
@@ -718,7 +714,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-
 action:
   send: 'Odeslat'
   sendTo: 'Odeslat ({count})'

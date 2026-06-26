@@ -22,11 +22,21 @@
     :maximized="quasar.screen.lt.sm"
   >
     <q-card class="history-dialog column no-wrap">
-      <q-toolbar class="q-px-md">
+      <q-toolbar class="q-px-sm">
+        <q-btn
+          v-if="quasar.screen.lt.sm && mobileDetail"
+          flat
+          round
+          dense
+          icon="arrow_back"
+          :aria-label="t('action.back')"
+          @click="mobileDetail = false"
+        />
         <q-icon
+          v-else
           name="history"
           size="sm"
-          class="q-mr-sm"
+          class="q-mx-sm"
         />
         <q-toolbar-title class="text-subtitle1 text-weight-medium">
           {{ t('title') }}
@@ -45,115 +55,182 @@
       <q-separator />
 
       <!-- Empty -->
-      <q-card-section
+      <div
         v-if="messages.length === 0"
-        class="column items-center q-gutter-sm q-py-xl"
+        class="col column items-center justify-center text-grey-6 q-pa-xl"
       >
         <q-icon
           name="mark_email_read"
           size="3rem"
           color="grey-4"
         />
-        <div class="text-body2 text-grey-6 text-center">
+        <div class="text-body2 q-mt-sm text-center">
           {{ t('empty') }}
         </div>
-      </q-card-section>
+      </div>
 
-      <!-- List -->
-      <q-list
+      <div
         v-else
-        separator
-        class="col scroll"
+        class="history-body row no-wrap col"
       >
-        <q-expansion-item
-          v-for="template in messages"
-          :key="template.id"
-          expand-separator
-          group="sent-messages"
+        <!-- List pane -->
+        <div
+          class="history-list column no-wrap"
+          :class="{ 'pane--hidden': quasar.screen.lt.sm && mobileDetail }"
         >
-          <template #header>
-            <q-item-section avatar>
-              <q-avatar
-                color="primary"
-                text-color="white"
-                size="36px"
-                icon="mail"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label class="text-weight-medium">
-                {{ template.subject }}
-              </q-item-label>
-              <q-item-label caption>
-                {{ template.createdAt ? d(template.createdAt, 'dateTime') : '' }}
-              </q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-chip
-                dense
-                outline
-                icon="group"
-                :label="String(recipientCount(template))"
-                color="grey-7"
-                class="q-mr-none"
-              >
-                <q-tooltip>
-                  {{ t('recipients', { count: recipientCount(template) }) }}
-                </q-tooltip>
-              </q-chip>
-            </q-item-section>
-          </template>
-
+          <div class="q-pa-sm">
+            <q-input
+              v-model="search"
+              dense
+              outlined
+              rounded
+              clearable
+              :placeholder="t('search')"
+            >
+              <template #prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </div>
           <q-separator />
 
-          <div class="q-pa-md q-gutter-y-sm">
-            <!-- Recipients (collapsed by default to save space) -->
-            <q-expansion-item
-              dense
-              dense-toggle
-              switch-toggle-side
-              :label="t('recipients', { count: recipientCount(template) })"
-              header-class="text-caption text-grey-7 q-px-none"
-            >
-              <div class="row q-gutter-xs q-pt-sm">
+          <q-virtual-scroll
+            v-if="filtered.length > 0"
+            :items="filtered"
+            class="col scroll"
+          >
+            <template #default="{ item }">
+              <q-item
+                :key="item.id"
+                v-ripple
+                clickable
+                :active="item.id === selectedId"
+                active-class="history-item--active"
+                @click="selectMessage(item)"
+              >
+                <q-item-section avatar>
+                  <q-avatar
+                    color="primary"
+                    text-color="white"
+                    size="32px"
+                    icon="mail"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label
+                    lines="1"
+                    class="text-weight-medium"
+                  >
+                    {{ item.subject }}
+                  </q-item-label>
+                  <q-item-label caption>
+                    {{ item.createdAt ? d(item.createdAt, 'dateTime') : '' }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-chip
+                    dense
+                    outline
+                    icon="group"
+                    :label="String(recipientCount(item))"
+                    color="grey-7"
+                    class="q-mr-none"
+                  />
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-virtual-scroll>
+
+          <div
+            v-else
+            class="col column items-center justify-center text-grey-6 q-pa-lg"
+          >
+            <q-icon
+              name="search_off"
+              size="2.5rem"
+              color="grey-4"
+            />
+            <div class="text-body2 q-mt-sm text-center">
+              {{ t('noResults') }}
+            </div>
+          </div>
+        </div>
+
+        <q-separator
+          v-if="quasar.screen.gt.xs"
+          vertical
+        />
+
+        <!-- Detail pane -->
+        <div
+          class="history-detail column no-wrap col"
+          :class="{ 'pane--hidden': quasar.screen.lt.sm && !mobileDetail }"
+        >
+          <template v-if="selected">
+            <div class="col scroll q-pa-md q-gutter-y-md">
+              <div>
+                <div class="text-subtitle1 text-weight-medium">
+                  {{ selected.subject }}
+                </div>
+                <div class="text-caption text-grey-6">
+                  {{
+                    selected.createdAt ? d(selected.createdAt, 'dateTime') : ''
+                  }}
+                </div>
+              </div>
+
+              <!-- Recipients -->
+              <div>
+                <div class="text-caption text-grey-7 q-mb-xs">
+                  {{ t('recipients', { count: recipientCount(selected) }) }}
+                </div>
+                <div class="recipient-chips row q-gutter-xs">
+                  <q-chip
+                    v-for="name in recipientNames(selected)"
+                    :key="name"
+                    dense
+                    square
+                    color="grey-3"
+                    text-color="grey-9"
+                  >
+                    {{ name }}
+                  </q-chip>
+                </div>
+              </div>
+
+              <!-- Attachments -->
+              <div
+                v-if="selected.attachments?.length"
+                class="row items-center q-gutter-xs"
+              >
                 <q-chip
-                  v-for="name in recipientNames(template)"
-                  :key="name"
+                  v-for="file in selected.attachments"
+                  :key="file.id"
+                  clickable
                   dense
-                  square
+                  icon="attach_file"
+                  icon-right="open_in_new"
                   color="grey-3"
                   text-color="grey-9"
+                  @click="openAttachment(file)"
                 >
-                  {{ name }}
+                  {{ file.name }}
+                  <q-tooltip>{{ t('action.view') }}</q-tooltip>
                 </q-chip>
               </div>
-            </q-expansion-item>
 
-            <!-- Attachments -->
-            <div
-              v-if="template.attachments?.length"
-              class="row items-center q-gutter-xs"
-            >
-              <q-chip
-                v-for="file in template.attachments"
-                :key="file.id"
-                dense
-                icon="attach_file"
-                color="grey-3"
-                text-color="grey-9"
-              >
-                {{ file.name }}
-              </q-chip>
+              <q-separator />
+
+              <!-- Body -->
+              <div
+                class="message-preview"
+                v-html="selectedBody"
+              />
             </div>
 
-            <!-- Body -->
-            <div
-              class="message-preview"
-              v-html="sanitizedBodies[template.id]"
-            />
+            <q-separator />
 
-            <!-- Actions -->
-            <div class="row justify-end q-gutter-sm q-pt-sm">
+            <div class="row justify-end q-gutter-sm q-pa-md">
               <q-btn
                 v-if="canDelete"
                 flat
@@ -162,7 +239,7 @@
                 color="negative"
                 icon="delete_outline"
                 :label="t('action.delete')"
-                @click="confirmDelete(template)"
+                @click="confirmDelete(selected)"
               />
               <q-btn
                 unelevated
@@ -171,27 +248,43 @@
                 color="primary"
                 icon="edit_note"
                 :label="t('action.reuse')"
-                @click="onResend(template)"
+                @click="onResend(selected)"
               />
             </div>
+          </template>
+
+          <div
+            v-else
+            class="col column items-center justify-center text-grey-6 q-pa-xl"
+          >
+            <q-icon
+              name="drafts"
+              size="2.5rem"
+              color="grey-4"
+            />
+            <div class="text-body2 q-mt-sm text-center">
+              {{ t('selectHint') }}
+            </div>
           </div>
-        </q-expansion-item>
-      </q-list>
+        </div>
+      </div>
     </q-card>
   </q-dialog>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import DOMPurify from 'dompurify';
 import type {
   MessageTemplate,
   Registration,
+  ServiceFile,
 } from '@camp-registration/common/entities';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { formatPersonName } from 'src/utils/formatters';
+import { useAPIService } from 'src/services/APIService';
 
 const {
   messages,
@@ -210,21 +303,35 @@ const emit = defineEmits<{
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
+const apiService = useAPIService();
 const { fullName } = useRegistrationHelper();
 
 const open = ref<boolean>(false);
+const search = ref<string>('');
+const selectedId = ref<string | null>(null);
+const mobileDetail = ref<boolean>(false);
 
 const registrationsById = computed(
   () => new Map(registrations.map((r) => [r.id, r])),
 );
 
-const sanitizedBodies = computed<Record<string, string>>(() =>
-  Object.fromEntries(
-    messages.map((template) => [
-      template.id,
-      DOMPurify.sanitize(template.body),
-    ]),
-  ),
+const filtered = computed<MessageTemplate[]>(() => {
+  const query = search.value.trim().toLowerCase();
+  if (!query) {
+    return messages;
+  }
+  return messages.filter((message) =>
+    message.subject.toLowerCase().includes(query),
+  );
+});
+
+const selected = computed<MessageTemplate | null>(
+  () => messages.find((message) => message.id === selectedId.value) ?? null,
+);
+
+// Only the open message is sanitized, so the list scales without parsing every body.
+const selectedBody = computed<string>(() =>
+  selected.value ? DOMPurify.sanitize(selected.value.body) : '',
 );
 
 function recipientCount(template: MessageTemplate): number {
@@ -243,6 +350,17 @@ function recipientNames(template: MessageTemplate): string[] {
       return name ?? recipient.to ?? recipient.registrationId;
     })
     .filter((name): name is string => !!name);
+}
+
+function selectMessage(template: MessageTemplate) {
+  selectedId.value = template.id;
+  if (quasar.screen.lt.sm) {
+    mobileDetail.value = true;
+  }
+}
+
+function openAttachment(file: ServiceFile) {
+  window.open(apiService.getFileUrl(file.id), '_blank', 'noopener');
 }
 
 function onResend(template: MessageTemplate) {
@@ -271,20 +389,69 @@ function confirmDelete(template: MessageTemplate) {
       emit('delete', template);
     });
 }
+
+// On wide screens auto-select the first message so the detail pane isn't empty.
+watch(open, (isOpen) => {
+  if (!isOpen) {
+    return;
+  }
+  mobileDetail.value = false;
+  if (quasar.screen.gt.xs && !selected.value) {
+    selectedId.value = filtered.value[0]?.id ?? null;
+  }
+});
+
+// Keep the selection valid as the list changes (e.g. after a delete).
+watch(
+  () => messages,
+  (list) => {
+    if (selectedId.value && !list.some((m) => m.id === selectedId.value)) {
+      selectedId.value = quasar.screen.gt.xs ? (list[0]?.id ?? null) : null;
+      if (quasar.screen.lt.sm) {
+        mobileDetail.value = false;
+      }
+    }
+  },
+);
 </script>
 
 <style scoped>
 .history-dialog {
-  width: 720px;
-  max-width: 90vw;
+  width: 900px;
+  max-width: 95vw;
+  height: 80vh;
   max-height: 85vh;
   background: var(--md3-surface);
 }
 
+.history-body {
+  min-height: 0;
+}
+
+.history-list,
+.history-detail {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.history-detail {
+  flex: 1 1 0;
+}
+
+.history-item--active {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.recipient-chips {
+  max-height: 140px;
+  overflow-y: auto;
+}
+
 .message-preview {
   line-height: 1.6;
-  max-height: 320px;
-  overflow-y: auto;
 }
 
 .message-preview :deep(p) {
@@ -300,16 +467,39 @@ function confirmDelete(template: MessageTemplate) {
 .message-preview :deep(a) {
   color: var(--md3-primary);
 }
+
+@media (min-width: 600px) {
+  .history-list {
+    flex: 0 0 320px;
+  }
+}
+
+@media (max-width: 599px) {
+  .history-list,
+  .history-detail {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+
+.pane--hidden {
+  display: none !important;
+}
 </style>
 
 <i18n lang="yaml" locale="en">
 title: 'Sent messages'
 empty: 'Messages you send appear here.'
+search: 'Search messages'
+noResults: 'No messages match your search.'
+selectHint: 'Select a message to view it.'
 recipients: '{count} recipient | {count} recipient | {count} recipients'
 action:
   reuse: 'Use as template'
+  view: 'Open'
   delete: 'Delete'
   close: 'Close'
+  back: 'Back'
 dialog:
   delete:
     title: 'Delete message'
@@ -319,11 +509,16 @@ dialog:
 <i18n lang="yaml" locale="de">
 title: 'Gesendete Nachrichten'
 empty: 'Von dir gesendete Nachrichten erscheinen hier.'
+search: 'Nachrichten suchen'
+noResults: 'Keine Nachrichten entsprechen deiner Suche.'
+selectHint: 'Wähle eine Nachricht aus, um sie anzuzeigen.'
 recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
 action:
   reuse: 'Als Vorlage verwenden'
+  view: 'Öffnen'
   delete: 'Löschen'
   close: 'Schließen'
+  back: 'Zurück'
 dialog:
   delete:
     title: 'Nachricht löschen'
@@ -333,11 +528,16 @@ dialog:
 <i18n lang="yaml" locale="fr">
 title: 'Messages envoyés'
 empty: 'Les messages que vous envoyez apparaissent ici.'
+search: 'Rechercher des messages'
+noResults: 'Aucun message ne correspond à votre recherche.'
+selectHint: 'Sélectionnez un message pour l’afficher.'
 recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
 action:
   reuse: 'Utiliser comme modèle'
+  view: 'Ouvrir'
   delete: 'Supprimer'
   close: 'Fermer'
+  back: 'Retour'
 dialog:
   delete:
     title: 'Supprimer le message'
@@ -347,11 +547,16 @@ dialog:
 <i18n lang="yaml" locale="pl">
 title: 'Wysłane wiadomości'
 empty: 'Wysłane przez Ciebie wiadomości pojawią się tutaj.'
+search: 'Szukaj wiadomości'
+noResults: 'Brak wiadomości pasujących do wyszukiwania.'
+selectHint: 'Wybierz wiadomość, aby ją wyświetlić.'
 recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
 action:
   reuse: 'Użyj jako szablon'
+  view: 'Otwórz'
   delete: 'Usuń'
   close: 'Zamknij'
+  back: 'Wstecz'
 dialog:
   delete:
     title: 'Usuń wiadomość'
@@ -361,11 +566,16 @@ dialog:
 <i18n lang="yaml" locale="cs">
 title: 'Odeslané zprávy'
 empty: 'Zprávy, které odešlete, se zobrazí zde.'
+search: 'Hledat zprávy'
+noResults: 'Žádné zprávy neodpovídají hledání.'
+selectHint: 'Vyber zprávu pro zobrazení.'
 recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
 action:
   reuse: 'Použít jako šablonu'
+  view: 'Otevřít'
   delete: 'Smazat'
   close: 'Zavřít'
+  back: 'Zpět'
 dialog:
   delete:
     title: 'Smazat zprávu'

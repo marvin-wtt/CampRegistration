@@ -50,6 +50,7 @@ export class MessageTemplateService extends BaseService {
     if (options.hasEvent === false) {
       return this.prisma.messageTemplate.findMany({
         where,
+        orderBy: { createdAt: 'desc' },
         include: {
           attachments: true,
           messages: { select: { registrationId: true, to: true } },

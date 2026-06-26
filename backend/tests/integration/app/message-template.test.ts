@@ -1082,7 +1082,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/message-templates/${ulid()}/attachments`)
+        .post(
+          `/api/v1/camps/${camp.id}/message-templates/${ulid()}/attachments`,
+        )
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
