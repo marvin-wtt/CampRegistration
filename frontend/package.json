@@ -15,7 +15,9 @@
     "postinstall": "quasar prepare",
     "clean": "quasar clean && rimraf ./node_modules/",
     "dev": "quasar dev",
-    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
+    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\" && npm run i18n:check",
+    "i18n:check": "node scripts/i18n/check.mjs",
+    "i18n:add-locale": "node scripts/i18n/add-locale.mjs",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "build": "quasar build",
@@ -66,8 +68,10 @@
     "vue3-apexcharts": "^1.11.1"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.104.2",
     "@eslint/js": "^10.0.1",
     "@intlify/unplugin-vue-i18n": "^11.2.3",
+    "jiti": "^2.7.0",
     "@quasar/app-vite": "^2.6.2",
     "@quasar/cli": "^5.0.1",
     "@types/markdown-it": "^14.1.2",
@@ -87,7 +91,8 @@
     "typescript": "^6.0.3",
     "vite-plugin-checker": "^0.14.1",
     "vitest": "^4.1.8",
-    "vue-tsc": "^3.3.5"
+    "vue-tsc": "^3.3.5",
+    "yaml": "^2.9.0"
   },
   "engines": {
     "node": ">=22 <25"

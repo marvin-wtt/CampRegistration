@@ -17,11 +17,19 @@
           </div>
         </div>
 
-        <div
-          v-if="can('camp.managers.create')"
-          class="col-12 col-sm-auto"
-        >
+        <div class="col-12 col-sm-auto row items-center q-gutter-sm">
+          <q-btn
+            :label="quasar.screen.gt.sm ? t('action.roles') : undefined"
+            :aria-label="t('action.roles')"
+            icon="info_outline"
+            flat
+            no-caps
+            dense
+            class="text-grey-6"
+            @click="showPermissionsDialog"
+          />
           <m-btn
+            v-if="can('camp.managers.create')"
             :label="t('action.add')"
             color="primary"
             icon="person_add"
@@ -236,6 +244,7 @@ import CampManagerCreateDialog from 'components/campManagement/settings/access/C
 import { useProfileStore } from 'stores/profile-store';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
+import RolePermissionsDialog from 'components/campManagement/settings/access/RolePermissionsDialog.vue';
 import { usePermissions } from 'src/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -340,6 +349,10 @@ function getRoleOptions(): QSelectOption[] {
     label: t('role.' + role.toLocaleLowerCase()),
     value: role,
   }));
+}
+
+function showPermissionsDialog() {
+  quasar.dialog({ component: RolePermissionsDialog });
 }
 
 function showAddDialog() {
@@ -552,6 +565,7 @@ action:
   delete: 'Remove'
   edit: 'Edit'
   menu: 'Actions'
+  roles: 'Role permissions'
 
 section:
   members: 'Members'
@@ -589,6 +603,7 @@ action:
   delete: 'Entfernen'
   edit: 'Bearbeiten'
   menu: 'Aktionen'
+  roles: 'Rollenberechtigungen'
 
 section:
   members: 'Mitglieder'
@@ -618,40 +633,41 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Gérer l’accès'
-subtitle: 'Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.'
+title: ‘Gérer l’accès’
+subtitle: ‘Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.’
 
 action:
-  add: 'Ajouter'
-  delete: 'Supprimer'
-  edit: 'Modifier'
-  menu: 'Actions'
+  add: ‘Ajouter’
+  delete: ‘Supprimer’
+  edit: ‘Modifier’
+  menu: ‘Actions’
+  roles: ‘Permissions par rôle’
 
 section:
-  members: 'Membres'
-  invitations: 'Invitations en attente'
+  members: ‘Membres’
+  invitations: ‘Invitations en attente’
 
 dialog:
   delete:
-    title: 'Révoquer l’accès'
-    message: 'Voulez-vous vraiment révoquer l’accès de cet utilisateur ?'
-    label: 'E-mail'
+    title: ‘Révoquer l’accès’
+    message: ‘Voulez-vous vraiment révoquer l’accès de cet utilisateur ?’
+    label: ‘E-mail’
 
 expiry:
-  until: 'Jusqu’au {date}'
-  expired: 'Expiré'
+  until: ‘Jusqu’au {date}’
+  expired: ‘Expiré’
 
 empty:
-  title: 'Personne n’a encore accès'
-  message: 'Invitez des membres de l’équipe pour gérer ce camp ensemble.'
+  title: ‘Personne n’a encore accès’
+  message: ‘Invitez des membres de l’équipe pour gérer ce camp ensemble.’
 
-you: 'Vous'
+you: ‘Vous’
 
 role:
-  coordinator: 'Coordinateur'
-  counselor: 'Conseiller'
-  director: 'Directeur'
-  viewer: 'Lecteur'
+  coordinator: ‘Coordinateur’
+  counselor: ‘Conseiller’
+  director: ‘Directeur’
+  viewer: ‘Lecteur’
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -663,6 +679,7 @@ action:
   delete: 'Usuń'
   edit: 'Edytuj'
   menu: 'Akcje'
+  roles: 'Uprawnienia ról'
 
 section:
   members: 'Członkowie'
@@ -700,6 +717,7 @@ action:
   delete: 'Odstranit'
   edit: 'Upravit'
   menu: 'Akce'
+  roles: 'Oprávnění rolí'
 
 section:
   members: 'Členové'

@@ -225,3 +225,63 @@ input:
       user: 'Utilisateur'
       admin: 'Administrateur'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Aktualizuj użytkownika'
+
+action:
+  cancel: 'Anuluj'
+  ok: 'Zapisz'
+
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail jest wymagany'
+  name:
+    label: 'Nazwa'
+    rule:
+      required: 'Nazwa jest wymagana'
+  locale:
+    label: 'Język'
+    rule:
+      required: 'Język jest wymagany'
+  password:
+    label: 'Hasło'
+    required: 'Hasło jest wymagane'
+  role:
+    label: 'Rola'
+    option:
+      user: 'Użytkownik'
+      admin: 'Administrator'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Upravit uživatele'
+
+action:
+  cancel: 'Zrušit'
+  ok: 'Uložit'
+
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail je povinný'
+  name:
+    label: 'Jméno'
+    rule:
+      required: 'Jméno je povinné'
+  locale:
+    label: 'Jazyk'
+    rule:
+      required: 'Jazyk je povinný'
+  password:
+    label: 'Heslo'
+    required: 'Heslo je povinné'
+  role:
+    label: 'Role'
+    option:
+      user: 'Uživatel'
+      admin: 'Administrátor'
+</i18n>
