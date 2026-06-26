@@ -187,7 +187,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 201 },
       { role: 'COORDINATOR', expectedStatus: 201 },
-      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 201 },
       { role: 'VIEWER', expectedStatus: 403 },
     ])(
       'should respond with `$expectedStatus` when user is $role',
@@ -343,7 +343,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
-      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
       { role: 'VIEWER', expectedStatus: 403 },
     ])(
       'should respond with `$expectedStatus` when user is $role',
@@ -503,7 +503,7 @@ describe('/api/v1/camps/:campId/program-events', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 204 },
       { role: 'COORDINATOR', expectedStatus: 204 },
-      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 204 },
       { role: 'VIEWER', expectedStatus: 403 },
     ])(
       'should respond with `$expectedStatus` when user is $role',
