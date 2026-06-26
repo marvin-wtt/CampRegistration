@@ -168,23 +168,7 @@ export class MessageTemplateService extends BaseService {
       return null;
     }
 
-    return Promise.all(
-      template.attachments.map((file) =>
-        this.prisma.file.create({
-          data: {
-            name: file.name,
-            originalName: file.originalName,
-            type: file.type,
-            size: file.size,
-            locale: file.locale,
-            accessLevel: file.accessLevel,
-            storageLocation: file.storageLocation,
-            uploadStatus: file.uploadStatus,
-            field: sessionId,
-          },
-        }),
-      ),
-    );
+    return this.fileService.duplicateFiles(template.attachments, sessionId);
   }
 
   async deleteMessageTemplateById(id: string, campId: string) {
