@@ -6,7 +6,7 @@
   >
     <!-- Empty state -->
     <div
-      v-if="registrations.length === 0"
+      v-if="canSend && registrations.length === 0"
       class="empty-state col column items-center justify-center"
     >
       <q-icon
@@ -29,10 +29,10 @@
       <header class="contact-header">
         <div class="contact-header__text">
           <div class="text-h5 text-weight-medium">
-            {{ t('header.title') }}
+            {{ canSend ? t('header.title') : t('header.viewTitle') }}
           </div>
           <div class="text-body2 text-grey-6">
-            {{ t('header.caption') }}
+            {{ canSend ? t('header.caption') : t('header.viewCaption') }}
           </div>
         </div>
         <sent-message-history
@@ -46,6 +46,7 @@
       </header>
 
       <contact-form
+        v-if="canSend"
         class="col"
         :registrations
         :draft
@@ -90,12 +91,9 @@ onMounted(async () => {
   ]);
 });
 
-const canViewHistory = computed<boolean>(() =>
-  can('camp.message_templates.view'),
-);
-const canDeleteHistory = computed<boolean>(() =>
-  can('camp.message_templates.delete'),
-);
+const canSend = computed<boolean>(() => can('camp.messages.create'));
+const canViewHistory = computed<boolean>(() => can('camp.messages.view'));
+const canDeleteHistory = computed<boolean>(() => can('camp.messages.delete'));
 
 async function loadSentMessages() {
   const campId = campDetailsStore.data?.id;
@@ -103,9 +101,7 @@ async function loadSentMessages() {
     return;
   }
 
-  sentMessages.value = await apiService.fetchMessageTemplates(campId, {
-    hasEvent: false,
-  });
+  sentMessages.value = await apiService.fetchMessages(campId);
 }
 
 // Permissions (campAccess) and camp details may resolve after mount, so load the
@@ -129,10 +125,7 @@ async function onResend(template: MessageTemplate) {
   const campId = campDetailsStore.data?.id;
   const attachments =
     campId && template.attachments?.length
-      ? await apiService.duplicateMessageTemplateAttachments(
-          campId,
-          template.id,
-        )
+      ? await apiService.duplicateMessageAttachments(campId, template.id)
       : [];
 
   draft.value = {
@@ -154,7 +147,7 @@ async function onDelete(template: MessageTemplate) {
   }
 
   try {
-    await apiService.deleteMessageTemplate(campId, template.id);
+    await apiService.deleteMessage(campId, template.id);
     sentMessages.value = sentMessages.value.filter(
       (item) => item.id !== template.id,
     );
@@ -218,6 +211,8 @@ const registrations = computed<Registration[]>(() => {
 header:
   title: 'Send a message'
   caption: 'Compose an email for one or more registrations.'
+  viewTitle: 'Sent messages'
+  viewCaption: 'Review the messages sent for this camp.'
 empty:
   title: 'No registrations yet'
   message: 'Once people register, you can send them a message from here.'
@@ -229,6 +224,8 @@ error:
 header:
   title: 'Nachricht senden'
   caption: 'Verfasse eine E-Mail für eine oder mehrere Anmeldungen.'
+  viewTitle: 'Gesendete Nachrichten'
+  viewCaption: 'Sieh dir die für dieses Camp gesendeten Nachrichten an.'
 empty:
   title: 'Noch keine Anmeldungen'
   message: 'Sobald sich Personen anmelden, können Sie ihnen von hier aus eine Nachricht senden.'
@@ -240,6 +237,8 @@ error:
 header:
   title: 'Envoyer un message'
   caption: 'Rédigez un e-mail pour une ou plusieurs inscriptions.'
+  viewTitle: 'Messages envoyés'
+  viewCaption: 'Consultez les messages envoyés pour ce camp.'
 empty:
   title: 'Aucune inscription pour le moment'
   message: 'Dès que des personnes s’inscrivent, vous pourrez leur envoyer un message d’ici.'
@@ -251,6 +250,8 @@ error:
 header:
   title: 'Wyślij wiadomość'
   caption: 'Napisz wiadomość e-mail do jednego lub kilku zgłoszeń.'
+  viewTitle: 'Wysłane wiadomości'
+  viewCaption: 'Przejrzyj wiadomości wysłane dla tego obozu.'
 empty:
   title: 'Brak zgłoszeń'
   message: 'Gdy ktoś się zarejestruje, będziesz mógł stąd wysłać mu wiadomość.'
@@ -262,6 +263,8 @@ error:
 header:
   title: 'Odeslat zprávu'
   caption: 'Napište e-mail pro jednu nebo více registrací.'
+  viewTitle: 'Odeslané zprávy'
+  viewCaption: 'Prohlédněte si zprávy odeslané pro tento tábor.'
 empty:
   title: 'Zatím žádné registrace'
   message: 'Jakmile se někdo zaregistruje, můžete mu odsud poslat zprávu.'

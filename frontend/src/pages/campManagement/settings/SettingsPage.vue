@@ -63,7 +63,7 @@ import { usePermissions } from 'src/composables/permissions';
 import type { Permission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
-const { can } = usePermissions();
+const { canAccessAny } = usePermissions();
 
 interface SettingsItem {
   name: string;
@@ -124,7 +124,7 @@ const items = computed<SettingsItem[]>(() => [
 ]);
 
 const filteredItems = computed<SettingsItem[]>(() => {
-  return items.value.filter((item) => !item.permission || can(item.permission));
+  return items.value.filter((item) => canAccessAny(item.permission));
 });
 </script>
 

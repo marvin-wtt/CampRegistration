@@ -7,6 +7,7 @@ import { MessageTemplateService } from '#app/messageTemplate/message-template.se
 import ApiError from '#utils/ApiError';
 import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
+import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
 import { sanitizeEmailHtml } from '#utils/sanitize';
 
@@ -21,8 +22,22 @@ export class MessageController extends BaseController {
     super();
   }
 
-  index(_req: Request, res: Response) {
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+  async index(req: Request, res: Response) {
+    const {
+      params: { campId },
+    } = await req.validate(validator.index);
+
+    // Sent messages are ad-hoc templates (event === null); event templates are
+    // the reusable automated ones and are governed by the message-template
+    // permissions, not these.
+    const messages = await this.messageTemplateService.queryMessageTemplates(
+      campId,
+      { hasEvent: false },
+    );
+
+    res
+      .status(httpStatus.OK)
+      .resource(MessageTemplateResource.collection(messages));
   }
 
   show(_req: Request, res: Response) {
@@ -98,7 +113,53 @@ export class MessageController extends BaseController {
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
-  destroy(_req: Request, res: Response) {
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+  async destroy(req: Request, res: Response) {
+    const {
+      params: { campId, messageId },
+    } = await req.validate(validator.destroy);
+
+    await this.getSentMessageOrFail(campId, messageId);
+
+    await this.messageTemplateService.deleteMessageTemplateById(
+      messageId,
+      campId,
+    );
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  async duplicateAttachments(req: Request, res: Response) {
+    const {
+      params: { campId, messageId },
+    } = await req.validate(validator.duplicateAttachments);
+
+    await this.getSentMessageOrFail(campId, messageId);
+
+    const files =
+      await this.messageTemplateService.duplicateAttachmentsToSession(
+        campId,
+        messageId,
+        req.sessionId,
+      );
+
+    res.status(httpStatus.CREATED).resource(FileResource.collection(files ?? []));
+  }
+
+  /**
+   * Loads a sent message (ad-hoc template with `event === null`) and throws 404
+   * for unknown ids or for reusable automated templates (`event !== null`),
+   * which are governed by the message-template permissions instead.
+   */
+  private async getSentMessageOrFail(campId: string, messageId: string) {
+    const template = await this.messageTemplateService.getMessageTemplateById(
+      campId,
+      messageId,
+    );
+
+    if (template?.event !== null) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Message not found');
+    }
+
+    return template;
   }
 }

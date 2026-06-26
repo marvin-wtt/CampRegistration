@@ -3,7 +3,6 @@ import { ServiceFile } from './ServiceFile.js';
 
 export interface MessageTemplateQuery {
   includeDefaults?: boolean | undefined;
-  hasEvent?: boolean | undefined;
 }
 
 export interface MessageTemplateRecipient {

@@ -143,7 +143,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const { can } = usePermissions();
+const { canAccessAny } = usePermissions();
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -220,7 +220,7 @@ const items = computed<NavigationItemProps[]>(() => [
     name: 'contact',
     label: t('contact'),
     icon: 'send',
-    permission: 'camp.messages.create',
+    permission: ['camp.messages.create', 'camp.messages.view'],
     to: { name: 'management.camp.contact' },
   },
   {
@@ -262,7 +262,7 @@ const filteredItems = computed<NavigationItemProps[]>(() => {
 
 function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
   return navItems
-    .filter((item) => !item.permission || can(item.permission))
+    .filter((item) => canAccessAny(item.permission))
     .map((item) => {
       if ('children' in item && item.children !== undefined) {
         return {

@@ -49,5 +49,10 @@ export class MessageRouter extends ModuleRouter {
       guard(campManager('camp.messages.delete')),
       controller(messageController, 'destroy'),
     );
+    this.router.post(
+      '/:messageId/attachments',
+      guard(campManager('camp.messages.create')),
+      controller(messageController, 'duplicateAttachments'),
+    );
   }
 }

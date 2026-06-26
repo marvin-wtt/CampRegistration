@@ -202,14 +202,22 @@
                 </div>
                 <div class="recipient-chips row q-gutter-xs">
                   <q-chip
-                    v-for="name in recipientNames(selected)"
-                    :key="name"
+                    v-for="entry in recipientEntries(selected)"
+                    :key="entry.key"
                     dense
                     square
                     color="grey-3"
                     text-color="grey-9"
                   >
-                    {{ name }}
+                    {{ entry.name }}
+                    <q-tooltip v-if="entry.emails.length > 0">
+                      <div
+                        v-for="email in entry.emails"
+                        :key="email"
+                      >
+                        {{ email }}
+                      </div>
+                    </q-tooltip>
                   </q-chip>
                 </div>
               </div>
@@ -320,7 +328,7 @@ const emit = defineEmits<{
 const { t, d } = useI18n();
 const quasar = useQuasar();
 const apiService = useAPIService();
-const { fullName } = useRegistrationHelper();
+const { fullName, emails } = useRegistrationHelper();
 
 const open = ref<boolean>(false);
 const search = ref<string>('');
@@ -354,18 +362,30 @@ function recipientCount(template: MessageTemplate): number {
   return template.recipients?.length ?? 0;
 }
 
-function recipientNames(template: MessageTemplate): string[] {
-  return (template.recipients ?? [])
-    .map((recipient) => {
-      const registration = registrationsById.value.get(
-        recipient.registrationId,
-      );
-      const name = registration
-        ? formatPersonName(fullName(registration))
-        : undefined;
-      return name ?? recipient.to ?? recipient.registrationId;
-    })
-    .filter((name): name is string => !!name);
+interface RecipientEntry {
+  key: string;
+  name: string;
+  emails: string[];
+}
+
+function recipientEntries(template: MessageTemplate): RecipientEntry[] {
+  return (template.recipients ?? []).map((recipient, index) => {
+    const registration = registrationsById.value.get(recipient.registrationId);
+    const name = registration
+      ? formatPersonName(fullName(registration))
+      : undefined;
+    // Prefer the registration's known addresses; fall back to the address the
+    // message was actually delivered to.
+    const addresses = registration ? emails(registration) : [];
+    const resolvedEmails =
+      addresses.length > 0 ? addresses : recipient.to ? [recipient.to] : [];
+
+    return {
+      key: `${recipient.registrationId}-${index}`,
+      name: name ?? recipient.to ?? recipient.registrationId,
+      emails: resolvedEmails,
+    };
+  });
 }
 
 function selectMessage(template: MessageTemplate) {

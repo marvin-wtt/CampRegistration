@@ -23,6 +23,22 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
+  // Ad-hoc templates (event === null) are sent messages governed by the message
+  // permissions, so the message-template routes must only ever resolve reusable
+  // automated templates (event !== null).
+  async getEventTemplateById(campId: string, id: string) {
+    return this.prisma.messageTemplate.findFirst({
+      where: {
+        id,
+        campId,
+        event: { not: null },
+      },
+      include: {
+        attachments: true,
+      },
+    });
+  }
+
   async getMessageTemplateWithCamp(id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {

@@ -23,7 +23,9 @@ export class MessageTemplateRouter extends ModuleRouter {
       if (!camp) {
         return null;
       }
-      return this.messageTemplateService.getMessageTemplateById(camp.id, id);
+      // Only reusable automated templates (event !== null) are addressable here;
+      // ad-hoc sent messages are served by the messages module.
+      return this.messageTemplateService.getEventTemplateById(camp.id, id);
     });
   }
 
@@ -55,11 +57,6 @@ export class MessageTemplateRouter extends ModuleRouter {
       '/:messageTemplateId',
       guard(campManager('camp.message_templates.delete')),
       controller(this.messageTemplateController, 'destroy'),
-    );
-    this.router.post(
-      '/:messageTemplateId/attachments',
-      guard(campManager('camp.message_templates.view')),
-      controller(this.messageTemplateController, 'duplicateAttachments'),
     );
   }
 }
