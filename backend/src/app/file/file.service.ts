@@ -347,19 +347,24 @@ export class FileService extends BaseService {
    * Duplicates the file models without model relationship so that they can be attached to a new model by another request
    */
   async duplicateFiles(files: File[], sessionId: string) {
-    return this.prisma.file.createMany({
-      data: files.map((file) => ({
-        name: file.name,
-        originalName: file.originalName,
-        type: file.type,
-        size: file.size,
-        locale: file.locale,
-        accessLevel: file.accessLevel,
-        storageLocation: file.storageLocation,
-        uploadStatus: file.uploadStatus,
-        field: sessionId,
-      })),
-    });
+    // CreateManyAndReturn is currently not supported for MySQL
+    return this.prisma.$transaction(
+      files.map((file) =>
+        this.prisma.file.create({
+          data: {
+            name: file.name,
+            originalName: file.originalName,
+            type: file.type,
+            size: file.size,
+            locale: file.locale,
+            accessLevel: file.accessLevel,
+            storageLocation: file.storageLocation,
+            uploadStatus: file.uploadStatus,
+            field: sessionId,
+          },
+        }),
+      ),
+    );
   }
 
   async deleteUnreferencedFiles(): Promise<void> {
