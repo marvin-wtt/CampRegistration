@@ -179,6 +179,22 @@
                 </div>
               </div>
 
+              <!-- Reply-to -->
+              <div v-if="selected.replyTo">
+                <div class="text-caption text-grey-7 q-mb-xs">
+                  {{ t('replyTo') }}
+                </div>
+                <q-chip
+                  dense
+                  square
+                  icon="reply"
+                  color="grey-3"
+                  text-color="grey-9"
+                >
+                  {{ selected.replyTo }}
+                </q-chip>
+              </div>
+
               <!-- Recipients -->
               <div>
                 <div class="text-caption text-grey-7 q-mb-xs">
@@ -493,6 +509,7 @@ empty: 'Messages you send appear here.'
 search: 'Search messages'
 noResults: 'No messages match your search.'
 selectHint: 'Select a message to view it.'
+replyTo: 'Reply-to'
 recipients: '{count} recipient | {count} recipient | {count} recipients'
 action:
   reuse: 'Use as template'
@@ -512,6 +529,7 @@ empty: 'Von dir gesendete Nachrichten erscheinen hier.'
 search: 'Nachrichten suchen'
 noResults: 'Keine Nachrichten entsprechen deiner Suche.'
 selectHint: 'Wähle eine Nachricht aus, um sie anzuzeigen.'
+replyTo: 'Antwort an'
 recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
 action:
   reuse: 'Als Vorlage verwenden'
@@ -531,6 +549,7 @@ empty: 'Les messages que vous envoyez apparaissent ici.'
 search: 'Rechercher des messages'
 noResults: 'Aucun message ne correspond à votre recherche.'
 selectHint: 'Sélectionnez un message pour l’afficher.'
+replyTo: 'Répondre à'
 recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
 action:
   reuse: 'Utiliser comme modèle'
@@ -550,6 +569,7 @@ empty: 'Wysłane przez Ciebie wiadomości pojawią się tutaj.'
 search: 'Szukaj wiadomości'
 noResults: 'Brak wiadomości pasujących do wyszukiwania.'
 selectHint: 'Wybierz wiadomość, aby ją wyświetlić.'
+replyTo: 'Odpowiedź do'
 recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
 action:
   reuse: 'Użyj jako szablon'
@@ -569,6 +589,7 @@ empty: 'Zprávy, které odešlete, se zobrazí zde.'
 search: 'Hledat zprávy'
 noResults: 'Žádné zprávy neodpovídají hledání.'
 selectHint: 'Vyber zprávu pro zobrazení.'
+replyTo: 'Odpovědět na'
 recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
 action:
   reuse: 'Použít jako šablonu'
