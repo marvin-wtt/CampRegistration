@@ -11,7 +11,7 @@
     >
       <q-card-actions align="right">
         <q-btn
-          v-if="!event.date"
+          v-if="!event.date && editable"
           v-close-popup
           icon="event"
           size="sm"
@@ -22,7 +22,7 @@
           <q-tooltip>{{ t('action.schedule') }}</q-tooltip>
         </q-btn>
         <q-btn
-          v-if="event.date"
+          v-if="event.date && editable"
           v-close-popup
           icon="inbox"
           size="sm"
@@ -33,6 +33,7 @@
           <q-tooltip>{{ t('action.moveToBacklog') }}</q-tooltip>
         </q-btn>
         <q-btn
+          v-if="creatable"
           v-close-popup
           icon="content_copy"
           size="sm"
@@ -43,6 +44,7 @@
           <q-tooltip>{{ t('action.duplicate') }}</q-tooltip>
         </q-btn>
         <q-btn
+          v-if="editable"
           v-close-popup
           icon="edit"
           size="sm"
@@ -53,6 +55,7 @@
           <q-tooltip>{{ t('action.edit') }}</q-tooltip>
         </q-btn>
         <q-btn
+          v-if="deletable"
           v-close-popup
           icon="delete"
           size="sm"
@@ -139,8 +142,16 @@ import { useI18n } from 'vue-i18n';
 const { locale, t } = useI18n();
 const { to } = useObjectTranslation();
 
-const { event } = defineProps<{
+const {
+  event,
+  editable = false,
+  deletable = false,
+  creatable = false,
+} = defineProps<{
   event: ProgramEvent;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{

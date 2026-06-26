@@ -144,6 +144,7 @@
         <q-btn
           :label="sendLabel"
           :loading="sendInProgress"
+          :disable="!can('camp.messages.create')"
           type="submit"
           icon-right="send"
           color="primary"
@@ -178,6 +179,7 @@ import { useAPIService } from 'src/services/APIService';
 import FileInput, {
   type FileInputModel,
 } from 'components/common/inputs/FileInput.vue';
+import { usePermissions } from 'src/composables/permissions';
 
 const {
   registrations,
@@ -197,10 +199,10 @@ const emit = defineEmits<{
 
 const quasar = useQuasar();
 const { t } = useI18n();
-
 const apiService = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const { withResultNotification } = useServiceNotifications();
+const { can } = usePermissions();
 
 onMounted(async () => {
   if (initialContacts?.length) {

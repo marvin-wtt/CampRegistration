@@ -466,6 +466,7 @@
         <m-btn
           :label="t('action.submit.edit')"
           :loading
+          :disable="!can('camp.edit')"
           color="primary"
           type="submit"
         />
@@ -491,10 +492,12 @@ import type { QSelectOption } from 'quasar';
 import { deepToRaw } from 'src/utils/deepToRaw';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { usePermissions } from 'src/composables/permissions';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { can } = usePermissions();
 
 const campStore = useCampDetailsStore();
 const { data, error, isLoading } = storeToRefs(campStore);

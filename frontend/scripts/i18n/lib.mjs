@@ -23,7 +23,9 @@ export async function walk(dir, ext, out = []) {
   for (const entry of entries) {
     const full = resolve(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name === 'dist') continue;
+      if (entry.name === 'node_modules' || entry.name === 'dist') {
+        continue;
+      }
       await walk(full, ext, out);
     } else if (extname(entry.name) === ext) {
       out.push(full);
@@ -50,7 +52,9 @@ function parseAttrs(attrString) {
   const attrs = {};
   const re = /(\w+)\s*=\s*"([^"]*)"/g;
   let m;
-  while ((m = re.exec(attrString)) !== null) attrs[m[1]] = m[2];
+  while ((m = re.exec(attrString)) !== null) {
+    attrs[m[1]] = m[2];
+  }
   return attrs;
 }
 
@@ -81,7 +85,9 @@ export function extractI18nBlocks(source) {
 /** Parse a block body to an object, respecting its `lang`. */
 export function parseBlockBody(block) {
   const text = block.body.trim();
-  if (text === '') return {};
+  if (text === '') {
+    return {};
+  }
   if (block.lang === 'yaml' || block.lang === 'yml') {
     return parseYaml(text) ?? {};
   }
@@ -90,8 +96,12 @@ export function parseBlockBody(block) {
 
 /** Is this `<i18n>` block a real translation locale (vs. an enum-style block)? */
 export function isLocaleBlock(block, locales) {
-  if (!block.locale) return false;
-  if (NON_LOCALE_BLOCKS.has(block.locale)) return false;
+  if (!block.locale) {
+    return false;
+  }
+  if (NON_LOCALE_BLOCKS.has(block.locale)) {
+    return false;
+  }
   return locales.includes(block.locale);
 }
 
@@ -101,7 +111,9 @@ export function isLocaleBlock(block, locales) {
  * String() so the validator still sees them as present keys.
  */
 export function flatten(obj, prefix = '', out = new Map()) {
-  if (obj == null) return out;
+  if (obj == null) {
+    return out;
+  }
   if (typeof obj !== 'object') {
     out.set(prefix, obj);
     return out;
@@ -117,25 +129,47 @@ export function flatten(obj, prefix = '', out = new Map()) {
   return out;
 }
 
+const blockedKeys = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Set a dotted path on a nested object, creating intermediate objects. */
 export function setPath(obj, path, value) {
   const parts = path.split('.');
   let node = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const k = parts[i];
-    if (node[k] == null || typeof node[k] !== 'object') node[k] = {};
+    if (blockedKeys.has(k)) {
+      return;
+    }
+
+    const hasOwn = Object.prototype.hasOwnProperty.call(node, k);
+    const next = hasOwn ? node[k] : undefined;
+    if (!hasOwn || next == null || typeof next !== 'object') {
+      node[k] = Object.create(null);
+    }
     node = node[k];
   }
-  node[parts[parts.length - 1]] = value;
+
+  const last = parts[parts.length - 1];
+  if (blockedKeys.has(last)) {
+    return;
+  }
+  if (node == null || typeof node !== 'object') {
+    return;
+  }
+  node[last] = value;
 }
 
 /** The set of ICU-style `{placeholder}` tokens in a string. */
 export function placeholders(value) {
   const set = new Set();
-  if (typeof value !== 'string') return set;
-  const re = /\{[^{}]+\}/g;
+  if (typeof value !== 'string') {
+    return set;
+  }
+  const re = /\{[^{}]+}/g;
   let m;
-  while ((m = re.exec(value)) !== null) set.add(m[0]);
+  while ((m = re.exec(value)) !== null) {
+    set.add(m[0]);
+  }
   return set;
 }
 

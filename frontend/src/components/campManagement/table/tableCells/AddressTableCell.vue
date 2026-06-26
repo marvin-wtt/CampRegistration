@@ -22,36 +22,49 @@ const address = computed<string>(() => {
     return JSON.stringify(value);
   }
 
-  let address = '';
-  if ('address' in value && typeof value.address === 'string') {
-    address += value.address;
-  } else if ('street' in value && typeof value.street === 'string') {
-    address += value.street;
-
-    if ('nr' in value && typeof value.nr === 'string') {
-      address += ' ' + value.nr;
+  const field = (key: string): string | undefined => {
+    const raw = (value as Record<string, unknown>)[key];
+    if (typeof raw !== 'string') {
+      return undefined;
     }
-  }
 
-  if ('zip_code' in value && typeof value.zip_code === 'string') {
-    address += ', ' + value.zip_code;
-  } else if ('zipCode' in value && typeof value.zipCode === 'string') {
-    address += ', ' + value.zipCode;
-  }
+    const trimmed = raw.trim();
 
-  if ('city' in value && typeof value.city === 'string') {
-    address += ' ' + value.city;
-  }
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
 
-  if ('country' in value && typeof value.country === 'string') {
-    address +=
-      ', ' + te(`country.${value.country}`)
-        ? t(`country.${value.country}`)
-        : value.country;
-  }
+  const translateCountry = (country: string): string => {
+    const key = `country.${country}`;
+    return te(key) ? t(key) : country;
+  };
 
-  return address;
+  // The street is either a single combined field or a street name plus an
+  // optional house number.
+  const street = field('address') ?? join(' ', field('street'), field('nr'));
+
+  // The locality combines the postal code (snake_case or camelCase) and city.
+  const locality = join(
+    ' ',
+    field('zip_code') ?? field('zipCode'),
+    field('city'),
+  );
+
+  const country = field('country');
+
+  // Comma-separate the present segments so we never emit a stray comma or
+  // double separator for missing fields.
+  return join(
+    ', ',
+    street,
+    locality,
+    country ? translateCountry(country) : undefined,
+  );
 });
+
+// Joins the defined, non-empty parts with the given separator.
+function join(separator: string, ...parts: (string | undefined)[]): string {
+  return parts.filter((part) => part).join(separator);
+}
 </script>
 
 <style scoped></style>

@@ -609,3 +609,101 @@ status:
   locked: 'Verrouillé'
   unverified: 'Non vérifié'
 </i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Użytkownicy'
+
+action:
+  delete: 'Usuń'
+  edit: 'Edytuj'
+  lock: 'Zablokuj'
+  unlock: 'Odblokuj'
+
+column:
+  action: 'Akcja'
+  createdAt: 'Utworzono'
+  email: 'E-mail'
+  lastSeen: 'Ostatnio widziany'
+  name: 'Nazwa'
+  role: 'Rola'
+  status: 'Status'
+
+dialog:
+  delete:
+    title: 'Usuń użytkownika'
+    message: 'Użytkownik zostanie trwale usunięty. Wszystkie powiązane dane (np. obozy) zostaną utracone.'
+    label: 'E-mail'
+  lock:
+    title: 'Zablokuj konto'
+    message: 'Czy na pewno chcesz zablokować { name }?'
+    ok: 'Zablokuj'
+    cancel: 'Anuluj'
+  unlock:
+    title: 'Odblokuj konto'
+    message: 'Czy na pewno chcesz odblokować { name }?'
+    ok: 'Odblokuj'
+    cancel: 'Anuluj'
+
+filter:
+  search: 'Szukaj'
+
+header:
+  create: 'Utwórz użytkownika'
+
+lastSeen:
+  never: 'Nigdy'
+
+status:
+  active: 'Aktywny'
+  locked: 'Zablokowany'
+  unverified: 'Niezweryfikowany'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Uživatelé'
+
+action:
+  delete: 'Smazat'
+  edit: 'Upravit'
+  lock: 'Zamknout'
+  unlock: 'Odemknout'
+
+column:
+  action: 'Akce'
+  createdAt: 'Vytvořeno'
+  email: 'E-mail'
+  lastSeen: 'Naposledy viděn'
+  name: 'Jméno'
+  role: 'Role'
+  status: 'Stav'
+
+dialog:
+  delete:
+    title: 'Smazat uživatele'
+    message: 'Uživatel bude trvale smazán. Všechna související data (např. tábory) budou ztracena.'
+    label: 'E-mail'
+  lock:
+    title: 'Zamknout účet'
+    message: 'Opravdu chcete zamknout { name }?'
+    ok: 'Zamknout'
+    cancel: 'Zrušit'
+  unlock:
+    title: 'Odemknout účet'
+    message: 'Opravdu chcete odemknout { name }?'
+    ok: 'Odemknout'
+    cancel: 'Zrušit'
+
+filter:
+  search: 'Hledat'
+
+header:
+  create: 'Vytvořit uživatele'
+
+lastSeen:
+  never: 'Nikdy'
+
+status:
+  active: 'Aktivní'
+  locked: 'Zamčený'
+  unverified: 'Neověřený'
+</i18n>
