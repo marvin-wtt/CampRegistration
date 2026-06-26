@@ -140,14 +140,20 @@ export function setPath(obj, path, value) {
     if (blockedKeys.has(k)) {
       return;
     }
-    if (node[k] == null || typeof node[k] !== 'object') {
-      node[k] = {};
+
+    const hasOwn = Object.prototype.hasOwnProperty.call(node, k);
+    const next = hasOwn ? node[k] : undefined;
+    if (!hasOwn || next == null || typeof next !== 'object') {
+      node[k] = Object.create(null);
     }
     node = node[k];
   }
 
   const last = parts[parts.length - 1];
   if (blockedKeys.has(last)) {
+    return;
+  }
+  if (node == null || typeof node !== 'object') {
     return;
   }
   node[last] = value;
