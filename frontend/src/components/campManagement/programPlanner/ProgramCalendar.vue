@@ -12,6 +12,9 @@
       :start="camp.startAt"
       :end="camp.endAt"
       :current="selectedDate"
+      :editable="canUpdate"
+      :deletable="canDelete"
+      :creatable="canCreate"
       @next="onNextNavigation"
       @previous="onPreviousNavigation"
       @jump="(date) => (selectedDate = date)"
@@ -85,7 +88,10 @@
                   :view-both="viewBoth"
                   :show-all-translations="settings.showAllTranslations"
                   :selected="event.id === selectedEventId"
-                  :draggable="true"
+                  :draggable="canDrag"
+                  :editable="canUpdate"
+                  :deletable="canDelete"
+                  :creatable="canCreate"
                   @click.stop="selectedEventId = event.id"
                   @dragstart="(e: DragEvent) => onDragStart(e, event)"
                   @edit="onEventEdit(event)"
@@ -104,18 +110,21 @@
               <!-- Drag-to-create overlay: sits behind events, handles empty-area clicks -->
               <div
                 class="cal-create-overlay"
+                :class="{ 'cal-create-overlay--readonly': !canCreate }"
                 :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
                 @mousedown.left.prevent="
                   (e) => {
                     selectedEventId = null;
-                    !quasar.platform.is.mobile &&
+                    canCreate &&
+                      !quasar.platform.is.mobile &&
                       onBodyMouseDown(e, timestamp, timeDurationHeight);
                   }
                 "
                 @click="
                   (e) => {
                     selectedEventId = null;
-                    quasar.platform.is.mobile &&
+                    canCreate &&
+                      quasar.platform.is.mobile &&
                       onBodyClick(e, timestamp, timeDurationHeight);
                   }
                 "
@@ -155,7 +164,10 @@
                 :view-both="viewBoth"
                 :show-all-translations="settings.showAllTranslations"
                 :selected="event.id === selectedEventId"
-                :draggable="true"
+                :draggable="canDrag"
+                :editable="canUpdate"
+                :deletable="canDelete"
+                :creatable="canCreate"
                 :snap="settings.timeInterval"
                 @click.stop="selectedEventId = event.id"
                 @dragstart="(e: DragEvent) => onDragStart(e, event)"
@@ -174,6 +186,9 @@
         :events="backlogEvents"
         :active-plan="activePlan"
         :show-all-translations="settings.showAllTranslations"
+        :editable="canUpdate"
+        :deletable="canDelete"
+        :creatable="canCreate"
         @add="onBacklogAdd"
         @edit="onEventEdit"
         @delete="onEventDelete"
@@ -212,9 +227,17 @@ import CalendarBacklogPanel from 'components/campManagement/programPlanner/Calen
 import { daysBetweenDates } from 'src/utils/date';
 import { openPrintIframe } from 'src/utils/printIframe';
 import { useCampStorage } from 'src/composables/campStorage';
+import { usePermissions } from 'src/composables/permissions';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
+const { can } = usePermissions();
+
+const canCreate = computed<boolean>(() => can('camp.program_events.create'));
+const canUpdate = computed<boolean>(() => can('camp.program_events.update'));
+const canDelete = computed<boolean>(() => can('camp.program_events.delete'));
+// Moving an event is an update; copy-dragging (Ctrl/⌘) is a create.
+const canDrag = computed<boolean>(() => canUpdate.value || canCreate.value);
 
 const { camp, events } = defineProps<{
   camp: CampDetails;
@@ -431,6 +454,9 @@ interface CalendarEvent {
 }
 
 function onDayEventAdd({ scope }: CalendarEvent) {
+  if (!canCreate.value) {
+    return;
+  }
   quasar
     .dialog({
       component: ProgramEventAddDialog,
@@ -450,6 +476,9 @@ function onDayEventAdd({ scope }: CalendarEvent) {
 }
 
 function onEventResize(event: ProgramEvent, duration: number) {
+  if (!canUpdate.value) {
+    return;
+  }
   emit('update', event.id, { duration });
 }
 
@@ -469,6 +498,9 @@ function addMinutesToTime(time: string, minutes: number): string {
 }
 
 function onEventDuplicate(event: ProgramEvent) {
+  if (!canCreate.value) {
+    return;
+  }
   quasar
     .dialog({
       component: ProgramEventAddDialog,
@@ -492,6 +524,9 @@ function onEventDuplicate(event: ProgramEvent) {
 }
 
 function onEventEdit(event: ProgramEvent) {
+  if (!canUpdate.value) {
+    return;
+  }
   quasar
     .dialog({
       component: ProgramEventEditDialog,
@@ -508,6 +543,9 @@ function onEventEdit(event: ProgramEvent) {
 }
 
 function onBacklogAdd() {
+  if (!canCreate.value) {
+    return;
+  }
   quasar
     .dialog({
       component: ProgramEventAddDialog,
@@ -524,6 +562,9 @@ function onBacklogAdd() {
 }
 
 function onMoveToBacklog(id: string) {
+  if (!canUpdate.value) {
+    return;
+  }
   // Dropping on the backlog removes the dragged item from the calendar DOM,
   // which can suppress its `dragend` event — clear lingering drag state here.
   clearDragHighlight();
@@ -533,6 +574,9 @@ function onMoveToBacklog(id: string) {
 }
 
 function onScheduleFromBacklog(event: ProgramEvent) {
+  if (!canUpdate.value) {
+    return;
+  }
   emit('update', event.id, {
     date: selectedDate.value,
     time: null,
@@ -541,6 +585,9 @@ function onScheduleFromBacklog(event: ProgramEvent) {
 }
 
 function onEventDelete(event: ProgramEvent) {
+  if (!canDelete.value) {
+    return;
+  }
   quasar
     .dialog({
       title: t('dialog.delete.title'),
@@ -697,6 +744,9 @@ function onBodyMouseDown(
   timestamp: Timestamp,
   timeDurationHeight: (d?: number) => number,
 ) {
+  if (!canCreate.value) {
+    return;
+  }
   const bodyEl = e.currentTarget as HTMLElement;
   const pxPerMinute = timeDurationHeight(60) / 60;
   const dayStartMinutes = intervalStart.value * settings.timeInterval;
@@ -768,6 +818,9 @@ function onBodyClick(
   timestamp: Timestamp,
   timeDurationHeight: (d?: number) => number,
 ) {
+  if (!canCreate.value) {
+    return;
+  }
   const bodyEl = e.currentTarget as HTMLElement;
   const pxPerMinute = timeDurationHeight(60) / 60;
   const dayStartMinutes = intervalStart.value * settings.timeInterval;
@@ -930,6 +983,9 @@ function onDrop(
   }
 
   if (e.ctrlKey || e.metaKey) {
+    if (!canCreate.value) {
+      return false;
+    }
     emit('add', {
       title: event.title,
       location: event.location,
@@ -939,6 +995,9 @@ function onDrop(
       ...eventUpdate,
     } as ProgramEventCreateData);
   } else {
+    if (!canUpdate.value) {
+      return false;
+    }
     emit('update', eventId, eventUpdate);
   }
 
@@ -1002,6 +1061,9 @@ function onKeydown(e: KeyboardEvent) {
   } else if (e.key === 'ArrowLeft') {
     onPreviousNavigation();
   } else if (e.key === 'p') {
+    if (!canUpdate.value) {
+      return;
+    }
     const event = events.find((ev) => ev.id === selectedEventId.value);
     if (event) {
       pushUndo({ type: 'update', id: event.id, data: { plan: event.plan } });
@@ -1010,6 +1072,9 @@ function onKeydown(e: KeyboardEvent) {
       emit('update', event.id, { plan: nextPlan });
     }
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (!canDelete.value) {
+      return;
+    }
     const event = events.find((ev) => ev.id === selectedEventId.value);
     if (event) {
       pushUndo({
@@ -1030,7 +1095,14 @@ function onKeydown(e: KeyboardEvent) {
     }
   } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    const entry = undoStack.pop();
+    const entry = undoStack[undoStack.length - 1];
+    if (entry?.type === 'update' && !canUpdate.value) {
+      return;
+    }
+    if (entry?.type === 'delete' && !canCreate.value) {
+      return;
+    }
+    undoStack.pop();
     if (entry?.type === 'update') {
       emit('update', entry.id, entry.data);
     } else if (entry?.type === 'delete') {
@@ -1098,6 +1170,10 @@ function formatDate(date: Date): string {
   inset: 0;
   cursor: cell;
   z-index: 0;
+
+  &--readonly {
+    cursor: default;
+  }
 }
 
 .cal-day-actions {

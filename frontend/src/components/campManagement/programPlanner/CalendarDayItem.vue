@@ -18,6 +18,9 @@
 
     <calendar-item-popup
       :event="event"
+      :editable="editable"
+      :deletable="deletable"
+      :creatable="creatable"
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
@@ -37,11 +40,17 @@ const {
   viewBoth,
   showAllTranslations,
   selected = false,
+  editable = false,
+  deletable = false,
+  creatable = false,
 } = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
   selected?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{

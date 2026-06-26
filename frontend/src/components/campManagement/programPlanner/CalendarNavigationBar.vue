@@ -79,6 +79,7 @@
       </div>
 
       <q-btn
+        v-if="showHelp"
         icon="help_outline"
         flat
         round
@@ -113,18 +114,23 @@
                 <div class="cal-help__desc">{{ row.label }}</div>
               </div>
 
-              <q-separator class="q-my-sm" />
+              <q-separator
+                v-if="mouseShortcuts.length"
+                class="q-my-sm"
+              />
             </template>
 
-            <div class="cal-help__section-label">{{ t('help.mouse') }}</div>
-            <ul class="cal-help__list">
-              <li
-                v-for="(row, i) in mouseShortcuts"
-                :key="`m${i}`"
-              >
-                {{ row }}
-              </li>
-            </ul>
+            <template v-if="mouseShortcuts.length">
+              <div class="cal-help__section-label">{{ t('help.mouse') }}</div>
+              <ul class="cal-help__list">
+                <li
+                  v-for="(row, i) in mouseShortcuts"
+                  :key="`m${i}`"
+                >
+                  {{ row }}
+                </li>
+              </ul>
+            </template>
           </div>
         </q-menu>
       </q-btn>
@@ -170,10 +176,20 @@ const plan = defineModel<'a' | 'b' | 'both'>('plan', {
   required: true,
 });
 
-const { start, end, current } = defineProps<{
+const {
+  start,
+  end,
+  current,
+  editable = false,
+  deletable = false,
+  creatable = false,
+} = defineProps<{
   start: string;
   end: string;
   current: string;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -208,22 +224,53 @@ const planOptions = computed(() => {
   ];
 });
 
-const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => [
-  { keys: ['←', '→'], label: t('help.shortcuts.navigate') },
-  { keys: ['Esc'], label: t('help.shortcuts.deselect') },
-  { keys: ['P'], label: t('help.shortcuts.switchPlan') },
-  { keys: ['Del'], label: t('help.shortcuts.delete') },
-  { keys: ['Ctrl', 'Z'], label: t('help.shortcuts.undo') },
-]);
+// Only surface shortcuts the user has permission to perform; navigate and
+// deselect are read-only and always shown.
+const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => {
+  const rows = [
+    { keys: ['←', '→'], label: t('help.shortcuts.navigate') },
+    { keys: ['Esc'], label: t('help.shortcuts.deselect') },
+  ];
+  if (editable) {
+    rows.push({ keys: ['P'], label: t('help.shortcuts.switchPlan') });
+  }
+  if (deletable) {
+    rows.push({ keys: ['Del'], label: t('help.shortcuts.delete') });
+  }
+  if (editable || creatable) {
+    rows.push({ keys: ['Ctrl', 'Z'], label: t('help.shortcuts.undo') });
+  }
+  return rows;
+});
 
-const mouseShortcuts = computed<string[]>(() => [
-  t('help.shortcuts.create'),
-  t('help.shortcuts.move'),
-  t('help.shortcuts.copy'),
-  t('help.shortcuts.unschedule'),
-  t('help.shortcuts.resize'),
-  t('help.shortcuts.allDay'),
-]);
+// Every mouse/drag shortcut is an editing action, so the whole section is
+// hidden for users without create or update permission.
+const mouseShortcuts = computed<string[]>(() => {
+  const rows: string[] = [];
+  if (creatable) {
+    rows.push(t('help.shortcuts.create'));
+  }
+  if (editable) {
+    rows.push(t('help.shortcuts.move'));
+  }
+  if (creatable) {
+    rows.push(t('help.shortcuts.copy'));
+  }
+  if (editable) {
+    rows.push(t('help.shortcuts.unschedule'));
+    rows.push(t('help.shortcuts.resize'));
+  }
+  if (creatable) {
+    rows.push(t('help.shortcuts.allDay'));
+  }
+  return rows;
+});
+
+// On mobile only the mouse section renders; hide the whole help button when
+// there is nothing useful left to show.
+const showHelp = computed<boolean>(
+  () => quasar.screen.gt.xs || mouseShortcuts.value.length > 0,
+);
 
 const maxDays = computed<number>(() => {
   return daysBetweenDates(new Date(start), new Date(end)) + 1;

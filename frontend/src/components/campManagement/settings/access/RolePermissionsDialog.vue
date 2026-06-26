@@ -233,7 +233,7 @@ const permissionGroups: PermissionGroup[] = [
     actions: {
       DIRECTOR: ['view', 'create', 'edit', 'delete'],
       COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
+      COUNSELOR: ['view', 'create', 'edit', 'delete'],
       VIEWER: ['view'],
     },
   },
