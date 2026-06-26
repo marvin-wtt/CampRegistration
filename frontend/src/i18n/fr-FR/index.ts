@@ -3,8 +3,6 @@
 import stores from './stores';
 
 export default {
-  //app_name: '',
-
   stores,
 
   service: {
