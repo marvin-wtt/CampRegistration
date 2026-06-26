@@ -44,7 +44,12 @@ export class ProgramEventModule implements AppModule {
         'camp.program_events.update',
         'camp.program_events.delete',
       ],
-      COUNSELOR: ['camp.program_events.view'],
+      COUNSELOR: [
+        'camp.program_events.view',
+        'camp.program_events.create',
+        'camp.program_events.update',
+        'camp.program_events.delete',
+      ],
       VIEWER: ['camp.program_events.view'],
     };
   }
