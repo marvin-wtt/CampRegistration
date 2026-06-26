@@ -1,6 +1,6 @@
 <template>
   <q-select
-    v-model="model"
+    v-model="selected"
     v-bind="$attrs"
     :options="filteredOptions"
     map-options
@@ -80,6 +80,15 @@ const { fullName, role, country } = useRegistrationHelper();
 
 const model = defineModel<Contact[]>({
   required: true,
+});
+
+// The q-select is `clearable`, which emits `null` when cleared. Coerce it back
+// to an empty array so downstream consumers always receive a `Contact[]`.
+const selected = computed<Contact[]>({
+  get: () => model.value,
+  set: (value) => {
+    model.value = value ?? [];
+  },
 });
 
 const { registrations } = defineProps<{

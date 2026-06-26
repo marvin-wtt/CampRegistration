@@ -5,6 +5,8 @@ import {
   CampManagerFactory,
   MessageTemplateFactory,
   FileFactory,
+  RegistrationFactory,
+  MessageFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
@@ -118,6 +120,82 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       expect(body).toHaveProperty('data');
       expect(Array.isArray(body.data)).toBe(true);
       expect(body.data.length).toBe(2);
+    });
+
+    it('should respond with 200 status code with hasEvent=false (ad-hoc only)', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: 'test-event',
+      });
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: null,
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/message-templates/?hasEvent=false`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toHaveProperty('event', null);
+    });
+
+    it('should include de-duplicated recipients for ad-hoc templates', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const template = await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: null,
+      });
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+
+      // Two messages for the same registration (e.g. two emails) collapse to one
+      // recipient entry.
+      await MessageFactory.create({
+        template: { connect: { id: template.id } },
+        registration: { connect: { id: registration.id } },
+        to: 'first@example.com',
+      });
+      await MessageFactory.create({
+        template: { connect: { id: template.id } },
+        registration: { connect: { id: registration.id } },
+        to: 'second@example.com',
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/message-templates/?hasEvent=false`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toHaveProperty('recipients');
+      expect(body.data[0].recipients).toHaveLength(1);
+      expect(body.data[0].recipients[0]).toHaveProperty(
+        'registrationId',
+        registration.id,
+      );
+    });
+
+    it('should not include recipients for event templates', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: 'test-event',
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/message-templates/?hasEvent=true`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data[0]).not.toHaveProperty('recipients');
     });
 
     it('should respond with 403 status code when user is not camp manager', async () => {
@@ -956,6 +1034,74 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(400);
       });
+    });
+  });
+
+  describe('POST /api/v1/camps/:campId/message-templates/:messageTemplateId/attachments', () => {
+    it('should duplicate template attachments into session-scoped files', async () => {
+      const sessionId = crypto.randomUUID();
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const messageTemplate = await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: null,
+      });
+      const original = await FileFactory.create({
+        messageTemplate: { connect: { id: messageTemplate.id } },
+        originalName: 'document.pdf',
+      });
+
+      const { body } = await request()
+        .post(
+          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}/attachments`,
+        )
+        .send()
+        .setSessionId(sessionId)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data).toHaveLength(1);
+
+      const copyId = body.data[0].id;
+      expect(copyId).not.toBe(original.id);
+
+      // The copy is an unassigned, session-scoped temp file sharing the same
+      // on-disk file as the original.
+      const copy = await prisma.file.findUnique({ where: { id: copyId } });
+      expect(copy?.field).toBe(sessionId);
+      expect(copy?.messageTemplateId).toBeNull();
+      expect(copy?.name).toBe(original.name);
+      expect(copy?.originalName).toBe(original.originalName);
+
+      // The original stays attached to its template.
+      const orig = await prisma.file.findUnique({ where: { id: original.id } });
+      expect(orig?.messageTemplateId).toBe(messageTemplate.id);
+    });
+
+    it('should respond with 404 status code when template does not exist', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/message-templates/${ulid()}/attachments`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with 403 status code when user is not camp manager', async () => {
+      const camp = await CampFactory.create();
+      const messageTemplate = await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .post(
+          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}/attachments`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
     });
   });
 

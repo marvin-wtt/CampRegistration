@@ -1,6 +1,7 @@
 import type {
   Message,
   MessageCreateData,
+  MessageTemplate,
 } from '@camp-registration/common/entities';
 import { api } from 'src/services/api';
 
@@ -23,7 +24,7 @@ export function useMessageService() {
   async function createMessage(
     campId: string,
     data: MessageCreateData,
-  ): Promise<Message[]> {
+  ): Promise<MessageTemplate> {
     const response = await api.post(`camps/${campId}/messages/`, data);
 
     return response?.data?.data;

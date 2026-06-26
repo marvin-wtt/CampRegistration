@@ -3,6 +3,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { sanitizeEmailHtml } from '#utils/sanitize';
+import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
 @injectable()
 export class MessageTemplateService extends BaseService {
@@ -34,9 +35,30 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
-  async queryMessageTemplates(campId: string) {
+  async queryMessageTemplates(
+    campId: string,
+    options: { hasEvent?: boolean } = {},
+  ): Promise<MessageTemplateWithFiles[]> {
+    const where: Prisma.MessageTemplateWhereInput = { campId };
+    if (options.hasEvent !== undefined) {
+      where.event = options.hasEvent ? { not: null } : null;
+    }
+
+    // Recipients only apply to ad-hoc templates (event === null). Including the
+    // messages relation for event templates would load their entire send log,
+    // so it is limited to the ad-hoc query.
+    if (options.hasEvent === false) {
+      return this.prisma.messageTemplate.findMany({
+        where,
+        include: {
+          attachments: true,
+          messages: { select: { registrationId: true, to: true } },
+        },
+      });
+    }
+
     return this.prisma.messageTemplate.findMany({
-      where: { campId },
+      where,
       include: {
         attachments: true,
       },
@@ -126,6 +148,42 @@ export class MessageTemplateService extends BaseService {
         },
       });
     });
+  }
+
+  /**
+   * Copies a template's attachments into fresh, session-scoped temporary files
+   * (no owner, `field = sessionId`) so they can be re-attached to a brand-new
+   * template when the user resends a message. The originals stay untouched, and
+   * the copies share the same on-disk file (`name`), which is ref-counted on
+   * delete. Returns the newly created file rows.
+   */
+  async duplicateAttachmentsToSession(
+    campId: string,
+    id: string,
+    sessionId: string,
+  ) {
+    const template = await this.getMessageTemplateById(campId, id);
+    if (!template) {
+      return null;
+    }
+
+    return Promise.all(
+      template.attachments.map((file) =>
+        this.prisma.file.create({
+          data: {
+            name: file.name,
+            originalName: file.originalName,
+            type: file.type,
+            size: file.size,
+            locale: file.locale,
+            accessLevel: file.accessLevel,
+            storageLocation: file.storageLocation,
+            uploadStatus: file.uploadStatus,
+            field: sessionId,
+          },
+        }),
+      ),
+    );
   }
 
   async deleteMessageTemplateById(id: string, campId: string) {
