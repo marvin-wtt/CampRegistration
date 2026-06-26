@@ -77,9 +77,17 @@ export class MessageController extends BaseController {
       template,
     );
 
-    res
-      .status(httpStatus.CREATED)
-      .resource(new MessageTemplateResource(template));
+    // The per-recipient messages are processed asynchronously, so expose the
+    // targeted registrations directly on the response.
+    res.status(httpStatus.CREATED).resource(
+      new MessageTemplateResource({
+        ...template,
+        messages: registrations.map((registration) => ({
+          registrationId: registration.id,
+          to: null,
+        })),
+      }),
+    );
   }
 
   async resend(req: Request, res: Response) {

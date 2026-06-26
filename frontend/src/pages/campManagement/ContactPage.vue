@@ -22,27 +22,66 @@
       </div>
     </div>
 
-    <contact-form
+    <div
       v-else
-      class="col"
-      :registrations
-      standalone
-    />
+      class="contact-page col column"
+    >
+      <header class="contact-header">
+        <div class="contact-header__text">
+          <div class="text-h5 text-weight-medium">
+            {{ t('header.title') }}
+          </div>
+          <div class="text-body2 text-grey-6">
+            {{ t('header.caption') }}
+          </div>
+        </div>
+        <sent-message-history
+          v-if="canViewHistory"
+          :messages="sentMessages"
+          :registrations
+          :can-delete="canDeleteHistory"
+          @resend="onResend"
+          @delete="onDelete"
+        />
+      </header>
+
+      <contact-form
+        class="col"
+        :registrations
+        :draft
+        standalone
+        @sent="onSent"
+      />
+    </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
 import PageStateHandler from 'components/common/PageStateHandler.vue';
 import { useRegistrationsStore } from 'stores/registration-store';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { Registration } from '@camp-registration/common/entities';
+import { useQuasar } from 'quasar';
+import type {
+  MessageTemplate,
+  Registration,
+} from '@camp-registration/common/entities';
+import type { ContactDraft } from 'components/campManagement/contact/Contact';
 import { useCampDetailsStore } from 'stores/camp-details-store';
+import { usePermissions } from 'src/composables/permissions';
+import { useAPIService } from 'src/services/APIService';
 import ContactForm from 'components/campManagement/contact/ContactForm.vue';
+import SentMessageHistory from 'components/campManagement/contact/SentMessageHistory.vue';
 
 const { t } = useI18n();
+const quasar = useQuasar();
+const { can } = usePermissions();
+const apiService = useAPIService();
 const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
+
+const sentMessages = ref<MessageTemplate[]>([]);
+const draft = ref<ContactDraft | null>(null);
 
 onMounted(async () => {
   await Promise.all([
@@ -50,6 +89,79 @@ onMounted(async () => {
     registrationStore.fetchData(),
   ]);
 });
+
+const canViewHistory = computed<boolean>(() =>
+  can('camp.message_templates.view'),
+);
+const canDeleteHistory = computed<boolean>(() =>
+  can('camp.message_templates.delete'),
+);
+
+async function loadSentMessages() {
+  const campId = campDetailsStore.data?.id;
+  if (!campId || !canViewHistory.value) {
+    return;
+  }
+
+  sentMessages.value = await apiService.fetchMessageTemplates(campId, {
+    hasEvent: false,
+  });
+}
+
+// Permissions (campAccess) and camp details may resolve after mount, so load the
+// history once both are available rather than only once on mount.
+watch(
+  () => canViewHistory.value && !!campDetailsStore.data?.id,
+  (ready) => {
+    if (ready) {
+      void loadSentMessages();
+    }
+  },
+  { immediate: true },
+);
+
+function onSent(template: MessageTemplate) {
+  // The create response already carries the recipients, so prepend optimistically.
+  sentMessages.value = [template, ...sentMessages.value];
+}
+
+async function onResend(template: MessageTemplate) {
+  const campId = campDetailsStore.data?.id;
+  const attachments =
+    campId && template.attachments?.length
+      ? await apiService.duplicateMessageTemplateAttachments(
+          campId,
+          template.id,
+        )
+      : [];
+
+  draft.value = {
+    subject: template.subject,
+    body: template.body,
+    priority:
+      template.priority === 'high' || template.priority === 'low'
+        ? template.priority
+        : 'normal',
+    replyTo: template.replyTo,
+    attachments,
+  };
+}
+
+async function onDelete(template: MessageTemplate) {
+  const campId = campDetailsStore.data?.id;
+  if (!campId) {
+    return;
+  }
+
+  try {
+    await apiService.deleteMessageTemplate(campId, template.id);
+    sentMessages.value = sentMessages.value.filter(
+      (item) => item.id !== template.id,
+    );
+  } catch {
+    quasar.notify({ type: 'negative', message: t('error.delete') });
+  }
+}
 
 const error = computed<string | null>(() => {
   return registrationStore.error ?? campDetailsStore.error;
@@ -65,6 +177,32 @@ const registrations = computed<Registration[]>(() => {
 </script>
 
 <style scoped>
+.contact-page {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.contact-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  padding: 24px 24px 0;
+  gap: 16px;
+}
+
+.contact-header__text {
+  min-width: 0;
+}
+
+@media (max-width: 599px) {
+  .contact-header {
+    padding: 16px 16px 0;
+  }
+}
+
 .empty-state {
   padding: 48px 16px;
 }
@@ -77,31 +215,56 @@ const registrations = computed<Registration[]>(() => {
 </style>
 
 <i18n lang="yaml" locale="en">
+header:
+  title: 'Send a message'
+  caption: 'Compose an email for one or more registrations.'
 empty:
   title: 'No registrations yet'
   message: 'Once people register, you can send them a message from here.'
+error:
+  delete: 'Failed to delete the message'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+header:
+  title: 'Nachricht senden'
+  caption: 'Verfasse eine E-Mail für eine oder mehrere Anmeldungen.'
 empty:
   title: 'Noch keine Anmeldungen'
   message: 'Sobald sich Personen anmelden, können Sie ihnen von hier aus eine Nachricht senden.'
+error:
+  delete: 'Nachricht konnte nicht gelöscht werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+header:
+  title: 'Envoyer un message'
+  caption: 'Rédigez un e-mail pour une ou plusieurs inscriptions.'
 empty:
   title: 'Aucune inscription pour le moment'
   message: 'Dès que des personnes s’inscrivent, vous pourrez leur envoyer un message d’ici.'
+error:
+  delete: 'Échec de la suppression du message'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+header:
+  title: 'Wyślij wiadomość'
+  caption: 'Napisz wiadomość e-mail do jednego lub kilku zgłoszeń.'
 empty:
   title: 'Brak zgłoszeń'
   message: 'Gdy ktoś się zarejestruje, będziesz mógł stąd wysłać mu wiadomość.'
+error:
+  delete: 'Nie udało się usunąć wiadomości'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+header:
+  title: 'Odeslat zprávu'
+  caption: 'Napište e-mail pro jednu nebo více registrací.'
 empty:
   title: 'Zatím žádné registrace'
   message: 'Jakmile se někdo zaregistruje, můžete mu odsud poslat zprávu.'
+error:
+  delete: 'Zprávu se nepodařilo smazat'
 </i18n>

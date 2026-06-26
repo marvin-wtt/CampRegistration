@@ -129,15 +129,13 @@ export function flatten(obj, prefix = '', out = new Map()) {
   return out;
 }
 
-const blockedKeys = new Set(['__proto__', 'constructor', 'prototype']);
-
 /** Set a dotted path on a nested object, creating intermediate objects. */
 export function setPath(obj, path, value) {
   const parts = path.split('.');
   let node = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const k = parts[i];
-    if (blockedKeys.has(k)) {
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') {
       return;
     }
 
@@ -150,7 +148,7 @@ export function setPath(obj, path, value) {
   }
 
   const last = parts[parts.length - 1];
-  if (blockedKeys.has(last)) {
+  if (last === '__proto__' || last === 'constructor' || last === 'prototype') {
     return;
   }
   if (node == null || typeof node !== 'object') {
