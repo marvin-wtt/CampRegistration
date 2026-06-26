@@ -27,6 +27,7 @@
         />
         <q-space />
         <q-btn
+          v-if="creatable"
           icon="add"
           flat
           round
@@ -61,6 +62,9 @@
           />
           <calendar-item-popup
             :event="event"
+            :editable="editable"
+            :deletable="deletable"
+            :creatable="creatable"
             @edit="emit('edit', event)"
             @delete="emit('delete', event)"
             @duplicate="emit('duplicate', event)"
@@ -116,7 +120,7 @@
 
       <q-space v-if="!collapsed" />
       <q-btn
-        v-if="!collapsed"
+        v-if="!collapsed && creatable"
         icon="add"
         flat
         round
@@ -148,8 +152,9 @@
         v-for="event in filteredEvents"
         :key="event.id"
         class="backlog-card"
+        :class="{ 'backlog-card--static': !editable }"
         :style="{ borderLeftColor: event.color ?? '#9E9E9E' }"
-        draggable="true"
+        :draggable="editable"
         @dragstart="(e) => onCardDragStart(e, event)"
       >
         <div class="backlog-card__title text-caption">
@@ -163,6 +168,9 @@
         />
         <calendar-item-popup
           :event="event"
+          :editable="editable"
+          :deletable="deletable"
+          :creatable="creatable"
           @edit="emit('edit', event)"
           @delete="emit('delete', event)"
           @duplicate="emit('duplicate', event)"
@@ -190,10 +198,16 @@ const {
   events,
   activePlan,
   showAllTranslations = false,
+  editable = false,
+  deletable = false,
+  creatable = false,
 } = defineProps<{
   events: ProgramEvent[];
   activePlan: 'a' | 'b' | 'both';
   showAllTranslations?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -237,6 +251,9 @@ function onCardDragStart(e: DragEvent, event: ProgramEvent) {
 }
 
 function onDragEnter() {
+  if (!editable) {
+    return;
+  }
   dragCounter++;
   isDragOver.value = true;
 }
@@ -250,6 +267,9 @@ function onDragLeave() {
 function onDrop(e: DragEvent) {
   dragCounter = 0;
   isDragOver.value = false;
+  if (!editable) {
+    return;
+  }
   const id = e.dataTransfer?.getData('text/plain');
   if (id) {
     emit('move-to-backlog', id);
@@ -368,6 +388,14 @@ function onDrop(e: DragEvent) {
 
   &:active {
     cursor: grabbing;
+  }
+
+  &--static {
+    cursor: default;
+
+    &:active {
+      cursor: default;
+    }
   }
 }
 
