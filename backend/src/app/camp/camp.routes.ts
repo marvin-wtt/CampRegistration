@@ -5,6 +5,7 @@ import { auth, guard } from '#middlewares/index';
 import { campManager } from '#app/campManager/camp-manager.guard';
 import type { CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
+import { realtimeStream } from '#app/realtime/realtime.stream';
 import { resolve } from '#core/ioc/container';
 
 export class CampRouter extends ModuleRouter {
@@ -26,6 +27,15 @@ export class CampRouter extends ModuleRouter {
     );
 
     this.router.get('/:campId', controller(campController, 'show'));
+
+    // Ambient live-updates stream for the camp. Also carries registration
+    // events, since anyone who can view the camp can view its registrations.
+    this.router.get(
+      '/:campId/events',
+      auth(),
+      guard(campManager('camp.view')),
+      realtimeStream('camp', 'registration'),
+    );
 
     this.router.post('/', auth(), controller(campController, 'store'));
 

@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import { ProgramEventService } from './program-event.service.js';
 import { ProgramEventResource } from './program-event.resource.js';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import type { Request, Response } from 'express';
 import validator from '#app/programEvent/program-event.validation';
 import { inject, injectable } from 'inversify';
@@ -11,6 +12,8 @@ export class ProgramEventController extends BaseController {
   constructor(
     @inject(ProgramEventService)
     private readonly programEventService: ProgramEventService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -37,6 +40,7 @@ export class ProgramEventController extends BaseController {
       params: { campId },
       body,
     } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
 
     const event = await this.programEventService.createProgramEvent(campId, {
       title: body.title,
@@ -49,12 +53,21 @@ export class ProgramEventController extends BaseController {
       plan: body.plan ?? 'both',
     });
 
+    await this.realtimeService.emit(
+      camp.id,
+      'program_event',
+      event.id,
+      'created',
+      req.clientId(),
+    );
+
     res.status(httpStatus.CREATED).resource(new ProgramEventResource(event));
   }
 
   async update(req: Request, res: Response) {
     const { body } = await req.validate(validator.update);
     const programEvent = req.modelOrFail('programEvent');
+    const camp = req.modelOrFail('camp');
 
     const event = await this.programEventService.updateProgramEventById(
       programEvent.id,
@@ -70,14 +83,30 @@ export class ProgramEventController extends BaseController {
       },
     );
 
+    await this.realtimeService.emit(
+      camp.id,
+      'program_event',
+      event.id,
+      'updated',
+      req.clientId(),
+    );
+
     res.resource(new ProgramEventResource(event));
   }
 
   async destroy(req: Request, res: Response) {
     await req.validate(validator.destroy);
     const programEvent = req.modelOrFail('programEvent');
+    const camp = req.modelOrFail('camp');
 
     await this.programEventService.deleteProgramEventById(programEvent.id);
+
+    await this.realtimeService.emit(
+      camp.id,
+      'program_event',
+      programEvent.id,
+      'deleted',
+    );
 
     res.status(httpStatus.NO_CONTENT).send();
   }

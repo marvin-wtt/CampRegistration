@@ -26,11 +26,15 @@ import type {
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
 import { useProgramPlannerStore } from 'stores/program-planner-store';
+import { useResourceRealtime } from 'src/composables/resourceRealtime';
 
 const programPlannerStore = useProgramPlannerStore();
 const { data: events } = storeToRefs(programPlannerStore);
 const campDetailsStore = useCampDetailsStore();
 const { data: camp } = storeToRefs(campDetailsStore);
+
+// Live program-event updates while the planner is open.
+useResourceRealtime('program_event');
 
 onMounted(async () => {
   await campDetailsStore.fetchData();

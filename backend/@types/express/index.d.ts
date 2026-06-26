@@ -56,6 +56,9 @@ declare global {
       // Auth
       authUserId: () => string;
 
+      // Realtime echo suppression (X-Client-Id header)
+      clientId: () => string | undefined;
+
       // i18n
       preferredLocale: () => string;
 

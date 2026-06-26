@@ -4,16 +4,19 @@ import type {
   ProgramEventCreateData,
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
+import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useRealtimeStore } from 'stores/realtime-store';
 
 export const useProgramPlannerStore = defineStore('program-planner', () => {
   const route = useRoute();
   const apiService = useAPIService();
   const authBus = useAuthBus();
   const campBus = useCampBus();
+  const realtime = useRealtimeStore();
   const {
     data,
     isLoading,
@@ -32,6 +35,45 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   campBus.on('change', () => {
     invalidate();
   });
+
+  // React to live changes pushed from other clients (and to the server's echo
+  // of this client's own writes — upserts by id make that idempotent).
+  realtime.on('program_event', (event) => void handleRemoteChange(event));
+  realtime.onReconnect('program_event', () => void reload());
+
+  // Replace the event with this id, or append it if not present.
+  function upsertEntry(event: ProgramEvent) {
+    const list = data.value ?? [];
+    data.value = list.some((e) => e.id === event.id)
+      ? list.map((e) => (e.id === event.id ? event : e))
+      : [...list, event];
+  }
+
+  async function handleRemoteChange(event: RealtimeEvent) {
+    const campId = route.params.campId as string | undefined;
+    if (!campId) {
+      return;
+    }
+
+    // Not loaded on the current page — mark stale and let the page refetch.
+    if (data.value === undefined) {
+      invalidate();
+      return;
+    }
+
+    if (event.operation === 'deleted') {
+      data.value = data.value.filter((e) => e.id !== event.id);
+      return;
+    }
+
+    const programEvent = await apiService.fetchProgramEvent(campId, event.id);
+    upsertEntry(programEvent);
+  }
+
+  async function reload(): Promise<void> {
+    invalidate();
+    await fetchData();
+  }
 
   async function fetchData(campId?: string): Promise<void> {
     const cid = checkNotNullWithError(
@@ -65,10 +107,11 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     );
 
     if (result) {
-      // Replace temporary event with server response
-      data.value = data.value?.map((value) =>
-        value.id === tmpId ? result : value,
-      );
+      // Drop the optimistic placeholder and upsert the server response. Using
+      // an id-keyed upsert (rather than a plain replace) dedupes the case where
+      // the realtime "created" echo already inserted the server event.
+      data.value = (data.value ?? []).filter((value) => value.id !== tmpId);
+      upsertEntry(result);
     } else {
       // Error occurred - remove optimistic event
       data.value = data.value?.filter((value) => value.id !== tmpId);
