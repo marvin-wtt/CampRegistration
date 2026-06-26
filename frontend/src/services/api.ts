@@ -1,4 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios';
+import { CLIENT_ID_HEADER } from '@camp-registration/common/realtime';
+import { clientId } from 'src/services/clientId';
 
 // Axios config flag used to coordinate the CSRF bootstrap: the token request
 // itself must not be retried by the CSRF retry interceptor, which would loop.
@@ -15,6 +17,10 @@ const api = axios.create({
 
 // Add a custom header to identify the client type (e.g., web, mobile, etc.)
 api.defaults.headers.common['X-Client-Type'] = 'web';
+
+// Identify this app instance so the server can stamp realtime events' origin
+// and this client can skip the echo of its own writes.
+api.defaults.headers.common[CLIENT_ID_HEADER] = clientId;
 
 // De-duplicates concurrent token requests so a burst of requests (or a cold
 // start priming the token) only triggers a single fetch and one session cookie.

@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import type { CampDetails } from '@camp-registration/common/entities';
+import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useRealtimeStore } from 'stores/realtime-store';
 import { omitProperty } from 'src/utils/omitProperty';
 
 export const useCampDetailsStore = defineStore('campDetails', () => {
@@ -12,6 +14,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
   const api = useAPIService();
   const bus = useCampBus();
   const authBus = useAuthBus();
+  const realtime = useRealtimeStore();
   const {
     data,
     isLoading,
@@ -47,6 +50,16 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       return;
     }
     reset();
+  });
+
+  // React to live changes pushed from other clients.
+  realtime.on('camp', (event) => void handleRemoteChange(event));
+  realtime.onReconnect('camp', () => {
+    if (data.value === undefined) {
+      return;
+    }
+    invalidate();
+    void fetchData(data.value.id);
   });
 
   router.beforeEach(async (to, from) => {
@@ -100,6 +113,23 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
         return updatedCamp;
       },
     );
+  }
+
+  // Applies a realtime change for the camp currently loaded. Re-fetches details
+  // through REST (where permissions apply) rather than trusting pushed data.
+  async function handleRemoteChange(event: RealtimeEvent) {
+    if (data.value?.id !== event.id) {
+      return;
+    }
+
+    if (event.operation === 'deleted') {
+      reset();
+      bus.emit('delete', event.id);
+      return;
+    }
+
+    invalidate();
+    await fetchData(event.id);
   }
 
   return {

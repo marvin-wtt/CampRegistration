@@ -16,6 +16,7 @@ import {
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
 import { isDeepStrictEqual } from 'node:util';
 
@@ -23,6 +24,8 @@ export class RegistrationController extends BaseController {
   constructor(
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -72,6 +75,14 @@ export class RegistrationController extends BaseController {
 
     // Notify contact email
     await RegistrationNotifyMessage.enqueue({ camp, registration });
+
+    await this.realtimeService.emit(
+      camp.id,
+      'registration',
+      registration.id,
+      'created',
+      req.clientId(),
+    );
 
     res
       .status(httpStatus.CREATED)
@@ -123,6 +134,14 @@ export class RegistrationController extends BaseController {
       }
     }
 
+    await this.realtimeService.emit(
+      camp.id,
+      'registration',
+      registration.id,
+      'updated',
+      req.clientId(),
+    );
+
     res.resource(new RegistrationResource(registration));
   }
 
@@ -138,6 +157,14 @@ export class RegistrationController extends BaseController {
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(camp, registration);
     }
+
+    await this.realtimeService.emit(
+      camp.id,
+      'registration',
+      registration.id,
+      'deleted',
+      req.clientId(),
+    );
 
     res.status(httpStatus.NO_CONTENT).send();
   }

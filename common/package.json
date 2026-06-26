@@ -28,7 +28,8 @@
   "exports": {
     "./form": "./dist/form/index.js",
     "./entities": "./dist/entities/index.js",
-    "./permissions": "./dist/permissions/index.js"
+    "./permissions": "./dist/permissions/index.js",
+    "./realtime": "./dist/realtime/index.js"
   },
   "imports": {
     "#enteties": "./src/enteties/index.js",

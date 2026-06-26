@@ -24,6 +24,7 @@ import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
+import { RealtimeModule } from '#app/realtime/realtime.module';
 import {
   campPermissionRegistry,
   newsletterPermissionRegistry,
@@ -51,6 +52,7 @@ const loadModules = () =>
     new CampModule(),
     new UserModule(),
     new RegistrationModule(),
+    new RealtimeModule(),
     new TableTemplateModule(),
     new CampManagerModule(),
     new MessageModule(),
