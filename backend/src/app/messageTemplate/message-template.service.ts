@@ -167,26 +167,6 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
-  /**
-   * Copies a template's attachments into fresh, session-scoped temporary files
-   * (no owner, `field = sessionId`) so they can be re-attached to a brand-new
-   * template when the user resends a message. The originals stay untouched, and
-   * the copies share the same on-disk file (`name`), which is ref-counted on
-   * delete. Returns the newly created file rows.
-   */
-  async duplicateAttachmentsToSession(
-    campId: string,
-    id: string,
-    sessionId: string,
-  ) {
-    const template = await this.getMessageTemplateById(campId, id);
-    if (!template) {
-      return null;
-    }
-
-    return this.fileService.duplicateFiles(template.attachments, sessionId);
-  }
-
   async deleteMessageTemplateById(id: string, campId: string) {
     return this.prisma.messageTemplate.delete({
       where: {

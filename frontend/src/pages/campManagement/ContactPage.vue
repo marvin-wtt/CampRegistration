@@ -40,6 +40,7 @@
           :messages="sentMessages"
           :registrations
           :can-delete="canDeleteHistory"
+          :can-reuse="canSend"
           @resend="onResend"
           @delete="onDelete"
         />
@@ -123,21 +124,28 @@ function onSent(template: MessageTemplate) {
 
 async function onResend(template: MessageTemplate) {
   const campId = campDetailsStore.data?.id;
-  const attachments =
-    campId && template.attachments?.length
+  if (!campId) {
+    return;
+  }
+
+  try {
+    const attachments = template.attachments?.length
       ? await apiService.duplicateMessageAttachments(campId, template.id)
       : [];
 
-  draft.value = {
-    subject: template.subject,
-    body: template.body,
-    priority:
-      template.priority === 'high' || template.priority === 'low'
-        ? template.priority
-        : 'normal',
-    replyTo: template.replyTo,
-    attachments,
-  };
+    draft.value = {
+      subject: template.subject,
+      body: template.body,
+      priority:
+        template.priority === 'high' || template.priority === 'low'
+          ? template.priority
+          : 'normal',
+      replyTo: template.replyTo,
+      attachments,
+    };
+  } catch {
+    quasar.notify({ type: 'negative', message: t('error.reuse') });
+  }
 }
 
 async function onDelete(template: MessageTemplate) {
@@ -218,6 +226,7 @@ empty:
   message: 'Once people register, you can send them a message from here.'
 error:
   delete: 'Failed to delete the message'
+  reuse: 'Failed to reuse the message'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -231,6 +240,7 @@ empty:
   message: 'Sobald sich Personen anmelden, können Sie ihnen von hier aus eine Nachricht senden.'
 error:
   delete: 'Nachricht konnte nicht gelöscht werden'
+  reuse: 'Nachricht konnte nicht wiederverwendet werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -244,6 +254,7 @@ empty:
   message: 'Dès que des personnes s’inscrivent, vous pourrez leur envoyer un message d’ici.'
 error:
   delete: 'Échec de la suppression du message'
+  reuse: 'Échec de la réutilisation du message'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -257,6 +268,7 @@ empty:
   message: 'Gdy ktoś się zarejestruje, będziesz mógł stąd wysłać mu wiadomość.'
 error:
   delete: 'Nie udało się usunąć wiadomości'
+  reuse: 'Nie udało się ponownie użyć wiadomości'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -270,4 +282,5 @@ empty:
   message: 'Jakmile se někdo zaregistruje, můžete mu odsud poslat zprávu.'
 error:
   delete: 'Zprávu se nepodařilo smazat'
+  reuse: 'Zprávu se nepodařilo znovu použít'
 </i18n>

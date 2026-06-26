@@ -10,6 +10,7 @@ import { MessageTemplateResource } from '#app/messageTemplate/message-template.r
 import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
 import { sanitizeEmailHtml } from '#utils/sanitize';
+import { FileService } from '#app/file/file.service';
 
 @injectable()
 export class MessageController extends BaseController {
@@ -18,6 +19,8 @@ export class MessageController extends BaseController {
     private readonly registrationService: RegistrationService,
     @inject(MessageTemplateService)
     private readonly messageTemplateService: MessageTemplateService,
+    @inject(FileService)
+    private readonly fileService: FileService,
   ) {
     super();
   }
@@ -133,18 +136,14 @@ export class MessageController extends BaseController {
       params: { campId, messageId },
     } = await req.validate(validator.duplicateAttachments);
 
-    await this.getSentMessageOrFail(campId, messageId);
+    const message = await this.getSentMessageOrFail(campId, messageId);
 
-    const files =
-      await this.messageTemplateService.duplicateAttachmentsToSession(
-        campId,
-        messageId,
-        req.sessionId,
-      );
+    const files = await this.fileService.duplicateFiles(
+      message.attachments,
+      req.sessionId,
+    );
 
-    res
-      .status(httpStatus.CREATED)
-      .resource(FileResource.collection(files ?? []));
+    res.status(httpStatus.CREATED).resource(FileResource.collection(files));
   }
 
   /**

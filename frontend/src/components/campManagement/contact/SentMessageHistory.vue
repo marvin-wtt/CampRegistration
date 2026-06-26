@@ -266,6 +266,7 @@
                 @click="confirmDelete(selected)"
               />
               <q-btn
+                v-if="canReuse"
                 unelevated
                 no-caps
                 rounded
@@ -314,10 +315,12 @@ const {
   messages,
   registrations,
   canDelete = false,
+  canReuse = false,
 } = defineProps<{
   messages: MessageTemplate[];
   registrations: Registration[];
   canDelete?: boolean;
+  canReuse?: boolean;
 }>();
 
 const emit = defineEmits<{
