@@ -142,7 +142,9 @@ export class MessageController extends BaseController {
         req.sessionId,
       );
 
-    res.status(httpStatus.CREATED).resource(FileResource.collection(files ?? []));
+    res
+      .status(httpStatus.CREATED)
+      .resource(FileResource.collection(files ?? []));
   }
 
   /**
