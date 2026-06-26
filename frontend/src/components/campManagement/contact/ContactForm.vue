@@ -21,6 +21,7 @@
           outlined
           rounded
           dense
+          @blur="onToBlur"
         />
 
         <div class="composer-meta">
@@ -211,7 +212,12 @@ onMounted(async () => {
   // Ensure camp details (contact email, form) are available before deriving
   // the default reply-to address.
   await campDetailsStore.fetchData();
-  replyTo.value = defaultReplyTo();
+  // Only pre-fill when recipients are already known (e.g. opened from a
+  // registration). Otherwise the reply-to is derived once the user has picked
+  // recipients and the "To" field loses focus (see onToBlur).
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
 });
 
 const formRef = ref<QForm>();
@@ -255,6 +261,21 @@ function defaultReplyTo(): string {
   }
 
   return Object.values(contactEmail)[0] ?? '';
+}
+
+// Fill the reply-to with the derived default, but never overwrite a value the
+// user has already entered (or one carried over from a draft).
+function applyDefaultReplyTo() {
+  if (!replyTo.value) {
+    replyTo.value = defaultReplyTo();
+  }
+}
+
+// Once the user finishes choosing recipients, derive the reply-to from the
+// selected recipients' countries — but only when the field is still empty so a
+// manually entered address is preserved.
+function onToBlur() {
+  applyDefaultReplyTo();
 }
 
 const subject = ref<string>('');
@@ -406,7 +427,12 @@ watch(
     subject.value = value.subject;
     text.value = value.body;
     priority.value = value.priority;
-    replyTo.value = value.replyTo ?? defaultReplyTo();
+    // Keep the draft's reply-to if set; otherwise derive it only when we already
+    // have recipients, leaving it empty to be filled on "To" blur if not.
+    replyTo.value = value.replyTo ?? '';
+    if (to.value.length > 0) {
+      applyDefaultReplyTo();
+    }
     attachments.value = [...value.attachments];
 
     void nextTick(() => formRef.value?.resetValidation());
@@ -418,7 +444,11 @@ function reset() {
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
-  replyTo.value = defaultReplyTo();
+  // Derive only when recipients are pre-filled; otherwise wait for "To" blur.
+  replyTo.value = '';
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
   attachments.value = [];
 
   void nextTick(() => formRef.value?.resetValidation());
