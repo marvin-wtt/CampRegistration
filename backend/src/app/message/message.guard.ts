@@ -19,7 +19,7 @@ export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
 
   // Load models for guard
   const messageService = resolve(MessageService);
-  const message = await messageService.getMessageWithCampById(file.messageId);
+  const message = await messageService.findMessageById(file.messageId);
   if (!message) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,

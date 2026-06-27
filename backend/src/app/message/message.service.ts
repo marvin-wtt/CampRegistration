@@ -33,7 +33,9 @@ export class MessageService extends BaseService {
     });
   }
 
-  async getMessageWithCampById(id: string) {
+  // Resolves a message by id alone (no camp scope) so the file guard can
+  // derive the owning camp from the returned `campId`.
+  async findMessageById(id: string) {
     return this.prisma.message.findUnique({
       where: { id },
       include: {

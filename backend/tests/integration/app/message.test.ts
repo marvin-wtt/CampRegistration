@@ -550,6 +550,46 @@ describe('/api/v1/camps/:campId/messages', () => {
       expect(body.data[0].recipients).toHaveLength(1);
     });
 
+    it('should collapse multiple deliveries for the same registration into one recipient', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const message = await MessageFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      // Two delivery rows (e.g. one per email address) for the same
+      // registration must surface as a single recipient.
+      await MessageDeliveryFactory.create({
+        message: { connect: { id: message.id } },
+        registration: { connect: { id: registration.id } },
+        to: 'first@example.com',
+      });
+      await MessageDeliveryFactory.create({
+        message: { connect: { id: message.id } },
+        registration: { connect: { id: registration.id } },
+        to: 'second@example.com',
+      });
+      // A delivery no longer linked to a registration must be dropped entirely.
+      await MessageDeliveryFactory.create({
+        message: { connect: { id: message.id } },
+        to: 'orphan@example.com',
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/messages`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].recipients).toHaveLength(1);
+      expect(body.data[0].recipients[0]).toHaveProperty(
+        'registrationId',
+        registration.id,
+      );
+    });
+
     it('should respond with `403` status code when user is not camp manager', async () => {
       const { camp, accessToken } = await createCampWithDifferentManager();
 

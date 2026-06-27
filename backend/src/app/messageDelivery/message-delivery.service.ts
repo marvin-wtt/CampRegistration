@@ -52,7 +52,8 @@ export class MessageDeliveryService extends BaseService {
         registrationId: { not: null },
       },
       include: {
-        registration: { include: { camp: { select: { id: true } } } },
+        // `campId` lives on the registration row directly — no camp JOIN needed.
+        registration: { select: { campId: true } },
         attachments: true,
       },
     });

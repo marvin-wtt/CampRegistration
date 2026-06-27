@@ -32,7 +32,7 @@ export const messageDeliveryFileGuard = async (
   }
 
   const campService = resolve(CampService);
-  const camp = await campService.getCampById(delivery.registration.camp.id);
+  const camp = await campService.getCampById(delivery.registration.campId);
   req.setModelOrFail('camp', camp);
 
   return campManager('camp.messages.view');

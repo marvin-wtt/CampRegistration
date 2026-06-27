@@ -5,7 +5,10 @@ import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
 import { MessageService } from '#app/message/message.service';
 import ApiError from '#utils/ApiError';
-import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
+import {
+  messageToRenderable,
+  RegistrationTemplateMessage,
+} from '#app/registration/registration.messages';
 import { MessageResource } from '#app/message/message.resource';
 import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
@@ -82,15 +85,11 @@ export class MessageController extends BaseController {
       req.sessionId,
     );
 
-    await RegistrationTemplateMessage.enqueueForAll(camp, registrations, {
-      kind: 'message',
-      id: message.id,
-      subject: message.subject,
-      body: message.body,
-      priority: message.priority,
-      replyTo: message.replyTo,
-      attachments: message.attachments,
-    });
+    await RegistrationTemplateMessage.enqueueForAll(
+      camp,
+      registrations,
+      messageToRenderable(message),
+    );
 
     // The per-recipient deliveries are processed asynchronously, so expose the
     // targeted registrations directly on the response.

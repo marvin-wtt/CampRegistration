@@ -1,6 +1,7 @@
 import type {
   Camp,
   File,
+  Message,
   MessageTemplate,
   Registration,
 } from '#generated/prisma/client.js';
@@ -436,6 +437,24 @@ function templateToRenderable(
     priority: template.priority,
     replyTo: template.replyTo,
     attachments: template.attachments,
+  };
+}
+
+type MessageWithFiles = Message & { attachments: File[] };
+
+// Adapts an ad-hoc Message into the shared RenderableMessage contract, mirroring
+// templateToRenderable so both send paths build the shape in exactly one place.
+export function messageToRenderable(
+  message: MessageWithFiles,
+): RenderableMessage {
+  return {
+    kind: 'message',
+    id: message.id,
+    subject: message.subject,
+    body: message.body,
+    priority: message.priority,
+    replyTo: message.replyTo,
+    attachments: message.attachments,
   };
 }
 
