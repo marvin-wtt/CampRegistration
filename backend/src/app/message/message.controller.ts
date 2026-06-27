@@ -55,6 +55,7 @@ export class MessageController extends BaseController {
       },
     } = await req.validate(validator.store);
     const camp = req.modelOrFail('camp');
+    const userId = req.authUserId();
 
     const registrations = await this.registrationService.getRegistrationsByIds(
       camp.id,
@@ -75,6 +76,7 @@ export class MessageController extends BaseController {
 
     const message = await this.messageService.createMessage(
       camp.id,
+      userId,
       {
         subject,
         body,

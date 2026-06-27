@@ -17,6 +17,7 @@ export interface Message extends Identifiable {
   priority: string;
   attachments: ServiceFile[] | null;
   recipients?: MessageRecipient[] | undefined;
+  sentBy: { id: string; name: string | null } | null;
   createdAt: string | null;
 }
 
