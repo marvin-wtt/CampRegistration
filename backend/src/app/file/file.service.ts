@@ -42,6 +42,7 @@ const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
   campId: null,
   registrationId: null,
   messageId: null,
+  messageDeliveryId: null,
   messageTemplateId: null,
   newsletterMessageId: null,
 };

@@ -46,40 +46,41 @@ enum ConfirmationMode {
 }
 
 model Camp {
-  id               String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
-  public              Boolean
+  id                   String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  public               Boolean
   registrationOpensAt  DateTime?        @map("registration_opens_at") @db.DateTime(0)
   registrationClosesAt DateTime?        @map("registration_closes_at") @db.DateTime(0)
-  confirmationMode ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
+  confirmationMode     ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
   /// ![Array<string>]
-  countries        Json             @db.Json
+  countries            Json             @db.Json
   /// ![string | Record<string, string>]
-  name             Json             @db.Json
+  name                 Json             @db.Json
   /// ![string | Record<string, string>]
-  organizer        Json             @db.Json
+  organizer            Json             @db.Json
   /// ![string | Record<string, string>]
-  contactEmail     Json             @map("contact_email") @db.Json
+  contactEmail         Json             @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
-  maxParticipants  Json             @map("max_participants") @db.Json
-  minAge           Int              @map("min_age") @db.UnsignedInt
-  maxAge           Int              @map("max_age") @db.UnsignedInt
-  startAt          DateTime         @map("start_at") @db.DateTime(0)
-  endAt            DateTime         @map("end_at") @db.DateTime(0)
-  price            Float
+  maxParticipants      Json             @map("max_participants") @db.Json
+  minAge               Int              @map("min_age") @db.UnsignedInt
+  maxAge               Int              @map("max_age") @db.UnsignedInt
+  startAt              DateTime         @map("start_at") @db.DateTime(0)
+  endAt                DateTime         @map("end_at") @db.DateTime(0)
+  price                Float
   /// ![string | Record<string, string>]
-  location         Json?            @db.Json
+  location             Json?            @db.Json
   /// ![Record<string, unknown>]
-  form             Json             @db.Json
+  form                 Json             @db.Json
   /// ![Record<string, unknown>]
-  themes           Json             @default("{}") @db.Json
-  createdAt        DateTime?        @default(now()) @map("created_at")
-  updatedAt        DateTime?        @updatedAt @map("updated_at")
+  themes               Json             @default("{}") @db.Json
+  createdAt            DateTime?        @default(now()) @map("created_at")
+  updatedAt            DateTime?        @updatedAt @map("updated_at")
 
   campManager      CampManager[]
   registrations    Registration[]
   rooms            Room[]
   tableTemplates   TableTemplate[]
   messageTemplates MessageTemplate[]
+  messages         Message[]
   files            File[]
   programEvents    ProgramEvent[]
 
@@ -145,10 +146,10 @@ model Registration {
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime?          @updatedAt @map("updated_at")
 
-  camp     Camp      @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
-  bed      Bed?
-  files    File[]
-  messages Message[]
+  camp       Camp              @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  bed        Bed?
+  files      File[]
+  deliveries MessageDelivery[]
 
   @@map("registrations")
 }
@@ -221,6 +222,7 @@ model File {
   campId              String?      @map("camp_id") @db.Char(26) // Prisma does not support morth
   registrationId      String?      @map("registration_id") @db.Char(26) // Prisma does not support morth
   messageId           String?      @map("message_id") @db.Char(26) // Prisma does not support morth
+  messageDeliveryId   String?      @map("message_delivery_id") @db.Char(26) // Prisma does not support morth
   messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
   newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
   name                String
@@ -237,6 +239,7 @@ model File {
   camp              Camp?              @relation(fields: [campId], references: [id], onDelete: SetNull)
   registration      Registration?      @relation(fields: [registrationId], references: [id], onDelete: SetNull)
   message           Message?           @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  messageDelivery   MessageDelivery?   @relation(fields: [messageDeliveryId], references: [id], onDelete: SetNull)
   messageTemplate   MessageTemplate?   @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
   newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
 
@@ -244,8 +247,27 @@ model File {
 }
 
 model Message {
-  id             String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  id        String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  campId    String   @map("camp_id") @db.Char(26)
+  priority  String   @default("normal")
+  replyTo   String?  @map("reply_to")
+  subject   String   @db.Text
+  body      String   @db.LongText
+  createdAt DateTime @default(now()) @map("created_at")
+
+  camp        Camp              @relation(fields: [campId], references: [id], onDelete: Cascade)
+  deliveries  MessageDelivery[]
+  attachments File[]
+
+  @@map("messages")
+}
+
+// A single per-recipient rendered email produced from a Message (ad-hoc send)
+// or a MessageTemplate (automated event template).
+model MessageDelivery {
+  id             String   @id @unique(map: "message_delivery_id_unique") @default(ulid()) @db.Char(26)
   templateId     String?  @map("message_template_id") @db.Char(26)
+  messageId      String?  @map("message_id") @db.Char(26)
   registrationId String?  @map("registration_id") @db.Char(26)
   to             String?  @db.TinyText
   cc             String?  @db.TinyText
@@ -257,17 +279,19 @@ model Message {
   createdAt      DateTime @default(now()) @map("created_at")
 
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  message      Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
   registration Registration?    @relation(fields: [registrationId], references: [id])
   attachments  File[]
 
-  @@map("messages")
+  @@map("message_deliveries")
 }
 
+// Reusable, automated template keyed by an event (and optional country).
 model MessageTemplate {
   id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
   campId    String    @map("camp_id") @db.Char(26)
   country   String?
-  event     String?
+  event     String
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
   subject   String    @db.Text
@@ -275,8 +299,8 @@ model MessageTemplate {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  camp        Camp      @relation(fields: [campId], references: [id], onDelete: Cascade)
-  messages    Message[]
+  camp        Camp              @relation(fields: [campId], references: [id], onDelete: Cascade)
+  deliveries  MessageDelivery[]
   attachments File[]
 
   @@unique([country, event, campId], map: "message_templates_country_event_camp_id_unique")

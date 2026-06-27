@@ -1,5 +1,5 @@
 import { Camp } from '#generated/prisma/client.js';
-import { MessageTemplateFactory } from '../factories';
+import { MessageFactory } from '../factories';
 import prisma from '../client';
 
 interface SeededMessage {
@@ -41,22 +41,20 @@ export class MessageTemplateSeeder {
     }
 
     for (const message of MESSAGES) {
-      const template = await MessageTemplateFactory.create({
+      const sentMessage = await MessageFactory.create({
         camp: { connect: { id: this.camp.id } },
-        event: null,
-        country: null,
         subject: message.subject,
         body: message.body,
       });
 
       const recipients = registrations.slice(0, message.count);
 
-      await prisma.message.createMany({
+      await prisma.messageDelivery.createMany({
         data: recipients.map((registration) => {
           const emails = registration.emails as string[] | null;
 
           return {
-            templateId: template.id,
+            messageId: sentMessage.id,
             registrationId: registration.id,
             to: emails?.[0] ?? null,
             subject: message.subject,

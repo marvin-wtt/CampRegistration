@@ -1,14 +1,8 @@
-import type {
-  Prisma,
-  Registration,
-  MessageTemplate,
-  File,
-} from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
-
-type MessageTemplateWithAttachments = MessageTemplate & { attachments: File[] };
+import { sanitizeEmailHtml } from '#utils/sanitize';
+import type { MessageWithFiles } from '#app/message/message.resource';
 
 @injectable()
 export class MessageService extends BaseService {
@@ -16,36 +10,22 @@ export class MessageService extends BaseService {
     super();
   }
 
-  async createMessage(
-    registration: Registration,
-    template: MessageTemplateWithAttachments,
-    data: Omit<
-      Prisma.MessageCreateInput,
-      'id' | 'template' | 'registration' | 'createdAt' | 'attachments'
-    >,
-  ) {
-    return this.prisma.message.create({
-      data: {
-        ...data,
-        registration: { connect: { id: registration.id } },
-        template: { connect: { id: template.id } },
-        attachments: this.fileService.getFileCreateManyInput(
-          template.attachments,
-        ),
-      },
+  async queryMessages(campId: string): Promise<MessageWithFiles[]> {
+    return this.prisma.message.findMany({
+      where: { campId },
+      orderBy: { createdAt: 'desc' },
       include: {
         attachments: true,
+        deliveries: { select: { registrationId: true, to: true } },
       },
     });
   }
 
   async getMessageById(campId: string, id: string) {
-    return this.prisma.message.findUnique({
+    return this.prisma.message.findFirst({
       where: {
         id,
-        registration: {
-          campId,
-        },
+        campId,
       },
       include: {
         attachments: true,
@@ -53,15 +33,53 @@ export class MessageService extends BaseService {
     });
   }
 
-  async getMessageWithCampById(id: string) {
+  // Resolves a message by id alone (no camp scope) so the file guard can
+  // derive the owning camp from the returned `campId`.
+  async findMessageById(id: string) {
     return this.prisma.message.findUnique({
-      where: {
-        id,
-        registrationId: { not: null },
+      where: { id },
+      include: {
+        attachments: true,
+      },
+    });
+  }
+
+  async createMessage(
+    campId: string,
+    data: {
+      subject: string;
+      body: string;
+      priority?: string | undefined;
+      replyTo?: string | undefined;
+      attachmentIds?: string[] | undefined;
+    },
+    fileFieldId: string,
+  ) {
+    return this.prisma.message.create({
+      data: {
+        subject: data.subject,
+        body: sanitizeEmailHtml(data.body),
+        priority: data.priority,
+        replyTo: data.replyTo,
+        campId,
+        attachments: data.attachmentIds
+          ? this.fileService.getFileConnectInput(
+              data.attachmentIds,
+              fileFieldId,
+            )
+          : undefined,
       },
       include: {
-        registration: { include: { camp: { select: { id: true } } } },
         attachments: true,
+      },
+    });
+  }
+
+  async deleteMessageById(id: string, campId: string) {
+    return this.prisma.message.delete({
+      where: {
+        id,
+        campId,
       },
     });
   }

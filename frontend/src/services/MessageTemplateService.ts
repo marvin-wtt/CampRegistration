@@ -1,20 +1,15 @@
 import type {
-  MessageTemplateQuery,
   MessageTemplate,
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
-  ServiceFile,
 } from '@camp-registration/common/entities';
 import { api } from 'src/services/api';
 
 export function useMessageTemplateService() {
   async function fetchMessageTemplates(
     campId: string,
-    params: MessageTemplateQuery = {},
   ): Promise<MessageTemplate[]> {
-    const response = await api.get(`camps/${campId}/message-templates/`, {
-      params,
-    });
+    const response = await api.get(`camps/${campId}/message-templates/`);
 
     return response?.data?.data;
   }
@@ -59,23 +54,11 @@ export function useMessageTemplateService() {
     await api.delete(`camps/${campId}/message-templates/${templateId}/`);
   }
 
-  async function duplicateMessageTemplateAttachments(
-    campId: string,
-    templateId: string,
-  ): Promise<ServiceFile[]> {
-    const response = await api.post(
-      `camps/${campId}/message-templates/${templateId}/attachments/`,
-    );
-
-    return response?.data?.data;
-  }
-
   return {
     fetchMessageTemplates,
     fetchMessageTemplate,
     createMessageTemplate,
     updateMessageTemplate,
     deleteMessageTemplate,
-    duplicateMessageTemplateAttachments,
   };
 }
