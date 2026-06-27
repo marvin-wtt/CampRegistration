@@ -17,7 +17,7 @@ import { messageCreateBody } from './fixtures/message.fixture.js';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
-import { Registration } from '#generated/prisma/client';
+import { Registration, Message } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
 
 // The message body and subject are rendered with Handlebars, which HTML-escapes
@@ -45,14 +45,11 @@ const crateCampWithManager = async (
 };
 
 const createMessageForCamp = async (campId: string) => {
-  const registration = await RegistrationFactory.create({
+  const message = await MessageFactory.create({
     camp: { connect: { id: campId } },
   });
-  const message = await MessageDeliveryFactory.create({
-    registration: { connect: { id: registration.id } },
-  });
 
-  return { message, registration };
+  return { message };
 };
 
 const createSentMessageForCamp = async (campId: string) => {
@@ -69,6 +66,19 @@ const createSentMessageForCamp = async (campId: string) => {
   });
 
   return { message, delivery, registration };
+};
+
+const assertMessageResource = (data: unknown, actual: Message) => {
+  expect(data).toStrictEqual({
+    id: actual.id,
+    subject: actual.subject,
+    body: actual.body,
+    priority: actual.priority,
+    replyTo: actual.replyTo ?? null,
+    attachments: [],
+    recipients: [],
+    createdAt: actual.createdAt.toISOString(),
+  });
 };
 
 describe('/api/v1/camps/:campId/messages', () => {
@@ -565,11 +575,13 @@ describe('/api/v1/camps/:campId/messages', () => {
       const { camp, accessToken } = await crateCampWithManager();
       const { message } = await createMessageForCamp(camp.id);
 
-      await request()
+      const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/messages/${message.id}`)
         .auth(accessToken, { type: 'bearer' })
         .send()
         .expect(501);
+
+      assertMessageResource(body.data, message);
     });
 
     it('should respond with `404` status code when message does not exist', async () => {
@@ -789,19 +801,17 @@ describe('/api/v1/camps/:campId/messages', () => {
 describe('/api/v1/files/', () => {
   const createMessageWithFile = async () => {
     const { user, accessToken, camp } = await crateCampWithManager();
-    const { message: delivery, registration } = await createMessageForCamp(
-      camp.id,
-    );
+    const { message } = await createMessageForCamp(camp.id);
 
     const fileName = crypto.randomUUID() + '.pdf';
     await uploadFile('blank.pdf', fileName);
 
     const file = await FileFactory.create({
-      messageDelivery: { connect: { id: delivery.id } },
+      messageDelivery: { connect: { id: message.id } },
       name: fileName,
     });
 
-    return { file, user, accessToken, camp, registration };
+    return { file, user, accessToken, camp };
   };
 
   describe('GET /api/v1/files/:fileId', () => {
