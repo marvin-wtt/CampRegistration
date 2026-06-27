@@ -247,14 +247,13 @@ model File {
 }
 
 model Message {
-  id        String    @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  campId    String    @map("camp_id") @db.Char(26)
-  priority  String    @default("normal")
-  replyTo   String?   @map("reply_to")
-  subject   String    @db.Text
-  body      String    @db.LongText
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
+  id        String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  campId    String   @map("camp_id") @db.Char(26)
+  priority  String   @default("normal")
+  replyTo   String?  @map("reply_to")
+  subject   String   @db.Text
+  body      String   @db.LongText
+  createdAt DateTime @default(now()) @map("created_at")
 
   camp        Camp              @relation(fields: [campId], references: [id], onDelete: Cascade)
   deliveries  MessageDelivery[]
