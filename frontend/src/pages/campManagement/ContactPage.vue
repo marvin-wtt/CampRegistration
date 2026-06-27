@@ -64,10 +64,7 @@ import { useRegistrationsStore } from 'stores/registration-store';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import type {
-  Message,
-  Registration,
-} from '@camp-registration/common/entities';
+import type { Message, Registration } from '@camp-registration/common/entities';
 import type { ContactDraft } from 'components/campManagement/contact/Contact';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { usePermissions } from 'src/composables/permissions';

@@ -163,10 +163,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type {
-  Message,
-  Registration,
-} from '@camp-registration/common/entities';
+import type { Message, Registration } from '@camp-registration/common/entities';
 import type {
   Contact,
   ContactDraft,
