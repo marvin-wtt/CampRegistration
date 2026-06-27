@@ -65,7 +65,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type {
-  MessageTemplate,
+  Message,
   Registration,
 } from '@camp-registration/common/entities';
 import type { ContactDraft } from 'components/campManagement/contact/Contact';
@@ -82,7 +82,7 @@ const apiService = useAPIService();
 const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
 
-const sentMessages = ref<MessageTemplate[]>([]);
+const sentMessages = ref<Message[]>([]);
 const draft = ref<ContactDraft | null>(null);
 
 onMounted(async () => {
@@ -117,12 +117,12 @@ watch(
   { immediate: true },
 );
 
-function onSent(template: MessageTemplate) {
+function onSent(template: Message) {
   // The create response already carries the recipients, so prepend optimistically.
   sentMessages.value = [template, ...sentMessages.value];
 }
 
-async function onResend(template: MessageTemplate) {
+async function onResend(template: Message) {
   const campId = campDetailsStore.data?.id;
   if (!campId) {
     return;
@@ -148,7 +148,7 @@ async function onResend(template: MessageTemplate) {
   }
 }
 
-async function onDelete(template: MessageTemplate) {
+async function onDelete(template: Message) {
   const campId = campDetailsStore.data?.id;
   if (!campId) {
     return;

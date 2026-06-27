@@ -19,7 +19,7 @@ export class MessageRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const messageController = resolve(MessageController);
+    const messageController: MessageController = resolve(MessageController);
 
     this.router.use(auth());
 

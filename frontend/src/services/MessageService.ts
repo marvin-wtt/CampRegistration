@@ -1,14 +1,13 @@
 import type {
   Message,
   MessageCreateData,
-  MessageTemplate,
+  MessageDelivery,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { api } from 'src/services/api';
 
 export function useMessageService() {
-  // Sent messages are persisted (and returned) as ad-hoc message templates.
-  async function fetchMessages(campId: string): Promise<MessageTemplate[]> {
+  async function fetchMessages(campId: string): Promise<Message[]> {
     const response = await api.get(`camps/${campId}/messages/`);
 
     return response?.data?.data;
@@ -17,7 +16,7 @@ export function useMessageService() {
   async function fetchMessage(
     campId: string,
     messageId: string,
-  ): Promise<Message> {
+  ): Promise<MessageDelivery> {
     const response = await api.get(`camps/${campId}/messages/${messageId}/`);
 
     return response?.data?.data;
@@ -26,7 +25,7 @@ export function useMessageService() {
   async function createMessage(
     campId: string,
     data: MessageCreateData,
-  ): Promise<MessageTemplate> {
+  ): Promise<Message> {
     const response = await api.post(`camps/${campId}/messages/`, data);
 
     return response?.data?.data;

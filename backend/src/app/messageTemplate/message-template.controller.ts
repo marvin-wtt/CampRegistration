@@ -29,7 +29,6 @@ export class MessageTemplateController extends BaseController {
 
     const templates = await this.messageTemplateService.queryMessageTemplates(
       camp.id,
-      { hasEvent: true },
     );
 
     res

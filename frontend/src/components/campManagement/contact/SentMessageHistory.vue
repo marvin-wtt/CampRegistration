@@ -303,7 +303,7 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import DOMPurify from 'dompurify';
 import type {
-  MessageTemplate,
+  Message,
   Registration,
   ServiceFile,
 } from '@camp-registration/common/entities';
@@ -317,15 +317,15 @@ const {
   canDelete = false,
   canReuse = false,
 } = defineProps<{
-  messages: MessageTemplate[];
+  messages: Message[];
   registrations: Registration[];
   canDelete?: boolean;
   canReuse?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'resend', template: MessageTemplate): void;
-  (e: 'delete', template: MessageTemplate): void;
+  (e: 'resend', template: Message): void;
+  (e: 'delete', template: Message): void;
 }>();
 
 const { t, d } = useI18n();
@@ -342,7 +342,7 @@ const registrationsById = computed(
   () => new Map(registrations.map((r) => [r.id, r])),
 );
 
-const filtered = computed<MessageTemplate[]>(() => {
+const filtered = computed<Message[]>(() => {
   const query = search.value.trim().toLowerCase();
   if (!query) {
     return messages;
@@ -352,7 +352,7 @@ const filtered = computed<MessageTemplate[]>(() => {
   );
 });
 
-const selected = computed<MessageTemplate | null>(
+const selected = computed<Message | null>(
   () => messages.find((message) => message.id === selectedId.value) ?? null,
 );
 
@@ -361,7 +361,7 @@ const selectedBody = computed<string>(() =>
   selected.value ? DOMPurify.sanitize(selected.value.body) : '',
 );
 
-function recipientCount(template: MessageTemplate): number {
+function recipientCount(template: Message): number {
   return template.recipients?.length ?? 0;
 }
 
@@ -371,7 +371,7 @@ interface RecipientEntry {
   emails: string[];
 }
 
-function recipientEntries(template: MessageTemplate): RecipientEntry[] {
+function recipientEntries(template: Message): RecipientEntry[] {
   return (template.recipients ?? []).map((recipient, index) => {
     const registration = registrationsById.value.get(recipient.registrationId);
     const name = registration
@@ -391,7 +391,7 @@ function recipientEntries(template: MessageTemplate): RecipientEntry[] {
   });
 }
 
-function selectMessage(template: MessageTemplate) {
+function selectMessage(template: Message) {
   selectedId.value = template.id;
   if (quasar.screen.lt.sm) {
     mobileDetail.value = true;
@@ -402,12 +402,12 @@ function openAttachment(file: ServiceFile) {
   window.open(apiService.getFileUrl(file.id), '_blank', 'noopener');
 }
 
-function onResend(template: MessageTemplate) {
+function onResend(template: Message) {
   emit('resend', template);
   open.value = false;
 }
 
-function confirmDelete(template: MessageTemplate) {
+function confirmDelete(template: Message) {
   quasar
     .dialog({
       title: t('dialog.delete.title'),

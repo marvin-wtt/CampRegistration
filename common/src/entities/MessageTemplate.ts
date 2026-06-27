@@ -5,20 +5,14 @@ export interface MessageTemplateQuery {
   includeDefaults?: boolean | undefined;
 }
 
-export interface MessageTemplateRecipient {
-  registrationId: string;
-  to: string | null;
-}
-
 export interface MessageTemplate extends Identifiable {
-  event: string | null;
+  event: string;
   country: string | null;
   subject: string;
   body: string;
   replyTo: string | null;
   priority: string;
   attachments: ServiceFile[] | null;
-  recipients?: MessageTemplateRecipient[] | undefined;
   updatedAt: string | null;
   createdAt: string | null;
 }

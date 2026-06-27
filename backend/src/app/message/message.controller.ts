@@ -3,13 +3,12 @@ import { RegistrationService } from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
+import { MessageService } from '#app/message/message.service';
 import ApiError from '#utils/ApiError';
 import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
-import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
+import { MessageResource } from '#app/message/message.resource';
 import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
-import { sanitizeEmailHtml } from '#utils/sanitize';
 import { FileService } from '#app/file/file.service';
 
 @injectable()
@@ -17,8 +16,8 @@ export class MessageController extends BaseController {
   constructor(
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
-    @inject(MessageTemplateService)
-    private readonly messageTemplateService: MessageTemplateService,
+    @inject(MessageService)
+    private readonly messageService: MessageService,
     @inject(FileService)
     private readonly fileService: FileService,
   ) {
@@ -26,21 +25,12 @@ export class MessageController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
 
-    // Sent messages are ad-hoc templates (event === null); event templates are
-    // the reusable automated ones and are governed by the message-template
-    // permissions, not these.
-    const messages = await this.messageTemplateService.queryMessageTemplates(
-      campId,
-      { hasEvent: false },
-    );
+    const messages = await this.messageService.queryMessages(camp.id);
 
-    res
-      .status(httpStatus.OK)
-      .resource(MessageTemplateResource.collection(messages));
+    res.status(httpStatus.OK).resource(MessageResource.collection(messages));
   }
 
   show(_req: Request, res: Response) {
@@ -77,11 +67,11 @@ export class MessageController extends BaseController {
       );
     }
 
-    const template = await this.messageTemplateService.createTemplate(
+    const message = await this.messageService.createMessage(
       camp.id,
       {
         subject,
-        body: sanitizeEmailHtml(body),
+        body,
         priority,
         replyTo,
         attachmentIds,
@@ -89,18 +79,22 @@ export class MessageController extends BaseController {
       req.sessionId,
     );
 
-    await RegistrationTemplateMessage.enqueueForAll(
-      camp,
-      registrations,
-      template,
-    );
+    await RegistrationTemplateMessage.enqueueForAll(camp, registrations, {
+      kind: 'message',
+      id: message.id,
+      subject: message.subject,
+      body: message.body,
+      priority: message.priority,
+      replyTo: message.replyTo,
+      attachments: message.attachments,
+    });
 
-    // The per-recipient messages are processed asynchronously, so expose the
+    // The per-recipient deliveries are processed asynchronously, so expose the
     // targeted registrations directly on the response.
     res.status(httpStatus.CREATED).resource(
-      new MessageTemplateResource({
-        ...template,
-        messages: registrations.map((registration) => ({
+      new MessageResource({
+        ...message,
+        deliveries: registrations.map((registration) => ({
           registrationId: registration.id,
           to: null,
         })),
@@ -111,32 +105,23 @@ export class MessageController extends BaseController {
   async resend(req: Request, res: Response) {
     await req.validate(validator.resend);
 
-    // TODO Create and enqueue new message
+    // TODO Create and enqueue new delivery
 
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, messageId },
-    } = await req.validate(validator.destroy);
+    await req.validate(validator.destroy);
+    const message = req.modelOrFail('message');
 
-    await this.getSentMessageOrFail(campId, messageId);
-
-    await this.messageTemplateService.deleteMessageTemplateById(
-      messageId,
-      campId,
-    );
+    await this.messageService.deleteMessageById(message.id, message.campId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
   async duplicateAttachments(req: Request, res: Response) {
-    const {
-      params: { campId, messageId },
-    } = await req.validate(validator.duplicateAttachments);
-
-    const message = await this.getSentMessageOrFail(campId, messageId);
+    await req.validate(validator.duplicateAttachments);
+    const message = req.modelOrFail('message');
 
     const files = await this.fileService.duplicateFiles(
       message.attachments,
@@ -144,23 +129,5 @@ export class MessageController extends BaseController {
     );
 
     res.status(httpStatus.CREATED).resource(FileResource.collection(files));
-  }
-
-  /**
-   * Loads a sent message (ad-hoc template with `event === null`) and throws 404
-   * for unknown ids or for reusable automated templates (`event !== null`),
-   * which are governed by the message-template permissions instead.
-   */
-  private async getSentMessageOrFail(campId: string, messageId: string) {
-    const template = await this.messageTemplateService.getMessageTemplateById(
-      campId,
-      messageId,
-    );
-
-    if (template?.event !== null) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Message not found');
-    }
-
-    return template;
   }
 }

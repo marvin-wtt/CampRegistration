@@ -164,7 +164,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
 import type {
-  MessageTemplate,
+  Message,
   Registration,
 } from '@camp-registration/common/entities';
 import type {
@@ -195,7 +195,7 @@ const {
 }>();
 
 const emit = defineEmits<{
-  (e: 'sent', template: MessageTemplate): void;
+  (e: 'sent', message: Message): void;
 }>();
 
 const quasar = useQuasar();
@@ -388,7 +388,7 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    const template = await withResultNotification('send', async () => {
+    const message = await withResultNotification('send', async () => {
       return apiService.createMessage(campId, {
         registrationIds: to.value.flatMap((contact) => {
           return contact.type === 'group'
@@ -407,7 +407,7 @@ async function send() {
 
     // Reset all fields on success
     reset();
-    emit('sent', template);
+    emit('sent', message);
   } finally {
     sendInProgress.value = false;
   }

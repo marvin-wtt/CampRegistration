@@ -3,6 +3,7 @@ import {
   CampFactory,
   UserFactory,
   CampManagerFactory,
+  MessageFactory,
   MessageTemplateFactory,
   FileFactory,
 } from '../../../prisma/factories/index.js';
@@ -105,10 +106,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         event: 'test-event-2',
       });
 
-      // Ad-hoc sent message (event === null) must not surface here.
-      await MessageTemplateFactory.create({
+      // Ad-hoc sent messages live in a different table and must not surface here.
+      await MessageFactory.create({
         camp: { connect: { id: camp.id } },
-        event: null,
       });
 
       const { body } = await request()

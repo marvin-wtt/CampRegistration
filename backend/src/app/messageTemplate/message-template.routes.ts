@@ -23,9 +23,7 @@ export class MessageTemplateRouter extends ModuleRouter {
       if (!camp) {
         return null;
       }
-      // Only reusable automated templates (event !== null) are addressable here;
-      // ad-hoc sent messages are served by the messages module.
-      return this.messageTemplateService.getEventTemplateById(camp.id, id);
+      return this.messageTemplateService.getMessageTemplateById(camp.id, id);
     });
   }
 

@@ -5,6 +5,7 @@ import { CampModule } from '#app/camp/camp.module';
 import { RegistrationModule } from '#app/registration/registration.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
 import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
+import { MessageDeliveryModule } from '#app/messageDelivery/message-delivery.module';
 import { MessageTemplateModule } from '#app/messageTemplate/message-template.module';
 import { MessageModule } from '#app/message/message.module';
 import { RoomModule } from '#app/room/room.module';
@@ -53,6 +54,7 @@ const loadModules = () =>
     new RegistrationModule(),
     new TableTemplateModule(),
     new CampManagerModule(),
+    new MessageDeliveryModule(),
     new MessageModule(),
     new MessageTemplateModule(),
     new RoomModule(),

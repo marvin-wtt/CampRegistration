@@ -23,22 +23,6 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
-  // Ad-hoc templates (event === null) are sent messages governed by the message
-  // permissions, so the message-template routes must only ever resolve reusable
-  // automated templates (event !== null).
-  async getEventTemplateById(campId: string, id: string) {
-    return this.prisma.messageTemplate.findFirst({
-      where: {
-        id,
-        campId,
-        event: { not: null },
-      },
-      include: {
-        attachments: true,
-      },
-    });
-  }
-
   async getMessageTemplateWithCamp(id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {
@@ -53,29 +37,9 @@ export class MessageTemplateService extends BaseService {
 
   async queryMessageTemplates(
     campId: string,
-    options: { hasEvent?: boolean } = {},
   ): Promise<MessageTemplateWithFiles[]> {
-    const where: Prisma.MessageTemplateWhereInput = { campId };
-    if (options.hasEvent !== undefined) {
-      where.event = options.hasEvent ? { not: null } : null;
-    }
-
-    // Recipients only apply to ad-hoc templates (event === null). Including the
-    // messages relation for event templates would load their entire send log,
-    // so it is limited to the ad-hoc query.
-    if (options.hasEvent === false) {
-      return this.prisma.messageTemplate.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          attachments: true,
-          messages: { select: { registrationId: true, to: true } },
-        },
-      });
-    }
-
     return this.prisma.messageTemplate.findMany({
-      where,
+      where: { campId },
       include: {
         attachments: true,
       },
