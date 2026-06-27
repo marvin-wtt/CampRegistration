@@ -571,7 +571,7 @@ describe('/api/v1/camps/:campId/messages', () => {
   });
 
   describe('GET /api/v1/camps/:campId/messages/:messageId/', () => {
-    it('should respond with `501` status code', async () => {
+    it('should respond with `200` status code', async () => {
       const { camp, accessToken } = await crateCampWithManager();
       const { message } = await createMessageForCamp(camp.id);
 
@@ -579,7 +579,7 @@ describe('/api/v1/camps/:campId/messages', () => {
         .get(`/api/v1/camps/${camp.id}/messages/${message.id}`)
         .auth(accessToken, { type: 'bearer' })
         .send()
-        .expect(501);
+        .expect(200);
 
       assertMessageResource(body.data, message);
     });

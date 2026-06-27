@@ -33,8 +33,11 @@ export class MessageController extends BaseController {
     res.status(httpStatus.OK).resource(MessageResource.collection(messages));
   }
 
-  show(_req: Request, res: Response) {
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const message = req.modelOrFail('message');
+
+    res.resource(new MessageResource(message));
   }
 
   async store(req: Request, res: Response) {
