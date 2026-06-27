@@ -807,7 +807,7 @@ describe('/api/v1/files/', () => {
     await uploadFile('blank.pdf', fileName);
 
     const file = await FileFactory.create({
-      messageDelivery: { connect: { id: message.id } },
+      message: { connect: { id: message.id } },
       name: fileName,
     });
 
