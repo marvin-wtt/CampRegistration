@@ -1,19 +1,20 @@
 <template>
-  <span
-    v-if="gridMode && empty"
-    class="cell-placeholder"
-  >
-    —
-  </span>
+  <default-table-cell
+    v-if="gridMode"
+    :props="props"
+    :camp="camp"
+    :printing="printing"
+  />
 
   <div
+    v-else
     class="text-cell fit"
     :class="{ 'text-cell--expandable': isTruncated }"
   >
-    {{ truncatedText }}
+    {{ cell.text }}
 
-    <template v-if="extraCharacters > 0 && showExtra">
-      {{ `(+${extraCharacters})` }}
+    <template v-if="cell.remaining > 0 && showExtra">
+      {{ `(+${cell.remaining})` }}
     </template>
 
     <!-- Opens on click/tap on both desktop and mobile; renders as a centered
@@ -26,7 +27,7 @@
         dense
         class="text-cell__banner"
       >
-        {{ cellProps.value }}
+        {{ fullText }}
       </q-banner>
     </q-popup-proxy>
   </div>
@@ -36,6 +37,7 @@
 import { computed } from 'vue';
 import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
 import type { TextOptions } from 'components/campManagement/table/tableCells/TextOptions';
+import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
 
 const { props: cellProps, options } =
   defineProps<TableCellProps<TextOptions>>();
@@ -44,58 +46,35 @@ const DEFAULT_LIMIT = 25;
 
 const showExtra = computed<boolean>(() => options?.showRemaining ?? true);
 
-const limit = computed<number>(() => {
-  if (options && 'limit' in options && typeof options.limit === 'number') {
-    return options.limit;
-  }
+const limit = computed<number>(() => options?.maxLength ?? DEFAULT_LIMIT);
 
-  return options?.maxLength ?? DEFAULT_LIMIT;
-});
-
-const isTruncated = computed<boolean>(() => {
-  const value = cellProps.value;
-
-  return typeof value === 'string' && value.trim().length > limit.value;
-});
-
-const truncatedText = computed<unknown>(() => {
+const cell = computed<{ text: unknown; remaining: number }>(() => {
   const value = cellProps.value;
 
   if (typeof value !== 'string') {
-    return value;
+    return { text: value, remaining: 0 };
   }
 
-  if (isTruncated.value) {
-    const lastSpaceIndex = value.substring(0, limit.value).lastIndexOf(' ');
-    if (lastSpaceIndex === -1) {
-      return value.substring(0, limit.value);
-    }
+  const trimmed = value.trim();
 
-    return value.substring(0, lastSpaceIndex);
+  if (trimmed.length <= limit.value) {
+    return { text: trimmed, remaining: 0 };
   }
 
-  return value;
+  const slice = trimmed.slice(0, limit.value);
+  const lastSpace = slice.lastIndexOf(' ');
+  const text = lastSpace === -1 ? slice : slice.slice(0, lastSpace);
+
+  return { text, remaining: trimmed.length - text.length };
 });
 
-const extraCharacters = computed<number>(() => {
-  const value = cellProps.value;
-  const text = truncatedText.value;
+const isTruncated = computed<boolean>(() => cell.value.remaining > 0);
 
-  if (typeof value !== 'string' || typeof text !== 'string') {
-    return 0;
-  }
-
-  return value.trim().length - text.length;
-});
-
-const empty = computed<boolean>(() => {
+// Full (untruncated) value shown in the expand popup, trimmed to match the cell.
+const fullText = computed<unknown>(() => {
   const value = cellProps.value;
 
-  return (
-    value === null ||
-    value === undefined ||
-    (typeof value === 'string' && value.trim().length === 0)
-  );
+  return typeof value === 'string' ? value.trim() : value;
 });
 </script>
 
