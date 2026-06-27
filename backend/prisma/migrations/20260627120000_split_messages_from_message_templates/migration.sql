@@ -50,15 +50,14 @@ CREATE TABLE `messages`
 
 -- 6. Backfill ad-hoc messages from the event-less templates, preserving ids so
 --    that delivery and attachment references can be repointed by id.
-INSERT INTO `messages` (`id`, `camp_id`, `priority`, `reply_to`, `subject`, `body`, `created_at`, `updated_at`)
+INSERT INTO `messages` (`id`, `camp_id`, `priority`, `reply_to`, `subject`, `body`, `created_at`)
 SELECT `id`,
        `camp_id`,
        `priority`,
        `reply_to`,
        `subject`,
        `body`,
-       `created_at`,
-       `updated_at`
+       `created_at`
 FROM `message_templates`
 WHERE `event` IS NULL;
 
