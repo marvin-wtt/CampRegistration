@@ -38,7 +38,6 @@ export class MessageController extends BaseController {
   }
 
   async store(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
     const {
       body: {
         subject,
@@ -49,6 +48,7 @@ export class MessageController extends BaseController {
         attachmentIds,
       },
     } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
 
     const registrations = await this.registrationService.getRegistrationsByIds(
       camp.id,
