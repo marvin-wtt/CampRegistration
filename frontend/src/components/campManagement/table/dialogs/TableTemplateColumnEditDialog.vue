@@ -197,10 +197,10 @@
                 :label="t('field.name.label')"
                 :hint="t('field.name.hint')"
                 :rules="[
-                  (val: string) => !!val || t('field.name.rules.required'),
                   (val: string) =>
-                    !/\s/.test(val) || t('field.name.rules.no_spaces'),
+                    !val || !/\s/.test(val) || t('field.name.rules.no_spaces'),
                 ]"
+                clearable
                 outlined
                 rounded
               />
@@ -550,7 +550,6 @@ field:
     label: 'Name'
     hint: 'A unique name to identify the column (some_name)'
     rules:
-      required: 'Name must not be empty'
       no_spaces: 'Use underscores instead of spaces'
   label:
     label: 'Label'
@@ -662,7 +661,6 @@ field:
     label: 'Name'
     hint: 'Ein eindeutiger Name zur Identifizierung (some_name)'
     rules:
-      required: 'Name darf nicht leer sein'
       no_spaces: 'Unterstriche statt Leerzeichen verwenden'
   label:
     label: 'Label'
@@ -774,7 +772,6 @@ field:
     label: 'Nom'
     hint: 'Un nom unique pour identifier la colonne (some_name)'
     rules:
-      required: 'Le nom ne doit pas être vide'
       no_spaces: "Utiliser des traits de soulignement au lieu d'espaces"
   label:
     label: 'Libellé'
@@ -886,7 +883,6 @@ field:
     label: 'Nazwa'
     hint: 'Unikalna nazwa identyfikacyjna (np. some_name)'
     rules:
-      required: 'Nazwa nie może być pusta'
       no_spaces: 'Użyj podkreśleń zamiast spacji'
   label:
     label: 'Etykieta'
@@ -998,7 +994,6 @@ field:
     label: 'Název'
     hint: 'Jedinečný název pro identifikaci (např. some_name)'
     rules:
-      required: 'Název nesmí být prázdný'
       no_spaces: 'Použijte podtržítka místo mezer'
   label:
     label: 'Popisek'
