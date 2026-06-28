@@ -1,4 +1,4 @@
-import type { Message, File } from '#generated/prisma/client.js';
+import type { Message, File, User } from '#generated/prisma/client.js';
 import type {
   Message as MessageData,
   MessageRecipient,
@@ -13,7 +13,7 @@ interface RecipientDelivery {
 
 export interface MessageWithFiles extends Message {
   attachments: File[];
-  // Present when the ad-hoc message is loaded with its deliveries.
+  sentBy?: Pick<User, 'id' | 'name'> | null;
   deliveries?: RecipientDelivery[];
 }
 
@@ -30,6 +30,9 @@ export class MessageResource extends JsonResource<
       replyTo: this.data.replyTo ?? null,
       attachments: FileResource.collection(this.data.attachments).transform(),
       recipients: this.mapRecipients(this.data.deliveries ?? []),
+      sentBy: this.data.sentBy
+        ? { id: this.data.sentBy.id, name: this.data.sentBy.name }
+        : null,
       createdAt: this.data.createdAt.toISOString(),
     };
   }

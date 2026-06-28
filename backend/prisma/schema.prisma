@@ -27,10 +27,11 @@ model User {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime? @updatedAt @map("updated_at")
 
-  campRoles          CampManager[]
-  tokens             Token[]
-  newsletterManagers NewsletterManager[]
-  sentMessages       NewsletterMessage[]
+  campRoles              CampManager[]
+  tokens                 Token[]
+  newsletterManagers     NewsletterManager[]
+  sentNewsletterMessages NewsletterMessage[]
+  sentMessages           Message[]
 
   @@map("users")
 }
@@ -247,18 +248,21 @@ model File {
 }
 
 model Message {
-  id        String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
-  campId    String   @map("camp_id") @db.Char(26)
-  priority  String   @default("normal")
-  replyTo   String?  @map("reply_to")
-  subject   String   @db.Text
-  body      String   @db.LongText
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @unique(map: "message_id_unique") @default(ulid()) @db.Char(26)
+  campId       String   @map("camp_id") @db.Char(26)
+  sentByUserId String?  @map("sent_by_user_id") @db.Char(26)
+  priority     String   @default("normal")
+  replyTo      String?  @map("reply_to")
+  subject      String   @db.Text
+  body         String   @db.LongText
+  createdAt    DateTime @default(now()) @map("created_at")
 
   camp        Camp              @relation(fields: [campId], references: [id], onDelete: Cascade)
+  sentBy      User?             @relation(fields: [sentByUserId], references: [id], onDelete: SetNull, map: "messages_sent_by_user_id_foreign")
   deliveries  MessageDelivery[]
   attachments File[]
 
+  @@index([sentByUserId], map: "messages_sent_by_user_id_index")
   @@map("messages")
 }
 

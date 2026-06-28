@@ -177,6 +177,18 @@
                     selected.createdAt ? d(selected.createdAt, 'dateTime') : ''
                   }}
                 </div>
+                <div
+                  v-if="selected.sentBy"
+                  class="text-caption text-grey-6 row items-center q-gutter-xs no-wrap"
+                >
+                  <q-icon
+                    name="person"
+                    size="14px"
+                  />
+                  <span>
+                    {{ t('sentBy', { name: selected.sentBy.name ?? '' }) }}
+                  </span>
+                </div>
               </div>
 
               <!-- Reply-to -->
@@ -532,6 +544,7 @@ empty: 'Messages you send appear here.'
 search: 'Search messages'
 noResults: 'No messages match your search.'
 selectHint: 'Select a message to view it.'
+sentBy: 'Sent by {name}'
 replyTo: 'Reply-to'
 recipients: '{count} recipient | {count} recipient | {count} recipients'
 action:
@@ -552,6 +565,7 @@ empty: 'Von dir gesendete Nachrichten erscheinen hier.'
 search: 'Nachrichten suchen'
 noResults: 'Keine Nachrichten entsprechen deiner Suche.'
 selectHint: 'Wähle eine Nachricht aus, um sie anzuzeigen.'
+sentBy: 'Gesendet von {name}'
 replyTo: 'Antwort an'
 recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
 action:
@@ -572,6 +586,7 @@ empty: 'Les messages que vous envoyez apparaissent ici.'
 search: 'Rechercher des messages'
 noResults: 'Aucun message ne correspond à votre recherche.'
 selectHint: 'Sélectionnez un message pour l’afficher.'
+sentBy: 'Envoyé par {name}'
 replyTo: 'Répondre à'
 recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
 action:
@@ -592,6 +607,7 @@ empty: 'Wysłane przez Ciebie wiadomości pojawią się tutaj.'
 search: 'Szukaj wiadomości'
 noResults: 'Brak wiadomości pasujących do wyszukiwania.'
 selectHint: 'Wybierz wiadomość, aby ją wyświetlić.'
+sentBy: 'Wysłane przez {name}'
 replyTo: 'Odpowiedź do'
 recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
 action:
@@ -612,6 +628,7 @@ empty: 'Zprávy, které odešlete, se zobrazí zde.'
 search: 'Hledat zprávy'
 noResults: 'Žádné zprávy neodpovídají hledání.'
 selectHint: 'Vyber zprávu pro zobrazení.'
+sentBy: 'Odeslal {name}'
 replyTo: 'Odpovědět na'
 recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
 action:

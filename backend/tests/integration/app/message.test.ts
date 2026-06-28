@@ -17,7 +17,7 @@ import { messageCreateBody } from './fixtures/message.fixture.js';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
-import { Registration, Message } from '#generated/prisma/client';
+import { Registration, Message, User } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
 
 // The message body and subject are rendered with Handlebars, which HTML-escapes
@@ -44,9 +44,10 @@ const crateCampWithManager = async (
   return { user, accessToken, camp };
 };
 
-const createMessageForCamp = async (campId: string) => {
+const createMessageForCamp = async (campId: string, userId?: string) => {
   const message = await MessageFactory.create({
     camp: { connect: { id: campId } },
+    sentBy: userId ? { connect: { id: userId } } : undefined,
   });
 
   return { message };
@@ -68,7 +69,7 @@ const createSentMessageForCamp = async (campId: string) => {
   return { message, delivery, registration };
 };
 
-const assertMessageResource = (data: unknown, actual: Message) => {
+const assertMessageResource = (data: unknown, actual: Message, user: User) => {
   expect(data).toStrictEqual({
     id: actual.id,
     subject: actual.subject,
@@ -77,6 +78,10 @@ const assertMessageResource = (data: unknown, actual: Message) => {
     replyTo: actual.replyTo ?? null,
     attachments: [],
     recipients: [],
+    sentBy: {
+      id: user.id,
+      name: user.name,
+    },
     createdAt: actual.createdAt.toISOString(),
   });
 };
@@ -151,7 +156,7 @@ describe('/api/v1/camps/:campId/messages', () => {
     };
 
     it('should respond with `201` status code', async () => {
-      const { camp, accessToken } = await crateCampWithManager();
+      const { user, camp, accessToken } = await crateCampWithManager();
 
       const registrationA = await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
@@ -189,6 +194,13 @@ describe('/api/v1/camps/:campId/messages', () => {
       expect(body.data?.subject).toBe(data.subject);
       expect(body.data?.body).toBe(data.body);
       expect(body.data?.priority).toBe(data.priority);
+      expect(body.data?.sentBy).toStrictEqual({ id: user.id, name: user.name });
+
+      // The sender is persisted on the message row.
+      const stored = await prisma.message.findUnique({
+        where: { id: body.data.id },
+      });
+      expect(stored?.sentByUserId).toBe(user.id);
 
       await assertMessages(body.data.id, [
         {
@@ -612,8 +624,8 @@ describe('/api/v1/camps/:campId/messages', () => {
 
   describe('GET /api/v1/camps/:campId/messages/:messageId/', () => {
     it('should respond with `200` status code', async () => {
-      const { camp, accessToken } = await crateCampWithManager();
-      const { message } = await createMessageForCamp(camp.id);
+      const { camp, user, accessToken } = await crateCampWithManager();
+      const { message } = await createMessageForCamp(camp.id, user.id);
 
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/messages/${message.id}`)
@@ -621,7 +633,7 @@ describe('/api/v1/camps/:campId/messages', () => {
         .send()
         .expect(200);
 
-      assertMessageResource(body.data, message);
+      assertMessageResource(body.data, message, user);
     });
 
     it('should respond with `404` status code when message does not exist', async () => {

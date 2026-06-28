@@ -16,6 +16,7 @@ export class MessageService extends BaseService {
       orderBy: { createdAt: 'desc' },
       include: {
         attachments: true,
+        sentBy: { select: { id: true, name: true } },
         deliveries: { select: { registrationId: true, to: true } },
       },
     });
@@ -29,6 +30,7 @@ export class MessageService extends BaseService {
       },
       include: {
         attachments: true,
+        sentBy: { select: { id: true, name: true } },
       },
     });
   }
@@ -46,6 +48,7 @@ export class MessageService extends BaseService {
 
   async createMessage(
     campId: string,
+    userId: string,
     data: {
       subject: string;
       body: string;
@@ -62,6 +65,7 @@ export class MessageService extends BaseService {
         priority: data.priority,
         replyTo: data.replyTo,
         campId,
+        sentByUserId: userId,
         attachments: data.attachmentIds
           ? this.fileService.getFileConnectInput(
               data.attachmentIds,
@@ -71,6 +75,7 @@ export class MessageService extends BaseService {
       },
       include: {
         attachments: true,
+        sentBy: { select: { id: true, name: true } },
       },
     });
   }
