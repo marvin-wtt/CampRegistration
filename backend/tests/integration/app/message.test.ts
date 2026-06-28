@@ -44,9 +44,10 @@ const crateCampWithManager = async (
   return { user, accessToken, camp };
 };
 
-const createMessageForCamp = async (campId: string) => {
+const createMessageForCamp = async (campId: string, userId?: string) => {
   const message = await MessageFactory.create({
     camp: { connect: { id: campId } },
+    sentBy: { connect: { id: userId } },
   });
 
   return { message };
@@ -624,7 +625,7 @@ describe('/api/v1/camps/:campId/messages', () => {
   describe('GET /api/v1/camps/:campId/messages/:messageId/', () => {
     it('should respond with `200` status code', async () => {
       const { camp, user, accessToken } = await crateCampWithManager();
-      const { message } = await createMessageForCamp(camp.id);
+      const { message } = await createMessageForCamp(camp.id, user.id);
 
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/messages/${message.id}`)
