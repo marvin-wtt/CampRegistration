@@ -6,5 +6,8 @@ declare global {
     type GenericObject = Record<string, unknown>;
 
     type RegistrationCampData = Record<string, unknown[]>;
+
+    type AuditChangeSet =
+      import('@camp-registration/common/entities').AuditChangeSet;
   }
 }

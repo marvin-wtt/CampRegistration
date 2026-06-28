@@ -1,12 +1,17 @@
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import { AuditService } from '#app/audit/audit.service';
+import { messageAuditPolicy } from '#app/message/message.audit';
 import { sanitizeEmailHtml } from '#utils/sanitize';
 import type { MessageWithFiles } from '#app/message/message.resource';
 
 @injectable()
 export class MessageService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -58,34 +63,57 @@ export class MessageService extends BaseService {
     },
     fileFieldId: string,
   ) {
-    return this.prisma.message.create({
-      data: {
-        subject: data.subject,
-        body: sanitizeEmailHtml(data.body),
-        priority: data.priority,
-        replyTo: data.replyTo,
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.message.create({
+        data: {
+          subject: data.subject,
+          body: sanitizeEmailHtml(data.body),
+          priority: data.priority,
+          replyTo: data.replyTo,
+          campId,
+          sentByUserId: userId,
+          attachments: data.attachmentIds
+            ? this.fileService.getFileConnectInput(
+                data.attachmentIds,
+                fileFieldId,
+              )
+            : undefined,
+        },
+        include: {
+          attachments: true,
+          sentBy: { select: { id: true, name: true } },
+        },
+      });
+
+      await this.audit.recordSnapshot(tx, 'created', messageAuditPolicy, {
+        entity: message,
+        entityId: message.id,
         campId,
-        sentByUserId: userId,
-        attachments: data.attachmentIds
-          ? this.fileService.getFileConnectInput(
-              data.attachmentIds,
-              fileFieldId,
-            )
-          : undefined,
-      },
-      include: {
-        attachments: true,
-        sentBy: { select: { id: true, name: true } },
-      },
+      });
+
+      return message;
     });
   }
 
   async deleteMessageById(id: string, campId: string) {
-    return this.prisma.message.delete({
-      where: {
-        id,
+    return this.prisma.$transaction(async (tx) => {
+      // `delete` returns the removed row (with the deliveries it had, for the
+      // recipient snapshot) — no separate read, no read-then-delete race.
+      const deleted = await tx.message.delete({
+        where: {
+          id,
+          campId,
+        },
+        include: { deliveries: { select: { to: true } } },
+      });
+
+      await this.audit.recordSnapshot(tx, 'deleted', messageAuditPolicy, {
+        entity: deleted,
+        entityId: id,
         campId,
-      },
+      });
+
+      return deleted;
     });
   }
 }

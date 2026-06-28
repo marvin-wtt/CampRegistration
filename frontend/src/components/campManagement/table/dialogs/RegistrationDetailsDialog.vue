@@ -227,21 +227,55 @@
               </q-item-label>
             </q-list>
 
+            <div
+              v-if="auditLoading"
+              class="row justify-center q-py-lg"
+            >
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+
             <q-timeline
+              v-else
               class="q-px-lg"
               color="primary"
             >
+              <template v-if="timelineEntries.length">
+                <q-timeline-entry
+                  v-for="entry in timelineEntries"
+                  :key="entry.id"
+                  :color="entry.color"
+                  :icon="entry.icon"
+                  :subtitle="entry.subtitle"
+                  :title="entry.title"
+                >
+                  <div
+                    v-for="(line, index) in entry.details"
+                    :key="index"
+                    class="text-body2"
+                  >
+                    {{ line }}
+                  </div>
+                  <div
+                    v-if="entry.actor"
+                    class="text-caption text-grey-6"
+                  >
+                    {{ t('timeline.by', { actor: entry.actor }) }}
+                  </div>
+                </q-timeline-entry>
+              </template>
+
+              <!-- Fallback for registrations created before audit logging -->
               <q-timeline-entry
+                v-else
                 :subtitle="formattedCreatedAt"
                 :title="t('timeline.registered')"
                 color="positive"
                 icon="how_to_reg"
               />
             </q-timeline>
-
-            <p class="text-caption text-grey-6 text-center q-px-md q-pb-md">
-              {{ t('timeline.moreComingSoon') }}
-            </p>
           </div>
         </div>
       </q-scroll-area>
@@ -252,9 +286,16 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
-import type { Registration } from '@camp-registration/common/entities';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import type {
+  AuditActor,
+  AuditChangeSet,
+  AuditLogEntry,
+  Registration,
+} from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useAPIService } from 'src/services/APIService';
 import { formatPersonName } from 'src/utils/formatters';
 import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
@@ -264,10 +305,166 @@ defineEmits([...useDialogPluginComponent.emits]);
 const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
+const route = useRoute();
+const apiService = useAPIService();
 
 const { registration } = defineProps<{
   registration: Registration;
 }>();
+
+interface TimelineDisplayEntry {
+  id: string;
+  title: string;
+  subtitle: string;
+  color: string;
+  icon: string;
+  details: string[];
+  actor: string | null;
+}
+
+const auditEntries = ref<AuditLogEntry[]>([]);
+const auditLoading = ref(true);
+
+onMounted(async () => {
+  const campId = route.params.campId;
+  if (typeof campId !== 'string') {
+    auditLoading.value = false;
+    return;
+  }
+
+  try {
+    auditEntries.value = await apiService.fetchRegistrationAuditLog(
+      campId,
+      registration.id,
+    );
+  } catch {
+    // Endpoint unavailable (e.g. not yet migrated) — fall back to the legacy
+    // single "registered" entry rather than breaking the dialog.
+    auditEntries.value = [];
+  } finally {
+    auditLoading.value = false;
+  }
+});
+
+const formatDateTime = (timestamp: string): string =>
+  new Date(timestamp).toLocaleString(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+const statusLabel = (status: unknown): string => {
+  if (typeof status !== 'string') {
+    return '';
+  }
+  const key = `status.${status.toLowerCase()}`;
+  return te(key) ? t(key) : status;
+};
+
+const statusColor = (status: unknown): string => {
+  switch (status) {
+    case 'ACCEPTED':
+      return 'positive';
+    case 'WAITLISTED':
+      return 'warning';
+    case 'PENDING':
+      return 'info';
+    default:
+      return 'primary';
+  }
+};
+
+const actionMeta = (
+  action: string,
+  changes: AuditChangeSet | null,
+): { title: string; icon: string; color: string } => {
+  switch (action) {
+    case 'created':
+      return {
+        title: t('timeline.created'),
+        icon: 'how_to_reg',
+        color: 'positive',
+      };
+    case 'deleted':
+      return {
+        title: t('timeline.deleted'),
+        icon: 'delete',
+        color: 'negative',
+      };
+    case 'updated':
+    default:
+      return {
+        title: t('timeline.updated'),
+        // A status change is the most salient kind of edit — colour by it.
+        icon: changes?.fields?.status ? 'swap_horiz' : 'edit',
+        color: changes?.fields?.status
+          ? statusColor(changes.fields.status.to)
+          : 'primary',
+      };
+  }
+};
+
+const changedFieldNames = (changes: AuditChangeSet | null): string[] => {
+  const names = [
+    ...Object.keys(changes?.data ?? {}),
+    ...Object.keys(changes?.fields ?? {}).filter((key) => key !== 'status'),
+  ];
+  return [...new Set(names)];
+};
+
+// One entry can carry several kinds of change at once (e.g. status + data in a
+// single edit); each becomes its own line.
+const detailsFor = (
+  action: string,
+  changes: AuditChangeSet | null,
+): string[] => {
+  const lines: string[] = [];
+  const status = changes?.fields?.status;
+
+  if (status) {
+    if (action === 'created') {
+      const label = statusLabel(status.to);
+      if (label) {
+        lines.push(label);
+      }
+    } else {
+      const from = statusLabel(status.from) || '—';
+      const to = statusLabel(status.to) || '—';
+      lines.push(`${from} → ${to}`);
+    }
+  }
+
+  const fields = changedFieldNames(changes);
+  if (fields.length > 0) {
+    lines.push(t('timeline.changedFields', { fields: fields.join(', ') }));
+  }
+
+  return lines;
+};
+
+const actorLabel = (actor: AuditActor | null): string | null => {
+  if (actor === null) {
+    return null;
+  }
+  return actor.name ?? t('timeline.deletedUser');
+};
+
+const timelineEntries = computed<TimelineDisplayEntry[]>(() =>
+  auditEntries.value.map((entry) => {
+    const meta = actionMeta(entry.action, entry.changes);
+    return {
+      id: entry.id,
+      title: meta.title,
+      subtitle: formatDateTime(entry.createdAt),
+      color: meta.color,
+      icon: meta.icon,
+      details: detailsFor(entry.action, entry.changes),
+      actor: actorLabel(entry.actor),
+    };
+  }),
+);
 
 const personName = computed<string>(() => {
   const firstName = registration.computedData.firstName?.trim() ?? '';
@@ -398,7 +595,13 @@ role:
 
 timeline:
   registered: 'Registered'
-  moreComingSoon: 'More timeline events will be available in a future update.'
+  created: 'Registered'
+  updated: 'Updated'
+  statusChanged: 'Status changed'
+  deleted: 'Deleted'
+  by: 'by {actor}'
+  changedFields: 'Changed: {fields}'
+  deletedUser: 'Deleted user'
 
 action:
   close: 'Close'
@@ -436,7 +639,13 @@ role:
 
 timeline:
   registered: 'Angemeldet'
-  moreComingSoon: 'Weitere Zeitstrahl-Einträge werden in einem zukünftigen Update verfügbar sein.'
+  created: 'Angemeldet'
+  updated: 'Aktualisiert'
+  statusChanged: 'Status geändert'
+  deleted: 'Gelöscht'
+  by: 'von {actor}'
+  changedFields: 'Geändert: {fields}'
+  deletedUser: 'Gelöschter Benutzer'
 
 action:
   close: 'Schließen'
@@ -474,7 +683,13 @@ role:
 
 timeline:
   registered: 'Inscrit'
-  moreComingSoon: "D'autres événements seront disponibles dans une future mise à jour."
+  created: 'Inscrit'
+  updated: 'Mis à jour'
+  statusChanged: 'Statut modifié'
+  deleted: 'Supprimé'
+  by: 'par {actor}'
+  changedFields: 'Modifié : {fields}'
+  deletedUser: 'Utilisateur supprimé'
 
 action:
   close: 'Fermer'
@@ -512,7 +727,13 @@ role:
 
 timeline:
   registered: 'Zarejestrowano'
-  moreComingSoon: 'Więcej wpisów będzie dostępnych w przyszłej aktualizacji.'
+  created: 'Zarejestrowano'
+  updated: 'Zaktualizowano'
+  statusChanged: 'Zmieniono status'
+  deleted: 'Usunięto'
+  by: 'przez {actor}'
+  changedFields: 'Zmieniono: {fields}'
+  deletedUser: 'Usunięty użytkownik'
 
 action:
   close: 'Zamknij'
@@ -550,7 +771,13 @@ role:
 
 timeline:
   registered: 'Zaregistrováno'
-  moreComingSoon: 'Další záznamy budou dostupné v budoucí aktualizaci.'
+  created: 'Zaregistrováno'
+  updated: 'Aktualizováno'
+  statusChanged: 'Stav změněn'
+  deleted: 'Smazáno'
+  by: 'uživatelem {actor}'
+  changedFields: 'Změněno: {fields}'
+  deletedUser: 'Smazaný uživatel'
 
 action:
   close: 'Zavřít'

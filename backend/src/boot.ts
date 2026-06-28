@@ -25,6 +25,7 @@ import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
+import { AuditModule } from '#app/audit/audit.module';
 import {
   campPermissionRegistry,
   newsletterPermissionRegistry,
@@ -43,6 +44,7 @@ const loadModules = () =>
     new MailModule(),
     new HealthModule(),
     new QueueModule(),
+    new AuditModule(),
     new TokenModule(),
     new AuthModule(),
     new SetupModule(),

@@ -2,12 +2,17 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { AuditService } from '#app/audit/audit.service';
+import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
 import { sanitizeEmailHtml } from '#utils/sanitize';
 import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
 @injectable()
 export class MessageTemplateService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -70,25 +75,36 @@ export class MessageTemplateService extends BaseService {
     },
     fileFieldId: string,
   ) {
-    return this.prisma.messageTemplate.create({
-      data: {
-        event: data.event,
-        country: data.country,
-        subject: data.subject,
-        body: sanitizeEmailHtml(data.body),
-        priority: data.priority,
-        replyTo: data.replyTo,
-        campId,
-        attachments: data.attachmentIds
-          ? this.fileService.getFileConnectInput(
-              data.attachmentIds,
-              fileFieldId,
-            )
-          : undefined,
-      },
-      include: {
-        attachments: true,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const template = await tx.messageTemplate.create({
+        data: {
+          event: data.event,
+          country: data.country,
+          subject: data.subject,
+          body: sanitizeEmailHtml(data.body),
+          priority: data.priority,
+          replyTo: data.replyTo,
+          campId,
+          attachments: data.attachmentIds
+            ? this.fileService.getFileConnectInput(
+                data.attachmentIds,
+                fileFieldId,
+              )
+            : undefined,
+        },
+        include: {
+          attachments: true,
+        },
+      });
+
+      await this.audit.recordSnapshot(
+        tx,
+        'created',
+        messageTemplateAuditPolicy,
+        { entity: template, entityId: template.id, campId },
+      );
+
+      return template;
     });
   }
 
@@ -104,6 +120,10 @@ export class MessageTemplateService extends BaseService {
     const fileIds = data.attachmentIds ?? [];
 
     return this.prisma.$transaction(async (tx) => {
+      const before = await tx.messageTemplate.findUniqueOrThrow({
+        where: { id },
+      });
+
       const attachments = await this.fileService.syncFilesForOwner(
         tx,
         'messageTemplateId',
@@ -112,7 +132,7 @@ export class MessageTemplateService extends BaseService {
         sessionId,
       );
 
-      return tx.messageTemplate.update({
+      const after = await tx.messageTemplate.update({
         where: {
           id,
           campId,
@@ -128,15 +148,37 @@ export class MessageTemplateService extends BaseService {
           attachments: true,
         },
       });
+
+      await this.audit.recordChange(tx, 'updated', messageTemplateAuditPolicy, {
+        before,
+        after,
+        entityId: id,
+        campId,
+      });
+
+      return after;
     });
   }
 
   async deleteMessageTemplateById(id: string, campId: string) {
-    return this.prisma.messageTemplate.delete({
-      where: {
-        id,
-        campId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // `delete` returns the row it removed — that is the snapshot, with no
+      // extra read and no read-then-delete race.
+      const deleted = await tx.messageTemplate.delete({
+        where: {
+          id,
+          campId,
+        },
+      });
+
+      await this.audit.recordSnapshot(
+        tx,
+        'deleted',
+        messageTemplateAuditPolicy,
+        { entity: deleted, entityId: id, campId },
+      );
+
+      return deleted;
     });
   }
 }

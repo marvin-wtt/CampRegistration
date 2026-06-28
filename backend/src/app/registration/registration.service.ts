@@ -10,10 +10,18 @@ import { BaseService } from '#core/base/BaseService';
 import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { AuditService } from '#app/audit/audit.service';
+import {
+  registrationAuditPolicy,
+  registrationInitialChange,
+} from '#app/registration/registration.audit';
 
 @injectable()
 export class RegistrationService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -129,7 +137,7 @@ export class RegistrationService extends BaseService {
             ? 'ACCEPTED'
             : 'PENDING';
 
-        return transaction.registration.create({
+        const registration = await transaction.registration.create({
           data: {
             ...data,
             ...computedData,
@@ -140,6 +148,23 @@ export class RegistrationService extends BaseService {
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
+
+        await this.audit.record(
+          {
+            action: 'created',
+            entityType: registrationAuditPolicy.entityType,
+            entityId: registration.id,
+            campId: camp.id,
+            changes: registrationInitialChange(registration.status),
+            // A registration is created by an external party via the public
+            // form — always system-attributed, never the logged-in manager who
+            // may happen to share the session.
+            actorId: null,
+          },
+          transaction,
+        );
+
+        return registration;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -154,52 +179,70 @@ export class RegistrationService extends BaseService {
     >,
     sessionId: string,
   ) {
-    if (!data.data) {
-      return this.prisma.registration.update({
-        where: { id: registrationId },
-        data: {
-          customData: data.customData,
-          status: data.status,
-        },
-        include: {
-          bed: { include: { room: true } },
-        },
-      });
-    }
-
-    const form = formUtils(camp);
-    form.updateData(data.data);
-    const computedData = this.createComputedData(form.extractCampData());
-
-    const fileIds = form.getFileIds();
-
     return this.prisma.$transaction(async (tx) => {
-      const files = await this.fileService.syncFilesForOwner(
-        tx,
-        'registrationId',
-        registrationId,
-        fileIds,
-        sessionId,
-      );
-
-      return tx.registration.update({
+      // Read the authoritative "before" inside the transaction so the audit diff
+      // is race-free and atomic with the write.
+      const before = await tx.registration.findUniqueOrThrow({
         where: { id: registrationId },
-        data: {
+      });
+
+      let updateData: Prisma.RegistrationUpdateInput = {
+        customData: data.customData,
+        status: data.status,
+      };
+
+      if (data.data) {
+        const form = formUtils(camp);
+        form.updateData(data.data);
+        const computedData = this.createComputedData(form.extractCampData());
+        const fileIds = form.getFileIds();
+        const files = await this.fileService.syncFilesForOwner(
+          tx,
+          'registrationId',
+          registrationId,
+          fileIds,
+          sessionId,
+        );
+
+        updateData = {
+          ...updateData,
           ...computedData,
           data: data.data,
-          customData: data.customData,
-          status: data.status,
           files,
-        },
+        };
+      }
+
+      const after = await tx.registration.update({
+        where: { id: registrationId },
+        data: updateData,
         include: {
           bed: { include: { room: true } },
         },
       });
+
+      await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
+        before,
+        after,
+        entityId: registrationId,
+        campId: camp.id,
+      });
+
+      return after;
     });
   }
 
   async deleteRegistration(registration: Registration) {
-    await this.prisma.registration.delete({ where: { id: registration.id } });
+    await this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.registration.delete({
+        where: { id: registration.id },
+      });
+
+      await this.audit.recordSnapshot(tx, 'deleted', registrationAuditPolicy, {
+        entity: deleted,
+        entityId: registration.id,
+        campId: registration.campId,
+      });
+    });
   }
 
   async updateRegistrationsComputedDataByCamp(

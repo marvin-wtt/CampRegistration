@@ -426,3 +426,21 @@ model ProgramEvent {
 
   @@map("program_events")
 }
+
+model AuditLog {
+  id         String   @id @unique(map: "audit_logs_id_unique") @default(ulid()) @db.Char(26)
+  action     String   @db.VarChar(64)
+  entityType String   @map("entity_type") @db.VarChar(64)
+  entityId   String   @map("entity_id") @db.Char(26)
+  campId     String?  @map("camp_id") @db.Char(26)
+  actorId    String?  @map("actor_id") @db.Char(26)
+  actorIp    String?  @map("actor_ip") @db.VarChar(45)
+  /// ![PrismaJson.AuditChangeSet]
+  changes    Json?    @db.Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId], map: "audit_logs_entity_index")
+  @@index([campId, createdAt], map: "audit_logs_camp_id_created_at_index")
+  @@index([actorId], map: "audit_logs_actor_id_index")
+  @@map("audit_logs")
+}
