@@ -35,11 +35,13 @@
       v-model="modelValue"
       :disable="loading"
       class="editor-inline-input full-width"
+      type="textarea"
+      autogrow
       autofocus
       dense
       outlined
       hide-bottom-space
-      @keydown.enter="onSave"
+      @keydown.enter.exact.prevent="onSave"
       @keydown.esc="onCancel"
       @focusout="onBlurCommit()"
       @click.stop
@@ -102,13 +104,15 @@
             v-model="modelValue"
             :label
             :disable="loading || !!error"
+            type="textarea"
+            autogrow
             autofocus
             dense
             rounded
             outlined
             clearable
             @clear="clearValue"
-            @keydown.enter="onSave"
+            @keydown.enter.exact.prevent="onSave"
           />
         </q-card-section>
 
