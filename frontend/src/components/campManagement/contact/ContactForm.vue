@@ -450,6 +450,19 @@ function reset() {
 
   void nextTick(() => formRef.value?.resetValidation());
 }
+
+// Whether the user has composed content that would be lost on navigation. The
+// reply-to is excluded because it is derived automatically rather than authored.
+const dirty = computed<boolean>(() => {
+  return (
+    recipientCount.value > 0 ||
+    subject.value.length > 0 ||
+    text.value.length > 0 ||
+    attachments.value.length > 0
+  );
+});
+
+defineExpose({ dirty });
 </script>
 
 <style scoped>

@@ -6,6 +6,7 @@ export default defineConfig({
   // @ts-ignore
   plugins: [tsconfigPaths()],
   test: {
+    name: 'unit',
     include: ['tests/unit/**/*.test.ts'],
     coverage: {
       enabled: true,
