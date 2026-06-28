@@ -47,7 +47,7 @@ const crateCampWithManager = async (
 const createMessageForCamp = async (campId: string, userId?: string) => {
   const message = await MessageFactory.create({
     camp: { connect: { id: campId } },
-    sentBy: { connect: { id: userId } },
+    sentBy: userId ? { connect: { id: userId } } : undefined,
   });
 
   return { message };
