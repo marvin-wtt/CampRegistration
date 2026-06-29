@@ -5,9 +5,12 @@
   >
     —
   </span>
-  <template v-else>
+  <span
+    v-else
+    class="cell-value"
+  >
     {{ cellProps.value }}
-  </template>
+  </span>
 </template>
 
 <script lang="ts" setup>
@@ -31,5 +34,12 @@ const empty = computed<boolean>(() => {
 .cell-placeholder {
   color: var(--md3-on-surface-variant);
   opacity: 0.6;
+}
+
+/* Preserve newlines (e.g. Shift+Enter in the inline editor) instead of
+   collapsing them to a single inline line, while still wrapping long lines. */
+.cell-value {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
