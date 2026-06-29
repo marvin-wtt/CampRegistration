@@ -435,7 +435,7 @@ model AuditLog {
   campId     String?  @map("camp_id") @db.Char(26)
   actorId    String?  @map("actor_id") @db.Char(26)
   actorIp    String?  @map("actor_ip") @db.VarChar(45)
-  /// ![PrismaJson.AuditChangedFields]
+  /// ![PrismaJson.AuditChangeSet]
   changes    Json?    @db.Json
   createdAt  DateTime @default(now()) @map("created_at")
 

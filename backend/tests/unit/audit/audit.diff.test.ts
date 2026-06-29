@@ -3,7 +3,10 @@ import {
   changedKeysByAllowList,
   changedKeysExcept,
   changedLeafPaths,
+  changedValues,
   composeChangedFields,
+  composeChangeSet,
+  isEmptyChangeSet,
 } from '#app/audit/audit.diff';
 
 describe('changedKeysByAllowList', () => {
@@ -101,5 +104,43 @@ describe('composeChangedFields', () => {
     expect(
       composeChangedFields(['status'], ['data.b', 'data.a'], ['status']),
     ).toEqual(['data.a', 'data.b', 'status']);
+  });
+});
+
+describe('changedValues', () => {
+  it('records the new value of changed value-tracked fields', () => {
+    const before = { status: 'PENDING', role: 'x' };
+    const after = { status: 'ACCEPTED', role: 'x' };
+
+    expect(changedValues(before, after, ['status'])).toEqual({
+      status: 'ACCEPTED',
+    });
+  });
+
+  it('ignores unchanged fields and coerces non-scalars to null', () => {
+    expect(changedValues({ a: 'x' }, { a: 'x' }, ['a'])).toEqual({});
+    expect(changedValues({ a: 1 }, { a: { nested: true } }, ['a'])).toEqual({
+      a: null,
+    });
+  });
+});
+
+describe('composeChangeSet / isEmptyChangeSet', () => {
+  it('omits empty sections and detects an empty change set', () => {
+    expect(composeChangeSet([], {})).toEqual({});
+    expect(isEmptyChangeSet(composeChangeSet([], {}))).toBe(true);
+
+    const changes = composeChangeSet(['data.a'], { status: 'ACCEPTED' });
+    expect(changes).toEqual({
+      changedFields: ['data.a'],
+      changedValues: { status: 'ACCEPTED' },
+    });
+    expect(isEmptyChangeSet(changes)).toBe(false);
+  });
+
+  it('is non-empty when only values changed', () => {
+    expect(isEmptyChangeSet(composeChangeSet([], { status: 'ACCEPTED' }))).toBe(
+      false,
+    );
   });
 });

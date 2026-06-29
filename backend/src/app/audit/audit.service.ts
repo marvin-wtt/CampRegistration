@@ -8,8 +8,10 @@ import {
 } from '#generated/prisma/client.js';
 import type {
   AuditActor,
+  AuditChangeSet,
   AuditEntityType,
 } from '@camp-registration/common/entities';
+import { isEmptyChangeSet } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 
 export type PrismaTransaction = Parameters<
@@ -21,8 +23,8 @@ export interface AuditRecordInput {
   entityType: AuditEntityType;
   entityId: string;
   campId?: string | null;
-  // Names of the changed fields; omit for create/delete events (no diff).
-  changedFields?: string[] | null;
+  // The change set; omit for create/delete events (no diff).
+  changes?: AuditChangeSet | null;
   // Override the actor. Omit to use the request context; pass `null` to force a
   // system-attributed entry (e.g. a public self-registration).
   actorId?: string | null;
@@ -58,15 +60,15 @@ export class AuditService extends BaseService {
             ? input.actorId
             : (this.context.userId ?? null),
         actorIp: this.context.ip ?? null,
-        changes: input.changedFields ?? Prisma.JsonNull,
+        changes: input.changes ?? Prisma.JsonNull,
       },
     });
   }
 
   /**
-   * Diffs `before`/`after` through the entity's policy and records an entry of
-   * the changed field NAMES — skipping no-op edits. Keeps audit shaping in the
-   * entity's module. Values are never recorded; they live on the record itself.
+   * Diffs `before`/`after` through the entity's policy and records the resulting
+   * change set — skipping no-op edits. Keeps audit shaping in the entity's
+   * module. Only field names (and the bounded status value) are recorded.
    */
   async recordChange<T>(
     tx: PrismaTransaction,
@@ -79,8 +81,8 @@ export class AuditService extends BaseService {
       campId?: string | null;
     },
   ): Promise<void> {
-    const changedFields = policy.changedFields(args.before, args.after);
-    if (changedFields.length === 0) {
+    const changes = policy.changeSet(args.before, args.after);
+    if (isEmptyChangeSet(changes)) {
       return;
     }
     await this.record(tx, {
@@ -88,7 +90,7 @@ export class AuditService extends BaseService {
       entityType: policy.entityType,
       entityId: args.entityId,
       campId: args.campId,
-      changedFields,
+      changes,
     });
   }
 

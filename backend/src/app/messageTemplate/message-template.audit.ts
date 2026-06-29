@@ -1,6 +1,6 @@
 import {
   changedKeysByAllowList,
-  composeChangedFields,
+  composeChangeSet,
 } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { MessageTemplate } from '#generated/prisma/client';
@@ -21,8 +21,8 @@ const FIELD_ALLOWLIST: (keyof MessageTemplate)[] = [
 export const messageTemplateAuditPolicy: AuditChangePolicy<MessageTemplate> = {
   entityType: 'messageTemplate',
 
-  changedFields(before, after) {
-    return composeChangedFields(
+  changeSet(before, after) {
+    return composeChangeSet(
       changedKeysByAllowList(before, after, FIELD_ALLOWLIST),
     );
   },

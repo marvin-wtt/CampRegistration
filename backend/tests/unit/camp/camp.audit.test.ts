@@ -1,22 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { campAuditPolicy } from '#app/camp/camp.audit';
-import type { AuditEntityType } from '@camp-registration/common/entities';
+import type {
+  AuditChangeSet,
+  AuditEntityType,
+} from '@camp-registration/common/entities';
 
 const policy = campAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changedFields(before: unknown, after: unknown): string[];
+  changeSet(before: unknown, after: unknown): AuditChangeSet;
 };
 
-describe('campAuditPolicy.changedFields', () => {
+describe('campAuditPolicy.changeSet', () => {
   it('records any config column that changed by default (deny-list)', () => {
     const before = { price: 100, minAge: 8, confirmationMode: 'AUTOMATIC' };
     const after = { price: 120, minAge: 10, confirmationMode: 'MANUAL' };
 
-    expect(policy.changedFields(before, after)).toEqual([
-      'confirmationMode',
-      'minAge',
-      'price',
-    ]);
+    expect(policy.changeSet(before, after)).toEqual({
+      changedFields: ['confirmationMode', 'minAge', 'price'],
+    });
   });
 
   it('reports added/removed form questions as `form.<name>` paths', () => {
@@ -36,7 +37,9 @@ describe('campAuditPolicy.changedFields', () => {
       },
     };
 
-    expect(policy.changedFields(before, after)).toEqual(['form.allergies']);
+    expect(policy.changeSet(before, after)).toEqual({
+      changedFields: ['form.allergies'],
+    });
   });
 
   it('denies cosmetic (themes) and metadata (updatedAt) columns', () => {
@@ -51,6 +54,6 @@ describe('campAuditPolicy.changedFields', () => {
       updatedAt: '2026-06-28',
     };
 
-    expect(policy.changedFields(before, after)).toEqual([]);
+    expect(policy.changeSet(before, after)).toEqual({});
   });
 });

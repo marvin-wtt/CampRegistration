@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import { SurveyModel } from 'survey-core';
-import { changedKeysExcept, composeChangedFields } from '#app/audit/audit.diff';
+import { changedKeysExcept, composeChangeSet } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { Camp } from '#generated/prisma/client';
 
@@ -34,7 +34,7 @@ function formFieldNames(form: unknown): string[] {
 export const campAuditPolicy: AuditChangePolicy<Camp> = {
   entityType: 'camp',
 
-  changedFields(before, after) {
+  changeSet(before, after) {
     const fields = changedKeysExcept(before, after, DENY_KEYS);
 
     if (
@@ -52,6 +52,6 @@ export const campAuditPolicy: AuditChangePolicy<Camp> = {
       }
     }
 
-    return composeChangedFields(fields);
+    return composeChangeSet(fields);
   },
 };

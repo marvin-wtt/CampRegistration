@@ -18,7 +18,7 @@ export class AuditResource extends JsonResource<
       entityId: log.entityId,
       campId: log.campId,
       actor,
-      changedFields: log.changes ?? null,
+      changes: log.changes ?? null,
       createdAt: log.createdAt.toISOString(),
     };
   }

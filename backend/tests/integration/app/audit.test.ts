@@ -71,9 +71,10 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
         campId: camp.id,
         actor: { id: user.id, name: user.name },
       });
-      // Field names only — no values are persisted (no PII in the log).
-      expect(entries[0].changes.changedFields).toEqual(['status']);
-      expect(JSON.stringify(entries[0].changes)).not.toContain('ACCEPTED');
+      // Status is a bounded, non-PII field — its new value is recorded so the
+      // timeline can show the outcome.
+      expect(entries[0].changes.changedValues).toEqual({ status: 'ACCEPTED' });
+      expect(entries[0].changes.changedFields).toBeUndefined();
     });
 
     it('records a data edit by changed leaf path only', async () => {

@@ -413,10 +413,22 @@ const actorLabel = (actor: AuditActor | null): string | null => {
   return actor.name ?? t('timeline.deletedUser');
 };
 
-// A registration status change is the most salient kind of edit — the audit log
-// records only that it changed (not the value), so surface it as its own
-// highlighted entry and group any other field edits into a second entry.
-const STATUS_FIELD = 'status';
+const statusLabel = (status: string): string => {
+  const key = `status.${status.toLowerCase()}`;
+  return te(key) ? t(key) : status;
+};
+
+// Mirrors the status colors used in the dialog header / table cells.
+const statusColor = (status: string): string => {
+  switch (status) {
+    case 'ACCEPTED':
+      return 'positive';
+    case 'PENDING':
+      return 'info';
+    default:
+      return 'warning';
+  }
+};
 
 const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
   const shared = {
@@ -450,29 +462,31 @@ const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
     ];
   }
 
-  const fields = entry.changedFields ?? [];
   const entries: TimelineDisplayEntry[] = [];
 
-  if (fields.includes(STATUS_FIELD)) {
+  // A status change is the most salient edit — surface it as its own entry,
+  // titled with the new status and coloured by it (e.g. "Accepted").
+  const status = entry.changes?.changedValues?.status;
+  if (typeof status === 'string') {
     entries.push({
       ...shared,
       id: `${entry.id}-status`,
-      title: t('timeline.statusChanged'),
-      color: 'secondary',
+      title: statusLabel(status),
+      color: statusColor(status),
       icon: 'swap_horiz',
       fields: [],
     });
   }
 
-  const others = fields.filter((field) => field !== STATUS_FIELD);
-  if (others.length > 0) {
+  const fields = entry.changes?.changedFields ?? [];
+  if (fields.length > 0) {
     entries.push({
       ...shared,
       id: `${entry.id}-fields`,
       title: t('timeline.updated'),
       color: 'primary',
       icon: 'edit',
-      fields: others.map(resolveField),
+      fields: fields.map(resolveField),
     });
   }
 
@@ -588,6 +602,11 @@ section:
   registration: 'Registration'
   timeline: 'Timeline'
 
+status:
+  pending: 'Pending'
+  waitlisted: 'Waitlisted'
+  accepted: 'Accepted'
+
 field:
   name: 'Name'
   dateOfBirth: 'Date of Birth'
@@ -609,7 +628,6 @@ timeline:
   registered: 'Registered'
   created: 'Registered'
   updated: 'Updated'
-  statusChanged: 'Status changed'
   deleted: 'Deleted'
   by: 'by {actor}'
   changedFields: 'Changed:'
@@ -626,6 +644,11 @@ section:
   address: 'Adresse'
   registration: 'Anmeldung'
   timeline: 'Verlauf'
+
+status:
+  pending: 'Ausstehend'
+  waitlisted: 'Warteliste'
+  accepted: 'Akzeptiert'
 
 field:
   name: 'Name'
@@ -648,7 +671,6 @@ timeline:
   registered: 'Angemeldet'
   created: 'Angemeldet'
   updated: 'Aktualisiert'
-  statusChanged: 'Status geändert'
   deleted: 'Gelöscht'
   by: 'von {actor}'
   changedFields: 'Geändert:'
@@ -665,6 +687,11 @@ section:
   address: 'Adresse'
   registration: 'Inscription'
   timeline: 'Historique'
+
+status:
+  pending: 'En attente'
+  waitlisted: "Liste d'attente"
+  accepted: 'Accepté'
 
 field:
   name: 'Nom'
@@ -687,7 +714,6 @@ timeline:
   registered: 'Inscrit'
   created: 'Inscrit'
   updated: 'Mis à jour'
-  statusChanged: 'Statut modifié'
   deleted: 'Supprimé'
   by: 'par {actor}'
   changedFields: 'Modifié :'
@@ -704,6 +730,11 @@ section:
   address: 'Adres'
   registration: 'Rejestracja'
   timeline: 'Historia'
+
+status:
+  pending: 'Oczekuje'
+  waitlisted: 'Lista oczekujących'
+  accepted: 'Zaakceptowano'
 
 field:
   name: 'Imię i nazwisko'
@@ -726,7 +757,6 @@ timeline:
   registered: 'Zarejestrowano'
   created: 'Zarejestrowano'
   updated: 'Zaktualizowano'
-  statusChanged: 'Zmieniono status'
   deleted: 'Usunięto'
   by: 'przez {actor}'
   changedFields: 'Zmieniono:'
@@ -743,6 +773,11 @@ section:
   address: 'Adresa'
   registration: 'Registrace'
   timeline: 'Časová osa'
+
+status:
+  pending: 'Čeká na schválení'
+  waitlisted: 'Na čekací listině'
+  accepted: 'Přijato'
 
 field:
   name: 'Jméno'
@@ -765,7 +800,6 @@ timeline:
   registered: 'Zaregistrováno'
   created: 'Zaregistrováno'
   updated: 'Aktualizováno'
-  statusChanged: 'Stav změněn'
   deleted: 'Smazáno'
   by: 'uživatelem {actor}'
   changedFields: 'Změněno:'
