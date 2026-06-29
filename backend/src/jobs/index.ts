@@ -5,6 +5,7 @@ import {
   deleteUnusedFiles,
 } from '#jobs/files.job';
 import { deleteOldQueueJobs } from '#jobs/queue.job';
+import { purgeExpiredAuditLogs } from '#jobs/audit.job';
 import { type CronOptions, Cron, scheduledJobs } from 'croner';
 import {
   errorHandler,
@@ -20,6 +21,11 @@ const startJobs = () => {
   scheduleJob('unused-file-cleanup', '15 4 * * *', deleteUnusedFiles);
   scheduleJob('unassigned-file-cleanup', '30 4 * * *', deleteUnassignedFiles);
   scheduleJob('queue-job-cleanup', '45 4 * * *', deleteOldQueueJobs);
+  scheduleJob(
+    'audit-log-retention-cleanup',
+    '0 5 * * *',
+    purgeExpiredAuditLogs,
+  );
 };
 
 const scheduleJob = (

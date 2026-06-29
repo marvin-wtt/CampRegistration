@@ -84,11 +84,11 @@ export class CampManagerController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, campManagerId },
-    } = await req.validate(validator.destroy);
+    await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const manager = req.modelOrFail('campManager');
 
-    const managers = await this.managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(camp.id);
     if (managers.length <= 1) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -96,7 +96,7 @@ export class CampManagerController extends BaseController {
       );
     }
 
-    await this.managerService.removeManager(campManagerId);
+    await this.managerService.removeManager(manager.id);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
