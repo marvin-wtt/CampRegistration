@@ -32,7 +32,7 @@ import {
 } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
 import { startJobs, stopJobs } from '#jobs';
-import { connectDatabase, disconnectDatabase } from '#core/database';
+import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container } from '#core/ioc/container';
 
@@ -70,7 +70,7 @@ const loadModules = () =>
   ]);
 
 export async function boot() {
-  await connectDatabase();
+  await verifyDatabaseConnection();
 
   await initI18n();
 
