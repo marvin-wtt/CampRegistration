@@ -184,15 +184,12 @@ export class CampService extends BaseService {
         include: { ...this.campRegistrationInclude() },
       });
 
-      await this.audit.record(
-        {
-          action: 'created',
-          entityType: campAuditPolicy.entityType,
-          entityId: created.id,
-          campId: created.id,
-        },
-        tx,
-      );
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: campAuditPolicy.entityType,
+        entityId: created.id,
+        campId: created.id,
+      });
 
       return created;
     });
@@ -285,10 +282,21 @@ export class CampService extends BaseService {
 
   async deleteCampById(id: string) {
     await this.prisma.$transaction(async (tx) => {
-      await tx.camp.delete({ where: { id } });
-      // The camp and all its data are gone; purge its (non-FK-linked) audit
-      // rows so no orphaned PII lingers. This is effectively camp-wide erasure.
+      // Drop the camp's detailed audit trail first — while `campId` still
+      // matches. Deleting the camp would otherwise SET NULL it via the FK, and
+      // the rows are unreachable (the UI is camp-scoped) once the camp is gone.
       await this.audit.purgeForCamp(id, tx);
+
+      await tx.camp.delete({ where: { id } });
+
+      // Keep one standalone record of who deleted the camp — its most
+      // destructive action. `campId` is null (the camp no longer exists), so
+      // this entry is not caught by the purge above.
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: campAuditPolicy.entityType,
+        entityId: id,
+      });
     });
   }
 }

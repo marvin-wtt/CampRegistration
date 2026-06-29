@@ -7,7 +7,7 @@ import {
   UserFactory,
   CampManagerFactory,
 } from '../../../prisma/factories/index.js';
-import { Camp, Prisma } from '#generated/prisma/client.js';
+import { type Camp, type Prisma } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
 import { request } from '../utils/request.js';
 
@@ -44,7 +44,7 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
       .auth(token, { type: 'bearer' });
 
   describe('GET .../audit', () => {
-    it('records a status change with actor and old/new values', async () => {
+    it('records a status change with actor and changed field names only', async () => {
       const { camp, user, accessToken } = await createCampWithManagerAndToken();
       const registration = await createRegistration(camp, {
         status: 'PENDING',
@@ -71,13 +71,12 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
         campId: camp.id,
         actor: { id: user.id, name: user.name },
       });
-      expect(entries[0].changes.fields.status).toEqual({
-        from: 'PENDING',
-        to: 'ACCEPTED',
-      });
+      // Field names only — no values are persisted (no PII in the log).
+      expect(entries[0].changes.changedFields).toEqual(['status']);
+      expect(JSON.stringify(entries[0].changes)).not.toContain('ACCEPTED');
     });
 
-    it('records a data edit with changed leaf fields only', async () => {
+    it('records a data edit by changed leaf path only', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const registration = await createRegistration(camp, {
         data: { first_name: 'Ann', notes: 'x' },
@@ -97,8 +96,10 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
 
       const entry = response.body.data[0];
       expect(entry.action).toBe('updated');
-      expect(entry.changes.data.first_name).toEqual({ from: 'Ann', to: 'Bob' });
-      expect(entry.changes.data).not.toHaveProperty('notes');
+      expect(entry.changes.changedFields).toContain('data.first_name');
+      expect(entry.changes.changedFields).not.toContain('data.notes');
+      // The new value must not leak into the log.
+      expect(JSON.stringify(entry.changes)).not.toContain('Bob');
     });
 
     it('attributes concurrent edits to the respective actors', async () => {
@@ -144,7 +145,7 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
       expect(entries[1].actor.id).toBe(userA.id);
     });
 
-    it('keeps a delete entry with a snapshot after the registration is gone', async () => {
+    it('keeps a delete event without any personal data after the registration is gone', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const registration = await createRegistration(camp, {
         status: 'ACCEPTED',
@@ -156,15 +157,15 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
-      // Registration row is gone, but the audit trail survives (no FK).
+      // Registration row is gone, but the audit event survives (no FK) — and it
+      // carries no snapshot, so no personal data lingers in the log.
       const logs = await prisma.auditLog.findMany({
         where: { entityType: 'registration', entityId: registration.id },
       });
       const deleteLog = logs.find((log) => log.action === 'deleted');
       expect(deleteLog).toBeDefined();
-      expect(deleteLog?.changes).toMatchObject({
-        snapshot: { status: 'ACCEPTED' },
-      });
+      expect(deleteLog?.changes).toBeNull();
+      expect(JSON.stringify(logs)).not.toContain('Ann');
     });
 
     it.each([

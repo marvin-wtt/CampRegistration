@@ -252,15 +252,28 @@
                   :title="entry.title"
                 >
                   <div
-                    v-for="(line, index) in entry.details"
-                    :key="index"
-                    class="text-body2"
+                    v-if="entry.fields.length"
+                    class="q-mb-xs"
                   >
-                    {{ line }}
+                    <div class="text-caption audit-fields-label q-mb-xs">
+                      {{ t('timeline.changedFields') }}
+                    </div>
+                    <div class="audit-field-chips">
+                      <q-chip
+                        v-for="field in entry.fields"
+                        :key="field.path"
+                        dense
+                        size="sm"
+                        class="audit-field-chip"
+                      >
+                        {{ field.label }}
+                        <q-tooltip>{{ field.path }}</q-tooltip>
+                      </q-chip>
+                    </div>
                   </div>
                   <div
                     v-if="entry.actor"
-                    class="text-caption text-grey-6"
+                    class="text-caption audit-fields-label"
                   >
                     {{ t('timeline.by', { actor: entry.actor }) }}
                   </div>
@@ -288,15 +301,17 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import type {
   AuditActor,
-  AuditChangeSet,
   AuditLogEntry,
   Registration,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
 import { useAPIService } from 'src/services/APIService';
+import { useCampDetailsStore } from 'src/stores/camp-details-store';
 import { formatPersonName } from 'src/utils/formatters';
+import { extractFormFields } from 'src/utils/surveyJS';
 import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -312,15 +327,51 @@ const { registration } = defineProps<{
   registration: Registration;
 }>();
 
+const { data: camp } = storeToRefs(useCampDetailsStore());
+
+interface ChangedField {
+  // Human-readable question name, or the raw path when it can't be resolved.
+  label: string;
+  // The raw audit path — always shown as the tooltip / fallback.
+  path: string;
+}
+
 interface TimelineDisplayEntry {
   id: string;
   title: string;
   subtitle: string;
   color: string;
   icon: string;
-  details: string[];
+  fields: ChangedField[];
   actor: string | null;
 }
+
+// Maps a registration `data` leaf path to its form question label (e.g.
+// `emergency_contacts.*.name` → "Contacts > * > Name"), the same mapping the
+// table-column and email editors use. Rebuilt when the camp's form changes.
+const DATA_PREFIX = 'data.';
+
+const fieldLabels = computed<Map<string, string>>(() => {
+  const form = camp.value?.form;
+  if (!form) {
+    return new Map();
+  }
+  return new Map(
+    extractFormFields(form).map(({ value, label }) => [value, label]),
+  );
+});
+
+const resolveField = (path: string): ChangedField => {
+  // Only form answers (`data.*`) have question labels; `customData.*` and any
+  // top-level column fall back to the raw path.
+  if (path.startsWith(DATA_PREFIX)) {
+    const label = fieldLabels.value.get(path.slice(DATA_PREFIX.length));
+    if (label) {
+      return { label, path };
+    }
+  }
+  return { label: path, path };
+};
 
 const auditEntries = ref<AuditLogEntry[]>([]);
 const auditLoading = ref(true);
@@ -355,95 +406,6 @@ const formatDateTime = (timestamp: string): string =>
     minute: '2-digit',
   });
 
-const statusLabel = (status: unknown): string => {
-  if (typeof status !== 'string') {
-    return '';
-  }
-  const key = `status.${status.toLowerCase()}`;
-  return te(key) ? t(key) : status;
-};
-
-const statusColor = (status: unknown): string => {
-  switch (status) {
-    case 'ACCEPTED':
-      return 'positive';
-    case 'WAITLISTED':
-      return 'warning';
-    case 'PENDING':
-      return 'info';
-    default:
-      return 'primary';
-  }
-};
-
-const actionMeta = (
-  action: string,
-  changes: AuditChangeSet | null,
-): { title: string; icon: string; color: string } => {
-  switch (action) {
-    case 'created':
-      return {
-        title: t('timeline.created'),
-        icon: 'how_to_reg',
-        color: 'positive',
-      };
-    case 'deleted':
-      return {
-        title: t('timeline.deleted'),
-        icon: 'delete',
-        color: 'negative',
-      };
-    case 'updated':
-    default:
-      return {
-        title: t('timeline.updated'),
-        // A status change is the most salient kind of edit — colour by it.
-        icon: changes?.fields?.status ? 'swap_horiz' : 'edit',
-        color: changes?.fields?.status
-          ? statusColor(changes.fields.status.to)
-          : 'primary',
-      };
-  }
-};
-
-const changedFieldNames = (changes: AuditChangeSet | null): string[] => {
-  const names = [
-    ...Object.keys(changes?.data ?? {}),
-    ...Object.keys(changes?.fields ?? {}).filter((key) => key !== 'status'),
-  ];
-  return [...new Set(names)];
-};
-
-// One entry can carry several kinds of change at once (e.g. status + data in a
-// single edit); each becomes its own line.
-const detailsFor = (
-  action: string,
-  changes: AuditChangeSet | null,
-): string[] => {
-  const lines: string[] = [];
-  const status = changes?.fields?.status;
-
-  if (status) {
-    if (action === 'created') {
-      const label = statusLabel(status.to);
-      if (label) {
-        lines.push(label);
-      }
-    } else {
-      const from = statusLabel(status.from) || '—';
-      const to = statusLabel(status.to) || '—';
-      lines.push(`${from} → ${to}`);
-    }
-  }
-
-  const fields = changedFieldNames(changes);
-  if (fields.length > 0) {
-    lines.push(t('timeline.changedFields', { fields: fields.join(', ') }));
-  }
-
-  return lines;
-};
-
 const actorLabel = (actor: AuditActor | null): string | null => {
   if (actor === null) {
     return null;
@@ -451,19 +413,74 @@ const actorLabel = (actor: AuditActor | null): string | null => {
   return actor.name ?? t('timeline.deletedUser');
 };
 
+// A registration status change is the most salient kind of edit — the audit log
+// records only that it changed (not the value), so surface it as its own
+// highlighted entry and group any other field edits into a second entry.
+const STATUS_FIELD = 'status';
+
+const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
+  const shared = {
+    subtitle: formatDateTime(entry.createdAt),
+    actor: actorLabel(entry.actor),
+  };
+
+  if (entry.action === 'created') {
+    return [
+      {
+        ...shared,
+        id: entry.id,
+        title: t('timeline.created'),
+        color: 'positive',
+        icon: 'how_to_reg',
+        fields: [],
+      },
+    ];
+  }
+
+  if (entry.action === 'deleted') {
+    return [
+      {
+        ...shared,
+        id: entry.id,
+        title: t('timeline.deleted'),
+        color: 'negative',
+        icon: 'delete',
+        fields: [],
+      },
+    ];
+  }
+
+  const fields = entry.changedFields ?? [];
+  const entries: TimelineDisplayEntry[] = [];
+
+  if (fields.includes(STATUS_FIELD)) {
+    entries.push({
+      ...shared,
+      id: `${entry.id}-status`,
+      title: t('timeline.statusChanged'),
+      color: 'secondary',
+      icon: 'swap_horiz',
+      fields: [],
+    });
+  }
+
+  const others = fields.filter((field) => field !== STATUS_FIELD);
+  if (others.length > 0) {
+    entries.push({
+      ...shared,
+      id: `${entry.id}-fields`,
+      title: t('timeline.updated'),
+      color: 'primary',
+      icon: 'edit',
+      fields: others.map(resolveField),
+    });
+  }
+
+  return entries;
+};
+
 const timelineEntries = computed<TimelineDisplayEntry[]>(() =>
-  auditEntries.value.map((entry) => {
-    const meta = actionMeta(entry.action, entry.changes);
-    return {
-      id: entry.id,
-      title: meta.title,
-      subtitle: formatDateTime(entry.createdAt),
-      color: meta.color,
-      icon: meta.icon,
-      details: detailsFor(entry.action, entry.changes),
-      actor: actorLabel(entry.actor),
-    };
-  }),
+  auditEntries.value.flatMap(buildEntries),
 );
 
 const personName = computed<string>(() => {
@@ -571,11 +588,6 @@ section:
   registration: 'Registration'
   timeline: 'Timeline'
 
-status:
-  pending: 'Pending'
-  waitlisted: 'Waitlisted'
-  accepted: 'Accepted'
-
 field:
   name: 'Name'
   dateOfBirth: 'Date of Birth'
@@ -600,7 +612,7 @@ timeline:
   statusChanged: 'Status changed'
   deleted: 'Deleted'
   by: 'by {actor}'
-  changedFields: 'Changed: {fields}'
+  changedFields: 'Changed:'
   deletedUser: 'Deleted user'
 
 action:
@@ -614,11 +626,6 @@ section:
   address: 'Adresse'
   registration: 'Anmeldung'
   timeline: 'Verlauf'
-
-status:
-  pending: 'Ausstehend'
-  waitlisted: 'Warteliste'
-  accepted: 'Akzeptiert'
 
 field:
   name: 'Name'
@@ -644,7 +651,7 @@ timeline:
   statusChanged: 'Status geändert'
   deleted: 'Gelöscht'
   by: 'von {actor}'
-  changedFields: 'Geändert: {fields}'
+  changedFields: 'Geändert:'
   deletedUser: 'Gelöschter Benutzer'
 
 action:
@@ -658,11 +665,6 @@ section:
   address: 'Adresse'
   registration: 'Inscription'
   timeline: 'Historique'
-
-status:
-  pending: 'En attente'
-  waitlisted: "Liste d'attente"
-  accepted: 'Accepté'
 
 field:
   name: 'Nom'
@@ -688,7 +690,7 @@ timeline:
   statusChanged: 'Statut modifié'
   deleted: 'Supprimé'
   by: 'par {actor}'
-  changedFields: 'Modifié : {fields}'
+  changedFields: 'Modifié :'
   deletedUser: 'Utilisateur supprimé'
 
 action:
@@ -702,11 +704,6 @@ section:
   address: 'Adres'
   registration: 'Rejestracja'
   timeline: 'Historia'
-
-status:
-  pending: 'Oczekuje'
-  waitlisted: 'Lista oczekujących'
-  accepted: 'Zaakceptowano'
 
 field:
   name: 'Imię i nazwisko'
@@ -732,7 +729,7 @@ timeline:
   statusChanged: 'Zmieniono status'
   deleted: 'Usunięto'
   by: 'przez {actor}'
-  changedFields: 'Zmieniono: {fields}'
+  changedFields: 'Zmieniono:'
   deletedUser: 'Usunięty użytkownik'
 
 action:
@@ -746,11 +743,6 @@ section:
   address: 'Adresa'
   registration: 'Registrace'
   timeline: 'Časová osa'
-
-status:
-  pending: 'Čeká na schválení'
-  waitlisted: 'Na čekací listině'
-  accepted: 'Přijato'
 
 field:
   name: 'Jméno'
@@ -776,7 +768,7 @@ timeline:
   statusChanged: 'Stav změněn'
   deleted: 'Smazáno'
   by: 'uživatelem {actor}'
-  changedFields: 'Změněno: {fields}'
+  changedFields: 'Změněno:'
   deletedUser: 'Smazaný uživatel'
 
 action:
@@ -791,6 +783,31 @@ action:
 
 .header-btn {
   color: var(--md3-on-surface-variant);
+}
+
+.audit-fields-label {
+  color: var(--md3-on-surface-variant);
+}
+
+/* Chips flow and wrap; long question labels stay fully visible by wrapping
+   their text rather than truncating. The raw path remains in the tooltip. */
+.audit-field-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.audit-field-chip {
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.audit-field-chip :deep(.q-chip__content) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  padding-block: 3px;
 }
 
 @media (min-width: 600px) {

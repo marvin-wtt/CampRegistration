@@ -1,11 +1,4 @@
 import { isDeepStrictEqual } from 'node:util';
-import type {
-  AuditChangeSet,
-  AuditFieldChange,
-} from '@camp-registration/common/entities';
-
-// Generic, entity-agnostic diff primitives. Per-entity policy (which fields to
-// track, how to shape a change set) lives in each feature's `*.audit.ts`.
 
 type AnyRecord = Record<string, unknown>;
 
@@ -23,124 +16,118 @@ function isPlainObject(value: unknown): value is AnyRecord {
   );
 }
 
+/** An array whose every element is a plain object (e.g. a dynamic panel). */
+function isPlainObjectArray(value: unknown): value is AnyRecord[] {
+  return Array.isArray(value) && value.length > 0 && value.every(isPlainObject);
+}
+
 /**
- * Flattens nested plain objects to dot-paths, treating arrays, dates and
- * primitives as leaf values (so e.g. the `emails` array is compared as a whole).
+ * Flattens nested structures to dot-paths for leaf comparison:
+ * - plain objects are descended into (`address.city`);
+ * - arrays of objects (SurveyJS dynamic panels) are traced positionlessly —
+ *   each leaf sub-path is collected across all rows under a `*` segment
+ *   (`emergency_contacts.*.name`) into an order-insensitive bag, so reordering
+ *   rows is not a change but editing/adding/removing a value is;
+ * - everything else (primitive arrays, dates, primitives) is a single leaf
+ *   (so e.g. the `emails` array is compared as a whole).
  */
 function flatten(obj: AnyRecord, prefix = ''): AnyRecord {
   const out: AnyRecord = {};
   for (const [key, value] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${key}` : key;
-    if (isPlainObject(value)) {
-      Object.assign(out, flatten(value, path));
-    } else {
-      out[path] = value;
-    }
+    flattenInto(out, path, value);
   }
   return out;
 }
 
-/** Top-level diff restricted to an explicit allow-list of keys. */
-export function diffByAllowList(
+function flattenInto(out: AnyRecord, path: string, value: unknown): void {
+  if (isPlainObject(value)) {
+    Object.assign(out, flatten(value, path));
+    return;
+  }
+
+  if (isPlainObjectArray(value)) {
+    const bags: Record<string, unknown[]> = {};
+    for (const element of value) {
+      for (const [subPath, subValue] of Object.entries(
+        flatten(element, `${path}.*`),
+      )) {
+        (bags[subPath] ??= []).push(subValue);
+      }
+    }
+    // Sort each bag so row order does not register as a change.
+    for (const [subPath, values] of Object.entries(bags)) {
+      out[subPath] = [...values].sort(compareSerialized);
+    }
+    return;
+  }
+
+  out[path] = value;
+}
+
+function compareSerialized(a: unknown, b: unknown): number {
+  return JSON.stringify(a ?? null).localeCompare(JSON.stringify(b ?? null));
+}
+
+/** True when two values are equal, treating `null` and absent as the same. */
+function unchanged(from: unknown, to: unknown): boolean {
+  if (from == null && to == null) {
+    return true;
+  }
+  return isDeepStrictEqual(from, to);
+}
+
+/** Allow-listed top-level keys whose value changed. */
+export function changedKeysByAllowList(
   before: unknown,
   after: unknown,
   allowList: readonly string[],
-): Record<string, AuditFieldChange> {
+): string[] {
   const beforeRecord = toRecord(before);
   const afterRecord = toRecord(after);
-  const changes: Record<string, AuditFieldChange> = {};
-  for (const key of allowList) {
-    const from = beforeRecord?.[key];
-    const to = afterRecord?.[key];
-    if (!isDeepStrictEqual(from, to)) {
-      changes[key] = { from: from ?? null, to: to ?? null };
-    }
-  }
-  return changes;
+  return allowList.filter(
+    (key) => !unchanged(beforeRecord?.[key], afterRecord?.[key]),
+  );
 }
 
 /**
- * Top-level diff of every column EXCEPT a deny-list. Iterates the keys of
+ * Top-level keys (minus a deny-list) whose value changed. Iterates the keys of
  * `before` (so pass the lean, no-relations read) — this avoids spuriously
- * diffing included relations that only exist on `after`. Suited to config
- * entities where "track everything except a few" beats enumerating each field.
+ * diffing included relations that only exist on `after`.
  */
-export function diffExcept(
+export function changedKeysExcept(
   before: unknown,
   after: unknown,
   deny: readonly string[],
-): Record<string, AuditFieldChange> {
+): string[] {
   const beforeRecord = toRecord(before) ?? {};
   const afterRecord = toRecord(after) ?? {};
   const denySet = new Set<string>(deny);
-  const changes: Record<string, AuditFieldChange> = {};
-  for (const key of Object.keys(beforeRecord)) {
-    if (denySet.has(key)) {
-      continue;
-    }
-    const from = beforeRecord[key];
-    const to = afterRecord[key];
-    if (!isDeepStrictEqual(from, to)) {
-      changes[key] = { from: from ?? null, to: to ?? null };
-    }
-  }
-  return changes;
+  return Object.keys(beforeRecord).filter(
+    (key) =>
+      !denySet.has(key) && !unchanged(beforeRecord[key], afterRecord[key]),
+  );
 }
 
-/** Leaf-level diff of two JSON blobs (e.g. registration `data`). */
-export function diffLeaves(
+/** Leaf dot-paths (prefixed) that changed between two JSON blobs. */
+export function changedLeafPaths(
   before: unknown,
   after: unknown,
-): Record<string, AuditFieldChange> {
+  prefix: string,
+): string[] {
   const flatBefore = flatten(toRecord(before) ?? {});
   const flatAfter = flatten(toRecord(after) ?? {});
   const keys = new Set([...Object.keys(flatBefore), ...Object.keys(flatAfter)]);
-  const changes: Record<string, AuditFieldChange> = {};
+  const changed: string[] = [];
   for (const key of keys) {
-    if (!isDeepStrictEqual(flatBefore[key], flatAfter[key])) {
-      changes[key] = {
-        from: flatBefore[key] ?? null,
-        to: flatAfter[key] ?? null,
-      };
+    if (!unchanged(flatBefore[key], flatAfter[key])) {
+      changed.push(prefix ? `${prefix}.${key}` : key);
     }
   }
-  return changes;
+  return changed;
 }
 
-/** Picks a stable snapshot of the given keys (for delete events). */
-export function pickSnapshot(
-  entity: unknown,
-  keys: readonly string[],
-): AnyRecord {
-  const record = toRecord(entity) ?? {};
-  const snapshot: AnyRecord = {};
-  for (const key of keys) {
-    snapshot[key] = record[key] ?? null;
-  }
-  return snapshot;
-}
-
-/** Assembles a change set, omitting empty sections. */
-export function composeChangeSet(
-  fields: Record<string, AuditFieldChange>,
-  data?: Record<string, AuditFieldChange>,
-): AuditChangeSet {
-  const changeSet: AuditChangeSet = {};
-  if (Object.keys(fields).length > 0) {
-    changeSet.fields = fields;
-  }
-  if (data && Object.keys(data).length > 0) {
-    changeSet.data = data;
-  }
-  return changeSet;
-}
-
-/** True when a change set carries no recordable change. */
-export function isEmptyChangeSet(changeSet: AuditChangeSet): boolean {
-  return (
-    !changeSet.fields &&
-    !changeSet.data &&
-    (changeSet.snapshot === undefined ||
-      Object.keys(changeSet.snapshot).length === 0)
-  );
+/** Merges field-name groups into a sorted, de-duplicated list. */
+export function composeChangedFields(...groups: string[][]): string[] {
+  return [...new Set(groups.flat())].sort();
 }

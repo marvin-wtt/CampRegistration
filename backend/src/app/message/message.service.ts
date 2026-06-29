@@ -85,8 +85,9 @@ export class MessageService extends BaseService {
         },
       });
 
-      await this.audit.recordSnapshot(tx, 'created', messageAuditPolicy, {
-        entity: message,
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: messageAuditPolicy.entityType,
         entityId: message.id,
         campId,
       });
@@ -97,18 +98,16 @@ export class MessageService extends BaseService {
 
   async deleteMessageById(id: string, campId: string) {
     return this.prisma.$transaction(async (tx) => {
-      // `delete` returns the removed row (with the deliveries it had, for the
-      // recipient snapshot) — no separate read, no read-then-delete race.
       const deleted = await tx.message.delete({
         where: {
           id,
           campId,
         },
-        include: { deliveries: { select: { to: true } } },
       });
 
-      await this.audit.recordSnapshot(tx, 'deleted', messageAuditPolicy, {
-        entity: deleted,
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: messageAuditPolicy.entityType,
         entityId: id,
         campId,
       });

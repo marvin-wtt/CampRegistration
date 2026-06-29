@@ -8,14 +8,9 @@ import {
 } from '#generated/prisma/client.js';
 import type {
   AuditActor,
-  AuditChangeSet,
   AuditEntityType,
 } from '@camp-registration/common/entities';
-import { isEmptyChangeSet } from '#app/audit/audit.diff';
-import type {
-  AuditChangePolicy,
-  AuditSnapshotPolicy,
-} from '#app/audit/audit.policy';
+import type { AuditChangePolicy } from '#app/audit/audit.policy';
 
 export type PrismaTransaction = Parameters<
   Parameters<PrismaClient['$transaction']>[0]
@@ -26,7 +21,8 @@ export interface AuditRecordInput {
   entityType: AuditEntityType;
   entityId: string;
   campId?: string | null;
-  changes?: AuditChangeSet | null;
+  // Names of the changed fields; omit for create/delete events (no diff).
+  changedFields?: string[] | null;
   // Override the actor. Omit to use the request context; pass `null` to force a
   // system-attributed entry (e.g. a public self-registration).
   actorId?: string | null;
@@ -46,13 +42,12 @@ export class AuditService extends BaseService {
   }
 
   /**
-   * Writes one audit entry. Pass `tx` to enrol the write in the caller's
-   * transaction so the audit row is atomic with the mutation it records.
-   * The actor is read from the request context — `null` for anonymous/system.
+   * Writes one audit entry, enrolled in the caller's transaction so the audit
+   * row is atomic with the mutation it records. The actor is read from the
+   * request context — `null` for anonymous/system.
    */
-  async record(input: AuditRecordInput, tx?: PrismaTransaction): Promise<void> {
-    const client = tx ?? this.prisma;
-    await client.auditLog.create({
+  async record(tx: PrismaTransaction, input: AuditRecordInput): Promise<void> {
+    await tx.auditLog.create({
       data: {
         action: input.action,
         entityType: input.entityType,
@@ -63,14 +58,15 @@ export class AuditService extends BaseService {
             ? input.actorId
             : (this.context.userId ?? null),
         actorIp: this.context.ip ?? null,
-        changes: input.changes ?? Prisma.JsonNull,
+        changes: input.changedFields ?? Prisma.JsonNull,
       },
     });
   }
 
   /**
-   * Diffs `before`/`after` through the entity's policy and records an entry —
-   * skipping no-op edits. Keeps audit shaping in the entity's module.
+   * Diffs `before`/`after` through the entity's policy and records an entry of
+   * the changed field NAMES — skipping no-op edits. Keeps audit shaping in the
+   * entity's module. Values are never recorded; they live on the record itself.
    */
   async recordChange<T>(
     tx: PrismaTransaction,
@@ -83,43 +79,17 @@ export class AuditService extends BaseService {
       campId?: string | null;
     },
   ): Promise<void> {
-    const changes = policy.changeSet(args.before, args.after);
-    if (isEmptyChangeSet(changes)) {
+    const changedFields = policy.changedFields(args.before, args.after);
+    if (changedFields.length === 0) {
       return;
     }
-    await this.record(
-      {
-        action,
-        entityType: policy.entityType,
-        entityId: args.entityId,
-        campId: args.campId,
-        changes,
-      },
-      tx,
-    );
-  }
-
-  /** Records an entry carrying a snapshot of the entity (for create/delete). */
-  async recordSnapshot<T>(
-    tx: PrismaTransaction,
-    action: string,
-    policy: AuditSnapshotPolicy<T>,
-    args: {
-      entity: T | null | undefined;
-      entityId: string;
-      campId?: string | null;
-    },
-  ): Promise<void> {
-    await this.record(
-      {
-        action,
-        entityType: policy.entityType,
-        entityId: args.entityId,
-        campId: args.campId,
-        changes: { snapshot: policy.snapshot(args.entity) },
-      },
-      tx,
-    );
+    await this.record(tx, {
+      action,
+      entityType: policy.entityType,
+      entityId: args.entityId,
+      campId: args.campId,
+      changedFields,
+    });
   }
 
   async listForRegistration(
@@ -154,17 +124,6 @@ export class AuditService extends BaseService {
       select: { id: true, name: true },
     });
     return new Map(users.map((user) => [user.id, user]));
-  }
-
-  /** Removes all audit rows for a registration — for GDPR erasure only. */
-  async purgeForRegistration(
-    registrationId: string,
-    tx?: PrismaTransaction,
-  ): Promise<void> {
-    const client = tx ?? this.prisma;
-    await client.auditLog.deleteMany({
-      where: { entityType: 'registration', entityId: registrationId },
-    });
   }
 
   /** Removes all audit rows scoped to a camp — for GDPR erasure only. */

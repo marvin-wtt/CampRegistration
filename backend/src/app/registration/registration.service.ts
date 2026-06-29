@@ -11,10 +11,7 @@ import { RegistrationCampDataHelper } from '#app/registration/registration.helpe
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
-import {
-  registrationAuditPolicy,
-  registrationInitialChange,
-} from '#app/registration/registration.audit';
+import { registrationAuditPolicy } from '#app/registration/registration.audit';
 
 @injectable()
 export class RegistrationService extends BaseService {
@@ -149,20 +146,16 @@ export class RegistrationService extends BaseService {
           },
         });
 
-        await this.audit.record(
-          {
-            action: 'created',
-            entityType: registrationAuditPolicy.entityType,
-            entityId: registration.id,
-            campId: camp.id,
-            changes: registrationInitialChange(registration.status),
-            // A registration is created by an external party via the public
-            // form — always system-attributed, never the logged-in manager who
-            // may happen to share the session.
-            actorId: null,
-          },
-          transaction,
-        );
+        await this.audit.record(transaction, {
+          action: 'created',
+          entityType: registrationAuditPolicy.entityType,
+          entityId: registration.id,
+          campId: camp.id,
+          // A registration is created by an external party via the public
+          // form — always system-attributed, never the logged-in manager who
+          // may happen to share the session.
+          actorId: null,
+        });
 
         return registration;
       },
@@ -233,12 +226,13 @@ export class RegistrationService extends BaseService {
 
   async deleteRegistration(registration: Registration) {
     await this.prisma.$transaction(async (tx) => {
-      const deleted = await tx.registration.delete({
+      await tx.registration.delete({
         where: { id: registration.id },
       });
 
-      await this.audit.recordSnapshot(tx, 'deleted', registrationAuditPolicy, {
-        entity: deleted,
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: registrationAuditPolicy.entityType,
         entityId: registration.id,
         campId: registration.campId,
       });

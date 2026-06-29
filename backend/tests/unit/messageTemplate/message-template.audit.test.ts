@@ -1,52 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
-import type {
-  AuditChangeSet,
-  AuditEntityType,
-} from '@camp-registration/common/entities';
+import type { AuditEntityType } from '@camp-registration/common/entities';
 
 const policy = messageTemplateAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changeSet(before: unknown, after: unknown): AuditChangeSet;
-  snapshot(entity: unknown): Record<string, unknown>;
+  changedFields(before: unknown, after: unknown): string[];
 };
 
-describe('messageTemplateAuditPolicy.changeSet', () => {
-  it('diffs editable content fields', () => {
+describe('messageTemplateAuditPolicy.changedFields', () => {
+  it('reports editable content fields that changed', () => {
     const before = { subject: 'Hi', body: '<p>a</p>', priority: 'normal' };
     const after = { subject: 'Hello', body: '<p>b</p>', priority: 'high' };
 
-    expect(policy.changeSet(before, after).fields).toEqual({
-      subject: { from: 'Hi', to: 'Hello' },
-      body: { from: '<p>a</p>', to: '<p>b</p>' },
-      priority: { from: 'normal', to: 'high' },
-    });
+    expect(policy.changedFields(before, after)).toEqual([
+      'body',
+      'priority',
+      'subject',
+    ]);
   });
 
   it('ignores fields outside the allow-list (id, campId, updatedAt)', () => {
     const before = { subject: 'Hi', campId: 'c1', updatedAt: '2026-06-01' };
     const after = { subject: 'Hi', campId: 'c1', updatedAt: '2026-06-28' };
 
-    expect(policy.changeSet(before, after)).toEqual({});
-  });
-});
-
-describe('messageTemplateAuditPolicy.snapshot', () => {
-  it('identifies the template without storing the body', () => {
-    const snapshot = policy.snapshot({
-      event: 'registration_confirmed',
-      country: 'de',
-      subject: 'Welcome',
-      priority: 'normal',
-      body: '<p>huge html</p>',
-    });
-
-    expect(snapshot).toEqual({
-      event: 'registration_confirmed',
-      country: 'de',
-      subject: 'Welcome',
-      priority: 'normal',
-    });
-    expect(snapshot).not.toHaveProperty('body');
+    expect(policy.changedFields(before, after)).toEqual([]);
   });
 });

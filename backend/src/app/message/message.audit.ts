@@ -1,20 +1,8 @@
-import type { AuditSnapshotPolicy } from '#app/audit/audit.policy';
+import type { AuditEntityType } from '@camp-registration/common/entities';
 
-export const messageAuditPolicy: AuditSnapshotPolicy = {
+// Messages are only ever created (on send) and deleted — there is no update, so
+// only the entity type is needed. The audit entry records the event itself; no
+// message content (recipient addresses, body) is written to the log.
+export const messageAuditPolicy: { entityType: AuditEntityType } = {
   entityType: 'message',
-
-  // Body deliberately omitted to limit PII duplication. `recipients` is empty on
-  // send (no deliveries yet) and populated on delete (deliveries loaded).
-  snapshot(entity) {
-    const message = entity as {
-      subject?: string;
-      deliveries?: { to: string | null }[];
-    };
-    return {
-      subject: message.subject ?? null,
-      recipients: (message.deliveries ?? [])
-        .map((delivery) => delivery.to)
-        .filter((to): to is string => to !== null),
-    };
-  },
 };

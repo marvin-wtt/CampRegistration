@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import { SurveyModel } from 'survey-core';
-import { composeChangeSet, diffExcept } from '#app/audit/audit.diff';
+import { changedKeysExcept, composeChangedFields } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { Camp } from '#generated/prisma/client';
 
@@ -17,16 +17,15 @@ const DENY_KEYS: (keyof Camp)[] = [
   'form',
 ];
 
-// The form is a deeply nested, array-structured SurveyJS definition; a structural
-// leaf-diff would serialize ~the whole form into the row (our diff treats arrays
-// as opaque). Instead record the form's field inventory (the question names it
-// collects) before/after — bounded, and the GDPR-relevant "what data is gathered".
+// The form is a deeply nested SurveyJS definition. Rather than diff its
+// structure, compare its field inventory (the question names it collects) and
+// report each question added or removed as `form.<name>` — bounded, and the
+// GDPR-relevant "what data is gathered".
 function formFieldNames(form: unknown): string[] {
   try {
     return new SurveyModel(form ?? {})
       .getAllQuestions(false, undefined, true)
-      .map((question) => question.name)
-      .sort();
+      .map((question) => question.name);
   } catch {
     return [];
   }
@@ -35,20 +34,24 @@ function formFieldNames(form: unknown): string[] {
 export const campAuditPolicy: AuditChangePolicy<Camp> = {
   entityType: 'camp',
 
-  changeSet(before, after) {
-    const fields = diffExcept(before, after, DENY_KEYS);
+  changedFields(before, after) {
+    const fields = changedKeysExcept(before, after, DENY_KEYS);
 
     if (
       before != null &&
       after != null &&
       !isDeepStrictEqual(before.form, after.form)
     ) {
-      fields.form = {
-        from: formFieldNames(before.form),
-        to: formFieldNames(after.form),
-      };
+      const beforeNames = new Set(formFieldNames(before.form));
+      const afterNames = new Set(formFieldNames(after.form));
+      for (const name of new Set([...beforeNames, ...afterNames])) {
+        // A question added or removed changes what data the camp collects.
+        if (beforeNames.has(name) !== afterNames.has(name)) {
+          fields.push(`form.${name}`);
+        }
+      }
     }
 
-    return composeChangeSet(fields);
+    return composeChangedFields(fields);
   },
 };

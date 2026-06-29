@@ -118,8 +118,9 @@ export class CampManagerService extends BaseService {
         },
       });
 
-      await this.audit.recordSnapshot(tx, 'created', campManagerAuditPolicy, {
-        entity: manager,
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: campManagerAuditPolicy.entityType,
         entityId: manager.id,
         campId,
       });
@@ -148,9 +149,10 @@ export class CampManagerService extends BaseService {
       });
 
       // Same action as addManager — an invite is just a manager created for a
-      // not-yet-registered user; the snapshot's email vs userId tells them apart.
-      await this.audit.recordSnapshot(tx, 'created', campManagerAuditPolicy, {
-        entity: manager,
+      // not-yet-registered user.
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: campManagerAuditPolicy.entityType,
         entityId: manager.id,
         campId,
       });
@@ -195,8 +197,9 @@ export class CampManagerService extends BaseService {
         where: { id },
       });
 
-      await this.audit.recordSnapshot(tx, 'deleted', campManagerAuditPolicy, {
-        entity: deleted,
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: campManagerAuditPolicy.entityType,
         entityId: id,
         campId: deleted.campId,
       });

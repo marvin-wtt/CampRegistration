@@ -97,12 +97,12 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.recordSnapshot(
-        tx,
-        'created',
-        messageTemplateAuditPolicy,
-        { entity: template, entityId: template.id, campId },
-      );
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: messageTemplateAuditPolicy.entityType,
+        entityId: template.id,
+        campId,
+      });
 
       return template;
     });
@@ -162,8 +162,6 @@ export class MessageTemplateService extends BaseService {
 
   async deleteMessageTemplateById(id: string, campId: string) {
     return this.prisma.$transaction(async (tx) => {
-      // `delete` returns the row it removed — that is the snapshot, with no
-      // extra read and no read-then-delete race.
       const deleted = await tx.messageTemplate.delete({
         where: {
           id,
@@ -171,12 +169,12 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.recordSnapshot(
-        tx,
-        'deleted',
-        messageTemplateAuditPolicy,
-        { entity: deleted, entityId: id, campId },
-      );
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: messageTemplateAuditPolicy.entityType,
+        entityId: id,
+        campId,
+      });
 
       return deleted;
     });

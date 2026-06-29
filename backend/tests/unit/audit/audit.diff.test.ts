@@ -1,102 +1,105 @@
 import { describe, expect, it } from 'vitest';
 import {
-  diffByAllowList,
-  diffLeaves,
-  pickSnapshot,
-  composeChangeSet,
-  isEmptyChangeSet,
+  changedKeysByAllowList,
+  changedKeysExcept,
+  changedLeafPaths,
+  composeChangedFields,
 } from '#app/audit/audit.diff';
 
-describe('diffByAllowList', () => {
-  it('only reports changes for allow-listed keys', () => {
+describe('changedKeysByAllowList', () => {
+  it('only reports allow-listed keys that changed', () => {
     const before = { a: 1, b: 2, c: 3 };
     const after = { a: 1, b: 99, c: 99 };
 
-    const result = diffByAllowList(before, after, ['a', 'b']);
-
-    expect(result).toEqual({ b: { from: 2, to: 99 } });
-    expect(result).not.toHaveProperty('c');
+    expect(changedKeysByAllowList(before, after, ['a', 'b'])).toEqual(['b']);
   });
 
-  it('treats missing values as null', () => {
-    const result = diffByAllowList({}, { a: 5 }, ['a']);
-    expect(result).toEqual({ a: { from: null, to: 5 } });
+  it('reports a key set from absent', () => {
+    expect(changedKeysByAllowList({}, { a: 5 }, ['a'])).toEqual(['a']);
   });
 
-  it('returns no change for deep-equal values', () => {
-    const before = { a: { x: 1 } };
-    const after = { a: { x: 1 } };
-    expect(diffByAllowList(before, after, ['a'])).toEqual({});
+  it('treats null and absent as equal (no phantom change)', () => {
+    expect(changedKeysByAllowList({ a: null }, {}, ['a'])).toEqual([]);
+  });
+
+  it('returns nothing for deep-equal values', () => {
+    expect(
+      changedKeysByAllowList({ a: { x: 1 } }, { a: { x: 1 } }, ['a']),
+    ).toEqual([]);
   });
 
   it('tolerates null/undefined operands', () => {
-    expect(diffByAllowList(null, undefined, ['a'])).toEqual({});
+    expect(changedKeysByAllowList(null, undefined, ['a'])).toEqual([]);
   });
 });
 
-describe('diffLeaves', () => {
-  it('flattens nested objects to dot-paths', () => {
+describe('changedKeysExcept', () => {
+  it('reports changed keys except the deny-list, iterating `before`', () => {
+    const before = { price: 100, themes: 'a', updatedAt: 1 };
+    const after = { price: 120, themes: 'b', updatedAt: 2 };
+
+    expect(changedKeysExcept(before, after, ['themes', 'updatedAt'])).toEqual([
+      'price',
+    ]);
+  });
+});
+
+describe('changedLeafPaths', () => {
+  it('flattens nested objects to prefixed dot-paths', () => {
     const before = { person: { name: 'Ann', age: 10 } };
     const after = { person: { name: 'Bob', age: 10 } };
 
-    expect(diffLeaves(before, after)).toEqual({
-      'person.name': { from: 'Ann', to: 'Bob' },
-    });
+    expect(changedLeafPaths(before, after, 'data')).toEqual([
+      'data.person.name',
+    ]);
   });
 
   it('treats arrays as leaf values', () => {
-    const before = { emails: ['a@x.com'] };
-    const after = { emails: ['a@x.com', 'b@x.com'] };
-
-    expect(diffLeaves(before, after)).toEqual({
-      emails: { from: ['a@x.com'], to: ['a@x.com', 'b@x.com'] },
-    });
-  });
-
-  it('detects added and removed leaves', () => {
-    expect(diffLeaves({ a: 1 }, { b: 2 })).toEqual({
-      a: { from: 1, to: null },
-      b: { from: null, to: 2 },
-    });
-  });
-});
-
-describe('pickSnapshot', () => {
-  it('captures the requested keys, defaulting missing ones to null', () => {
-    const entity = { status: 'ACCEPTED', data: { a: 1 } };
-    expect(pickSnapshot(entity, ['status', 'data', 'missing'])).toEqual({
-      status: 'ACCEPTED',
-      data: { a: 1 },
-      missing: null,
-    });
-  });
-});
-
-describe('composeChangeSet', () => {
-  it('omits empty sections', () => {
-    expect(composeChangeSet({})).toEqual({});
-    expect(composeChangeSet({ a: { from: 1, to: 2 } }, {})).toEqual({
-      fields: { a: { from: 1, to: 2 } },
-    });
-  });
-
-  it('includes both sections when present', () => {
     expect(
-      composeChangeSet(
-        { status: { from: 'A', to: 'B' } },
-        { name: { from: 'x', to: 'y' } },
+      changedLeafPaths(
+        { emails: ['a@x.com'] },
+        { emails: ['a@x.com', 'b'] },
+        'data',
       ),
-    ).toEqual({
-      fields: { status: { from: 'A', to: 'B' } },
-      data: { name: { from: 'x', to: 'y' } },
-    });
+    ).toEqual(['data.emails']);
+  });
+
+  it('detects added and removed leaves but ignores null/absent flips', () => {
+    expect(
+      changedLeafPaths({ a: 1, n: null }, { b: 2 }, 'data').sort(),
+    ).toEqual(['data.a', 'data.b']);
+  });
+
+  it('traces arrays of objects positionlessly with a `*` segment', () => {
+    const before = { contacts: [{ name: 'Ann', phone: '1' }] };
+    const after = { contacts: [{ name: 'Bob', phone: '1' }] };
+
+    expect(changedLeafPaths(before, after, 'data')).toEqual([
+      'data.contacts.*.name',
+    ]);
+  });
+
+  it('treats row reordering in an array of objects as no change', () => {
+    const before = { contacts: [{ name: 'Ann' }, { name: 'Bob' }] };
+    const after = { contacts: [{ name: 'Bob' }, { name: 'Ann' }] };
+
+    expect(changedLeafPaths(before, after, 'data')).toEqual([]);
+  });
+
+  it('reports the affected sub-path when a row is added', () => {
+    const before = { contacts: [{ name: 'Ann' }] };
+    const after = { contacts: [{ name: 'Ann' }, { name: 'Bob' }] };
+
+    expect(changedLeafPaths(before, after, 'data')).toContain(
+      'data.contacts.*.name',
+    );
   });
 });
 
-describe('isEmptyChangeSet', () => {
-  it('is true for an empty object and false when sections are present', () => {
-    expect(isEmptyChangeSet({})).toBe(true);
-    expect(isEmptyChangeSet({ fields: { a: { from: 1, to: 2 } } })).toBe(false);
-    expect(isEmptyChangeSet({ snapshot: { a: 1 } })).toBe(false);
+describe('composeChangedFields', () => {
+  it('merges, de-duplicates and sorts', () => {
+    expect(
+      composeChangedFields(['status'], ['data.b', 'data.a'], ['status']),
+    ).toEqual(['data.a', 'data.b', 'status']);
   });
 });

@@ -7,7 +7,8 @@ declare global {
 
     type RegistrationCampData = Record<string, unknown[]>;
 
-    type AuditChangeSet =
-      import('@camp-registration/common/entities').AuditChangeSet;
+    // Names of the fields that changed (`status`, `data.allergies`, …) — never
+    // their values. Null for create/delete events.
+    type AuditChangedFields = string[];
   }
 }

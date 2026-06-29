@@ -1,23 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import {
-  registrationAuditPolicy,
-  registrationInitialChange,
-} from '#app/registration/registration.audit';
-import type {
-  AuditChangeSet,
-  AuditEntityType,
-} from '@camp-registration/common/entities';
+import { registrationAuditPolicy } from '#app/registration/registration.audit';
+import type { AuditEntityType } from '@camp-registration/common/entities';
 
 // The policy is typed against the Prisma `Registration`; tests exercise behaviour
 // with plain fixtures, so view it through a loose structural type.
 const policy = registrationAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changeSet(before: unknown, after: unknown): AuditChangeSet;
-  snapshot(entity: unknown): Record<string, unknown>;
+  changedFields(before: unknown, after: unknown): string[];
 };
 
-describe('registrationAuditPolicy.changeSet', () => {
-  it('excludes computed columns and includes status + data leaves', () => {
+describe('registrationAuditPolicy.changedFields', () => {
+  it('excludes computed columns and reports status + data leaf paths', () => {
     const before = {
       status: 'PENDING',
       customData: {},
@@ -34,37 +27,21 @@ describe('registrationAuditPolicy.changeSet', () => {
       data: { firstName: 'Bob', notes: 'x' },
     };
 
-    const changes = policy.changeSet(before, after);
-
-    expect(changes.fields).toEqual({
-      status: { from: 'PENDING', to: 'ACCEPTED' },
-    });
-    expect(changes.data).toEqual({ firstName: { from: 'Ann', to: 'Bob' } });
-    expect(changes.fields).not.toHaveProperty('country');
-    expect(changes.fields).not.toHaveProperty('firstName');
+    expect(policy.changedFields(before, after)).toEqual([
+      'data.firstName',
+      'status',
+    ]);
   });
 
-  it('produces an empty change set when nothing relevant changed', () => {
+  it('reports customData changes by full leaf path', () => {
+    const before = { status: 'PENDING', customData: { flag: false }, data: {} };
+    const after = { status: 'PENDING', customData: { flag: true }, data: {} };
+
+    expect(policy.changedFields(before, after)).toEqual(['customData.flag']);
+  });
+
+  it('reports nothing when nothing relevant changed', () => {
     const reg = { status: 'PENDING', customData: {}, data: { a: 1 } };
-    expect(policy.changeSet(reg, { ...reg })).toEqual({});
-  });
-});
-
-describe('registrationAuditPolicy.snapshot', () => {
-  it('captures source-of-truth fields', () => {
-    const snapshot = policy.snapshot({
-      firstName: 'Ann',
-      status: 'ACCEPTED',
-      data: { a: 1 },
-    });
-    expect(snapshot).toMatchObject({ firstName: 'Ann', status: 'ACCEPTED' });
-  });
-});
-
-describe('registrationInitialChange', () => {
-  it('records the initial status as a from=null transition', () => {
-    expect(registrationInitialChange('WAITLISTED')).toEqual({
-      fields: { status: { from: null, to: 'WAITLISTED' } },
-    });
+    expect(policy.changedFields(reg, { ...reg })).toEqual([]);
   });
 });

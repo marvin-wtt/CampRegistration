@@ -1,6 +1,5 @@
 import { JsonResource } from '#core/resource/JsonResource';
 import type {
-  AuditChangeSet,
   AuditEntityType,
   AuditLogEntry,
 } from '@camp-registration/common/entities';
@@ -19,7 +18,7 @@ export class AuditResource extends JsonResource<
       entityId: log.entityId,
       campId: log.campId,
       actor,
-      changes: (log.changes as AuditChangeSet | null) ?? null,
+      changedFields: log.changes ?? null,
       createdAt: log.createdAt.toISOString(),
     };
   }
