@@ -296,17 +296,19 @@ const priorityOptions = computed<QSelectOption[]>(() => [
   },
 ]);
 
-const recipientCount = computed<number>(() => {
+function recipientIds(contacts: Contact[]): Set<string> {
   const ids = new Set<string>();
-  to.value.forEach((contact) => {
+  contacts.forEach((contact) => {
     if (contact.type === 'group') {
       contact.registrations.forEach((r: Registration) => ids.add(r.id));
     } else {
       ids.add(contact.registration.id);
     }
   });
-  return ids.size;
-});
+  return ids;
+}
+
+const recipientCount = computed<number>(() => recipientIds(to.value).size);
 
 const priorityIcon = computed<string>(() => {
   switch (priority.value) {
@@ -451,14 +453,33 @@ function reset() {
   void nextTick(() => formRef.value?.resetValidation());
 }
 
-// Whether the user has composed content that would be lost on navigation. The
-// reply-to is excluded because it is derived automatically rather than authored.
+function sameIds(a: Set<string>, b: Set<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function attachmentsChanged(): boolean {
+  const baseline = draft?.attachments ?? [];
+  if (attachments.value.length !== baseline.length) {
+    return true;
+  }
+  const baselineIds = new Set(baseline.map((file) => file.id));
+  // An attachment still uploading (no id) is always a change.
+  return attachments.value.some(
+    (file) => file.id === undefined || !baselineIds.has(file.id),
+  );
+}
+
+// Whether the user has changed anything relative to the pristine state the form
+// was initialised with: recipients from `initialContacts` and message content
+// from `draft` (all empty when composing a new message). The reply-to is
+// excluded because it is derived automatically rather than authored.
 const dirty = computed<boolean>(() => {
   return (
-    recipientCount.value > 0 ||
-    subject.value.length > 0 ||
-    text.value.length > 0 ||
-    attachments.value.length > 0
+    !sameIds(recipientIds(to.value), recipientIds(initialContacts ?? [])) ||
+    subject.value !== (draft?.subject ?? '') ||
+    text.value !== (draft?.body ?? '') ||
+    priority.value !== (draft?.priority ?? 'normal') ||
+    attachmentsChanged()
   );
 });
 
