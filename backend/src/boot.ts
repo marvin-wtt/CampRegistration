@@ -1,31 +1,6 @@
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
-import { AuthModule } from '#app/auth/auth.module';
-import { CampModule } from '#app/camp/camp.module';
-import { RegistrationModule } from '#app/registration/registration.module';
-import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
-import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
-import { MessageDeliveryModule } from '#app/messageDelivery/message-delivery.module';
-import { MessageTemplateModule } from '#app/messageTemplate/message-template.module';
-import { MessageModule } from '#app/message/message.module';
-import { RoomModule } from '#app/room/room.module';
-import { BedModule } from '#app/bed/bed.module';
-import { FeedbackModule } from '#app/feedback/feedback.module';
-import { ProfileModule } from '#app/profile/profile.module';
-import { TotpModule } from '#app/totp/totp.module';
-import { UserModule } from '#app/user/user.module';
-import { SetupModule } from '#app/setup/setup.module';
-import { FileModule } from '#app/file/file.module';
-import { TokenModule } from '#app/token/token.module';
-import { HealthModule } from '#app/health/health.module';
-import { QueueModule } from '#app/queue/queue.module';
-import { ProgramEventModule } from '#app/programEvent/program-event.module';
-import { MailModule } from '#app/mail/mail.module';
-import { NewsletterModule } from '#app/newsletter/newsletter.module';
-import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
-import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
-import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
-import { AuditModule } from '#app/audit/audit.module';
+import { createModules } from './modules.js';
 import {
   campPermissionRegistry,
   newsletterPermissionRegistry,
@@ -35,64 +10,33 @@ import { JobScheduler } from '#core/scheduler/JobScheduler';
 import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container, resolve } from '#core/ioc/container';
+import logger from '#core/logger';
 
 let modules: AppModule[] = [];
-
-const loadModules = () =>
-  // Modules in order
-  (modules = [
-    new MailModule(),
-    new HealthModule(),
-    new QueueModule(),
-    new AuditModule(),
-    new TokenModule(),
-    new AuthModule(),
-    new SetupModule(),
-    new TotpModule(),
-    new ProfileModule(),
-    new FileModule(),
-    new CampModule(),
-    new UserModule(),
-    new RegistrationModule(),
-    new TableTemplateModule(),
-    new CampManagerModule(),
-    new MessageDeliveryModule(),
-    new MessageModule(),
-    new MessageTemplateModule(),
-    new RoomModule(),
-    new BedModule(),
-    new ProgramEventModule(),
-    new FeedbackModule(),
-    new NewsletterModule(),
-    new NewsletterSubscriberModule(),
-    new NewsletterManagerModule(),
-    new NewsletterMessageModule(),
-  ]);
 
 export async function boot() {
   await verifyDatabaseConnection();
 
   await initI18n();
 
-  loadModules();
+  modules = createModules();
 
-  await bootModules();
+  bindModuleContainers(modules);
+  await configureModules(modules);
+  registerModulePermissions(modules);
+  registerModuleRoutes(modules);
+  registerModuleJobs(modules);
 }
 
 export async function shutdown() {
-  stopJobs();
+  resolve(JobScheduler).stop();
 
-  await shutdownModules();
+  await shutdownModules(modules);
 
   await disconnectDatabase();
 }
 
-function stopJobs() {
-  resolve(JobScheduler).stop();
-}
-
-async function bootModules() {
-  // Bind module services
+function bindModuleContainers(modules: AppModule[]) {
   container.load(
     ...modules.map(
       (module) =>
@@ -101,15 +45,15 @@ async function bootModules() {
         }),
     ),
   );
+}
 
-  // Configure modules
+async function configureModules(modules: AppModule[]) {
   for (const module of modules) {
-    if (module.configure) {
-      await module.configure({});
-    }
+    await module.configure?.({});
   }
+}
 
-  // Register permissions
+function registerModulePermissions(modules: AppModule[]) {
   for (const module of modules) {
     if (module.registerPermissions) {
       campPermissionRegistry.registerAll(module.registerPermissions());
@@ -120,27 +64,33 @@ async function bootModules() {
       );
     }
   }
+}
 
-  // Register routes
+function registerModuleRoutes(modules: AppModule[]) {
   for (const module of modules) {
-    if (module.registerRoutes) {
-      module.registerRoutes(apiRouter);
-    }
-  }
-
-  // Register recurring jobs
-  const scheduler = resolve(JobScheduler);
-  for (const module of modules) {
-    if (module.registerJobs) {
-      module.registerJobs(scheduler);
-    }
+    module.registerRoutes?.(apiRouter);
   }
 }
 
-async function shutdownModules() {
+function registerModuleJobs(modules: AppModule[]) {
+  const scheduler = resolve(JobScheduler);
   for (const module of modules) {
-    if (module.shutdown) {
-      await module.shutdown();
+    module.registerJobs?.(scheduler);
+  }
+}
+
+// Modules are shut down in reverse boot order so that later modules can rely
+// on earlier ones during teardown (e.g. queue handlers still need the mail
+// transport). A failing module must not prevent the remaining cleanup.
+async function shutdownModules(modules: AppModule[]) {
+  for (const module of modules.toReversed()) {
+    try {
+      await module.shutdown?.();
+    } catch (err: unknown) {
+      logger.error(
+        `Failed to shut down module ${module.constructor.name}`,
+        err,
+      );
     }
   }
 }
