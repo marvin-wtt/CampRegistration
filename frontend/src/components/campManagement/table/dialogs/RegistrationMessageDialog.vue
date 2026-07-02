@@ -4,6 +4,7 @@
     :maximized="quasar.screen.lt.sm"
     :full-height="quasar.screen.lt.sm"
     :full-width="quasar.screen.lt.sm"
+    :persistent="dirty"
     @hide="onDialogHide"
   >
     <q-card class="column message-dialog-card">
@@ -26,6 +27,7 @@
       </q-bar>
 
       <contact-form
+        ref="contactFormRef"
         class="col"
         :registrations
         :initial-contacts="initialContacts"
@@ -38,7 +40,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from '@/components/campManagement/contact/Contact';
 import ContactForm from '@/components/campManagement/contact/ContactForm.vue';
@@ -59,6 +61,12 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const registrationStore = useRegistrationsStore();
 const { fullName, role } = useRegistrationHelper();
+
+const contactFormRef = ref<{ dirty: boolean } | null>(null);
+
+// Keep the dialog open (no backdrop/Esc dismiss) while the composer holds
+// unsent content so it can't be discarded by accident.
+const dirty = computed<boolean>(() => contactFormRef.value?.dirty ?? false);
 
 const registrations = computed<Registration[]>(() => {
   return registrationStore.data ?? [registration];

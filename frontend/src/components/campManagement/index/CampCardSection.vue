@@ -53,7 +53,7 @@
         v-show="open"
         class="results-grid"
       >
-        <results-item
+        <camp-card
           v-for="camp in camps"
           :key="camp.id"
           :camp
@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItem from '@/components/campManagement/index/ResultsItem.vue';
+import CampCard from '@/components/campManagement/index/CampCard.vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { ref } from 'vue';
 

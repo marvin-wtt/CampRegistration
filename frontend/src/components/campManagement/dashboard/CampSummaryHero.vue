@@ -28,6 +28,19 @@
             />
             {{ registrationStatus.label }}
           </span>
+          <button
+            v-if="registrationStatus.open"
+            type="button"
+            class="status-pill copy-link-pill"
+            @click="copyRegistrationLink"
+          >
+            <q-icon
+              name="link"
+              size="17px"
+            />
+            {{ t('copyLink.label') }}
+            <q-tooltip>{{ t('copyLink.tooltip') }}</q-tooltip>
+          </button>
         </div>
 
         <div class="hero-copy">
@@ -131,6 +144,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+import { copyToClipboard, useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useCampStatistics } from '@/composables/campStatistics';
@@ -138,6 +153,8 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
+const router = useRouter();
+const quasar = useQuasar();
 const campDetailsStore = useCampDetailsStore();
 const stats = useCampStatistics();
 
@@ -191,7 +208,12 @@ const countdown = computed<string | undefined>(() => {
 const registrationStatus = computed(() => {
   const c = camp.value;
   if (!c || (!c.registrationOpensAt && !c.registrationClosesAt)) {
-    return { label: t('registration.unset'), tone: 'neutral', icon: 'help' };
+    return {
+      label: t('registration.unset'),
+      tone: 'neutral',
+      icon: 'help',
+      open: false,
+    };
   }
   const now = new Date();
   const opensAt = c.registrationOpensAt
@@ -206,6 +228,7 @@ const registrationStatus = computed(() => {
       label: t('registration.upcoming'),
       tone: 'info',
       icon: 'schedule',
+      open: false,
     };
   }
   if (closesAt && now > closesAt) {
@@ -213,14 +236,41 @@ const registrationStatus = computed(() => {
       label: t('registration.closed'),
       tone: 'neutral',
       icon: 'lock',
+      open: false,
     };
   }
   return {
     label: t('registration.open'),
     tone: 'positive',
     icon: 'lock_open',
+    open: true,
   };
 });
+
+async function copyRegistrationLink() {
+  const campId = camp.value?.id;
+  if (!campId) {
+    return;
+  }
+
+  const url =
+    window.location.origin +
+    router.resolve({ name: 'camp', params: { campId } }).href;
+
+  try {
+    await copyToClipboard(url);
+    quasar.notify({
+      type: 'positive',
+      message: t('copyLink.success'),
+      icon: 'assignment_turned_in',
+    });
+  } catch {
+    quasar.notify({
+      type: 'negative',
+      message: t('copyLink.fail'),
+    });
+  }
+}
 
 const capacity = computed(() => ({
   accepted: stats.counts.value.accepted,
@@ -359,6 +409,24 @@ function daysFromNow(date: string): number {
   background: var(--md3-surface-container-highest);
 }
 
+.copy-link-pill {
+  color: var(--md3-on-secondary-container);
+  background: var(--md3-secondary-container);
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.copy-link-pill:hover,
+.copy-link-pill:focus-visible {
+  box-shadow: 0 2px 8px rgba(38, 50, 56, 0.16);
+  outline: none;
+}
+
 .camp-meta {
   display: flex;
   flex-wrap: wrap;
@@ -448,6 +516,20 @@ function daysFromNow(date: string): number {
     padding: 18px;
   }
 
+  .status-chips {
+    gap: 6px;
+  }
+
+  .status-pill {
+    min-height: 28px;
+    padding: 3px 10px;
+    font-size: 0.72rem;
+  }
+
+  .status-pill :deep(.q-icon) {
+    font-size: 15px !important;
+  }
+
   .camp-title {
     font-size: 1.6rem;
   }
@@ -493,6 +575,11 @@ registration:
   closed: 'Registration closed'
   upcoming: 'Registration upcoming'
   unset: 'No registration dates'
+copyLink:
+  label: 'Copy link'
+  tooltip: 'Copy the public registration form link'
+  success: 'Link copied to clipboard'
+  fail: 'Failed to copy link to clipboard'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -514,6 +601,11 @@ registration:
   closed: 'Anmeldung geschlossen'
   upcoming: 'Anmeldung bevorstehend'
   unset: 'Keine Anmeldedaten'
+copyLink:
+  label: 'Link kopieren'
+  tooltip: 'Link zum öffentlichen Anmeldeformular kopieren'
+  success: 'Link in die Zwischenablage kopiert'
+  fail: 'Link konnte nicht kopiert werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -535,6 +627,11 @@ registration:
   closed: 'Inscription fermée'
   upcoming: 'Inscription à venir'
   unset: "Aucune date d'inscription"
+copyLink:
+  label: 'Copier le lien'
+  tooltip: "Copier le lien du formulaire d'inscription public"
+  success: 'Lien copié dans le presse-papiers'
+  fail: 'Échec de la copie du lien'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -556,6 +653,11 @@ registration:
   closed: 'Rejestracja zamknięta'
   upcoming: 'Rejestracja wkrótce'
   unset: 'Brak dat rejestracji'
+copyLink:
+  label: 'Kopiuj link'
+  tooltip: 'Skopiuj link do publicznego formularza rejestracji'
+  success: 'Link skopiowany do schowka'
+  fail: 'Nie udało się skopiować linku'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -577,4 +679,9 @@ registration:
   closed: 'Registrace uzavřena'
   upcoming: 'Registrace již brzy'
   unset: 'Žádná data registrace'
+copyLink:
+  label: 'Kopírovat odkaz'
+  tooltip: 'Zkopírovat odkaz na veřejný registrační formulář'
+  success: 'Odkaz zkopírován do schránky'
+  fail: 'Odkaz se nepodařilo zkopírovat'
 </i18n>

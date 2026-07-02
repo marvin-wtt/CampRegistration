@@ -3,7 +3,8 @@ import './mocks/mockRateLimiter.js';
 import resetDb from './utils/reset-db.js';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import fse from 'fs-extra';
-import { stopJobs } from '#jobs/index';
+import { resolve } from '#core/ioc/container';
+import { JobScheduler } from '#core/scheduler/JobScheduler';
 import { Express } from 'express';
 import { boot, shutdown } from '#boot.js';
 import { createApp } from '#app.js';
@@ -27,8 +28,6 @@ export async function restartApp() {
 }
 
 export async function stopApp() {
-  stopJobs();
-
   await shutdown();
 }
 
@@ -40,7 +39,7 @@ beforeEach(async () => {
   await resetDb();
   await clearDirectory(path.join(__dirname, '..', 'tmp', 'storage', 'tmp'));
   await clearDirectory(path.join(__dirname, '..', 'tmp', 'storage', 'uploads'));
-  stopJobs();
+  resolve(JobScheduler).stop();
 });
 
 async function clearDirectory(directory: string) {

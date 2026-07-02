@@ -135,7 +135,7 @@
         </div>
 
         <div class="row q-col-gutter-md">
-          <div class="col-6 col-md-3">
+          <div class="col-6 col-md-3 col-xs-12">
             <stat-card
               :label="t('kpi.registrations')"
               :value="stats.counts.value.total"
@@ -146,7 +146,7 @@
           </div>
           <div
             v-if="showPending"
-            class="col-6 col-md-3"
+            class="col-6 col-md-3 col-xs-12"
           >
             <stat-card
               :label="t('kpi.pending')"
@@ -156,7 +156,7 @@
               color="orange"
             />
           </div>
-          <div class="col-6 col-md-3">
+          <div class="col-6 col-md-3 col-xs-12">
             <stat-card
               :label="t('kpi.waitlisted')"
               :value="stats.counts.value.waitlisted"
@@ -165,7 +165,7 @@
               color="blue-grey"
             />
           </div>
-          <div class="col-6 col-md-3">
+          <div class="col-6 col-md-3 col-xs-12">
             <stat-card
               :label="t('kpi.team')"
               :value="stats.staff.value.length"

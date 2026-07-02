@@ -159,7 +159,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'participants',
                 name: 'management.camp.participants',
                 component: () =>
-                  import('@/pages/campManagement/ParticipantsIndexPage.vue'),
+                  import('@/pages/campManagement/RegistrationsPage.vue'),
               },
               {
                 path: 'contact',

@@ -34,7 +34,7 @@
         v-if="loading"
         class="results-grid"
       >
-        <results-item-skeleton
+        <camp-card-skeleton
           v-for="index in 6"
           :key="index"
         />
@@ -70,7 +70,7 @@
 
       <!-- Timeline groups -->
       <template v-else>
-        <results-list
+        <camp-card-section
           v-for="group in groups"
           :key="group.key"
           :header="group.header"
@@ -78,7 +78,7 @@
           :camps="group.camps"
         />
 
-        <results-list
+        <camp-card-section
           v-if="archivedCamps.length"
           :header="t('group.archived')"
           icon="inventory_2"
@@ -98,8 +98,8 @@ import type { Camp } from '@camp-registration/common/entities';
 import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
-import ResultsList from '@/components/campManagement/index/ResultsList.vue';
-import ResultsItemSkeleton from '@/components/campManagement/index/ResultsItemSkeleton.vue';
+import CampCardSection from '@/components/campManagement/index/CampCardSection.vue';
+import CampCardSkeleton from '@/components/campManagement/index/CampCardSkeleton.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import CampCreateDialog from '@/components/campManagement/index/CampCreateDialog.vue';
 import { phaseOf, type CampPhase } from '@/utils/campPhase';

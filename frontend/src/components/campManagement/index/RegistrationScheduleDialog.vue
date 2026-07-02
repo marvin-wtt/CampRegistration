@@ -118,7 +118,7 @@
 </template>
 
 <script lang="ts">
-export interface RegistrationResult {
+export interface RegistrationScheduleResult {
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
 }
@@ -222,7 +222,7 @@ function onSave() {
   onDialogOK({
     registrationOpensAt: opensAt.value || null,
     registrationClosesAt: closesAt.value || null,
-  } satisfies RegistrationResult);
+  } satisfies RegistrationScheduleResult);
 }
 </script>
 
