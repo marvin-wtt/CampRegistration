@@ -1,5 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
 import { RequestContext } from '#core/context/RequestContext';
+import logger from '#core/logger';
 import { inject, injectable } from 'inversify';
 import {
   type AuditLog,
@@ -17,6 +18,12 @@ import type { AuditChangePolicy } from '#app/audit/audit.policy';
 export type PrismaTransaction = Parameters<
   Parameters<PrismaClient['$transaction']>[0]
 >[0];
+
+// Audit entries are retained for this many days, then purged. Defense-in-depth
+// against indefinite retention of the PII some entries carry (data diffs,
+// delete snapshots). Adjust to your jurisdiction's accountability requirements.
+const AUDIT_RETENTION_DAYS = 365 * 2;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface AuditRecordInput {
   action: string;
@@ -140,5 +147,12 @@ export class AuditService extends BaseService {
       where: { createdAt: { lt: cutoff } },
     });
     return count;
+  }
+
+  /** Enforces the audit-log retention policy by purging expired entries. */
+  async purgeExpiredAuditLogs(): Promise<void> {
+    const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);
+    const count = await this.purgeOlderThan(cutoff);
+    logger.info(`Removed ${count.toString()} audit log entry(ies).`);
   }
 }
