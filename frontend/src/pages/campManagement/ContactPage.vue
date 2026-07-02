@@ -2,6 +2,7 @@
   <page-state-handler
     :error
     :loading
+    :prevent-leave="preventLeave"
     class="column"
   >
     <!-- Empty state -->
@@ -48,6 +49,7 @@
 
       <contact-form
         v-if="canSend"
+        ref="contactFormRef"
         class="col"
         :registrations
         :draft
@@ -81,6 +83,12 @@ const campDetailsStore = useCampDetailsStore();
 
 const sentMessages = ref<Message[]>([]);
 const draft = ref<ContactDraft | null>(null);
+const contactFormRef = ref<{ dirty: boolean } | null>(null);
+
+// Guard against navigating away while the composer holds unsent content.
+const preventLeave = computed<boolean>(
+  () => contactFormRef.value?.dirty ?? false,
+);
 
 onMounted(async () => {
   await Promise.all([

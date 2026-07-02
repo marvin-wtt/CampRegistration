@@ -1,4 +1,5 @@
 import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
+import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { FileRouter } from '#app/file/file.routes';
 import { unregisterAllFileGuards } from '#app/file/file.guard';
 import { FileService } from '#app/file/file.service';
@@ -14,6 +15,18 @@ export class FileModule implements AppModule {
 
   registerRoutes(router: AppRouter) {
     router.useRouter('/files', resolve(FileRouter));
+  }
+
+  registerJobs(scheduler: JobScheduler): void {
+    scheduler.schedule('tmp-file-cleanup', '0 4 * * *', () =>
+      resolve(FileService).deleteTempFiles(),
+    );
+    scheduler.schedule('unused-file-cleanup', '15 4 * * *', () =>
+      resolve(FileService).deleteUnreferencedFiles(),
+    );
+    scheduler.schedule('unassigned-file-cleanup', '30 4 * * *', () =>
+      resolve(FileService).deleteUnassignedFiles(),
+    );
   }
 
   async shutdown() {

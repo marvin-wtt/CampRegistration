@@ -31,10 +31,10 @@ import {
   newsletterPermissionRegistry,
 } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
-import { startJobs, stopJobs } from '#jobs';
+import { JobScheduler } from '#core/scheduler/JobScheduler';
 import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
-import { container } from '#core/ioc/container';
+import { container, resolve } from '#core/ioc/container';
 
 let modules: AppModule[] = [];
 
@@ -77,8 +77,6 @@ export async function boot() {
   loadModules();
 
   await bootModules();
-
-  startJobs();
 }
 
 export async function shutdown() {
@@ -87,6 +85,10 @@ export async function shutdown() {
   await shutdownModules();
 
   await disconnectDatabase();
+}
+
+function stopJobs() {
+  resolve(JobScheduler).stop();
 }
 
 async function bootModules() {
@@ -123,6 +125,14 @@ async function bootModules() {
   for (const module of modules) {
     if (module.registerRoutes) {
       module.registerRoutes(apiRouter);
+    }
+  }
+
+  // Register recurring jobs
+  const scheduler = resolve(JobScheduler);
+  for (const module of modules) {
+    if (module.registerJobs) {
+      module.registerJobs(scheduler);
     }
   }
 }
