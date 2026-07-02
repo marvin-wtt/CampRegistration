@@ -516,6 +516,20 @@ function daysFromNow(date: string): number {
     padding: 18px;
   }
 
+  .status-chips {
+    gap: 6px;
+  }
+
+  .status-pill {
+    min-height: 28px;
+    padding: 3px 10px;
+    font-size: 0.72rem;
+  }
+
+  .status-pill :deep(.q-icon) {
+    font-size: 15px !important;
+  }
+
   .camp-title {
     font-size: 1.6rem;
   }
