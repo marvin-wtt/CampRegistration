@@ -262,14 +262,14 @@ import type {
   CampDetails,
   TableColumnTemplate,
 } from '@camp-registration/common/entities';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import ToggleItem from 'components/common/ToggleItem.vue';
-import { extractFormFields } from 'src/utils/surveyJS';
-import type { PartialBy } from 'src/types';
-import { deepToRaw } from 'src/utils/deepToRaw';
-import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import ComponentRegistry from '@/components/campManagement/table/ComponentRegistry';
+import ToggleItem from '@/components/common/ToggleItem.vue';
+import { extractFormFields } from '@/utils/surveyJS';
+import type { PartialBy } from '@/types';
+import { deepToRaw } from '@/utils/deepToRaw';
+import { FormSelectCache } from '@/components/campManagement/table/tableCells/FormSelectCache';
 
 const { camp, column } = defineProps<{
   column: TableColumnTemplate;

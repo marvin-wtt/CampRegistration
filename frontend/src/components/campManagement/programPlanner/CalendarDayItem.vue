@@ -32,8 +32,8 @@
 <script lang="ts" setup>
 import type { ProgramEvent } from '@camp-registration/common/entities';
 import { computed, ref, type StyleValue } from 'vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import CalendarItemPopup from '@/components/campManagement/programPlanner/CalendarItemPopup.vue';
 
 const {
   event,

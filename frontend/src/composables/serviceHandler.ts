@@ -3,10 +3,10 @@ import {
   type QNotifyUpdateOptions,
   useQuasar,
 } from 'quasar';
-import { hasMessage } from 'src/composables/errorChecker';
+import { hasMessage } from '@/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
-import { isAPIServiceError } from 'src/services/APIService';
+import { isAPIServiceError } from '@/services/APIService';
 import { useRoute } from 'vue-router';
 
 export interface ProgressOptions {

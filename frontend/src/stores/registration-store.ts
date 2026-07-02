@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type {
   Registration,
   RegistrationCreateData,
@@ -8,12 +8,8 @@ import type {
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import {
-  useAuthBus,
-  useCampBus,
-  useRegistrationBus,
-} from 'src/composables/bus';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus, useRegistrationBus } from '@/composables/bus';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();

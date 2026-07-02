@@ -5,9 +5,9 @@ import type {
   TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
 
 export const useTemplateStore = defineStore('templates', () => {
   const route = useRoute();

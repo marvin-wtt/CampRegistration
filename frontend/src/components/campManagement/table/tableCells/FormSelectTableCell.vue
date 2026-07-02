@@ -3,10 +3,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 import { computed } from 'vue';
-import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { FormSelectCache } from '@/components/campManagement/table/tableCells/FormSelectCache';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { props: cellProps, camp } = defineProps<TableCellProps>();
 const { to } = useObjectTranslation();

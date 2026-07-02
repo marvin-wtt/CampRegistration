@@ -2,7 +2,7 @@ import type { Registration } from '@camp-registration/common/entities';
 import type {
   Token,
   TokenRegistry,
-} from 'components/campManagement/contact/TokenRegistry';
+} from '@/components/campManagement/contact/TokenRegistry';
 
 type Dot<S extends string> = S extends '' ? '' : `.${S}`;
 

@@ -128,7 +128,7 @@ export interface RegistrationResult {
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
-import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
+import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

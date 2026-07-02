@@ -1,5 +1,5 @@
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import { getSelectOptions } from 'src/utils/surveyJS';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import { getSelectOptions } from '@/utils/surveyJS';
 
 type Entry = Record<string, string | Record<string, string>>;
 

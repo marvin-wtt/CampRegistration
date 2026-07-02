@@ -16,16 +16,16 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted } from 'vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import ProgramCalendar from 'components/campManagement/programPlanner/ProgramCalendar.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import ProgramCalendar from '@/components/campManagement/programPlanner/ProgramCalendar.vue';
 import { storeToRefs } from 'pinia';
 import type {
   ProgramEventCreateData,
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
-import { useProgramPlannerStore } from 'stores/program-planner-store';
+import { useProgramPlannerStore } from '@/stores/program-planner-store';
 
 const programPlannerStore = useProgramPlannerStore();
 const { data: events } = storeToRefs(programPlannerStore);

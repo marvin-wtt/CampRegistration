@@ -170,8 +170,8 @@ import type {
   ServiceFileUpdateData,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { useCampFilesStore } from 'stores/camp-files-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useCampFilesStore } from '@/stores/camp-files-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 
 const MAX_FIELD_LENGTH = 40;
 const FALLBACK_FIELD_NAME = 'file';

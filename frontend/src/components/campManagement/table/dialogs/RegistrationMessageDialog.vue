@@ -40,11 +40,11 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Registration } from '@camp-registration/common/entities';
-import type { Contact } from 'components/campManagement/contact/Contact';
-import ContactForm from 'components/campManagement/contact/ContactForm.vue';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { formatPersonName } from 'src/utils/formatters';
+import type { Contact } from '@/components/campManagement/contact/Contact';
+import ContactForm from '@/components/campManagement/contact/ContactForm.vue';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { formatPersonName } from '@/utils/formatters';
 
 const quasar = useQuasar();
 const { t } = useI18n();

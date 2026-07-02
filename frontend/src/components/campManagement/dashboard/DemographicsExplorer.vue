@@ -153,8 +153,8 @@ import type { Registration } from '@camp-registration/common/entities';
 import {
   useCampStatistics,
   type Dimension,
-} from 'src/composables/campStatistics';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
+} from '@/composables/campStatistics';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 const { people } = defineProps<{
   people: Registration[];

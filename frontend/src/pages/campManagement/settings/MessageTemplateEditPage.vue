@@ -146,18 +146,18 @@
 </template>
 
 <script setup lang="ts">
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import MessageEditDialog from 'components/campManagement/settings/emails/MessageEditDialog.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import MessageEditDialog from '@/components/campManagement/settings/emails/MessageEditDialog.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type { MessageTemplate } from '@camp-registration/common/entities';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { usePermissions } from 'src/composables/permissions';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { usePermissions } from '@/composables/permissions';
 import { storeToRefs } from 'pinia';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const {
   queryParam,

@@ -101,7 +101,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 

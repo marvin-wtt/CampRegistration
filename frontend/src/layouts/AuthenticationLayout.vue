@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { onMounted } from 'vue';
 
 const authStore = useAuthStore();

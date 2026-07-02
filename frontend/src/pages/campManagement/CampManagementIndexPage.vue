@@ -95,14 +95,14 @@
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useAssignedCampsStore } from 'stores/assigned-camps-store';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
-import ResultsList from 'components/campManagement/index/ResultsList.vue';
-import ResultsItemSkeleton from 'components/campManagement/index/ResultsItemSkeleton.vue';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CampCreateDialog from 'components/campManagement/index/CampCreateDialog.vue';
-import { phaseOf, type CampPhase } from 'src/utils/campPhase';
+import ResultsList from '@/components/campManagement/index/ResultsList.vue';
+import ResultsItemSkeleton from '@/components/campManagement/index/ResultsItemSkeleton.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CampCreateDialog from '@/components/campManagement/index/CampCreateDialog.vue';
+import { phaseOf, type CampPhase } from '@/utils/campPhase';
 
 const { t } = useI18n();
 const quasar = useQuasar();

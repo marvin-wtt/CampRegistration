@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus } from '@/composables/bus';
 import type { NewsletterMessage } from '@camp-registration/common/entities';
 
 export const useNewsletterMessageStore = defineStore(

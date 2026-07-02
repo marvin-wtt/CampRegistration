@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 import { useI18n } from 'vue-i18n';
 
 // eslint-disable-next-line @typescript-eslint/unbound-method

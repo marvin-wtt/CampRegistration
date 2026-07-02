@@ -148,18 +148,18 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted } from 'vue';
-import { useNewsletterStore } from 'stores/newsletter-store';
-import { useProfileStore } from 'stores/profile-store';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import { useNewsletterStore } from '@/stores/newsletter-store';
+import { useProfileStore } from '@/stores/profile-store';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import type {
   Newsletter,
   NewsletterCreateData,
   NewsletterUpdateData,
 } from '@camp-registration/common/entities';
-import NewsletterCreateDialog from 'components/newsletter/NewsletterCreateDialog.vue';
-import NewsletterEditDialog from 'components/newsletter/NewsletterEditDialog.vue';
+import NewsletterCreateDialog from '@/components/newsletter/NewsletterCreateDialog.vue';
+import NewsletterEditDialog from '@/components/newsletter/NewsletterEditDialog.vue';
 import { useRouter } from 'vue-router';
 
 const { t } = useI18n();

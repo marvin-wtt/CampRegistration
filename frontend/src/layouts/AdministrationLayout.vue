@@ -95,14 +95,14 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import NavigationItem from 'components/NavigationItem.vue';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
-import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
+import NavigationItem from '@/components/NavigationItem.vue';
+import ProfileMenu from '@/components/common/ProfileMenu.vue';
+import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.vue';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute } from 'vue-router';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useAuthStore } from 'stores/auth-store';
-import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useAuthStore } from '@/stores/auth-store';
+import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 

@@ -134,7 +134,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
-import type { CalendarSettings } from 'components/campManagement/programPlanner/CalendarSettings';
+import type { CalendarSettings } from '@/components/campManagement/programPlanner/CalendarSettings';
 
 const { settings } = defineProps<{
   settings: Partial<CalendarSettings>;

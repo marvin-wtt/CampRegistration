@@ -342,17 +342,17 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
-import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
+import FileUploadDialog from '@/components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
-import { formatBytes } from 'src/utils/formatters/formatBytes';
-import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
-import { useCampFilesStore } from 'stores/camp-files-store';
-import { usePermissions } from 'src/composables/permissions';
+import { formatBytes } from '@/utils/formatters/formatBytes';
+import { formatUtcDateTime } from '@/utils/formatters/formatUtcDateTime';
+import { useCampFilesStore } from '@/stores/camp-files-store';
+import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 // eslint-disable-next-line @typescript-eslint/unbound-method

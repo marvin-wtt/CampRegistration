@@ -13,8 +13,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import IconMappingTableCell from 'components/campManagement/table/tableCells/IconMappingTableCell.vue';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import IconMappingTableCell from '@/components/campManagement/table/tableCells/IconMappingTableCell.vue';
 
 const props = defineProps<TableCellProps>();
 </script>

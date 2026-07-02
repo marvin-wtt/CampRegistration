@@ -43,7 +43,7 @@ import { useI18n } from 'vue-i18n';
 import type {
   Token,
   TokenRegistry,
-} from 'components/campManagement/contact/TokenRegistry';
+} from '@/components/campManagement/contact/TokenRegistry';
 import { ref } from 'vue';
 
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();

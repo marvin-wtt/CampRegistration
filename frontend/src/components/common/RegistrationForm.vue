@@ -11,7 +11,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { createMarkdownConverter } from 'src/utils/markdown';
+import { createMarkdownConverter } from '@/utils/markdown';
 import { onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
@@ -19,9 +19,9 @@ import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
   addFileSlotResolver,
-} from 'src/composables/survey';
+} from '@/composables/survey';
 import type { CampDetails } from '@camp-registration/common/entities';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 
 const mdConverter = createMarkdownConverter();
 

@@ -17,16 +17,16 @@
 
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import ResultTableInteractive from 'components/campManagement/table/ResultTableInteractive.vue';
-import { useTemplateStore } from 'stores/template-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import ResultTableInteractive from '@/components/campManagement/table/ResultTableInteractive.vue';
+import { useTemplateStore } from '@/stores/template-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import type { TableColumnTemplate } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { extractFormFields } from 'src/utils/surveyJS';
-import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
-import { openPrintIframe } from 'src/utils/printIframe';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { extractFormFields } from '@/utils/surveyJS';
+import type { PrintTablesPayload } from '@/components/campManagement/table/PrintTablesPayload';
+import { openPrintIframe } from '@/utils/printIframe';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';

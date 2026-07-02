@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItem from 'components/campManagement/index/ResultsItem.vue';
+import ResultsItem from '@/components/campManagement/index/ResultsItem.vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { ref } from 'vue';
 

@@ -254,9 +254,9 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Registration } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { formatPersonName } from 'src/utils/formatters';
-import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { formatPersonName } from '@/utils/formatters';
+import RegistrationDialogHeader from '@/components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 

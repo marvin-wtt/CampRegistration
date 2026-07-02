@@ -74,7 +74,7 @@ import type {
   CampDetails,
   Registration,
 } from '@camp-registration/common/entities';
-import RegistrationForm from 'components/common/RegistrationForm.vue';
+import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 

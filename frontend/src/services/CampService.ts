@@ -5,8 +5,8 @@ import type {
   CampUpdateData,
   CampQuery,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
-import { extendAxiosConfig } from 'src/services/AuthService';
+import { api } from '@/services/api';
+import { extendAxiosConfig } from '@/services/AuthService';
 
 export function useCampService() {
   async function fetchCamps(query?: CampQuery): Promise<Camp[]> {

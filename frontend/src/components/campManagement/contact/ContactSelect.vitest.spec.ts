@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { QSelect } from 'quasar';
-import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
+import ContactSelect from '@/components/campManagement/contact/ContactSelect.vue';
 import type { Registration } from '@camp-registration/common/entities';
-import type { Contact } from 'components/campManagement/contact/Contact';
+import type { Contact } from '@/components/campManagement/contact/Contact';
 
 installQuasarPlugin();
 

@@ -50,7 +50,7 @@ import { useDialogPluginComponent } from 'quasar';
 import type { TableTemplate } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { templates } = defineProps<{
   templates: Pick<TableTemplate, 'title' | 'id' | 'order'>[];

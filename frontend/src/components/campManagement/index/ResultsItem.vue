@@ -151,20 +151,20 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItemMenu from 'components/campManagement/index/ResultsItemMenu.vue';
-import { useCampsStore } from 'stores/camps-store';
+import ResultsItemMenu from '@/components/campManagement/index/ResultsItemMenu.vue';
+import { useCampsStore } from '@/stores/camps-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Camp } from '@camp-registration/common/entities';
 import type { Permission } from '@camp-registration/common/permissions';
 import { computed, type Ref, ref } from 'vue';
-import { useProfileStore } from 'stores/profile-store';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import RegistrationDialog from 'components/campManagement/index/RegistrationDialog.vue';
-import type { RegistrationResult } from 'components/campManagement/index/RegistrationDialog.vue';
-import { usePermissions } from 'src/composables/permissions';
+import { useProfileStore } from '@/stores/profile-store';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import RegistrationDialog from '@/components/campManagement/index/RegistrationDialog.vue';
+import type { RegistrationResult } from '@/components/campManagement/index/RegistrationDialog.vue';
+import { usePermissions } from '@/composables/permissions';
 
 const capsStore = useCampsStore();
 const profileStore = useProfileStore();

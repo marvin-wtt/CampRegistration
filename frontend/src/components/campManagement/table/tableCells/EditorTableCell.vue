@@ -153,17 +153,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 import { computed, ref, watch, watchEffect } from 'vue';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { updateObjectAtPath } from '@/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { usePermissions } from 'src/composables/permissions';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePermissions } from '@/composables/permissions';
 import { useQuasar } from 'quasar';
-import { formatPersonName } from 'src/utils/formatters';
-import { deepToRaw } from 'src/utils/deepToRaw';
-import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
+import { formatPersonName } from '@/utils/formatters';
+import { deepToRaw } from '@/utils/deepToRaw';
+import DefaultTableCell from '@/components/campManagement/table/tableCells/DefaultTableCell.vue';
 
 const {
   props: cellProps,

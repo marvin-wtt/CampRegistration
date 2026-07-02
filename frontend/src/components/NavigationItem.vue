@@ -76,7 +76,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
+import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 
 const route = useRoute();
 

@@ -3,7 +3,7 @@ import type {
   ProgramEventCreateData,
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useProgramEventService() {
   async function fetchProgramEvents(campId: string): Promise<ProgramEvent[]> {

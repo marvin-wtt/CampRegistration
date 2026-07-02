@@ -325,16 +325,16 @@
 import { type QTableColumn } from 'quasar';
 import type { Camp, CampUpdateData } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import TranslationTd from 'components/administration/camps/TranslationTd.vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import TranslationTd from '@/components/administration/camps/TranslationTd.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();

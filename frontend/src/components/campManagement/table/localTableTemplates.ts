@@ -4,7 +4,7 @@ import type {
   TableColumnTemplate,
   TableTemplate,
 } from '@camp-registration/common/entities';
-import type { useRegistrationHelper } from 'src/composables/registrationHelper';
+import type { useRegistrationHelper } from '@/composables/registrationHelper';
 
 /**
  * Hidden, frontend-only table templates.

@@ -70,10 +70,10 @@ import { useI18n } from 'vue-i18n';
 import { type QSelectProps } from 'quasar';
 import type { Registration } from '@camp-registration/common/entities';
 import { computed, ref, watch } from 'vue';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
 import type { NamedColor } from 'quasar';
-import { formatPersonName } from 'src/utils/formatters';
-import { type Contact } from 'components/campManagement/contact/Contact';
+import { formatPersonName } from '@/utils/formatters';
+import { type Contact } from '@/components/campManagement/contact/Contact';
 
 const { t } = useI18n();
 const { fullName, role, country } = useRegistrationHelper();

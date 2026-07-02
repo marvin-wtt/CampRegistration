@@ -1,4 +1,4 @@
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import '@camp-registration/common/form';
 import 'survey-core/i18n/german';
 import 'survey-core/i18n/french';

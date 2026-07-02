@@ -85,17 +85,17 @@
 </template>
 
 <script lang="ts" setup>
-import LocaleSwitch from 'components/common/localization/LocaleSwitch.vue';
+import LocaleSwitch from '@/components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
-import HelpFab from 'components/FeedbackFab.vue';
+import ProfileMenu from '@/components/common/ProfileMenu.vue';
+import HelpFab from '@/components/FeedbackFab.vue';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useAuthStore } from '@/stores/auth-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 
 const { t } = useI18n();

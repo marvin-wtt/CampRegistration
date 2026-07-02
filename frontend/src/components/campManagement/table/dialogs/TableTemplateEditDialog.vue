@@ -216,19 +216,19 @@ import {
   useQuasar,
 } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import type {
   TableTemplate,
   TableColumnTemplate,
   Camp,
 } from '@camp-registration/common/entities';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, ref } from 'vue';
-import SortableList from 'components/common/SortableList.vue';
-import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/TableTemplateColumnEditDialog.vue';
-import type { PartialBy } from 'src/types';
-import { uniqueName } from 'src/utils/uniqueName';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import SortableList from '@/components/common/SortableList.vue';
+import TableTemplateColumnEditDialog from '@/components/campManagement/table/dialogs/TableTemplateColumnEditDialog.vue';
+import type { PartialBy } from '@/types';
+import { uniqueName } from '@/utils/uniqueName';
+import { deepToRaw } from '@/utils/deepToRaw';
 
 interface Props {
   template: TableTemplate;

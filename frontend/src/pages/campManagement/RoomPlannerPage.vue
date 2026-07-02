@@ -267,16 +267,16 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import type { Roommate, RoomWithRoommates } from 'src/types/Room';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
-import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
-import RoomOrderDialog from 'components/campManagement/roomPlanner/dialogs/RoomOrderDialog.vue';
-import RoomCreateDialog from 'components/campManagement/roomPlanner/dialogs/RoomCreateDialog.vue';
-import RoomEditDialog from 'components/campManagement/roomPlanner/dialogs/RoomEditDialog.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import type { Roommate, RoomWithRoommates } from '@/types/Room';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import RoomList from '@/components/campManagement/roomPlanner/RoomList.vue';
+import RoomListSkeleton from '@/components/campManagement/roomPlanner/RoomListSkeleton.vue';
+import RoomOrderDialog from '@/components/campManagement/roomPlanner/dialogs/RoomOrderDialog.vue';
+import RoomCreateDialog from '@/components/campManagement/roomPlanner/dialogs/RoomCreateDialog.vue';
+import RoomEditDialog from '@/components/campManagement/roomPlanner/dialogs/RoomEditDialog.vue';
 import type {
   Room,
   RoomCreateData,
@@ -284,12 +284,12 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { usePermissions } from 'src/composables/permissions';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { formatPersonName } from 'src/utils/formatters';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { useCampStorage } from 'src/composables/campStorage';
-import { useAPIService } from 'src/services/APIService';
+import { usePermissions } from '@/composables/permissions';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { useCampStorage } from '@/composables/campStorage';
+import { useAPIService } from '@/services/APIService';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();

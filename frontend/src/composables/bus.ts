@@ -5,7 +5,7 @@ import {
   CAMP_BUS,
   REGISTRATION_BUS,
   TEMPLATE_BUS,
-} from 'src/utils/keys';
+} from '@/utils/keys';
 import type {
   Camp,
   Registration,

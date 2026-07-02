@@ -219,7 +219,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { storeToRefs } from 'pinia';
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();

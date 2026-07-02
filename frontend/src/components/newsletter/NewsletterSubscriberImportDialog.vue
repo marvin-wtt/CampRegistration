@@ -102,8 +102,8 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
-import { useAssignedCampsStore } from 'stores/assigned-camps-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

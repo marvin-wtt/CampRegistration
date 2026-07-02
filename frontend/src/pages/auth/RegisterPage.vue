@@ -25,7 +25,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { storeToRefs } from 'pinia';
 import UserRegistrationForm, {
   type RegistrationCredentials,

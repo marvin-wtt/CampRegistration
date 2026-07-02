@@ -1,7 +1,7 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-import { defineConfig } from '#q-app/wrappers';
+import { defineConfig } from '#q-app';
 import { fileURLToPath } from 'node:url';
 import { freshPaint } from '@anoyomoose/q2-fresh-paint-core';
 import { md3eTheme } from '@anoyomoose/q2-fresh-paint-md3e';

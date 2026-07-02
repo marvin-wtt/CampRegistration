@@ -186,9 +186,9 @@ import type { ProgramEvent } from '@camp-registration/common/entities';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
-import BottomSheet from 'components/BottomSheet.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import CalendarItemPopup from '@/components/campManagement/programPlanner/CalendarItemPopup.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
