@@ -11,7 +11,7 @@ CampRegistration is a full-stack web application for managing youth camp registr
 npm workspaces monorepo with four workspaces:
 
 - **`common/`** – Shared TypeScript types, entities, form definitions, and permissions (must build first)
-- **`backend/`** – Node.js/Express 5 REST API (TypeScript, Prisma, InversifyJS, BullMQ)
+- **`backend/`** – Node.js/Express 5 REST API (TypeScript, Prisma, InversifyJS, driver-based queues, croner scheduler)
 - **`frontend/`** – Vue 3/Quasar SPA (TypeScript, Pinia, SurveyJS, vue-i18n)
 - **`e2e/`** – Cypress end-to-end tests
 
@@ -80,14 +80,17 @@ Integration tests use a separate DB on port 3307 and run serially (`maxWorkers: 
 
 ### Module System
 
-Each feature is an `AppModule` with four responsibilities:
+Each feature is an `AppModule`; all lifecycle hooks are optional and called during boot:
 
 ```ts
 class ExampleModule implements AppModule {
-  bindContainers(container: Container): void { /* DI bindings */ }
-  configure(app: Application): void { /* middleware */ }
-  registerRoutes(app: Application): void { /* mount router */ }
-  registerPermissions(): void { /* RBAC permissions */ }
+  bindContainers(options: BindOptions): void { /* DI bindings */ }
+  configure(options: ModuleOptions): void { /* middleware */ }
+  registerRoutes(router: AppRouter): void { /* mount router */ }
+  registerPermissions(): RoleToPermissions<ManagerRole, Permission> { /* RBAC */ }
+  registerNewsletterPermissions(): RoleToPermissions<NewsletterManagerRole, NewsletterPermission> {}
+  registerJobs(scheduler: JobScheduler): void { /* recurring cron jobs */ }
+  shutdown(): Promise<void> | void { /* cleanup on shutdown */ }
 }
 ```
 
@@ -128,6 +131,31 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - MJML templates in `backend/src/views/emails/`
 - Use `Mailable` pattern; register in the mailable registry
 - Dev email preview: http://localhost:1080 (MailDev)
+
+### Background Jobs & Queues
+
+Two distinct systems, both wired through the module lifecycle:
+
+**Async work queues** (`src/core/queue/`) — for deferred/retried unit-of-work jobs
+(e.g. sending mail, processing file uploads).
+
+- `Queue` is an abstract base with three interchangeable drivers selected by the
+  `QUEUE_DRIVER` env var: `database` (default, backed by the Prisma `Job` model),
+  `redis` (BullMQ), and `memory` (in-process, for tests).
+- Inject `QueueManager` and call `queueManager.create<Payload, Result>('name', options)`
+  in a service constructor, then `.process(handler)` to consume and `.add(name, payload, opts)`
+  to enqueue. `QueueManager` keeps every queue as a singleton and closes them on shutdown.
+- Queue options cover `maxAttempts`, `retryDelay`/`retryDelayType`, rate `limit`,
+  stalled-job handling, and `repeat` (cron/interval). Job options: `delay`, `priority`.
+- Admin queue inspection/retry lives in `src/app/queue/` (`/admin/queues` routes).
+
+**Recurring scheduler** (`src/core/scheduler/JobScheduler.ts`) — for cron-style
+recurring tasks (e.g. token cleanup, pruning old job records).
+
+- Wraps `croner`. Modules register jobs in the `registerJobs(scheduler)` hook:
+  `scheduler.schedule('job-name', '0 3 * * *', () => resolve(Service).method())`.
+- Registration is idempotent (duplicate names ignored); the scheduler owns job
+  lifecycle logging and is stopped deterministically on shutdown.
 
 ### Backend Path Alias
 
