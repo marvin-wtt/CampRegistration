@@ -56,7 +56,7 @@
         @click.stop
         @keyup.enter.stop
       >
-        <results-item-menu
+        <camp-card-menu
           :camp
           :active="registrationOpen"
           @edit="editAction"
@@ -151,7 +151,7 @@
 </template>
 
 <script lang="ts" setup>
-import ResultsItemMenu from 'components/campManagement/index/ResultsItemMenu.vue';
+import CampCardMenu from 'components/campManagement/index/CampCardMenu.vue';
 import { useCampsStore } from 'stores/camps-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -162,8 +162,8 @@ import type { Permission } from '@camp-registration/common/permissions';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from 'stores/profile-store';
 import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import RegistrationDialog from 'components/campManagement/index/RegistrationDialog.vue';
-import type { RegistrationResult } from 'components/campManagement/index/RegistrationDialog.vue';
+import RegistrationScheduleDialog from 'components/campManagement/index/RegistrationScheduleDialog.vue';
+import type { RegistrationScheduleResult } from 'components/campManagement/index/RegistrationScheduleDialog.vue';
 import { usePermissions } from 'src/composables/permissions';
 
 const capsStore = useCampsStore();
@@ -384,14 +384,14 @@ const actionLoading = computed<boolean>(() => {
 function manageRegistration() {
   quasar
     .dialog({
-      component: RegistrationDialog,
+      component: RegistrationScheduleDialog,
       componentProps: {
         name: to(camp.name),
         opensAt: camp.registrationOpensAt,
         closesAt: camp.registrationClosesAt,
       },
     })
-    .onOk((result: RegistrationResult) => {
+    .onOk((result: RegistrationScheduleResult) => {
       void withLoading(registrationLoading, async () => {
         await capsStore.updateEntry(camp.id, {
           registrationOpensAt: result.registrationOpensAt,
