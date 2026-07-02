@@ -1,6 +1,5 @@
 import { BaseService } from '#core/base/BaseService';
 import { RequestContext } from '#core/context/RequestContext';
-import logger from '#core/logger';
 import { inject, injectable } from 'inversify';
 import {
   type AuditLog,
@@ -150,9 +149,9 @@ export class AuditService extends BaseService {
   }
 
   /** Enforces the audit-log retention policy by purging expired entries. */
-  async purgeExpiredAuditLogs(): Promise<void> {
+  async purgeExpiredAuditLogs(): Promise<number> {
     const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);
-    const count = await this.purgeOlderThan(cutoff);
-    logger.info(`Removed ${count.toString()} audit log entry(ies).`);
+
+    return this.purgeOlderThan(cutoff);
   }
 }

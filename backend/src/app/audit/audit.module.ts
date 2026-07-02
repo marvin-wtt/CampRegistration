@@ -4,6 +4,7 @@ import { AuditService } from '#app/audit/audit.service';
 import { AuditController } from '#app/audit/audit.controller';
 import { AuditRouter } from '#app/audit/audit.routes';
 import { resolve } from '#core/ioc/container';
+import logger from '#core/logger';
 
 export class AuditModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -19,8 +20,9 @@ export class AuditModule implements AppModule {
   }
 
   registerJobs(scheduler: JobScheduler): void {
-    scheduler.schedule('audit-log-retention-cleanup', '0 5 * * *', () =>
-      resolve(AuditService).purgeExpiredAuditLogs(),
-    );
+    scheduler.schedule('audit-log-retention-cleanup', '0 5 * * *', async () => {
+      const count = await resolve(AuditService).purgeExpiredAuditLogs();
+      logger.info(`Removed ${count.toString()} audit log entry(ies)`);
+    });
   }
 }
