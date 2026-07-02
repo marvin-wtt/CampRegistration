@@ -32,7 +32,7 @@
     "@camp-registration/common": "*",
     "@floating-ui/dom": "^1.7.6",
     "@quasar/extras": "^2.0.1",
-    "@quasar/quasar-ui-qcalendar": "^4.1.2",
+    "@quasar/quasar-ui-qcalendar": "^5.0.0-rc.9",
     "@tiptap/extension-color": "^3.26.1",
     "@tiptap/extension-hard-break": "^3.26.1",
     "@tiptap/extension-highlight": "^3.26.1",
