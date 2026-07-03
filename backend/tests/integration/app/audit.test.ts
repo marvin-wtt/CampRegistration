@@ -6,10 +6,13 @@ import {
   RegistrationFactory,
   UserFactory,
   CampManagerFactory,
-} from '../../../prisma/factories/index.js';
+} from '../../../prisma/factories';
 import { type Camp, type Prisma } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
+import moment from 'moment';
 import { request } from '../utils/request.js';
+import { resolve } from '#core/ioc/container';
+import { AuditService } from '#app/audit/audit.service';
 
 describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
   const createCampWithManagerAndToken = async (
@@ -208,6 +211,90 @@ describe('/api/v1/camps/:campId/registrations/:registrationId/audit', () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
 
       await fetchAudit(camp.id, ulid(), accessToken).expect(404);
+    });
+  });
+
+  describe('retention jobs', () => {
+    const createAuditLog = (
+      data: Partial<Prisma.AuditLogUncheckedCreateInput> = {},
+    ) =>
+      prisma.auditLog.create({
+        data: {
+          action: 'updated',
+          entityType: 'registration',
+          entityId: ulid(),
+          ...data,
+        },
+      });
+
+    describe('purgeExpiredAuditLogs', () => {
+      it('deletes orphaned entries past the retention window', async () => {
+        const expired = await createAuditLog({
+          campId: null,
+          createdAt: moment().subtract(3, 'years').toDate(),
+        });
+
+        await resolve(AuditService).purgeExpiredAuditLogs();
+
+        expect(
+          await prisma.auditLog.findUnique({ where: { id: expired.id } }),
+        ).toBeNull();
+      });
+
+      it('keeps orphaned entries within the retention window', async () => {
+        const recent = await createAuditLog({
+          campId: null,
+          createdAt: moment().subtract(1, 'day').toDate(),
+        });
+
+        await resolve(AuditService).purgeExpiredAuditLogs();
+
+        expect(
+          await prisma.auditLog.findUnique({ where: { id: recent.id } }),
+        ).not.toBeNull();
+      });
+
+      it('keeps entries still tied to a camp regardless of age', async () => {
+        const old = await createAuditLog({
+          campId: ulid(),
+          createdAt: moment().subtract(3, 'years').toDate(),
+        });
+
+        await resolve(AuditService).purgeExpiredAuditLogs();
+
+        expect(
+          await prisma.auditLog.findUnique({ where: { id: old.id } }),
+        ).not.toBeNull();
+      });
+    });
+
+    describe('purgeExpiredActorIps', () => {
+      it('scrubs the actor IP past the IP window but keeps the row', async () => {
+        const old = await createAuditLog({
+          actorIp: '203.0.113.7',
+          createdAt: moment().subtract(60, 'days').toDate(),
+        });
+
+        await resolve(AuditService).purgeExpiredActorIps();
+
+        const row = await prisma.auditLog.findUnique({ where: { id: old.id } });
+        expect(row).not.toBeNull();
+        expect(row?.actorIp).toBeNull();
+      });
+
+      it('keeps the actor IP for recent entries', async () => {
+        const recent = await createAuditLog({
+          actorIp: '203.0.113.7',
+          createdAt: moment().subtract(1, 'day').toDate(),
+        });
+
+        await resolve(AuditService).purgeExpiredActorIps();
+
+        const row = await prisma.auditLog.findUnique({
+          where: { id: recent.id },
+        });
+        expect(row?.actorIp).toBe('203.0.113.7');
+      });
     });
   });
 });

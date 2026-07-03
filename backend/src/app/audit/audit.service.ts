@@ -22,6 +22,10 @@ export type PrismaTransaction = Parameters<
 // against indefinite retention of the PII some entries carry (data diffs,
 // delete snapshots). Adjust to your jurisdiction's accountability requirements.
 const AUDIT_RETENTION_DAYS = 365 * 2;
+// The actor IP only serves short-lived security/abuse investigation, so it is
+// scrubbed well before the audit row itself expires — data minimization for the
+// one piece of free-floating PII the log retains for a camp's whole lifetime.
+const AUDIT_IP_RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface AuditRecordInput {
@@ -140,18 +144,42 @@ export class AuditService extends BaseService {
     await client.auditLog.deleteMany({ where: { campId } });
   }
 
-  /** Deletes audit rows older than the given cutoff (retention enforcement). */
-  async purgeOlderThan(cutoff: Date): Promise<number> {
+  /**
+   * Enforces the audit-log retention policy. Only purges *orphaned* entries —
+   * rows whose camp is already gone (`campId` is null, e.g. the standalone
+   * "deleted camp" markers and system/public actions). Rows still tied to an
+   * existing camp are left untouched; they are removed with the camp itself via
+   * {@link purgeForCamp}, so a live camp always keeps its full audit trail.
+   */
+  async purgeExpiredAuditLogs(): Promise<number> {
+    const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);
+
     const { count } = await this.prisma.auditLog.deleteMany({
-      where: { createdAt: { lt: cutoff } },
+      where: {
+        campId: null,
+        createdAt: { lt: cutoff },
+      },
     });
     return count;
   }
 
-  /** Enforces the audit-log retention policy by purging expired entries. */
-  async purgeExpiredAuditLogs(): Promise<number> {
-    const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);
+  /**
+   * Scrubs the actor IP from audit rows older than the short IP-retention
+   * window, while keeping the accountability record (actor, action, time). The
+   * IP outlives its investigative purpose quickly, so it is nulled independently
+   * of the row's own lifetime — this also clears the IPs of any user who has
+   * since been erased.
+   */
+  async purgeExpiredActorIps(): Promise<number> {
+    const cutoff = new Date(Date.now() - AUDIT_IP_RETENTION_DAYS * DAY_MS);
 
-    return this.purgeOlderThan(cutoff);
+    const { count } = await this.prisma.auditLog.updateMany({
+      where: {
+        actorIp: { not: null },
+        createdAt: { lt: cutoff },
+      },
+      data: { actorIp: null },
+    });
+    return count;
   }
 }

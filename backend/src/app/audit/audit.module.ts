@@ -24,5 +24,10 @@ export class AuditModule implements AppModule {
       const count = await resolve(AuditService).purgeExpiredAuditLogs();
       logger.info(`Removed ${count.toString()} audit log entry(ies)`);
     });
+
+    scheduler.schedule('audit-log-ip-scrub', '30 5 * * *', async () => {
+      const count = await resolve(AuditService).purgeExpiredActorIps();
+      logger.info(`Scrubbed IP from ${count.toString()} audit log entry(ies)`);
+    });
   }
 }
