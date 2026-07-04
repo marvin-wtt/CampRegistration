@@ -15,8 +15,9 @@ describe('campAuditPolicy.changeSet', () => {
     const before = { price: 100, minAge: 8, confirmationMode: 'AUTOMATIC' };
     const after = { price: 120, minAge: 10, confirmationMode: 'MANUAL' };
 
+    // Fields are reported in the entity's key order, not sorted.
     expect(policy.changeSet(before, after)).toEqual({
-      changedFields: ['confirmationMode', 'minAge', 'price'],
+      changedFields: ['price', 'minAge', 'confirmationMode'],
     });
   });
 

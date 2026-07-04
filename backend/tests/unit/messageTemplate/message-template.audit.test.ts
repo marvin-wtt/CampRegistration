@@ -15,8 +15,9 @@ describe('messageTemplateAuditPolicy.changeSet', () => {
     const before = { subject: 'Hi', body: '<p>a</p>', priority: 'normal' };
     const after = { subject: 'Hello', body: '<p>b</p>', priority: 'high' };
 
+    // Fields are reported in allow-list order, not sorted.
     expect(policy.changeSet(before, after)).toEqual({
-      changedFields: ['body', 'priority', 'subject'],
+      changedFields: ['subject', 'body', 'priority'],
     });
   });
 
