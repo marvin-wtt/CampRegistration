@@ -1,3 +1,11 @@
+/**
+ * Field namespace on `File` rows for custom registration files
+ * (`field = 'custom:<slot>'`). The File row is the single source of truth for
+ * these assignments; the API's `Registration.files` record is derived from it.
+ * The prefix separates custom files from form files (`field = sessionId`).
+ */
+export const CUSTOM_FILE_FIELD_PREFIX = 'custom:';
+
 export class RegistrationCampDataHelper {
   constructor(private readonly dataByTags: Record<string, unknown[]>) {}
 

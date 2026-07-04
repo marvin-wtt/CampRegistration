@@ -27,7 +27,7 @@ export interface AppModule {
 
   bindContainers?(options: BindOptions): void;
 
-  registerRoutes?(router?: Router): void;
+  registerRoutes?(router: AppRouter): void;
 
   registerPermissions?(): RoleToPermissions<ManagerRole, Permission>;
 

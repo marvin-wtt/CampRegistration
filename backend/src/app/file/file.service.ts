@@ -155,12 +155,18 @@ export class FileService extends BaseService {
     ownerId: string,
     fileIds: string[],
     sessionId: string,
+    options?: { excludeFieldPrefix?: string },
   ) {
     // 1) Detach removed ones
     await tx.file.updateMany({
       where: {
         [ownerKey]: ownerId,
         id: { notIn: fileIds.length ? fileIds : ['__none__'] }, // avoid `notIn: []` edge cases
+        // Files in an excluded field namespace are managed by a different
+        // sync (e.g. custom-data files during a form-data sync).
+        ...(options?.excludeFieldPrefix
+          ? { NOT: { field: { startsWith: options.excludeFieldPrefix } } }
+          : {}),
       },
       data: {
         [ownerKey]: null,
@@ -179,6 +185,87 @@ export class FileService extends BaseService {
     }));
 
     return { connect };
+  }
+
+  /**
+   * Synchronizes a set of named file slots (`field = prefix + name`) for an
+   * owner in one pass: each slot is pointed at its given file id, or cleared
+   * when the id is `null`. The previous occupant of a changed slot is
+   * detached and picked up by the unassigned-file cleanup job.
+   *
+   * A file is only attachable when it already occupies a slot of the same
+   * namespace on this owner or is an unreferenced temp file of the given
+   * session. Slots whose id could not be resolved are left untouched and
+   * their names are returned so the caller can decide how to fail.
+   */
+  async syncFileSlots(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    prefix: string,
+    slots: Record<string, string | null>,
+    sessionId: string,
+  ): Promise<string[]> {
+    const entries = Object.entries(slots);
+    const requestedIds = entries
+      .map(([, fileId]) => fileId)
+      .filter((id) => id !== null);
+
+    // One query validates every requested id at once.
+    const validIds = new Set(
+      requestedIds.length
+        ? await tx.file
+            .findMany({
+              where: {
+                id: { in: requestedIds },
+                OR: [
+                  { [ownerKey]: ownerId, field: { startsWith: prefix } },
+                  { ...this.getUnreferencedModelArgs(), field: sessionId },
+                ],
+              },
+              select: { id: true },
+            })
+            .then((files) => files.map((file) => file.id))
+        : [],
+    );
+
+    const invalidNames: string[] = [];
+    const toAttach: { name: string; fileId: string }[] = [];
+    const toDetach: Prisma.FileWhereInput[] = [];
+
+    for (const [name, fileId] of entries) {
+      if (fileId !== null && !validIds.has(fileId)) {
+        invalidNames.push(name);
+        continue;
+      }
+
+      if (fileId !== null) {
+        toAttach.push({ name, fileId });
+      }
+
+      toDetach.push({
+        field: prefix + name,
+        ...(fileId !== null ? { id: { not: fileId } } : {}),
+      });
+    }
+
+    await Promise.all(
+      toAttach.map(({ name, fileId }) =>
+        tx.file.update({
+          where: { id: fileId },
+          data: { [ownerKey]: ownerId, field: prefix + name },
+        }),
+      ),
+    );
+
+    if (toDetach.length > 0) {
+      await tx.file.updateMany({
+        where: { [ownerKey]: ownerId, OR: toDetach },
+        data: { [ownerKey]: null, field: null },
+      });
+    }
+
+    return invalidNames;
   }
 
   async saveModelFile(
