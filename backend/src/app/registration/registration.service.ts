@@ -190,20 +190,22 @@ export class RegistrationService extends BaseService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const invalidSlots = await this.fileService.syncFileSlots(
-        tx,
-        'registrationId',
-        registrationId,
-        CUSTOM_FILE_FIELD_PREFIX,
-        data.customFiles ?? {},
-        sessionId,
-      );
-
-      if (invalidSlots.length > 0) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          `Invalid file for custom file field(s): ${invalidSlots.join(', ')}`,
+      if (data.customFiles) {
+        const invalidSlots = await this.fileService.syncFileSlots(
+          tx,
+          'registrationId',
+          registrationId,
+          CUSTOM_FILE_FIELD_PREFIX,
+          data.customFiles,
+          sessionId,
         );
+
+        if (invalidSlots.length > 0) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Invalid file for custom file field(s): ${invalidSlots.join(', ')}`,
+          );
+        }
       }
 
       const files = formFileIds
