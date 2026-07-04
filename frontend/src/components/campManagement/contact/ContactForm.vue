@@ -412,6 +412,22 @@ async function send() {
   }
 }
 
+// The pristine state the current fields are compared against for the dirty
+// check. Updated whenever the fields are set to a known-clean state (a draft
+// loads, or the form is reset) so `dirty` doesn't compare against a stale
+// `draft` prop once its content has been superseded (e.g. after sending).
+const baseline = ref<{
+  subject: string;
+  body: string;
+  priority: 'high' | 'normal' | 'low';
+  attachments: FileInputModel[];
+}>({
+  subject: '',
+  body: '',
+  priority: 'normal',
+  attachments: [],
+});
+
 // Loading a draft (e.g. resending a sent message) replaces the message content
 // but intentionally starts with an empty recipient list so the user chooses who
 // to send to. Attachments arrive pre-duplicated as fresh session files.
@@ -433,6 +449,12 @@ watch(
       applyDefaultReplyTo();
     }
     attachments.value = [...value.attachments];
+    baseline.value = {
+      subject: value.subject,
+      body: value.body,
+      priority: value.priority,
+      attachments: [...value.attachments],
+    };
 
     void nextTick(() => formRef.value?.resetValidation());
   },
@@ -449,6 +471,12 @@ function reset() {
     applyDefaultReplyTo();
   }
   attachments.value = [];
+  baseline.value = {
+    subject: '',
+    body: '',
+    priority: 'normal',
+    attachments: [],
+  };
 
   void nextTick(() => formRef.value?.resetValidation());
 }
@@ -458,27 +486,27 @@ function sameIds(a: Set<string>, b: Set<string>): boolean {
 }
 
 function attachmentsChanged(): boolean {
-  const baseline = draft?.attachments ?? [];
-  if (attachments.value.length !== baseline.length) {
+  const base = baseline.value.attachments;
+  if (attachments.value.length !== base.length) {
     return true;
   }
-  const baselineIds = new Set(baseline.map((file) => file.id));
+  const baselineIds = new Set(base.map((file) => file.id));
   // An attachment still uploading (no id) is always a change.
   return attachments.value.some(
     (file) => file.id === undefined || !baselineIds.has(file.id),
   );
 }
 
-// Whether the user has changed anything relative to the pristine state the form
-// was initialised with: recipients from `initialContacts` and message content
-// from `draft` (all empty when composing a new message). The reply-to is
-// excluded because it is derived automatically rather than authored.
+// Whether the user has changed anything relative to the pristine `baseline`
+// (recipients are compared against `initialContacts` directly, since those
+// never change after mount). The reply-to is excluded because it is derived
+// automatically rather than authored.
 const dirty = computed<boolean>(() => {
   return (
     !sameIds(recipientIds(to.value), recipientIds(initialContacts ?? [])) ||
-    subject.value !== (draft?.subject ?? '') ||
-    text.value !== (draft?.body ?? '') ||
-    priority.value !== (draft?.priority ?? 'normal') ||
+    subject.value !== baseline.value.subject ||
+    text.value !== baseline.value.body ||
+    priority.value !== baseline.value.priority ||
     attachmentsChanged()
   );
 });

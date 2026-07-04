@@ -7,6 +7,8 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import { FileService } from '#app/file/file.service.js';
+import { AuditService } from '#app/audit/audit.service';
+import { campAuditPolicy } from '#app/camp/camp.audit';
 
 export interface CampWithFreePlaces extends Camp {
   freePlaces: number | Record<string, number>;
@@ -37,6 +39,7 @@ export class CampService extends BaseService {
   constructor(
     @Config() private readonly config: AppConfig,
     @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -159,25 +162,36 @@ export class CampService extends BaseService {
           : undefined,
     }));
 
-    const camp = await this.prisma.camp.create({
-      data: {
-        ...data,
-        form,
-        campManager: {
-          create: {
-            userId,
-            role: 'DIRECTOR',
+    const camp = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.camp.create({
+        data: {
+          ...data,
+          form,
+          campManager: {
+            create: {
+              userId,
+              role: 'DIRECTOR',
+            },
           },
+          tableTemplates: {
+            createMany: { data: this.stripIds(tableTemplates) },
+          },
+          messageTemplates: {
+            createMany: { data: this.stripIds(messageTemplateData) },
+          },
+          files: { createMany: { data: fileData } },
         },
-        tableTemplates: {
-          createMany: { data: this.stripIds(tableTemplates) },
-        },
-        messageTemplates: {
-          createMany: { data: this.stripIds(messageTemplateData) },
-        },
-        files: { createMany: { data: fileData } },
-      },
-      include: { ...this.campRegistrationInclude() },
+        include: { ...this.campRegistrationInclude() },
+      });
+
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: campAuditPolicy.entityType,
+        entityId: created.id,
+        campId: created.id,
+      });
+
+      return created;
     });
 
     return {
@@ -240,19 +254,47 @@ export class CampService extends BaseService {
   }
 
   async updateCamp(camp: Camp, data: Omit<Prisma.CampUpdateInput, 'id'>) {
-    const updatedCamp = await this.prisma.camp.update({
-      where: { id: camp.id },
-      data: {
-        ...data,
-      },
-      include: { ...this.campRegistrationInclude() },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // Read the "before" inside the transaction so the audit diff is race-free
+      // (the request-model `camp` may be stale relative to the actual write).
+      const before = await tx.camp.findUniqueOrThrow({
+        where: { id: camp.id },
+      });
 
-    return enrichFreePlaces(updatedCamp);
+      const updatedCamp = await tx.camp.update({
+        where: { id: camp.id },
+        data: {
+          ...data,
+        },
+        include: { ...this.campRegistrationInclude() },
+      });
+
+      await this.audit.recordChange(tx, 'updated', campAuditPolicy, {
+        before,
+        after: updatedCamp,
+        entityId: camp.id,
+        campId: camp.id,
+      });
+
+      return enrichFreePlaces(updatedCamp);
+    });
   }
 
   async deleteCampById(id: string) {
-    await this.prisma.camp.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      // The FK's `onDelete: SetNull` orphans the camp's existing audit rows
+      // (campId -> null) instead of deleting them, so they age out through the
+      // normal retention window rather than vanishing with the camp.
+      await tx.camp.delete({ where: { id } });
+
+      // Keep one standalone record of who deleted the camp — its most
+      // destructive action. `campId` is null (the camp no longer exists).
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: campAuditPolicy.entityType,
+        entityId: id,
+      });
+    });
   }
 }
 

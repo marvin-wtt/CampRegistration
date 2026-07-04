@@ -216,6 +216,12 @@ const routes: RouteRecordRaw[] = [
                     component: () =>
                       import('pages/campManagement/settings/FormEditPage.vue'),
                   },
+                  {
+                    path: 'audit',
+                    name: 'management.camp.settings.audit',
+                    component: () =>
+                      import('pages/campManagement/settings/AuditLogPage.vue'),
+                  },
                 ],
               },
             ],

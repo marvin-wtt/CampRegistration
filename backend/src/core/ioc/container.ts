@@ -2,6 +2,7 @@ import { Container, type ServiceIdentifier } from 'inversify';
 import { TYPES } from './types.js';
 import config, { type AppConfig } from '#config/index';
 import { QueueManager } from '#core/queue/QueueManager';
+import { RequestContext } from '#core/context/RequestContext';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
 
 export const container = new Container({
@@ -12,6 +13,7 @@ export const container = new Container({
 container.bind<AppConfig>(TYPES.Config).toConstantValue(config);
 
 container.bind(QueueManager).toSelf().inSingletonScope();
+container.bind(RequestContext).toSelf().inSingletonScope();
 container.bind(JobScheduler).toSelf().inSingletonScope();
 
 // Optional tiny helper (nice ergonomics)

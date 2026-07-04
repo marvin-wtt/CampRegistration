@@ -26,6 +26,7 @@ export * from './NewsletterSubscriber.js';
 export * from './NewsletterMessage.js';
 
 // Types
+export * from './AuditLogEntry.js';
 export * from './AuthTokens.js';
 export * from './Authentication.js';
 export * from './Queue.js';

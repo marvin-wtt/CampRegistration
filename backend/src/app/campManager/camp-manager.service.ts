@@ -2,7 +2,12 @@ import { BaseService } from '#core/base/BaseService';
 import { campPermissionRegistry } from '#core/permission-registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { Permission } from '@camp-registration/common/permissions';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { AuditService } from '#app/audit/audit.service';
+import {
+  campManagerAuditPolicy,
+  managerIdentity,
+} from '#app/campManager/camp-manager.audit';
 
 type ManagerCreateData = Pick<
   Prisma.CampManagerCreateInput,
@@ -16,6 +21,10 @@ type ManagerUpdateData = Pick<
 
 @injectable()
 export class CampManagerService extends BaseService {
+  constructor(@inject(AuditService) private readonly audit: AuditService) {
+    super();
+  }
+
   async campManagerExistsWithUserIdAndCampId(campId: string, userId: string) {
     return this.prisma.campManager
       .findFirst({
@@ -98,58 +107,110 @@ export class CampManagerService extends BaseService {
   }
 
   async addManager(campId: string, userId: string, data: ManagerCreateData) {
-    return this.prisma.campManager.create({
-      data: {
+    return this.prisma.$transaction(async (tx) => {
+      const manager = await tx.campManager.create({
+        data: {
+          campId,
+          userId,
+          role: data.role,
+          expiresAt: data.expiresAt,
+        },
+        include: {
+          user: true,
+          invitation: true,
+        },
+      });
+
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: campManagerAuditPolicy.entityType,
+        entityId: manager.id,
         campId,
-        userId,
-        role: data.role,
-        expiresAt: data.expiresAt,
-      },
-      include: {
-        user: true,
-        invitation: true,
-      },
+        changes: { changedValues: managerIdentity(manager) },
+      });
+
+      return manager;
     });
   }
 
   async inviteManager(campId: string, email: string, data: ManagerCreateData) {
-    return this.prisma.campManager.create({
-      data: {
-        camp: { connect: { id: campId } },
-        role: data.role,
-        expiresAt: data.expiresAt,
-        invitation: {
-          create: {
-            email,
+    return this.prisma.$transaction(async (tx) => {
+      const manager = await tx.campManager.create({
+        data: {
+          camp: { connect: { id: campId } },
+          role: data.role,
+          expiresAt: data.expiresAt,
+          invitation: {
+            create: {
+              email,
+            },
           },
         },
-      },
-      include: {
-        invitation: true,
-        user: true,
-      },
+        include: {
+          invitation: true,
+          user: true,
+        },
+      });
+
+      // Same action as addManager — an invite is just a manager created for a
+      // not-yet-registered user.
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: campManagerAuditPolicy.entityType,
+        entityId: manager.id,
+        campId,
+        changes: { changedValues: managerIdentity(manager) },
+      });
+
+      return manager;
     });
   }
 
   async updateManagerById(id: string, data: ManagerUpdateData) {
-    return this.prisma.campManager.update({
-      where: {
-        id,
-      },
-      data: {
-        role: data.role,
-        expiresAt: data.expiresAt,
-      },
-      include: {
-        invitation: true,
-        user: true,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // Read the "before" inside the transaction so the audit diff is race-free.
+      const before = await tx.campManager.findUniqueOrThrow({ where: { id } });
+
+      const after = await tx.campManager.update({
+        where: {
+          id,
+        },
+        data: {
+          role: data.role,
+          expiresAt: data.expiresAt,
+        },
+        include: {
+          invitation: true,
+          user: true,
+        },
+      });
+
+      await this.audit.recordChange(tx, 'updated', campManagerAuditPolicy, {
+        before,
+        after,
+        entityId: id,
+        campId: before.campId,
+      });
+
+      return after;
     });
   }
 
   async removeManager(id: string) {
-    return this.prisma.campManager.delete({
-      where: { id },
+    return this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.campManager.delete({
+        where: { id },
+      });
+
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: campManagerAuditPolicy.entityType,
+        entityId: id,
+        campId: deleted.campId,
+        changes: { changedValues: managerIdentity(deleted) },
+      });
+
+      return deleted;
     });
   }
 }

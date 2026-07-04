@@ -121,6 +121,15 @@ const items = computed<SettingsItem[]>(() => [
     to: { name: 'management.camp.settings.files' },
     permission: 'camp.files.view',
   },
+  {
+    name: 'audit',
+    label: t('audit.label'),
+    description: t('audit.description'),
+    icon: 'history',
+    color: 'tertiary',
+    to: { name: 'management.camp.settings.audit' },
+    permission: 'camp.audit.view',
+  },
 ]);
 
 const filteredItems = computed<SettingsItem[]>(() => {
@@ -155,6 +164,9 @@ emails:
 files:
   label: 'Files'
   description: 'Upload and manage files for this camp.'
+audit:
+  label: 'Audit Log'
+  description: 'Review the history of changes made to this camp.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -175,6 +187,9 @@ emails:
 files:
   label: 'Dateien'
   description: 'Lade Dateien für dieses Camp hoch und verwalte sie.'
+audit:
+  label: 'Aktivitätsprotokoll'
+  description: 'Sieh dir den Änderungsverlauf dieses Camps an.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -195,6 +210,9 @@ emails:
 files:
   label: 'Fichiers'
   description: 'Téléchargez et gérez les fichiers de ce camp.'
+audit:
+  label: 'Journal d’activité'
+  description: 'Consultez l’historique des modifications apportées à ce camp.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -215,6 +233,9 @@ emails:
 files:
   label: 'Pliki'
   description: 'Przesyłaj pliki dla tego obozu i zarządzaj nimi.'
+audit:
+  label: 'Dziennik aktywności'
+  description: 'Przejrzyj historię zmian wprowadzonych w tym obozie.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -235,4 +256,7 @@ emails:
 files:
   label: 'Soubory'
   description: 'Nahrávejte a spravujte soubory pro tento tábor.'
+audit:
+  label: 'Deník aktivit'
+  description: 'Prohlédněte si historii změn tohoto tábora.'
 </i18n>

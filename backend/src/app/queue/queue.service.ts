@@ -3,7 +3,6 @@ import httpStatus from 'http-status';
 import moment from 'moment';
 import { QueueManager } from '#core/queue/QueueManager';
 import { BaseService } from '#core/base/BaseService';
-import logger from '#core/logger';
 import ApiError from '#utils/ApiError';
 import type { QueueInfo } from '@camp-registration/common/entities';
 
@@ -41,12 +40,14 @@ export class QueueService extends BaseService {
   }
 
   /** Prunes old terminal job records: completed >30d and failed >90d ago. */
-  async deleteOldJobs(): Promise<void> {
-    await this.deleteCompletedJobs();
-    await this.deleteFailedJobs();
+  async deleteOldJobs(): Promise<{ completed: number; failed: number }> {
+    const completed = await this.deleteCompletedJobs();
+    const failed = await this.deleteFailedJobs();
+
+    return { completed, failed };
   }
 
-  private async deleteCompletedJobs(): Promise<void> {
+  private async deleteCompletedJobs(): Promise<number> {
     const { count } = await this.prisma.job.deleteMany({
       where: {
         status: 'COMPLETED',
@@ -55,10 +56,11 @@ export class QueueService extends BaseService {
         },
       },
     });
-    logger.info(`Deleted ${count.toString()} completed jobs`);
+
+    return count;
   }
 
-  private async deleteFailedJobs(): Promise<void> {
+  private async deleteFailedJobs(): Promise<number> {
     const { count } = await this.prisma.job.deleteMany({
       where: {
         status: 'FAILED',
@@ -67,6 +69,7 @@ export class QueueService extends BaseService {
         },
       },
     });
-    logger.info(`Deleted ${count.toString()} failed jobs`);
+
+    return count;
   }
 }

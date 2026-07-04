@@ -1,9 +1,11 @@
 import stores from './stores';
+import audit from './audit';
 
 export default {
   //app_name: '',
 
   stores,
+  audit,
 
   service: {
     internal: 'Błąd wewnętrzny',

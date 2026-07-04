@@ -4,6 +4,7 @@ import campSeeder from './camp.seeder';
 import campManagerSeeder from './camp-manager.seeder';
 import tableTemplate from './table-template.seeder';
 import newsletterSeeder from './newsletter.seeder';
+import auditSeeder from './audit.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
 async function main() {
@@ -13,6 +14,7 @@ async function main() {
     tableTemplate,
     campManagerSeeder,
     newsletterSeeder,
+    auditSeeder,
   ];
 
   console.log(`Start seeding ...`);
