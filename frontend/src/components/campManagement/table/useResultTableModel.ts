@@ -257,7 +257,11 @@ export function useResultTableModel(
     const rendererMap = new Map<string, TableCellRenderer>();
 
     columns.value.forEach((column) => {
-      column.renderAs ??= 'default';
+      // Custom (staff-entered) fields are meant to be editable text by
+      // default, even if a column was ever persisted without an explicit
+      // renderAs (e.g. via direct API use) — fall back to the editor rather
+      // than the generic read-only default cell.
+      column.renderAs ??= column.source === 'custom' ? 'editor' : 'default';
       const componentEntry = TableComponentRegistry.load(column.renderAs);
       const renderComponent = componentEntry.component;
 

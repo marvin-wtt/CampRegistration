@@ -317,8 +317,8 @@ function getFieldSource(): TableColumnTemplate['source'] {
 }
 
 function removeFieldPrefix(): string {
-  const prefix = [...Object.values(FIELD_MAP), CUSTOM_FILES_FIELD_PREFIX].find((p) =>
-    column.field.startsWith(`${p}.`),
+  const prefix = [...Object.values(FIELD_MAP), CUSTOM_FILES_FIELD_PREFIX].find(
+    (p) => column.field.startsWith(`${p}.`),
   );
   return prefix ? column.field.slice(`${prefix}.`.length) : column.field;
 }
