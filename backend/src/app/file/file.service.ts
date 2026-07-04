@@ -155,12 +155,18 @@ export class FileService extends BaseService {
     ownerId: string,
     fileIds: string[],
     sessionId: string,
+    options?: { excludeFieldPrefix?: string },
   ) {
     // 1) Detach removed ones
     await tx.file.updateMany({
       where: {
         [ownerKey]: ownerId,
         id: { notIn: fileIds.length ? fileIds : ['__none__'] }, // avoid `notIn: []` edge cases
+        // Files in an excluded field namespace are managed by a different
+        // sync (e.g. custom-data files during a form-data sync).
+        ...(options?.excludeFieldPrefix
+          ? { NOT: { field: { startsWith: options.excludeFieldPrefix } } }
+          : {}),
       },
       data: {
         [ownerKey]: null,
@@ -179,6 +185,67 @@ export class FileService extends BaseService {
     }));
 
     return { connect };
+  }
+
+  /**
+   * Points a named file slot (`field = prefix + name`) of an owner to the
+   * given file, or clears it when `fileId` is null. The previous occupant of
+   * the slot is detached and picked up by the unassigned-file cleanup job.
+   *
+   * A file is only attachable when it already occupies a slot of the same
+   * namespace on this owner or is an unreferenced temp file of the given
+   * session — otherwise nothing is changed and `false` is returned so the
+   * caller can decide how to fail.
+   */
+  async syncFileSlot(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    slot: { prefix: string; name: string },
+    fileId: string | null,
+    sessionId: string,
+  ): Promise<boolean> {
+    const field = slot.prefix + slot.name;
+
+    if (fileId !== null) {
+      const file = await tx.file.findFirst({
+        where: {
+          id: fileId,
+          OR: [
+            { [ownerKey]: ownerId, field: { startsWith: slot.prefix } },
+            { ...this.getUnreferencedModelArgs(), field: sessionId },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (!file) {
+        return false;
+      }
+
+      await tx.file.update({
+        where: { id: file.id },
+        data: {
+          [ownerKey]: ownerId,
+          field,
+        },
+      });
+    }
+
+    // Detach the previous occupant(s) of the slot
+    await tx.file.updateMany({
+      where: {
+        [ownerKey]: ownerId,
+        field,
+        ...(fileId !== null ? { id: { not: fileId } } : {}),
+      },
+      data: {
+        [ownerKey]: null,
+        field: null,
+      },
+    });
+
+    return true;
   }
 
   async saveModelFile(
