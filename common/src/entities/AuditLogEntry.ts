@@ -35,6 +35,10 @@ export interface AuditLogEntry extends Identifiable {
   entityId: string;
   campId: string | null;
   actor: AuditActor | null;
+  // The entity's "subject" user, when it has one distinct from the actor
+  // (e.g. the manager a campManager entry is about) — resolved the same way
+  // as `actor`, never stored as a name.
+  subject: AuditActor | null;
   changes: AuditChangeSet | null;
   createdAt: string;
 }

@@ -18,9 +18,7 @@ export type PrismaTransaction = Parameters<
   Parameters<PrismaClient['$transaction']>[0]
 >[0];
 
-// Audit entries are retained for this many days, then purged. Defense-in-depth
-// against indefinite retention of the PII some entries carry (data diffs,
-// delete snapshots). Adjust to your jurisdiction's accountability requirements.
+// Audit rows are purged after this long — defense-in-depth against unbounded PII retention.
 const AUDIT_RETENTION_DAYS = 365 * 2;
 // The actor IP only serves short-lived security/abuse investigation, so it is
 // scrubbed well before the audit row itself expires — data minimization for the
@@ -43,6 +41,7 @@ export interface AuditRecordInput {
 export interface AuditLogWithActor {
   log: AuditLog;
   actor: AuditActor | null;
+  subject: AuditActor | null;
 }
 
 @injectable()
@@ -59,16 +58,18 @@ export class AuditService extends BaseService {
    * request context — `null` for anonymous/system.
    */
   async record(tx: PrismaTransaction, input: AuditRecordInput): Promise<void> {
+    const actorId =
+      input.actorId !== undefined
+        ? input.actorId
+        : (this.context.userId ?? null);
+
     await tx.auditLog.create({
       data: {
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
         campId: input.campId ?? null,
-        actorId:
-          input.actorId !== undefined
-            ? input.actorId
-            : (this.context.userId ?? null),
+        actorId,
         actorIp: this.context.ip ?? null,
         changes: input.changes ?? Prisma.JsonNull,
       },
@@ -118,9 +119,19 @@ export class AuditService extends BaseService {
     });
   }
 
+  /** All audit rows for a camp, across every entity type. */
+  async listForCamp(campId: string): Promise<AuditLog[]> {
+    return this.prisma.auditLog.findMany({
+      where: { campId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   /**
    * Resolves actor ids to `{ id, name }`. Ids with no matching user (deleted or
-   * GDPR-erased) are omitted, so callers surface them as `null` ("deleted user").
+   * GDPR-erased) are omitted from the returned map — callers should fall back to
+   * `{ id, name: null }` (not a bare `null`) so the id survives for display as
+   * "deleted user", distinct from a genuinely absent (system/anonymous) actor.
    */
   async resolveActors(
     actorIds: (string | null)[],
@@ -146,10 +157,10 @@ export class AuditService extends BaseService {
 
   /**
    * Enforces the audit-log retention policy. Only purges *orphaned* entries —
-   * rows whose camp is already gone (`campId` is null, e.g. the standalone
-   * "deleted camp" markers and system/public actions). Rows still tied to an
-   * existing camp are left untouched; they are removed with the camp itself via
-   * {@link purgeForCamp}, so a live camp always keeps its full audit trail.
+   * rows whose camp is already gone (`campId` is null, either because the camp
+   * was deleted — the FK sets it null — or because the action was
+   * system/public to begin with). Rows still tied to an existing camp are left
+   * untouched, so a live camp always keeps its full audit trail.
    */
   async purgeExpiredAuditLogs(): Promise<number> {
     const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);

@@ -3,7 +3,10 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
-import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
+import {
+  messageTemplateAuditPolicy,
+  templateIdentity,
+} from '#app/messageTemplate/message-template.audit';
 import { sanitizeEmailHtml } from '#utils/sanitize';
 import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
@@ -102,6 +105,7 @@ export class MessageTemplateService extends BaseService {
         entityType: messageTemplateAuditPolicy.entityType,
         entityId: template.id,
         campId,
+        changes: { changedValues: templateIdentity(template) },
       });
 
       return template;
@@ -174,6 +178,7 @@ export class MessageTemplateService extends BaseService {
         entityType: messageTemplateAuditPolicy.entityType,
         entityId: id,
         campId,
+        changes: { changedValues: templateIdentity(deleted) },
       });
 
       return deleted;

@@ -13,7 +13,14 @@ export function useAuditService() {
     return response?.data?.data;
   }
 
+  async function fetchCampAuditLog(campId: string): Promise<AuditLogEntry[]> {
+    const response = await api.get(`camps/${campId}/audit/`);
+
+    return response?.data?.data;
+  }
+
   return {
     fetchRegistrationAuditLog,
+    fetchCampAuditLog,
   };
 }

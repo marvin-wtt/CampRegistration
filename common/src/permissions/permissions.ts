@@ -1,5 +1,7 @@
 export type CampPermission = 'camp.view' | 'camp.edit' | 'camp.delete';
 
+export type AuditPermission = 'camp.audit.view';
+
 export type FilePermission =
   | 'camp.files.view'
   | 'camp.files.create'
@@ -67,6 +69,7 @@ export type NewsletterPermission =
 
 export type Permission =
   | CampPermission
+  | AuditPermission
   | FilePermission
   | RegistrationPermission
   | ManagerPermission

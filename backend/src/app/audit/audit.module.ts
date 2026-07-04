@@ -1,8 +1,17 @@
-import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
+import type {
+  AppModule,
+  AppRouter,
+  BindOptions,
+  RoleToPermissions,
+} from '#core/base/AppModule';
 import type { JobScheduler } from '#core/scheduler/JobScheduler';
+import type {
+  AuditPermission,
+  ManagerRole,
+} from '@camp-registration/common/permissions';
 import { AuditService } from '#app/audit/audit.service';
 import { AuditController } from '#app/audit/audit.controller';
-import { AuditRouter } from '#app/audit/audit.routes';
+import { AuditRouter, CampAuditRouter } from '#app/audit/audit.routes';
 import { resolve } from '#core/ioc/container';
 import logger from '#core/logger';
 
@@ -17,6 +26,14 @@ export class AuditModule implements AppModule {
       '/camps/:campId/registrations/:registrationId/audit',
       new AuditRouter(),
     );
+    router.useRouter('/camps/:campId/audit', new CampAuditRouter());
+  }
+
+  registerPermissions(): RoleToPermissions<ManagerRole, AuditPermission> {
+    return {
+      DIRECTOR: ['camp.audit.view'],
+      COORDINATOR: ['camp.audit.view'],
+    };
   }
 
   registerJobs(scheduler: JobScheduler): void {

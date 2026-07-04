@@ -43,6 +43,43 @@ describe('campAuditPolicy.changeSet', () => {
     });
   });
 
+  it('reports a question modified in place (no name added/removed) as `form.<name>`', () => {
+    const before = {
+      form: {
+        pages: [
+          {
+            elements: [
+              {
+                type: 'text',
+                name: 'allergies',
+                isRequired: false,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const after = {
+      form: {
+        pages: [
+          {
+            elements: [
+              {
+                type: 'text',
+                name: 'allergies',
+                isRequired: true,
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    expect(policy.changeSet(before, after)).toEqual({
+      changedFields: ['form.allergies'],
+    });
+  });
+
   it('denies cosmetic (themes) and metadata (updatedAt) columns', () => {
     const before = {
       public: true,

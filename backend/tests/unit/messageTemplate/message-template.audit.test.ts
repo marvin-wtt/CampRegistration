@@ -12,19 +12,48 @@ const policy = messageTemplateAuditPolicy as unknown as {
 
 describe('messageTemplateAuditPolicy.changeSet', () => {
   it('reports editable content fields that changed', () => {
-    const before = { subject: 'Hi', body: '<p>a</p>', priority: 'normal' };
-    const after = { subject: 'Hello', body: '<p>b</p>', priority: 'high' };
+    const before = {
+      event: 'registration_confirmation',
+      country: 'de',
+      subject: 'Hi',
+      body: '<p>a</p>',
+      priority: 'normal',
+    };
+    const after = {
+      event: 'registration_confirmation',
+      country: 'de',
+      subject: 'Hello',
+      body: '<p>b</p>',
+      priority: 'high',
+    };
 
     // Fields are reported in allow-list order, not sorted.
     expect(policy.changeSet(before, after)).toEqual({
       changedFields: ['subject', 'body', 'priority'],
+      changedValues: { event: 'registration_confirmation', country: 'de' },
     });
   });
 
   it('ignores fields outside the allow-list (id, campId, updatedAt)', () => {
-    const before = { subject: 'Hi', campId: 'c1', updatedAt: '2026-06-01' };
-    const after = { subject: 'Hi', campId: 'c1', updatedAt: '2026-06-28' };
+    const before = {
+      event: 'registration_confirmation',
+      country: 'de',
+      subject: 'Hi',
+      campId: 'c1',
+      updatedAt: '2026-06-01',
+    };
+    const after = {
+      event: 'registration_confirmation',
+      country: 'de',
+      subject: 'Hi',
+      campId: 'c1',
+      updatedAt: '2026-06-28',
+    };
 
-    expect(policy.changeSet(before, after)).toEqual({});
+    // event/country are still attached — they identify the template even
+    // when nothing else changed.
+    expect(policy.changeSet(before, after)).toEqual({
+      changedValues: { event: 'registration_confirmation', country: 'de' },
+    });
   });
 });

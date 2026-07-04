@@ -308,6 +308,7 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useAuditTimeline } from 'src/composables/auditTimeline';
 import { useAPIService } from 'src/services/APIService';
 import { useCampDetailsStore } from 'src/stores/camp-details-store';
 import { formatPersonName } from 'src/utils/formatters';
@@ -397,21 +398,14 @@ onMounted(async () => {
   }
 });
 
-const formatDateTime = (timestamp: string): string =>
-  new Date(timestamp).toLocaleString(locale.value, {
-    year: 'numeric',
-    month: '2-digit',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+const { formatDateTime: formatAuditDateTime, actorLabel: resolveActorLabel } =
+  useAuditTimeline();
 
-const actorLabel = (actor: AuditActor | null): string | null => {
-  if (actor === null) {
-    return null;
-  }
-  return actor.name ?? t('timeline.deletedUser');
-};
+const formatDateTime = (timestamp: string): string =>
+  formatAuditDateTime(timestamp, locale.value);
+
+const actorLabel = (actor: AuditActor | null): string | null =>
+  resolveActorLabel(actor, t('timeline.deletedUser'));
 
 const statusLabel = (status: string): string => {
   const key = `status.${status.toLowerCase()}`;

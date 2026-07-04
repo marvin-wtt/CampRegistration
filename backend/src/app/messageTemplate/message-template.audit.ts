@@ -24,6 +24,22 @@ export const messageTemplateAuditPolicy: AuditChangePolicy<MessageTemplate> = {
   changeSet(before, after) {
     return composeChangeSet(
       changedKeysByAllowList(before, after, FIELD_ALLOWLIST),
+      templateIdentity(after ?? before),
     );
   },
 };
+
+/**
+ * `event`/`country` never change after creation, so a plain diff never records
+ * them — but without them an entry can't say *which* template it's about.
+ * Always attach the current values (not just when they change) so create,
+ * update, and delete entries are all identifiable on their own.
+ */
+export function templateIdentity(
+  template: Pick<MessageTemplate, 'event' | 'country'> | null | undefined,
+): Record<string, string | null> {
+  if (!template) {
+    return {};
+  }
+  return { event: template.event, country: template.country };
+}

@@ -12,18 +12,43 @@ const policy = campManagerAuditPolicy as unknown as {
 
 describe('campManagerAuditPolicy.changeSet', () => {
   it('reports changes only for allow-listed keys', () => {
-    const before = { role: 'COUNSELOR', expiresAt: null, campId: 'c1' };
-    const after = { role: 'COORDINATOR', expiresAt: null, campId: 'c1' };
+    const before = {
+      userId: 'u1',
+      role: 'COUNSELOR',
+      expiresAt: null,
+      campId: 'c1',
+    };
+    const after = {
+      userId: 'u1',
+      role: 'COORDINATOR',
+      expiresAt: null,
+      campId: 'c1',
+    };
 
     expect(policy.changeSet(before, after)).toEqual({
       changedFields: ['role'],
+      changedValues: { userId: 'u1', role: 'COORDINATOR' },
     });
   });
 
   it('ignores keys outside the allow-list', () => {
-    const before = { role: 'COUNSELOR', expiresAt: null, campId: 'c1' };
-    const after = { role: 'COUNSELOR', expiresAt: null, campId: 'c2' };
+    const before = {
+      userId: 'u1',
+      role: 'COUNSELOR',
+      expiresAt: null,
+      campId: 'c1',
+    };
+    const after = {
+      userId: 'u1',
+      role: 'COUNSELOR',
+      expiresAt: null,
+      campId: 'c2',
+    };
 
-    expect(policy.changeSet(before, after)).toEqual({});
+    // userId/role are still attached — they identify the manager even when
+    // nothing else changed.
+    expect(policy.changeSet(before, after)).toEqual({
+      changedValues: { userId: 'u1', role: 'COUNSELOR' },
+    });
   });
 });

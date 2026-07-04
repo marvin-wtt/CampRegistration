@@ -4,7 +4,10 @@ import type { Prisma } from '#generated/prisma/client.js';
 import type { Permission } from '@camp-registration/common/permissions';
 import { inject, injectable } from 'inversify';
 import { AuditService } from '#app/audit/audit.service';
-import { campManagerAuditPolicy } from '#app/campManager/camp-manager.audit';
+import {
+  campManagerAuditPolicy,
+  managerIdentity,
+} from '#app/campManager/camp-manager.audit';
 
 type ManagerCreateData = Pick<
   Prisma.CampManagerCreateInput,
@@ -123,6 +126,7 @@ export class CampManagerService extends BaseService {
         entityType: campManagerAuditPolicy.entityType,
         entityId: manager.id,
         campId,
+        changes: { changedValues: managerIdentity(manager) },
       });
 
       return manager;
@@ -155,6 +159,7 @@ export class CampManagerService extends BaseService {
         entityType: campManagerAuditPolicy.entityType,
         entityId: manager.id,
         campId,
+        changes: { changedValues: managerIdentity(manager) },
       });
 
       return manager;
@@ -202,6 +207,7 @@ export class CampManagerService extends BaseService {
         entityType: campManagerAuditPolicy.entityType,
         entityId: id,
         campId: deleted.campId,
+        changes: { changedValues: managerIdentity(deleted) },
       });
 
       return deleted;

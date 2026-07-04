@@ -10,7 +10,7 @@ export class AuditResource extends JsonResource<
   AuditLogEntry
 > {
   transform(): AuditLogEntry {
-    const { log, actor } = this.data;
+    const { log, actor, subject } = this.data;
     return {
       id: log.id,
       action: log.action,
@@ -18,6 +18,7 @@ export class AuditResource extends JsonResource<
       entityId: log.entityId,
       campId: log.campId,
       actor,
+      subject,
       changes: log.changes ?? null,
       createdAt: log.createdAt.toISOString(),
     };

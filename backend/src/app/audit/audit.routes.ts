@@ -27,3 +27,25 @@ export class AuditRouter extends ModuleRouter {
     );
   }
 }
+
+/**
+ * Mounted at `/camps/:campId/audit` — the camp-wide audit log covering every
+ * entity type scoped to the camp. The `camp` binding is registered globally by
+ * `CampRouter`, so no bindings are needed here.
+ */
+export class CampAuditRouter extends ModuleRouter {
+  protected registerBindings() {
+    // Reuses the global `camp` binding.
+  }
+
+  protected defineRoutes() {
+    const auditController = resolve(AuditController);
+
+    this.router.get(
+      '/',
+      auth(),
+      guard(campManager('camp.audit.view')),
+      controller(auditController, 'indexForCamp'),
+    );
+  }
+}

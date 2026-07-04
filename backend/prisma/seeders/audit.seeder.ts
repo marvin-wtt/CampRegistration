@@ -88,8 +88,14 @@ class AuditSeeder extends BaseSeeder {
         continue;
       }
 
-      const editedAt = moment(registration.createdAt)
-        .add(faker.number.int({ min: 1, max: 5 }), 'days')
+      const editedAt = moment
+        .min(
+          moment(registration.createdAt).add(
+            faker.number.int({ min: 1, max: 5 }),
+            'days',
+          ),
+          moment(),
+        )
         .toDate();
 
       // A manager edits some answers (field names only — never the values).
@@ -121,8 +127,14 @@ class AuditSeeder extends BaseSeeder {
             actorId: MANAGER_USER_ID,
             actorIp: MANAGER_IP,
             changes: { changedValues: { status: registration.status } },
-            createdAt: moment(editedAt)
-              .add(faker.number.int({ min: 1, max: 3 }), 'days')
+            createdAt: moment
+              .min(
+                moment(editedAt).add(
+                  faker.number.int({ min: 1, max: 3 }),
+                  'days',
+                ),
+                moment(),
+              )
               .toDate(),
           },
         });
