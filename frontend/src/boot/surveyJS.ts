@@ -8,6 +8,7 @@ export default defineBoot(() => {
   const licenseKey = import.meta.env.SURVEYJS_LICENCE_KEY;
 
   if (!licenseKey && import.meta.env.QUASAR_PROD) {
+    // eslint-disable-next-line no-console
     console.warn('SURVEYJS_LICENCE_KEY is not configured.');
     return;
   }
