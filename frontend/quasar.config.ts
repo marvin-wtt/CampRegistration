@@ -63,11 +63,12 @@ export default defineConfig((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
-      // rawDefine: {}
+      defineEnv: {
+        SURVEYJS_LICENCE_KEY: import.meta.env.SURVEYJS_LICENCE_KEY,
+      },
+      // define: {}
       // ignorePublicFolder: true,
       // minify: false,
-      // polyfillModulePreload: true,
       // distDir
 
       // extendViteConf (viteConf) {},

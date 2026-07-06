@@ -10,4 +10,6 @@
  *   readonly MY_OTHER_VAR: string;
  * }
  */
-interface ImportMetaEnv {}
+interface ImportMetaEnv {
+  readonly SURVEYJS_LICENCE_KEY: string;
+}
