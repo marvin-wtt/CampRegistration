@@ -9,8 +9,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import parsePhoneNumber, { isSupportedCountry } from 'libphonenumber-js';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
 import type { Registration } from '@camp-registration/common/entities';
 
 const { props: cellProps, camp } = defineProps<TableCellProps>();

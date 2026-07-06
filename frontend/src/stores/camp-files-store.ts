@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type {
   ServiceFileCreateData,
   ServiceFileUpdateData,

@@ -135,10 +135,10 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar, type QTableColumn } from 'quasar';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import type { QueueInfo } from 'src/services/QueueService';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import type { QueueInfo } from '@/services/QueueService';
 
 const { t } = useI18n();
 const quasar = useQuasar();

@@ -533,17 +533,17 @@
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useNewsletterStore } from 'stores/newsletter-store';
-import { useNewsletterManagerStore } from 'stores/newsletter-manager-store';
-import { useNewsletterSubscriberStore } from 'stores/newsletter-subscriber-store';
-import { useNewsletterMessageStore } from 'stores/newsletter-message-store';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
+import { useNewsletterStore } from '@/stores/newsletter-store';
+import { useNewsletterManagerStore } from '@/stores/newsletter-manager-store';
+import { useNewsletterSubscriberStore } from '@/stores/newsletter-subscriber-store';
+import { useNewsletterMessageStore } from '@/stores/newsletter-message-store';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import EmailEditor from '@/components/campManagement/contact/EmailEditor.vue';
 import FileInput, {
   type FileInputModel,
-} from 'components/common/inputs/FileInput.vue';
+} from '@/components/common/inputs/FileInput.vue';
 import { useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import type {
   NewsletterManager,
   NewsletterManagerCreateData,
@@ -554,12 +554,12 @@ import type {
   NewsletterSubscriberImportData,
 } from '@camp-registration/common/entities';
 import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
-import NewsletterEditDialog from 'components/newsletter/NewsletterEditDialog.vue';
-import NewsletterSubscriberAddDialog from 'components/newsletter/NewsletterSubscriberAddDialog.vue';
-import NewsletterSubscriberImportDialog from 'components/newsletter/NewsletterSubscriberImportDialog.vue';
-import NewsletterManagerAddDialog from 'components/newsletter/NewsletterManagerAddDialog.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useProfileStore } from 'stores/profile-store';
+import NewsletterEditDialog from '@/components/newsletter/NewsletterEditDialog.vue';
+import NewsletterSubscriberAddDialog from '@/components/newsletter/NewsletterSubscriberAddDialog.vue';
+import NewsletterSubscriberImportDialog from '@/components/newsletter/NewsletterSubscriberImportDialog.vue';
+import NewsletterManagerAddDialog from '@/components/newsletter/NewsletterManagerAddDialog.vue';
+import { useAPIService } from '@/services/APIService';
+import { useProfileStore } from '@/stores/profile-store';
 import DOMPurify from 'dompurify';
 
 const { t, d } = useI18n();

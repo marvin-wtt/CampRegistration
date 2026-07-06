@@ -190,14 +190,14 @@ import type {
   UserCreateData,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import UserCreateDialog from 'components/administration/users/UserCreateDialog.vue';
-import UserUpdateDialog from 'components/administration/users/UserUpdateDialog.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import UserCreateDialog from '@/components/administration/users/UserCreateDialog.vue';
+import UserUpdateDialog from '@/components/administration/users/UserUpdateDialog.vue';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();

@@ -1,7 +1,7 @@
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
+import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
 
 installQuasarPlugin();
 

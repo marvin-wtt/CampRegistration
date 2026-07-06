@@ -56,10 +56,10 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type { QTableColumn } from 'quasar';
 import type { Newsletter } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
 import { useRouter } from 'vue-router';
 
 const { t, d } = useI18n();

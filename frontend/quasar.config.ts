@@ -1,7 +1,7 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-import { defineConfig } from '#q-app/wrappers';
+import { defineConfig } from '#q-app';
 import { fileURLToPath } from 'node:url';
 import { freshPaint } from '@anoyomoose/q2-fresh-paint-core';
 import { md3eTheme } from '@anoyomoose/q2-fresh-paint-md3e';
@@ -63,11 +63,12 @@ export default defineConfig((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
-      // rawDefine: {}
+      defineEnv: {
+        SURVEYJS_LICENCE_KEY: import.meta.env.SURVEYJS_LICENCE_KEY,
+      },
+      // define: {}
       // ignorePublicFolder: true,
       // minify: false,
-      // polyfillModulePreload: true,
       // distDir
 
       // extendViteConf (viteConf) {},

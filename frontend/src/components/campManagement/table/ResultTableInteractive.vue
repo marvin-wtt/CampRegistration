@@ -398,19 +398,19 @@ import type {
   TableColumnTemplate,
   Registration,
 } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { usePermissions } from 'src/composables/permissions';
-import { useTemplateStore } from 'stores/template-store';
-import TableTemplateIndexDialog from 'components/campManagement/table/dialogs/TableTemplateIndexDialog.vue';
-import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import BottomSheet from 'components/BottomSheet.vue';
-import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
-import type { CTableColumnTemplate } from 'src/types/CTableTemplate';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePermissions } from '@/composables/permissions';
+import { useTemplateStore } from '@/stores/template-store';
+import TableTemplateIndexDialog from '@/components/campManagement/table/dialogs/TableTemplateIndexDialog.vue';
+import TableCellWrapper from '@/components/campManagement/table/TableCellWrapper.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
+import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
+import type { CTableColumnTemplate } from '@/types/CTableTemplate';
 import { useResultTableModel } from './useResultTableModel';
-import PrintTableDialog from 'components/campManagement/table/dialogs/PrintTableDialog.vue';
-import RegistrationActionList from 'components/campManagement/table/RegistrationActionList.vue';
-import RegistrationRowCardDialog from 'components/campManagement/table/dialogs/RegistrationRowCardDialog.vue';
+import PrintTableDialog from '@/components/campManagement/table/dialogs/PrintTableDialog.vue';
+import RegistrationActionList from '@/components/campManagement/table/RegistrationActionList.vue';
+import RegistrationRowCardDialog from '@/components/campManagement/table/dialogs/RegistrationRowCardDialog.vue';
 import { computed, nextTick, ref, toRef } from 'vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 

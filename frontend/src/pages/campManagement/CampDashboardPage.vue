@@ -206,24 +206,24 @@ import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CampSummaryHero from 'components/campManagement/dashboard/CampSummaryHero.vue';
-import StatCard from 'components/campManagement/dashboard/StatCard.vue';
-import CountryBreakdownTable from 'components/campManagement/dashboard/CountryBreakdownTable.vue';
-import DemographicsExplorer from 'components/campManagement/dashboard/DemographicsExplorer.vue';
-import TasksDueWidget from 'components/campManagement/dashboard/TasksDueWidget.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { useCampFilesStore } from 'stores/camp-files-store';
-import { useTaskStore } from 'stores/task-store';
-import { useCampStatistics } from 'src/composables/campStatistics';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { usePermissions } from 'src/composables/permissions';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CampSummaryHero from '@/components/campManagement/dashboard/CampSummaryHero.vue';
+import StatCard from '@/components/campManagement/dashboard/StatCard.vue';
+import CountryBreakdownTable from '@/components/campManagement/dashboard/CountryBreakdownTable.vue';
+import DemographicsExplorer from '@/components/campManagement/dashboard/DemographicsExplorer.vue';
+import TasksDueWidget from '@/components/campManagement/dashboard/TasksDueWidget.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { useCampFilesStore } from '@/stores/camp-files-store';
+import { useTaskStore } from '@/stores/task-store';
+import { useCampStatistics } from '@/composables/campStatistics';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { usePermissions } from '@/composables/permissions';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
-} from 'components/campManagement/table/localTableTemplates';
+} from '@/components/campManagement/table/localTableTemplates';
 
 const { t } = useI18n();
 const router = useRouter();

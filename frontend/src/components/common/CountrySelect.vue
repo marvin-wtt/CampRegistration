@@ -38,7 +38,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
 import { type QSelectOption, type QSelectSlots } from 'quasar';
 

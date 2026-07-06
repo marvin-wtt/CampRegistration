@@ -381,20 +381,20 @@
 
 <script setup lang="ts">
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
-import TimeInput from 'components/common/inputs/TimeInput.vue';
-import CampEditStep from 'components/campManagement/settings/create/CampEditStep.vue';
-import CountrySelect from 'components/common/CountrySelect.vue';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
+import TimeInput from '@/components/common/inputs/TimeInput.vue';
+import CampEditStep from '@/components/campManagement/settings/create/CampEditStep.vue';
+import CountrySelect from '@/components/common/CountrySelect.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import { computed, ref, watch } from 'vue';
 import type {
   CampCreateData,
   CampDetails,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { useAssignedCampsStore } from 'stores/assigned-camps-store';
-import { useCampsStore } from 'stores/camps-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useCampsStore } from '@/stores/camps-store';
 
 const assignedCampsStore = useAssignedCampsStore();
 const campStore = useCampsStore();
@@ -416,12 +416,10 @@ const { to } = useObjectTranslation();
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
   return (assignedCampsStore.data ?? [])
-    .map(
-      (camp): QSelectOption => ({
-        value: camp.id,
-        label: to(camp.name),
-      }),
-    )
+    .map((camp): QSelectOption => ({
+      value: camp.id,
+      label: to(camp.name),
+    }))
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 

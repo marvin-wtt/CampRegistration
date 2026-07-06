@@ -58,7 +58,7 @@
 <script lang="ts" setup>
 import type { Camp } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { usePermissions } from 'src/composables/permissions';
+import { usePermissions } from '@/composables/permissions';
 
 const { t } = useI18n();
 const { canFor } = usePermissions();

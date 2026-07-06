@@ -1,5 +1,5 @@
-import { useProfileStore } from 'stores/profile-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useProfileStore } from '@/stores/profile-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type { Permission } from '@camp-registration/common/permissions';
 import { storeToRefs } from 'pinia';
 

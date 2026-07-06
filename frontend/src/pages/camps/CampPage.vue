@@ -61,16 +61,16 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import RegistrationForm from 'components/common/RegistrationForm.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import type { CampDetails } from '@camp-registration/common/entities';
-import { isAPIServiceError, useAPIService } from 'src/services/APIService';
+import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useErrorExtractor } from 'src/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const { t, d } = useI18n();
 const { to } = useObjectTranslation();
@@ -161,11 +161,7 @@ async function init() {
 }
 
 type RegistrationStatus =
-  | 'open'
-  | 'not_open'
-  | 'closed'
-  | 'unavailable'
-  | 'not_found';
+  'open' | 'not_open' | 'closed' | 'unavailable' | 'not_found';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
   if (knownError.value) {

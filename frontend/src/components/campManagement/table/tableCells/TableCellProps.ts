@@ -1,4 +1,4 @@
-import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import type {
   CampDetails,
   Registration,

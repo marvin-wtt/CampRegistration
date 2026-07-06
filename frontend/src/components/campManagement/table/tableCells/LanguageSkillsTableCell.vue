@@ -28,8 +28,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 interface Skill {
   name: string;

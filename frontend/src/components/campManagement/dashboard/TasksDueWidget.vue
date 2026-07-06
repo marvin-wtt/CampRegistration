@@ -104,12 +104,12 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted } from 'vue';
-import { useTaskStore } from 'stores/task-store';
-import { useCampManagerStore } from 'stores/camp-manager-store';
-import { useCurrentManager } from 'src/composables/currentManager';
+import { useTaskStore } from '@/stores/task-store';
+import { useCampManagerStore } from '@/stores/camp-manager-store';
+import { useCurrentManager } from '@/composables/currentManager';
 import type { Task } from '@camp-registration/common/entities';
-import { taskPhaseOf } from 'src/utils/taskPhase';
-import { parseLocalDate } from 'src/utils/date';
+import { taskPhaseOf } from '@/utils/taskPhase';
+import { parseLocalDate } from '@/utils/date';
 
 const { t, d } = useI18n();
 const taskStore = useTaskStore();

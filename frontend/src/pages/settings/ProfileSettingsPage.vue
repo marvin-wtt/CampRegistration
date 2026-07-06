@@ -23,10 +23,10 @@
 
 <script lang="ts" setup>
 import type { ProfileUpdateData } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { storeToRefs } from 'pinia';
-import ProfileSettingsCard from 'components/settings/ProfileSettingsCard.vue';
-import EmailSettingsCard from 'components/settings/EmailSettingsCard.vue';
+import ProfileSettingsCard from '@/components/settings/ProfileSettingsCard.vue';
+import EmailSettingsCard from '@/components/settings/EmailSettingsCard.vue';
 
 const profileStore = useProfileStore();
 const { user } = storeToRefs(profileStore);

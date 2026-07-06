@@ -4,7 +4,7 @@ import type {
   MessageDelivery,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useMessageService() {
   async function fetchMessages(campId: string): Promise<Message[]> {

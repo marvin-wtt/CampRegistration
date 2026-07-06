@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import RegistrationForm from 'components/common/RegistrationForm.vue';
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import RegistrationForm from '@/components/common/RegistrationForm.vue';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 
 installQuasarPlugin();
 

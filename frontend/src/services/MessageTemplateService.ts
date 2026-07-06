@@ -3,7 +3,7 @@ import type {
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useMessageTemplateService() {
   async function fetchMessageTemplates(

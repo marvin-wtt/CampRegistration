@@ -147,9 +147,9 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useCampStatistics } from 'src/composables/campStatistics';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useCampStatistics } from '@/composables/campStatistics';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();

@@ -3,12 +3,12 @@ import { type RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/CampLayout.vue'),
+    component: () => import('@/layouts/CampLayout.vue'),
     children: [
       {
         path: '',
         name: 'home',
-        component: () => import('pages/LandingPage.vue'),
+        component: () => import('@/pages/LandingPage.vue'),
       },
       {
         path: 'camps',
@@ -16,107 +16,107 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'camps',
-            component: () => import('pages/camps/CampsPublicPage.vue'),
+            component: () => import('@/pages/camps/CampsPublicPage.vue'),
           },
           {
             path: ':campId',
             name: 'camp',
-            component: () => import('pages/camps/CampPage.vue'),
+            component: () => import('@/pages/camps/CampPage.vue'),
           },
         ],
       },
       {
         path: 'imprint',
         name: 'imprint',
-        component: () => import('pages/legal/ImprintPage.vue'),
+        component: () => import('@/pages/legal/ImprintPage.vue'),
       },
       {
         path: 'privacy-policy',
         name: 'privacy-policy',
-        component: () => import('pages/legal/PrivacyPolicyPage.vue'),
+        component: () => import('@/pages/legal/PrivacyPolicyPage.vue'),
       },
     ],
   },
   {
     path: '/setup',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'setup',
         path: '',
-        component: () => import('pages/auth/SetupPage.vue'),
+        component: () => import('@/pages/auth/SetupPage.vue'),
       },
     ],
   },
   {
     path: '/login',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'login',
         path: '',
-        component: () => import('pages/auth/LoginPage.vue'),
+        component: () => import('@/pages/auth/LoginPage.vue'),
       },
     ],
   },
   {
     path: '/register',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'register',
         path: '/register',
-        component: () => import('pages/auth/RegisterPage.vue'),
+        component: () => import('@/pages/auth/RegisterPage.vue'),
       },
     ],
   },
   {
     path: '/forgot-password',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'forgot-password',
         path: '',
-        component: () => import('pages/auth/ForgotPasswordPage.vue'),
+        component: () => import('@/pages/auth/ForgotPasswordPage.vue'),
       },
     ],
   },
   {
     path: '/reset-password',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'reset-password',
         path: '',
-        component: () => import('pages/auth/ResetPasswordPage.vue'),
+        component: () => import('@/pages/auth/ResetPasswordPage.vue'),
       },
     ],
   },
   {
     path: '/verify-email',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'verify-email',
         path: '',
-        component: () => import('pages/auth/VerifyEmailPage.vue'),
+        component: () => import('@/pages/auth/VerifyEmailPage.vue'),
       },
     ],
   },
   {
     path: '/verify-otp',
-    component: () => import('layouts/AuthenticationLayout.vue'),
+    component: () => import('@/layouts/AuthenticationLayout.vue'),
     children: [
       {
         name: 'verify-otp',
         path: '',
-        component: () => import('pages/auth/VerifyOtpPage.vue'),
+        component: () => import('@/pages/auth/VerifyOtpPage.vue'),
       },
     ],
   },
   {
     path: '/management',
-    component: () => import('layouts/CampManagementLayout.vue'),
+    component: () => import('@/layouts/CampManagementLayout.vue'),
     meta: {
       auth: true,
     },
@@ -127,7 +127,8 @@ const routes: RouteRecordRaw[] = [
         meta: {
           hideDrawer: true,
         },
-        component: () => import('pages/campManagement/ManagementIndexPage.vue'),
+        component: () =>
+          import('@/pages/campManagement/ManagementIndexPage.vue'),
       },
       {
         path: 'camps',
@@ -135,7 +136,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             component: () =>
-              import('pages/campManagement/CampManagementIndexPage.vue'),
+              import('@/pages/campManagement/CampManagementIndexPage.vue'),
             name: 'management.camps',
             meta: {
               hideDrawer: true,
@@ -152,35 +153,36 @@ const routes: RouteRecordRaw[] = [
                 path: 'dashboard',
                 name: 'management.camp.dashboard',
                 component: () =>
-                  import('pages/campManagement/CampDashboardPage.vue'),
+                  import('@/pages/campManagement/CampDashboardPage.vue'),
               },
               {
                 path: 'participants',
                 name: 'management.camp.participants',
                 component: () =>
-                  import('pages/campManagement/RegistrationsPage.vue'),
+                  import('@/pages/campManagement/RegistrationsPage.vue'),
               },
               {
                 path: 'contact',
                 name: 'management.camp.contact',
-                component: () => import('pages/campManagement/ContactPage.vue'),
+                component: () =>
+                  import('@/pages/campManagement/ContactPage.vue'),
               },
               {
                 path: 'program-planner',
                 name: 'management.camp.program-planner',
                 component: () =>
-                  import('pages/campManagement/ProgramPlannerPage.vue'),
+                  import('@/pages/campManagement/ProgramPlannerPage.vue'),
               },
               {
                 path: 'room-planner',
                 name: 'management.camp.room-planner',
                 component: () =>
-                  import('pages/campManagement/RoomPlannerPage.vue'),
+                  import('@/pages/campManagement/RoomPlannerPage.vue'),
               },
               {
                 path: 'tasks',
                 name: 'management.camp.tasks',
-                component: () => import('pages/campManagement/TasksPage.vue'),
+                component: () => import('@/pages/campManagement/TasksPage.vue'),
               },
               {
                 path: 'settings',
@@ -189,37 +191,37 @@ const routes: RouteRecordRaw[] = [
                     path: '',
                     name: 'management.camp.settings',
                     component: () =>
-                      import('pages/campManagement/settings/SettingsPage.vue'),
+                      import('@/pages/campManagement/settings/SettingsPage.vue'),
                   },
                   {
                     path: 'access',
                     name: 'management.camp.settings.access',
                     component: () =>
-                      import('pages/campManagement/settings/AccessPage.vue'),
+                      import('@/pages/campManagement/settings/AccessPage.vue'),
                   },
                   {
                     path: 'edit',
                     name: 'management.camp.settings.edit',
                     component: () =>
-                      import('pages/campManagement/settings/CampEditPage.vue'),
+                      import('@/pages/campManagement/settings/CampEditPage.vue'),
                   },
                   {
                     path: 'emails',
                     name: 'management.camp.settings.emails',
                     component: () =>
-                      import('pages/campManagement/settings/MessageTemplateEditPage.vue'),
+                      import('@/pages/campManagement/settings/MessageTemplateEditPage.vue'),
                   },
                   {
                     path: 'files',
                     name: 'management.camp.settings.files',
                     component: () =>
-                      import('pages/campManagement/settings/FileSettingsPage.vue'),
+                      import('@/pages/campManagement/settings/FileSettingsPage.vue'),
                   },
                   {
                     path: 'form',
                     name: 'management.camp.settings.form',
                     component: () =>
-                      import('pages/campManagement/settings/FormEditPage.vue'),
+                      import('@/pages/campManagement/settings/FormEditPage.vue'),
                   },
                 ],
               },
@@ -231,7 +233,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/management/newsletters',
-    component: () => import('layouts/NewsletterLayout.vue'),
+    component: () => import('@/layouts/NewsletterLayout.vue'),
     meta: {
       auth: true,
     },
@@ -239,18 +241,18 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'management.newsletters',
-        component: () => import('pages/newsletter/NewsletterIndexPage.vue'),
+        component: () => import('@/pages/newsletter/NewsletterIndexPage.vue'),
       },
       {
         path: ':newsletterId',
         name: 'management.newsletter',
-        component: () => import('pages/newsletter/NewsletterPage.vue'),
+        component: () => import('@/pages/newsletter/NewsletterPage.vue'),
       },
     ],
   },
   {
     path: '/administration',
-    component: () => import('layouts/AdministrationLayout.vue'),
+    component: () => import('@/layouts/AdministrationLayout.vue'),
     meta: {
       auth: true,
     },
@@ -262,77 +264,78 @@ const routes: RouteRecordRaw[] = [
           hideDrawer: true,
         },
         component: () =>
-          import('pages/administration/AdministrationIndexPage.vue'),
+          import('@/pages/administration/AdministrationIndexPage.vue'),
       },
       {
         path: 'camps',
         name: 'administration.camps',
-        component: () => import('pages/administration/CampIndexPage.vue'),
+        component: () => import('@/pages/administration/CampIndexPage.vue'),
       },
       {
         path: 'newsletters',
         name: 'administration.newsletters',
-        component: () => import('pages/administration/NewsletterIndexPage.vue'),
+        component: () =>
+          import('@/pages/administration/NewsletterIndexPage.vue'),
       },
       {
         path: 'users',
         name: 'administration.users',
-        component: () => import('pages/administration/UserIndexPage.vue'),
+        component: () => import('@/pages/administration/UserIndexPage.vue'),
       },
       {
         path: 'queues',
         name: 'administration.queues',
-        component: () => import('pages/administration/QueueIndexPage.vue'),
+        component: () => import('@/pages/administration/QueueIndexPage.vue'),
       },
     ],
   },
   {
     path: '/settings',
-    component: () => import('layouts/AccountSettingsLayout.vue'),
+    component: () => import('@/layouts/AccountSettingsLayout.vue'),
     meta: {
       auth: true,
     },
     children: [
       {
         path: 'account',
-        component: () => import('pages/settings/AccountSettingsPage.vue'),
+        component: () => import('@/pages/settings/AccountSettingsPage.vue'),
       },
       {
         name: 'settings',
         path: 'profile',
-        component: () => import('pages/settings/ProfileSettingsPage.vue'),
+        component: () => import('@/pages/settings/ProfileSettingsPage.vue'),
       },
       {
         path: 'security',
-        component: () => import('pages/settings/SecuritySettingsPage.vue'),
+        component: () => import('@/pages/settings/SecuritySettingsPage.vue'),
       },
     ],
   },
   {
     path: '/newsletters/unsubscribe/:token',
-    component: () => import('layouts/PublicLayout.vue'),
+    component: () => import('@/layouts/PublicLayout.vue'),
     children: [
       {
         path: '',
         name: 'newsletter.unsubscribe',
         component: () =>
-          import('pages/newsletter/NewsletterUnsubscribePage.vue'),
+          import('@/pages/newsletter/NewsletterUnsubscribePage.vue'),
       },
     ],
   },
   {
     path: '/print',
-    component: () => import('layouts/PrintLayout.vue'),
+    component: () => import('@/layouts/PrintLayout.vue'),
     children: [
       {
         path: 'tables',
         name: 'print.tables',
-        component: () => import('pages/print/PrintTablesPage.vue'),
+        component: () => import('@/pages/print/PrintTablesPage.vue'),
       },
       {
         path: 'calendar',
         name: 'print.calendar',
-        component: () => import('pages/print/PrintCalendarPage.vue'),
+        component: () => import('@/pages/print/PrintCalendarPage.vue'),
       },
     ],
   },
@@ -340,7 +343,7 @@ const routes: RouteRecordRaw[] = [
   // but you can also remove it
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFoundPage.vue'),
+    component: () => import('@/pages/ErrorNotFoundPage.vue'),
   },
 ];
 

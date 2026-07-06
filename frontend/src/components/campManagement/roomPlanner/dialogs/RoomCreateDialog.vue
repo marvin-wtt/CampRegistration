@@ -68,7 +68,7 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
 import type { RoomCreateData } from '@camp-registration/common/entities';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 
 const { locales } = defineProps<{
   locales?: string[];

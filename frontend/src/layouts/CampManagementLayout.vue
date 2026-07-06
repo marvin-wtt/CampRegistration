@@ -121,20 +121,20 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import NavigationItem from 'components/NavigationItem.vue';
-import NavigationItemSkeleton from 'components/NavigationItemSkeleton.vue';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
-import CampSwitcher from 'components/layout/CampSwitcher.vue';
-import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useAssignedCampsStore } from 'stores/assigned-camps-store';
+import NavigationItem from '@/components/NavigationItem.vue';
+import NavigationItemSkeleton from '@/components/NavigationItemSkeleton.vue';
+import ProfileMenu from '@/components/common/ProfileMenu.vue';
+import CampSwitcher from '@/components/layout/CampSwitcher.vue';
+import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { useMeta, useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
-import { useProfileStore } from 'stores/profile-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
-import { usePermissions } from 'src/composables/permissions';
+import { useAuthStore } from '@/stores/auth-store';
+import { useProfileStore } from '@/stores/profile-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
+import { usePermissions } from '@/composables/permissions';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 

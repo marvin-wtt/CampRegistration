@@ -27,9 +27,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { computed } from 'vue';
 import type { Translatable } from '@camp-registration/common/entities';
 

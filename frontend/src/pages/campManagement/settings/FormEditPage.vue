@@ -16,17 +16,17 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted, ref } from 'vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useCampFilesStore } from 'stores/camp-files-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useCampFilesStore } from '@/stores/camp-files-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
-import { useRegistrationsStore } from 'stores/registration-store';
-import FormEditor from 'components/campManagement/settings/form/FormEditor.vue';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import FormEditor from '@/components/campManagement/settings/form/FormEditor.vue';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import type { ITheme } from 'survey-core';
-import EditorRestrictedAccessDialog from 'components/campManagement/settings/form/EditorRestrictedAccessDialog.vue';
+import EditorRestrictedAccessDialog from '@/components/campManagement/settings/form/EditorRestrictedAccessDialog.vue';
 
 const quasar = useQuasar();
 const campDetailsStore = useCampDetailsStore();

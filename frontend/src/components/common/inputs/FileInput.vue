@@ -40,7 +40,7 @@ import { ref, useAttrs, watch } from 'vue';
 import type { QInputSlots } from 'quasar';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type { ServiceFile } from '@camp-registration/common/entities';
 
 const api = useAPIService();

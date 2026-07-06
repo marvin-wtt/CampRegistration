@@ -48,7 +48,7 @@
 import { useI18n } from 'vue-i18n';
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 
 const { t } = useI18n();
 const route = useRoute();

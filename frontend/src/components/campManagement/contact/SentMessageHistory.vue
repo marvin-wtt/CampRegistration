@@ -319,9 +319,9 @@ import type {
   Registration,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { formatPersonName } from 'src/utils/formatters';
-import { useAPIService } from 'src/services/APIService';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { formatPersonName } from '@/utils/formatters';
+import { useAPIService } from '@/services/APIService';
 
 const {
   messages,

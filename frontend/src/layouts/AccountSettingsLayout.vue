@@ -98,14 +98,14 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import NavigationItem from 'components/NavigationItem.vue';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import NavigationItem from '@/components/NavigationItem.vue';
+import ProfileMenu from '@/components/common/ProfileMenu.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { useQuasar } from 'quasar';
-import type { NavigationItemProps } from 'components/NavigationItemProps.ts';
-import { usePermissions } from 'src/composables/permissions';
+import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
+import { usePermissions } from '@/composables/permissions';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 

@@ -1,14 +1,13 @@
 import type { Component } from 'vue';
-import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
-import components from 'components/campManagement/table/tableCells';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
+import DefaultTableCell from '@/components/campManagement/table/tableCells/DefaultTableCell.vue';
+import components from '@/components/campManagement/table/tableCells';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellOptionsProps } from '@/components/campManagement/table/tableCells/TableCellOptionsProps';
 
 type Options = object | undefined;
 
 type MaybeLazyComponent<T extends Options> =
-  | Component<TableCellProps<T>>
-  | (() => Component<TableCellProps<T>>);
+  Component<TableCellProps<T>> | (() => Component<TableCellProps<T>>);
 
 type TableCellOptionsComponentProps<T> = TableCellOptionsProps & {
   modelValue?: T;

@@ -126,8 +126,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { CountryStats } from 'src/composables/campStatistics';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import type { CountryStats } from '@/composables/campStatistics';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const { showPending = true } = defineProps<{
   rows: CountryStats[];

@@ -135,7 +135,7 @@
 
 <script lang="ts" setup>
 import type { ProgramEvent } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 

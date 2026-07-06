@@ -127,8 +127,8 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
-import { taskPhaseOf } from 'src/utils/taskPhase';
-import { parseLocalDate } from 'src/utils/date';
+import { taskPhaseOf } from '@/utils/taskPhase';
+import { parseLocalDate } from '@/utils/date';
 
 const { t, d } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =

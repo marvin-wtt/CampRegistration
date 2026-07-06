@@ -59,7 +59,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw } from 'vue-router';
-import { usePermissions } from 'src/composables/permissions';
+import { usePermissions } from '@/composables/permissions';
 import type { Permission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();

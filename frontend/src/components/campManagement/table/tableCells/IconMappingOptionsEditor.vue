@@ -121,16 +121,16 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { QSelectOption } from 'quasar';
-import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
-import IconPicker from 'components/common/inputs/IconPicker.vue';
-import SemanticColorSelect from 'components/common/inputs/SemanticColorSelect.vue';
-import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import type { TableCellOptionsProps } from '@/components/campManagement/table/tableCells/TableCellOptionsProps';
+import IconPicker from '@/components/common/inputs/IconPicker.vue';
+import SemanticColorSelect from '@/components/common/inputs/SemanticColorSelect.vue';
+import { FormSelectCache } from '@/components/campManagement/table/tableCells/FormSelectCache';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import type {
   IconMappingOptions,
   IconMapping,
   IconMappingFallback,
-} from 'components/campManagement/table/tableCells/IconMappingOptions';
+} from '@/components/campManagement/table/tableCells/IconMappingOptions';
 
 const { camp, field } = defineProps<TableCellOptionsProps>();
 

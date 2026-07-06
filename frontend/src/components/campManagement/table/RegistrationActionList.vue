@@ -63,9 +63,9 @@
 <script lang="ts" setup>
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import RegistrationEditor from 'components/campManagement/table/dialogs/RegistrationEditor.vue';
+import RegistrationEditor from '@/components/campManagement/table/dialogs/RegistrationEditor.vue';
 
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import type {
@@ -74,14 +74,14 @@ import type {
   RegistrationDeleteQuery,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { usePermissions } from 'src/composables/permissions';
-import RegistrationDeleteDialog from 'components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
-import RegistrationAcceptDialog from 'components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
-import RegistrationDetailsDialog from 'components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
-import RegistrationMessageDialog from 'components/campManagement/table/dialogs/RegistrationMessageDialog.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useMessageTemplateService } from 'src/services/MessageTemplateService';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { usePermissions } from '@/composables/permissions';
+import RegistrationDeleteDialog from '@/components/campManagement/table/dialogs/RegistrationDeleteDialog.vue';
+import RegistrationAcceptDialog from '@/components/campManagement/table/dialogs/RegistrationAcceptDialog.vue';
+import RegistrationDetailsDialog from '@/components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
+import RegistrationMessageDialog from '@/components/campManagement/table/dialogs/RegistrationMessageDialog.vue';
+import { useAPIService } from '@/services/APIService';
+import { useMessageTemplateService } from '@/services/MessageTemplateService';
 
 const { registration, readonly = false } = defineProps<{
   registration: Registration;

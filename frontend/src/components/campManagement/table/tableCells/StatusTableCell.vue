@@ -30,7 +30,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 
 const { props: cellProps } = defineProps<TableCellProps>();
 

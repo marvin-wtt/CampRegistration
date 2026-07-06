@@ -1,9 +1,19 @@
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import '@camp-registration/common/form';
 import 'survey-core/i18n/german';
 import 'survey-core/i18n/french';
 import { slk } from 'survey-core';
 
 export default defineBoot(() => {
-  slk(process.env.SURVEYJS_LICENCE_KEY ?? '');
+  const licenseKey = import.meta.env.SURVEYJS_LICENCE_KEY;
+
+  if (!licenseKey && import.meta.env.QUASAR_PROD) {
+    // eslint-disable-next-line no-console
+    console.warn('SURVEYJS_LICENCE_KEY is not configured.');
+    return;
+  }
+
+  if (licenseKey) {
+    slk(licenseKey);
+  }
 });

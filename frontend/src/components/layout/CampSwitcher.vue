@@ -70,9 +70,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import CampSwitcherMenu from 'components/layout/CampSwitcherMenu.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import CampSwitcherMenu from '@/components/layout/CampSwitcherMenu.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 defineProps<{

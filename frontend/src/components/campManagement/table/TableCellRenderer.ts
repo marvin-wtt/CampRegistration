@@ -1,7 +1,7 @@
 import { type Component } from 'vue';
-import type { CTableColumnTemplate } from 'src/types/CTableTemplate';
-import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { CTableColumnTemplate } from '@/types/CTableTemplate';
+import { ExpressionEvaluator } from '@/components/ExpressionEvaluator';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 
 export class TableCellRenderer {
   private readonly _component: Component<TableCellProps>;

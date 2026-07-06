@@ -59,7 +59,7 @@
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
-import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
+import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
 import type {
   CampManager,
   CampManagerUpdateData,

@@ -230,22 +230,22 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { useCampManagerStore } from 'stores/camp-manager-store';
+import { useCampManagerStore } from '@/stores/camp-manager-store';
 import { computed, onMounted } from 'vue';
 import type {
   CampManager,
   CampManagerCreateData,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { type QSelectOption, useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import CampManagerCreateDialog from 'components/campManagement/settings/access/CampManagerCreateDialog.vue';
-import { useProfileStore } from 'stores/profile-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
-import RolePermissionsDialog from 'components/campManagement/settings/access/RolePermissionsDialog.vue';
-import { usePermissions } from 'src/composables/permissions';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import CampManagerCreateDialog from '@/components/campManagement/settings/access/CampManagerCreateDialog.vue';
+import { useProfileStore } from '@/stores/profile-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import CampManagerUpdateDialog from '@/components/campManagement/settings/access/CampManagerUpdateDialog.vue';
+import RolePermissionsDialog from '@/components/campManagement/settings/access/RolePermissionsDialog.vue';
+import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();

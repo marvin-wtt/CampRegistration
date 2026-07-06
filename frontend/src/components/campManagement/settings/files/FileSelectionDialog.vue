@@ -106,12 +106,12 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useCampFilesStore } from 'stores/camp-files-store';
+import { useCampFilesStore } from '@/stores/camp-files-store';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import FileUploadDialog from '@/components/campManagement/settings/files/FileUploadDialog.vue';
 
 const quasar = useQuasar();
 const campFileStore = useCampFilesStore();

@@ -35,9 +35,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import type { TextOptions } from 'components/campManagement/table/tableCells/TextOptions';
-import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import type { TextOptions } from '@/components/campManagement/table/tableCells/TextOptions';
+import DefaultTableCell from '@/components/campManagement/table/tableCells/DefaultTableCell.vue';
 
 const { props: cellProps, options } =
   defineProps<TableCellProps<TextOptions>>();
