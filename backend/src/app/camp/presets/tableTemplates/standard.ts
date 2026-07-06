@@ -11,6 +11,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -25,6 +26,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -39,6 +41,7 @@ export default [
       {
         name: 'role',
         field: 'data.role',
+        source: 'form',
         label: {
           en: 'Role',
           de: 'Rolle',
@@ -54,6 +57,7 @@ export default [
       {
         name: 'age',
         field: 'data.date_of_birth',
+        source: 'form',
         label: {
           en: 'Age',
           de: 'Alter',
@@ -72,6 +76,7 @@ export default [
       {
         name: 'gender',
         field: 'data.gender',
+        source: 'form',
         label: {
           en: 'Gender',
           de: 'Geschlecht',
@@ -87,6 +92,7 @@ export default [
       {
         name: 'country',
         field: 'data.address.country',
+        source: 'form',
         label: {
           en: 'Country',
           de: 'Land',
@@ -102,6 +108,7 @@ export default [
       {
         name: 'status',
         field: 'status',
+        source: 'meta',
         label: {
           en: 'Status',
           de: 'Status',
@@ -117,6 +124,7 @@ export default [
       {
         name: 'waiting_list',
         field: 'data.waiting_list',
+        source: 'form',
         label: {
           en: 'Waiting list',
           de: 'Warteliste',
@@ -137,6 +145,7 @@ export default [
       {
         name: 'created_at',
         field: 'createdAt',
+        source: 'meta',
         label: {
           en: 'Registered',
           de: 'Angemeldet',
@@ -151,6 +160,7 @@ export default [
       {
         name: 'email',
         field: 'data.email',
+        source: 'form',
         label: {
           en: 'E-mail',
           de: 'E-Mail',
@@ -164,6 +174,7 @@ export default [
       {
         name: 'phone_number',
         field: 'data.phone_number',
+        source: 'form',
         label: {
           en: 'Phone',
           de: 'Telefon',
@@ -177,6 +188,7 @@ export default [
       {
         name: 'guardian_email',
         field: 'data.guardian_email',
+        source: 'form',
         label: {
           en: 'Legal guardian e-mail',
           de: 'E-Mail Sorgeberechtigte',
@@ -190,6 +202,7 @@ export default [
       {
         name: 'additional_information',
         field: 'data.additional_information',
+        source: 'form',
         label: {
           en: 'Additional information',
           de: 'Weitere Informationen',
@@ -222,6 +235,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -236,6 +250,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -250,6 +265,7 @@ export default [
       {
         name: 'age',
         field: 'data.date_of_birth',
+        source: 'form',
         label: {
           en: 'Age',
           de: 'Alter',
@@ -265,6 +281,7 @@ export default [
       {
         name: 'gender',
         field: 'data.gender',
+        source: 'form',
         label: {
           en: 'Gender',
           de: 'Geschlecht',
@@ -280,6 +297,7 @@ export default [
       {
         name: 'country',
         field: 'data.address.country',
+        source: 'form',
         label: {
           en: 'Country',
           de: 'Land',
@@ -295,6 +313,7 @@ export default [
       {
         name: 'permission_leave',
         field: 'data.permission_leave',
+        source: 'form',
         label: {
           en: 'Leave',
           de: 'Verlassen',
@@ -333,6 +352,7 @@ export default [
       {
         name: 'permission_swim',
         field: 'data.permission_swim',
+        source: 'form',
         label: {
           en: 'No swimming',
           de: 'Nicht schwimmen',
@@ -353,6 +373,7 @@ export default [
       {
         name: 'permission_written_consent',
         field: 'data.permission_written_consent',
+        source: 'form',
         label: {
           en: 'No written consent',
           de: 'Keine schriftliche Zustimmung',
@@ -373,6 +394,7 @@ export default [
       {
         name: 'privacy',
         field: 'data.consent_privacy',
+        source: 'form',
         label: {
           en: 'No photos',
           de: 'Keine Fotos',
@@ -427,6 +449,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -441,6 +464,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -455,6 +479,7 @@ export default [
       {
         name: 'country',
         field: 'data.address.country',
+        source: 'form',
         label: {
           en: 'Country',
           de: 'Land',
@@ -514,6 +539,7 @@ export default [
       {
         name: 'permission_leave',
         field: 'data.permission_leave',
+        source: 'form',
         label: {
           en: 'Leave',
           de: 'Verlassen',
@@ -552,6 +578,7 @@ export default [
       {
         name: 'phone_number',
         field: 'data.phone_number',
+        source: 'form',
         label: {
           en: 'Phone',
           de: 'Telefon',
@@ -565,6 +592,7 @@ export default [
       {
         name: 'guardian_email',
         field: 'data.guardian_email',
+        source: 'form',
         label: {
           en: 'Legal guardian e-mail',
           de: 'E-Mail Sorgeberechtigte',
@@ -597,6 +625,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -611,6 +640,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -625,6 +655,7 @@ export default [
       {
         name: 'age',
         field: 'data.date_of_birth',
+        source: 'form',
         label: {
           en: 'Age',
           de: 'Alter',
@@ -640,6 +671,7 @@ export default [
       {
         name: 'guardian_first_name',
         field: 'data.guardian..first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -654,6 +686,7 @@ export default [
       {
         name: 'guardian_last_name',
         field: 'data.guardian..last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -668,6 +701,7 @@ export default [
       {
         name: 'guardian_email',
         field: 'data.guardian_email',
+        source: 'form',
         label: {
           en: 'Legal guardian e-mail',
           de: 'E-Mail Sorgeberechtigte',
@@ -700,6 +734,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -714,6 +749,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -728,6 +764,7 @@ export default [
       {
         name: 'age',
         field: 'data.date_of_birth',
+        source: 'form',
         label: {
           en: 'Age',
           de: 'Alter',
@@ -743,6 +780,7 @@ export default [
       {
         name: 'date_of_birth',
         field: 'data.date_of_birth',
+        source: 'form',
         label: {
           en: 'Date of birth',
           de: 'Geburtsdatum',
@@ -757,6 +795,7 @@ export default [
       {
         name: 'contact_description',
         field: 'data.emergency_contacts..description',
+        source: 'form',
         label: {
           en: 'Contact',
           de: 'Kontakt',
@@ -771,6 +810,7 @@ export default [
       {
         name: 'emergency_phone',
         field: 'data.emergency_contacts..phone_number',
+        source: 'form',
         label: {
           en: 'Phone',
           de: 'Telefon',
@@ -804,6 +844,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -818,6 +859,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -832,6 +874,7 @@ export default [
       {
         name: 'medical_restrictions',
         field: 'data.medical_restrictions',
+        source: 'form',
         label: {
           en: 'Medical restrictions',
           de: 'Medizinische Einschränkungen',
@@ -845,6 +888,7 @@ export default [
       {
         name: 'food_intolerance',
         field: 'data.food_intolerance',
+        source: 'form',
         label: {
           en: 'Special nutrition',
           de: 'Besondere Ernährung',
@@ -858,6 +902,7 @@ export default [
       {
         name: 'additional_information',
         field: 'data.additional_information',
+        source: 'form',
         label: {
           en: 'Additional information',
           de: 'Weitere Informationen',
@@ -871,6 +916,7 @@ export default [
       {
         name: 'permission_swim',
         field: 'data.permission_swim',
+        source: 'form',
         label: {
           en: 'No swimming',
           de: 'Nicht schwimmen',
@@ -891,6 +937,7 @@ export default [
       {
         name: 'permission_written_consent',
         field: 'data.permission_written_consent',
+        source: 'form',
         label: {
           en: 'No written consent',
           de: 'Keine schriftliche Zustimmung',
@@ -930,6 +977,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -944,6 +992,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -958,6 +1007,7 @@ export default [
       {
         name: 'consent_rules',
         field: 'data.consent_rules',
+        source: 'form',
         label: {
           en: 'Rules missing',
           de: 'Regeln fehlen',
@@ -978,6 +1028,7 @@ export default [
       {
         name: 'consent_terms',
         field: 'data.consent_general_terms_and_conditions',
+        source: 'form',
         label: {
           en: 'Terms missing',
           de: 'AGB fehlen',
@@ -998,6 +1049,7 @@ export default [
       {
         name: 'confirmation_guardian',
         field: 'data.confirmation_guardian',
+        source: 'form',
         label: {
           en: 'Guardian missing',
           de: 'Sorgeberechtigte:r fehlt',
@@ -1018,6 +1070,7 @@ export default [
       {
         name: 'consent_privacy',
         field: 'data.consent_privacy',
+        source: 'form',
         label: {
           en: 'No photos',
           de: 'Keine Fotos',
@@ -1038,6 +1091,7 @@ export default [
       {
         name: 'consent_forward_list_participants',
         field: 'data.consent_forward_list_participants',
+        source: 'form',
         label: {
           en: 'Carpool list',
           de: 'Fahrgemeinschaftsliste',
@@ -1058,6 +1112,7 @@ export default [
       {
         name: 'newsletter',
         field: 'data.newsletter',
+        source: 'form',
         label: {
           en: 'Newsletter',
           de: 'Newsletter',
@@ -1097,6 +1152,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -1111,6 +1167,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -1125,6 +1182,7 @@ export default [
       {
         name: 'country',
         field: 'data.address.country',
+        source: 'form',
         label: {
           en: 'Country',
           de: 'Land',
@@ -1140,6 +1198,7 @@ export default [
       {
         name: 'status',
         field: 'status',
+        source: 'meta',
         label: {
           en: 'Status',
           de: 'Status',
@@ -1203,6 +1262,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -1217,6 +1277,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -1231,6 +1292,7 @@ export default [
       {
         name: 'country',
         field: 'data.address.country',
+        source: 'form',
         label: {
           en: 'Country',
           de: 'Land',
@@ -1246,6 +1308,7 @@ export default [
       {
         name: 'phone_number',
         field: 'data.phone_number',
+        source: 'form',
         label: {
           en: 'Phone',
           de: 'Telefon',
@@ -1259,6 +1322,7 @@ export default [
       {
         name: 'email',
         field: 'data.email',
+        source: 'form',
         label: {
           en: 'E-mail',
           de: 'E-Mail',
@@ -1272,6 +1336,7 @@ export default [
       {
         name: 'address',
         field: 'data.address',
+        source: 'form',
         label: {
           en: 'Address',
           de: 'Adresse',
@@ -1304,6 +1369,7 @@ export default [
       {
         name: 'first_name',
         field: 'data.first_name',
+        source: 'form',
         label: {
           en: 'First name',
           de: 'Vorname',
@@ -1318,6 +1384,7 @@ export default [
       {
         name: 'last_name',
         field: 'data.last_name',
+        source: 'form',
         label: {
           en: 'Last name',
           de: 'Nachname',
@@ -1332,6 +1399,7 @@ export default [
       {
         name: 'role',
         field: 'data.role',
+        source: 'form',
         label: {
           en: 'Role',
           de: 'Rolle',
@@ -1347,6 +1415,7 @@ export default [
       {
         name: 'age',
         field: 'data.date_of_birth',
+        source: 'form',
         label: {
           en: 'Age',
           de: 'Alter',
@@ -1362,6 +1431,7 @@ export default [
       {
         name: 'country',
         field: 'data.address.country',
+        source: 'form',
         label: {
           en: 'Country',
           de: 'Land',
@@ -1377,6 +1447,7 @@ export default [
       {
         name: 'email',
         field: 'data.email',
+        source: 'form',
         label: {
           en: 'E-mail',
           de: 'E-Mail',
@@ -1390,6 +1461,7 @@ export default [
       {
         name: 'phone_number',
         field: 'data.phone_number',
+        source: 'form',
         label: {
           en: 'Phone',
           de: 'Telefon',
@@ -1403,6 +1475,7 @@ export default [
       {
         name: 'address',
         field: 'data.address',
+        source: 'form',
         label: {
           en: 'Address',
           de: 'Adresse',
@@ -1417,6 +1490,7 @@ export default [
       {
         name: 'additional_information',
         field: 'data.additional_information',
+        source: 'form',
         label: {
           en: 'Additional information',
           de: 'Weitere Informationen',
