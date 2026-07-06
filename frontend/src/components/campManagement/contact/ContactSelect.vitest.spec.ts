@@ -9,7 +9,7 @@ import type { Contact } from '@/components/campManagement/contact/Contact';
 
 installQuasarPlugin();
 
-vi.mock('src/composables/registrationHelper', () => ({
+vi.mock('@/composables/registrationHelper', () => ({
   useRegistrationHelper: () => ({
     fullName: (r: Registration): string | undefined => {
       const parts = [r.computedData.firstName, r.computedData.lastName].filter(
