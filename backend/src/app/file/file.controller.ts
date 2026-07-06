@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 import contentDisposition from 'content-disposition';
 
@@ -15,7 +16,11 @@ interface ModelData {
 
 @injectable()
 export class FileController extends BaseController {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
+  ) {
     super();
   }
 
@@ -100,6 +105,17 @@ export class FileController extends BaseController {
       accessLevel ?? 'private',
     );
 
+    // Files are polymorphic; only camp-owned files are a realtime resource.
+    if (model?.name === 'camp') {
+      await this.realtimeService.emit(
+        model.id,
+        'file',
+        data.id,
+        'created',
+        req.clientId(),
+      );
+    }
+
     res.status(httpStatus.CREATED).resource(new FileResource(data));
   }
 
@@ -116,6 +132,16 @@ export class FileController extends BaseController {
       name,
     });
 
+    if (updatedFile.campId) {
+      await this.realtimeService.emit(
+        updatedFile.campId,
+        'file',
+        updatedFile.id,
+        'updated',
+        req.clientId(),
+      );
+    }
+
     res.resource(new FileResource(updatedFile));
   }
 
@@ -124,6 +150,16 @@ export class FileController extends BaseController {
     const file = req.modelOrFail('file');
 
     await this.fileService.deleteFile(file.id);
+
+    if (file.campId) {
+      await this.realtimeService.emit(
+        file.campId,
+        'file',
+        file.id,
+        'deleted',
+        req.clientId(),
+      );
+    }
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

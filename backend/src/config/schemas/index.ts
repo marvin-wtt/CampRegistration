@@ -7,6 +7,7 @@ import { CsrfEnvSchema } from './csrf.schema.js';
 import { DatabaseSchema } from './database.schema.js';
 import { RedisSchema } from './redis.schema.js';
 import { QueueSchema } from './queue.schema.js';
+import { RealtimeSchema } from './realtime.schema.js';
 
 export const EnvSchema = z
   .object({
@@ -18,5 +19,6 @@ export const EnvSchema = z
     ...CsrfEnvSchema.shape,
     ...RedisSchema.shape,
     ...QueueSchema.shape,
+    ...RealtimeSchema.shape,
   })
   .readonly();

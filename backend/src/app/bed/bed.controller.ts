@@ -6,6 +6,7 @@ import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
 import { BedResource } from '#app/bed/bed.resource';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -14,6 +15,8 @@ export class BedController extends BaseController {
     @inject(BedService) private readonly bedService: BedService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -31,12 +34,22 @@ export class BedController extends BaseController {
 
     const bed = await this.bedService.createBed(roomId, registrationId);
 
+    // Beds are not a realtime resource of their own — they render embedded in
+    // their room, so subscribers refetch the parent room.
+    await this.realtimeService.emit(
+      campId,
+      'room',
+      roomId,
+      'updated',
+      req.clientId(),
+    );
+
     res.status(httpStatus.CREATED).resource(new BedResource(bed));
   }
 
   async update(req: Request, res: Response) {
     const {
-      params: { campId, bedId },
+      params: { campId, roomId, bedId },
       body: { registrationId },
     } = await req.validate(validator.update);
 
@@ -47,15 +60,31 @@ export class BedController extends BaseController {
 
     const bed = await this.bedService.updateBedById(bedId, registrationId);
 
+    await this.realtimeService.emit(
+      campId,
+      'room',
+      roomId,
+      'updated',
+      req.clientId(),
+    );
+
     res.resource(new BedResource(bed));
   }
 
   async destroy(req: Request, res: Response) {
     const {
-      params: { bedId },
+      params: { campId, roomId, bedId },
     } = await req.validate(validator.destroy);
 
     await this.bedService.deleteBedById(bedId);
+
+    await this.realtimeService.emit(
+      campId,
+      'room',
+      roomId,
+      'updated',
+      req.clientId(),
+    );
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

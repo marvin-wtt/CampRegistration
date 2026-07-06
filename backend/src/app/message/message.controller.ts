@@ -13,6 +13,7 @@ import { MessageResource } from '#app/message/message.resource';
 import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 
 @injectable()
 export class MessageController extends BaseController {
@@ -23,6 +24,8 @@ export class MessageController extends BaseController {
     private readonly messageService: MessageService,
     @inject(FileService)
     private readonly fileService: FileService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -93,6 +96,14 @@ export class MessageController extends BaseController {
       messageToRenderable(message),
     );
 
+    await this.realtimeService.emit(
+      camp.id,
+      'message',
+      message.id,
+      'created',
+      req.clientId(),
+    );
+
     // The per-recipient deliveries are processed asynchronously, so expose the
     // targeted registrations directly on the response.
     res.status(httpStatus.CREATED).resource(
@@ -119,6 +130,14 @@ export class MessageController extends BaseController {
     const message = req.modelOrFail('message');
 
     await this.messageService.deleteMessageById(message.id, message.campId);
+
+    await this.realtimeService.emit(
+      message.campId,
+      'message',
+      message.id,
+      'deleted',
+      req.clientId(),
+    );
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

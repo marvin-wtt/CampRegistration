@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useAPIService } from 'src/services/APIService';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useRealtimeCollection } from 'src/composables/realtimeCollection';
 import { useAuthBus, useCampBus } from 'src/composables/bus';
 import type {
   Task,
@@ -32,6 +33,17 @@ export const useTaskStore = defineStore('task', () => {
 
   campBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients.
+  useRealtimeCollection<Task>('task', {
+    data,
+    invalidate,
+    reload: async () => {
+      invalidate();
+      await fetchData();
+    },
+    fetchOne: (campId, id) => api.fetchTask(campId, id),
   });
 
   async function fetchData(campId?: string) {

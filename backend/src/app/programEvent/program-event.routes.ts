@@ -4,7 +4,6 @@ import { ProgramEventService } from './program-event.service.js';
 import { ProgramEventController } from './program-event.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#utils/bindController';
-import { realtimeStream } from '#app/realtime/realtime.stream';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -32,13 +31,6 @@ export class ProgramEventRouter extends ModuleRouter {
       '/',
       guard(campManager('camp.program_events.view')),
       controller(this.programEventController, 'index'),
-    );
-    // Page-scoped live-updates stream. Declared before `/:programEventId` so
-    // "events" is not matched as a program event id.
-    this.router.get(
-      '/events',
-      guard(campManager('camp.program_events.view')),
-      realtimeStream('program_event'),
     );
     this.router.get(
       '/:programEventId',

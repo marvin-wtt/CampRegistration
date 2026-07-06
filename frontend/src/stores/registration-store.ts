@@ -8,14 +8,13 @@ import type {
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useRealtimeCollection } from 'src/composables/realtimeCollection';
 import {
   useAuthBus,
   useCampBus,
   useRegistrationBus,
 } from 'src/composables/bus';
-import { useRealtimeStore } from 'stores/realtime-store';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
@@ -23,7 +22,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   const authBus = useAuthBus();
   const bus = useRegistrationBus();
   const campBus = useCampBus();
-  const realtime = useRealtimeStore();
   const {
     data,
     isLoading,
@@ -44,9 +42,18 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     invalidate();
   });
 
-  // React to live changes pushed from other clients.
-  realtime.on('registration', (event) => void handleRemoteChange(event));
-  realtime.onReconnect('registration', () => void reload());
+  // React to live changes pushed from other clients: refetch the affected
+  // registration through the REST API (where full permissions apply) and
+  // reconcile it into the local list.
+  useRealtimeCollection<Registration>('registration', {
+    data,
+    invalidate,
+    reload: () => fetchAfterInvalidate(),
+    fetchOne: (campId, id) => apiService.fetchRegistration(campId, id),
+    onCreate: (registration) => bus.emit('create', registration),
+    onUpdate: (registration) => bus.emit('update', registration),
+    onDelete: (id) => bus.emit('delete', id),
+  });
 
   async function fetchData(campId?: string) {
     const cid: string = campId ?? (route.params.campId as string);
@@ -112,46 +119,8 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
-  // Applies a realtime change pushed from the server. The event carries only an
-  // id, so we refetch the affected registration through the REST API (where
-  // full permissions apply) and reconcile it into the local list.
-  async function handleRemoteChange(event: RealtimeEvent) {
-    const campId = route.params.campId as string | undefined;
-    if (!campId) {
-      return;
-    }
-
-    // List not loaded on the current page — just mark stale so the next page
-    // that needs it fetches fresh, rather than building a partial list.
-    if (data.value === undefined) {
-      invalidate();
-      return;
-    }
-
-    if (event.operation === 'deleted') {
-      data.value = data.value.filter(
-        (registration) => registration.id !== event.id,
-      );
-      bus.emit('delete', event.id);
-      return;
-    }
-
-    const registration = await apiService.fetchRegistration(campId, event.id);
-
-    const exists = data.value.some((r) => r.id === registration.id);
-    if (exists) {
-      data.value = data.value.map((r) =>
-        r.id === registration.id ? registration : r,
-      );
-      bus.emit('update', registration);
-    } else {
-      data.value = [...data.value, registration];
-      bus.emit('create', registration);
-    }
-  }
-
   // Force a fresh list fetch (used after a (re)connect to catch missed events).
-  async function reload() {
+  async function fetchAfterInvalidate() {
     invalidate();
     await fetchData();
   }

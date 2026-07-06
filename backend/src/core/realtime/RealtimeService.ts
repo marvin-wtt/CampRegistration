@@ -17,15 +17,20 @@ export class RealtimeService {
   private readonly bus: RealtimeBus;
 
   public constructor(@Config() config: AppConfig) {
-    // Mirror QueueManager: a Redis-backed queue implies a multi-instance
-    // deployment, where realtime must fan out across processes too. Otherwise
-    // the in-memory bus is sufficient (single instance / dev).
+    // `config.realtime.driver` defaults to redis when the queue driver is
+    // redis (multi-instance deployment) and memory otherwise; REALTIME_DRIVER
+    // overrides (e.g. multi-instance with the database queue driver).
     this.bus =
-      config.queue.driver === 'redis'
+      config.realtime.driver === 'redis'
         ? new RedisRealtimeBus()
         : new MemoryRealtimeBus();
 
     logger.info(`Using ${this.bus.type} realtime bus`);
+  }
+
+  /** The active bus driver (diagnostics). */
+  get busType(): string {
+    return this.bus.type;
   }
 
   /**
@@ -38,20 +43,40 @@ export class RealtimeService {
     campId: string,
     resource: RealtimeResource,
     id: string,
-    operation: RealtimeOperation,
+    operation: Exclude<RealtimeOperation, 'invalidated'>,
     origin?: string,
   ): Promise<void> {
-    const event: RealtimeEvent = {
-      resource,
-      id,
-      operation,
-      requiredPermission: RESOURCE_VIEW_PERMISSION[resource],
-      origin,
-      at: new Date().toISOString(),
-    };
+    await this.publish(campId, { resource, id, operation, origin });
+  }
 
+  /**
+   * Publish a collection-level invalidation for a resource within a camp:
+   * "something about this collection changed — refetch the list". Used for
+   * bulk operations where per-entity events would trigger a refetch stampede.
+   */
+  async emitInvalidation(
+    campId: string,
+    resource: RealtimeResource,
+    origin?: string,
+  ): Promise<void> {
+    await this.publish(campId, {
+      resource,
+      id: null,
+      operation: 'invalidated',
+      origin,
+    });
+  }
+
+  private async publish(
+    campId: string,
+    event: Pick<RealtimeEvent, 'resource' | 'id' | 'operation' | 'origin'>,
+  ): Promise<void> {
     try {
-      await this.bus.publish(campId, event);
+      await this.bus.publish(campId, {
+        ...event,
+        requiredPermission: RESOURCE_VIEW_PERMISSION[event.resource],
+        at: new Date().toISOString(),
+      });
     } catch (err) {
       logger.error('Failed to emit realtime event', err);
     }

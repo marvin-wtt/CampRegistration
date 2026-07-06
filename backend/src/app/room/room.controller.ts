@@ -4,11 +4,16 @@ import { RoomResource } from './room.resource.js';
 import validator from './room.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
 export class RoomController extends BaseController {
-  constructor(@inject(RoomService) private readonly roomService: RoomService) {
+  constructor(
+    @inject(RoomService) private readonly roomService: RoomService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
+  ) {
     super();
   }
 
@@ -36,16 +41,32 @@ export class RoomController extends BaseController {
 
     const room = await this.roomService.createRoom(campId, name, capacity);
 
+    await this.realtimeService.emit(
+      campId,
+      'room',
+      room.id,
+      'created',
+      req.clientId(),
+    );
+
     res.status(httpStatus.CREATED).resource(new RoomResource(room));
   }
 
   async update(req: Request, res: Response) {
     const {
-      params: { roomId },
+      params: { campId, roomId },
       body: { name, sortOrder },
     } = await req.validate(validator.update);
 
     const room = await this.roomService.updateRoomById(roomId, name, sortOrder);
+
+    await this.realtimeService.emit(
+      campId,
+      'room',
+      room.id,
+      'updated',
+      req.clientId(),
+    );
 
     res.resource(new RoomResource(room));
   }
@@ -58,15 +79,27 @@ export class RoomController extends BaseController {
 
     const updatedRooms = await this.roomService.bulkUpdateRooms(campId, rooms);
 
+    // One collection-level event for the whole transaction — per-room events
+    // would make every subscriber refetch each room individually.
+    await this.realtimeService.emitInvalidation(campId, 'room', req.clientId());
+
     res.resource(RoomResource.collection(updatedRooms));
   }
 
   async destroy(req: Request, res: Response) {
     const {
-      params: { roomId },
+      params: { campId, roomId },
     } = await req.validate(validator.destroy);
 
     await this.roomService.deleteRoomById(roomId);
+
+    await this.realtimeService.emit(
+      campId,
+      'room',
+      roomId,
+      'deleted',
+      req.clientId(),
+    );
 
     res.status(httpStatus.NO_CONTENT).send();
   }

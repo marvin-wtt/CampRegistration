@@ -2,7 +2,10 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { CampController } from '#app/camp/camp.controller';
 import { CampService } from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import {
+  campManager,
+  campManagerSubscriber,
+} from '#app/campManager/camp-manager.guard';
 import type { CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
@@ -28,13 +31,14 @@ export class CampRouter extends ModuleRouter {
 
     this.router.get('/:campId', controller(campController, 'show'));
 
-    // Ambient live-updates stream for the camp. Also carries registration
-    // events, since anyone who can view the camp can view its registrations.
+    // The camp's single live-updates stream. Carries all camp resources; each
+    // event is filtered against the subscriber's permission set, so resources
+    // not every role may see (managers, messages, ...) are safe to carry here.
     this.router.get(
       '/:campId/events',
       auth(),
       guard(campManager('camp.view')),
-      realtimeStream('camp', 'registration'),
+      realtimeStream(campManagerSubscriber),
     );
 
     this.router.post('/', auth(), controller(campController, 'store'));

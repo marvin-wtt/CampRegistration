@@ -4,6 +4,7 @@ import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
 import { TableTemplateResource } from '#app/tableTemplate/table-template.resource';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -11,6 +12,8 @@ export class TableTemplateController extends BaseController {
   constructor(
     @inject(TableTemplateService)
     private readonly tableTemplateService: TableTemplateService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -42,6 +45,14 @@ export class TableTemplateController extends BaseController {
       body,
     );
 
+    await this.realtimeService.emit(
+      campId,
+      'table_template',
+      template.id,
+      'created',
+      req.clientId(),
+    );
+
     res
       .status(httpStatus.CREATED)
       .resource(new TableTemplateResource(template));
@@ -49,7 +60,7 @@ export class TableTemplateController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      params: { tableTemplateId },
+      params: { campId, tableTemplateId },
       body,
     } = await req.validate(validator.update);
 
@@ -58,15 +69,31 @@ export class TableTemplateController extends BaseController {
       body,
     );
 
+    await this.realtimeService.emit(
+      campId,
+      'table_template',
+      template.id,
+      'updated',
+      req.clientId(),
+    );
+
     res.resource(new TableTemplateResource(template));
   }
 
   async destroy(req: Request, res: Response) {
     const {
-      params: { tableTemplateId },
+      params: { campId, tableTemplateId },
     } = await req.validate(validator.destroy);
 
     await this.tableTemplateService.deleteTemplateById(tableTemplateId);
+
+    await this.realtimeService.emit(
+      campId,
+      'table_template',
+      tableTemplateId,
+      'deleted',
+      req.clientId(),
+    );
 
     res.status(httpStatus.NO_CONTENT).send();
   }

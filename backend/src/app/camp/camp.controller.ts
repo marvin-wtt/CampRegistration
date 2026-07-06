@@ -13,6 +13,7 @@ import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import { CampManagerService } from '#app/campManager/camp-manager.service.js';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import ApiError from '#utils/ApiError';
 import { inject, injectable } from 'inversify';
 
@@ -29,6 +30,8 @@ export class CampController extends BaseController {
     private readonly tableTemplateService: TableTemplateService,
     @inject(MessageTemplateService)
     private readonly messageTemplateService: MessageTemplateService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -174,6 +177,14 @@ export class CampController extends BaseController {
       );
     }
 
+    await this.realtimeService.emit(
+      updatedCamp.id,
+      'camp',
+      updatedCamp.id,
+      'updated',
+      req.clientId(),
+    );
+
     res.resource(new CampDetailsResource(updatedCamp));
   }
 
@@ -183,6 +194,14 @@ export class CampController extends BaseController {
     } = await req.validate(validator.destroy);
 
     await this.campService.deleteCampById(campId);
+
+    await this.realtimeService.emit(
+      campId,
+      'camp',
+      campId,
+      'deleted',
+      req.clientId(),
+    );
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

@@ -7,6 +7,7 @@ import validator from '#app/campManager/camp-manager.validation';
 import { type Request, type Response } from 'express';
 import { CampManagerInvitationMessage } from '#app/campManager/camp-manager.messages';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -15,6 +16,8 @@ export class CampManagerController extends BaseController {
     @inject(CampManagerService)
     private readonly managerService: CampManagerService,
     @inject(UserService) private readonly userService: UserService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -63,6 +66,14 @@ export class CampManagerController extends BaseController {
       manager,
     });
 
+    await this.realtimeService.emit(
+      camp.id,
+      'manager',
+      manager.id,
+      'created',
+      req.clientId(),
+    );
+
     res.status(httpStatus.CREATED).resource(new CampManagerResource(manager));
   }
 
@@ -78,6 +89,14 @@ export class CampManagerController extends BaseController {
         role,
         expiresAt,
       },
+    );
+
+    await this.realtimeService.emit(
+      updatedManager.campId,
+      'manager',
+      updatedManager.id,
+      'updated',
+      req.clientId(),
     );
 
     res.resource(new CampManagerResource(updatedManager));
@@ -97,6 +116,14 @@ export class CampManagerController extends BaseController {
     }
 
     await this.managerService.removeManager(campManagerId);
+
+    await this.realtimeService.emit(
+      campId,
+      'manager',
+      campManagerId,
+      'deleted',
+      req.clientId(),
+    );
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

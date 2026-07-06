@@ -13,6 +13,7 @@ import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { StorageFile } from '#core/storage/storage';
 import { selectFileByLocale } from '@camp-registration/common/form';
 
@@ -61,6 +62,8 @@ export class FileService extends BaseService {
   constructor(
     @Config() private readonly config: AppConfig,
     @inject(QueueManager) queueManager: QueueManager,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
 
@@ -108,10 +111,27 @@ export class FileService extends BaseService {
 
   private async uploadFile(filename: string) {
     await this.storageRegistry.getStorage().moveToStorage(filename);
+    const files = await this.prisma.file.findMany({
+      where: { name: filename },
+    });
     await this.prisma.file.updateMany({
       where: { name: filename },
       data: { uploadStatus: 'READY' },
     });
+
+    // Notify camp subscribers that the file became READY. Deliberately without
+    // an origin: the status flips outside any request, and the uploading
+    // client must refetch too to see it.
+    for (const file of files) {
+      if (file.campId) {
+        await this.realtimeService.emit(
+          file.campId,
+          'file',
+          file.id,
+          'updated',
+        );
+      }
+    }
   }
 
   public getFileConnectInput(

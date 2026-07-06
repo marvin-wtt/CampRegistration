@@ -18,6 +18,7 @@ npm workspaces monorepo with four workspaces:
 ## Commands
 
 ### Root
+
 ```bash
 npm install
 npm run build                                        # Build all workspaces
@@ -26,6 +27,7 @@ npm run format:check --workspaces --if-present
 ```
 
 ### Backend
+
 ```bash
 npm run dev --workspace backend                      # Dev server with hot reload
 npm run build --workspace backend
@@ -48,6 +50,7 @@ npm run db:studio --workspace backend                # Prisma Studio GUI
 ```
 
 ### Frontend
+
 ```bash
 npm run dev --workspace frontend                     # Quasar dev server
 npm run build --workspace frontend
@@ -61,6 +64,7 @@ npx vitest src/path/to/test.ts --workspace frontend
 ```
 
 ### E2E
+
 ```bash
 npm run test --workspace e2e                         # Start backend + run Cypress
 npm run run:ui --workspace e2e                       # Cypress interactive UI
@@ -84,13 +88,28 @@ Each feature is an `AppModule`; all lifecycle hooks are optional and called duri
 
 ```ts
 class ExampleModule implements AppModule {
-  bindContainers(options: BindOptions): void { /* DI bindings */ }
-  configure(options: ModuleOptions): void { /* middleware */ }
-  registerRoutes(router: AppRouter): void { /* mount router */ }
-  registerPermissions(): RoleToPermissions<ManagerRole, Permission> { /* RBAC */ }
-  registerNewsletterPermissions(): RoleToPermissions<NewsletterManagerRole, NewsletterPermission> {}
-  registerJobs(scheduler: JobScheduler): void { /* recurring cron jobs */ }
-  shutdown(): Promise<void> | void { /* cleanup on shutdown */ }
+  bindContainers(options: BindOptions): void {
+    /* DI bindings */
+  }
+  configure(options: ModuleOptions): void {
+    /* middleware */
+  }
+  registerRoutes(router: AppRouter): void {
+    /* mount router */
+  }
+  registerPermissions(): RoleToPermissions<ManagerRole, Permission> {
+    /* RBAC */
+  }
+  registerNewsletterPermissions(): RoleToPermissions<
+    NewsletterManagerRole,
+    NewsletterPermission
+  > {}
+  registerJobs(scheduler: JobScheduler): void {
+    /* recurring cron jobs */
+  }
+  shutdown(): Promise<void> | void {
+    /* cleanup on shutdown */
+  }
 }
 ```
 
@@ -157,6 +176,30 @@ recurring tasks (e.g. token cleanup, pruning old job records).
 - Registration is idempotent (duplicate names ignored); the scheduler owns job
   lifecycle logging and is stopped deterministically on shutdown.
 
+### Realtime (SSE live updates)
+
+Permission-filtered, invalidation-only SSE — full design in
+`docs/live-updates-plan.md`. One stream per camp
+(`GET /camps/:campId/events`); events carry `{resource, id, operation}` plus a
+`requiredPermission` that the stream handler enforces per subscriber; clients
+refetch via REST (single auth path). Echo suppression via the `X-Client-Id`
+header → `event.origin`.
+
+Adding realtime to a module (no routing/stream changes needed):
+
+1. `common/src/realtime/events.ts`: add the resource to `RealtimeResource` +
+   `RESOURCE_VIEW_PERMISSION`; rebuild `common`.
+2. Backend: inject `RealtimeService` into the controller and call
+   `realtimeService.emit(campId, '<resource>', id, op, req.clientId())` after
+   each write (`emitInvalidation(...)` for bulk operations).
+3. Frontend: call `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`
+   (`src/composables/realtimeCollection.ts`) in the feature store or page —
+   it handles refetch coalescing, ordering, and reconnect reloads.
+
+Driver: `REALTIME_DRIVER` env (`redis`/`memory`); defaults to `redis` only when
+`QUEUE_DRIVER=redis`. Multi-instance deploys on other queue drivers must set
+`REALTIME_DRIVER=redis`.
+
 ### Backend Path Alias
 
 `#*` maps to `src/*` in backend TypeScript.
@@ -188,7 +231,7 @@ a few MD3-specific components. It is wired up in `frontend/quasar.config.ts`:
   tokens so both modes work.
 
 **Design tokens — use `var(--md3-*)` for all colors.** Most existing custom CSS
-already does this. The full token set lives in the package's `dist/theme/base.scss`; 
+already does this. The full token set lives in the package's `dist/theme/base.scss`;
 common families:
 
 - **Color roles**: `--md3-primary`, `--md3-on-primary`, `--md3-primary-container`,
@@ -209,11 +252,11 @@ common families:
   (disable button-group widening). Shape tokens are also Sass vars
   (`$md3-corner-*`, `$md3-easing-*`) for use inside `<style lang="scss">`.
 
-**MD3 components** — import from subpaths (these are *not* auto-registered):
+**MD3 components** — import from subpaths (these are _not_ auto-registered):
 
 ```ts
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from "@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn";
+import { MToolbar } from "@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar";
 // also available: Md3eBtnGroup, Md3eFab, Md3eFabAction, Md3eSlider
 ```
 

@@ -286,6 +286,7 @@ import type {
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from 'src/composables/permissions';
 import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useRealtimeCollection } from 'src/composables/realtimeCollection';
 import { formatPersonName } from 'src/utils/formatters';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
 import { useCampStorage } from 'src/composables/campStorage';
@@ -318,6 +319,7 @@ const {
   data,
   isLoading,
   error: roomError,
+  invalidate,
   withProgressNotification,
   withErrorNotification,
   lazyFetch,
@@ -326,6 +328,19 @@ const {
   requestPending,
   checkNotNullWithError,
 } = useServiceHandler<Room[]>();
+
+// React to live room/bed changes pushed from other clients while the planner
+// is open (bed changes arrive as 'room updated' events for the parent room;
+// bulk reorders arrive as one collection-level invalidation).
+useRealtimeCollection<Room>('room', {
+  data,
+  invalidate,
+  reload: async () => {
+    invalidate();
+    await fetchRooms();
+  },
+  fetchOne: (campId, id) => apiService.fetchRoom(campId, id),
+});
 
 onMounted(async () => {
   await registrationsStore.fetchData();

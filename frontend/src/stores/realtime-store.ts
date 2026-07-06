@@ -12,40 +12,29 @@ import { clientId } from 'src/services/clientId';
 type EventHandler = (event: RealtimeEvent) => void;
 type ReconnectHandler = () => void;
 
-interface StreamState {
-  source: EventSource;
-  resources: RealtimeResource[];
-  // Distinguishes the first connect from later reconnects (to catch up on
-  // events missed while disconnected).
-  hasConnected: boolean;
-}
-
-const AMBIENT_KEY = 'ambient';
-const resourceKey = (resource: RealtimeResource) => `resource:${resource}`;
-
 /**
- * Owns the live SSE streams for the active camp and acts as a registry: feature
+ * Owns the live SSE stream for the active camp and acts as a registry: feature
  * stores subscribe to the resources they care about via `on(resource, handler)`.
  * The realtime layer never imports feature stores, so adding a reactive resource
  * only touches that resource's own store (mirrors the existing
  * `authBus.on(...)`/`campBus.on(...)` self-subscription idiom).
  *
- * - `connect()` opens the always-on ambient stream (camp + registration) and is
- *   called once from the camp management layout.
- * - `openResourceStream(resource)` opens a page-scoped stream and returns a
- *   cleanup function for the calling component's lifecycle.
+ * `connect()` opens the single camp stream (all resources; the server filters
+ * events by permission) and is called once from the camp management layout.
  */
 export const useRealtimeStore = defineStore('realtime', () => {
   const route = useRoute();
   const authBus = useAuthBus();
-  const { openCampStream, openResourceStream: openResourceSource } =
-    useRealtimeService();
+  const { openCampStream } = useRealtimeService();
 
   const handlers = new Map<RealtimeResource, Set<EventHandler>>();
   const reconnectHandlers = new Map<RealtimeResource, Set<ReconnectHandler>>();
-  const streams = new Map<string, StreamState>();
 
-  let ambientStarted = false;
+  let source: EventSource | undefined;
+  // Distinguishes the first connect from later reconnects (to catch up on
+  // events missed while disconnected).
+  let hasConnected = false;
+  let started = false;
 
   /** Subscribe to events for a resource. Returns an unsubscribe function. */
   function on(resource: RealtimeResource, handler: EventHandler): () => void {
@@ -57,8 +46,8 @@ export const useRealtimeStore = defineStore('realtime', () => {
   }
 
   /**
-   * Run a handler when a stream carrying `resource` reconnects (to recover
-   * events missed while disconnected). Returns an unsubscribe function.
+   * Run a handler when the stream reconnects (to recover events missed while
+   * disconnected). Returns an unsubscribe function.
    */
   function onReconnect(
     resource: RealtimeResource,
@@ -80,26 +69,22 @@ export const useRealtimeStore = defineStore('realtime', () => {
     handlers.get(event.resource)?.forEach((handler) => handler(event));
   }
 
-  function fireReconnect(resources: RealtimeResource[]) {
-    for (const resource of resources) {
-      reconnectHandlers.get(resource)?.forEach((handler) => handler());
+  function fireReconnect() {
+    for (const set of reconnectHandlers.values()) {
+      set.forEach((handler) => handler());
     }
   }
 
-  function openStream(
-    key: string,
-    source: EventSource,
-    resources: RealtimeResource[],
-  ) {
-    closeStream(key);
+  function openStream(campId: string) {
+    closeStream();
 
-    const state: StreamState = { source, resources, hasConnected: false };
+    source = openCampStream(campId);
 
     source.onopen = () => {
-      if (state.hasConnected) {
-        fireReconnect(resources);
+      if (hasConnected) {
+        fireReconnect();
       }
-      state.hasConnected = true;
+      hasConnected = true;
     };
 
     source.onmessage = (e: MessageEvent<string>) => {
@@ -109,22 +94,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
         // Ignore malformed frames (comments/heartbeats are not delivered here).
       }
     };
-
-    streams.set(key, state);
   }
 
-  function closeStream(key: string) {
-    const state = streams.get(key);
-    if (state) {
-      state.source.close();
-      streams.delete(key);
-    }
-  }
-
-  function closeAll() {
-    for (const key of [...streams.keys()]) {
-      closeStream(key);
-    }
+  function closeStream() {
+    source?.close();
+    source = undefined;
+    hasConnected = false;
   }
 
   const activeCampId = (): string | undefined => {
@@ -132,51 +107,32 @@ export const useRealtimeStore = defineStore('realtime', () => {
     return Array.isArray(value) ? value[0] : value;
   };
 
-  /** Open and maintain the ambient stream for the active camp. Idempotent. */
+  /** Open and maintain the stream for the active camp. Idempotent. */
   function connect() {
-    if (ambientStarted) {
+    if (started) {
       return;
     }
-    ambientStarted = true;
+    started = true;
 
     watch(
       () => route.params.campId,
       () => {
         const campId = activeCampId();
         if (campId) {
-          openStream(AMBIENT_KEY, openCampStream(campId), [
-            'camp',
-            'registration',
-          ]);
+          openStream(campId);
         } else {
-          closeStream(AMBIENT_KEY);
+          closeStream();
         }
       },
       { immediate: true },
     );
 
-    authBus.on('logout', closeAll);
-  }
-
-  /**
-   * Open a page-scoped stream for a single resource. Returns a cleanup function
-   * to close it (call from the consuming component's `onUnmounted`).
-   */
-  function openResourceStream(resource: RealtimeResource): () => void {
-    const campId = activeCampId();
-    const key = resourceKey(resource);
-
-    if (campId) {
-      openStream(key, openResourceSource(campId, resource), [resource]);
-    }
-
-    return () => closeStream(key);
+    authBus.on('logout', closeStream);
   }
 
   return {
     on,
     onReconnect,
     connect,
-    openResourceStream,
   };
 });

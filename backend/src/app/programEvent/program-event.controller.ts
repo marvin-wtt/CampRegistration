@@ -106,6 +106,7 @@ export class ProgramEventController extends BaseController {
       'program_event',
       programEvent.id,
       'deleted',
+      req.clientId(),
     );
 
     res.status(httpStatus.NO_CONTENT).send();

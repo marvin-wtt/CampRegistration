@@ -3,15 +3,32 @@ import type { Permission } from '../permissions/permissions.js';
 /**
  * Resources that can be broadcast over a realtime stream. Each maps to a single
  * "view" permission via {@link RESOURCE_VIEW_PERMISSION}.
+ *
+ * Note: beds are not a resource of their own — bed mutations emit a
+ * `{ resource: 'room', id: roomId, operation: 'updated' }` event, since beds
+ * are embedded in rooms (`Room.beds`) and covered by `camp.rooms.view`.
  */
 export type RealtimeResource =
   | 'camp'
   | 'registration'
   | 'program_event'
   | 'room'
-  | 'bed';
+  | 'task'
+  | 'manager'
+  | 'message'
+  | 'file'
+  | 'table_template';
 
-export type RealtimeOperation = 'created' | 'updated' | 'deleted';
+/**
+ * `created` / `updated` / `deleted` target a single entity (`id` set).
+ * `invalidated` targets the whole collection (`id` is null) — emitted for bulk
+ * operations where per-entity events would trigger a refetch stampede.
+ */
+export type RealtimeOperation =
+  | 'created'
+  | 'updated'
+  | 'deleted'
+  | 'invalidated';
 
 /**
  * Invalidation-only realtime event. Carries no model data — recipients refetch
@@ -20,12 +37,13 @@ export type RealtimeOperation = 'created' | 'updated' | 'deleted';
  */
 export interface RealtimeEvent {
   resource: RealtimeResource;
-  id: string;
+  /** Entity id; `null` only when `operation === 'invalidated'` (collection-level). */
+  id: string | null;
   operation: RealtimeOperation;
   /**
    * The "view" permission a recipient must hold to be told about this change.
-   * Forward-compat hook for mixed-resource streams; unused in v1 because every
-   * stream is gated by a single connect-time guard.
+   * Enforced per event by the SSE stream handler, so a single camp stream can
+   * carry resources that not every camp role may see (e.g. managers, messages).
    */
   requiredPermission?: Permission;
   /**
@@ -52,5 +70,9 @@ export const RESOURCE_VIEW_PERMISSION: Record<RealtimeResource, Permission> = {
   registration: 'camp.registrations.view',
   program_event: 'camp.program_events.view',
   room: 'camp.rooms.view',
-  bed: 'camp.rooms.view',
+  task: 'camp.tasks.view',
+  manager: 'camp.managers.view',
+  message: 'camp.messages.view',
+  file: 'camp.files.view',
+  table_template: 'camp.table_templates.view',
 };
