@@ -2,11 +2,7 @@ import type { Task } from '@camp-registration/common/entities';
 import { daysBetweenDates, parseLocalDate } from '@/utils/date';
 
 export type TaskPhase =
-  | 'overdue'
-  | 'dueSoon'
-  | 'upcoming'
-  | 'noDueDate'
-  | 'done';
+  'overdue' | 'dueSoon' | 'upcoming' | 'noDueDate' | 'done';
 
 export function taskPhaseOf(task: Task, dueSoonDays = 7): TaskPhase {
   if (task.completed) {

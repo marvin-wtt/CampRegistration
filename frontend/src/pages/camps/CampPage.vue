@@ -161,11 +161,7 @@ async function init() {
 }
 
 type RegistrationStatus =
-  | 'open'
-  | 'not_open'
-  | 'closed'
-  | 'unavailable'
-  | 'not_found';
+  'open' | 'not_open' | 'closed' | 'unavailable' | 'not_found';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
   if (knownError.value) {

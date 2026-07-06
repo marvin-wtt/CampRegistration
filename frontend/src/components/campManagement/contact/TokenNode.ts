@@ -9,13 +9,11 @@ type Dot<S extends string> = S extends '' ? '' : `.${S}`;
 type Paths<T, P extends string = ''> =
   // arrays → "prop.[number]" (+ recurse inside element if it's an object)
   T extends readonly (infer U)[]
-    ?
-        | `${P}.[${number}]`
-        | (U extends object ? `${P}.[${number}]${Dot<Paths<U>>}` : never)
+    ? | `${P}.[${number}]`
+      | (U extends object ? `${P}.[${number}]${Dot<Paths<U>>}` : never)
     : T extends (infer U)[] // non-readonly variant
-      ?
-          | `${P}.[${number}]`
-          | (U extends object ? `${P}.[${number}]${Dot<Paths<U>>}` : never)
+      ? | `${P}.[${number}]`
+        | (U extends object ? `${P}.[${number}]${Dot<Paths<U>>}` : never)
       : // objects → union over keys
         T extends object
         ? {

@@ -7,8 +7,7 @@ import type { TableCellOptionsProps } from '@/components/campManagement/table/ta
 type Options = object | undefined;
 
 type MaybeLazyComponent<T extends Options> =
-  | Component<TableCellProps<T>>
-  | (() => Component<TableCellProps<T>>);
+  Component<TableCellProps<T>> | (() => Component<TableCellProps<T>>);
 
 type TableCellOptionsComponentProps<T> = TableCellOptionsProps & {
   modelValue?: T;
