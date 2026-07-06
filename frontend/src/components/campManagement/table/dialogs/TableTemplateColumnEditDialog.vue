@@ -260,6 +260,7 @@ import {
 import type {
   CampDetails,
   TableColumnTemplate,
+  Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -299,6 +300,19 @@ const FIELD_MAP: Record<PrefixedSource, string> = {
 // of customData.
 const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
 
+// Registration metadata columns. Unlike the other sources these are not
+// prefixed — they sit at the top level of the row — so they are matched by
+// exact field name both when building the picker and when guessing the source
+// of an existing column.
+const META_FIELDS = [
+  'status',
+  'room',
+  'createdAt',
+] as const satisfies readonly (keyof Omit<
+  Registration,
+  'data' | 'computedData' | 'customData' | 'customFiles'
+>)[];
+
 const data = reactive<PartialBy<TableColumnTemplate, 'name'>>({
   ...structuredClone(deepToRaw(column)),
   source: getFieldSource(),
@@ -313,7 +327,15 @@ function getFieldSource(): TableColumnTemplate['source'] {
   const entry = (Object.entries(FIELD_MAP) as [PrefixedSource, string][]).find(
     ([, prefix]) => column.field.startsWith(`${prefix}.`),
   );
-  return entry?.[0] ?? column.source;
+  if (entry) {
+    return entry[0];
+  }
+
+  if ((META_FIELDS as readonly string[]).includes(column.field)) {
+    return 'meta';
+  }
+
+  return column.source;
 }
 
 function removeFieldPrefix(): string {
@@ -498,11 +520,10 @@ const fieldOptions = computed<QSelectOption[]>(() => {
   }
 
   if (data.source === 'meta') {
-    return [
-      { label: t('field.field.options.status'), value: 'status' },
-      { label: t('field.field.options.room'), value: 'room' },
-      { label: t('field.field.options.createdAt'), value: 'createdAt' },
-    ].sort((a, b) => a.label.localeCompare(b.label));
+    return META_FIELDS.map((value) => ({
+      label: t(`field.field.options.${value}`),
+      value,
+    })).sort((a, b) => a.label.localeCompare(b.label));
   }
 
   return extractFormFields(camp.form);
