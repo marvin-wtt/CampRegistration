@@ -180,6 +180,11 @@ const routes: RouteRecordRaw[] = [
                   import('@/pages/campManagement/RoomPlannerPage.vue'),
               },
               {
+                path: 'tasks',
+                name: 'management.camp.tasks',
+                component: () => import('pages/campManagement/TasksPage.vue'),
+              },
+              {
                 path: 'settings',
                 children: [
                   {

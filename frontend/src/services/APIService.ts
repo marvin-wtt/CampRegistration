@@ -18,6 +18,7 @@ import { useNewsletterSubscriberService } from '@/services/NewsletterSubscriberS
 import { useNewsletterMessageService } from '@/services/NewsletterMessageService';
 import { useProgramEventService } from '@/services/ProgramEventService';
 import { useQueueService } from '@/services/QueueService';
+import { useTaskService } from '@/services/TaskService';
 
 export function useAPIService() {
   return {
@@ -40,6 +41,7 @@ export function useAPIService() {
     ...useNewsletterMessageService(),
     ...useProgramEventService(),
     ...useQueueService(),
+    ...useTaskService(),
   };
 }
 

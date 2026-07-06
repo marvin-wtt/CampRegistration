@@ -238,6 +238,13 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'management.camp.room-planner' },
   },
   {
+    name: 'tasks',
+    label: t('tasks'),
+    icon: 'task_alt',
+    permission: 'camp.tasks.view',
+    to: { name: 'management.camp.tasks' },
+  },
+  {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
@@ -303,6 +310,7 @@ room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
 switch_camp: 'Switch camp'
+tasks: 'Tasks'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -315,6 +323,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 switch_camp: 'Camp wechseln'
+tasks: 'Aufgaben'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -327,6 +336,7 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 switch_camp: 'Changer de camp'
+tasks: 'Tâches'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -339,6 +349,7 @@ room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 switch_camp: 'Zmień obóz'
+tasks: 'Zadania'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -351,6 +362,7 @@ room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 switch_camp: 'Změnit tábor'
+tasks: 'Úkoly'
 </i18n>
 
 <style>

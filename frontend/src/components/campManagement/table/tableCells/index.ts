@@ -20,6 +20,7 @@ import TextTableCell from '@/components/campManagement/table/tableCells/TextTabl
 import TimeAgoTableCell from '@/components/campManagement/table/tableCells/TimeAgoTableCell.vue';
 import TranslatedValueTableCell from '@/components/campManagement/table/tableCells/TranslatedValueTableCell.vue';
 import EditorTableCell from '@/components/campManagement/table/tableCells/EditorTableCell.vue';
+import FileEditorTableCell from '@/components/campManagement/table/tableCells/FileEditorTableCell.vue';
 import FormSelectTableCell from '@/components/campManagement/table/tableCells/FormSelectTableCell.vue';
 import StatusTableCell from '@/components/campManagement/table/tableCells/StatusTableCell.vue';
 import AgeOptionsEditor from '@/components/campManagement/table/tableCells/AgeOptionsEditor.vue';
@@ -43,6 +44,9 @@ const components = () => {
   });
   TableComponentRegistry.register('email', EmailTableCell);
   TableComponentRegistry.register('file', FileTableCell);
+  TableComponentRegistry.register('file_editor', FileEditorTableCell, {
+    internal: true,
+  });
   TableComponentRegistry.register('form_select', FormSelectTableCell);
   TableComponentRegistry.register('gender', GenderTableCell);
   TableComponentRegistry.register('hidden_text', HiddenTextTableCell);
