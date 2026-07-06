@@ -310,17 +310,22 @@ function addColumn(): void {
       },
     })
     .onOk((payload: TableColumnTemplate) => {
-      payload.name = payload.name ?? createColumnName(payload.label);
+      payload.name = payload.name || createColumnName(payload.label);
 
       template.columns.push(payload);
     });
 }
 
-function createColumnName(label: TableColumnTemplate['label']): string {
+function createColumnName(
+  label: TableColumnTemplate['label'],
+  exclude?: string,
+): string {
   const labelString =
     typeof label === 'string' ? label : (Object.values(label)[0] ?? '');
   const name = labelString.toLowerCase().replaceAll(' ', '_');
-  const names = template.columns.map((column) => column.name);
+  const names = template.columns
+    .map((column) => column.name)
+    .filter((columnName) => columnName !== exclude);
 
   return uniqueName(name, names);
 }
@@ -338,6 +343,9 @@ function editColumn(column: TableColumnTemplate): void {
       },
     })
     .onOk((payload: TableColumnTemplate) => {
+      payload.name =
+        payload.name || createColumnName(payload.label, column.name);
+
       const index = template.columns.indexOf(column);
       template.columns.splice(index, 1, payload);
     });

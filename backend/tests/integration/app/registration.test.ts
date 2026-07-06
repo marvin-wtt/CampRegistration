@@ -1863,6 +1863,373 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(400);
       });
     });
+
+    describe('custom files', () => {
+      const sessionCookies = (sessionId: string) => [
+        'session=' + sessionId,
+        '__Host-session=' + sessionId,
+      ];
+
+      it('should attach a temp file of the same session to a slot', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const file = await FileFactory.create({
+          field: sessionId,
+          accessLevel: 'private',
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', sessionCookies(sessionId))
+          .send({
+            customFiles: {
+              consent_form: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customFiles', {
+          consent_form: file.id,
+        });
+
+        const updatedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: file.id },
+        });
+        expect(updatedFile.registrationId).toBe(registration.id);
+        expect(updatedFile.field).toBe('custom:consent_form');
+      });
+
+      it('should detach the previous file when the slot is replaced', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const oldFile = await FileFactory.create({
+          field: 'custom:consent_form',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+        const file = await FileFactory.create({
+          field: sessionId,
+          accessLevel: 'private',
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', sessionCookies(sessionId))
+          .send({
+            customFiles: {
+              consent_form: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customFiles', {
+          consent_form: file.id,
+        });
+
+        const updatedOldFile = await prisma.file.findUniqueOrThrow({
+          where: { id: oldFile.id },
+        });
+        expect(updatedOldFile.registrationId).toBeNull();
+        expect(updatedOldFile.field).toBeNull();
+
+        const updatedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: file.id },
+        });
+        expect(updatedFile.registrationId).toBe(registration.id);
+        expect(updatedFile.field).toBe('custom:consent_form');
+      });
+
+      it('should detach the file when the slot is cleared', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const file = await FileFactory.create({
+          field: 'custom:consent_form',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customFiles: {
+              consent_form: null,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customFiles', {});
+
+        const updatedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: file.id },
+        });
+        expect(updatedFile.registrationId).toBeNull();
+        expect(updatedFile.field).toBeNull();
+      });
+
+      it('should keep the file when the slot is re-assigned to it', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const file = await FileFactory.create({
+          field: 'custom:consent_form',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customFiles: {
+              consent_form: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customFiles', {
+          consent_form: file.id,
+        });
+
+        const updatedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: file.id },
+        });
+        expect(updatedFile.registrationId).toBe(registration.id);
+        expect(updatedFile.field).toBe('custom:consent_form');
+      });
+
+      it('should only change the mentioned slots', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const otherFile = await FileFactory.create({
+          field: 'custom:payment_receipt',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+        const file = await FileFactory.create({
+          field: 'custom:consent_form',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customFiles: {
+              consent_form: null,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customFiles', {
+          payment_receipt: otherFile.id,
+        });
+
+        const unchangedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: otherFile.id },
+        });
+        expect(unchangedFile.registrationId).toBe(registration.id);
+        expect(unchangedFile.field).toBe('custom:payment_receipt');
+
+        const removedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: file.id },
+        });
+        expect(removedFile.registrationId).toBeNull();
+      });
+
+      it('should respond with `400` status code when the session id does not match', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const file = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', sessionCookies(sessionId))
+          .send({
+            customFiles: {
+              consent_form: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+
+        const unchangedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: file.id },
+        });
+        expect(unchangedFile.registrationId).toBeNull();
+      });
+
+      it('should respond with `400` status code when the file does not exist', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customFiles: {
+              consent_form: ulid(),
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('should respond with `400` status code when a form file is referenced', async () => {
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const formFile = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+            some_file: formFile.id,
+          },
+          files: { connect: { id: formFile.id } },
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({
+            customFiles: {
+              consent_form: formFile.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+
+        const unchangedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: formFile.id },
+        });
+        expect(unchangedFile.registrationId).toBe(registration.id);
+        expect(unchangedFile.field).not.toBe('custom:consent_form');
+      });
+
+      it.each([
+        ['a slot name with a dot', { 'consent.form': null }],
+        ['a slot name with a space', { 'consent form': null }],
+        ['a non-ULID file id', { consent_form: 'not-a-file-id' }],
+        ['a non-object value', 'consent_form'],
+      ])(
+        'should respond with `400` status code for %s',
+        async (_name, customFiles) => {
+          const { camp, accessToken } = await createCampWithManagerAndToken();
+          const registration = await createRegistration(camp);
+
+          await request()
+            .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+            .send({ customFiles })
+            .auth(accessToken, { type: 'bearer' })
+            .expect(400);
+        },
+      );
+
+      it('should keep custom files when form data is updated', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+          },
+        });
+
+        const customFile = await FileFactory.create({
+          field: 'custom:consent_form',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', sessionCookies(sessionId))
+          .send({
+            data: {
+              some_field: 'Updated',
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const unchangedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: customFile.id },
+        });
+        expect(unchangedFile.registrationId).toBe(registration.id);
+        expect(unchangedFile.field).toBe('custom:consent_form');
+      });
+
+      it('should keep form files when custom files are updated', async () => {
+        const sessionId = crypto.randomUUID();
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(campWithFileOptional);
+        const formFile = await FileFactory.create({
+          field: crypto.randomUUID(),
+          accessLevel: 'private',
+        });
+        const registration = await createRegistration(camp, {
+          data: {
+            some_field: 'Test',
+            some_file: formFile.id,
+          },
+          files: { connect: { id: formFile.id } },
+        });
+        const file = await FileFactory.create({
+          field: sessionId,
+          accessLevel: 'private',
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .set('Cookie', sessionCookies(sessionId))
+          .send({
+            customFiles: {
+              consent_form: file.id,
+            },
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const unchangedFile = await prisma.file.findUniqueOrThrow({
+          where: { id: formFile.id },
+        });
+        expect(unchangedFile.registrationId).toBe(registration.id);
+      });
+
+      it('should include the file slots in the show response', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const registration = await createRegistration(camp);
+
+        const file = await FileFactory.create({
+          field: 'custom:consent_form',
+          accessLevel: 'private',
+          registration: { connect: { id: registration.id } },
+        });
+
+        const { body } = await request()
+          .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.customFiles', {
+          consent_form: file.id,
+        });
+      });
+    });
   });
 
   describe('DELETE /api/v1/camps/:campId/registrations/:registrationId', () => {

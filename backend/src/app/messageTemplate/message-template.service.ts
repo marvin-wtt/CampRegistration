@@ -37,29 +37,9 @@ export class MessageTemplateService extends BaseService {
 
   async queryMessageTemplates(
     campId: string,
-    options: { hasEvent?: boolean } = {},
   ): Promise<MessageTemplateWithFiles[]> {
-    const where: Prisma.MessageTemplateWhereInput = { campId };
-    if (options.hasEvent !== undefined) {
-      where.event = options.hasEvent ? { not: null } : null;
-    }
-
-    // Recipients only apply to ad-hoc templates (event === null). Including the
-    // messages relation for event templates would load their entire send log,
-    // so it is limited to the ad-hoc query.
-    if (options.hasEvent === false) {
-      return this.prisma.messageTemplate.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          attachments: true,
-          messages: { select: { registrationId: true, to: true } },
-        },
-      });
-    }
-
     return this.prisma.messageTemplate.findMany({
-      where,
+      where: { campId },
       include: {
         attachments: true,
       },
@@ -149,26 +129,6 @@ export class MessageTemplateService extends BaseService {
         },
       });
     });
-  }
-
-  /**
-   * Copies a template's attachments into fresh, session-scoped temporary files
-   * (no owner, `field = sessionId`) so they can be re-attached to a brand-new
-   * template when the user resends a message. The originals stay untouched, and
-   * the copies share the same on-disk file (`name`), which is ref-counted on
-   * delete. Returns the newly created file rows.
-   */
-  async duplicateAttachmentsToSession(
-    campId: string,
-    id: string,
-    sessionId: string,
-  ) {
-    const template = await this.getMessageTemplateById(campId, id);
-    if (!template) {
-      return null;
-    }
-
-    return this.fileService.duplicateFiles(template.attachments, sessionId);
   }
 
   async deleteMessageTemplateById(id: string, campId: string) {

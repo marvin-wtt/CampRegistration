@@ -207,9 +207,7 @@ const pageError = computed<string | null>(() => {
 
 async function loadData() {
   await forceFetch(async () => {
-    return api.fetchMessageTemplates(queryParam('campId'), {
-      hasEvent: true,
-    });
+    return api.fetchMessageTemplates(queryParam('campId'));
   });
 }
 

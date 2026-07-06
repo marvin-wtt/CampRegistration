@@ -5,6 +5,7 @@ import type {
   Registration,
   TableTemplate,
   Message,
+  MessageDelivery,
   MessageTemplate,
   CampManager,
   Bed,
@@ -27,6 +28,7 @@ declare global {
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
+      messageDelivery?: MessageDelivery & { attachments: File[] };
       messageTemplate?: MessageTemplate & { attachments: File[] };
       campManager?: CampManager;
       room?: Room & { beds: Bed[] };

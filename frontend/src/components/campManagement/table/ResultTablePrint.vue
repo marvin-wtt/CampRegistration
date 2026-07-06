@@ -116,5 +116,12 @@ const { pagination, rows, columns, renderers } = useResultTableModel(
     position: static;
     background: white;
   }
+
+  // Never split a single row across a page boundary.
+  tbody tr,
+  thead tr {
+    break-inside: avoid;
+    page-break-inside: avoid; // legacy fallback
+  }
 }
 </style>

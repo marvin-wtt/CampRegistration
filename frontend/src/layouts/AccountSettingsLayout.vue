@@ -113,7 +113,7 @@ const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
-const { can } = usePermissions();
+const { canAccessAny } = usePermissions();
 
 const authStore = useAuthStore();
 const campDetailStore = useCampDetailsStore();
@@ -174,7 +174,7 @@ const filteredItems = computed<NavigationItemProps[]>(() => {
 
 function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
   return navItems
-    .filter((item) => !item.permission || can(item.permission))
+    .filter((item) => canAccessAny(item.permission))
     .map((item) => {
       if ('children' in item && item.children !== undefined) {
         return {

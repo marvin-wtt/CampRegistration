@@ -19,8 +19,8 @@ export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
 
   // Load models for guard
   const messageService = resolve(MessageService);
-  const message = await messageService.getMessageWithCampById(file.messageId);
-  if (!message?.registration) {
+  const message = await messageService.findMessageById(file.messageId);
+  if (!message) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       'Message related to file not found',
@@ -28,7 +28,7 @@ export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
   }
 
   const campService = resolve(CampService);
-  const camp = await campService.getCampById(message.registration.camp.id);
+  const camp = await campService.getCampById(message.campId);
   req.setModelOrFail('camp', camp);
 
   return campManager('camp.messages.view');

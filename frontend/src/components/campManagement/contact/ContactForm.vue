@@ -21,6 +21,7 @@
           outlined
           rounded
           dense
+          @blur="onToBlur"
         />
 
         <div class="composer-meta">
@@ -162,10 +163,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type {
-  MessageTemplate,
-  Registration,
-} from '@camp-registration/common/entities';
+import type { Message, Registration } from '@camp-registration/common/entities';
 import type {
   Contact,
   ContactDraft,
@@ -194,7 +192,7 @@ const {
 }>();
 
 const emit = defineEmits<{
-  (e: 'sent', template: MessageTemplate): void;
+  (e: 'sent', message: Message): void;
 }>();
 
 const quasar = useQuasar();
@@ -211,7 +209,12 @@ onMounted(async () => {
   // Ensure camp details (contact email, form) are available before deriving
   // the default reply-to address.
   await campDetailsStore.fetchData();
-  replyTo.value = defaultReplyTo();
+  // Only pre-fill when recipients are already known (e.g. opened from a
+  // registration). Otherwise the reply-to is derived once the user has picked
+  // recipients and the "To" field loses focus (see onToBlur).
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
 });
 
 const formRef = ref<QForm>();
@@ -257,6 +260,21 @@ function defaultReplyTo(): string {
   return Object.values(contactEmail)[0] ?? '';
 }
 
+// Fill the reply-to with the derived default, but never overwrite a value the
+// user has already entered (or one carried over from a draft).
+function applyDefaultReplyTo() {
+  if (!replyTo.value) {
+    replyTo.value = defaultReplyTo();
+  }
+}
+
+// Once the user finishes choosing recipients, derive the reply-to from the
+// selected recipients' countries — but only when the field is still empty so a
+// manually entered address is preserved.
+function onToBlur() {
+  applyDefaultReplyTo();
+}
+
 const subject = ref<string>('');
 const attachments = ref<FileInputModel[]>([]);
 const priority = ref<'high' | 'normal' | 'low'>('normal');
@@ -278,17 +296,19 @@ const priorityOptions = computed<QSelectOption[]>(() => [
   },
 ]);
 
-const recipientCount = computed<number>(() => {
+function recipientIds(contacts: Contact[]): Set<string> {
   const ids = new Set<string>();
-  to.value.forEach((contact) => {
+  contacts.forEach((contact) => {
     if (contact.type === 'group') {
       contact.registrations.forEach((r: Registration) => ids.add(r.id));
     } else {
       ids.add(contact.registration.id);
     }
   });
-  return ids.size;
-});
+  return ids;
+}
+
+const recipientCount = computed<number>(() => recipientIds(to.value).size);
 
 const priorityIcon = computed<string>(() => {
   switch (priority.value) {
@@ -367,7 +387,7 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    const template = await withResultNotification('send', async () => {
+    const message = await withResultNotification('send', async () => {
       return apiService.createMessage(campId, {
         registrationIds: to.value.flatMap((contact) => {
           return contact.type === 'group'
@@ -386,7 +406,7 @@ async function send() {
 
     // Reset all fields on success
     reset();
-    emit('sent', template);
+    emit('sent', message);
   } finally {
     sendInProgress.value = false;
   }
@@ -406,7 +426,12 @@ watch(
     subject.value = value.subject;
     text.value = value.body;
     priority.value = value.priority;
-    replyTo.value = value.replyTo ?? defaultReplyTo();
+    // Keep the draft's reply-to if set; otherwise derive it only when we already
+    // have recipients, leaving it empty to be filled on "To" blur if not.
+    replyTo.value = value.replyTo ?? '';
+    if (to.value.length > 0) {
+      applyDefaultReplyTo();
+    }
     attachments.value = [...value.attachments];
 
     void nextTick(() => formRef.value?.resetValidation());
@@ -418,11 +443,47 @@ function reset() {
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
-  replyTo.value = defaultReplyTo();
+  // Derive only when recipients are pre-filled; otherwise wait for "To" blur.
+  replyTo.value = '';
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
   attachments.value = [];
 
   void nextTick(() => formRef.value?.resetValidation());
 }
+
+function sameIds(a: Set<string>, b: Set<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function attachmentsChanged(): boolean {
+  const baseline = draft?.attachments ?? [];
+  if (attachments.value.length !== baseline.length) {
+    return true;
+  }
+  const baselineIds = new Set(baseline.map((file) => file.id));
+  // An attachment still uploading (no id) is always a change.
+  return attachments.value.some(
+    (file) => file.id === undefined || !baselineIds.has(file.id),
+  );
+}
+
+// Whether the user has changed anything relative to the pristine state the form
+// was initialised with: recipients from `initialContacts` and message content
+// from `draft` (all empty when composing a new message). The reply-to is
+// excluded because it is derived automatically rather than authored.
+const dirty = computed<boolean>(() => {
+  return (
+    !sameIds(recipientIds(to.value), recipientIds(initialContacts ?? [])) ||
+    subject.value !== (draft?.subject ?? '') ||
+    text.value !== (draft?.body ?? '') ||
+    priority.value !== (draft?.priority ?? 'normal') ||
+    attachmentsChanged()
+  );
+});
+
+defineExpose({ dirty });
 </script>
 
 <style scoped>

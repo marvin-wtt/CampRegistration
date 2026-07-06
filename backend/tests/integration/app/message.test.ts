@@ -5,6 +5,8 @@ import {
   RegistrationFactory,
   UserFactory,
   MessageFactory,
+  MessageDeliveryFactory,
+  MessageTemplateFactory,
   FileFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
@@ -15,7 +17,7 @@ import { messageCreateBody } from './fixtures/message.fixture.js';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
-import { Registration } from '#generated/prisma/client';
+import { Registration, Message, User } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
 
 // The message body and subject are rendered with Handlebars, which HTML-escapes
@@ -42,15 +44,46 @@ const crateCampWithManager = async (
   return { user, accessToken, camp };
 };
 
-const createMessageForCamp = async (campId: string) => {
+const createMessageForCamp = async (campId: string, userId?: string) => {
+  const message = await MessageFactory.create({
+    camp: { connect: { id: campId } },
+    sentBy: userId ? { connect: { id: userId } } : undefined,
+  });
+
+  return { message };
+};
+
+const createSentMessageForCamp = async (campId: string) => {
+  const message = await MessageFactory.create({
+    camp: { connect: { id: campId } },
+  });
   const registration = await RegistrationFactory.create({
     camp: { connect: { id: campId } },
   });
-  const message = await MessageFactory.create({
+  const delivery = await MessageDeliveryFactory.create({
+    message: { connect: { id: message.id } },
     registration: { connect: { id: registration.id } },
+    to: 'recipient@example.com',
   });
 
-  return { message, registration };
+  return { message, delivery, registration };
+};
+
+const assertMessageResource = (data: unknown, actual: Message, user: User) => {
+  expect(data).toStrictEqual({
+    id: actual.id,
+    subject: actual.subject,
+    body: actual.body,
+    priority: actual.priority,
+    replyTo: actual.replyTo ?? null,
+    attachments: [],
+    recipients: [],
+    sentBy: {
+      id: user.id,
+      name: user.name,
+    },
+    createdAt: actual.createdAt.toISOString(),
+  });
 };
 
 describe('/api/v1/camps/:campId/messages', () => {
@@ -76,7 +109,7 @@ describe('/api/v1/camps/:campId/messages', () => {
 
   describe('POST /api/v1/camps/:campId/messages/', () => {
     const assertMessages = async (
-      templateId: string,
+      messageId: string,
       expected: {
         body: string;
         subject: string;
@@ -93,9 +126,9 @@ describe('/api/v1/camps/:campId/messages', () => {
 
       for (const entry of expected) {
         for (const email of entry.emails) {
-          const models = await prisma.message.findMany({
+          const models = await prisma.messageDelivery.findMany({
             where: {
-              templateId,
+              messageId,
               to: email,
             },
           });
@@ -123,7 +156,7 @@ describe('/api/v1/camps/:campId/messages', () => {
     };
 
     it('should respond with `201` status code', async () => {
-      const { camp, accessToken } = await crateCampWithManager();
+      const { user, camp, accessToken } = await crateCampWithManager();
 
       const registrationA = await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
@@ -161,6 +194,13 @@ describe('/api/v1/camps/:campId/messages', () => {
       expect(body.data?.subject).toBe(data.subject);
       expect(body.data?.body).toBe(data.body);
       expect(body.data?.priority).toBe(data.priority);
+      expect(body.data?.sentBy).toStrictEqual({ id: user.id, name: user.name });
+
+      // The sender is persisted on the message row.
+      const stored = await prisma.message.findUnique({
+        where: { id: body.data.id },
+      });
+      expect(stored?.sentByUserId).toBe(user.id);
 
       await assertMessages(body.data.id, [
         {
@@ -320,8 +360,8 @@ describe('/api/v1/camps/:campId/messages', () => {
 
       const files = await prisma.file.findMany({
         where: {
-          message: {
-            templateId: body.data.id,
+          messageDelivery: {
+            messageId: body.data.id,
           },
         },
       });
@@ -480,8 +520,8 @@ describe('/api/v1/camps/:campId/messages', () => {
 
   describe('GET /api/v1/camps/:campId/messages/', () => {
     it.each([
-      { role: 'DIRECTOR', expectedStatus: 501 },
-      { role: 'COORDINATOR', expectedStatus: 501 },
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
       { role: 'COUNSELOR', expectedStatus: 403 },
       { role: 'VIEWER', expectedStatus: 403 },
     ])(
@@ -499,6 +539,68 @@ describe('/api/v1/camps/:campId/messages', () => {
           .expect(expectedStatus);
       },
     );
+
+    it('should only return sent messages, not automated event templates', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const { message } = await createSentMessageForCamp(camp.id);
+      // An automated event template lives in a different table and must not
+      // surface here.
+      await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: 'registration_confirmed',
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/messages`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toHaveProperty('id', message.id);
+      expect(body.data[0]).toHaveProperty('recipients');
+      expect(body.data[0].recipients).toHaveLength(1);
+    });
+
+    it('should collapse multiple deliveries for the same registration into one recipient', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const message = await MessageFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      // Two delivery rows (e.g. one per email address) for the same
+      // registration must surface as a single recipient.
+      await MessageDeliveryFactory.create({
+        message: { connect: { id: message.id } },
+        registration: { connect: { id: registration.id } },
+        to: 'first@example.com',
+      });
+      await MessageDeliveryFactory.create({
+        message: { connect: { id: message.id } },
+        registration: { connect: { id: registration.id } },
+        to: 'second@example.com',
+      });
+      // A delivery no longer linked to a registration must be dropped entirely.
+      await MessageDeliveryFactory.create({
+        message: { connect: { id: message.id } },
+        to: 'orphan@example.com',
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/camps/${camp.id}/messages`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].recipients).toHaveLength(1);
+      expect(body.data[0].recipients[0]).toHaveProperty(
+        'registrationId',
+        registration.id,
+      );
+    });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const { camp, accessToken } = await createCampWithDifferentManager();
@@ -521,15 +623,17 @@ describe('/api/v1/camps/:campId/messages', () => {
   });
 
   describe('GET /api/v1/camps/:campId/messages/:messageId/', () => {
-    it('should respond with `501` status code', async () => {
-      const { camp, accessToken } = await crateCampWithManager();
-      const { message } = await createMessageForCamp(camp.id);
+    it('should respond with `200` status code', async () => {
+      const { camp, user, accessToken } = await crateCampWithManager();
+      const { message } = await createMessageForCamp(camp.id, user.id);
 
-      await request()
+      const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/messages/${message.id}`)
         .auth(accessToken, { type: 'bearer' })
         .send()
-        .expect(501);
+        .expect(200);
+
+      assertMessageResource(body.data, message, user);
     });
 
     it('should respond with `404` status code when message does not exist', async () => {
@@ -567,8 +671,8 @@ describe('/api/v1/camps/:campId/messages', () => {
 
   describe('DELETE /api/v1/camps/:campId/messages/:messageId/', () => {
     it.each([
-      { role: 'DIRECTOR', expectedStatus: 501 },
-      { role: 'COORDINATOR', expectedStatus: 501 },
+      { role: 'DIRECTOR', expectedStatus: 204 },
+      { role: 'COORDINATOR', expectedStatus: 204 },
       { role: 'COUNSELOR', expectedStatus: 403 },
       { role: 'VIEWER', expectedStatus: 403 },
     ])(
@@ -578,7 +682,7 @@ describe('/api/v1/camps/:campId/messages', () => {
           undefined,
           role,
         );
-        const { message } = await createMessageForCamp(camp.id);
+        const { message } = await createSentMessageForCamp(camp.id);
 
         await request()
           .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
@@ -587,6 +691,22 @@ describe('/api/v1/camps/:campId/messages', () => {
           .expect(expectedStatus);
       },
     );
+
+    it('should delete the sent message', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const { message } = await createSentMessageForCamp(camp.id);
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .send()
+        .expect(204);
+
+      const deleted = await prisma.message.findUnique({
+        where: { id: message.id },
+      });
+      expect(deleted).toBeNull();
+    });
 
     it('should respond with `404` status code when message does not exist', async () => {
       const { camp, accessToken } = await crateCampWithManager();
@@ -599,9 +719,29 @@ describe('/api/v1/camps/:campId/messages', () => {
         .expect(404);
     });
 
+    it('should respond with `404` status code for an automated event template', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const eventTemplate = await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: 'registration_confirmed',
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/messages/${eventTemplate.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .send()
+        .expect(404);
+
+      // The event template must remain untouched.
+      const stillThere = await prisma.messageTemplate.findUnique({
+        where: { id: eventTemplate.id },
+      });
+      expect(stillThere).not.toBeNull();
+    });
+
     it('should respond with `403` status code when user is not camp manager', async () => {
       const { camp, accessToken } = await createCampWithDifferentManager();
-      const { message } = await createMessageForCamp(camp.id);
+      const { message } = await createSentMessageForCamp(camp.id);
 
       await request()
         .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
@@ -612,10 +752,98 @@ describe('/api/v1/camps/:campId/messages', () => {
 
     it('should respond with `401` status code when unauthenticated', async () => {
       const camp = await CampFactory.create();
-      const { message } = await createMessageForCamp(camp.id);
+      const { message } = await createSentMessageForCamp(camp.id);
 
       await request()
         .delete(`/api/v1/camps/${camp.id}/messages/${message.id}`)
+        .send()
+        .expect(401);
+    });
+  });
+
+  describe('POST /api/v1/camps/:campId/messages/:messageId/attachments/', () => {
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 201 },
+      { role: 'COORDINATOR', expectedStatus: 201 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await crateCampWithManager(
+          undefined,
+          role,
+        );
+        const { message } = await createSentMessageForCamp(camp.id);
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/messages/${message.id}/attachments`)
+          .auth(accessToken, { type: 'bearer' })
+          .send()
+          .expect(expectedStatus);
+      },
+    );
+
+    it('should duplicate the sent message attachments into session files', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const { message } = await createSentMessageForCamp(camp.id);
+      await FileFactory.create({
+        message: { connect: { id: message.id } },
+        name: crypto.randomUUID() + '.pdf',
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/camps/${camp.id}/messages/${message.id}/attachments`)
+        .auth(accessToken, { type: 'bearer' })
+        .send()
+        .expect(201);
+
+      expect(body.data).toHaveLength(1);
+    });
+
+    it('should respond with `404` status code for an automated event template', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+      const eventTemplate = await MessageTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        event: 'registration_confirmed',
+      });
+
+      await request()
+        .post(
+          `/api/v1/camps/${camp.id}/messages/${eventTemplate.id}/attachments`,
+        )
+        .auth(accessToken, { type: 'bearer' })
+        .send()
+        .expect(404);
+    });
+
+    it('should respond with `404` status code when message does not exist', async () => {
+      const { camp, accessToken } = await crateCampWithManager();
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/messages/${ulid()}/attachments`)
+        .auth(accessToken, { type: 'bearer' })
+        .send()
+        .expect(404);
+    });
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const { camp, accessToken } = await createCampWithDifferentManager();
+      const { message } = await createSentMessageForCamp(camp.id);
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/messages/${message.id}/attachments`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const camp = await CampFactory.create();
+      const { message } = await createSentMessageForCamp(camp.id);
+
+      await request()
+        .post(`/api/v1/camps/${camp.id}/messages/${message.id}/attachments`)
         .send()
         .expect(401);
     });
@@ -625,7 +853,7 @@ describe('/api/v1/camps/:campId/messages', () => {
 describe('/api/v1/files/', () => {
   const createMessageWithFile = async () => {
     const { user, accessToken, camp } = await crateCampWithManager();
-    const { message, registration } = await createMessageForCamp(camp.id);
+    const { message } = await createMessageForCamp(camp.id);
 
     const fileName = crypto.randomUUID() + '.pdf';
     await uploadFile('blank.pdf', fileName);
@@ -635,7 +863,7 @@ describe('/api/v1/files/', () => {
       name: fileName,
     });
 
-    return { file, user, accessToken, camp, registration };
+    return { file, user, accessToken, camp };
   };
 
   describe('GET /api/v1/files/:fileId', () => {

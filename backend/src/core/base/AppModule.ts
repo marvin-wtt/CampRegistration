@@ -6,6 +6,7 @@ import type {
   NewsletterPermission,
 } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
+import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import type { ContainerModuleLoadOptions } from 'inversify';
 
 export type AppRouter = Router & {
@@ -26,7 +27,7 @@ export interface AppModule {
 
   bindContainers?(options: BindOptions): void;
 
-  registerRoutes?(router?: Router): void;
+  registerRoutes?(router: AppRouter): void;
 
   registerPermissions?(): RoleToPermissions<ManagerRole, Permission>;
 
@@ -34,6 +35,8 @@ export interface AppModule {
     NewsletterManagerRole,
     NewsletterPermission
   >;
+
+  registerJobs?(scheduler: JobScheduler): void;
 
   shutdown?(): Promise<void> | void;
 }

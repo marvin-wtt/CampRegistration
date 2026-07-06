@@ -15,8 +15,10 @@ export * from './Room.js';
 export * from './ServiceFile.js';
 export * from './TableTemplate.js';
 export * from './User.js';
+
 export * from './Message.js';
 export * from './MessageTemplate.js';
+export * from './MessageDelivery.js';
 
 export * from './Newsletter.js';
 export * from './NewsletterManager.js';

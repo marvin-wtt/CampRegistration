@@ -101,19 +101,18 @@
             v-else
             v-model="data.field"
             :label="t('field.field.label')"
-            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            :rules="customFieldRules"
             hide-bottom-space
             outlined
             rounded
           />
 
           <q-select
-            v-if="data.source !== 'custom'"
             v-model="data.renderAs"
             :label="t('field.renderAs.label')"
             :hint="t('field.renderAs.hint')"
             :options="renderAsOptions"
-            clearable
+            :clearable="data.source !== 'custom'"
             emit-value
             map-options
             outlined
@@ -197,10 +196,10 @@
                 :label="t('field.name.label')"
                 :hint="t('field.name.hint')"
                 :rules="[
-                  (val: string) => !!val || t('field.name.rules.required'),
                   (val: string) =>
-                    !/\s/.test(val) || t('field.name.rules.no_spaces'),
+                    !val || !/\s/.test(val) || t('field.name.rules.no_spaces'),
                 ]"
+                clearable
                 outlined
                 rounded
               />
@@ -296,6 +295,10 @@ const FIELD_MAP: Record<PrefixedSource, string> = {
   custom: 'customData',
 } as const;
 
+// Custom file columns read from the registration's file-slot record instead
+// of customData.
+const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
+
 const data = reactive<PartialBy<TableColumnTemplate, 'name'>>({
   ...structuredClone(deepToRaw(column)),
   source: getFieldSource(),
@@ -303,6 +306,10 @@ const data = reactive<PartialBy<TableColumnTemplate, 'name'>>({
 });
 
 function getFieldSource(): TableColumnTemplate['source'] {
+  if (column.field.startsWith(`${CUSTOM_FILES_FIELD_PREFIX}.`)) {
+    return 'custom';
+  }
+
   const entry = (Object.entries(FIELD_MAP) as [PrefixedSource, string][]).find(
     ([, prefix]) => column.field.startsWith(`${prefix}.`),
   );
@@ -310,8 +317,8 @@ function getFieldSource(): TableColumnTemplate['source'] {
 }
 
 function removeFieldPrefix(): string {
-  const prefix = Object.values(FIELD_MAP).find((p) =>
-    column.field.startsWith(`${p}.`),
+  const prefix = [...Object.values(FIELD_MAP), CUSTOM_FILES_FIELD_PREFIX].find(
+    (p) => column.field.startsWith(`${p}.`),
   );
   return prefix ? column.field.slice(`${prefix}.`.length) : column.field;
 }
@@ -394,6 +401,19 @@ const alignOptions = computed<QSelectOption[]>(() => {
   ];
 });
 
+const customFieldRules = computed(() => {
+  const rules = [(val: string) => !!val || t('field.field.rules.required')];
+
+  // File slot names must stay addressable as flat `files.<slot>` paths.
+  if (data.renderAs === 'file_editor') {
+    rules.push(
+      (val: string) => !val.includes('.') || t('field.field.rules.no_dots'),
+    );
+  }
+
+  return rules;
+});
+
 const customOptionsComponent = computed<Component | undefined>(() => {
   if (!data.renderAs) {
     return undefined;
@@ -403,6 +423,14 @@ const customOptionsComponent = computed<Component | undefined>(() => {
 });
 
 const renderAsOptions = computed<QSelectOption[]>(() => {
+  // Custom fields are staff-entered: plain text or an uploaded file.
+  if (data.source === 'custom') {
+    return [
+      { label: t('cellType.text'), value: 'editor' },
+      { label: t('cellType.file'), value: 'file_editor' },
+    ];
+  }
+
   return Array.from(ComponentRegistry.all().entries(), ([key, value]) => {
     const options = value.options;
     if (options.internal) {
@@ -510,7 +538,10 @@ function updateFieldPath(): string {
     return data.field;
   }
 
-  const prefix = FIELD_MAP[data.source];
+  const prefix =
+    data.source === 'custom' && data.renderAs === 'file_editor'
+      ? CUSTOM_FILES_FIELD_PREFIX
+      : FIELD_MAP[data.source];
   if (
     !prefix ||
     data.field.length === 0 ||
@@ -550,7 +581,6 @@ field:
     label: 'Name'
     hint: 'A unique name to identify the column (some_name)'
     rules:
-      required: 'Name must not be empty'
       no_spaces: 'Use underscores instead of spaces'
   label:
     label: 'Label'
@@ -577,6 +607,7 @@ field:
     hint: 'Name of corresponding form field'
     rules:
       required: 'Field must not be empty'
+      no_dots: 'File field names must not contain dots'
     options:
       createdAt: 'Creation date'
       room: 'Room'
@@ -662,7 +693,6 @@ field:
     label: 'Name'
     hint: 'Ein eindeutiger Name zur Identifizierung (some_name)'
     rules:
-      required: 'Name darf nicht leer sein'
       no_spaces: 'Unterstriche statt Leerzeichen verwenden'
   label:
     label: 'Label'
@@ -689,6 +719,7 @@ field:
     hint: 'Name des entsprechenden Formularfelds'
     rules:
       required: 'Feld darf nicht leer sein'
+      no_dots: 'Dateifeld-Namen dürfen keine Punkte enthalten'
     options:
       createdAt: 'Erstellungsdatum'
       room: 'Raum'
@@ -774,7 +805,6 @@ field:
     label: 'Nom'
     hint: 'Un nom unique pour identifier la colonne (some_name)'
     rules:
-      required: 'Le nom ne doit pas être vide'
       no_spaces: "Utiliser des traits de soulignement au lieu d'espaces"
   label:
     label: 'Libellé'
@@ -801,6 +831,7 @@ field:
     hint: 'Nom du champ de formulaire correspondant'
     rules:
       required: 'Le champ ne doit pas être vide'
+      no_dots: 'Les noms de champs de fichier ne doivent pas contenir de points'
     options:
       createdAt: 'Date de création'
       room: 'Salle'
@@ -886,7 +917,6 @@ field:
     label: 'Nazwa'
     hint: 'Unikalna nazwa identyfikacyjna (np. some_name)'
     rules:
-      required: 'Nazwa nie może być pusta'
       no_spaces: 'Użyj podkreśleń zamiast spacji'
   label:
     label: 'Etykieta'
@@ -913,6 +943,7 @@ field:
     hint: 'Nazwa odpowiedniego pola formularza'
     rules:
       required: 'Pole nie może być puste'
+      no_dots: 'Nazwy pól plików nie mogą zawierać kropek'
     options:
       createdAt: 'Data utworzenia'
       room: 'Pokój'
@@ -998,7 +1029,6 @@ field:
     label: 'Název'
     hint: 'Jedinečný název pro identifikaci (např. some_name)'
     rules:
-      required: 'Název nesmí být prázdný'
       no_spaces: 'Použijte podtržítka místo mezer'
   label:
     label: 'Popisek'
@@ -1025,6 +1055,7 @@ field:
     hint: 'Název odpovídajícího pole ve formuláři'
     rules:
       required: 'Pole nesmí být prázdné'
+      no_dots: 'Názvy souborových polí nesmí obsahovat tečky'
     options:
       createdAt: 'Datum vytvoření'
       room: 'Pokoj'

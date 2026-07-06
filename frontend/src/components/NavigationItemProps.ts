@@ -6,7 +6,8 @@ interface BaseProps {
   label?: string | undefined;
   separated?: boolean | undefined;
   insertLevel?: number | undefined;
-  permission?: Permission | undefined;
+  // A single permission, or an array meaning "any of these grants access".
+  permission?: Permission | Permission[] | undefined;
 }
 
 interface HeaderItemProps extends BaseProps {

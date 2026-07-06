@@ -91,7 +91,7 @@ export class RegistrationController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      body: { data, customData, status },
+      body: { data, customData, customFiles, status },
       params: { registrationId },
       query: { suppressMessage },
     } = await req.validate(validator.update);
@@ -101,6 +101,7 @@ export class RegistrationController extends BaseController {
     const updateData = {
       data,
       customData,
+      customFiles,
       status,
     };
 
