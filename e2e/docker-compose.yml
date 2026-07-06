@@ -14,7 +14,7 @@ services:
     volumes:
       - db:/var/lib/mysql
   mail:
-    image: maildev/maildev:latest
+    image: maildev/maildev:2.2.1
     restart: on-failure
     ports:
       - '1081:1081'
