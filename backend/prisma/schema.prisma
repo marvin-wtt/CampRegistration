@@ -84,6 +84,7 @@ model Camp {
   messages         Message[]
   files            File[]
   programEvents    ProgramEvent[]
+  tasks            Task[]
 
   @@map("camps")
 }
@@ -96,9 +97,10 @@ model CampManager {
   invitationId String?   @map("invitation_id") @db.Char(26)
   expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
 
-  camp       Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
-  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
-  invitation Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
+  camp          Camp        @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_camp_id_foreign")
+  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_managers_user_id_foreign")
+  invitation    Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "camp_managers_invitation_id_foreign")
+  assignedTasks Task[]
 
   @@index([campId], map: "camp_managers_camp_id_foreign")
   @@index([userId], map: "camp_managers_user_id_foreign")
@@ -425,4 +427,21 @@ model ProgramEvent {
   camp     Camp    @relation(fields: [campId], references: [id], onDelete: Cascade)
 
   @@map("program_events")
+}
+
+model Task {
+  id         String  @id @unique(map: "tasks_id_unique") @default(ulid()) @db.Char(26)
+  campId     String  @map("camp_id") @db.Char(26)
+  title      String
+  notes      String? @db.Text
+  dueDate    String? @map("due_date")
+  completed  Boolean @default(false)
+  assigneeId String? @map("assignee_id") @db.Char(26)
+
+  camp     Camp         @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "tasks_camp_id_foreign")
+  assignee CampManager? @relation(fields: [assigneeId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "tasks_assignee_id_foreign")
+
+  @@index([campId], map: "tasks_camp_id_foreign")
+  @@index([assigneeId], map: "tasks_assignee_id_foreign")
+  @@map("tasks")
 }

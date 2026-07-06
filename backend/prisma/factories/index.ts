@@ -15,3 +15,4 @@ export * from './newsletter.factory';
 export * from './newsletter-subscriber.factory';
 export * from './newsletter-message.factory';
 export * from './program-event.factory';
+export * from './task.factory';
