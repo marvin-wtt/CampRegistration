@@ -65,6 +65,13 @@
         </div>
       </section>
 
+      <section
+        v-if="canAccessAny('camp.tasks.view')"
+        class="dashboard-section"
+      >
+        <tasks-due-widget />
+      </section>
+
       <q-card
         v-if="attentionItems.length > 0"
         flat
@@ -204,11 +211,14 @@ import CampSummaryHero from 'components/campManagement/dashboard/CampSummaryHero
 import StatCard from 'components/campManagement/dashboard/StatCard.vue';
 import CountryBreakdownTable from 'components/campManagement/dashboard/CountryBreakdownTable.vue';
 import DemographicsExplorer from 'components/campManagement/dashboard/DemographicsExplorer.vue';
+import TasksDueWidget from 'components/campManagement/dashboard/TasksDueWidget.vue';
 import { useCampDetailsStore } from 'stores/camp-details-store';
 import { useRegistrationsStore } from 'stores/registration-store';
 import { useCampFilesStore } from 'stores/camp-files-store';
+import { useTaskStore } from 'stores/task-store';
 import { useCampStatistics } from 'src/composables/campStatistics';
 import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { usePermissions } from 'src/composables/permissions';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
@@ -221,8 +231,10 @@ const router = useRouter();
 const campDetailsStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
 const campFilesStore = useCampFilesStore();
+const taskStore = useTaskStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
+const { canAccessAny } = usePermissions();
 
 const {
   data: camp,
@@ -244,6 +256,7 @@ onMounted(() => {
   void registrationStore.fetchData();
   void campDetailsStore.fetchData();
   void campFilesStore.fetchData();
+  void taskStore.fetchData();
 });
 
 // Pending only matters when registrations are confirmed manually.

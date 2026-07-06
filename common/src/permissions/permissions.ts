@@ -51,6 +51,12 @@ export type ProgramEventPermission =
   | 'camp.program_events.update'
   | 'camp.program_events.delete';
 
+export type TaskPermission =
+  | 'camp.tasks.view'
+  | 'camp.tasks.create'
+  | 'camp.tasks.update'
+  | 'camp.tasks.delete';
+
 export type NewsletterPermission =
   | 'newsletter.view'
   | 'newsletter.edit'
@@ -76,6 +82,7 @@ export type Permission =
   | RoomPermission
   | BedPermission
   | ProgramEventPermission
+  | TaskPermission
   | NewsletterPermission;
 
 export type Permissions = Permission[];

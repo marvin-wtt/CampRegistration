@@ -238,7 +238,7 @@ export function useResultTableModel(
     }
 
     // Add actions column at the end
-    if (template.value.actions) {
+    if (template.value.actions !== false) {
       cols.push({
         name: '_action',
         align: 'center',

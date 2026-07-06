@@ -1,0 +1,76 @@
+import httpStatus from 'http-status';
+import { TaskService } from './task.service.js';
+import { TaskResource } from './task.resource.js';
+import { BaseController } from '#core/base/BaseController';
+import type { Request, Response } from 'express';
+import validator from '#app/task/task.validation';
+import { inject, injectable } from 'inversify';
+
+@injectable()
+export class TaskController extends BaseController {
+  constructor(
+    @inject(TaskService)
+    private readonly taskService: TaskService,
+  ) {
+    super();
+  }
+
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const task = req.modelOrFail('task');
+
+    res.resource(new TaskResource(task));
+  }
+
+  async index(req: Request, res: Response) {
+    await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+
+    const tasks = await this.taskService.queryTasks(camp.id);
+
+    res.resource(TaskResource.collection(tasks));
+  }
+
+  async store(req: Request, res: Response) {
+    const { body } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
+
+    const task = await this.taskService.createTask(camp.id, {
+      title: body.title,
+      notes: body.notes ?? undefined,
+      dueDate: body.dueDate ?? undefined,
+      assigneeId: body.assigneeId ?? undefined,
+    });
+
+    res.status(httpStatus.CREATED).resource(new TaskResource(task));
+  }
+
+  async update(req: Request, res: Response) {
+    const { body } = await req.validate(validator.update);
+    const camp = req.modelOrFail('camp');
+    const existingTask = req.modelOrFail('task');
+
+    const task = await this.taskService.updateTaskById(
+      camp.id,
+      existingTask.id,
+      {
+        title: body.title,
+        notes: body.notes,
+        dueDate: body.dueDate,
+        completed: body.completed,
+        assigneeId: body.assigneeId,
+      },
+    );
+
+    res.resource(new TaskResource(task));
+  }
+
+  async destroy(req: Request, res: Response) {
+    await req.validate(validator.destroy);
+    const task = req.modelOrFail('task');
+
+    await this.taskService.deleteTaskById(task.id);
+
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+}

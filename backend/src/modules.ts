@@ -19,6 +19,7 @@ import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
+import { TaskModule } from '#app/task/task.module';
 import { MailModule } from '#app/mail/mail.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
@@ -47,6 +48,7 @@ export const createModules = (): AppModule[] => [
   new RoomModule(),
   new BedModule(),
   new ProgramEventModule(),
+  new TaskModule(),
   new FeedbackModule(),
   new NewsletterModule(),
   new NewsletterSubscriberModule(),
