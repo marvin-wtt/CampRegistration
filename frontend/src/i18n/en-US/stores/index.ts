@@ -11,6 +11,7 @@ import newsletter from './newsletter';
 import newsletterSubscriber from './newsletter-subscriber';
 import newsletterMessage from './newsletter-message';
 import newsletterManager from './newsletter-manager';
+import task from './task';
 
 export default {
   camp,
@@ -26,4 +27,5 @@ export default {
   newsletterSubscriber,
   newsletterMessage,
   newsletterManager,
+  task,
 };
