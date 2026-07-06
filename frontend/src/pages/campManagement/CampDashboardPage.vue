@@ -211,7 +211,7 @@ import CampSummaryHero from '@/components/campManagement/dashboard/CampSummaryHe
 import StatCard from '@/components/campManagement/dashboard/StatCard.vue';
 import CountryBreakdownTable from '@/components/campManagement/dashboard/CountryBreakdownTable.vue';
 import DemographicsExplorer from '@/components/campManagement/dashboard/DemographicsExplorer.vue';
-import TasksDueWidget from 'components/campManagement/dashboard/TasksDueWidget.vue';
+import TasksDueWidget from '@/components/campManagement/dashboard/TasksDueWidget.vue';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useCampFilesStore } from '@/stores/camp-files-store';
