@@ -4,6 +4,12 @@ import { Quasar } from 'quasar';
 
 import { messages, datetimeFormats, numberFormats } from 'src/i18n';
 
+const appName = process.env.APP_NAME ?? 'Camp Registration';
+for (const locale of Object.keys(messages)) {
+  // @ts-expect-error This is intended
+  messages[locale as keyof typeof messages]['app_name'] = appName;
+}
+
 export default defineBoot(({ app }) => {
   const i18n = createI18n({
     legacy: false,
