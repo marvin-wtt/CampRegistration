@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts" setup>
-import RoomListItemSkeleton from 'components/campManagement/roomPlanner/RoomListItemSkeleton.vue';
+import RoomListItemSkeleton from '@/components/campManagement/roomPlanner/RoomListItemSkeleton.vue';
 
 const { capacity } = defineProps<{
   capacity: number;

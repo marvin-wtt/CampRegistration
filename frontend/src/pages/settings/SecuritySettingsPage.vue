@@ -27,14 +27,14 @@
 </template>
 
 <script lang="ts" setup>
-import PasswordSettingsCard from 'components/settings/PasswordSettingsCard.vue';
-import { useProfileStore } from 'stores/profile-store';
+import PasswordSettingsCard from '@/components/settings/PasswordSettingsCard.vue';
+import { useProfileStore } from '@/stores/profile-store';
 import type { ProfileUpdateData } from '@camp-registration/common/entities';
-import TwoFactorDisableCard from 'components/settings/twoFactor/TwoFactorDisableCard.vue';
-import { useTotpStore } from 'stores/totp-store';
+import TwoFactorDisableCard from '@/components/settings/twoFactor/TwoFactorDisableCard.vue';
+import { useTotpStore } from '@/stores/totp-store';
 import { storeToRefs } from 'pinia';
-import TwoFactorEnableCard from 'components/settings/twoFactor/TwoFactorEnableCard.vue';
-import TwoFactorSetupCard from 'components/settings/twoFactor/TwoFactorSetupCard.vue';
+import TwoFactorEnableCard from '@/components/settings/twoFactor/TwoFactorEnableCard.vue';
+import TwoFactorSetupCard from '@/components/settings/twoFactor/TwoFactorSetupCard.vue';
 import { computed } from 'vue';
 
 const profileStore = useProfileStore();

@@ -1,15 +1,15 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type {
   AuthTokens,
   Authentication,
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthBus } from 'src/composables/bus';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useProfileStore } from 'stores/profile-store';
-import { createInitialAdmin } from 'src/services/SetupService';
-import { isCustomAxiosError } from 'src/services/AuthService';
+import { useAuthBus } from '@/composables/bus';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useProfileStore } from '@/stores/profile-store';
+import { createInitialAdmin } from '@/services/SetupService';
+import { isCustomAxiosError } from '@/services/AuthService';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();

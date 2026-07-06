@@ -22,9 +22,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
+import type { TableCellOptionsProps } from '@/components/campManagement/table/tableCells/TableCellOptionsProps';
 import { useI18n } from 'vue-i18n';
-import type { TextOptions } from 'components/campManagement/table/tableCells/TextOptions';
+import type { TextOptions } from '@/components/campManagement/table/tableCells/TextOptions';
 import { ref, watch } from 'vue';
 
 const { t } = useI18n();

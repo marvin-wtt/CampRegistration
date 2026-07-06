@@ -61,19 +61,19 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useRegistrationsStore } from 'stores/registration-store';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useRegistrationsStore } from '@/stores/registration-store';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type { Message, Registration } from '@camp-registration/common/entities';
-import type { ContactDraft } from 'components/campManagement/contact/Contact';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { usePermissions } from 'src/composables/permissions';
-import { useRealtimeCollection } from 'src/composables/realtimeCollection';
-import { useAPIService } from 'src/services/APIService';
-import ContactForm from 'components/campManagement/contact/ContactForm.vue';
-import SentMessageHistory from 'components/campManagement/contact/SentMessageHistory.vue';
+import type { ContactDraft } from '@/components/campManagement/contact/Contact';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { usePermissions } from '@/composables/permissions';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useAPIService } from '@/services/APIService';
+import ContactForm from '@/components/campManagement/contact/ContactForm.vue';
+import SentMessageHistory from '@/components/campManagement/contact/SentMessageHistory.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();

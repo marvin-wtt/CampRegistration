@@ -1,3 +1,3 @@
-import { formatPersonName } from 'src/utils/formatters/personName';
+import { formatPersonName } from '@/utils/formatters/personName';
 
 export { formatPersonName };

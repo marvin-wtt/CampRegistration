@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import CampCard from 'components/campManagement/index/CampCard.vue';
+import CampCard from '@/components/campManagement/index/CampCard.vue';
 import type { Camp } from '@camp-registration/common/entities';
 import { ref } from 'vue';
 

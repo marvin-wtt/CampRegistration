@@ -162,7 +162,7 @@
 import { useI18n } from 'vue-i18n';
 import { useQuasar, type QPopupProxy } from 'quasar';
 import { computed, onMounted, ref } from 'vue';
-import { daysBetweenDates } from 'src/utils/date';
+import { daysBetweenDates } from '@/utils/date';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();

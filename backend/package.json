@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./build/ && rimraf ./node_modules/",
-    "build": "prisma generate && tsc && tsc-alias && cp ./src/entry.cjs ./build/ && npm run build:views",
+    "build": "prisma generate && tsc && tsc-alias && npm run build:entry && npm run build:views",
+    "build:entry": "node ./scripts/copy-entry.mjs",
     "build:views": "mkdirp ./build/views/emails/ && mjml src/views/emails/**/*.mjml -o ./build/views/emails/",
     "data:migrate": "tsx prisma/data-migrations/runner.ts",
     "migrate": "npm run db:migrate && npm run data:migrate",

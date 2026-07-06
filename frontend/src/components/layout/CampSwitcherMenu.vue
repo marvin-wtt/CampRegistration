@@ -62,9 +62,9 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { useAssignedCampsStore } from 'stores/assigned-camps-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { isCampArchived } from 'src/utils/campPhase';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { isCampArchived } from '@/utils/campPhase';
 import type { Camp } from '@camp-registration/common/entities';
 
 const route = useRoute();

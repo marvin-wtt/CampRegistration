@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useRealtimeCollection } from 'src/composables/realtimeCollection';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import type {
   CampManager,
   CampManagerCreateData,

@@ -67,10 +67,10 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import ResultTablePrint from 'components/campManagement/table/ResultTablePrint.vue';
-import type { PrintTablesPayload } from 'components/campManagement/table/PrintTablesPayload';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { usePrintPage, waitForStableLayout } from 'src/composables/printPage';
+import ResultTablePrint from '@/components/campManagement/table/ResultTablePrint.vue';
+import type { PrintTablesPayload } from '@/components/campManagement/table/PrintTablesPayload';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 
 const { to } = useObjectTranslation();
 

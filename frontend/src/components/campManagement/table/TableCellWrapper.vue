@@ -42,9 +42,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
+import type { TableCellRenderer } from '@/components/campManagement/table/TableCellRenderer';
 import type { CampDetails } from '@camp-registration/common/entities';
-import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 
 const {
   renderer,

@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
 import type { TotpData } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { ref } from 'vue';
 
 export const useTotpStore = defineStore('totp', () => {

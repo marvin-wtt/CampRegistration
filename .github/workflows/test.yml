@@ -247,7 +247,7 @@ jobs:
           - 3306:3306
 
       maildev:
-        image: maildev/maildev
+        image: maildev/maildev:2.2.1
         env:
           MAILDEV_SMTP_PORT: 1025
           MAILDEV_WEB_PORT: 1081

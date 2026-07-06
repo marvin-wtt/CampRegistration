@@ -16,12 +16,12 @@
 </template>
 
 <script lang="ts" setup>
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { useQuasar } from 'quasar';
-import DeleteAccountSettingsCard from 'components/settings/DeleteAccountlSettingsCard.vue';
+import DeleteAccountSettingsCard from '@/components/settings/DeleteAccountlSettingsCard.vue';
 import { storeToRefs } from 'pinia';
-import ExportDataSettingsCard from 'components/settings/ExportDataSettingsCard.vue';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
+import ExportDataSettingsCard from '@/components/settings/ExportDataSettingsCard.vue';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();

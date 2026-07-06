@@ -18,9 +18,7 @@ export type ManagerPermission =
   | 'camp.managers.delete';
 
 export type MessagePermission =
-  | 'camp.messages.view'
-  | 'camp.messages.create'
-  | 'camp.messages.delete';
+  'camp.messages.view' | 'camp.messages.create' | 'camp.messages.delete';
 
 export type MessageTemplatePermission =
   | 'camp.message_templates.view'
@@ -41,9 +39,7 @@ export type RoomPermission =
   | 'camp.rooms.delete';
 
 export type BedPermission =
-  | 'camp.rooms.beds.create'
-  | 'camp.rooms.beds.edit'
-  | 'camp.rooms.beds.delete';
+  'camp.rooms.beds.create' | 'camp.rooms.beds.edit' | 'camp.rooms.beds.delete';
 
 export type ProgramEventPermission =
   | 'camp.program_events.view'

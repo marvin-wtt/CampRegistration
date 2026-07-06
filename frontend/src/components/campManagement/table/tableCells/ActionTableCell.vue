@@ -19,8 +19,8 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import RegistrationActionList from 'components/campManagement/table/RegistrationActionList.vue';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import RegistrationActionList from '@/components/campManagement/table/RegistrationActionList.vue';
 
 const { props: cellProps, printing, readonly } = defineProps<TableCellProps>();
 

@@ -51,13 +51,13 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import type { Camp, TableTemplate } from '@camp-registration/common/entities';
-import TableTemplateEditDialog from 'components/campManagement/table/dialogs/TableTemplateEditDialog.vue';
-import SortableList from 'components/common/SortableList.vue';
+import TableTemplateEditDialog from '@/components/campManagement/table/dialogs/TableTemplateEditDialog.vue';
+import SortableList from '@/components/common/SortableList.vue';
 import { ref, toRaw } from 'vue';
-import { usePermissions } from 'src/composables/permissions';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import { usePermissions } from '@/composables/permissions';
+import { deepToRaw } from '@/utils/deepToRaw';
 
 const { camp, templates } = defineProps<{
   templates: TableTemplate[];

@@ -27,7 +27,7 @@ import {
 } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
-import campDataMapping from 'src/lib/surveyJs/properties/campDataMapping';
+import campDataMapping from '@/lib/surveyJs/properties/campDataMapping';
 import {
   type Base,
   type ITheme,
@@ -38,8 +38,8 @@ import {
   Serializer,
 } from 'survey-core';
 import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from 'src/utils/markdown';
-import FileSelectionDialog from 'components/campManagement/settings/files/FileSelectionDialog.vue';
+import { createMarkdownConverter } from '@/utils/markdown';
+import FileSelectionDialog from '@/components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
   ServiceFile,
@@ -47,11 +47,11 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
-import { addFileSlotResolver } from 'src/composables/survey';
-import { useAPIService } from 'src/services/APIService';
-import { surveyCreatorCustomLocaleConfig } from 'components/campManagement/settings/form/form-editor-translations';
-import { createStaticMd3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
-import { md3CreatorThemes } from 'src/lib/surveyJs/themes/md3-creator';
+import { addFileSlotResolver } from '@/composables/survey';
+import { useAPIService } from '@/services/APIService';
+import { surveyCreatorCustomLocaleConfig } from '@/components/campManagement/settings/form/form-editor-translations';
+import { createStaticMd3SurveyThemes } from '@/lib/surveyJs/themes/md3';
+import { md3CreatorThemes } from '@/lib/surveyJs/themes/md3-creator';
 
 const props = defineProps<{
   camp: CampDetails;

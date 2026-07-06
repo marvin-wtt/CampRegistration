@@ -4,8 +4,8 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { formatPersonName } from 'src/utils/formatters';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import { formatPersonName } from '@/utils/formatters';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 
 const { props: cellProps } = defineProps<TableCellProps>();
 

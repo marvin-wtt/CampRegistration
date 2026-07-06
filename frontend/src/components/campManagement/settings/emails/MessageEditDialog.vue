@@ -94,15 +94,15 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, ref } from 'vue';
-import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
+import RegistrationEmailEditor from '@/components/campManagement/contact/RegistrationEmailEditor.vue';
 import type {
   CampDetails,
   ServiceFile,
 } from '@camp-registration/common/entities';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import { deepToRaw } from '@/utils/deepToRaw';
 import FileInput, {
   type FileInputModel,
-} from 'components/common/inputs/FileInput.vue';
+} from '@/components/common/inputs/FileInput.vue';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

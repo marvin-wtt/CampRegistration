@@ -29,7 +29,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import type { RouteLocationRaw } from 'vue-router';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
+import ProfileMenu from '@/components/common/ProfileMenu.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { backTo } = defineProps<{

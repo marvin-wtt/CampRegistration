@@ -1,5 +1,5 @@
 import { reactive, watch } from 'vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 
 /**
  * Reactive settings object that is persisted to `localStorage`, scoped to the

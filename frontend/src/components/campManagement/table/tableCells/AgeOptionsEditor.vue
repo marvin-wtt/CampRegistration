@@ -8,9 +8,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { TableCellOptionsProps } from 'components/campManagement/table/tableCells/TableCellOptionsProps';
+import type { TableCellOptionsProps } from '@/components/campManagement/table/tableCells/TableCellOptionsProps';
 import { useI18n } from 'vue-i18n';
-import type { AgeOptions } from 'components/campManagement/table/tableCells/AgeOptions';
+import type { AgeOptions } from '@/components/campManagement/table/tableCells/AgeOptions';
 import { ref, watch } from 'vue';
 
 const { t } = useI18n();

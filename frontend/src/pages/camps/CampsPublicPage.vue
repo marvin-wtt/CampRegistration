@@ -67,12 +67,12 @@
 </template>
 
 <script lang="ts" setup>
-import { useCampsStore } from 'stores/camps-store';
+import { useCampsStore } from '@/stores/camps-store';
 import { computed, onMounted } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CampCard from 'components/camps/CampCard.vue';
-import CampCardSkeleton from 'components/camps/CampCardSkeleton.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CampCard from '@/components/camps/CampCard.vue';
+import CampCardSkeleton from '@/components/camps/CampCardSkeleton.vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();

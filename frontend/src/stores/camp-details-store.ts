@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import type { CampDetails } from '@camp-registration/common/entities';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { omitProperty } from '@/utils/omitProperty';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { useRealtimeStore } from 'stores/realtime-store';
-import { omitProperty } from 'src/utils/omitProperty';
+import { useRealtimeStore } from '@/stores/realtime-store';
+import { omitProperty } from '@/utils/omitProperty';
 
 export const useCampDetailsStore = defineStore('campDetails', () => {
   const route = useRoute();

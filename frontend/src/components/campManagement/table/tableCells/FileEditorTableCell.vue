@@ -89,13 +89,13 @@
 import { computed, ref } from 'vue';
 import { QFile, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import FileTableCell from 'components/campManagement/table/tableCells/FileTableCell.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { usePermissions } from 'src/composables/permissions';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { formatPersonName } from 'src/utils/formatters';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import FileTableCell from '@/components/campManagement/table/tableCells/FileTableCell.vue';
+import { useAPIService } from '@/services/APIService';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { usePermissions } from '@/composables/permissions';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { formatPersonName } from '@/utils/formatters';
 
 const {
   props: cellProps,

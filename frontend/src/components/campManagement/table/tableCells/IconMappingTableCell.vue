@@ -11,8 +11,8 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import type { IconMappingOptions } from 'components/campManagement/table/tableCells/IconMappingOptions';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import type { IconMappingOptions } from '@/components/campManagement/table/tableCells/IconMappingOptions';
 
 const { props: cellProps, options } =
   defineProps<TableCellProps<IconMappingOptions>>();

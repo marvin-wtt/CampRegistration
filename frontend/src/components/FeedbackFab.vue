@@ -119,7 +119,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import { useQuasar } from 'quasar';
 
 const quasar = useQuasar();

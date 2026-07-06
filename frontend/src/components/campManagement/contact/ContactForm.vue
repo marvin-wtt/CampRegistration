@@ -162,22 +162,22 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
+import ContactSelect from '@/components/campManagement/contact/ContactSelect.vue';
 import type { Message, Registration } from '@camp-registration/common/entities';
 import type {
   Contact,
   ContactDraft,
-} from 'components/campManagement/contact/Contact';
+} from '@/components/campManagement/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
-import { useServiceNotifications } from 'src/composables/serviceHandler';
-import { useAPIService } from 'src/services/APIService';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import RegistrationEmailEditor from '@/components/campManagement/contact/RegistrationEmailEditor.vue';
+import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAPIService } from '@/services/APIService';
 import FileInput, {
   type FileInputModel,
-} from 'components/common/inputs/FileInput.vue';
-import { usePermissions } from 'src/composables/permissions';
+} from '@/components/common/inputs/FileInput.vue';
+import { usePermissions } from '@/composables/permissions';
 
 const {
   registrations,

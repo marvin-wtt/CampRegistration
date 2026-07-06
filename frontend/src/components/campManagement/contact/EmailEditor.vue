@@ -287,8 +287,8 @@ import {
 import type {
   Token,
   TokenRegistry,
-} from 'components/campManagement/contact/TokenRegistry';
-import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
+} from '@/components/campManagement/contact/TokenRegistry';
+import TokenSelectionDialog from '@/components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import { BubbleMenu } from '@tiptap/vue-3/menus';

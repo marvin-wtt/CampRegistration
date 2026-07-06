@@ -150,10 +150,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const { to } = useObjectTranslation();
 const { t, locale } = useI18n();
