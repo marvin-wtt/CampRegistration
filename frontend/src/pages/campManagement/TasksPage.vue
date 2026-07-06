@@ -164,18 +164,18 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { useTaskStore } from 'stores/task-store';
-import { useCampManagerStore } from 'stores/camp-manager-store';
+import { useTaskStore } from '@/stores/task-store';
+import { useCampManagerStore } from '@/stores/camp-manager-store';
 import { computed, onMounted, ref } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import TaskFormDialog from 'components/campManagement/tasks/dialogs/TaskFormDialog.vue';
-import TaskDetailsDialog from 'components/campManagement/tasks/dialogs/TaskDetailsDialog.vue';
-import TaskRow from 'components/campManagement/tasks/TaskRow.vue';
-import { usePermissions } from 'src/composables/permissions';
-import { useCurrentManager } from 'src/composables/currentManager';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import TaskFormDialog from '@/components/campManagement/tasks/dialogs/TaskFormDialog.vue';
+import TaskDetailsDialog from '@/components/campManagement/tasks/dialogs/TaskDetailsDialog.vue';
+import TaskRow from '@/components/campManagement/tasks/TaskRow.vue';
+import { usePermissions } from '@/composables/permissions';
+import { useCurrentManager } from '@/composables/currentManager';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();

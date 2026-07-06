@@ -1,5 +1,5 @@
 import type { Task } from '@camp-registration/common/entities';
-import { daysBetweenDates, parseLocalDate } from 'src/utils/date';
+import { daysBetweenDates, parseLocalDate } from '@/utils/date';
 
 export type TaskPhase =
   | 'overdue'

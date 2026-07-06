@@ -182,7 +182,7 @@ const routes: RouteRecordRaw[] = [
               {
                 path: 'tasks',
                 name: 'management.camp.tasks',
-                component: () => import('pages/campManagement/TasksPage.vue'),
+                component: () => import('@/pages/campManagement/TasksPage.vue'),
               },
               {
                 path: 'settings',

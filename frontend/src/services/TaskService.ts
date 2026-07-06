@@ -3,7 +3,7 @@ import type {
   TaskCreateData,
   TaskUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useTaskService() {
   async function fetchTasks(campId: string): Promise<Task[]> {
