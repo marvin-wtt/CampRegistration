@@ -24,6 +24,7 @@ import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
+import { RealtimeModule } from '#app/realtime/realtime.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createModules = (): AppModule[] => [
@@ -52,4 +53,5 @@ export const createModules = (): AppModule[] => [
   new NewsletterSubscriberModule(),
   new NewsletterManagerModule(),
   new NewsletterMessageModule(),
+  new RealtimeModule(),
 ];
