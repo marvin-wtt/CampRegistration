@@ -1289,7 +1289,6 @@ export default [
     filterStatus: ['ACCEPTED'],
     filterRoles: ['participant', 'counselor', 'organizer'],
     indexed: true,
-    actions: false,
     sortBy: 'first_name',
     id: '01KVH6HQPTH0PFJKQ0K4W6JJWX',
   },
