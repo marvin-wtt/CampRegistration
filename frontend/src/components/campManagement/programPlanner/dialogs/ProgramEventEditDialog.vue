@@ -27,7 +27,7 @@
             outlined
             rounded
           >
-            <template #prepend>
+            <template #before>
               <q-icon name="title" />
             </template>
           </translated-input>
@@ -41,7 +41,7 @@
             outlined
             rounded
           >
-            <template #prepend>
+            <template #before>
               <q-icon name="place" />
             </template>
           </translated-input>
@@ -56,7 +56,7 @@
             outlined
             rounded
           >
-            <template #prepend>
+            <template #before>
               <q-icon name="description" />
             </template>
           </translated-input>
