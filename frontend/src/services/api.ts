@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { CLIENT_ID_HEADER } from '@camp-registration/common/realtime';
-import { clientId } from 'src/services/clientId';
+import { clientId } from '@/services/clientId';
 
 // Axios config flag used to coordinate the CSRF bootstrap: the token request
 // itself must not be retried by the CSRF retry interceptor, which would loop.

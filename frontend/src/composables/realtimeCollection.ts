@@ -5,8 +5,8 @@ import type {
   RealtimeEvent,
   RealtimeResource,
 } from '@camp-registration/common/realtime';
-import { useRealtimeStore } from 'stores/realtime-store';
-import { isAPIServiceError } from 'src/services/APIService';
+import { useRealtimeStore } from '@/stores/realtime-store';
+import { isAPIServiceError } from '@/services/APIService';
 
 export interface RealtimeCollectionOptions<T extends { id: string }> {
   /** The list state to reconcile (usually `data` from `useServiceHandler`). */

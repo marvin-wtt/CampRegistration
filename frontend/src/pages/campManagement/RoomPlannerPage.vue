@@ -286,7 +286,7 @@ import type {
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from '@/composables/permissions';
 import { useServiceHandler } from '@/composables/serviceHandler';
-import { useRealtimeCollection } from 'src/composables/realtimeCollection';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useCampStorage } from '@/composables/campStorage';

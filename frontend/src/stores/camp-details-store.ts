@@ -4,7 +4,6 @@ import type { CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useAuthBus, useCampBus } from '@/composables/bus';
-import { omitProperty } from '@/utils/omitProperty';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { omitProperty } from '@/utils/omitProperty';

@@ -5,7 +5,7 @@ import type {
   RealtimeEvent,
   RealtimeResource,
 } from '@camp-registration/common/realtime';
-import { useRealtimeCollection } from 'src/composables/realtimeCollection';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 
 interface Item {
   id: string;

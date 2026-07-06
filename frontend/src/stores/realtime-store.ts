@@ -5,9 +5,9 @@ import type {
   RealtimeEvent,
   RealtimeResource,
 } from '@camp-registration/common/realtime';
-import { useRealtimeService } from 'src/services/RealtimeService';
-import { useAuthBus } from 'src/composables/bus';
-import { clientId } from 'src/services/clientId';
+import { useRealtimeService } from '@/services/RealtimeService';
+import { useAuthBus } from '@/composables/bus';
+import { clientId } from '@/services/clientId';
 
 type EventHandler = (event: RealtimeEvent) => void;
 type ReconnectHandler = () => void;
