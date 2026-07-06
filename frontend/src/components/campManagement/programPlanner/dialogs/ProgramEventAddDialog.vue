@@ -231,12 +231,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  addToDate,
-  getTime,
-  parseTimestamp,
-} from '@quasar/quasar-ui-qcalendar';
-
+import { addToDate, getTime, parseTimestamp } from '@timestamp-js/core';
 import { QPopupProxy, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive } from 'vue';
