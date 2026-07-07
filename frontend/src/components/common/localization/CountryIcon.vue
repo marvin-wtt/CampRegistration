@@ -29,6 +29,7 @@ const { country, locale } = defineProps<Props>();
 
 const DEFAULT_COUNTRY_BY_LANG: Record<string, string> = {
   en: 'GB',
+  cs: 'CZ',
 } as const;
 
 const isoCode = computed<string>(() => {
