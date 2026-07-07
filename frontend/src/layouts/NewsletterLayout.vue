@@ -1,16 +1,28 @@
 <template>
-  <general-layout :title="t('title')" />
+  <general-layout
+    :title="t('title')"
+    :back-to="backTo"
+  />
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import { useAuthStore } from '@/stores/auth-store';
+import { useRoute, type RouteLocationRaw } from 'vue-router';
 
 const { t } = useI18n();
-
 const authStore = useAuthStore();
+const route = useRoute();
+
+const backTo = computed<RouteLocationRaw>(() => {
+  if (route.name === 'management.newsletters') {
+    return { name: 'management' };
+  }
+
+  return { name: 'management.newsletters' };
+});
 
 onMounted(async () => {
   await authStore.init();

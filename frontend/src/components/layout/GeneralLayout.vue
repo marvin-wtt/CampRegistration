@@ -5,10 +5,9 @@
   >
     <q-ajax-bar color="accent" />
 
-    <!-- Top bar: only when there is no rail or on mobile, where the rail is
-         hidden off-canvas. On desktop the rail carries nav + profile. -->
+    <!-- Top bar: mobile only. Desktop uses either the rail or floating controls. -->
     <q-header
-      v-if="!showDrawer || quasar.screen.lt.sm"
+      v-if="showTopBar"
       class="app-top-bar"
       :class="{ 'app-top-bar--scrolled': scrolled }"
     >
@@ -21,15 +20,14 @@
           text
           @click="toggleDrawer"
         />
-
         <m-btn
-          v-else-if="!loading"
+          v-else
+          :aria-label="t('back')"
           icon="arrow_back"
+          :to="backRoute"
           square
           round
           text
-          :aria-label="t('back')"
-          @click="navigateBack()"
         />
 
         <slot
@@ -64,11 +62,11 @@
       >
         <slot name="navigation">
           <m-btn
+            :aria-label="t('back')"
             icon="arrow_back"
+            :to="backRoute"
             round
             text
-            :aria-label="t('back')"
-            @click="navigateBack()"
           >
             <q-tooltip
               anchor="center right"
@@ -123,8 +121,8 @@
          controls (back + profile) instead of a rail, keeping the profile in the
          same bottom-left spot as every other layout. -->
     <layout-floating-controls
-      v-if="!showDrawer && quasar.screen.gt.xs"
-      :back-to="backTo"
+      v-if="showFloatingControls"
+      :back-to="backRoute"
     />
 
     <q-page-container>
@@ -144,7 +142,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from '@/components/NavigationItem.vue';
 import ProfileMenu from '@/components/common/ProfileMenu.vue';
-import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
+import { useRoute, type RouteLocationRaw, useRouter } from 'vue-router';
 import { useMeta, useQuasar } from 'quasar';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
@@ -164,8 +162,8 @@ const {
   title = '',
 } = defineProps<{
   navigationItems?: NavigationItemProps[];
-  backTo?: RouteLocationRaw;
-  title?: string;
+  backTo?: RouteLocationRaw | undefined;
+  title?: string | undefined;
   loading?: boolean;
 }>();
 
@@ -177,7 +175,22 @@ useMeta(() => {
 });
 
 const showDrawer = computed<boolean>(() => {
-  return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
+  if ('hideDrawer' in route.meta && route.meta.hideDrawer === true) {
+    return false;
+  }
+
+  // Always hide the drawer if there are no items to be displayed
+  return !(!navigationItems || navigationItems.length <= 0);
+});
+
+const showFloatingControls = computed<boolean>(() => {
+  return !showDrawer.value && quasar.screen.gt.xs;
+});
+
+const showTopBar = computed<boolean>(() => {
+  return (
+    !showFloatingControls.value && (!showDrawer.value || quasar.screen.lt.sm)
+  );
 });
 
 const drawer = ref<boolean>(false);
@@ -195,19 +208,33 @@ function toggleDrawer() {
   drawer.value = !drawer.value;
 }
 
-function navigateBack() {
-  if (backTo) {
-    void router.push(backTo);
-    return;
+function isCurrentRoute(target: RouteLocationRaw) {
+  try {
+    return (
+      router.resolve(target).fullPath === router.currentRoute.value.fullPath
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_e) {
+    return true;
   }
-
-  if (window.history.state?.back) {
-    router.back();
-    return;
-  }
-
-  void router.push('/');
 }
+
+const backRoute = computed<RouteLocationRaw>(() => {
+  if (backTo && !isCurrentRoute(backTo)) {
+    return backTo;
+  }
+
+  // Use management as first fallback layer
+  const fallback = {
+    name: 'management',
+  };
+
+  if (!isCurrentRoute(fallback)) {
+    return fallback;
+  }
+
+  return '/';
+});
 </script>
 
 <i18n lang="yaml" locale="en">
