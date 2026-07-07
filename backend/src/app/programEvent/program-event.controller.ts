@@ -26,23 +26,19 @@ export class ProgramEventController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
-    const events = await this.programEventService.queryProgramEvent(campId);
+    const events = await this.programEventService.queryProgramEvent(camp.id);
 
     res.resource(ProgramEventResource.collection(events));
   }
 
   async store(req: Request, res: Response) {
-    const {
-      params: { campId },
-      body,
-    } = await req.validate(validator.store);
     const camp = req.modelOrFail('camp');
+    const { body } = await req.validate(validator.store);
 
-    const event = await this.programEventService.createProgramEvent(campId, {
+    const event = await this.programEventService.createProgramEvent(camp.id, {
       title: body.title,
       details: body.details ?? undefined,
       location: body.location ?? undefined,

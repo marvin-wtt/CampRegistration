@@ -23,11 +23,10 @@ export class CampManagerController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
-    const managers = await this.managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(camp.id);
 
     res.resource(CampManagerResource.collection(managers));
   }
@@ -72,6 +71,7 @@ export class CampManagerController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
     const manager = req.modelOrFail('campManager');
     const {
       body: { role, expiresAt },
@@ -86,7 +86,7 @@ export class CampManagerController extends BaseController {
     );
 
     void this.realtimeService.emit(
-      updatedManager.campId,
+      camp.id,
       'manager',
       updatedManager.id,
       'updated',
@@ -96,11 +96,11 @@ export class CampManagerController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, campManagerId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const manager = req.modelOrFail('campManager');
+    await req.validate(validator.destroy);
 
-    const managers = await this.managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(camp.id);
     if (managers.length <= 1) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -108,9 +108,9 @@ export class CampManagerController extends BaseController {
       );
     }
 
-    await this.managerService.removeManager(campManagerId);
+    await this.managerService.removeManager(manager.id);
 
-    void this.realtimeService.emit(campId, 'manager', campManagerId, 'deleted');
+    void this.realtimeService.emit(camp.id, 'manager', manager.id, 'deleted');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

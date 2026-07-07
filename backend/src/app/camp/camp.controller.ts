@@ -188,13 +188,12 @@ export class CampController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.destroy);
 
-    await this.campService.deleteCampById(campId);
+    await this.campService.deleteCampById(camp.id);
 
-    void this.realtimeService.emit(campId, 'camp', campId, 'deleted');
+    void this.realtimeService.emit(camp.id, 'camp', camp.id, 'deleted');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

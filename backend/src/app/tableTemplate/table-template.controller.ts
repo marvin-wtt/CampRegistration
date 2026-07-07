@@ -25,28 +25,25 @@ export class TableTemplateController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
-    const templates = await this.tableTemplateService.queryTemplates(campId);
+    const templates = await this.tableTemplateService.queryTemplates(camp.id);
 
     res.resource(TableTemplateResource.collection(templates));
   }
 
   async store(req: Request, res: Response) {
-    const {
-      params: { campId },
-      body,
-    } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
+    const { body } = await req.validate(validator.store);
 
     const template = await this.tableTemplateService.createTemplate(
-      campId,
+      camp.id,
       body,
     );
 
     void this.realtimeService.emit(
-      campId,
+      camp.id,
       'table_template',
       template.id,
       'created',
@@ -58,18 +55,17 @@ export class TableTemplateController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const {
-      params: { campId, tableTemplateId },
-      body,
-    } = await req.validate(validator.update);
+    const camp = req.modelOrFail('camp');
+    const tableTemplate = req.modelOrFail('tableTemplate');
+    const { body } = await req.validate(validator.update);
 
     const template = await this.tableTemplateService.updateTemplateById(
-      tableTemplateId,
+      tableTemplate.id,
       body,
     );
 
     void this.realtimeService.emit(
-      campId,
+      camp.id,
       'table_template',
       template.id,
       'updated',
@@ -79,16 +75,16 @@ export class TableTemplateController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, tableTemplateId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const tableTemplate = req.modelOrFail('tableTemplate');
+    await req.validate(validator.destroy);
 
-    await this.tableTemplateService.deleteTemplateById(tableTemplateId);
+    await this.tableTemplateService.deleteTemplateById(tableTemplate.id);
 
     void this.realtimeService.emit(
-      campId,
+      camp.id,
       'table_template',
-      tableTemplateId,
+      tableTemplate.id,
       'deleted',
     );
 

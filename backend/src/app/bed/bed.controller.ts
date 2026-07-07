@@ -22,51 +22,58 @@ export class BedController extends BaseController {
   }
 
   async store(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const room = req.modelOrFail('room');
     const {
-      params: { campId, roomId },
       body: { registrationId },
     } = await req.validate(validator.store);
 
     // Validate registrationId is present
     if (registrationId !== undefined) {
-      await this.getRegistrationOrFail(campId, registrationId);
+      await this.getRegistrationOrFail(camp.id, registrationId);
     }
 
-    const bed = await this.bedService.createBed(roomId, registrationId);
+    const bed = await this.bedService.createBed(room.id, registrationId);
 
     // Beds are not a realtime resource of their own — they render embedded in
     // their room, so subscribers refetch the parent room.
-    void this.realtimeService.emit(campId, 'room', roomId, 'updated');
+    void this.realtimeService.emit(camp.id, 'room', room.id, 'updated');
 
     res.status(httpStatus.CREATED).resource(new BedResource(bed));
   }
 
   async update(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const room = req.modelOrFail('room');
+    const bed = req.modelOrFail('bed');
     const {
-      params: { campId, roomId, bedId },
       body: { registrationId },
     } = await req.validate(validator.update);
 
     // Validate registrationId is present
     if (registrationId !== null) {
-      await this.getRegistrationOrFail(campId, registrationId);
+      await this.getRegistrationOrFail(camp.id, registrationId);
     }
 
-    const bed = await this.bedService.updateBedById(bedId, registrationId);
+    const updatedBed = await this.bedService.updateBedById(
+      bed.id,
+      registrationId,
+    );
 
-    void this.realtimeService.emit(campId, 'room', roomId, 'updated');
+    void this.realtimeService.emit(camp.id, 'room', room.id, 'updated');
 
-    res.resource(new BedResource(bed));
+    res.resource(new BedResource(updatedBed));
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, roomId, bedId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const room = req.modelOrFail('room');
+    const bed = req.modelOrFail('bed');
+    await req.validate(validator.destroy);
 
-    await this.bedService.deleteBedById(bedId);
+    await this.bedService.deleteBedById(bed.id);
 
-    void this.realtimeService.emit(campId, 'room', roomId, 'updated');
+    void this.realtimeService.emit(camp.id, 'room', room.id, 'updated');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

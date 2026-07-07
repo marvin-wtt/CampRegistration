@@ -128,6 +128,7 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 
 - Use `Zod` for complex data shapes (JSON columns, form definitions)
 - Extend `ModuleRouter` for all routers; use model binding for route params (`:campId` → `Camp` entity)
+- In controllers, prefer the bound model's `.id` (e.g. `req.modelOrFail('camp').id`) over the raw route param (`req.params.campId`) for service calls and realtime emits — the binding already fetched and validated the entity, so there's no cost to using it, and it's the only option for guard-derived bindings that have no route param at all
 - Throw `ApiError` from services; centralized error middleware handles the response
 - Use RBAC permission guards — never write ad-hoc role comparisons
 
@@ -195,7 +196,9 @@ Adding realtime to a module (no routing/stream changes needed):
    (`emitInvalidation(campId, '<resource>')` for bulk operations) — fire-and-forget
    (`void`, not `await`): errors are swallowed internally, so awaiting would only
    add latency. Emits live exclusively in controllers — never inject
-   `RealtimeService` into services.
+   `RealtimeService` into services. Source `campId`/`id` from the bound model
+   (`req.modelOrFail('camp').id`, the service's returned entity) rather than
+   the raw route param — see the model binding note above.
 3. Frontend: call `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`
    (`src/composables/realtimeCollection.ts`) in the feature store or page —
    it handles refetch coalescing, ordering, and reconnect reloads.
