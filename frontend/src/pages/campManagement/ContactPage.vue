@@ -138,6 +138,9 @@ useRealtimeCollection<Message>('message', {
 function onSent(template: Message) {
   // The create response already carries the recipients, so prepend optimistically.
   sentMessages.value = [template, ...(sentMessages.value ?? [])];
+  // Clear the reuse draft so the form's dirty check compares against the blank
+  // pristine state instead of the now-stale draft it was reset away from.
+  draft.value = null;
 }
 
 async function onResend(template: Message) {
