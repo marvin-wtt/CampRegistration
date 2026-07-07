@@ -441,7 +441,12 @@ function unwrapTemplateVariables(html: string): string {
 
 watch(
   () => attrs.disable as boolean | undefined,
-  (disabled) => editor.value?.setEditable(!disabled),
+  // `setEditable`'s `emitUpdate` defaults to `true` and unconditionally
+  // re-emits 'update' regardless of whether the doc actually changed —
+  // toggling editability isn't a content edit, so suppress it explicitly.
+  // Otherwise this clobbers `model` with the editor's current serialization
+  // (e.g. an empty doc becomes '<p></p>' instead of the '' it was reset to).
+  (disabled) => editor.value?.setEditable(!disabled, false),
 );
 
 async function onFieldClick() {
