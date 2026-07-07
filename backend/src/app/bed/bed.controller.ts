@@ -36,7 +36,7 @@ export class BedController extends BaseController {
 
     // Beds are not a realtime resource of their own — they render embedded in
     // their room, so subscribers refetch the parent room.
-    await this.realtimeService.emit(campId, 'room', roomId, 'updated');
+    void this.realtimeService.emit(campId, 'room', roomId, 'updated');
 
     res.status(httpStatus.CREATED).resource(new BedResource(bed));
   }
@@ -54,7 +54,7 @@ export class BedController extends BaseController {
 
     const bed = await this.bedService.updateBedById(bedId, registrationId);
 
-    await this.realtimeService.emit(campId, 'room', roomId, 'updated');
+    void this.realtimeService.emit(campId, 'room', roomId, 'updated');
 
     res.resource(new BedResource(bed));
   }
@@ -66,7 +66,7 @@ export class BedController extends BaseController {
 
     await this.bedService.deleteBedById(bedId);
 
-    await this.realtimeService.emit(campId, 'room', roomId, 'updated');
+    void this.realtimeService.emit(campId, 'room', roomId, 'updated');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

@@ -53,7 +53,11 @@ interface PendingItemFetch {
  *   a reload bumps a generation counter that voids any in-flight item fetches,
  *   so an old item response can't clobber the fresh list;
  * - stream reconnect → full reload (to catch events missed while offline),
- *   only if the list is loaded.
+ *   only if the list is loaded;
+ * - camp switch → an item fetch's result is only applied if the active camp
+ *   at completion still matches the camp it was fetched for, so a slow
+ *   response started under a previous camp (store-level consumers persist
+ *   across navigation) can't be appended into the new camp's list.
  *
  * Works inside Pinia setup stores and page components alike: cleanup is
  * registered with `onScopeDispose`, so page-level usage unsubscribes on
@@ -147,9 +151,16 @@ export function useRealtimeCollection<T extends { id: string }>(
 
     try {
       const item = await options.fetchOne!(campId, id);
-      // Stale guard: a full reload happened meanwhile (fresher than this
-      // response), or the entity was deleted.
-      if (generation === startGeneration && !state.cancelled) {
+      // Stale guards: a full reload happened meanwhile (fresher than this
+      // response), the entity was deleted, or — since store-level consumers
+      // persist across navigation and may swap `data.value` for a different
+      // camp via their own invalidation path (e.g. campBus on route change) —
+      // the active camp itself has moved on from the one this fetch was for.
+      if (
+        generation === startGeneration &&
+        !state.cancelled &&
+        activeCampId() === campId
+      ) {
         upsert(item);
       }
     } catch (error: unknown) {
@@ -164,7 +175,12 @@ export function useRealtimeCollection<T extends { id: string }>(
       }
     } finally {
       itemFetches.delete(id);
-      if (state.rerun && !state.cancelled && generation === startGeneration) {
+      if (
+        state.rerun &&
+        !state.cancelled &&
+        generation === startGeneration &&
+        activeCampId() === campId
+      ) {
         void fetchItem(campId, id);
       }
     }

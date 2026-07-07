@@ -191,9 +191,11 @@ Adding realtime to a module (no routing/stream changes needed):
 1. `common/src/realtime/events.ts`: add the resource to `RealtimeResource` +
    `RESOURCE_VIEW_PERMISSION`; rebuild `common`.
 2. Backend: inject `RealtimeService` into the **controller** and call
-   `realtimeService.emit(campId, '<resource>', id, op)` after each write
-   (`emitInvalidation(campId, '<resource>')` for bulk operations). Emits live
-   exclusively in controllers — never inject `RealtimeService` into services.
+   `void realtimeService.emit(campId, '<resource>', id, op)` after each write
+   (`emitInvalidation(campId, '<resource>')` for bulk operations) — fire-and-forget
+   (`void`, not `await`): errors are swallowed internally, so awaiting would only
+   add latency. Emits live exclusively in controllers — never inject
+   `RealtimeService` into services.
 3. Frontend: call `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`
    (`src/composables/realtimeCollection.ts`) in the feature store or page —
    it handles refetch coalescing, ordering, and reconnect reloads.

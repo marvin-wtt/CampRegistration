@@ -45,7 +45,7 @@ export class TableTemplateController extends BaseController {
       body,
     );
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       campId,
       'table_template',
       template.id,
@@ -68,7 +68,7 @@ export class TableTemplateController extends BaseController {
       body,
     );
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       campId,
       'table_template',
       template.id,
@@ -85,7 +85,7 @@ export class TableTemplateController extends BaseController {
 
     await this.tableTemplateService.deleteTemplateById(tableTemplateId);
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       campId,
       'table_template',
       tableTemplateId,

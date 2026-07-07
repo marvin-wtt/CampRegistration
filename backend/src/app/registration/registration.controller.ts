@@ -76,7 +76,7 @@ export class RegistrationController extends BaseController {
     // Notify contact email
     await RegistrationNotifyMessage.enqueue({ camp, registration });
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       camp.id,
       'registration',
       registration.id,
@@ -134,7 +134,7 @@ export class RegistrationController extends BaseController {
       }
     }
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       camp.id,
       'registration',
       registration.id,
@@ -157,7 +157,7 @@ export class RegistrationController extends BaseController {
       await RegistrationDeletedMessage.enqueueFor(camp, registration);
     }
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       camp.id,
       'registration',
       registration.id,

@@ -13,6 +13,13 @@ const HEARTBEAT_INTERVAL_MS = 25_000;
 
 /** A connected stream consumer's authorization snapshot. */
 export interface RealtimeSubscriber {
+  /**
+   * The subscriber's own camp-manager row id. Used to scope permission
+   * refreshes: a `manager` event only requires re-resolving connections whose
+   * `managerId` matches the changed record — a role/expiry change can only
+   * ever affect the permissions of that one manager, never anyone else's.
+   */
+  managerId: string;
   permissions: ReadonlySet<Permission>;
   /** Camp-manager expiry; `null` = never expires. */
   expiresAt: Date | null;
@@ -46,6 +53,35 @@ export function shouldDeliver(
 const isExpired = (subscriber: RealtimeSubscriber): boolean =>
   subscriber.expiresAt !== null && subscriber.expiresAt <= new Date();
 
+// A given event object is dispatched to every local connection subscribed to
+// its camp (the bus emits the same reference to all listeners in one process
+// — see MemoryRealtimeBus/RedisRealtimeBus). Cache the serialized SSE frame
+// per event so N connections share one JSON.stringify instead of each doing
+// their own. WeakMap keys are released once the event is no longer
+// referenced by the bus (after all listeners have run), so this never leaks.
+const serializedFrames = new WeakMap<RealtimeEvent, string>();
+
+function serialize(event: RealtimeEvent): string {
+  let frame = serializedFrames.get(event);
+  if (frame === undefined) {
+    frame = `data: ${JSON.stringify(event)}\n\n`;
+    serializedFrames.set(event, frame);
+  }
+  return frame;
+}
+
+/**
+ * Whether a `manager` event should trigger a permission refresh for this
+ * subscriber: only when it's their own camp-manager record that changed — a
+ * role/expiry change can only ever affect that one manager's own permissions.
+ */
+export function shouldRefreshOn(
+  event: RealtimeEvent,
+  subscriber: RealtimeSubscriber,
+): boolean {
+  return event.resource === 'manager' && event.id === subscriber.managerId;
+}
+
 /**
  * Builds the SSE request handler streaming all realtime events of the route's
  * camp (`:campId`), filtered per event against the subscriber's permission set
@@ -53,9 +89,13 @@ const isExpired = (subscriber: RealtimeSubscriber): boolean =>
  * guard (e.g. `guard(campManager('camp.view'))`).
  *
  * The permission set is resolved once at connect and refreshed whenever a
- * `manager` event for the camp arrives (someone's role may have changed —
- * including the subscriber's, so the refresh runs *before* permission
- * filtering, which would otherwise hide manager events from e.g. VIEWERs).
+ * `manager` event for *this subscriber's own* camp-manager record arrives
+ * (identified by `event.id === subscriber.managerId`) — a role/expiry change
+ * can only ever affect that one manager's own permissions, so other
+ * subscribers' connections don't need to re-verify. The refresh check runs
+ * independently of {@link shouldDeliver}, so a subscriber who lacks
+ * `camp.managers.view` (e.g. a VIEWER being downgraded) still has their own
+ * permissions refreshed even though they'd never see the event itself.
  *
  * Staleness window: between a role change committing and the async refresh
  * completing — one bus hop plus one DB round-trip (typically milliseconds),
@@ -65,6 +105,11 @@ const isExpired = (subscriber: RealtimeSubscriber): boolean =>
  * stream ends — the client's `EventSource` reconnects (retry: 5000) and the
  * connect guard re-validates, so no events are ever delivered under an
  * unverifiable permission set.
+ *
+ * Expiry (`expiresAt`) is checked both reactively (on every delivered event)
+ * and proactively (on every heartbeat tick, `HEARTBEAT_INTERVAL_MS`), so an
+ * expired manager's connection is closed within one heartbeat cycle even on
+ * an otherwise-idle camp, rather than lingering until some unrelated event.
  */
 export function realtimeStream(
   resolveSubscriber: SubscriberResolver,
@@ -160,25 +205,32 @@ export function realtimeStream(
     };
 
     const unsubscribe = realtimeService.subscribe(campId, (event) => {
-      // A manager change may have altered the subscriber's own role — refresh
-      // regardless of whether this event is deliverable to them.
-      if (event.resource === 'manager') {
-        refresh();
-      }
-
       if (subscriber === null || isExpired(subscriber)) {
         close();
         return;
+      }
+
+      // Refresh regardless of whether the event is deliverable to them (see
+      // doc comment above).
+      if (shouldRefreshOn(event, subscriber)) {
+        refresh();
       }
 
       if (!shouldDeliver(event, subscriber)) {
         return;
       }
 
-      send(`data: ${JSON.stringify(event)}\n\n`);
+      send(serialize(event));
     });
 
     const heartbeat = setInterval(() => {
+      // Proactively catch an expiry that no event happened to trigger a check
+      // for — otherwise a connection outlasting its manager's expiry on an
+      // idle camp would only ever be caught reactively (see doc comment).
+      if (subscriber === null || isExpired(subscriber)) {
+        close();
+        return;
+      }
       send(': heartbeat\n\n');
     }, HEARTBEAT_INTERVAL_MS);
 

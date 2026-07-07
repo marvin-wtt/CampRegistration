@@ -96,7 +96,7 @@ export class MessageController extends BaseController {
       messageToRenderable(message),
     );
 
-    await this.realtimeService.emit(camp.id, 'message', message.id, 'created');
+    void this.realtimeService.emit(camp.id, 'message', message.id, 'created');
 
     // The per-recipient deliveries are processed asynchronously, so expose the
     // targeted registrations directly on the response.
@@ -125,7 +125,7 @@ export class MessageController extends BaseController {
 
     await this.messageService.deleteMessageById(message.id, message.campId);
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       message.campId,
       'message',
       message.id,

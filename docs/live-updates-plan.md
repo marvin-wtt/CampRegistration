@@ -33,15 +33,21 @@ not every role may see.
   subscriber's role → permission set (+ manager `expiresAt`).
 - Each event is delivered only if the subscriber holds the event's
   `requiredPermission` (see `shouldDeliver` in `realtime.stream.ts`).
-- Whenever a `manager` event for the camp arrives, the handler re-resolves the
-  subscriber's permissions (their own role may have changed) — _before_
-  filtering, so roles that can't see manager events still refresh.
+- Whenever a `manager` event arrives for _that subscriber's own_ camp-manager
+  record (`event.id === subscriber.managerId`, see `shouldRefreshOn`), the
+  handler re-resolves permissions — independently of delivery, so a role
+  that can't see manager events (e.g. VIEWER) still refreshes its own. A
+  change to one manager's role/expiry can't affect anyone else's permissions,
+  so this only costs one DB lookup for the affected manager's own
+  connection(s), not one per connection in the camp.
 - **Staleness window**: one bus hop (memory: same tick; Redis: ~1–5 ms) plus
   one DB round-trip for the refresh — the same freshness class as a REST
   request's guard check. Events arriving inside the window are filtered with
   the pre-change set (the triggering manager event itself is deliberately
-  delivered under the old set). Manager `expiresAt` is checked locally on every
-  delivery, so expiry is effective immediately.
+  delivered under the old set). Manager `expiresAt` is checked both reactively
+  (on every delivered event) and proactively (on every heartbeat tick), so an
+  expired manager's connection closes within one heartbeat cycle even on an
+  idle camp.
 - **Fail-closed**: if the refresh resolves to `null` (removed/expired) or
   throws (e.g. DB error), the stream ends; the client's `EventSource`
   reconnects (retry: 5000) and the connect guard re-validates. No events are
@@ -117,10 +123,15 @@ send custom headers.
 1. **common**: add the resource to `RealtimeResource` and
    `RESOURCE_VIEW_PERMISSION` in `common/src/realtime/events.ts`; rebuild.
 2. **backend**: inject `RealtimeService` into the module's **controller** and
-   call `realtimeService.emit(campId, '<resource>', id, 'created'|'updated'|'deleted')`
+   call `void realtimeService.emit(campId, '<resource>', id, 'created'|'updated'|'deleted')`
    after each successful write (`emitInvalidation(campId, '<resource>')` for
-   bulk operations). The event origin is stamped automatically from the request
-   context. **Emits live exclusively in controllers** — services stay
+   bulk operations). **Fire-and-forget** (`void`, not `await`): `RealtimeService`
+   swallows all publish errors internally, so awaiting it before responding
+   would only add latency (a real network round-trip with the Redis bus) for
+   no correctness benefit — Node's AsyncLocalStorage context (used for the
+   `origin` stamp) is preserved across a promise's dynamic extent regardless of
+   whether the caller awaits it. The event origin is stamped automatically from
+   the request context. **Emits live exclusively in controllers** — services stay
    transport-agnostic and must not depend on `RealtimeService`.
 3. **frontend**: in the feature store (or page), call
    `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`.

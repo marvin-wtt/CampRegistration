@@ -41,7 +41,7 @@ export class RoomController extends BaseController {
 
     const room = await this.roomService.createRoom(campId, name, capacity);
 
-    await this.realtimeService.emit(campId, 'room', room.id, 'created');
+    void this.realtimeService.emit(campId, 'room', room.id, 'created');
 
     res.status(httpStatus.CREATED).resource(new RoomResource(room));
   }
@@ -54,7 +54,7 @@ export class RoomController extends BaseController {
 
     const room = await this.roomService.updateRoomById(roomId, name, sortOrder);
 
-    await this.realtimeService.emit(campId, 'room', room.id, 'updated');
+    void this.realtimeService.emit(campId, 'room', room.id, 'updated');
 
     res.resource(new RoomResource(room));
   }
@@ -69,7 +69,7 @@ export class RoomController extends BaseController {
 
     // One collection-level event for the whole transaction — per-room events
     // would make every subscriber refetch each room individually.
-    await this.realtimeService.emitInvalidation(campId, 'room');
+    void this.realtimeService.emitInvalidation(campId, 'room');
 
     res.resource(RoomResource.collection(updatedRooms));
   }
@@ -81,7 +81,7 @@ export class RoomController extends BaseController {
 
     await this.roomService.deleteRoomById(roomId);
 
-    await this.realtimeService.emit(campId, 'room', roomId, 'deleted');
+    void this.realtimeService.emit(campId, 'room', roomId, 'deleted');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

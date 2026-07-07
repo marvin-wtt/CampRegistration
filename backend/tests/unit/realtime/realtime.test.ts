@@ -10,6 +10,7 @@ import { RealtimeService } from '#core/realtime/RealtimeService';
 import { runWithRequestContext } from '#core/context/requestContext';
 import {
   shouldDeliver,
+  shouldRefreshOn,
   type RealtimeSubscriber,
 } from '#app/realtime/realtime.stream';
 import type { AppConfig } from '#config';
@@ -18,7 +19,10 @@ const memoryConfig = {
   realtime: { driver: 'memory' },
 } as AppConfig;
 
-const subscriber = (...permissions: Permission[]): RealtimeSubscriber => ({
+const subscriber = (
+  ...permissions: Permission[]
+): RealtimeSubscriber & { managerId: string } => ({
+  managerId: 'manager-self',
   permissions: new Set(permissions),
   expiresAt: null,
 });
@@ -68,6 +72,35 @@ describe('shouldDeliver', () => {
 
   it('delivers events without a required permission', () => {
     expect(shouldDeliver(event({}), subscriber())).toBe(true);
+  });
+});
+
+describe('shouldRefreshOn', () => {
+  it("refreshes when the manager event is about this subscriber's own record", () => {
+    expect(
+      shouldRefreshOn(
+        event({ resource: 'manager', id: 'manager-self' }),
+        subscriber(),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh for a different manager's event", () => {
+    expect(
+      shouldRefreshOn(
+        event({ resource: 'manager', id: 'manager-someone-else' }),
+        subscriber(),
+      ),
+    ).toBe(false);
+  });
+
+  it('ignores non-manager events even if the id happens to match', () => {
+    expect(
+      shouldRefreshOn(
+        event({ resource: 'task', id: 'manager-self' }),
+        subscriber(),
+      ),
+    ).toBe(false);
   });
 });
 

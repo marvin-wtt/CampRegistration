@@ -18,7 +18,7 @@ const registry = vi.hoisted(() => {
   return { handlers, reconnectHandlers };
 });
 
-vi.mock('stores/realtime-store', () => ({
+vi.mock('@/stores/realtime-store', () => ({
   useRealtimeStore: () => ({
     on: (resource: string, handler: (event: unknown) => void) => {
       registry.handlers.set(resource, handler);
@@ -31,8 +31,13 @@ vi.mock('stores/realtime-store', () => ({
   }),
 }));
 
+// A shared, mutable object (not a fresh literal per call) so tests can change
+// the active campId mid-test and have the composable observe it — it captures
+// `useRoute()`'s return value once and reads `.params.campId` off it later.
+const routeState = vi.hoisted(() => ({ params: { campId: 'camp-1' } }));
+
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { campId: 'camp-1' } }),
+  useRoute: () => routeState,
 }));
 
 function emit(
@@ -90,6 +95,7 @@ describe('useRealtimeCollection', () => {
     vi.useFakeTimers();
     registry.handlers.clear();
     registry.reconnectHandlers.clear();
+    routeState.params.campId = 'camp-1';
     data = ref<Item[]>();
     invalidate = vi.fn();
     reload = vi.fn().mockResolvedValue(undefined);
@@ -241,6 +247,26 @@ describe('useRealtimeCollection', () => {
 
     expect(reload).toHaveBeenCalledOnce();
     expect(data.value).toEqual([{ id: 'item-1', value: 'a' }]);
+  });
+
+  it('drops an item-fetch result if the active camp changed before it resolved', async () => {
+    const pending = deferred<Item>();
+    const fetchOne = vi.fn().mockReturnValueOnce(pending.promise);
+    data.value = [{ id: 'item-1', value: 'a' }];
+    mount({ fetchOne });
+
+    emit({ resource: 'task', operation: 'updated', id: 'item-1' });
+
+    // Simulate navigating to a different camp while the fetch is in flight:
+    // a store's own campBus invalidation swaps `data.value` for the new camp
+    // without going through this composable's reload/generation mechanism.
+    routeState.params.campId = 'camp-2';
+    data.value = [{ id: 'item-9', value: 'other camp' }];
+
+    pending.resolve({ id: 'item-1', value: 'from old camp' });
+    await vi.runAllTimersAsync();
+
+    expect(data.value).toEqual([{ id: 'item-9', value: 'other camp' }]);
   });
 
   it('reloads on reconnect only when the list is loaded', async () => {

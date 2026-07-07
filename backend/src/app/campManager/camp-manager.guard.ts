@@ -2,7 +2,6 @@ import { CampManagerService } from '#app/campManager/camp-manager.service';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
-import { campPermissionRegistry } from '#core/permission-registry';
 import type { SubscriberResolver } from '#app/realtime/realtime.stream';
 
 export const campManager = (
@@ -19,26 +18,28 @@ export const campManager = (
 
 /**
  * Resolves the realtime-stream subscriber for the route's camp: the requesting
- * user's current permission set and manager expiry. Returns `null` when the
- * user is not (or no longer) a non-expired manager, ending the stream.
- * Mirrors {@link CampManagerService.campManagerHasPermission}.
+ * user's own manager record id, current permission set, and expiry. Returns
+ * `null` when the user is not (or no longer) a non-expired manager, ending the
+ * stream. Shares its authorization logic with `campManager()` above via
+ * {@link CampManagerService.getManagerAuthorization}.
  */
 export const campManagerSubscriber: SubscriberResolver = async (req) => {
   const userId = req.authUserId();
   const campId = req.modelOrFail('camp').id;
   const managerService = resolve(CampManagerService);
 
-  const manager = await managerService.getManagerByUserId(campId, userId);
-  if (manager === null) {
-    return null;
-  }
-  if (manager.expiresAt !== null && manager.expiresAt <= new Date()) {
+  const authorization = await managerService.getManagerAuthorization(
+    campId,
+    userId,
+  );
+  if (authorization === null) {
     return null;
   }
 
   return {
-    permissions: new Set(campPermissionRegistry.getPermissions(manager.role)),
-    expiresAt: manager.expiresAt,
+    managerId: authorization.managerId,
+    permissions: new Set(authorization.permissions),
+    expiresAt: authorization.expiresAt,
   };
 };
 

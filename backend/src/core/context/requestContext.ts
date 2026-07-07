@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 /**
- * Per-request ambient context, established by the extension middleware and
+ * Per-request ambient context, established by the context middleware and
  * propagated through the whole async call chain of a request. Lets deep layers
  * (e.g. the realtime service stamping the event origin) access request-scoped
  * values without threading them through every signature.

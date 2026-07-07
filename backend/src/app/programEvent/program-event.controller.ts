@@ -53,7 +53,7 @@ export class ProgramEventController extends BaseController {
       plan: body.plan ?? 'both',
     });
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       camp.id,
       'program_event',
       event.id,
@@ -82,7 +82,7 @@ export class ProgramEventController extends BaseController {
       },
     );
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       camp.id,
       'program_event',
       event.id,
@@ -99,7 +99,7 @@ export class ProgramEventController extends BaseController {
 
     await this.programEventService.deleteProgramEventById(programEvent.id);
 
-    await this.realtimeService.emit(
+    void this.realtimeService.emit(
       camp.id,
       'program_event',
       programEvent.id,
