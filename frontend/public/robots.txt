@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /$
+Allow: /camps
+Allow: /imprint
+Allow: /privacy-policy
+Disallow: /setup
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /verify-otp
+Disallow: /management
+Disallow: /administration
+Disallow: /settings
+Disallow: /newsletters
+Disallow: /print
