@@ -15,38 +15,6 @@
           size="20px"
         />
         <div class="text-subtitle2 text-weight-bold">{{ title }}</div>
-        <q-space />
-        <q-btn-toggle
-          v-model="view"
-          :options="[
-            { value: 'edit', slot: 'edit' },
-            { value: 'preview', slot: 'preview' },
-          ]"
-          no-caps
-          unelevated
-          dense
-          rounded
-          toggle-color="primary"
-          color="surface-container-high"
-          text-color="on-surface-variant"
-        >
-          <template #edit>
-            <q-icon
-              name="edit"
-              size="18px"
-              class="q-mr-xs"
-            />
-            {{ t('view.edit') }}
-          </template>
-          <template #preview>
-            <q-icon
-              name="visibility"
-              size="18px"
-              class="q-mr-xs"
-            />
-            {{ t('view.preview') }}
-          </template>
-        </q-btn-toggle>
       </q-card-section>
 
       <!-- One locale at a time: legal documents are long, so all five side by
@@ -79,32 +47,10 @@
       <q-separator />
 
       <q-card-section>
-        <q-input
-          v-show="view === 'edit'"
-          v-model="translations[activeLocale]"
-          type="textarea"
-          :label="t('field.content')"
-          :input-style="{ minHeight: '420px', fontFamily: 'monospace' }"
-          hide-bottom-space
-          outlined
+        <rich-text-editor
+          v-model="activeContent"
+          :placeholder="t('placeholder')"
         />
-
-        <div
-          v-show="view === 'preview'"
-          class="legal-preview"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -- operator-authored content, not user input -->
-          <div
-            v-if="previewHtml"
-            v-html="previewHtml"
-          />
-          <div
-            v-else
-            class="text-grey-6 text-italic"
-          >
-            {{ t('emptyPreview') }}
-          </div>
-        </div>
       </q-card-section>
 
       <q-card-actions>
@@ -132,9 +78,9 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import { useLegalService } from '@/services/LegalService';
 import { useServiceNotifications } from '@/composables/serviceHandler';
-import { createMarkdownConverter } from '@/utils/markdown';
 import type {
   LegalDocumentType,
   Translatable,
@@ -155,7 +101,6 @@ const {
 const { t, locale } = useI18n();
 const { updateLegalDocument } = useLegalService();
 const { withResultNotification } = useServiceNotifications();
-const converter = createMarkdownConverter();
 
 // The app's fixed locale set (see CLAUDE.md) — legal content is instance-wide,
 // unlike camp fields whose locales follow the camp's target countries.
@@ -189,7 +134,6 @@ function compact(record: Record<string, string>): Record<string, string> {
 }
 
 const saving = ref<boolean>(false);
-const view = ref<'edit' | 'preview'>('edit');
 const activeLocale = ref<string>(
   locales.find((loc) => loc === locale.value.split('-')[0]) ?? 'en',
 );
@@ -207,18 +151,21 @@ watch(
   },
 );
 
+// Index access is `string | undefined` under the strict tsconfig; this proxy
+// keeps the editor's v-model a plain `string`.
+const activeContent = computed<string>({
+  get: () => translations[activeLocale.value] ?? '',
+  set: (value) => {
+    translations[activeLocale.value] = value;
+  },
+});
+
 function hasContent(loc: string): boolean {
   return (translations[loc] ?? '').trim().length > 0;
 }
 
 const isModified = computed<boolean>(() => {
   return JSON.stringify(compact(translations)) !== original.value;
-});
-
-const previewHtml = computed<string>(() => {
-  const value = translations[activeLocale.value] ?? '';
-
-  return value ? converter.render(value) : '';
 });
 
 async function onSave() {
@@ -242,34 +189,8 @@ function onReset() {
 }
 </script>
 
-<style scoped>
-.legal-preview {
-  min-height: 452px;
-  max-height: 452px;
-  padding: 12px 16px;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 12px;
-  overflow-y: auto;
-}
-
-.legal-preview :deep(h1),
-.legal-preview :deep(h2),
-.legal-preview :deep(h3) {
-  color: var(--md3-on-surface);
-}
-
-.legal-preview :deep(a) {
-  color: var(--md3-primary);
-}
-</style>
-
 <i18n lang="yaml" locale="en">
-field:
-  content: 'Content (Markdown)'
-view:
-  edit: 'Edit'
-  preview: 'Preview'
-emptyPreview: 'Nothing to preview yet.'
+placeholder: 'Write the content shown to visitors on this page…'
 action:
   save: 'Save'
   reset: 'Reset'
@@ -280,12 +201,7 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-field:
-  content: 'Inhalt (Markdown)'
-view:
-  edit: 'Bearbeiten'
-  preview: 'Vorschau'
-emptyPreview: 'Noch nichts zum Vorschauen.'
+placeholder: 'Verfasse den Inhalt, der Besuchern auf dieser Seite angezeigt wird…'
 action:
   save: 'Speichern'
   reset: 'Zurücksetzen'
@@ -296,12 +212,7 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-field:
-  content: 'Contenu (Markdown)'
-view:
-  edit: 'Modifier'
-  preview: 'Aperçu'
-emptyPreview: 'Rien à prévisualiser pour le moment.'
+placeholder: 'Rédigez le contenu affiché aux visiteurs sur cette page…'
 action:
   save: 'Enregistrer'
   reset: 'Réinitialiser'
@@ -312,12 +223,7 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-field:
-  content: 'Treść (Markdown)'
-view:
-  edit: 'Edytuj'
-  preview: 'Podgląd'
-emptyPreview: 'Nie ma jeszcze nic do podglądu.'
+placeholder: 'Wpisz treść wyświetlaną odwiedzającym na tej stronie…'
 action:
   save: 'Zapisz'
   reset: 'Resetuj'
@@ -328,12 +234,7 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-field:
-  content: 'Obsah (Markdown)'
-view:
-  edit: 'Upravit'
-  preview: 'Náhled'
-emptyPreview: 'Zatím není co zobrazit.'
+placeholder: 'Napište obsah zobrazený návštěvníkům na této stránce…'
 action:
   save: 'Uložit'
   reset: 'Obnovit'

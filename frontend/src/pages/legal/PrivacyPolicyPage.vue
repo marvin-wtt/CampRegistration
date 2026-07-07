@@ -41,14 +41,12 @@ import LegalPlaceholder from '@/components/legal/LegalPlaceholder.vue';
 import { useLegalService } from '@/services/LegalService';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useErrorExtractor } from '@/composables/serviceHandler';
-import { createMarkdownConverter } from '@/utils/markdown';
 
 const { t } = useI18n();
 const router = useRouter();
 const { fetchLegalDocument } = useLegalService();
 const { to } = useObjectTranslation();
 const { extractErrorText } = useErrorExtractor();
-const converter = createMarkdownConverter();
 
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
@@ -57,8 +55,9 @@ const html = ref<string | null>(null);
 onMounted(async () => {
   try {
     const document = await fetchLegalDocument('PRIVACY_POLICY');
-    const content = to(document.content ?? undefined);
-    html.value = content ? converter.render(content) : null;
+    // Content is operator-authored HTML from the rich-text editor, rendered
+    // directly (locale resolved via `to`).
+    html.value = to(document.content ?? undefined) || null;
   } catch (err) {
     error.value = extractErrorText(err);
   } finally {
