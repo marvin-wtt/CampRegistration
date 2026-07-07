@@ -31,6 +31,13 @@ export class CampManagerController extends BaseController {
     res.resource(CampManagerResource.collection(managers));
   }
 
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const manager = req.modelOrFail('campManager');
+
+    res.resource(new CampManagerResource(manager));
+  }
+
   async store(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
     const {

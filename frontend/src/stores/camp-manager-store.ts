@@ -35,8 +35,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
     invalidate();
   });
 
-  // React to live changes pushed from other clients. List mode (no per-id
-  // endpoint): every event collapses into one debounced list refetch.
+  // React to live changes pushed from other clients.
   useRealtimeCollection<CampManager>('manager', {
     data,
     invalidate,
@@ -44,6 +43,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
       invalidate();
       await fetchData();
     },
+    fetchOne: (campId, id) => api.fetchCampManager(campId, id),
   });
 
   async function fetchData(campId?: string) {

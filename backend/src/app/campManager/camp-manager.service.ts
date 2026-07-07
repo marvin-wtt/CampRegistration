@@ -84,6 +84,10 @@ export class CampManagerService extends BaseService {
   async getManagerById(campId: string, id: string) {
     return this.prisma.campManager.findFirst({
       where: { id, campId },
+      include: {
+        invitation: true,
+        user: true,
+      },
     });
   }
 

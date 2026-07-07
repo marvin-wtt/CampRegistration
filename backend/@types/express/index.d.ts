@@ -8,6 +8,7 @@ import type {
   MessageDelivery,
   MessageTemplate,
   CampManager,
+  Invitation,
   Bed,
   Room,
   File,
@@ -31,7 +32,10 @@ declare global {
       message?: Message & { attachments: File[] };
       messageDelivery?: MessageDelivery & { attachments: File[] };
       messageTemplate?: MessageTemplate & { attachments: File[] };
-      campManager?: CampManager;
+      campManager?: CampManager & {
+        user: UserModel | null;
+        invitation: Invitation | null;
+      };
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
