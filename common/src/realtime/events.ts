@@ -25,10 +25,7 @@ export type RealtimeResource =
  * operations where per-entity events would trigger a refetch stampede.
  */
 export type RealtimeOperation =
-  | 'created'
-  | 'updated'
-  | 'deleted'
-  | 'invalidated';
+  'created' | 'updated' | 'deleted' | 'invalidated';
 
 /**
  * Invalidation-only realtime event. Carries no model data — recipients refetch
