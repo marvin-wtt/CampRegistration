@@ -7,6 +7,7 @@ import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import type { Permission } from '@camp-registration/common/permissions';
 import { MemoryRealtimeBus } from '#core/realtime/MemoryRealtimeBus';
 import { RealtimeService } from '#core/realtime/RealtimeService';
+import { runWithRequestContext } from '#core/context/requestContext';
 import {
   shouldDeliver,
   type RealtimeSubscriber,
@@ -124,14 +125,31 @@ describe('RealtimeService', () => {
     }
   });
 
-  it('passes the origin through for echo suppression', async () => {
+  it('stamps the origin from the ambient request context', async () => {
     const service = new RealtimeService(memoryConfig);
     const received: RealtimeEvent[] = [];
     service.subscribe('camp-a', (e) => received.push(e));
 
-    await service.emit('camp-a', 'task', 'task-1', 'created', 'client-42');
+    await new Promise<void>((resolve, reject) => {
+      runWithRequestContext({ clientId: 'client-42' }, () => {
+        service
+          .emit('camp-a', 'task', 'task-1', 'created')
+          .then(resolve, reject);
+      });
+    });
 
     expect(received[0]?.origin).toBe('client-42');
+  });
+
+  it('emits without an origin outside a request context', async () => {
+    const service = new RealtimeService(memoryConfig);
+    const received: RealtimeEvent[] = [];
+    service.subscribe('camp-a', (e) => received.push(e));
+
+    // e.g. queue jobs / scheduler — everyone must react, incl. the originator.
+    await service.emit('camp-a', 'task', 'task-1', 'created');
+
+    expect(received[0]?.origin).toBeUndefined();
   });
 
   it('emitInvalidation publishes a collection-level event with a null id', async () => {
@@ -139,7 +157,11 @@ describe('RealtimeService', () => {
     const received: RealtimeEvent[] = [];
     service.subscribe('camp-a', (e) => received.push(e));
 
-    await service.emitInvalidation('camp-a', 'room', 'client-42');
+    await new Promise<void>((resolve, reject) => {
+      runWithRequestContext({ clientId: 'client-42' }, () => {
+        service.emitInvalidation('camp-a', 'room').then(resolve, reject);
+      });
+    });
 
     expect(received).toEqual([
       expect.objectContaining({

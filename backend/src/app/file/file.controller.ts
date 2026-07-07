@@ -107,13 +107,7 @@ export class FileController extends BaseController {
 
     // Files are polymorphic; only camp-owned files are a realtime resource.
     if (model?.name === 'camp') {
-      await this.realtimeService.emit(
-        model.id,
-        'file',
-        data.id,
-        'created',
-        req.clientId(),
-      );
+      await this.realtimeService.emit(model.id, 'file', data.id, 'created');
     }
 
     res.status(httpStatus.CREATED).resource(new FileResource(data));
@@ -138,7 +132,6 @@ export class FileController extends BaseController {
         'file',
         updatedFile.id,
         'updated',
-        req.clientId(),
       );
     }
 
@@ -152,13 +145,7 @@ export class FileController extends BaseController {
     await this.fileService.deleteFile(file.id);
 
     if (file.campId) {
-      await this.realtimeService.emit(
-        file.campId,
-        'file',
-        file.id,
-        'deleted',
-        req.clientId(),
-      );
+      await this.realtimeService.emit(file.campId, 'file', file.id, 'deleted');
     }
 
     res.sendStatus(httpStatus.NO_CONTENT);

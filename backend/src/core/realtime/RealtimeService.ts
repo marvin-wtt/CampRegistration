@@ -8,6 +8,7 @@ import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import type { RealtimeBus, RealtimeListener } from '#core/realtime/RealtimeBus';
 import { MemoryRealtimeBus } from '#core/realtime/MemoryRealtimeBus';
 import { RedisRealtimeBus } from '#core/realtime/RedisRealtimeBus';
+import { getRequestContext } from '#core/context/requestContext';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
 import logger from '#core/logger';
@@ -44,9 +45,8 @@ export class RealtimeService {
     resource: RealtimeResource,
     id: string,
     operation: Exclude<RealtimeOperation, 'invalidated'>,
-    origin?: string,
   ): Promise<void> {
-    await this.publish(campId, { resource, id, operation, origin });
+    await this.publish(campId, { resource, id, operation });
   }
 
   /**
@@ -57,24 +57,26 @@ export class RealtimeService {
   async emitInvalidation(
     campId: string,
     resource: RealtimeResource,
-    origin?: string,
   ): Promise<void> {
     await this.publish(campId, {
       resource,
       id: null,
       operation: 'invalidated',
-      origin,
     });
   }
 
   private async publish(
     campId: string,
-    event: Pick<RealtimeEvent, 'resource' | 'id' | 'operation' | 'origin'>,
+    event: Pick<RealtimeEvent, 'resource' | 'id' | 'operation'>,
   ): Promise<void> {
     try {
       await this.bus.publish(campId, {
         ...event,
         requiredPermission: RESOURCE_VIEW_PERMISSION[event.resource],
+        // Ambient request context: set for emits inside an HTTP request,
+        // undefined for non-HTTP paths (queue jobs, scheduler) — those changes
+        // must reach every client, including the originator's other state.
+        origin: getRequestContext()?.clientId,
         at: new Date().toISOString(),
       });
     } catch (err) {

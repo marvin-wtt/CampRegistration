@@ -57,13 +57,14 @@ const isExpired = (subscriber: RealtimeSubscriber): boolean =>
  * including the subscriber's, so the refresh runs *before* permission
  * filtering, which would otherwise hide manager events from e.g. VIEWERs).
  *
- * Known staleness window: between a role change committing and the async
- * refresh completing (one DB round-trip), events are filtered with the old
- * permission set — the same window an already-issued REST response has.
- * If the resolver fails transiently, the old set is kept and the refresh is
- * retried on the next manager event; if it resolves to `null` (manager removed
- * or expired), the stream ends and the client's reconnect is rejected by the
- * connect guard.
+ * Staleness window: between a role change committing and the async refresh
+ * completing — one bus hop plus one DB round-trip (typically milliseconds),
+ * the same freshness class as a REST request's guard check. During the window,
+ * events are filtered with the old permission set. Fail-closed: if the
+ * resolver returns `null` (manager removed or expired) **or throws**, the
+ * stream ends — the client's `EventSource` reconnects (retry: 5000) and the
+ * connect guard re-validates, so no events are ever delivered under an
+ * unverifiable permission set.
  */
 export function realtimeStream(
   resolveSubscriber: SubscriberResolver,
@@ -139,12 +140,15 @@ export function realtimeStream(
           subscriber = next;
         })
         .catch((error: unknown) => {
-          // Transient failure: keep the (possibly stale) set and retry on the
-          // next manager event.
+          // Fail closed: permissions can no longer be verified, so end the
+          // stream instead of continuing with a possibly stale set. The
+          // client's EventSource reconnects and the connect guard
+          // re-validates.
           logger.warn(
-            'Failed to refresh realtime subscriber permissions',
+            'Failed to refresh realtime subscriber permissions — ending stream',
             error,
           );
+          close();
         })
         .finally(() => {
           refreshing = false;

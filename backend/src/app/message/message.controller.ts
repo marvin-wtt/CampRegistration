@@ -96,13 +96,7 @@ export class MessageController extends BaseController {
       messageToRenderable(message),
     );
 
-    await this.realtimeService.emit(
-      camp.id,
-      'message',
-      message.id,
-      'created',
-      req.clientId(),
-    );
+    await this.realtimeService.emit(camp.id, 'message', message.id, 'created');
 
     // The per-recipient deliveries are processed asynchronously, so expose the
     // targeted registrations directly on the response.
@@ -136,7 +130,6 @@ export class MessageController extends BaseController {
       'message',
       message.id,
       'deleted',
-      req.clientId(),
     );
 
     res.sendStatus(httpStatus.NO_CONTENT);

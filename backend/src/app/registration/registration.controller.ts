@@ -81,7 +81,6 @@ export class RegistrationController extends BaseController {
       'registration',
       registration.id,
       'created',
-      req.clientId(),
     );
 
     res
@@ -140,7 +139,6 @@ export class RegistrationController extends BaseController {
       'registration',
       registration.id,
       'updated',
-      req.clientId(),
     );
 
     res.resource(new RegistrationResource(registration));
@@ -164,7 +162,6 @@ export class RegistrationController extends BaseController {
       'registration',
       registration.id,
       'deleted',
-      req.clientId(),
     );
 
     res.status(httpStatus.NO_CONTENT).send();

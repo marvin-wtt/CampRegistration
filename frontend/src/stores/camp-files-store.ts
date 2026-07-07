@@ -42,8 +42,9 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   });
 
   // React to live changes pushed from other clients. List mode (no per-id
-  // metadata endpoint). Upload-completion (READY) events arrive without an
-  // origin, so the uploading tab refreshes too — intended.
+  // metadata endpoint). Note: the async upload-completion (READY) status flip
+  // does not emit — the list refreshes on the next created/updated/deleted
+  // event or page load.
   useRealtimeCollection<ServiceFile>('file', {
     data,
     invalidate,

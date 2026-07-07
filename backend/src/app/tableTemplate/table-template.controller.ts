@@ -50,7 +50,6 @@ export class TableTemplateController extends BaseController {
       'table_template',
       template.id,
       'created',
-      req.clientId(),
     );
 
     res
@@ -74,7 +73,6 @@ export class TableTemplateController extends BaseController {
       'table_template',
       template.id,
       'updated',
-      req.clientId(),
     );
 
     res.resource(new TableTemplateResource(template));
@@ -92,7 +90,6 @@ export class TableTemplateController extends BaseController {
       'table_template',
       tableTemplateId,
       'deleted',
-      req.clientId(),
     );
 
     res.status(httpStatus.NO_CONTENT).send();

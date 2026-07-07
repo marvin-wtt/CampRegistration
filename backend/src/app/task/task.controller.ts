@@ -45,13 +45,7 @@ export class TaskController extends BaseController {
       assigneeId: body.assigneeId ?? undefined,
     });
 
-    await this.realtimeService.emit(
-      camp.id,
-      'task',
-      task.id,
-      'created',
-      req.clientId(),
-    );
+    await this.realtimeService.emit(camp.id, 'task', task.id, 'created');
 
     res.status(httpStatus.CREATED).resource(new TaskResource(task));
   }
@@ -73,13 +67,7 @@ export class TaskController extends BaseController {
       },
     );
 
-    await this.realtimeService.emit(
-      camp.id,
-      'task',
-      task.id,
-      'updated',
-      req.clientId(),
-    );
+    await this.realtimeService.emit(camp.id, 'task', task.id, 'updated');
 
     res.resource(new TaskResource(task));
   }
@@ -91,13 +79,7 @@ export class TaskController extends BaseController {
 
     await this.taskService.deleteTaskById(task.id);
 
-    await this.realtimeService.emit(
-      camp.id,
-      'task',
-      task.id,
-      'deleted',
-      req.clientId(),
-    );
+    await this.realtimeService.emit(camp.id, 'task', task.id, 'deleted');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

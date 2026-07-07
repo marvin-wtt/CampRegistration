@@ -58,7 +58,6 @@ export class ProgramEventController extends BaseController {
       'program_event',
       event.id,
       'created',
-      req.clientId(),
     );
 
     res.status(httpStatus.CREATED).resource(new ProgramEventResource(event));
@@ -88,7 +87,6 @@ export class ProgramEventController extends BaseController {
       'program_event',
       event.id,
       'updated',
-      req.clientId(),
     );
 
     res.resource(new ProgramEventResource(event));
@@ -106,7 +104,6 @@ export class ProgramEventController extends BaseController {
       'program_event',
       programEvent.id,
       'deleted',
-      req.clientId(),
     );
 
     res.status(httpStatus.NO_CONTENT).send();

@@ -35,11 +35,17 @@ not every role may see.
   `requiredPermission` (see `shouldDeliver` in `realtime.stream.ts`).
 - Whenever a `manager` event for the camp arrives, the handler re-resolves the
   subscriber's permissions (their own role may have changed) — _before_
-  filtering, so roles that can't see manager events still refresh. If the
-  subscriber was removed or expired, the stream ends and the reconnect attempt
-  is rejected by the connect guard.
-- Staleness window: one DB round-trip between a role change committing and the
-  refresh completing — the same window an already-issued REST response has.
+  filtering, so roles that can't see manager events still refresh.
+- **Staleness window**: one bus hop (memory: same tick; Redis: ~1–5 ms) plus
+  one DB round-trip for the refresh — the same freshness class as a REST
+  request's guard check. Events arriving inside the window are filtered with
+  the pre-change set (the triggering manager event itself is deliberately
+  delivered under the old set). Manager `expiresAt` is checked locally on every
+  delivery, so expiry is effective immediately.
+- **Fail-closed**: if the refresh resolves to `null` (removed/expired) or
+  throws (e.g. DB error), the stream ends; the client's `EventSource`
+  reconnects (retry: 5000) and the connect guard re-validates. No events are
+  ever delivered under an unverifiable permission set.
 
 ### Resources
 
@@ -52,7 +58,7 @@ not every role may see.
 | `task`           | `camp.tasks.view`           |                                                                                                                                             |
 | `manager`        | `camp.managers.view`        | Not visible to VIEWER.                                                                                                                      |
 | `message`        | `camp.messages.view`        | DIRECTOR/COORDINATOR only.                                                                                                                  |
-| `file`           | `camp.files.view`           | Camp-owned files only. Async upload completion (`READY`) emits **without** an origin so the uploader's tab refreshes too.                   |
+| `file`           | `camp.files.view`           | Camp-owned files only. The async upload-completion (`READY`) status flip does **not** emit (see known gaps).                                |
 | `table_template` | `camp.table_templates.view` |                                                                                                                                             |
 
 ## Event payload (invalidation-only)
@@ -74,12 +80,17 @@ instead of a per-entity event stampede.
 
 **Echo suppression.** The server emits on _every_ write, including the
 originator's. Each app instance (browser tab) generates an in-memory `clientId`
-(`crypto.randomUUID()`), sends it on mutating requests via the `X-Client-Id`
-header, and the controller stamps it onto `event.origin`. The realtime store
-drops events whose `origin` equals its own `clientId` in one place
-(`dispatch`) — the originator already has authoritative state from the mutation
-response, while the user's _other_ tabs (different `clientId`) still react.
-Filtering is client-side because `EventSource` cannot send custom headers.
+(`crypto.randomUUID()`) and sends it on mutating requests via the `X-Client-Id`
+header. The context middleware (`middlewares/context.middleware.ts`) stores it
+in the ambient **request context** (`core/context/requestContext.ts`,
+AsyncLocalStorage), and `RealtimeService`
+stamps it onto `event.origin` itself — emit calls never pass it explicitly.
+Emits outside a request (queue jobs, scheduler) get no origin, so every client
+reacts. The realtime store drops events whose `origin` equals its own
+`clientId` in one place (`dispatch`) — the originator already has authoritative
+state from the mutation response, while the user's _other_ tabs (different
+`clientId`) still react. Filtering is client-side because `EventSource` cannot
+send custom headers.
 
 ## Frontend
 
@@ -105,10 +116,12 @@ Filtering is client-side because `EventSource` cannot send custom headers.
 
 1. **common**: add the resource to `RealtimeResource` and
    `RESOURCE_VIEW_PERMISSION` in `common/src/realtime/events.ts`; rebuild.
-2. **backend**: inject `RealtimeService` into the module's controller and call
-   `realtimeService.emit(campId, '<resource>', id, 'created'|'updated'|'deleted', req.clientId())`
-   after each successful write (`emitInvalidation(campId, '<resource>', req.clientId())`
-   for bulk operations).
+2. **backend**: inject `RealtimeService` into the module's **controller** and
+   call `realtimeService.emit(campId, '<resource>', id, 'created'|'updated'|'deleted')`
+   after each successful write (`emitInvalidation(campId, '<resource>')` for
+   bulk operations). The event origin is stamped automatically from the request
+   context. **Emits live exclusively in controllers** — services stay
+   transport-agnostic and must not depend on `RealtimeService`.
 3. **frontend**: in the feature store (or page), call
    `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`.
 
@@ -116,8 +129,12 @@ No routes, streams, or realtime-layer changes needed.
 
 ## Known gaps (accepted)
 
-- `resolveManagerInvitations` (cross-camp `updateMany` on signup) and message
-  delivery-status updates from mail jobs do not emit — stale until next visit.
+- Changes outside the HTTP layer do not emit (controllers-only rule):
+  the async file upload-completion (`READY`) status flip,
+  `resolveManagerInvitations` (cross-camp `updateMany` on signup), and message
+  delivery-status updates from mail jobs — stale until the next event or
+  visit. If one of these ever needs realtime, add a completion hook at the
+  queue layer rather than injecting `RealtimeService` into a service.
 - Registration-owned file changes do not emit `registration updated` events
   (possible follow-up).
 - No durable event log/replay: native `EventSource` auto-reconnect + the

@@ -182,7 +182,6 @@ export class CampController extends BaseController {
       'camp',
       updatedCamp.id,
       'updated',
-      req.clientId(),
     );
 
     res.resource(new CampDetailsResource(updatedCamp));
@@ -195,13 +194,7 @@ export class CampController extends BaseController {
 
     await this.campService.deleteCampById(campId);
 
-    await this.realtimeService.emit(
-      campId,
-      'camp',
-      campId,
-      'deleted',
-      req.clientId(),
-    );
+    await this.realtimeService.emit(campId, 'camp', campId, 'deleted');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

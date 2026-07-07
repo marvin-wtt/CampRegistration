@@ -66,13 +66,7 @@ export class CampManagerController extends BaseController {
       manager,
     });
 
-    await this.realtimeService.emit(
-      camp.id,
-      'manager',
-      manager.id,
-      'created',
-      req.clientId(),
-    );
+    await this.realtimeService.emit(camp.id, 'manager', manager.id, 'created');
 
     res.status(httpStatus.CREATED).resource(new CampManagerResource(manager));
   }
@@ -96,7 +90,6 @@ export class CampManagerController extends BaseController {
       'manager',
       updatedManager.id,
       'updated',
-      req.clientId(),
     );
 
     res.resource(new CampManagerResource(updatedManager));
@@ -122,7 +115,6 @@ export class CampManagerController extends BaseController {
       'manager',
       campManagerId,
       'deleted',
-      req.clientId(),
     );
 
     res.sendStatus(httpStatus.NO_CONTENT);

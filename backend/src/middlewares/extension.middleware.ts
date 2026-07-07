@@ -3,13 +3,6 @@ import { routeModel, verifyModel } from '#middlewares/model.middleware';
 import { validateRequest } from '#middlewares/validate.middleware';
 import { authUserId } from '#middlewares/auth.middleware';
 import { requestLocale } from '#middlewares/i18n.middleware';
-import { CLIENT_ID_HEADER } from '@camp-registration/common/realtime';
-
-// Originating client id (X-Client-Id header) used for realtime echo suppression.
-const clientId = (req: Request): string | undefined => {
-  const value = req.headers[CLIENT_ID_HEADER.toLowerCase()];
-  return Array.isArray(value) ? value[0] : value;
-};
 
 export default (req: Request, res: Response, next: NextFunction) => {
   // ---------------------------------------------------------------------------
@@ -24,7 +17,6 @@ export default (req: Request, res: Response, next: NextFunction) => {
   // ---------------------------------------------------------------------------
 
   req.authUserId = () => authUserId(req);
-  req.clientId = () => clientId(req);
 
   // ---------------------------------------------------------------------------
   // Validation

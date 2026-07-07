@@ -182,16 +182,18 @@ Permission-filtered, invalidation-only SSE — full design in
 `docs/live-updates-plan.md`. One stream per camp
 (`GET /camps/:campId/events`); events carry `{resource, id, operation}` plus a
 `requiredPermission` that the stream handler enforces per subscriber; clients
-refetch via REST (single auth path). Echo suppression via the `X-Client-Id`
-header → `event.origin`.
+refetch via REST (single auth path). Echo suppression: the `X-Client-Id` header
+is stored in the ambient request context (`core/context/requestContext.ts`,
+AsyncLocalStorage) and stamped onto `event.origin` by `RealtimeService` itself.
 
 Adding realtime to a module (no routing/stream changes needed):
 
 1. `common/src/realtime/events.ts`: add the resource to `RealtimeResource` +
    `RESOURCE_VIEW_PERMISSION`; rebuild `common`.
-2. Backend: inject `RealtimeService` into the controller and call
-   `realtimeService.emit(campId, '<resource>', id, op, req.clientId())` after
-   each write (`emitInvalidation(...)` for bulk operations).
+2. Backend: inject `RealtimeService` into the **controller** and call
+   `realtimeService.emit(campId, '<resource>', id, op)` after each write
+   (`emitInvalidation(campId, '<resource>')` for bulk operations). Emits live
+   exclusively in controllers — never inject `RealtimeService` into services.
 3. Frontend: call `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`
    (`src/composables/realtimeCollection.ts`) in the feature store or page —
    it handles refetch coalescing, ordering, and reconnect reloads.
