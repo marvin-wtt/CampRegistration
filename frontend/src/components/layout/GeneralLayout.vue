@@ -125,7 +125,9 @@
       :back-to="backRoute"
     />
 
-    <q-page-container>
+    <q-page-container
+      :class="{ 'q-page-container--floating-controls': showFloatingControls }"
+    >
       <router-view v-slot="{ Component }">
         <transition name="fade">
           <slot :component="Component">
@@ -268,5 +270,14 @@ back: 'Zpět'
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.q-page-container--floating-controls {
+  padding-left: 40px;
+}
+
+/* MD3 only applies margin to the left - apply right margin manually */
+.q-drawer__content .q-separator--horizontal-inset {
+  margin-right: 16px;
 }
 </style>
