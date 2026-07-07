@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type {
   ServiceFileCreateData,
@@ -38,6 +39,19 @@ export const useCampFilesStore = defineStore('campFiles', () => {
 
   campBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients. List mode (no per-id
+  // metadata endpoint). Note: the async upload-completion (READY) status flip
+  // does not emit — the list refreshes on the next created/updated/deleted
+  // event or page load.
+  useRealtimeCollection<ServiceFile>('file', {
+    data,
+    invalidate,
+    reload: async () => {
+      invalidate();
+      await fetchData();
+    },
   });
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.

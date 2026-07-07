@@ -7,6 +7,7 @@ import validator from '#app/campManager/camp-manager.validation';
 import { type Request, type Response } from 'express';
 import { CampManagerInvitationMessage } from '#app/campManager/camp-manager.messages';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -15,18 +16,26 @@ export class CampManagerController extends BaseController {
     @inject(CampManagerService)
     private readonly managerService: CampManagerService,
     @inject(UserService) private readonly userService: UserService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
-    const managers = await this.managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(camp.id);
 
     res.resource(CampManagerResource.collection(managers));
+  }
+
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const manager = req.modelOrFail('campManager');
+
+    res.resource(new CampManagerResource(manager));
   }
 
   async store(req: Request, res: Response) {
@@ -63,10 +72,13 @@ export class CampManagerController extends BaseController {
       manager,
     });
 
+    void this.realtimeService.emit(camp.id, 'manager', manager.id, 'created');
+
     res.status(httpStatus.CREATED).resource(new CampManagerResource(manager));
   }
 
   async update(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
     const manager = req.modelOrFail('campManager');
     const {
       body: { role, expiresAt },
@@ -80,15 +92,22 @@ export class CampManagerController extends BaseController {
       },
     );
 
+    void this.realtimeService.emit(
+      camp.id,
+      'manager',
+      updatedManager.id,
+      'updated',
+    );
+
     res.resource(new CampManagerResource(updatedManager));
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, campManagerId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const manager = req.modelOrFail('campManager');
+    await req.validate(validator.destroy);
 
-    const managers = await this.managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(camp.id);
     if (managers.length <= 1) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -96,7 +115,9 @@ export class CampManagerController extends BaseController {
       );
     }
 
-    await this.managerService.removeManager(campManagerId);
+    await this.managerService.removeManager(manager.id);
+
+    void this.realtimeService.emit(camp.id, 'manager', manager.id, 'deleted');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }

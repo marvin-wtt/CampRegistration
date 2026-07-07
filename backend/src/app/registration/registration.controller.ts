@@ -16,6 +16,7 @@ import {
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
 import { isDeepStrictEqual } from 'node:util';
 
@@ -23,6 +24,8 @@ export class RegistrationController extends BaseController {
   constructor(
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -34,12 +37,11 @@ export class RegistrationController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
     const registrations: RegistrationWithBed[] =
-      await this.registrationService.queryRegistrations(campId);
+      await this.registrationService.queryRegistrations(camp.id);
 
     res.resource(RegistrationResource.collection(registrations));
   }
@@ -73,6 +75,13 @@ export class RegistrationController extends BaseController {
     // Notify contact email
     await RegistrationNotifyMessage.enqueue({ camp, registration });
 
+    void this.realtimeService.emit(
+      camp.id,
+      'registration',
+      registration.id,
+      'created',
+    );
+
     res
       .status(httpStatus.CREATED)
       .resource(new RegistrationResource(registration));
@@ -81,7 +90,6 @@ export class RegistrationController extends BaseController {
   async update(req: Request, res: Response) {
     const {
       body: { data, customData, customFiles, status },
-      params: { registrationId },
       query: { suppressMessage },
     } = await req.validate(validator.update);
     const camp = req.modelOrFail('camp');
@@ -96,7 +104,7 @@ export class RegistrationController extends BaseController {
 
     const registration = await this.registrationService.updateRegistrationById(
       camp,
-      registrationId,
+      previousRegistration.id,
       updateData,
       req.sessionId,
     );
@@ -124,6 +132,13 @@ export class RegistrationController extends BaseController {
       }
     }
 
+    void this.realtimeService.emit(
+      camp.id,
+      'registration',
+      registration.id,
+      'updated',
+    );
+
     res.resource(new RegistrationResource(registration));
   }
 
@@ -139,6 +154,13 @@ export class RegistrationController extends BaseController {
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(camp, registration);
     }
+
+    void this.realtimeService.emit(
+      camp.id,
+      'registration',
+      registration.id,
+      'deleted',
+    );
 
     res.status(httpStatus.NO_CONTENT).send();
   }

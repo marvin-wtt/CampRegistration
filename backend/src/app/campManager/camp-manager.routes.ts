@@ -28,6 +28,11 @@ export class CampManagerRouter extends ModuleRouter {
       guard(campManager('camp.managers.view')),
       controller(managerController, 'index'),
     );
+    this.router.get(
+      '/:campManagerId',
+      guard(campManager('camp.managers.view')),
+      controller(managerController, 'show'),
+    );
     this.router.post(
       '/',
       guard(campManager('camp.managers.create')),

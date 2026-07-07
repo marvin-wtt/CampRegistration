@@ -9,6 +9,7 @@ import type {
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from '@/composables/serviceHandler';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { useAuthBus, useCampBus, useRegistrationBus } from '@/composables/bus';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
@@ -35,6 +36,19 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
   campBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients: refetch the affected
+  // registration through the REST API (where full permissions apply) and
+  // reconcile it into the local list.
+  useRealtimeCollection<Registration>('registration', {
+    data,
+    invalidate,
+    reload: () => fetchAfterInvalidate(),
+    fetchOne: (campId, id) => apiService.fetchRegistration(campId, id),
+    onCreate: (registration) => bus.emit('create', registration),
+    onUpdate: (registration) => bus.emit('update', registration),
+    onDelete: (id) => bus.emit('delete', id),
   });
 
   async function fetchData(campId?: string) {
@@ -99,6 +113,12 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
       bus.emit('delete', rid);
     });
+  }
+
+  // Force a fresh list fetch (used after a (re)connect to catch missed events).
+  async function fetchAfterInvalidate() {
+    invalidate();
+    await fetchData();
   }
 
   return {

@@ -12,6 +12,15 @@ export function useCampManagerService() {
     return response?.data?.data;
   }
 
+  async function fetchCampManager(
+    campId: string,
+    id: string,
+  ): Promise<CampManager> {
+    const response = await api.get(`camps/${campId}/managers/${id}/`);
+
+    return response?.data?.data;
+  }
+
   async function createCampManager(
     campId: string,
     data: CampManagerCreateData,
@@ -37,6 +46,7 @@ export function useCampManagerService() {
 
   return {
     fetchCampManagers,
+    fetchCampManager,
     createCampManager,
     updateCampManager,
     deleteCampManager,

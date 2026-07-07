@@ -99,6 +99,78 @@ describe('/api/v1/camps/:campId/managers', () => {
     });
   });
 
+  describe('GET /api/v1/camps/:campId/managers/:managerId', () => {
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, manager, accessToken, user } =
+          await createCampWithManagerAndToken(role);
+
+        const response = await request()
+          .get(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+
+        if (expectedStatus === 200) {
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.data).toEqual({
+            id: manager.id,
+            name: user.name,
+            email: user.email,
+            expiresAt: null,
+            status: 'accepted',
+            role,
+          });
+        }
+      },
+    );
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const camp = await CampFactory.create();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const camp = await CampFactory.create();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .expect(401);
+    });
+
+    it('should respond with `404` status code when manager does not exist', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const managerId = ulid();
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers/${managerId}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+  });
+
   describe('POST /api/v1/camps/:campId/managers/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 201 },

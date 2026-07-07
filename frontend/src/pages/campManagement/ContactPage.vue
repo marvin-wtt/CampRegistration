@@ -38,7 +38,7 @@
         </div>
         <sent-message-history
           v-if="canViewHistory"
-          :messages="sentMessages"
+          :messages="sentMessages ?? []"
           :registrations
           :can-delete="canDeleteHistory"
           :can-reuse="canSend"
@@ -70,6 +70,7 @@ import type { Message, Registration } from '@camp-registration/common/entities';
 import type { ContactDraft } from '@/components/campManagement/contact/Contact';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { usePermissions } from '@/composables/permissions';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { useAPIService } from '@/services/APIService';
 import ContactForm from '@/components/campManagement/contact/ContactForm.vue';
 import SentMessageHistory from '@/components/campManagement/contact/SentMessageHistory.vue';
@@ -81,7 +82,9 @@ const apiService = useAPIService();
 const registrationStore = useRegistrationsStore();
 const campDetailsStore = useCampDetailsStore();
 
-const sentMessages = ref<Message[]>([]);
+// undefined until the history is loaded (needed by the realtime collection to
+// tell "not loaded yet" apart from "empty").
+const sentMessages = ref<Message[]>();
 const draft = ref<ContactDraft | null>(null);
 const contactFormRef = ref<{ dirty: boolean } | null>(null);
 
@@ -122,9 +125,19 @@ watch(
   { immediate: true },
 );
 
+// React to live changes pushed from other clients. List mode: messages are
+// rare and ordered newest-first, so a full reload keeps the order correct.
+// The server only sends message events to users with 'camp.messages.view'.
+useRealtimeCollection<Message>('message', {
+  data: sentMessages,
+  // Not loaded yet — the ready-watch above fetches once permitted.
+  invalidate: () => {},
+  reload: () => loadSentMessages(),
+});
+
 function onSent(template: Message) {
   // The create response already carries the recipients, so prepend optimistically.
-  sentMessages.value = [template, ...sentMessages.value];
+  sentMessages.value = [template, ...(sentMessages.value ?? [])];
 }
 
 async function onResend(template: Message) {
@@ -161,7 +174,7 @@ async function onDelete(template: Message) {
 
   try {
     await apiService.deleteMessage(campId, template.id);
-    sentMessages.value = sentMessages.value.filter(
+    sentMessages.value = sentMessages.value?.filter(
       (item) => item.id !== template.id,
     );
   } catch {

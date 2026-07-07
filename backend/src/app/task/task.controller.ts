@@ -4,6 +4,7 @@ import { TaskResource } from './task.resource.js';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/task/task.validation';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -11,6 +12,8 @@ export class TaskController extends BaseController {
   constructor(
     @inject(TaskService)
     private readonly taskService: TaskService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -42,6 +45,8 @@ export class TaskController extends BaseController {
       assigneeId: body.assigneeId ?? undefined,
     });
 
+    void this.realtimeService.emit(camp.id, 'task', task.id, 'created');
+
     res.status(httpStatus.CREATED).resource(new TaskResource(task));
   }
 
@@ -62,14 +67,19 @@ export class TaskController extends BaseController {
       },
     );
 
+    void this.realtimeService.emit(camp.id, 'task', task.id, 'updated');
+
     res.resource(new TaskResource(task));
   }
 
   async destroy(req: Request, res: Response) {
     await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
     const task = req.modelOrFail('task');
 
     await this.taskService.deleteTaskById(task.id);
+
+    void this.realtimeService.emit(camp.id, 'task', task.id, 'deleted');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

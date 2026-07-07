@@ -8,6 +8,7 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 
 export const useTemplateStore = defineStore('templates', () => {
   const route = useRoute();
@@ -33,6 +34,15 @@ export const useTemplateStore = defineStore('templates', () => {
 
   campBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients. List mode: a template
+  // sync fans out many create/update/delete calls, so remote clients coalesce
+  // the resulting event burst into one debounced list refetch.
+  useRealtimeCollection<TableTemplate>('table_template', {
+    data,
+    invalidate,
+    reload: () => forceFetchData(),
   });
 
   async function forceFetchData(id?: string) {

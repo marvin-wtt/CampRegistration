@@ -1,6 +1,7 @@
 import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import { successHandler, clientErrorHandler } from '#core/morgan';
+import context from '#middlewares/context.middleware';
 import extensions from '#middlewares/extension.middleware';
 import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
@@ -22,6 +23,9 @@ const router = createRouter()
 
   // session management
   .use(sessionId)
+
+  // ambient request context (AsyncLocalStorage) for the rest of the chain
+  .use(context)
 
   // custom request‐extensions
   .use(extensions)

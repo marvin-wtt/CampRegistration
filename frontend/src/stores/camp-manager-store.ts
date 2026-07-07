@@ -3,6 +3,7 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import type {
   CampManager,
   CampManagerCreateData,
@@ -32,6 +33,17 @@ export const useCampManagerStore = defineStore('campManager', () => {
 
   campBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients.
+  useRealtimeCollection<CampManager>('manager', {
+    data,
+    invalidate,
+    reload: async () => {
+      invalidate();
+      await fetchData();
+    },
+    fetchOne: (campId, id) => api.fetchCampManager(campId, id),
   });
 
   async function fetchData(campId?: string) {

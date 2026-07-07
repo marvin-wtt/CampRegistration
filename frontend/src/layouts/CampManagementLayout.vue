@@ -135,6 +135,7 @@ import { useProfileStore } from '@/stores/profile-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import { usePermissions } from '@/composables/permissions';
+import { useRealtimeStore } from '@/stores/realtime-store';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -149,9 +150,11 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const campDetailStore = useCampDetailsStore();
 const assignedCampsStore = useAssignedCampsStore();
+const realtimeStore = useRealtimeStore();
 
 onMounted(async () => {
   await authStore.init();
+  realtimeStore.connect();
 
   if (route.params.campId) {
     await campDetailStore.fetchData();

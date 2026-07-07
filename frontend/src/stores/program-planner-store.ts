@@ -8,6 +8,7 @@ import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 
 export const useProgramPlannerStore = defineStore('program-planner', () => {
   const route = useRoute();
@@ -32,6 +33,25 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   campBus.on('change', () => {
     invalidate();
   });
+
+  // React to live changes pushed from other clients.
+  useRealtimeCollection<ProgramEvent>('program_event', {
+    data,
+    invalidate,
+    reload: async () => {
+      invalidate();
+      await fetchData();
+    },
+    fetchOne: (campId, id) => apiService.fetchProgramEvent(campId, id),
+  });
+
+  // Replace the event with this id, or append it if not present.
+  function upsertEntry(event: ProgramEvent) {
+    const list = data.value ?? [];
+    data.value = list.some((e) => e.id === event.id)
+      ? list.map((e) => (e.id === event.id ? event : e))
+      : [...list, event];
+  }
 
   async function fetchData(campId?: string): Promise<void> {
     const cid = checkNotNullWithError(
@@ -65,10 +85,11 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     );
 
     if (result) {
-      // Replace temporary event with server response
-      data.value = data.value?.map((value) =>
-        value.id === tmpId ? result : value,
-      );
+      // Drop the optimistic placeholder and upsert the server response. Using
+      // an id-keyed upsert (rather than a plain replace) dedupes the case where
+      // the realtime "created" echo already inserted the server event.
+      data.value = (data.value ?? []).filter((value) => value.id !== tmpId);
+      upsertEntry(result);
     } else {
       // Error occurred - remove optimistic event
       data.value = data.value?.filter((value) => value.id !== tmpId);

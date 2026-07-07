@@ -43,12 +43,7 @@
             v-model="filter"
             :options="filterOptions"
             no-caps
-            unelevated
-            rounded
             dense
-            toggle-color="primary"
-            color="transparent"
-            text-color="grey-7"
             class="task-filter"
           />
         </div>
@@ -190,10 +185,23 @@ const showCompleted = ref<boolean>(false);
 type TaskFilter = 'all' | 'mine' | 'unassigned';
 const filter = ref<TaskFilter>('all');
 
+// Icon-only on phones — labels would force the segmented control to wrap
+// onto a second line (equal-width columns can't shrink below the widest
+// label), which eats vertical space. The icons stay self-explanatory and
+// keep an aria-label for screen readers.
+function filterOption(value: TaskFilter, icon: string, label: string) {
+  return {
+    value,
+    icon,
+    ...(quasar.screen.lt.sm ? {} : { label }),
+    attrs: { 'aria-label': label },
+  };
+}
+
 const filterOptions = computed(() => [
-  { label: t('filter.all'), value: 'all' },
-  { label: t('filter.mine'), value: 'mine' },
-  { label: t('filter.unassigned'), value: 'unassigned' },
+  filterOption('all', 'checklist', t('filter.all')),
+  filterOption('mine', 'person', t('filter.mine')),
+  filterOption('unassigned', 'person_off', t('filter.unassigned')),
 ]);
 
 onMounted(async () => {
@@ -358,18 +366,7 @@ function showDeleteDialog(task: Task) {
 
 .filter-bar {
   display: flex;
-  padding: 10px 12px;
-}
-
-/* Segmented "track" around the toggle so the selected pill reads clearly. */
-.task-filter {
-  background: var(--md3-surface-container-high);
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.task-filter :deep(.q-btn) {
-  padding: 4px 14px;
+  padding: 12px 16px;
 }
 
 .empty-icon {

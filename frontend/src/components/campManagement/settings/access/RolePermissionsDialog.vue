@@ -237,6 +237,16 @@ const permissionGroups: PermissionGroup[] = [
       VIEWER: ['view'],
     },
   },
+  {
+    key: 'tasks',
+    icon: 'task_alt',
+    actions: {
+      DIRECTOR: ['view', 'create', 'edit', 'delete'],
+      COORDINATOR: ['view', 'create', 'edit', 'delete'],
+      COUNSELOR: ['view', 'create', 'edit', 'delete'],
+      VIEWER: ['view'],
+    },
+  },
 ];
 
 const roleOrder = ['director', 'coordinator', 'counselor', 'viewer'];
@@ -498,6 +508,7 @@ permissions:
     rooms: 'Rooms'
     beds: 'Beds'
     program: 'Program'
+    tasks: 'Tasks'
   action:
     view: 'View'
     create: 'Create'
@@ -527,6 +538,7 @@ permissions:
     rooms: 'Räume'
     beds: 'Betten'
     program: 'Programm'
+    tasks: 'Aufgaben'
   action:
     view: 'Anzeigen'
     create: 'Erstellen'
@@ -556,6 +568,7 @@ permissions:
     rooms: 'Chambres'
     beds: 'Lits'
     program: 'Programme'
+    tasks: 'Tâches'
   action:
     view: 'Voir'
     create: 'Créer'
@@ -585,6 +598,7 @@ permissions:
     rooms: 'Pokoje'
     beds: 'Łóżka'
     program: 'Program'
+    tasks: 'Zadania'
   action:
     view: 'Podgląd'
     create: 'Tworzenie'
@@ -614,6 +628,7 @@ permissions:
     rooms: 'Pokoje'
     beds: 'Lůžka'
     program: 'Program'
+    tasks: 'Úkoly'
   action:
     view: 'Zobrazit'
     create: 'Vytvořit'

@@ -52,6 +52,13 @@ const config = {
   queue: {
     driver: env.QUEUE_DRIVER,
   },
+  realtime: {
+    // A redis queue implies a multi-instance deployment, where realtime must
+    // fan out across processes too.
+    driver:
+      env.REALTIME_DRIVER ??
+      (env.QUEUE_DRIVER === 'redis' ? ('redis' as const) : ('memory' as const)),
+  },
   sentry: {
     dsn: env.SENTRY_DSN,
   },
