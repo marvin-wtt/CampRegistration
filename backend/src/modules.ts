@@ -17,6 +17,7 @@ import { SetupModule } from '#app/setup/setup.module';
 import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
+import { LegalModule } from '#app/legal/legal.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
 import { TaskModule } from '#app/task/task.module';
@@ -40,6 +41,7 @@ export const createModules = (): AppModule[] => [
   new FileModule(),
   new CampModule(),
   new UserModule(),
+  new LegalModule(),
   new RegistrationModule(),
   new TableTemplateModule(),
   new CampManagerModule(),

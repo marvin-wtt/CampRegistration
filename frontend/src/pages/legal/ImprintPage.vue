@@ -1,5 +1,9 @@
 <template>
-  <q-page class="row justify-center q-pa-md">
+  <page-state-handler
+    :loading
+    :error
+    class="row justify-center q-pa-md"
+  >
     <div class="col-12 col-md-8 col-lg-6 q-py-lg">
       <m-btn
         flat
@@ -15,6 +19,7 @@
       </div>
 
       <q-banner
+        v-if="html === null"
         rounded
         class="bg-surface-container-low text-on-surface-variant"
       >
@@ -23,8 +28,15 @@
         </template>
         {{ t('placeholder') }}
       </q-banner>
+
+      <!-- eslint-disable-next-line vue/no-v-html -- operator-authored content, not user input -->
+      <div
+        v-else
+        class="legal-content"
+        v-html="html"
+      />
     </div>
-  </q-page>
+  </page-state-handler>
 </template>
 
 <script lang="ts" setup>
@@ -32,9 +44,35 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRouter } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { onMounted, ref } from 'vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useLegalService } from '@/services/LegalService';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useErrorExtractor } from '@/composables/serviceHandler';
+import { createMarkdownConverter } from '@/utils/markdown';
 
 const { t } = useI18n();
 const router = useRouter();
+const { fetchLegalDocument } = useLegalService();
+const { to } = useObjectTranslation();
+const { extractErrorText } = useErrorExtractor();
+const converter = createMarkdownConverter();
+
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const html = ref<string | null>(null);
+
+onMounted(async () => {
+  try {
+    const document = await fetchLegalDocument('IMPRINT');
+    const content = to(document.content ?? undefined);
+    html.value = content ? converter.render(content) : null;
+  } catch (err) {
+    error.value = extractErrorText(err);
+  } finally {
+    loading.value = false;
+  }
+});
 
 useMeta(() => {
   return {
@@ -51,6 +89,20 @@ function goBack() {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.legal-content {
+  :deep(h1),
+  :deep(h2),
+  :deep(h3) {
+    color: var(--md3-on-surface);
+  }
+
+  :deep(a) {
+    color: var(--md3-primary);
+  }
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Imprint'

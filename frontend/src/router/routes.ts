@@ -287,6 +287,11 @@ const routes: RouteRecordRaw[] = [
         name: 'administration.queues',
         component: () => import('@/pages/administration/QueueIndexPage.vue'),
       },
+      {
+        path: 'legal',
+        name: 'administration.legal',
+        component: () => import('@/pages/administration/LegalSettingsPage.vue'),
+      },
     ],
   },
   {

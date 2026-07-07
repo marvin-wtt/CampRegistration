@@ -91,6 +91,14 @@ const items = [
     color: 'info',
     to: { name: 'administration.queues' },
   },
+  {
+    name: 'legal',
+    label: t('legal.label'),
+    description: t('legal.description'),
+    icon: 'gavel',
+    color: 'primary',
+    to: { name: 'administration.legal' },
+  },
 ] as const;
 </script>
 
@@ -109,6 +117,9 @@ newsletters:
 queues:
   label: 'Queues'
   description: 'Monitor background jobs, retry or delete failed jobs.'
+legal:
+  label: 'Legal Content'
+  description: 'Manage the Imprint and Privacy Policy shown to visitors.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -126,6 +137,9 @@ newsletters:
 queues:
   label: 'Warteschlangen'
   description: 'Hintergrundjobs überwachen, fehlgeschlagene Jobs wiederholen oder löschen.'
+legal:
+  label: 'Rechtliche Inhalte'
+  description: 'Impressum und Datenschutzerklärung für Besucher verwalten.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -143,6 +157,9 @@ newsletters:
 queues:
   label: "Files d'attente"
   description: 'Surveiller les tâches en arrière-plan, relancer ou supprimer les tâches échouées.'
+legal:
+  label: 'Contenu légal'
+  description: 'Gérer les mentions légales et la politique de confidentialité affichées aux visiteurs.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -160,6 +177,9 @@ newsletters:
 queues:
   label: 'Kolejki'
   description: 'Monitoruj zadania w tle, ponawiaj lub usuwaj nieudane zadania.'
+legal:
+  label: 'Treści prawne'
+  description: 'Zarządzaj notą prawną i polityką prywatności widoczną dla odwiedzających.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -177,4 +197,7 @@ newsletters:
 queues:
   label: 'Fronty'
   description: 'Sledujte úlohy na pozadí, opakujte nebo mažte neúspěšné úlohy.'
+legal:
+  label: 'Právní obsah'
+  description: 'Spravujte tiráž a zásady ochrany osobních údajů zobrazované návštěvníkům.'
 </i18n>
