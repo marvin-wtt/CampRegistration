@@ -6,6 +6,7 @@ import * as container from '#core/ioc/container';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
 import {
   campManager,
+  campManagerSelf,
   campManagerSubscriber,
   registrationOpen,
 } from '#app/campManager/camp-manager.guard';
@@ -44,6 +45,32 @@ describe('campManager', () => {
     const guard = campManager('camp.tasks.view');
 
     const result = await guard(fakeReq({ id: 'camp-1' }));
+
+    expect(result).toBe(false);
+  });
+});
+
+describe('campManagerSelf', () => {
+  const fakeManagerReq = (userId: string | null, authUserId = 'user-1') =>
+    ({
+      authUserId: () => authUserId,
+      modelOrFail: () => ({ userId }),
+    }) as unknown as Request;
+
+  it('returns true when the manager record belongs to the requesting user', () => {
+    const result = campManagerSelf(fakeManagerReq('user-1', 'user-1'));
+
+    expect(result).toBe(true);
+  });
+
+  it('returns false when the manager record belongs to someone else', () => {
+    const result = campManagerSelf(fakeManagerReq('user-2', 'user-1'));
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false for pending invitations with no associated user', () => {
+    const result = campManagerSelf(fakeManagerReq(null, 'user-1'));
 
     expect(result).toBe(false);
   });

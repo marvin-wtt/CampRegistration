@@ -17,6 +17,18 @@ export const campManager = (
 };
 
 /**
+ * Allows a manager to act on their own camp-manager record (e.g. leaving the
+ * camp) regardless of permission — the invariant checks in the controller
+ * still block removing the sole director.
+ */
+export const campManagerSelf = (req: Request): boolean => {
+  const manager = req.modelOrFail('campManager');
+  const userId = req.authUserId();
+
+  return manager.userId === userId;
+};
+
+/**
  * Resolves the realtime-stream subscriber for the route's camp: the requesting
  * user's own manager record id, current permission set, and expiry. Returns
  * `null` when the user is not (or no longer) a non-expired manager, ending the

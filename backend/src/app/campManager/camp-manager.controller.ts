@@ -84,6 +84,42 @@ export class CampManagerController extends BaseController {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
 
+    const wasDirector = manager.role === 'DIRECTOR';
+    const willBeDirector = (role ?? manager.role) === 'DIRECTOR';
+    const willExpire =
+      (expiresAt !== undefined ? expiresAt : manager.expiresAt) !== null;
+
+    if (wasDirector && !willBeDirector) {
+      const hasOtherDirector = await this.managerService.hasOtherDirector(
+        camp.id,
+        manager.id,
+      );
+      if (!hasOtherDirector) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'The camp must always have at least one camp manager with the director role.',
+        );
+      }
+    }
+
+    if (
+      wasDirector &&
+      manager.expiresAt === null &&
+      (!willBeDirector || willExpire)
+    ) {
+      const hasOtherNonExpiringDirector =
+        await this.managerService.hasOtherNonExpiringDirector(
+          camp.id,
+          manager.id,
+        );
+      if (!hasOtherNonExpiringDirector) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'The camp must always have a camp manager with the director role that does not expire.',
+        );
+      }
+    }
+
     const updatedManager = await this.managerService.updateManagerById(
       manager.id,
       {
@@ -107,12 +143,31 @@ export class CampManagerController extends BaseController {
     const manager = req.modelOrFail('campManager');
     await req.validate(validator.destroy);
 
-    const managers = await this.managerService.getManagers(camp.id);
-    if (managers.length <= 1) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'The camp must always have at least one camp manager.',
+    if (manager.role === 'DIRECTOR') {
+      const hasOtherDirector = await this.managerService.hasOtherDirector(
+        camp.id,
+        manager.id,
       );
+      if (!hasOtherDirector) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'The camp must always have at least one camp manager with the director role.',
+        );
+      }
+
+      if (manager.expiresAt === null) {
+        const hasOtherNonExpiringDirector =
+          await this.managerService.hasOtherNonExpiringDirector(
+            camp.id,
+            manager.id,
+          );
+        if (!hasOtherNonExpiringDirector) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'The camp must always have a camp manager with the director role that does not expire.',
+          );
+        }
+      }
     }
 
     await this.managerService.removeManager(manager.id);

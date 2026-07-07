@@ -140,7 +140,7 @@
               </q-item-section>
 
               <q-item-section
-                v-if="canManage(manager)"
+                v-if="canManage(manager) || canLeave(manager)"
                 side
                 class="member-actions"
               >
@@ -154,7 +154,7 @@
                   <q-menu>
                     <q-list style="min-width: 180px">
                       <q-item
-                        v-if="can('camp.managers.edit')"
+                        v-if="canManage(manager) && can('camp.managers.edit')"
                         clickable
                         v-close-popup
                         @click="showEditDialog(manager)"
@@ -170,7 +170,7 @@
                         </q-item-section>
                       </q-item>
                       <q-item
-                        v-if="can('camp.managers.delete')"
+                        v-if="canManage(manager) && can('camp.managers.delete')"
                         clickable
                         v-close-popup
                         class="text-negative"
@@ -184,6 +184,23 @@
                         </q-item-section>
                         <q-item-section>
                           {{ t('action.delete') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-if="canLeave(manager)"
+                        clickable
+                        v-close-popup
+                        class="text-negative"
+                        @click="showLeaveDialog(manager)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="logout"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.leave') }}
                         </q-item-section>
                       </q-item>
                     </q-list>
@@ -342,6 +359,18 @@ function canManage(manager: CampManager): boolean {
   );
 }
 
+function isSoleDirector(manager: CampManager): boolean {
+  if (manager.role !== 'DIRECTOR') {
+    return false;
+  }
+
+  return rows.value.filter((m) => m.role === 'DIRECTOR').length <= 1;
+}
+
+function canLeave(manager: CampManager): boolean {
+  return userEmail.value === manager.email && !isSoleDirector(manager);
+}
+
 function getRoleOptions(): QSelectOption[] {
   const roles = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
 
@@ -394,6 +423,22 @@ function showDeleteDialog(manager: CampManager) {
         title: t('dialog.delete.title'),
         message: t('dialog.delete.message'),
         label: t('dialog.delete.label'),
+        value: manager.email,
+      },
+    })
+    .onOk(() => {
+      void campManagerStore.deleteData(manager.id);
+    });
+}
+
+function showLeaveDialog(manager: CampManager) {
+  quasar
+    .dialog({
+      component: SafeDeleteDialog,
+      componentProps: {
+        title: t('dialog.leave.title'),
+        message: t('dialog.leave.message'),
+        label: t('dialog.leave.label'),
         value: manager.email,
       },
     })
@@ -564,6 +609,7 @@ action:
   add: 'Add'
   delete: 'Remove'
   edit: 'Edit'
+  leave: 'Leave camp'
   menu: 'Actions'
   roles: 'Role permissions'
 
@@ -575,6 +621,10 @@ dialog:
   delete:
     title: 'Revoke access'
     message: 'Do you really want to revoke access for this user?'
+    label: 'Email'
+  leave:
+    title: 'Leave camp'
+    message: 'Do you really want to leave this camp? You will lose access.'
     label: 'Email'
 
 expiry:
@@ -602,6 +652,7 @@ action:
   add: 'Hinzufügen'
   delete: 'Entfernen'
   edit: 'Bearbeiten'
+  leave: 'Camp verlassen'
   menu: 'Aktionen'
   roles: 'Rollenberechtigungen'
 
@@ -613,6 +664,10 @@ dialog:
   delete:
     title: 'Zugriff entziehen'
     message: 'Möchten Sie den Zugriff dieses Nutzers wirklich entziehen?'
+    label: 'E-Mail'
+  leave:
+    title: 'Camp verlassen'
+    message: 'Möchten Sie dieses Camp wirklich verlassen? Sie verlieren dadurch den Zugriff.'
     label: 'E-Mail'
 
 expiry:
@@ -640,6 +695,7 @@ action:
   add: ‘Ajouter’
   delete: ‘Supprimer’
   edit: ‘Modifier’
+  leave: ‘Quitter le camp’
   menu: ‘Actions’
   roles: ‘Permissions par rôle’
 
@@ -651,6 +707,10 @@ dialog:
   delete:
     title: ‘Révoquer l’accès’
     message: ‘Voulez-vous vraiment révoquer l’accès de cet utilisateur ?’
+    label: ‘E-mail’
+  leave:
+    title: ‘Quitter le camp’
+    message: ‘Voulez-vous vraiment quitter ce camp ? Vous perdrez l’accès.’
     label: ‘E-mail’
 
 expiry:
@@ -678,6 +738,7 @@ action:
   add: 'Dodaj'
   delete: 'Usuń'
   edit: 'Edytuj'
+  leave: 'Opuść obóz'
   menu: 'Akcje'
   roles: 'Uprawnienia ról'
 
@@ -689,6 +750,10 @@ dialog:
   delete:
     title: 'Cofnij dostęp'
     message: 'Czy na pewno chcesz cofnąć dostęp temu użytkownikowi?'
+    label: 'E-mail'
+  leave:
+    title: 'Opuść obóz'
+    message: 'Czy na pewno chcesz opuścić ten obóz? Stracisz do niego dostęp.'
     label: 'E-mail'
 
 expiry:
@@ -716,6 +781,7 @@ action:
   add: 'Přidat'
   delete: 'Odstranit'
   edit: 'Upravit'
+  leave: 'Opustit tábor'
   menu: 'Akce'
   roles: 'Oprávnění rolí'
 
@@ -727,6 +793,10 @@ dialog:
   delete:
     title: 'Odebrat přístup'
     message: 'Opravdu chcete odebrat přístup tomuto uživateli?'
+    label: 'E-mail'
+  leave:
+    title: 'Opustit tábor'
+    message: 'Opravdu chcete opustit tento tábor? Ztratíte k němu přístup.'
     label: 'E-mail'
 
 expiry:
