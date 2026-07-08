@@ -6,7 +6,7 @@ import type {
 } from '#core/base/AppModule';
 import { RoomRouter } from '#app/room/room.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   RoomPermission,
 } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
@@ -24,7 +24,7 @@ export class RoomModule implements AppModule {
     router.useRouter('/camps/:campId/rooms', resolve(RoomRouter));
   }
 
-  registerPermissions(): RoleToPermissions<ManagerRole, RoomPermission> {
+  registerPermissions(): RoleToPermissions<CampManagerRole, RoomPermission> {
     return {
       DIRECTOR: [
         'camp.rooms.view',

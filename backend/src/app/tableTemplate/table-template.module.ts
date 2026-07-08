@@ -6,7 +6,7 @@ import type {
 } from '#core/base/AppModule';
 import { TableTemplateRouter } from '#app/tableTemplate/table-template.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   TableTemplatePermission,
 } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
@@ -28,7 +28,7 @@ export class TableTemplateModule implements AppModule {
   }
 
   registerPermissions(): RoleToPermissions<
-    ManagerRole,
+    CampManagerRole,
     TableTemplatePermission
   > {
     return {

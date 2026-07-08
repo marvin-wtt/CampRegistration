@@ -1,5 +1,5 @@
 import type {
-  ManagerRole,
+  CampManagerRole,
   NewsletterManagerRole,
   Permission,
   NewsletterPermission,
@@ -44,7 +44,7 @@ export class PermissionRegistry<
 }
 
 export const campPermissionRegistry = new PermissionRegistry<
-  ManagerRole,
+  CampManagerRole,
   Permission
 >();
 

@@ -84,6 +84,18 @@ export class CampManagerController extends BaseController {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
 
+    // Verify the camp has another non-expiring director available.
+    const nextRole = role ?? manager.role;
+    const nextExpiresAt =
+      expiresAt === undefined ? manager.expiresAt : expiresAt;
+    if (
+      manager.role === 'DIRECTOR' &&
+      manager.expiresAt === null &&
+      (nextRole !== 'DIRECTOR' || nextExpiresAt !== null)
+    ) {
+      await this.checkDirectorConstraints(camp.id, manager.id);
+    }
+
     const updatedManager = await this.managerService.updateManagerById(
       manager.id,
       {
@@ -107,12 +119,9 @@ export class CampManagerController extends BaseController {
     const manager = req.modelOrFail('campManager');
     await req.validate(validator.destroy);
 
-    const managers = await this.managerService.getManagers(camp.id);
-    if (managers.length <= 1) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'The camp must always have at least one camp manager.',
-      );
+    // Verify the camp has another non-expiring director available.
+    if (manager.role === 'DIRECTOR' && manager.expiresAt === null) {
+      await this.checkDirectorConstraints(camp.id, manager.id);
     }
 
     await this.managerService.removeManager(manager.id);
@@ -120,5 +129,17 @@ export class CampManagerController extends BaseController {
     void this.realtimeService.emit(camp.id, 'manager', manager.id, 'deleted');
 
     res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  private async checkDirectorConstraints(campId: string, managerId: string) {
+    const hasOtherDirector =
+      await this.managerService.hasOtherNonExpiringDirector(campId, managerId);
+
+    if (!hasOtherDirector) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'The camp must always have a camp manager with the director role that does not expire.',
+      );
+    }
   }
 }

@@ -6,7 +6,7 @@ import type {
 } from '#core/base/AppModule';
 import { MessageTemplateRouter } from '#app/messageTemplate/message-template.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   MessageTemplatePermission,
 } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -34,7 +34,7 @@ export class MessageTemplateModule implements AppModule {
   }
 
   registerPermissions(): RoleToPermissions<
-    ManagerRole,
+    CampManagerRole,
     MessageTemplatePermission
   > {
     return {

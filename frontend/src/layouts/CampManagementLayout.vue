@@ -1,147 +1,43 @@
 <template>
-  <q-layout
-    view="hHh Lpr lFf"
-    @scroll="onScroll"
+  <general-layout
+    :navigation-items="permissionsLoading ? items : filteredItems"
+    :title="title"
+    :back-to="backTo"
+    :loading="permissionsLoading"
   >
-    <q-ajax-bar color="accent" />
+    <template #toolbar="{ drawer }">
+      <camp-switcher v-if="drawer" />
+    </template>
 
-    <!-- Top bar: mobile only. On large screens pages use either a left rail
-         or floating controls, both of which carry the profile. -->
-    <q-header
-      v-if="quasar.screen.lt.sm"
-      class="app-top-bar"
-      :class="{ 'app-top-bar--scrolled': scrolled }"
-    >
-      <m-toolbar>
-        <m-btn
-          v-if="showDrawer"
-          icon="menu"
-          square
-          round
-          text
-          @click="toggleDrawer"
-        />
-        <m-btn
-          v-else-if="!isLanding"
-          icon="arrow_back"
-          square
-          round
-          text
-          :aria-label="t('back')"
-          @click="navigateHome()"
-        />
+    <template #navigation>
+      <camp-switcher rail />
+    </template>
 
-        <!-- Camp context (mobile): name doubles as a camp switcher -->
-        <camp-switcher v-if="showDrawer" />
-        <q-space />
-
-        <profile-menu />
-      </m-toolbar>
-    </q-header>
-
-    <q-drawer
-      v-if="showDrawer"
-      v-model="drawer"
-      :breakpoint="599.99"
-      mini
-      :width="300"
-      :mini-width="96"
-      bordered
-      show-if-above
-      class="column no-wrap"
-    >
-      <!-- Rail header: camp switcher (desktop only — mobile uses the top bar) -->
-      <div
-        v-if="quasar.screen.gt.xs"
-        class="rail-header row justify-center q-py-sm"
-      >
-        <camp-switcher rail />
-      </div>
-
-      <q-separator
-        v-if="quasar.screen.gt.xs"
-        inset
+    <template #default="{ component }">
+      <component
+        :is="component"
+        :key="campKey"
       />
-
-      <q-list class="q-list--rail">
-        <template v-if="permissionsLoading">
-          <navigation-item-skeleton
-            v-for="(item, i) in items"
-            :key="item.name"
-            :label="item.label"
-            :separated="item.separated"
-            :first="i === 0"
-          />
-        </template>
-        <navigation-item
-          v-for="(item, i) in filteredItems"
-          v-else
-          :key="item.name"
-          v-bind="item"
-          :first="i === 0"
-        />
-      </q-list>
-
-      <q-space />
-
-      <!-- Rail footer: profile (desktop only — mobile uses the top bar) -->
-      <div
-        v-if="quasar.screen.gt.xs"
-        class="rail-footer row justify-center q-py-sm"
-      >
-        <profile-menu />
-      </div>
-    </q-drawer>
-
-    <!-- No-drawer pages on large screens (camps grid, landing) get floating
-         controls instead of a rail, keeping the profile bottom-left. The
-         landing is home, so it shows no back button. -->
-    <layout-floating-controls
-      v-if="!showDrawer && quasar.screen.gt.xs"
-      :back-to="isLanding ? { name: 'camps' } : { name: 'management' }"
-    />
-
-    <q-page-container>
-      <!-- Key by campId so switching camps remounts the page (re-running its
-           onMounted data fetch). Without this, Vue reuses the component instance
-           on param-only navigation and pages keep showing the previous camp's
-           data. -->
-      <router-view v-slot="{ Component }">
-        <transition name="fade">
-          <component
-            :is="Component"
-            :key="campKey"
-          />
-        </transition>
-      </router-view>
-    </q-page-container>
-  </q-layout>
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import NavigationItem from '@/components/NavigationItem.vue';
-import NavigationItemSkeleton from '@/components/NavigationItemSkeleton.vue';
-import ProfileMenu from '@/components/common/ProfileMenu.vue';
 import CampSwitcher from '@/components/layout/CampSwitcher.vue';
-import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.vue';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
-import { useMeta, useQuasar } from 'quasar';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import { usePermissions } from '@/composables/permissions';
 import { useRealtimeStore } from '@/stores/realtime-store';
-import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 
-const quasar = useQuasar();
 const route = useRoute();
-const router = useRouter();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { canAccessAny } = usePermissions();
@@ -169,40 +65,15 @@ const campKey = computed<string | undefined>(() => {
   return Array.isArray(campId) ? campId[0] : campId;
 });
 
-const showDrawer = computed<boolean>(() => {
-  return !('hideDrawer' in route.meta) || route.meta.hideDrawer !== true;
-});
-
-// The landing/home hub keeps a full-width top bar instead of a rail.
-const isLanding = computed<boolean>(() => {
-  return route.name === 'management';
-});
-
 const title = computed(() => {
-  return showDrawer.value ? campName.value : t('app_name');
+  return campName.value ?? t('app_name');
 });
 
 const campName = computed<string | undefined>(() => {
-  return to(campDetailStore.data?.name);
+  const name = campDetailStore.data?.name;
+
+  return name ? to(name) : undefined;
 });
-
-useMeta(() => {
-  return {
-    title: to(title.value),
-    titleTemplate: (title) => `${title} | ${t('app_name')}`,
-  };
-});
-
-const drawer = ref<boolean>(false);
-
-// Top app bar elevates once content scrolls beneath it (MD3 small top app bar).
-const scrolled = ref<boolean>(false);
-
-function onScroll(info: { position: { top: number } | number }) {
-  const top =
-    typeof info.position === 'number' ? info.position : info.position.top;
-  scrolled.value = top > 0;
-}
 
 const items = computed<NavigationItemProps[]>(() => [
   {
@@ -284,23 +155,17 @@ function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
     });
 }
 
-function toggleDrawer() {
-  drawer.value = !drawer.value;
-}
-
-function navigateHome() {
+const backTo = computed(() => {
   if (route.name === 'management') {
-    void router.push({ name: 'camps' });
-    return;
+    return { name: 'camps' };
   }
 
   if (route.name === 'management.camps') {
-    void router.push({ name: 'management' });
-    return;
+    return { name: 'management' };
   }
 
-  void router.push({ name: 'management.camps' });
-}
+  return { name: 'management.camps' };
+});
 </script>
 
 <i18n lang="yaml" locale="en">

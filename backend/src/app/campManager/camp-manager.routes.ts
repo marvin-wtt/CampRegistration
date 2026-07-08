@@ -1,10 +1,14 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import {
+  campManager,
+  campManagerSelf,
+} from '#app/campManager/camp-manager.guard';
 import { CampManagerController } from './camp-manager.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import { resolve } from '#core/ioc/container';
+import { or } from '#core/guard';
 
 export class CampManagerRouter extends ModuleRouter {
   protected registerBindings() {
@@ -45,7 +49,7 @@ export class CampManagerRouter extends ModuleRouter {
     );
     this.router.delete(
       '/:campManagerId',
-      guard(campManager('camp.managers.delete')),
+      guard(or(campManager('camp.managers.delete'), campManagerSelf)),
       controller(managerController, 'destroy'),
     );
   }

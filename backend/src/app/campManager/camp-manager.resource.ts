@@ -22,8 +22,8 @@ export class CampManagerResource extends JsonResource<
       email: this.data.invitation
         ? this.data.invitation.email
         : (this.data.user?.email ?? ''),
-      status: this.data.user ? 'accepted' : 'pending',
-      role: this.data.role,
+      status: this.data.user ? 'ACCEPTED' : 'PENDING',
+      role: this.data.role as CampManagerData['role'],
       expiresAt: this.data.expiresAt?.toISOString() ?? null,
     };
   }
