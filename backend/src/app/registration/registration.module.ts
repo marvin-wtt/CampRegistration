@@ -62,18 +62,23 @@ export class RegistrationModule implements AppModule {
     CampManagerRole,
     RegistrationPermission
   > {
+    // The 'camp.registrations.create' permission bypasses the registration
+    // open/close checks, allowing managers to create registrations outside
+    // the normal registration period.
     return {
       DIRECTOR: [
         'camp.registrations.view',
+        'camp.registrations.create',
         'camp.registrations.edit',
         'camp.registrations.delete',
       ],
       COORDINATOR: [
         'camp.registrations.view',
+        'camp.registrations.create',
         'camp.registrations.edit',
         'camp.registrations.delete',
       ],
-      COUNSELOR: ['camp.registrations.view'],
+      COUNSELOR: ['camp.registrations.view', 'camp.registrations.create'],
       VIEWER: ['camp.registrations.view'],
     };
   }

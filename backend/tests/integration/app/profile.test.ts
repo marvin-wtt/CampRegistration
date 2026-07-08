@@ -42,6 +42,7 @@ describe('/api/v1/profile', () => {
           'camp.edit',
           'camp.delete',
           'camp.registrations.view',
+          'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
           'camp.managers.view',
@@ -57,6 +58,7 @@ describe('/api/v1/profile', () => {
           'camp.view',
           'camp.edit',
           'camp.registrations.view',
+          'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
           'camp.managers.view',
@@ -72,6 +74,7 @@ describe('/api/v1/profile', () => {
         expectedPermissions: [
           'camp.view',
           'camp.registrations.view',
+          'camp.registrations.create',
           'camp.managers.view',
         ],
         unexpectedPermissions: [
@@ -90,6 +93,7 @@ describe('/api/v1/profile', () => {
         unexpectedPermissions: [
           'camp.edit',
           'camp.delete',
+          'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
           'camp.managers.view',

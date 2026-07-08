@@ -47,25 +47,30 @@ export class CampController extends BaseController {
 
     const showPrivate = query.view === 'all' || query.view === 'assigned';
 
-    const camps = await this.campService.queryCamps(
-      {
-        managerUserId: query.view === 'assigned' ? req.authUserId() : undefined,
-        public: showPrivate ? undefined : true,
-        name: query.name,
-        country: query.country,
-        age: query.age,
-        startAt: query.startAt,
-        endAt: query.endAt,
-      },
-      {
-        page: query.page,
-        limit: query.limit,
-        sortBy: query.sortBy ?? 'startAt',
-        sortType: query.sortType ?? 'asc',
-      },
-    );
+    const { camps, nextCursor, limit, total } =
+      await this.campService.queryCamps(
+        {
+          managerUserId:
+            query.view === 'assigned' ? req.authUserId() : undefined,
+          public: showPrivate ? query.public : true,
+          name: query.name,
+          country: query.country,
+          age: query.age,
+          startAt: query.startAt,
+          endAt: query.endAt,
+          status: query.status,
+        },
+        {
+          cursor: query.cursor,
+          limit: query.limit,
+          sortBy: query.sortBy ?? 'startAt',
+          sortType: query.sortType ?? 'asc',
+        },
+      );
 
-    res.resource(CampResource.collection(camps));
+    res.resource(
+      CampResource.collection(camps).withCursor(nextCursor, limit, total),
+    );
   }
 
   async store(req: Request, res: Response) {

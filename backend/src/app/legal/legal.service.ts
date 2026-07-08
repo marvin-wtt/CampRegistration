@@ -2,6 +2,7 @@ import { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import type { LegalDocumentType } from '@camp-registration/common/entities';
+import { sanitizeHtmlContent } from '#utils/sanitize';
 
 type NullableTranslation = string | Record<string, string> | null;
 
@@ -32,12 +33,42 @@ export class LegalService extends BaseService {
   }
 
   async upsertDocument(type: LegalDocumentType, content: NullableTranslation) {
-    const jsonContent = content ?? Prisma.JsonNull;
+    const jsonContent = this.sanitizeContent(content) ?? Prisma.JsonNull;
 
     return this.prisma.legalDocument.upsert({
       where: { type },
-      create: { type, content: jsonContent },
+      create: {
+        type,
+        content: jsonContent,
+      },
       update: { content: jsonContent },
     });
+  }
+
+  private sanitizeContent(content: NullableTranslation) {
+    if (content === null) {
+      return content;
+    }
+
+    if (typeof content === 'string') {
+      return sanitizeHtmlContent(content);
+    }
+
+    if (typeof content === 'object') {
+      const clean: Record<string, string> = {};
+      for (const key in content) {
+        clean[key] = sanitizeHtmlContent(content[key]);
+      }
+      return clean;
+    }
+  }
+
+  async getOverviewCounts() {
+    const documents = await this.getAllDocuments();
+    const configured = documents.filter(
+      (document) => document.content !== null,
+    ).length;
+
+    return { total: ALL_TYPES.length, configured };
   }
 }

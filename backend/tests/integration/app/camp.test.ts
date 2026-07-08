@@ -11,6 +11,7 @@ import {
   MessageTemplateFactory,
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
+import { campRegistrationStatus } from '#app/camp/camp.util';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -95,6 +96,7 @@ const assertCampResponseBody = (
     price: data.price,
     location: data.location,
     freePlaces: data.maxParticipants,
+    registrationStatus: campRegistrationStatus(data as Camp),
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
   });
@@ -301,23 +303,23 @@ describe('/api/v1/camps', () => {
         );
       });
 
-      it.skip('should filter by name', async () => {
-        await CampFactory.create({
+      it('should filter by name', async () => {
+        const plainMatch = await CampFactory.create({
           ...campPublic,
           name: 'TestCamp',
         });
-        await CampFactory.create({
+        const translatedMatch = await CampFactory.create({
           ...campPublic,
           name: {
             de: 'TestCampDE',
             en: 'TestCampEN',
           },
         });
-        await CampFactory.create({
+        const plainNonMatch = await CampFactory.create({
           ...campPublic,
           name: 'OtherCamp',
         });
-        await CampFactory.create({
+        const translatedNonMatch = await CampFactory.create({
           ...campPublic,
           name: {
             de: 'OtherCampDE',
@@ -325,17 +327,72 @@ describe('/api/v1/camps', () => {
           },
         });
 
-        const { status, body } = await request()
-          .get(`/api/v1/camps/`)
+        const { body } = await request()
+          .get('/api/v1/camps/')
           .query({
             name: 'Test',
           })
-          .send();
+          .send()
+          .expect(200);
 
-        expect(status).toBe(200);
+        const ids = body.data.map((camp: { id: string }) => camp.id);
 
         expect(body).toHaveProperty('data');
-        expect(body.data.length).toBe(2);
+        expect(body.data).toHaveLength(2);
+        expect(ids).toEqual(
+          expect.arrayContaining([plainMatch.id, translatedMatch.id]),
+        );
+        expect(ids).not.toEqual(
+          expect.arrayContaining([plainNonMatch.id, translatedNonMatch.id]),
+        );
+      });
+
+      it('should treat name query wildcard characters literally', async () => {
+        const literalMatch = await CampFactory.create({
+          ...campPublic,
+          name: 'Wild_100% Camp',
+        });
+        const wildcardNonMatch = await CampFactory.create({
+          ...campPublic,
+          name: 'WildA1000 Camp',
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({
+            name: 'Wild_100%',
+          })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveLength(1);
+        expect(ids).toEqual([literalMatch.id]);
+        expect(ids).not.toContain(wildcardNonMatch.id);
+      });
+
+      it('should ignore one-character name queries', async () => {
+        await CampFactory.create({
+          ...campPublic,
+          name: 'Alpha Camp',
+        });
+        await CampFactory.create({
+          ...campPublic,
+          name: 'Beta Camp',
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({
+            name: 'A',
+          })
+          .send()
+          .expect(200);
+
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveLength(2);
       });
 
       it.todo('should filter by age');
@@ -382,6 +439,7 @@ describe('/api/v1/camps', () => {
         form: camp.form,
         themes: camp.themes,
         freePlaces: expect.anything(),
+        registrationStatus: campRegistrationStatus(camp),
       });
     });
 

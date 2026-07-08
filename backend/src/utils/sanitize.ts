@@ -64,7 +64,7 @@ const ALLOWED_STYLES: sanitizeHtml.IOptions['allowedStyles'] = {
 
 const ALLOWED_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 
-export function sanitizeEmailHtml(html: string): string {
+export function sanitizeHtmlContent(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,

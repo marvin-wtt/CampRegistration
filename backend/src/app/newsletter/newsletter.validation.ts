@@ -3,8 +3,14 @@ import { z } from 'zod';
 const index = z.object({
   query: z
     .object({
-      view: z.enum(['all', 'assigned']).optional(),
+      view: z.enum(['all', 'assigned']),
+      name: z.string(),
+      cursor: z.ulid(),
+      limit: z.coerce.number().int().positive().max(100),
+      sortBy: z.enum(['name', 'createdAt', 'updatedAt']),
+      sortType: z.enum(['asc', 'desc']),
     })
+    .partial()
     .optional(),
 });
 

@@ -215,15 +215,8 @@ const registrationStatus = computed(() => {
       open: false,
     };
   }
-  const now = new Date();
-  const opensAt = c.registrationOpensAt
-    ? new Date(c.registrationOpensAt)
-    : null;
-  const closesAt = c.registrationClosesAt
-    ? new Date(c.registrationClosesAt)
-    : null;
 
-  if (opensAt && now < opensAt) {
+  if (c.registrationStatus === 'upcoming') {
     return {
       label: t('registration.upcoming'),
       tone: 'info',
@@ -231,7 +224,7 @@ const registrationStatus = computed(() => {
       open: false,
     };
   }
-  if (closesAt && now > closesAt) {
+  if (c.registrationStatus === 'closed') {
     return {
       label: t('registration.closed'),
       tone: 'neutral',
@@ -239,6 +232,7 @@ const registrationStatus = computed(() => {
       open: false,
     };
   }
+
   return {
     label: t('registration.open'),
     tone: 'positive',

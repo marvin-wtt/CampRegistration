@@ -54,19 +54,3 @@ export const campManagerSubscriber: SubscriberResolver = async (req) => {
     expiresAt: authorization.expiresAt,
   };
 };
-
-export const registrationOpen = (req: Request): boolean => {
-  const camp = req.modelOrFail('camp');
-  const { registrationOpensAt, registrationClosesAt } = camp;
-
-  if (!registrationOpensAt && !registrationClosesAt) {
-    return false;
-  }
-
-  const now = new Date();
-  if (registrationOpensAt && now < registrationOpensAt) {
-    return false;
-  }
-
-  return !(registrationClosesAt && now > registrationClosesAt);
-};

@@ -252,6 +252,7 @@ import { computed, onMounted } from 'vue';
 import type {
   CampManager,
   CampManagerCreateData,
+  CampManagerRole,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -374,7 +375,7 @@ function canLeave(manager: CampManager): boolean {
   return userEmail.value === manager.email && !isSoleDirector(manager);
 }
 
-function getRoleOptions(): QSelectOption[] {
+function getRoleOptions(): QSelectOption<CampManagerRole>[] {
   const roles = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
 
   return roles.map((role) => ({

@@ -17,10 +17,12 @@ const index = z.object({
       endAt: z.iso.datetime(),
       age: z.coerce.number(),
       country: z.string().length(2),
+      public: z.stringbool(),
+      status: z.enum(['open', 'upcoming', 'closed']),
       view: z.enum(['all', 'assigned']),
       // Options
-      page: z.coerce.number().positive(),
-      limit: z.coerce.number().int().positive(),
+      cursor: z.ulid(),
+      limit: z.coerce.number().int().positive().max(100),
       sortBy: z.string(),
       sortType: z.enum(['asc', 'desc']),
     })

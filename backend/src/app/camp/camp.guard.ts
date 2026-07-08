@@ -5,6 +5,14 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { CampService } from '#app/camp/camp.service';
 import { resolve } from '#core/ioc/container';
+import { campRegistrationStatus } from '#app/camp/camp.util';
+
+export const registrationOpen = (req: Request): boolean => {
+  const camp = req.modelOrFail('camp');
+  const status = campRegistrationStatus(camp);
+
+  return status === 'open';
+};
 
 async function prepareRequestModels(req: Request) {
   const file = req.modelOrFail('file');

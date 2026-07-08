@@ -32,7 +32,14 @@ export const useCampsStore = defineStore('camps', () => {
   }
 
   async function fetchData() {
-    return lazyFetch(async () => await apiService.fetchCamps());
+    return lazyFetch(
+      async () =>
+        await apiService.fetchCamps({
+          status: 'open',
+          public: true,
+          limit: 50,
+        }),
+    );
   }
 
   async function createEntry(createData: CampCreateData): Promise<Camp> {

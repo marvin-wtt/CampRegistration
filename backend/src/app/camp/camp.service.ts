@@ -2,7 +2,7 @@ import type { Camp, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
@@ -22,6 +22,15 @@ type MessageTemplateCreateData = (OptionalByKeys<
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
+type CampRegistrationStatusFilter = 'open' | 'upcoming' | 'closed';
+
+// A 1-character query LIKE-matches a large share of camps (scanned via a
+// leading-wildcard, un-indexable raw query), turning `campIdsMatchingName`
+// into a near-full-table scan whose `id IN (...)` result set is nearly as
+// large as the table itself. Below this length, skip the name filter
+// entirely rather than pay that cost for a query that isn't selective yet.
+const MIN_NAME_FILTER_LENGTH = 2;
+
 interface CampQueryArgs {
   public?: boolean | undefined;
   name?: string | undefined;
@@ -29,6 +38,7 @@ interface CampQueryArgs {
   startAt?: Date | string | undefined;
   endAt?: Date | string | undefined;
   country?: string | undefined;
+  status?: CampRegistrationStatusFilter | undefined;
   managerUserId?: string | undefined;
 }
 
@@ -74,60 +84,150 @@ export class CampService extends BaseService {
     };
   }
 
-  async queryCamps(
-    filter: CampQueryArgs = {},
-    options: {
-      limit?: number;
-      page?: number;
-      sortBy?: string;
-      sortType?: 'asc' | 'desc';
-    } = {},
-  ) {
-    const page = options.page ?? 1;
-    const limit = options.limit ?? 10;
-    const sortBy = options.sortBy ?? 'startAt';
-    const sortType = options.sortType ?? 'desc';
+  /**
+   * Build the registration-status filter as date conditions on the
+   * registration window, mirroring the shared status derivation.
+   */
+  private campStatusWhere(
+    status: CampRegistrationStatusFilter,
+    now: Date,
+  ): Prisma.CampWhereInput {
+    switch (status) {
+      case 'upcoming':
+        return {
+          AND: [
+            { registrationOpensAt: { gt: now } },
+            // Check for invariant where close is before open
+            {
+              OR: [
+                { registrationClosesAt: null },
+                { registrationClosesAt: { gt: now } },
+              ],
+            },
+          ],
+        };
+      case 'closed':
+        return {
+          OR: [
+            { registrationOpensAt: null, registrationClosesAt: null },
+            { registrationClosesAt: { lte: now } },
+          ],
+        };
+      case 'open':
+        return {
+          AND: [
+            {
+              OR: [
+                { registrationOpensAt: { not: null } },
+                { registrationClosesAt: { not: null } },
+              ],
+            },
+            {
+              OR: [
+                { registrationOpensAt: null },
+                { registrationOpensAt: { lte: now } },
+              ],
+            },
+            {
+              OR: [
+                { registrationClosesAt: null },
+                { registrationClosesAt: { gt: now } },
+              ],
+            },
+          ],
+        };
+    }
+  }
 
+  /**
+   * Resolve camp ids whose translated `name` JSON matches the query in any
+   * locale. Matching the serialized JSON with LIKE covers every locale value
+   * without needing per-locale JSON paths.
+   */
+  private async campIdsMatchingName(name: string): Promise<string[]> {
+    const escaped = name
+      .replace(/\\/g, '\\\\')
+      .replace(/%/g, '\\%')
+      .replace(/_/g, '\\_');
+
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM camps
+      WHERE JSON_SEARCH(name, 'one', ${`%${escaped}%`}) IS NOT NULL
+    `;
+
+    return rows.map((row) => row.id);
+  }
+
+  private async buildCampWhere(
+    filter: CampQueryArgs,
+  ): Promise<Prisma.CampWhereInput> {
     const where: Prisma.CampWhereInput = {
       public: filter.public,
-      // FIXME Name filter not working for translated names
-      // OR: filter.name
-      //   ? [
-      //       { name: { string_contains: filter.name } },
-      //       {
-      //         name: {
-      //           path: dbJsonPath('*'),
-      //           string_contains: filter.name,
-      //         },
-      //       },
-      //     ]
-      //   : undefined,
       minAge: { lte: filter.age },
       maxAge: { gte: filter.age },
       startAt: { gte: filter.startAt },
       endAt: { lte: filter.endAt },
       countries: { array_contains: filter.country },
-      // Filter by manager user id if provided
       ...(filter.managerUserId
-        ? {
-            campManager: {
-              some: {
-                userId: filter.managerUserId,
-              },
-            },
-          }
+        ? { campManager: { some: { userId: filter.managerUserId } } }
         : {}),
+      ...(filter.status ? this.campStatusWhere(filter.status, new Date()) : {}),
     };
 
-    const camps = await this.prisma.camp.findMany({
+    const name = filter.name?.trim();
+    if (name && name.length >= MIN_NAME_FILTER_LENGTH) {
+      where.id = { in: await this.campIdsMatchingName(name) };
+    }
+
+    return where;
+  }
+
+  async queryCamps(
+    filter: CampQueryArgs = {},
+    options: {
+      limit?: number;
+      cursor?: string;
+      sortBy?: string;
+      sortType?: 'asc' | 'desc';
+    } = {},
+  ) {
+    const limit = options.limit ?? 25;
+    const sortBy = options.sortBy ?? 'startAt';
+    const sortType = options.sortType ?? 'desc';
+
+    const where = await this.buildCampWhere(filter);
+
+    // Over-fetch by one to detect whether a further page exists. The `id`
+    // tiebreaker keeps the cursor stable when the sort column has duplicates.
+    const items = await this.prisma.camp.findMany({
       where,
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: sortBy ? { [sortBy]: sortType } : undefined,
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      orderBy: [{ [sortBy]: sortType }, { id: sortType }],
       include: { ...this.campRegistrationInclude() },
     });
 
-    return camps.map(enrichFreePlaces);
+    const hasMore = items.length > limit;
+    const page = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? (page[page.length - 1]?.id ?? null) : null;
+    // Only pay for the count on the first (uncursored) request.
+    const total = options.cursor
+      ? undefined
+      : await this.prisma.camp.count({ where });
+
+    return { camps: page.map(enrichFreePlaces), nextCursor, limit, total };
+  }
+
+  async getOverviewCounts() {
+    const now = new Date();
+    const [total, open, upcoming, closed] = await this.prisma.$transaction([
+      this.prisma.camp.count(),
+      this.prisma.camp.count({ where: this.campStatusWhere('open', now) }),
+      this.prisma.camp.count({ where: this.campStatusWhere('upcoming', now) }),
+      this.prisma.camp.count({ where: this.campStatusWhere('closed', now) }),
+    ]);
+
+    return { total, open, upcoming, closed };
   }
 
   async createCamp(

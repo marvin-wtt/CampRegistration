@@ -1,4 +1,6 @@
-export type ResourceMetadata<T = unknown> = Record<string, T>;
+export type ResourceMetadata<T = unknown> = Partial<PaginatedMeta> &
+  Record<string, T>;
+import type { PaginatedMeta } from '@camp-registration/common/entities';
 
 export abstract class JsonResource<TInput, TOutput> {
   constructor(
@@ -12,10 +14,34 @@ export abstract class JsonResource<TInput, TOutput> {
    */
   public abstract transform(): TOutput;
 
-  public withMeta(metadata: ResourceMetadata): this {
-    this.metadata = metadata;
+  public withMeta(metadata: ResourceMetadata | object): this {
+    this.metadata = {
+      ...this.metadata,
+      ...metadata,
+    };
 
     return this;
+  }
+
+  public withPagination(total: number, page: number, limit: number): this {
+    return this.withMeta({
+      total,
+      page,
+      limit,
+      totalPages: limit > 0 ? Math.ceil(total / limit) : 0,
+    });
+  }
+
+  public withCursor(
+    nextCursor: string | null,
+    limit: number,
+    total?: number,
+  ): this {
+    return this.withMeta({
+      nextCursor,
+      limit,
+      ...(total !== undefined ? { total } : {}),
+    });
   }
 
   /**

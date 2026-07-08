@@ -23,3 +23,19 @@ export type UserCreateData = Omit<
 export type UserUpdateData = Partial<
   Omit<UserWithPassword, 'id' | 'createdAt'>
 >;
+
+export type UserStatus = 'active' | 'locked' | 'unverified';
+
+export interface UserQuery {
+  cursor?: string;
+  limit?: number;
+  sortBy?: keyof User;
+  sortType?: 'asc' | 'desc';
+
+  /** Free-text search across name and email. */
+  search?: string;
+  name?: string;
+  email?: string;
+  role?: User['role'];
+  status?: UserStatus;
+}

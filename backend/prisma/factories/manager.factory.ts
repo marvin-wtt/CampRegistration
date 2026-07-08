@@ -6,7 +6,7 @@ export const CampManagerFactory = {
     data: Partial<Prisma.CampManagerCreateInput> = {},
   ): Prisma.CampManagerCreateInput => {
     return {
-      camp: {},
+      camp: undefined as unknown as {}, // Must be overwritten
       role: 'DIRECTOR',
       ...data,
     };

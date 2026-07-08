@@ -34,8 +34,66 @@ export class UserService extends BaseService {
     });
   }
 
-  async queryUsers() {
-    return this.prisma.user.findMany({
+  private userWhere(
+    filter: {
+      search?: string;
+      name?: string;
+      email?: string;
+      role?: Prisma.UserWhereInput['role'];
+      status?: 'active' | 'locked' | 'unverified';
+    } = {},
+  ): Prisma.UserWhereInput {
+    const status: Prisma.UserWhereInput =
+      filter.status === 'locked'
+        ? { locked: true }
+        : filter.status === 'unverified'
+          ? { emailVerified: false }
+          : filter.status === 'active'
+            ? { locked: false, emailVerified: true }
+            : {};
+
+    return {
+      ...(filter.search
+        ? {
+            OR: [
+              { name: { contains: filter.search } },
+              { email: { contains: filter.search } },
+            ],
+          }
+        : {}),
+      name: filter.name ? { contains: filter.name } : undefined,
+      email: filter.email ? { contains: filter.email } : undefined,
+      role: filter.role,
+      ...status,
+    };
+  }
+
+  async queryUsers(
+    filter: {
+      search?: string;
+      name?: string;
+      email?: string;
+      role?: Prisma.UserWhereInput['role'];
+      status?: 'active' | 'locked' | 'unverified';
+    } = {},
+    options: {
+      limit?: number;
+      cursor?: string;
+      sortBy?: string;
+      sortType?: 'asc' | 'desc';
+    } = {},
+  ) {
+    const limit = options.limit ?? 25;
+    const sortBy = options.sortBy ?? 'lastSeen';
+    const sortType = options.sortType ?? 'desc';
+
+    const where = this.userWhere(filter);
+
+    const items = await this.prisma.user.findMany({
+      where,
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      orderBy: [{ [sortBy]: sortType }, { id: sortType }],
       select: {
         id: true,
         name: true,
@@ -48,6 +106,25 @@ export class UserService extends BaseService {
         createdAt: true,
       },
     });
+
+    const hasMore = items.length > limit;
+    const users = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? (users[users.length - 1]?.id ?? null) : null;
+    const total = options.cursor
+      ? undefined
+      : await this.prisma.user.count({ where });
+
+    return { users, nextCursor, limit, total };
+  }
+
+  async getOverviewCounts() {
+    const [total, unverified, locked] = await this.prisma.$transaction([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { emailVerified: false } }),
+      this.prisma.user.count({ where: { locked: true } }),
+    ]);
+
+    return { total, unverified, locked };
   }
 
   async getUserByIdWithCampRoles(id: string) {

@@ -1,7 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
-import { sanitizeEmailHtml } from '#utils/sanitize';
+import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageWithFiles } from '#app/message/message.resource';
 
 @injectable()
@@ -61,7 +61,7 @@ export class MessageService extends BaseService {
     return this.prisma.message.create({
       data: {
         subject: data.subject,
-        body: sanitizeEmailHtml(data.body),
+        body: sanitizeHtmlContent(data.body),
         priority: data.priority,
         replyTo: data.replyTo,
         campId,

@@ -1,338 +1,186 @@
 <template>
   <page-state-handler :error>
-    <q-table
-      v-model:pagination="pagination"
-      :title="t('title')"
-      :loading
-      :rows
-      :columns
-      :expanded
-      :visible-columns="visibleColumns"
-      :rows-per-page-options="[0]"
-      virtual-scroll
-      row-key="id"
-      class="absolute fit"
-    >
-      <template #top-right>
-        <div class="row no-wrap q-gutter-x-md">
-          <!-- Search -->
-          <q-input
-            v-model="filterQuery"
-            :placeholder="t('filter.search')"
-            debounce="300"
-            rounded
-            dense
-            outlined
-          >
-            <template #append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
+    <div class="admin-page column no-wrap fit">
+      <admin-list-toolbar
+        v-model:search="search"
+        :title="t('title')"
+        :total="total"
+        :loading
+        @refresh="reload"
+      >
+        <template #filters>
+          <div class="col-6 col-sm-auto">
+            <q-select
+              v-model="statusFilter"
+              :options="statusOptions"
+              :label="t('column.registrationStatus')"
+              dense
+              outlined
+              rounded
+              clearable
+              emit-value
+              map-options
+              options-dense
+              style="min-width: 140px"
+            />
+          </div>
+          <div class="col-6 col-sm-auto">
+            <q-select
+              v-model="publicFilter"
+              :options="publicOptions"
+              :label="t('column.public')"
+              dense
+              outlined
+              rounded
+              clearable
+              emit-value
+              map-options
+              options-dense
+              style="min-width: 130px"
+            />
+          </div>
+          <div class="col-auto">
+            <q-select
+              v-model="visibleColumns"
+              :options="columnFilterOptions"
+              :display-value="t('header.columns')"
+              multiple
+              emit-value
+              map-options
+              option-value="name"
+              options-cover
+              options-dense
+              outlined
+              rounded
+              dense
+              style="min-width: 130px"
+            />
+          </div>
+        </template>
+      </admin-list-toolbar>
 
-          <q-select
-            v-model="visibleColumns"
-            :options="columnFilterOptions"
-            :display-value="t('header.columns')"
-            multiple
-            emit-value
-            map-options
-            option-value="name"
-            options-cover
-            options-dense
-            style="min-width: 150px"
-            outlined
-            rounded
-            dense
-          />
+      <q-table
+        ref="tableRef"
+        v-model:pagination="pagination"
+        :loading
+        :rows
+        :columns
+        :visible-columns="visibleColumns"
+        :sort-method="identitySort"
+        :rows-per-page-options="[0]"
+        virtual-scroll
+        :virtual-scroll-item-size="48"
+        :virtual-scroll-sticky-size-start="48"
+        hide-bottom
+        row-key="id"
+        flat
+        bordered
+        binary-state-sort
+        class="admin-table col rounded-borders"
+        @virtual-scroll="onVirtualScroll"
+      >
+        <template #body-cell-name="props">
+          <translation-td :props="props" />
+        </template>
 
-          <q-btn
-            :icon="expanded.length > 0 ? 'unfold_less' : 'expand'"
-            outline
-            rounded
-            @click="toggleExpandAll()"
-          />
-        </div>
-      </template>
+        <template #body-cell-organizer="props">
+          <translation-td :props="props" />
+        </template>
 
-      <template #header-cell-action="columnProps">
-        <q-th
-          :auto-width="true"
-          :props="columnProps"
-        >
-          {{ columnProps.col.label }}
-        </q-th>
-      </template>
-
-      <template #body-cell-expand="props">
-        <q-td
-          :props="props"
-          auto-width
-        >
-          <q-btn
-            v-if="props.row.countries.length > 1"
-            :icon="props.expand ? 'expand_less' : 'expand_more'"
-            color="primary"
-            size="sm"
-            round
-            dense
-            outline
-            @click="toggleExpand(props.key)"
-          />
-        </q-td>
-      </template>
-
-      <template #body-cell-name="props">
-        <translation-td :props="props" />
-      </template>
-
-      <template #body-cell-organizer="props">
-        <translation-td :props="props" />
-      </template>
-
-      <template #body-cell-countries="props">
-        <q-td :props="props">
-          <div class="row q-gutter-x-sm justify-center content-center">
-            <div
-              v-for="country in props.value"
-              :key="country"
-            >
-              <country-icon
-                :locale="country"
-                size="sm"
-              />
+        <template #body-cell-countries="props">
+          <q-td :props="props">
+            <div class="row q-gutter-x-sm justify-center content-center">
+              <div
+                v-for="country in props.value"
+                :key="country"
+              >
+                <country-icon
+                  :locale="country"
+                  size="sm"
+                />
+              </div>
             </div>
-          </div>
-        </q-td>
-      </template>
+          </q-td>
+        </template>
 
-      <template #body-cell-maxParticipants="props">
-        <translation-td :props="props" />
-      </template>
+        <template #body-cell-maxParticipants="props">
+          <translation-td :props="props" />
+        </template>
 
-      <template #body-cell-registrationStatus="props">
-        <q-td :props="props">
-          {{ t(`value.${registrationStatus(props.row)}`) }}
-        </q-td>
-      </template>
+        <template #body-cell-registrationStatus="props">
+          <q-td :props="props">
+            <q-chip
+              :color="statusColor(props.row.registrationStatus)"
+              text-color="white"
+              dense
+              square
+              class="q-ml-none"
+            >
+              {{ t(`value.${props.row.registrationStatus}`) }}
+            </q-chip>
+          </q-td>
+        </template>
 
-      <template #body-cell-public="props">
-        <q-td :props="props">
-          {{ props.value ? t('value.public') : t('value.private') }}
-        </q-td>
-      </template>
+        <template #body-cell-public="props">
+          <q-td :props="props">
+            <q-chip
+              :color="props.value ? 'positive' : 'grey-7'"
+              text-color="white"
+              dense
+              square
+              class="q-ml-none"
+            >
+              {{ props.value ? t('value.public') : t('value.private') }}
+            </q-chip>
+          </q-td>
+        </template>
 
-      <template #body-cell-startAt="props">
-        <q-td :props="props">
-          {{ formatDateTime(props.value) }}
-        </q-td>
-      </template>
+        <template #body-cell-startAt="props">
+          <q-td :props="props">
+            {{ formatDateTime(props.value) }}
+          </q-td>
+        </template>
 
-      <template #body-cell-endAt="props">
-        <q-td :props="props">
-          {{ formatDateTime(props.value) }}
-        </q-td>
-      </template>
+        <template #body-cell-endAt="props">
+          <q-td :props="props">
+            {{ formatDateTime(props.value) }}
+          </q-td>
+        </template>
 
-      <template #body-cell-action="props">
-        <q-td :props="props">
-          <div
-            v-if="quasar.screen.gt.md"
-            class="q-gt-md row no-wrap q-gutter-x-md justify-center"
+        <template #body-cell-action="props">
+          <q-td
+            :props="props"
+            auto-width
           >
-            <q-btn
-              icon="app_registration"
-              round
-              flat
-              size="sm"
-              @click="showCampForm(props.row)"
-            >
-              <q-tooltip>{{ t('action.form') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="dashboard"
-              round
-              flat
-              size="sm"
-              @click="showCampResults(props.row)"
-            >
-              <q-tooltip>{{ t('action.results') }}</q-tooltip>
-            </q-btn>
-            <q-separator vertical />
-            <q-btn
-              v-if="!props.row.public"
-              icon="publish"
-              round
-              flat
-              size="sm"
-              @click="onPublishCamp(props.row)"
-            >
-              <q-tooltip>{{ t('action.publish') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              v-else
-              icon="unpublished"
-              color="warning"
-              round
-              flat
-              size="sm"
-              @click="onUnpublishCamp(props.row)"
-            >
-              <q-tooltip>{{ t('action.unpublish') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              v-if="registrationStatus(props.row) !== 'open'"
-              icon="toggle_on"
-              round
-              flat
-              size="sm"
-              @click="onActivateCamp(props.row)"
-            >
-              <q-tooltip>{{ t('action.activate') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              v-else
-              icon="toggle_off"
-              color="warning"
-              round
-              flat
-              size="sm"
-              @click="onDeactivateCamp(props.row)"
-            >
-              <q-tooltip>{{ t('action.deactivate') }}</q-tooltip>
-            </q-btn>
-            <q-separator vertical />
-            <q-btn
-              icon="edit"
-              color="warning"
-              round
-              flat
-              size="sm"
-              @click="editCamp(props.row)"
-            >
-              <q-tooltip>{{ t('action.edit') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="delete"
-              color="negative"
-              round
-              flat
-              size="sm"
-              @click="onDeleteCamp(props.row)"
-            >
-              <q-tooltip>{{ t('action.delete') }}</q-tooltip>
-            </q-btn>
-          </div>
-
-          <!-- Small screen devices -->
-          <q-btn
-            v-else
-            icon="more_vert"
-            size="sm"
-            round
-            flat
-          >
-            <q-menu>
-              <q-list style="min-width: 150px">
-                <q-item
-                  v-close-popup
-                  clickable
-                  @click="showCampForm(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.form') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-close-popup
-                  clickable
-                  @click="showCampResults(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.results') }}
-                  </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item
-                  v-if="!props.row.public"
-                  v-close-popup
-                  clickable
-                  @click="onPublishCamp(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.publish') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-else
-                  v-close-popup
-                  clickable
-                  @click="onUnpublishCamp(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.unpublish') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-if="registrationStatus(props.row) !== 'open'"
-                  v-close-popup
-                  clickable
-                  @click="onActivateCamp(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.activate') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-else
-                  v-close-popup
-                  clickable
-                  @click="onDeactivateCamp(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.deactivate') }}
-                  </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item
-                  v-close-popup
-                  clickable
-                  @click="editCamp(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.edit') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-close-popup
-                  clickable
-                  class="text-negative"
-                  @click="onDeleteCamp(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.delete') }}
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-        </q-td>
-      </template>
-    </q-table>
+            <row-actions :actions="rowActionsFn(props.row)" />
+          </q-td>
+        </template>
+      </q-table>
+    </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
 import { type QTableColumn } from 'quasar';
-import type { Camp, CampUpdateData } from '@camp-registration/common/entities';
+import type {
+  Camp,
+  CampUpdateData,
+  CampQuery,
+  CampRegistrationStatus,
+} from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import AdminListToolbar from '@/components/administration/AdminListToolbar.vue';
+import RowActions, {
+  type RowAction,
+} from '@/components/administration/RowActions.vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useServerTable } from '@/composables/serverTable';
 import TranslationTd from '@/components/administration/camps/TranslationTd.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
@@ -341,68 +189,58 @@ const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
+
+const statusFilter = ref<CampRegistrationStatus | null>(null);
+const publicFilter = ref<boolean | null>(null);
+
 const {
-  data: camps,
+  tableRef,
+  rows,
+  search,
+  loading,
   error,
-  isLoading: loading,
-  forceFetch,
+  total,
+  pagination,
+  onVirtualScroll,
+  identitySort,
+  reload,
   withProgressNotification,
-} = useServiceHandler<Camp[]>('camp');
-
-const filterQuery = ref<string>('');
-const pagination = ref({
-  rowsPerPage: 0,
-});
-
-onMounted(async () => {
-  await forceFetch(() =>
-    api.fetchCamps({
+} = useServerTable<Camp, CampQuery>({
+  storeName: 'camp',
+  sortBy: 'startAt',
+  descending: true,
+  watchSources: [statusFilter, publicFilter],
+  fetch: (query) => api.fetchCampsPaginated(query),
+  buildQuery: ({ cursor, limit, sortBy, sortType, search }) =>
+    ({
       view: 'all',
-    }),
-  );
+      cursor,
+      limit,
+      sortBy,
+      sortType,
+      name: search || undefined,
+      status: statusFilter.value ?? undefined,
+      public: publicFilter.value ?? undefined,
+    }) as CampQuery,
 });
 
-const rows = computed<Camp[]>(() => {
-  if (!camps.value) {
-    return [];
-  }
+const statusOptions = computed(() => [
+  { label: t('value.open'), value: 'open' },
+  { label: t('value.upcoming'), value: 'upcoming' },
+  { label: t('value.closed'), value: 'closed' },
+]);
 
-  if (!filterQuery.value) {
-    return camps.value;
-  }
+const publicOptions = computed(() => [
+  { label: t('value.public'), value: true },
+  { label: t('value.private'), value: false },
+]);
 
-  return camps.value
-    .map((camp) => {
-      const names =
-        typeof camp.name === 'string' ? [camp.name] : Object.values(camp.name);
-
-      const namesScore = names.map((name) =>
-        getMatchScore(name, filterQuery.value),
-      );
-
-      return {
-        ...camp,
-        score: Math.max(...namesScore),
-      };
-    })
-    .filter((user) => user.score > 0)
-    .sort((a, b) => b.score - a.score);
-});
-
-const columns: QTableColumn<Camp>[] = [
-  {
-    name: 'expand',
-    label: '',
-    field: 'id',
-    align: 'center',
-    required: true,
-  },
+const columns = computed<QTableColumn<Camp>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
     field: 'name',
     align: 'left',
-    sortable: true,
     required: true,
   },
   {
@@ -410,7 +248,6 @@ const columns: QTableColumn<Camp>[] = [
     label: t('column.organizer'),
     field: 'organizer',
     align: 'left',
-    sortable: true,
   },
   {
     name: 'countries',
@@ -440,14 +277,14 @@ const columns: QTableColumn<Camp>[] = [
   },
   {
     name: 'startAt',
-    label: t('column.end'),
+    label: t('column.start'),
     field: 'startAt',
     align: 'center',
     sortable: true,
   },
   {
     name: 'endAt',
-    label: t('column.start'),
+    label: t('column.end'),
     field: 'endAt',
     align: 'center',
     sortable: true,
@@ -462,9 +299,8 @@ const columns: QTableColumn<Camp>[] = [
   {
     name: 'registrationStatus',
     label: t('column.registrationStatus'),
-    field: (row: Camp) => registrationStatus(row),
+    field: 'registrationStatus',
     align: 'left',
-    sortable: true,
   },
   {
     name: 'public',
@@ -480,42 +316,87 @@ const columns: QTableColumn<Camp>[] = [
     align: 'center',
     required: true,
   },
-];
+]);
 
 const columnFilterOptions = computed<QTableColumn<Camp>[]>(() => {
-  return columns.filter((column) => !column.required);
+  return columns.value.filter((column) => !column.required);
 });
 
 const visibleColumns = ref([
   'name',
   'organizer',
   'countries',
+  'startAt',
   'registrationStatus',
   'public',
   'action',
 ]);
 
-const expanded = ref<string[]>([]);
+function rowActionsFn(camp: Camp): RowAction[] {
+  const status = camp.registrationStatus;
 
-function toggleExpandAll() {
-  expanded.value =
-    expanded.value.length === 0 ? rows.value.map((camp) => camp.id) : [];
+  return [
+    {
+      key: 'form',
+      label: t('action.form'),
+      icon: 'app_registration',
+      handler: () => showCampForm(camp),
+    },
+    {
+      key: 'results',
+      label: t('action.results'),
+      icon: 'open_in_new',
+      handler: () => showCampResults(camp),
+    },
+    camp.public
+      ? {
+          key: 'unpublish',
+          label: t('action.unpublish'),
+          icon: 'unpublished',
+          color: 'warning',
+          separatorBefore: true,
+          handler: () => onUnpublishCamp(camp),
+        }
+      : {
+          key: 'publish',
+          label: t('action.publish'),
+          icon: 'publish',
+          separatorBefore: true,
+          handler: () => onPublishCamp(camp),
+        },
+    status === 'open'
+      ? {
+          key: 'deactivate',
+          label: t('action.deactivate'),
+          icon: 'toggle_off',
+          color: 'warning',
+          handler: () => onDeactivateCamp(camp),
+        }
+      : {
+          key: 'activate',
+          label: t('action.activate'),
+          icon: 'toggle_on',
+          handler: () => onActivateCamp(camp),
+        },
+    {
+      key: 'delete',
+      label: t('action.delete'),
+      icon: 'delete',
+      color: 'negative',
+      handler: () => onDeleteCamp(camp),
+    },
+  ];
 }
 
-function toggleExpand(id: string) {
-  expanded.value = expanded.value.includes(id)
-    ? expanded.value.filter((i) => i !== id)
-    : [...expanded.value, id];
-}
-
-function getMatchScore(text: string, query: string) {
-  text = text.toLowerCase();
-  query = query.toLowerCase();
-  if (text.includes(query)) {
-    return query.length / text.length;
+function statusColor(status: CampRegistrationStatus): string {
+  switch (status) {
+    case 'open':
+      return 'positive';
+    case 'upcoming':
+      return 'info';
+    case 'closed':
+      return 'grey-7';
   }
-
-  return 0;
 }
 
 function formatDateTime(dateTime: string): string {
@@ -527,17 +408,6 @@ function formatDateTime(dateTime: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(dateTime));
-}
-
-function editCamp(camp: Camp) {
-  const routeData = router.resolve({
-    name: 'management.camp.settings.edit',
-    params: {
-      campId: camp.id,
-    },
-  });
-
-  window.open(routeData.href, '_blank');
 }
 
 function showCampForm(camp: Camp) {
@@ -579,23 +449,6 @@ function onDeleteCamp(camp: Camp) {
     .onOk(() => {
       void deleteCamp(camp.id);
     });
-}
-
-function registrationStatus(camp: Camp): 'open' | 'not_open' | 'closed' {
-  if (!camp.registrationOpensAt && !camp.registrationClosesAt) {
-    return 'closed';
-  }
-
-  const now = new Date();
-  if (camp.registrationOpensAt && now < new Date(camp.registrationOpensAt)) {
-    return 'not_open';
-  }
-
-  if (camp.registrationClosesAt && now > new Date(camp.registrationClosesAt)) {
-    return 'closed';
-  }
-
-  return 'open';
 }
 
 function onActivateCamp(camp: Camp) {
@@ -696,41 +549,37 @@ function onUnpublishCamp(camp: Camp) {
 }
 
 async function updateCamp(id: string, data: CampUpdateData) {
-  const camp = await withProgressNotification('update', () =>
-    api.updateCamp(id, data),
-  );
-
-  // Update data
-  if (!camps.value) {
-    return camp;
-  }
-
-  const index = camps.value.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return camp;
-  }
-
-  camps.value.splice(index, 1, camp);
+  await withProgressNotification('update', () => api.updateCamp(id, data));
+  reload();
 }
 
 async function deleteCamp(id: string) {
   await withProgressNotification('delete', () => api.deleteCamp(id));
-
-  // Update data
-  if (!camps.value) {
-    return;
-  }
-
-  const index = camps.value.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return;
-  }
-
-  camps.value.splice(index, 1);
+  reload();
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.admin-page {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+}
+
+.admin-table {
+  // Let the table fill the remaining height and scroll internally instead of
+  // growing the page (min-height:0 lets the flex child shrink below content).
+  min-height: 0;
+  background: var(--md3-surface);
+
+  :deep(thead tr th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--md3-surface-container-low);
+  }
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Camps'
@@ -739,7 +588,6 @@ action:
   activate: 'Activate'
   deactivate: 'Deactivate'
   delete: 'Delete'
-  edit: 'Edit'
   form: 'Form'
   publish: 'Publish'
   results: 'Results'
@@ -788,15 +636,12 @@ dialog:
     ok: 'Unpublish'
     cancel: 'Cancel'
 
-filter:
-  search: 'Search'
-
 header:
   columns: 'Columns'
 
 value:
   open: 'Open'
-  not_open: 'Not open yet'
+  upcoming: 'Upcoming'
   closed: 'Closed'
   public: 'Public'
   private: 'Private'
@@ -809,7 +654,6 @@ action:
   activate: 'Aktivieren'
   deactivate: 'Deaktivieren'
   delete: 'Löschen'
-  edit: 'Bearbeiten'
   form: 'Formular'
   publish: 'Veröffentlichen'
   results: 'Ergebnisse'
@@ -859,15 +703,12 @@ dialog:
     ok: 'Zurückziehen'
     cancel: 'Abbrechen'
 
-filter:
-  search: 'Suchen'
-
 header:
   columns: 'Spalten'
 
 value:
   open: 'Offen'
-  not_open: 'Noch nicht offen'
+  upcoming: 'Bevorstehend'
   closed: 'Geschlossen'
   public: 'Öffentlich'
   private: 'Privat'
@@ -880,7 +721,6 @@ action:
   activate: 'Activer'
   deactivate: 'Désactiver'
   delete: 'Supprimer'
-  edit: 'Modifier'
   form: 'Formulaire'
   publish: 'Publier'
   results: 'Résultats'
@@ -930,15 +770,12 @@ dialog:
     ok: 'Dépublier'
     cancel: 'Annuler'
 
-filter:
-  search: 'Chercher'
-
 header:
   columns: 'Colonnes'
 
 value:
   open: 'Ouvert'
-  not_open: 'Pas encore ouvert'
+  upcoming: 'À venir'
   closed: 'Fermé'
   public: 'Public'
   private: 'Privé'
@@ -951,7 +788,6 @@ action:
   activate: 'Aktywuj'
   deactivate: 'Dezaktywuj'
   delete: 'Usuń'
-  edit: 'Edytuj'
   form: 'Formularz'
   publish: 'Opublikuj'
   results: 'Wyniki'
@@ -1000,15 +836,12 @@ dialog:
     ok: 'Cofnij'
     cancel: 'Anuluj'
 
-filter:
-  search: 'Szukaj'
-
 header:
   columns: 'Kolumny'
 
 value:
   open: 'Otwarta'
-  not_open: 'Jeszcze nie otwarta'
+  upcoming: 'Nadchodząca'
   closed: 'Zamknięta'
   public: 'Publiczny'
   private: 'Prywatny'
@@ -1021,7 +854,6 @@ action:
   activate: 'Aktivovat'
   deactivate: 'Deaktivovat'
   delete: 'Smazat'
-  edit: 'Upravit'
   form: 'Formulář'
   publish: 'Zveřejnit'
   results: 'Výsledky'
@@ -1070,15 +902,12 @@ dialog:
     ok: 'Zrušit'
     cancel: 'Zrušit'
 
-filter:
-  search: 'Hledat'
-
 header:
   columns: 'Sloupce'
 
 value:
   open: 'Otevřená'
-  not_open: 'Ještě neotevřená'
+  upcoming: 'Nadcházející'
   closed: 'Uzavřená'
   public: 'Veřejný'
   private: 'Soukromý'

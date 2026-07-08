@@ -172,6 +172,8 @@ export const useAuthStore = defineStore('auth', () => {
       return ongoingRefresh;
     }
 
+    isLoading.value = true;
+
     ongoingRefresh = apiService
       .refreshTokens()
       .then(handleTokenRefresh)
@@ -180,6 +182,7 @@ export const useAuthStore = defineStore('auth', () => {
       .finally(() => {
         // allow a new refresh after this one settles
         ongoingRefresh = null;
+        isLoading.value = false;
       });
 
     return ongoingRefresh;
