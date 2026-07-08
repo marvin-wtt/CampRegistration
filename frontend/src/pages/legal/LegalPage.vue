@@ -15,7 +15,7 @@
       />
 
       <div class="text-h4 q-mb-lg">
-        {{ t('title') }}
+        {{ title }}
       </div>
 
       <legal-placeholder v-if="html === null" />
@@ -35,12 +35,17 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRouter } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import type { LegalDocumentType } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalPlaceholder from '@/components/legal/LegalPlaceholder.vue';
 import { useLegalService } from '@/services/LegalService';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useErrorExtractor } from '@/composables/serviceHandler';
+
+const { type } = defineProps<{
+  type: LegalDocumentType;
+}>();
 
 const { t } = useI18n();
 const router = useRouter();
@@ -52,9 +57,13 @@ const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 const html = ref<string | null>(null);
 
+const title = computed(() =>
+  type === 'IMPRINT' ? t('imprint') : t('privacyPolicy'),
+);
+
 onMounted(async () => {
   try {
-    const document = await fetchLegalDocument('IMPRINT');
+    const document = await fetchLegalDocument(type);
     // Content is operator-authored HTML from the rich-text editor, rendered
     // directly (locale resolved via `to`).
     html.value = to(document.content ?? undefined) || null;
@@ -67,8 +76,8 @@ onMounted(async () => {
 
 useMeta(() => {
   return {
-    title: t('title'),
-    titleTemplate: (title) => `${title} | ${t('app_name')}`,
+    title: title.value,
+    titleTemplate: (pageTitle) => `${pageTitle} | ${t('app_name')}`,
   };
 });
 
@@ -96,26 +105,31 @@ function goBack() {
 </style>
 
 <i18n lang="yaml" locale="en">
-title: 'Imprint'
+imprint: 'Imprint'
+privacyPolicy: 'Privacy Policy'
 back: 'Back'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Impressum'
+imprint: 'Impressum'
+privacyPolicy: 'Datenschutzerklärung'
 back: 'Zurück'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Mentions légales'
+imprint: 'Mentions légales'
+privacyPolicy: 'Politique de confidentialité'
 back: 'Retour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Nota prawna'
+imprint: 'Nota prawna'
+privacyPolicy: 'Polityka prywatności'
 back: 'Wstecz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Tiráž'
+imprint: 'Tiráž'
+privacyPolicy: 'Zásady ochrany osobních údajů'
 back: 'Zpět'
 </i18n>
