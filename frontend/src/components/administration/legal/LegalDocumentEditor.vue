@@ -2,21 +2,12 @@
   <q-card
     flat
     bordered
-    class="legal-document-editor"
   >
     <q-form
+      class="column no-wrap full-height"
       @reset="onReset"
       @submit="onSave"
     >
-      <q-card-section class="row items-center no-wrap q-gutter-sm">
-        <q-icon
-          :name="icon"
-          color="primary"
-          size="20px"
-        />
-        <div class="text-subtitle2 text-weight-bold">{{ title }}</div>
-      </q-card-section>
-
       <!-- One locale at a time: legal documents are long, so all five side by
            side (as a translated input would show them) is unworkable. -->
       <q-tabs
@@ -32,8 +23,6 @@
           v-for="loc in locales"
           :key="loc"
           :name="loc"
-          :alert="hasContent(loc) ? 'primary' : false"
-          alert-icon="circle"
         >
           <div class="row items-center no-wrap q-gutter-xs">
             <country-icon :locale="loc" />
@@ -46,10 +35,11 @@
 
       <q-separator />
 
-      <q-card-section>
+      <q-card-section class="full-height">
         <rich-text-editor
           v-model="activeContent"
           :placeholder="t('placeholder')"
+          class="fit"
         />
       </q-card-section>
 
@@ -86,19 +76,12 @@ import type {
   Translatable,
 } from '@camp-registration/common/entities';
 
-const {
-  type,
-  icon,
-  title,
-  content: initialContent,
-} = defineProps<{
+const { type, content: initialContent } = defineProps<{
   type: LegalDocumentType;
-  icon: string;
-  title: string;
   content: Translatable | null;
 }>();
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { updateLegalDocument } = useLegalService();
 const { withResultNotification } = useServiceNotifications();
 
@@ -134,9 +117,7 @@ function compact(record: Record<string, string>): Record<string, string> {
 }
 
 const saving = ref<boolean>(false);
-const activeLocale = ref<string>(
-  locales.find((loc) => loc === locale.value.split('-')[0]) ?? 'en',
-);
+const activeLocale = ref<string>(locales[0] ?? 'en');
 
 const translations = reactive<Record<string, string>>(toRecord(initialContent));
 const original = ref<string>(JSON.stringify(compact(translations)));
@@ -159,10 +140,6 @@ const activeContent = computed<string>({
     translations[activeLocale.value] = value;
   },
 });
-
-function hasContent(loc: string): boolean {
-  return (translations[loc] ?? '').trim().length > 0;
-}
 
 const isModified = computed<boolean>(() => {
   return JSON.stringify(compact(translations)) !== original.value;
@@ -187,6 +164,10 @@ async function onSave() {
 function onReset() {
   Object.assign(translations, toRecord(initialContent));
 }
+
+// Exposed so the parent can flag unsaved changes on its document-switcher tab —
+// otherwise switching tabs could silently discard an in-progress edit.
+defineExpose({ isModified });
 </script>
 
 <i18n lang="yaml" locale="en">
