@@ -6,7 +6,7 @@ import type {
 } from '#core/base/AppModule';
 import { TaskRouter } from '#app/task/task.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   TaskPermission,
 } from '@camp-registration/common/permissions';
 import { TaskService } from '#app/task/task.service';
@@ -24,7 +24,7 @@ export class TaskModule implements AppModule {
     router.useRouter('/camps/:campId/tasks', resolve(TaskRouter));
   }
 
-  registerPermissions(): RoleToPermissions<ManagerRole, TaskPermission> {
+  registerPermissions(): RoleToPermissions<CampManagerRole, TaskPermission> {
     return {
       DIRECTOR: [
         'camp.tasks.view',

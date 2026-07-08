@@ -7,7 +7,7 @@ import type {
 import type {
   CampPermission,
   FilePermission,
-  ManagerRole,
+  CampManagerRole,
 } from '@camp-registration/common/permissions';
 import { CampRouter } from '#app/camp/camp.routes';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -30,7 +30,7 @@ export class CampModule implements AppModule {
   }
 
   registerPermissions(): RoleToPermissions<
-    ManagerRole,
+    CampManagerRole,
     CampPermission | FilePermission
   > {
     return {

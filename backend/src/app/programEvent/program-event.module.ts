@@ -6,7 +6,7 @@ import type {
 } from '#core/base/AppModule';
 import { ProgramEventRouter } from '#app/programEvent/program-event.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   ProgramEventPermission,
 } from '@camp-registration/common/permissions';
 import { ProgramEventService } from '#app/programEvent/program-event.service';
@@ -28,7 +28,7 @@ export class ProgramEventModule implements AppModule {
   }
 
   registerPermissions(): RoleToPermissions<
-    ManagerRole,
+    CampManagerRole,
     ProgramEventPermission
   > {
     return {

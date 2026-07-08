@@ -303,7 +303,7 @@ interface AccessSection {
 
 const sections = computed<AccessSection[]>(() => {
   const pending = (manager: CampManager) =>
-    manager.status.toLowerCase() === 'pending';
+    manager.status.toLowerCase() === 'PENDING';
 
   return [
     {

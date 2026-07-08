@@ -1,3 +1,2 @@
-export type ManagerRole = 'DIRECTOR' | 'COORDINATOR' | 'COUNSELOR' | 'VIEWER';
-
-export type NewsletterManagerRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export { NewsletterManagerRole } from '../entities/index.js';
+export { CampManagerRole } from '../entities/index.js';
