@@ -109,7 +109,13 @@ onUnmounted(() => {
   stopRegistrationOpenTimer();
 });
 
-watch(() => camp.value?.registrationOpensAt, startRegistrationOpenTimer);
+watch(
+  [
+    () => camp.value?.registrationOpensAt,
+    () => camp.value?.registrationClosesAt,
+  ],
+  ([openAt, closeAt]) => startRegistrationOpenTimer(openAt, closeAt),
+);
 
 useMeta(() => {
   return {
@@ -249,22 +255,33 @@ function updateBgColor(color: string | undefined) {
   bgColor.value = color;
 }
 
-function startRegistrationOpenTimer(opensAt: string | null | undefined) {
-  if (openTimer !== null) {
-    clearTimeout(openTimer);
-    openTimer = null;
-  }
+function startRegistrationOpenTimer(
+  opensAt: string | null | undefined,
+  closesAt: string | null | undefined,
+) {
+  stopRegistrationOpenTimer();
 
-  if (!opensAt) {
+  const offset = 1000;
+
+  for (const timestamp of [opensAt, closesAt]) {
+    if (!timestamp) {
+      continue;
+    }
+
+    const delay = new Date(timestamp).getTime() - Date.now();
+    // Use negative offset to avoid data race between the status and the timestamp
+    if (delay < -offset) {
+      continue;
+    }
+
+    openTimer = setTimeout(
+      () => {
+        void loadCamp();
+      },
+      Math.max(delay, 0) + offset,
+    );
+
     return;
-  }
-
-  const delay = new Date(opensAt).getTime() - Date.now();
-  if (delay > 0) {
-    const offset = 1000;
-    openTimer = setTimeout(() => {
-      void loadCamp();
-    }, delay + offset);
   }
 }
 
