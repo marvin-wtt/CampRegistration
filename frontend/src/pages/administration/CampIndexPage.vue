@@ -183,15 +183,25 @@ import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import TranslationTd from '@/components/administration/camps/TranslationTd.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const router = useRouter();
+const routeQuery = useRouteQueryParams();
 const api = useAPIService();
 
-const statusFilter = ref<CampRegistrationStatus | null>(null);
-const publicFilter = ref<boolean | null>(null);
+const statusFilter = ref<CampRegistrationStatus | null>(
+  routeQuery.getEnumQueryParam<CampRegistrationStatus>('status', [
+    'open',
+    'upcoming',
+    'closed',
+  ]),
+);
+const publicFilter = ref<boolean | null>(
+  routeQuery.getBooleanQueryParam('public'),
+);
 
 const {
   tableRef,
