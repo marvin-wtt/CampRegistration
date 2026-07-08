@@ -131,6 +131,12 @@ const model = defineModel<string>({ default: '' });
 const { t } = useI18n();
 const quasar = useQuasar();
 
+// Set right before `onUpdate` assigns `model.value`, and cleared by the
+// `watch(model, ...)` handler it triggers — lets that handler tell an
+// internally-driven change apart from an external one without re-deriving
+// and comparing HTML it just produced itself.
+let isInternalUpdate = false;
+
 const editor = useEditor({
   extensions: [
     StarterKit.configure({
@@ -149,6 +155,7 @@ const editor = useEditor({
   onUpdate: ({ editor }) => {
     // Normalise TipTap's empty document (`<p></p>`) to an empty string so an
     // untouched editor is not treated as content.
+    isInternalUpdate = true;
     model.value = editor.isEmpty ? '' : editor.getHTML();
   },
 });
@@ -156,12 +163,12 @@ const editor = useEditor({
 // Re-sync when the bound value changes externally (e.g. switching locale tabs
 // or the parent reloading the document).
 watch(model, (value) => {
-  if (!editor.value) {
+  if (isInternalUpdate) {
+    isInternalUpdate = false;
     return;
   }
 
-  const current = editor.value.isEmpty ? '' : editor.value.getHTML();
-  if (value === current) {
+  if (!editor.value) {
     return;
   }
 

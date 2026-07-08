@@ -22,9 +22,7 @@ export class LegalService extends BaseService {
   }
 
   async getAllDocuments() {
-    const documents = await this.prisma.legalDocument.findMany({
-      where: { type: { in: ALL_TYPES } },
-    });
+    const documents = await this.prisma.legalDocument.findMany();
 
     return ALL_TYPES.map(
       (type) =>
