@@ -44,20 +44,32 @@
     </m-btn>
 
     <div class="camp-switcher-rail__name ellipsis">
-      {{ campName || t('app_name') }}
+      {{ switcherLabel }}
     </div>
   </div>
 
-  <!-- Bar: full-width tonal button with label + caret -->
+  <!-- Bar: width-constrained toolbar control with a truncating label + caret. -->
   <m-btn
     v-else
     tonal
     no-caps
     no-morph
-    icon-right="arrow_drop_down"
-    :label="campName || t('app_name')"
+    :aria-label="switcherLabel"
     class="camp-switcher"
   >
+    <span class="camp-switcher__label">
+      {{ switcherLabel }}
+    </span>
+    <q-icon
+      name="arrow_drop_down"
+      size="20px"
+      class="camp-switcher__chevron on-right"
+    />
+
+    <q-tooltip>
+      {{ switcherLabel }}
+    </q-tooltip>
+
     <q-menu
       anchor="bottom start"
       self="top start"
@@ -88,9 +100,35 @@ const campDetailStore = useCampDetailsStore();
 const campName = computed<string | undefined>(() => {
   return to(campDetailStore.data?.name);
 });
+
+const switcherLabel = computed<string>(() => {
+  return campName.value || t('app_name');
+});
 </script>
 
 <style scoped>
+.camp-switcher {
+  min-width: 0;
+}
+
+.camp-switcher :deep(.q-btn__content) {
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.camp-switcher__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.camp-switcher__chevron {
+  flex: 0 0 auto;
+  margin-left: 6px;
+}
+
 .camp-switcher-rail__btn {
   min-height: 32px;
   padding: 0 6px;
