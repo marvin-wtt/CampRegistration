@@ -71,7 +71,7 @@ beforeEach(() => {
 describe('CampManagerController.update', () => {
   it('rejects demoting the sole director', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(false);
+    managerService.hasOtherNonExpiringDirector.mockResolvedValue(false);
     const req = fakeRequest({
       models: { camp, campManager: manager },
       validateResult: { body: { role: 'COORDINATOR' } },
@@ -80,7 +80,7 @@ describe('CampManagerController.update', () => {
     await expect(controller.update(req, fakeResponse())).rejects.toThrow(
       ApiError,
     );
-    expect(managerService.hasOtherDirector).toHaveBeenCalledWith(
+    expect(managerService.hasOtherNonExpiringDirector).toHaveBeenCalledWith(
       camp.id,
       manager.id,
     );
@@ -89,7 +89,6 @@ describe('CampManagerController.update', () => {
 
   it('allows demoting a director when another director remains', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(true);
     managerService.hasOtherNonExpiringDirector.mockResolvedValue(true);
     managerService.updateManagerById.mockResolvedValue(
       buildManager({ role: 'COORDINATOR' }),
@@ -109,7 +108,6 @@ describe('CampManagerController.update', () => {
 
   it('rejects adding an expiration to the sole non-expiring director', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(true);
     managerService.hasOtherNonExpiringDirector.mockResolvedValue(false);
     const req = fakeRequest({
       models: { camp, campManager: manager },
@@ -128,7 +126,6 @@ describe('CampManagerController.update', () => {
 
   it('rejects demoting the sole non-expiring director even when another (expiring) director remains', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(true);
     managerService.hasOtherNonExpiringDirector.mockResolvedValue(false);
     const req = fakeRequest({
       models: { camp, campManager: manager },
@@ -143,7 +140,6 @@ describe('CampManagerController.update', () => {
 
   it('allows adding an expiration when another non-expiring director remains', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(true);
     managerService.hasOtherNonExpiringDirector.mockResolvedValue(true);
     managerService.updateManagerById.mockResolvedValue(
       buildManager({ expiresAt: new Date('2030-01-01') }),
@@ -170,7 +166,20 @@ describe('CampManagerController.update', () => {
 
     await controller.update(req, fakeResponse());
 
-    expect(managerService.hasOtherDirector).not.toHaveBeenCalled();
+    expect(managerService.hasOtherNonExpiringDirector).not.toHaveBeenCalled();
+    expect(managerService.updateManagerById).toHaveBeenCalled();
+  });
+
+  it('does not re-check invariants on a no-op update that omits role', async () => {
+    const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
+    managerService.updateManagerById.mockResolvedValue(manager);
+    const req = fakeRequest({
+      models: { camp, campManager: manager },
+      validateResult: { body: { expiresAt: null } },
+    });
+
+    await controller.update(req, fakeResponse());
+
     expect(managerService.hasOtherNonExpiringDirector).not.toHaveBeenCalled();
     expect(managerService.updateManagerById).toHaveBeenCalled();
   });
@@ -179,7 +188,7 @@ describe('CampManagerController.update', () => {
 describe('CampManagerController.destroy', () => {
   it('rejects removing the sole director', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(false);
+    managerService.hasOtherNonExpiringDirector.mockResolvedValue(false);
     const req = fakeRequest({ models: { camp, campManager: manager } });
 
     await expect(controller.destroy(req, fakeResponse())).rejects.toThrow(
@@ -190,7 +199,6 @@ describe('CampManagerController.destroy', () => {
 
   it('rejects removing the sole non-expiring director, even if another (expiring) director remains', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(true);
     managerService.hasOtherNonExpiringDirector.mockResolvedValue(false);
     const req = fakeRequest({ models: { camp, campManager: manager } });
 
@@ -202,7 +210,6 @@ describe('CampManagerController.destroy', () => {
 
   it('allows removing a director when another non-expiring director remains', async () => {
     const manager = buildManager({ role: 'DIRECTOR', expiresAt: null });
-    managerService.hasOtherDirector.mockResolvedValue(true);
     managerService.hasOtherNonExpiringDirector.mockResolvedValue(true);
     const req = fakeRequest({ models: { camp, campManager: manager } });
     const res = fakeResponse();
@@ -225,7 +232,7 @@ describe('CampManagerController.destroy', () => {
 
     await controller.destroy(req, fakeResponse());
 
-    expect(managerService.hasOtherDirector).not.toHaveBeenCalled();
+    expect(managerService.hasOtherNonExpiringDirector).not.toHaveBeenCalled();
     expect(managerService.removeManager).toHaveBeenCalledWith(manager.id);
   });
 });
