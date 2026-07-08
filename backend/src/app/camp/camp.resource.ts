@@ -1,5 +1,5 @@
 import type { Camp } from '#generated/prisma/client.js';
-import {
+import type {
   Camp as CampResourceData,
   CampDetails as CampDetailsResourceData,
   CampRegistrationStatus,
