@@ -34,7 +34,9 @@ export function useObjectTranslation() {
     useScope: 'global',
   });
 
-  function to(value: string | Record<string, string> | undefined): string {
+  function to(
+    value: string | Record<string, string> | undefined | null,
+  ): string {
     if (value == null) {
       return '';
     }

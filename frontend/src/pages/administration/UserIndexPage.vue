@@ -160,13 +160,23 @@ import UserCreateDialog from '@/components/administration/users/UserCreateDialog
 import UserUpdateDialog from '@/components/administration/users/UserUpdateDialog.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
 const api = useAPIService();
+const routeQuery = useRouteQueryParams();
 
-const roleFilter = ref<User['role'] | null>(null);
-const statusFilter = ref<UserStatus | null>(null);
+const roleFilter = ref<User['role'] | null>(
+  routeQuery.getEnumQueryParam<User['role']>('role', ['USER', 'ADMIN']),
+);
+const statusFilter = ref<UserStatus | null>(
+  routeQuery.getEnumQueryParam<UserStatus>('status', [
+    'active',
+    'locked',
+    'unverified',
+  ]),
+);
 
 const {
   tableRef,

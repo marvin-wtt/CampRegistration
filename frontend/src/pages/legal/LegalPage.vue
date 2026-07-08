@@ -35,7 +35,7 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRouter } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { LegalDocumentType } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalPlaceholder from '@/components/legal/LegalPlaceholder.vue';
@@ -43,7 +43,7 @@ import { useLegalService } from '@/services/LegalService';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
-const { type } = defineProps<{
+const props = defineProps<{
   type: LegalDocumentType;
 }>();
 
@@ -57,21 +57,12 @@ const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 const html = ref<string | null>(null);
 
-const title = computed(() =>
-  type === 'IMPRINT' ? t('imprint') : t('privacyPolicy'),
+const title = computed<string>(() =>
+  props.type === 'IMPRINT' ? t('imprint') : t('privacyPolicy'),
 );
 
-onMounted(async () => {
-  try {
-    const document = await fetchLegalDocument(type);
-    // Content is operator-authored HTML from the rich-text editor, rendered
-    // directly (locale resolved via `to`).
-    html.value = to(document.content ?? undefined) || null;
-  } catch (err) {
-    error.value = extractErrorText(err);
-  } finally {
-    loading.value = false;
-  }
+onMounted(() => {
+  void loadDocument(props.type);
 });
 
 useMeta(() => {
@@ -80,6 +71,25 @@ useMeta(() => {
     titleTemplate: (pageTitle) => `${pageTitle} | ${t('app_name')}`,
   };
 });
+
+watch(() => props.type, loadDocument);
+
+async function loadDocument(type: LegalDocumentType) {
+  loading.value = true;
+  error.value = null;
+  html.value = null;
+
+  try {
+    const document = await fetchLegalDocument(type);
+    // Content is operator-authored HTML from the rich-text editor, rendered
+    // directly (locale resolved via `to`).
+    html.value = to(document.content) || null;
+  } catch (err) {
+    error.value = extractErrorText(err);
+  } finally {
+    loading.value = false;
+  }
+}
 
 function goBack() {
   if (window.history.length > 1) {

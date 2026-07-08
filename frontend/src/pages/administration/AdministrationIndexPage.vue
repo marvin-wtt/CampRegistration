@@ -229,16 +229,6 @@ const attention = computed<AttentionItem[]>(() => {
     });
   }
 
-  if (data.users.unverified > 0) {
-    items.push({
-      key: 'unverified',
-      icon: 'mark_email_unread',
-      color: 'warning',
-      label: t('attention.unverified', { count: data.users.unverified }),
-      to: { name: 'administration.users', query: { status: 'unverified' } },
-    });
-  }
-
   if (data.users.locked > 0) {
     items.push({
       key: 'locked',
