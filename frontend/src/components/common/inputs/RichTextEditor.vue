@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="editor"
-    class="rich-text-editor rounded-borders"
+    class="rich-text-editor"
   >
-    <div class="rich-text-editor__toolbar row items-center q-gutter-xs q-pa-xs">
+    <div class="rich-text-editor__toolbar row items-center q-pa-xs">
       <q-btn
         v-for="action in inlineActions"
         :key="action.name"
@@ -227,18 +227,29 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .rich-text-editor {
-  border: 1px solid var(--md3-outline-variant);
+  display: flex;
+  flex-direction: column;
   background: var(--md3-surface);
 }
 
 .rich-text-editor__toolbar {
   background: var(--md3-surface-container-low);
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* The content wrapper (not the ProseMirror element inside it) owns the
+   scroll: it's the flex item bounded by the surrounding layout, so it's
+   the one that can actually shrink instead of pushing the card's action
+   buttons off-screen as the text grows. */
+.rich-text-editor__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .rich-text-editor__content :deep(.ProseMirror) {
   min-height: 200px;
-  max-height: 60vh;
-  overflow-y: auto;
   padding: 16px;
   outline: none;
 }

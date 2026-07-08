@@ -35,13 +35,15 @@
 
       <q-separator />
 
-      <q-card-section class="full-height">
+      <q-card-section class="col q-pa-none legal-document-editor__content">
         <rich-text-editor
           v-model="activeContent"
           :placeholder="t('placeholder')"
           class="fit"
         />
       </q-card-section>
+
+      <q-separator />
 
       <q-card-actions>
         <q-btn
@@ -120,7 +122,12 @@ const saving = ref<boolean>(false);
 const activeLocale = ref<string>(locales[0] ?? 'en');
 
 const translations = reactive<Record<string, string>>(toRecord(initialContent));
-const original = ref<string>(JSON.stringify(compact(translations)));
+
+// The revert target for Reset. Distinct from `initialContent` (the prop):
+// the parent fetches documents once and never refreshes them after a save,
+// so the prop would keep pointing at the pre-save content forever — this
+// tracks the actual last-saved state instead.
+const baseline = reactive<Record<string, string>>(toRecord(initialContent));
 
 // The parent fetches both documents together and passes the result down, so
 // re-sync whenever it resolves or reloads (the prop is `null` until then).
@@ -128,7 +135,7 @@ watch(
   () => initialContent,
   (value) => {
     Object.assign(translations, toRecord(value));
-    original.value = JSON.stringify(compact(translations));
+    Object.assign(baseline, toRecord(value));
   },
 );
 
@@ -142,7 +149,9 @@ const activeContent = computed<string>({
 });
 
 const isModified = computed<boolean>(() => {
-  return JSON.stringify(compact(translations)) !== original.value;
+  return (
+    JSON.stringify(compact(translations)) !== JSON.stringify(compact(baseline))
+  );
 });
 
 async function onSave() {
@@ -155,20 +164,30 @@ async function onSave() {
       updateLegalDocument(type, payload),
     );
     Object.assign(translations, toRecord(document.content));
-    original.value = JSON.stringify(compact(translations));
+    Object.assign(baseline, toRecord(document.content));
   } finally {
     saving.value = false;
   }
 }
 
 function onReset() {
-  Object.assign(translations, toRecord(initialContent));
+  Object.assign(translations, baseline);
 }
 
 // Exposed so the parent can flag unsaved changes on its document-switcher tab —
 // otherwise switching tabs could silently discard an in-progress edit.
 defineExpose({ isModified });
 </script>
+
+<style scoped>
+/* A flex item of the card's column layout: min-height:0 lets it shrink
+   below the editor's content size instead of pushing q-card-actions off
+   the bottom, so the rich-text-editor scrolls internally instead. */
+.legal-document-editor__content {
+  min-height: 0;
+  overflow: hidden;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 placeholder: 'Write the content shown to visitors on this page…'

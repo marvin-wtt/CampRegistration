@@ -44,6 +44,7 @@
           <q-tab-panels
             v-model="tab"
             animated
+            keep-alive
             class="col bg-transparent legal-panels"
           >
             <q-tab-panel
