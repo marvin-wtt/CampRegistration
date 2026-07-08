@@ -8,6 +8,7 @@ export type FilePermission =
 
 export type RegistrationPermission =
   | 'camp.registrations.view'
+  | 'camp.registrations.create'
   | 'camp.registrations.edit'
   | 'camp.registrations.delete';
 

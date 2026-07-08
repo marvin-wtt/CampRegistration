@@ -86,7 +86,7 @@ export class CampService extends BaseService {
 
   /**
    * Build the registration-status filter as date conditions on the
-   * registration window, mirroring the client-side status derivation.
+   * registration window, mirroring the shared status derivation.
    */
   private campStatusWhere(
     status: CampRegistrationStatusFilter,
@@ -94,12 +94,23 @@ export class CampService extends BaseService {
   ): Prisma.CampWhereInput {
     switch (status) {
       case 'upcoming':
-        return { registrationOpensAt: { gt: now } };
+        return {
+          AND: [
+            { registrationOpensAt: { gt: now } },
+            // Check for invariant where close is before open
+            {
+              OR: [
+                { registrationClosesAt: null },
+                { registrationClosesAt: { gt: now } },
+              ],
+            },
+          ],
+        };
       case 'closed':
         return {
           OR: [
             { registrationOpensAt: null, registrationClosesAt: null },
-            { registrationClosesAt: { lt: now } },
+            { registrationClosesAt: { lte: now } },
           ],
         };
       case 'open':
@@ -120,7 +131,7 @@ export class CampService extends BaseService {
             {
               OR: [
                 { registrationClosesAt: null },
-                { registrationClosesAt: { gte: now } },
+                { registrationClosesAt: { gt: now } },
               ],
             },
           ],

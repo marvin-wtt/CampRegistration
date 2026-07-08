@@ -344,6 +344,37 @@ describe('/api/v1/camps/:campId/registrations', () => {
       expect(body).toHaveProperty('data.updatedAt');
     });
 
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 201 },
+      { role: 'COORDINATOR', expectedStatus: 201 },
+      { role: 'COUNSELOR', expectedStatus: 201 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code for manager override when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, accessToken } = await createCampWithManagerAndToken(
+          {
+            ...campPublic,
+            registrationClosesAt: moment().subtract(1, 'day').toDate(),
+          },
+          role,
+        );
+
+        const data = {
+          data: {
+            first_name: 'Jhon',
+            last_name: 'Doe',
+          },
+        };
+
+        await request()
+          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
     it('set the registration status to pending without auto-accept', async () => {
       const camp = await CampFactory.create({
         ...campPublic,
