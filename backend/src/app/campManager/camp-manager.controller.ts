@@ -85,10 +85,13 @@ export class CampManagerController extends BaseController {
     } = await req.validate(validator.update);
 
     // Verify the camp has another non-expiring director available.
+    const nextRole = role ?? manager.role;
+    const nextExpiresAt =
+      expiresAt === undefined ? manager.expiresAt : expiresAt;
     if (
       manager.role === 'DIRECTOR' &&
       manager.expiresAt === null &&
-      (role !== 'DIRECTOR' || expiresAt != null)
+      (nextRole !== 'DIRECTOR' || nextExpiresAt !== null)
     ) {
       await this.checkDirectorConstraints(camp.id, manager.id);
     }
