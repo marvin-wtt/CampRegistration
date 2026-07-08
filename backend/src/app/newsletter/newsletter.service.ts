@@ -8,12 +8,6 @@ export class NewsletterService extends BaseService {
     return this.prisma.newsletter.findUnique({ where: { id } });
   }
 
-  async getAllNewsletters() {
-    return this.prisma.newsletter.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
   async queryNewsletters(
     filter: { name?: string } = {},
     options: {
