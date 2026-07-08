@@ -28,12 +28,14 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'imprint',
         name: 'imprint',
-        component: () => import('@/pages/legal/ImprintPage.vue'),
+        component: () => import('@/pages/legal/LegalPage.vue'),
+        props: { type: 'IMPRINT' },
       },
       {
         path: 'privacy-policy',
         name: 'privacy-policy',
-        component: () => import('@/pages/legal/PrivacyPolicyPage.vue'),
+        component: () => import('@/pages/legal/LegalPage.vue'),
+        props: { type: 'PRIVACY_POLICY' },
       },
     ],
   },
@@ -286,6 +288,11 @@ const routes: RouteRecordRaw[] = [
         path: 'queues',
         name: 'administration.queues',
         component: () => import('@/pages/administration/QueueIndexPage.vue'),
+      },
+      {
+        path: 'legal',
+        name: 'administration.legal',
+        component: () => import('@/pages/administration/LegalSettingsPage.vue'),
       },
     ],
   },

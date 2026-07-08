@@ -168,7 +168,7 @@ const data = reactive<
 
 const assigneeOptions = computed<QSelectOption[]>(() => {
   return props.managers
-    .filter((manager) => manager.status.toLowerCase() !== 'PENDING')
+    .filter((manager) => manager.status.toUpperCase() !== 'PENDING')
     .map((manager) => ({
       label: manager.name ?? manager.email,
       value: manager.id,

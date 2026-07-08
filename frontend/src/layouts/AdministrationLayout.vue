@@ -56,6 +56,12 @@ const items = computed<NavigationItemProps[]>(() => [
     icon: 'queue',
     to: { name: 'administration.queues' },
   },
+  {
+    name: 'legal',
+    label: t('legal'),
+    icon: 'gavel',
+    to: { name: 'administration.legal' },
+  },
 ]);
 </script>
 
@@ -67,6 +73,7 @@ newsletters: 'Newsletters'
 queues: 'Queues'
 users: 'Users'
 settings: 'Settings'
+legal: 'Legal Content'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -77,6 +84,7 @@ newsletters: 'Newsletter'
 queues: 'Warteschlangen'
 users: 'Benutzer'
 settings: 'Einstellungen'
+legal: 'Rechtliche Inhalte'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -87,6 +95,7 @@ newsletters: 'Newsletters'
 queues: "Files d'attente"
 users: 'Utilisateurs'
 settings: 'Paramètres'
+legal: 'Contenu légal'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -97,6 +106,7 @@ newsletters: 'Newslettery'
 queues: 'Kolejki'
 users: 'Użytkownicy'
 settings: 'Ustawienia'
+legal: 'Treści prawne'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -107,6 +117,7 @@ newsletters: 'Newslettery'
 queues: 'Fronty'
 users: 'Uživatelé'
 settings: 'Nastavení'
+legal: 'Právní obsah'
 </i18n>
 
 <style scoped></style>

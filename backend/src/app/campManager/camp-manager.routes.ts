@@ -49,7 +49,7 @@ export class CampManagerRouter extends ModuleRouter {
     );
     this.router.delete(
       '/:campManagerId',
-      guard(or(campManager('camp.managers.delete'), campManagerSelf)),
+      guard(or(campManagerSelf, campManager('camp.managers.delete'))),
       controller(managerController, 'destroy'),
     );
   }

@@ -445,3 +445,18 @@ model Task {
   @@index([assigneeId], map: "tasks_assignee_id_foreign")
   @@map("tasks")
 }
+
+enum LegalDocumentType {
+  IMPRINT
+  PRIVACY_POLICY
+}
+
+model LegalDocument {
+  id   String            @id @unique(map: "legal_documents_id_unique") @default(ulid()) @db.Char(26)
+  type LegalDocumentType @unique(map: "legal_documents_type_unique")
+  /// ![string | Record<string, string>]
+  content   Json?     @db.Json
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("legal_documents")
+}

@@ -8,6 +8,7 @@ export * from './Bed.js';
 export * from './Camp.js';
 export * from './CampManager.js';
 export * from './Expense.js';
+export * from './LegalDocument.js';
 export * from './Profile.js';
 export * from './ProgramEvent.js';
 export * from './Registration.js';

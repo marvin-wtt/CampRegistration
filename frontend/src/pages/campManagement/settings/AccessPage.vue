@@ -303,7 +303,7 @@ interface AccessSection {
 
 const sections = computed<AccessSection[]>(() => {
   const pending = (manager: CampManager) =>
-    manager.status.toLowerCase() === 'PENDING';
+    manager.status.toUpperCase() === 'PENDING';
 
   return [
     {
@@ -360,11 +360,14 @@ function canManage(manager: CampManager): boolean {
 }
 
 function isSoleDirector(manager: CampManager): boolean {
-  if (manager.role !== 'DIRECTOR') {
+  if (manager.role !== 'DIRECTOR' || manager.expiresAt != null) {
     return false;
   }
 
-  return rows.value.filter((m) => m.role === 'DIRECTOR').length <= 1;
+  return (
+    rows.value.filter((m) => m.role === 'DIRECTOR' && m.expiresAt === null)
+      .length <= 1
+  );
 }
 
 function canLeave(manager: CampManager): boolean {
