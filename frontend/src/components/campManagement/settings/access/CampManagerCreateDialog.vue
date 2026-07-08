@@ -81,7 +81,10 @@ import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
-import type { CampManagerCreateData } from '@camp-registration/common/entities';
+import type {
+  CampManagerCreateData,
+  CampManagerRole,
+} from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -89,13 +92,13 @@ const { t } = useI18n();
 
 const { date, roles } = defineProps<{
   date: string;
-  roles: QSelectOption[];
+  roles: QSelectOption<CampManagerRole>[];
 }>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref<string>('');
 const expiresAt = ref<string | null>(null);
-const role = ref<string>('');
+const role = ref<CampManagerRole>('COUNSELOR');
 
 function onInvite() {
   const data: CampManagerCreateData = {

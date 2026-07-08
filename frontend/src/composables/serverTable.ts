@@ -148,7 +148,7 @@ export function useServerTable<TRow, TQuery>(
   }
 
   function onVirtualScroll(details: VirtualScrollDetails): void {
-    if (details.to === rows.value.length - 1) {
+    if (details.to >= rows.value.length - 1) {
       loadMore(details.ref as unknown as VirtualScrollRef);
     }
   }
