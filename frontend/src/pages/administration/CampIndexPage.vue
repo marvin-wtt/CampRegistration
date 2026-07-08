@@ -178,7 +178,7 @@ import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import TranslationTd from '@/components/administration/camps/TranslationTd.vue';
@@ -187,15 +187,10 @@ import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const quasar = useQuasar();
-const route = useRoute();
 const router = useRouter();
 const api = useAPIService();
 
-const statusFilter = ref<CampRegistrationStatus | null>(
-  typeof route.query.status === 'string'
-    ? (route.query.status as CampRegistrationStatus)
-    : null,
-);
+const statusFilter = ref<CampRegistrationStatus | null>(null);
 const publicFilter = ref<boolean | null>(null);
 
 const {

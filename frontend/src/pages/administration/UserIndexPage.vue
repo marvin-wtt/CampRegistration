@@ -154,7 +154,6 @@ import RowActions, {
 } from '@/components/administration/RowActions.vue';
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
-import { useRoute } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from '@/components/administration/users/UserCreateDialog.vue';
@@ -164,15 +163,10 @@ import { useServerTable } from '@/composables/serverTable';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
-const route = useRoute();
 const api = useAPIService();
 
 const roleFilter = ref<User['role'] | null>(null);
-const statusFilter = ref<UserStatus | null>(
-  typeof route.query.status === 'string'
-    ? (route.query.status as UserStatus)
-    : null,
-);
+const statusFilter = ref<UserStatus | null>(null);
 
 const {
   tableRef,

@@ -20,7 +20,7 @@ export function useUserService() {
     const response = await api.get('users/', { params: query });
 
     return {
-      data: response?.data?.data,
+      data: response?.data?.data ?? [],
       meta: response?.data?.meta,
     };
   }

@@ -26,7 +26,7 @@ export function useCampService() {
     });
 
     return {
-      data: response?.data?.data,
+      data: response?.data?.data ?? [],
       meta: response?.data?.meta,
     };
   }

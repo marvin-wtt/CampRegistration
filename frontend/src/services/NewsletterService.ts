@@ -20,7 +20,7 @@ export function useNewsletterService() {
   ): Promise<CursorPaginated<Newsletter>> {
     const response = await api.get('newsletters/', { params });
     return {
-      data: response?.data?.data,
+      data: response?.data?.data ?? [],
       meta: response?.data?.meta,
     };
   }
