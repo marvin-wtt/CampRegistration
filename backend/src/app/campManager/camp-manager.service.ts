@@ -107,22 +107,6 @@ export class CampManagerService extends BaseService {
   }
 
   /**
-   * Whether the camp has a DIRECTOR other than `excludeManagerId`. Used to
-   * guard against ever leaving a camp without a director.
-   */
-  async hasOtherDirector(campId: string, excludeManagerId: string) {
-    return this.prisma.campManager
-      .findFirst({
-        where: {
-          campId,
-          role: 'DIRECTOR',
-          id: { not: excludeManagerId },
-        },
-      })
-      .then((value) => value !== null);
-  }
-
-  /**
    * Whether the camp has a non-expiring DIRECTOR other than
    * `excludeManagerId`. Used to guard against ever leaving a camp where every
    * director's access can lapse.
