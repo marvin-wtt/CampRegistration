@@ -2,7 +2,7 @@ import type { Camp, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
@@ -145,9 +145,14 @@ export class CampService extends BaseService {
    * without needing per-locale JSON paths.
    */
   private async campIdsMatchingName(name: string): Promise<string[]> {
+    const escaped = name
+      .replace(/\\/g, '\\\\')
+      .replace(/%/g, '\\%')
+      .replace(/_/g, '\\_');
+
     const rows = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM camps
-      WHERE LOWER(CAST(name AS CHAR)) LIKE CONCAT('%', LOWER(${name}), '%')
+      WHERE JSON_SEARCH(name, 'one', ${`%${escaped}%`}) IS NOT NULL
     `;
 
     return rows.map((row) => row.id);
