@@ -27,6 +27,7 @@ import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { RealtimeModule } from '#app/realtime/realtime.module';
+import { AdminModule } from '#app/admin/admin.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createModules = (): AppModule[] => [
@@ -41,6 +42,7 @@ export const createModules = (): AppModule[] => [
   new FileModule(),
   new CampModule(),
   new UserModule(),
+  new AdminModule(),
   new LegalModule(),
   new RegistrationModule(),
   new TableTemplateModule(),

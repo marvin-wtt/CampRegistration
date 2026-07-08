@@ -292,14 +292,7 @@ const capacity = computed<Capacity | null>(() => {
 });
 
 const registrationOpen = computed<boolean>(() => {
-  if (!camp.registrationOpensAt && !camp.registrationClosesAt) {
-    return false;
-  }
-  const now = new Date();
-  return (
-    (!camp.registrationOpensAt || now >= new Date(camp.registrationOpensAt)) &&
-    (!camp.registrationClosesAt || now <= new Date(camp.registrationClosesAt))
-  );
+  return camp.registrationStatus === 'open';
 });
 
 function shortDate(value: string): string {
@@ -316,7 +309,7 @@ interface Status {
 }
 
 const status = computed<Status>(() => {
-  if (registrationOpen.value) {
+  if (camp.registrationStatus === 'open') {
     if (camp.registrationClosesAt) {
       return {
         kind: 'closes',
@@ -329,10 +322,7 @@ const status = computed<Status>(() => {
     return { kind: 'open', icon: 'check_circle', label: t('status.open') };
   }
 
-  if (
-    camp.registrationOpensAt &&
-    new Date(camp.registrationOpensAt) > new Date()
-  ) {
+  if (camp.registrationStatus === 'upcoming' && camp.registrationOpensAt) {
     return {
       kind: 'opens',
       icon: 'upcoming',

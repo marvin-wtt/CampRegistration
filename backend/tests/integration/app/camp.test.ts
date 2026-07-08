@@ -11,6 +11,7 @@ import {
   MessageTemplateFactory,
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
+import { campRegistrationStatus } from '#app/camp/camp.resource';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -95,6 +96,10 @@ const assertCampResponseBody = (
     price: data.price,
     location: data.location,
     freePlaces: data.maxParticipants,
+    registrationStatus: campRegistrationStatus(
+      data.registrationOpensAt ?? null,
+      data.registrationClosesAt ?? null,
+    ),
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
   });
@@ -382,6 +387,10 @@ describe('/api/v1/camps', () => {
         form: camp.form,
         themes: camp.themes,
         freePlaces: expect.anything(),
+        registrationStatus: campRegistrationStatus(
+          camp.registrationOpensAt,
+          camp.registrationClosesAt,
+        ),
       });
     });
 

@@ -69,6 +69,7 @@ const createCamp = (
   price: 50,
   location: 'Test Location',
   freePlaces: 10,
+  registrationStatus: 'closed' as const,
   form: {} as CampDetails['form'],
   themes: {},
   ...overrides,

@@ -1,247 +1,219 @@
 <template>
   <page-state-handler :error>
-    <q-table
-      v-model:pagination="pagination"
-      :title="t('title')"
-      :loading
-      :rows
-      :columns
-      :rows-per-page-options="[0]"
-      virtual-scroll
-      row-key="id"
-      class="absolute fit"
-    >
-      <template #top-right>
-        <div class="row no-wrap q-gutter-x-md">
-          <!-- Search -->
-          <q-input
-            v-model="filterQuery"
-            :placeholder="t('filter.search')"
-            debounce="300"
-            outlined
-            rounded
-            dense
-          >
-            <template #append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-
-          <q-btn
-            v-if="quasar.screen.gt.xs"
-            :label="t('header.create')"
-            icon="add"
-            color="primary"
-            rounded
-            @click="onAddUser()"
-          />
-          <q-btn
-            v-else
-            icon="add"
-            color="primary"
-            round
-            @click="onAddUser()"
-          />
-        </div>
-      </template>
-
-      <template #body-cell-email="props">
-        <q-td :props="props">
-          <a
-            :href="'mailto:' + props.value"
-            style="text-decoration: none; color: inherit"
-          >
-            {{ props.value }}
-          </a>
-        </q-td>
-      </template>
-
-      <template #body-cell-status="props">
-        <q-td :props="props">
-          {{ getUserStatus(props.row) }}
-        </q-td>
-      </template>
-
-      <template #body-cell-lastSeen="props">
-        <q-td :props="props">
-          {{ props.value ? formatDateTime(props.value) : t('lastSeen.never') }}
-        </q-td>
-      </template>
-
-      <template #body-cell-createdAt="props">
-        <q-td :props="props">
-          {{ formatDateTime(props.value) }}
-        </q-td>
-      </template>
-
-      <template #body-cell-action="props">
-        <q-td
-          :props="props"
-          auto-width
-        >
-          <div
-            v-if="quasar.screen.gt.md"
-            class="q-gt-md row no-wrap q-gutter-x-md justify-center"
-          >
-            <q-btn
-              v-if="!props.row.locked"
-              icon="lock"
-              round
-              flat
-              size="sm"
-              @click="onLockUser(props.row)"
-            >
-              <q-tooltip>{{ t('action.lock') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              v-else
-              icon="lock_open"
-              round
-              flat
-              size="sm"
-              @click="onUnlockUser(props.row)"
-            >
-              <q-tooltip>{{ t('action.unlock') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="edit"
-              round
-              flat
-              size="sm"
-              @click="onEditUser(props.row)"
-            >
-              <q-tooltip>{{ t('action.edit') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="delete"
-              color="negative"
-              round
-              flat
-              size="sm"
-              @click="onDeleteUser(props.row)"
-            >
-              <q-tooltip>{{ t('action.delete') }}</q-tooltip>
-            </q-btn>
+    <div class="admin-page column no-wrap fit">
+      <admin-list-toolbar
+        v-model:search="search"
+        :title="t('title')"
+        :total="total"
+        :loading
+        @refresh="reload"
+      >
+        <template #filters>
+          <div class="col-6 col-sm-auto">
+            <q-select
+              v-model="roleFilter"
+              :options="roleOptions"
+              :label="t('column.role')"
+              dense
+              outlined
+              rounded
+              clearable
+              emit-value
+              map-options
+              options-dense
+              style="min-width: 130px"
+            />
           </div>
+          <div class="col-6 col-sm-auto">
+            <q-select
+              v-model="statusFilter"
+              :options="statusOptions"
+              :label="t('column.status')"
+              dense
+              outlined
+              rounded
+              clearable
+              emit-value
+              map-options
+              options-dense
+              style="min-width: 130px"
+            />
+          </div>
+        </template>
 
-          <q-btn
-            v-else
-            icon="more_vert"
-            size="sm"
-            round
-            flat
+        <template #actions>
+          <m-btn
+            :label="quasar.screen.gt.xs ? t('header.create') : undefined"
+            :round="!quasar.screen.gt.xs"
+            icon="add"
+            color="primary"
+            @click="onAddUser()"
+          />
+        </template>
+      </admin-list-toolbar>
+
+      <q-table
+        ref="tableRef"
+        v-model:pagination="pagination"
+        :loading
+        :rows
+        :columns
+        :sort-method="identitySort"
+        :rows-per-page-options="[0]"
+        virtual-scroll
+        :virtual-scroll-item-size="48"
+        :virtual-scroll-sticky-size-start="48"
+        hide-bottom
+        row-key="id"
+        flat
+        bordered
+        binary-state-sort
+        class="admin-table col rounded-borders"
+        @virtual-scroll="onVirtualScroll"
+      >
+        <template #body-cell-email="props">
+          <q-td :props="props">
+            <a
+              :href="'mailto:' + props.value"
+              class="email-link"
+            >
+              {{ props.value }}
+            </a>
+          </q-td>
+        </template>
+
+        <template #body-cell-role="props">
+          <q-td :props="props">
+            <q-chip
+              :color="props.value === 'ADMIN' ? 'primary' : 'grey-4'"
+              :text-color="props.value === 'ADMIN' ? 'white' : 'grey-9'"
+              dense
+              square
+              class="q-ml-none"
+            >
+              {{ props.value }}
+            </q-chip>
+          </q-td>
+        </template>
+
+        <template #body-cell-status="props">
+          <q-td :props="props">
+            <q-chip
+              :color="statusColor(props.row)"
+              text-color="white"
+              dense
+              square
+              class="q-ml-none"
+            >
+              {{ getUserStatus(props.row) }}
+            </q-chip>
+          </q-td>
+        </template>
+
+        <template #body-cell-lastSeen="props">
+          <q-td :props="props">
+            {{
+              props.value ? formatDateTime(props.value) : t('lastSeen.never')
+            }}
+          </q-td>
+        </template>
+
+        <template #body-cell-createdAt="props">
+          <q-td :props="props">
+            {{ formatDateTime(props.value) }}
+          </q-td>
+        </template>
+
+        <template #body-cell-action="props">
+          <q-td
+            :props="props"
+            auto-width
           >
-            <q-menu>
-              <q-list style="min-width: 100px">
-                <q-item
-                  v-if="!props.row.locked"
-                  v-close-popup
-                  clickable
-                  @click="onLockUser(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.lock') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-else
-                  v-close-popup
-                  clickable
-                  @click="onUnlockUser(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.unlock') }}
-                  </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item
-                  v-close-popup
-                  clickable
-                  @click="onEditUser(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.edit') }}
-                  </q-item-section>
-                </q-item>
-                <q-item
-                  v-close-popup
-                  clickable
-                  class="text-negative"
-                  @click="onDeleteUser(props.row)"
-                >
-                  <q-item-section>
-                    {{ t('action.delete') }}
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-        </q-td>
-      </template>
-    </q-table>
+            <row-actions :actions="rowActionsFn(props.row)" />
+          </q-td>
+        </template>
+      </q-table>
+    </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { type QTableColumn, type QTableProps } from 'quasar';
+import { type QTableColumn } from 'quasar';
 import type {
   User,
   UserUpdateData,
   UserCreateData,
+  UserQuery,
+  UserStatus,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import AdminListToolbar from '@/components/administration/AdminListToolbar.vue';
+import RowActions, {
+  type RowAction,
+} from '@/components/administration/RowActions.vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
+import { useRoute } from 'vue-router';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import UserCreateDialog from '@/components/administration/users/UserCreateDialog.vue';
 import UserUpdateDialog from '@/components/administration/users/UserUpdateDialog.vue';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useServerTable } from '@/composables/serverTable';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
+const route = useRoute();
 const api = useAPIService();
-const {
-  data: users,
-  error,
-  isLoading: loading,
-  forceFetch,
-  withProgressNotification,
-} = useServiceHandler<User[]>('user');
 
-const filterQuery = ref<string>('');
-const pagination = ref<QTableProps['pagination']>({
-  rowsPerPage: 0,
+const roleFilter = ref<User['role'] | null>(null);
+const statusFilter = ref<UserStatus | null>(
+  typeof route.query.status === 'string'
+    ? (route.query.status as UserStatus)
+    : null,
+);
+
+const {
+  tableRef,
+  rows,
+  search,
+  loading,
+  error,
+  total,
+  pagination,
+  onVirtualScroll,
+  identitySort,
+  reload,
+  withProgressNotification,
+} = useServerTable<User, UserQuery>({
+  storeName: 'user',
   sortBy: 'lastSeen',
   descending: true,
+  watchSources: [roleFilter, statusFilter],
+  fetch: (query) => api.fetchUsersPaginated(query),
+  buildQuery: ({ cursor, limit, sortBy, sortType, search }) =>
+    ({
+      cursor,
+      limit,
+      sortBy,
+      sortType,
+      search: search || undefined,
+      role: roleFilter.value ?? undefined,
+      status: statusFilter.value ?? undefined,
+    }) as UserQuery,
 });
 
-onMounted(async () => {
-  await forceFetch(() => api.fetchUsers());
-});
+const roleOptions = [
+  { label: 'ADMIN', value: 'ADMIN' },
+  { label: 'USER', value: 'USER' },
+];
 
-const rows = computed<User[]>(() => {
-  if (!users.value) {
-    return [];
-  }
-
-  if (!filterQuery.value) {
-    return users.value;
-  }
-
-  return users.value
-    .map((user) => {
-      const nameScore = getMatchScore(user.name, filterQuery.value);
-      const emailScore = getMatchScore(user.email, filterQuery.value);
-      return {
-        ...user,
-        score: Math.max(nameScore, emailScore),
-      };
-    })
-    .filter((user) => user.score > 0)
-    .sort((a, b) => b.score - a.score);
-});
+const statusOptions = computed(() => [
+  { label: t('status.active'), value: 'active' },
+  { label: t('status.locked'), value: 'locked' },
+  { label: t('status.unverified'), value: 'unverified' },
+]);
 
 const columns = computed<QTableColumn<User>[]>(() => [
   {
@@ -293,14 +265,36 @@ const columns = computed<QTableColumn<User>[]>(() => [
   },
 ]);
 
-function getMatchScore(text: string, query: string) {
-  text = text.toLowerCase();
-  query = query.toLowerCase();
-  if (text.includes(query)) {
-    return query.length / text.length;
-  }
-
-  return 0;
+function rowActionsFn(user: User): RowAction[] {
+  return [
+    user.locked
+      ? {
+          key: 'unlock',
+          label: t('action.unlock'),
+          icon: 'lock_open',
+          handler: () => onUnlockUser(user),
+        }
+      : {
+          key: 'lock',
+          label: t('action.lock'),
+          icon: 'lock',
+          handler: () => onLockUser(user),
+        },
+    {
+      key: 'edit',
+      label: t('action.edit'),
+      icon: 'edit',
+      handler: () => onEditUser(user),
+    },
+    {
+      key: 'delete',
+      label: t('action.delete'),
+      icon: 'delete',
+      color: 'negative',
+      separatorBefore: true,
+      handler: () => onDeleteUser(user),
+    },
+  ];
 }
 
 function getUserStatus(user: User): string {
@@ -313,6 +307,18 @@ function getUserStatus(user: User): string {
   }
 
   return t('status.active');
+}
+
+function statusColor(user: User): string {
+  if (user.locked) {
+    return 'negative';
+  }
+
+  if (!user.emailVerified) {
+    return 'warning';
+  }
+
+  return 'positive';
 }
 
 function formatDateTime(dateTime: string): string {
@@ -414,54 +420,51 @@ function onUnlockUser(user: User) {
 }
 
 async function createUser(data: UserCreateData) {
-  const user = await withProgressNotification('update', () =>
-    api.createUser(data),
-  );
-
-  // Update data
-  if (!users.value) {
-    return user;
-  }
-
-  users.value.push(user);
+  await withProgressNotification('update', () => api.createUser(data));
+  reload();
 }
 
 async function updateUser(id: string, data: UserUpdateData) {
-  const user = await withProgressNotification('update', () =>
-    api.updateUser(id, data),
-  );
-
-  // Update data
-  if (!users.value) {
-    return user;
-  }
-
-  const index = users.value.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return user;
-  }
-
-  users.value.splice(index, 1, user);
+  await withProgressNotification('update', () => api.updateUser(id, data));
+  reload();
 }
 
 async function deleteUser(id: string) {
   await withProgressNotification('delete', () => api.deleteUser(id));
-
-  // Update data
-  if (!users.value) {
-    return;
-  }
-
-  const index = users.value.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return;
-  }
-
-  users.value.splice(index, 1);
+  reload();
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.admin-page {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+}
+
+.admin-table {
+  // Let the table fill the remaining height and scroll internally instead of
+  // growing the page (min-height:0 lets the flex child shrink below content).
+  min-height: 0;
+  background: var(--md3-surface);
+
+  :deep(thead tr th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--md3-surface-container-low);
+  }
+}
+
+.email-link {
+  color: var(--md3-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Users'
@@ -496,9 +499,6 @@ dialog:
     message: 'Are you sure you want to unlock { name }?'
     ok: 'Unlock'
     cancel: 'Cancel'
-
-filter:
-  search: 'Search'
 
 header:
   create: 'Create user'
@@ -546,9 +546,6 @@ dialog:
     ok: 'Entsperren'
     cancel: 'Abbrechen'
 
-filter:
-  search: 'Suchen'
-
 header:
   create: 'Benutzer erstellen'
 
@@ -594,9 +591,6 @@ dialog:
     message: 'Es-tu sûr de vouloir déverrouiller { name } ?'
     ok: 'Déverrouiller'
     cancel: 'Annuler'
-
-filter:
-  search: 'Chercher'
 
 header:
   create: 'Créer un utilisateur'
@@ -644,9 +638,6 @@ dialog:
     ok: 'Odblokuj'
     cancel: 'Anuluj'
 
-filter:
-  search: 'Szukaj'
-
 header:
   create: 'Utwórz użytkownika'
 
@@ -692,9 +683,6 @@ dialog:
     message: 'Opravdu chcete odemknout { name }?'
     ok: 'Odemknout'
     cancel: 'Zrušit'
-
-filter:
-  search: 'Hledat'
 
 header:
   create: 'Vytvořit uživatele'

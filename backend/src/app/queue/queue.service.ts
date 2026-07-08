@@ -24,6 +24,12 @@ export class QueueService extends BaseService {
     );
   }
 
+  async countFailedJobs(): Promise<number> {
+    const queues = await this.listQueues();
+
+    return queues.reduce((sum, queue) => sum + queue.counts.failed, 0);
+  }
+
   async retryFailed(name: string): Promise<void> {
     const queue = this.queueManager.get(name);
     if (!queue) {

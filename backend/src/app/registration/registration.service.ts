@@ -68,6 +68,12 @@ export class RegistrationService extends BaseService {
     });
   }
 
+  async getOverviewCounts() {
+    const total = await this.prisma.registration.count();
+
+    return { total };
+  }
+
   async createRegistration(
     camp: Camp & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,

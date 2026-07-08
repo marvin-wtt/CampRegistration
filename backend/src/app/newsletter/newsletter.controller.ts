@@ -19,10 +19,30 @@ export class NewsletterController extends BaseController {
     const { query } = await req.validate(validator.index);
     const userId = req.authUserId();
 
+    if (query?.view === 'all') {
+      const { newsletters, nextCursor, limit, total } =
+        await this.newsletterService.queryNewsletters(
+          { name: query.name },
+          {
+            cursor: query.cursor,
+            limit: query.limit,
+            sortBy: query.sortBy,
+            sortType: query.sortType,
+          },
+        );
+
+      res.resource(
+        NewsletterResource.collection(newsletters).withCursor(
+          nextCursor,
+          limit,
+          total,
+        ),
+      );
+      return;
+    }
+
     const newsletters =
-      query?.view === 'all'
-        ? await this.newsletterService.getAllNewsletters()
-        : await this.newsletterService.getNewslettersByUserId(userId);
+      await this.newsletterService.getNewslettersByUserId(userId);
 
     res.resource(NewsletterResource.collection(newsletters));
   }

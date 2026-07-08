@@ -19,10 +19,12 @@ import { useNewsletterMessageService } from '@/services/NewsletterMessageService
 import { useProgramEventService } from '@/services/ProgramEventService';
 import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
+import { useAdminService } from '@/services/AdminService';
 
 export function useAPIService() {
   return {
     ...useAuthService(),
+    ...useAdminService(),
     ...useProfileService(),
     ...useUserService(),
     ...useCampService(),

@@ -1,65 +1,63 @@
 <template>
   <page-state-handler :error>
-    <q-table
-      :title="t('title')"
-      :loading
-      :rows
-      :columns
-      :rows-per-page-options="[0]"
-      virtual-scroll
-      row-key="id"
-      class="absolute fit"
-    >
-      <template #top-right>
-        <q-input
-          v-model="filterQuery"
-          :placeholder="t('filter.search')"
-          debounce="300"
-          rounded
-          dense
-          outlined
-        >
-          <template #append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
-      </template>
+    <div class="admin-page column no-wrap fit">
+      <admin-list-toolbar
+        v-model:search="search"
+        :title="t('title')"
+        :total="total"
+        :loading
+        @refresh="reload"
+      />
 
-      <template #body-cell-action="props">
-        <q-td :props="props">
-          <q-btn
-            flat
-            round
-            icon="open_in_new"
-            size="sm"
-            @click="showNewsletterManagement(props.row)"
+      <q-table
+        ref="tableRef"
+        v-model:pagination="pagination"
+        :loading
+        :rows
+        :columns
+        :sort-method="identitySort"
+        :rows-per-page-options="[0]"
+        virtual-scroll
+        :virtual-scroll-item-size="48"
+        :virtual-scroll-sticky-size-start="48"
+        hide-bottom
+        row-key="id"
+        flat
+        bordered
+        binary-state-sort
+        class="admin-table col rounded-borders"
+        @virtual-scroll="onVirtualScroll"
+      >
+        <template #body-cell-action="props">
+          <q-td
+            :props="props"
+            auto-width
           >
-            <q-tooltip>{{ t('action.manage') }}</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            round
-            icon="delete"
-            color="negative"
-            size="sm"
-            @click="showDeleteDialog(props.row)"
-          />
-        </q-td>
-      </template>
-    </q-table>
+            <row-actions :actions="rowActionsFn(props.row)" />
+          </q-td>
+        </template>
+      </q-table>
+    </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type { QTableColumn } from 'quasar';
-import type { Newsletter } from '@camp-registration/common/entities';
+import type {
+  Newsletter,
+  NewsletterQuery,
+} from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import AdminListToolbar from '@/components/administration/AdminListToolbar.vue';
+import RowActions, {
+  type RowAction,
+} from '@/components/administration/RowActions.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useServerTable } from '@/composables/serverTable';
 import { useRouter } from 'vue-router';
 
 const { t, d } = useI18n();
@@ -68,35 +66,34 @@ const router = useRouter();
 const api = useAPIService();
 
 const {
-  data: newsletters,
+  tableRef,
+  rows,
+  search,
+  loading,
   error,
-  isLoading: loading,
-  forceFetch,
+  total,
+  pagination,
+  onVirtualScroll,
+  identitySort,
+  reload,
   withProgressNotification,
-} = useServiceHandler<Newsletter[]>('newsletter');
-
-onMounted(async () => {
-  await forceFetch(() => api.fetchNewsletters({ view: 'all' }));
+} = useServerTable<Newsletter, NewsletterQuery>({
+  storeName: 'newsletter',
+  sortBy: 'createdAt',
+  descending: true,
+  fetch: (query) => api.fetchNewslettersPaginated(query),
+  buildQuery: ({ cursor, limit, sortBy, sortType, search }) =>
+    ({
+      view: 'all',
+      cursor,
+      limit,
+      sortBy,
+      sortType,
+      name: search || undefined,
+    }) as NewsletterQuery,
 });
 
-const filterQuery = ref<string>('');
-
-const rows = computed<Newsletter[]>(() => {
-  if (!newsletters.value) {
-    return [];
-  }
-  if (!filterQuery.value) {
-    return newsletters.value;
-  }
-  const query = filterQuery.value.toLowerCase();
-  return newsletters.value.filter(
-    (n) =>
-      n.name.toLowerCase().includes(query) ||
-      (n.description ?? '').toLowerCase().includes(query),
-  );
-});
-
-const columns = computed<QTableColumn[]>(() => [
+const columns = computed<QTableColumn<Newsletter>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
@@ -123,11 +120,30 @@ const columns = computed<QTableColumn[]>(() => [
   {
     name: 'action',
     label: t('column.action'),
-    field: 'action',
+    field: 'id',
     align: 'center',
     sortable: false,
   },
 ]);
+
+function rowActionsFn(newsletter: Newsletter): RowAction[] {
+  return [
+    {
+      key: 'manage',
+      label: t('action.manage'),
+      icon: 'open_in_new',
+      handler: () => showNewsletterManagement(newsletter),
+    },
+    {
+      key: 'delete',
+      label: t('action.delete'),
+      icon: 'delete',
+      color: 'negative',
+      separatorBefore: true,
+      handler: () => showDeleteDialog(newsletter),
+    },
+  ];
+}
 
 function showNewsletterManagement(newsletter: Newsletter) {
   const routeData = router.resolve({
@@ -154,17 +170,38 @@ function showDeleteDialog(newsletter: Newsletter) {
     .onOk(() => {
       void withProgressNotification('delete', () =>
         api.deleteNewsletter(newsletter.id),
-      ).then(() => forceFetch(() => api.fetchNewsletters({ view: 'all' })));
+      ).then(() => reload());
     });
 }
 </script>
+
+<style scoped lang="scss">
+.admin-page {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+}
+
+.admin-table {
+  // Let the table fill the remaining height and scroll internally instead of
+  // growing the page (min-height:0 lets the flex child shrink below content).
+  min-height: 0;
+  background: var(--md3-surface);
+
+  :deep(thead tr th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--md3-surface-container-low);
+  }
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
 action:
   manage: 'Manage'
-filter:
-  search: 'Search'
+  delete: 'Delete'
 column:
   name: 'Name'
   description: 'Description'
@@ -181,8 +218,7 @@ dialog:
 title: 'Newsletter'
 action:
   manage: 'Verwalten'
-filter:
-  search: 'Suchen'
+  delete: 'Löschen'
 column:
   name: 'Name'
   description: 'Beschreibung'
@@ -199,8 +235,7 @@ dialog:
 title: 'Newsletters'
 action:
   manage: 'Gérer'
-filter:
-  search: 'Rechercher'
+  delete: 'Supprimer'
 column:
   name: 'Nom'
   description: 'Description'
@@ -217,8 +252,7 @@ dialog:
 title: 'Newslettery'
 action:
   manage: 'Zarządzaj'
-filter:
-  search: 'Szukaj'
+  delete: 'Usuń'
 column:
   name: 'Nazwa'
   description: 'Opis'
@@ -235,8 +269,7 @@ dialog:
 title: 'Newslettery'
 action:
   manage: 'Spravovat'
-filter:
-  search: 'Hledat'
+  delete: 'Smazat'
 column:
   name: 'Název'
   description: 'Popis'

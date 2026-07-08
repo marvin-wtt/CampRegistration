@@ -40,4 +40,13 @@ export class LegalService extends BaseService {
       update: { content: jsonContent },
     });
   }
+
+  async getOverviewCounts() {
+    const documents = await this.getAllDocuments();
+    const configured = documents.filter(
+      (document) => document.content !== null,
+    ).length;
+
+    return { total: ALL_TYPES.length, configured };
+  }
 }

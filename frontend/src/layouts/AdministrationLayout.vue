@@ -70,7 +70,7 @@ title: 'Administration'
 
 camps: 'Camps'
 newsletters: 'Newsletters'
-queues: 'Queues'
+queues: 'Jobs'
 users: 'Users'
 settings: 'Settings'
 legal: 'Legal Content'
@@ -81,10 +81,10 @@ title: 'Verwaltung'
 
 camps: 'Camps'
 newsletters: 'Newsletter'
-queues: 'Warteschlangen'
+queues: 'Aufgaben'
 users: 'Benutzer'
 settings: 'Einstellungen'
-legal: 'Rechtliche Inhalte'
+legal: 'Rechtliches'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -92,7 +92,7 @@ title: 'Administration'
 
 camps: 'Camps'
 newsletters: 'Newsletters'
-queues: "Files d'attente"
+queues: 'Tâches'
 users: 'Utilisateurs'
 settings: 'Paramètres'
 legal: 'Contenu légal'
@@ -103,7 +103,7 @@ title: 'Administracja'
 
 camps: 'Obozy'
 newsletters: 'Newslettery'
-queues: 'Kolejki'
+queues: 'Zadania'
 users: 'Użytkownicy'
 settings: 'Ustawienia'
 legal: 'Treści prawne'
@@ -114,7 +114,7 @@ title: 'Administrace'
 
 camps: 'Tábory'
 newsletters: 'Newslettery'
-queues: 'Fronty'
+queues: 'Úlohy'
 users: 'Uživatelé'
 settings: 'Nastavení'
 legal: 'Právní obsah'

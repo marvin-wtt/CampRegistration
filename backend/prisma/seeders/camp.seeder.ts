@@ -1,4 +1,4 @@
-import { CampFactory } from '../factories';
+import { CampFactory, CampManagerFactory, UserFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
 import { RegistrationSeeder } from './registration.seeder';
 import { ProgramEventSeeder } from './program-event.seeder';
@@ -12,6 +12,18 @@ class CampSeeder extends BaseSeeder {
   }
 
   async run(): Promise<void> {
+    for (let i = 0; i < 100; i++) {
+      await CampFactory.create({
+        campManager: {
+          create: CampManagerFactory.build({
+            user: {
+              create: UserFactory.build(),
+            },
+          }),
+        },
+      });
+    }
+
     await CampFactory.create({
       id: '01JHP0CXJFR4MQS8SF1HQJCY38',
       name: 'Simple Camp',
