@@ -97,7 +97,7 @@ class ExampleModule implements AppModule {
   registerRoutes(router: AppRouter): void {
     /* mount router */
   }
-  registerPermissions(): RoleToPermissions<ManagerRole, Permission> {
+  registerPermissions(): RoleToPermissions<CampManagerRole, Permission> {
     /* RBAC */
   }
   registerNewsletterPermissions(): RoleToPermissions<

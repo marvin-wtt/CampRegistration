@@ -1,6 +1,6 @@
 import type { Router } from 'express';
 import type {
-  ManagerRole,
+  CampManagerRole,
   NewsletterManagerRole,
   Permission,
   NewsletterPermission,
@@ -29,7 +29,7 @@ export interface AppModule {
 
   registerRoutes?(router: AppRouter): void;
 
-  registerPermissions?(): RoleToPermissions<ManagerRole, Permission>;
+  registerPermissions?(): RoleToPermissions<CampManagerRole, Permission>;
 
   registerNewsletterPermissions?(): RoleToPermissions<
     NewsletterManagerRole,

@@ -1,5 +1,6 @@
 import type { Identifiable } from './Identifiable.js';
-import type { NewsletterManagerRole } from '../permissions/roles.js';
+
+export type NewsletterManagerRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 
 export interface NewsletterManager extends Identifiable {
   name: string | null;

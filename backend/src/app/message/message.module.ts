@@ -6,7 +6,7 @@ import type {
 } from '#core/base/AppModule';
 import { MessageRouter } from '#app/message/message.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   MessagePermission,
 } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -28,7 +28,7 @@ export class MessageModule implements AppModule {
     router.useRouter('/camps/:campId/messages', new MessageRouter());
   }
 
-  registerPermissions(): RoleToPermissions<ManagerRole, MessagePermission> {
+  registerPermissions(): RoleToPermissions<CampManagerRole, MessagePermission> {
     return {
       DIRECTOR: [
         'camp.messages.view',

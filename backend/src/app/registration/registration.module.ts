@@ -7,7 +7,7 @@ import type {
 } from '#core/base/AppModule';
 import { RegistrationRouter } from '#app/registration/registration.routes';
 import type {
-  ManagerRole,
+  CampManagerRole,
   RegistrationPermission,
 } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -59,7 +59,7 @@ export class RegistrationModule implements AppModule {
   }
 
   registerPermissions(): RoleToPermissions<
-    ManagerRole,
+    CampManagerRole,
     RegistrationPermission
   > {
     return {
