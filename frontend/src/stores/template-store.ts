@@ -24,6 +24,7 @@ export const useTemplateStore = defineStore('templates', () => {
     withProgressNotification,
     withMultiProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<TableTemplate[]>('template');
@@ -42,7 +43,7 @@ export const useTemplateStore = defineStore('templates', () => {
   useRealtimeCollection<TableTemplate>('table_template', {
     data,
     invalidate,
-    reload: () => forceFetchData(),
+    reload: () => fetchData(undefined, { background: true }),
   });
 
   async function forceFetchData(id?: string) {
@@ -50,16 +51,17 @@ export const useTemplateStore = defineStore('templates', () => {
     return fetchData(id);
   }
 
-  async function fetchData(campId?: string) {
+  async function fetchData(campId?: string, opts?: { background?: boolean }) {
     campId = campId ?? (route.params.campId as string | undefined);
 
     const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
+    const fetcher = async () => {
       const data = await apiService.fetchTableTemplates(cid);
       return data.sort((a, b) => {
         return a.order - b.order;
       });
-    });
+    };
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function updateCollection(templates: TableTemplate[]) {

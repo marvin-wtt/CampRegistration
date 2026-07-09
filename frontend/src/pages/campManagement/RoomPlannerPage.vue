@@ -323,6 +323,7 @@ const {
   withProgressNotification,
   withErrorNotification,
   lazyFetch,
+  backgroundFetch,
   queryParam,
   asyncUpdate,
   requestPending,
@@ -335,10 +336,7 @@ const {
 useRealtimeCollection<Room>('room', {
   data,
   invalidate,
-  reload: async () => {
-    invalidate();
-    await fetchRooms();
-  },
+  reload: () => fetchRooms({ background: true }),
   fetchOne: (campId, id) => apiService.fetchRoom(campId, id),
 });
 
@@ -417,11 +415,12 @@ const availablePeople = computed<Roommate[]>(() => {
     .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });
 
-async function fetchRooms() {
+async function fetchRooms(opts?: { background?: boolean }) {
   const campId = queryParam('campId');
 
   const cid = checkNotNullWithError(campId);
-  await lazyFetch(() => apiService.fetchRooms(cid));
+  const fetcher = () => apiService.fetchRooms(cid);
+  await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
 }
 
 function addRoom() {

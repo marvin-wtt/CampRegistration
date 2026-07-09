@@ -548,10 +548,10 @@ export class RegistrationSubmittedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_submitted';
   static readonly type = 'registration:template:submitted';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [
+  protected attachments(): Promise<MailAttachment[]> {
+    return Promise.resolve([
       // Attach registration data PDF here
-    ];
+    ]);
   }
 }
 
@@ -559,10 +559,10 @@ export class RegistrationConfirmedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_confirmed';
   static readonly type = 'registration:template:confirmed';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [
+  protected attachments(): Promise<MailAttachment[]> {
+    return Promise.resolve([
       // Attach registration data PDF here
-    ];
+    ]);
   }
 }
 
@@ -575,10 +575,10 @@ export class RegistrationUpdatedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_updated';
   static readonly type = 'registration:template:updated';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [
+  protected attachments(): Promise<MailAttachment[]> {
+    return Promise.resolve([
       // Attach registration data PDF here
-    ];
+    ]);
   }
 }
 

@@ -23,6 +23,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
     invalidate,
     withProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<CampManager[]>('campManager');
@@ -39,20 +40,16 @@ export const useCampManagerStore = defineStore('campManager', () => {
   useRealtimeCollection<CampManager>('manager', {
     data,
     invalidate,
-    reload: async () => {
-      invalidate();
-      await fetchData();
-    },
+    reload: () => fetchData(undefined, { background: true }),
     fetchOne: (campId, id) => api.fetchCampManager(campId, id),
   });
 
-  async function fetchData(campId?: string) {
+  async function fetchData(campId?: string, opts?: { background?: boolean }) {
     campId ??= route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
-      return await api.fetchCampManagers(cid);
-    });
+    const fetcher = () => api.fetchCampManagers(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createData(newData: CampManagerCreateData) {
