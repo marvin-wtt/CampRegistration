@@ -38,15 +38,27 @@ export class FileController extends BaseController {
       );
     }
 
-    const fileStream = this.fileService.getFileStream(file);
+    const contentDispositionHeader = this.buildContentDisposition(
+      file.originalName,
+      download,
+    );
+
+    const downloadUrl = await this.fileService.getFileDownloadUrl(
+      file,
+      contentDispositionHeader,
+    );
+
+    if (downloadUrl) {
+      res.redirect(downloadUrl);
+      return;
+    }
+
+    const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display
     res.contentType(file.type);
 
-    res.setHeader(
-      'Content-disposition',
-      this.buildContentDisposition(file.originalName, download),
-    );
+    res.setHeader('Content-disposition', contentDispositionHeader);
 
     fileStream.pipe(res); // Pipe the file stream to the response
   }

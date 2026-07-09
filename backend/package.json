@@ -58,6 +58,8 @@
     "#generated/*": "./src/generated/*.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1083.0",
+    "@aws-sdk/s3-request-presigner": "^3.1083.0",
     "@camp-registration/common": "*",
     "@camp-registration/web": "*",
     "@candoimage/prisma-extension-soft-delete": "^2.1.2",

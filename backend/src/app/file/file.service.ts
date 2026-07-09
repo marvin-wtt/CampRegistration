@@ -13,10 +13,15 @@ import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
-import { StorageFile } from '#core/storage/storage';
+import type { StorageFile } from '#core/storage/storage';
 import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
+
+interface FileUploadJobPayload {
+  fileId: string;
+  tmpFileName: string;
+}
 
 interface ModelData {
   id: string;
@@ -56,7 +61,7 @@ const fileRelationIdFieldsUndefined = Object.keys(
 export class FileService extends BaseService {
   private tmpStorage: DiskStorage;
   private storageRegistry: StorageRegistry;
-  private queue: Queue<string>;
+  private queue: Queue<FileUploadJobPayload>;
 
   constructor(
     @Config() private readonly config: AppConfig,
@@ -67,7 +72,7 @@ export class FileService extends BaseService {
     this.tmpStorage = new DiskStorage(config.storage.tmpDir);
     this.storageRegistry = new StorageRegistry(config.storage);
 
-    this.queue = queueManager.create<string>('file', {
+    this.queue = queueManager.create<FileUploadJobPayload>('file', {
       retryDelay: 1000 * 10,
     });
 
@@ -83,15 +88,16 @@ export class FileService extends BaseService {
 
   private mapFields = (
     file: RequestFile,
-    name?: string,
+    originalName?: string,
+    storageName?: string,
     field?: string,
     locale?: string | null,
     accessLevel?: string,
   ): Prisma.FileCreateInput => {
     return {
       type: file.mimetype,
-      originalName: name ?? file.originalname,
-      name: file.filename,
+      originalName: originalName ?? file.originalname,
+      name: storageName ?? file.filename,
       size: file.size,
       field: extractKeyFromFieldName(field ?? file.fieldname),
       locale: locale ?? null,
@@ -106,10 +112,25 @@ export class FileService extends BaseService {
     });
   }
 
-  private async uploadFile(filename: string) {
-    await this.storageRegistry.getStorage().moveToStorage(filename);
-    await this.prisma.file.updateMany({
-      where: { name: filename },
+  private async uploadFile(job: FileUploadJobPayload) {
+    const file = await this.prisma.file.findUniqueOrThrow({
+      where: { id: job.fileId },
+      select: {
+        id: true,
+        name: true,
+        originalName: true,
+        storageLocation: true,
+        type: true,
+      },
+    });
+
+    await this.storageRegistry.getStorage(file.storageLocation).moveToStorage({
+      ...file,
+      tmpFileName: job.tmpFileName,
+    });
+
+    await this.prisma.file.update({
+      where: { id: file.id },
       data: { uploadStatus: 'READY' },
     });
   }
@@ -276,6 +297,10 @@ export class FileService extends BaseService {
     locale?: string | null,
     accessLevel?: string,
   ) {
+    const fileId = ulid();
+    const storageName =
+      this.config.storage.location === 's3' ? fileId : file.filename;
+
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
       : file.originalname;
@@ -283,6 +308,7 @@ export class FileService extends BaseService {
     const fileData = this.mapFields(
       file,
       originalFileName,
+      storageName,
       field,
       locale,
       accessLevel,
@@ -291,13 +317,17 @@ export class FileService extends BaseService {
 
     const created = await this.prisma.file.create({
       data: {
+        id: fileId,
         ...fileData,
         ...modelData,
         uploadStatus: 'PENDING',
       },
     });
 
-    await this.queue.add('upload', file.filename);
+    await this.queue.add('upload', {
+      fileId: created.id,
+      tmpFileName: file.filename,
+    });
 
     return created;
   }
@@ -367,8 +397,18 @@ export class FileService extends BaseService {
     });
   }
 
-  getFileStream(file: StorageFile) {
-    return this.storageRegistry.getStorage(file.storageLocation).stream(file);
+  async getFileStream(file: StorageFile) {
+    return this.storageRegistry
+      .getStorage(file.storageLocation)
+      .openReadStream(file);
+  }
+
+  async getFileDownloadUrl(file: StorageFile, contentDisposition?: string) {
+    return this.storageRegistry
+      .getStorage(file.storageLocation)
+      .createDownloadUrl(file, {
+        contentDisposition,
+      });
   }
 
   async updateFile(
@@ -458,7 +498,9 @@ export class FileService extends BaseService {
   async deleteUnreferencedFiles(): Promise<void> {
     const fileModels = await this.prisma.file.findMany({
       where: {
-        storageLocation: 'local',
+        storageLocation: {
+          in: ['local', 'disk', 's3'],
+        },
       },
       select: {
         name: true,

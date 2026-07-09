@@ -1,4 +1,4 @@
-import type fs from 'fs';
+import type { Readable } from 'stream';
 
 export interface StorageFile {
   id: string;
@@ -11,9 +11,25 @@ export interface StorageFile {
   storageLocation: string;
 }
 
+export interface StorageMoveFile {
+  id: string;
+  name: string;
+  originalName: string;
+  type: string;
+  tmpFileName: string;
+}
+
+export interface StorageDownloadUrlOptions {
+  contentDisposition?: string;
+}
+
 export interface Storage {
   removeFile: (fileName: string) => Promise<void>;
-  moveToStorage: (filename: string) => Promise<void>;
+  moveToStorage: (file: StorageMoveFile) => Promise<void>;
   getFileNames: () => Promise<string[]>;
-  stream: (file: StorageFile) => fs.ReadStream;
+  openReadStream: (file: StorageFile) => Promise<Readable>;
+  createDownloadUrl: (
+    file: StorageFile,
+    options?: StorageDownloadUrlOptions,
+  ) => Promise<string | null>;
 }

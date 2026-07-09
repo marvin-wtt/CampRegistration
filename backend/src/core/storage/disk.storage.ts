@@ -1,4 +1,9 @@
-import type { Storage, StorageFile } from '#core/storage/storage';
+import type {
+  Storage,
+  StorageDownloadUrlOptions,
+  StorageFile,
+  StorageMoveFile,
+} from '#core/storage/storage';
 import fse from 'fs-extra';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
@@ -34,9 +39,9 @@ export class DiskStorage implements Storage {
     await fse.remove(filePath);
   }
 
-  async moveToStorage(filename: string) {
-    const sourcePath = this.safeJoinFilePath(config.storage.tmpDir, filename);
-    const destinationPath = this.safeJoinFilePath(this.storageDir, filename);
+  async moveToStorage(file: StorageMoveFile) {
+    const sourcePath = this.safeJoinFilePath(config.storage.tmpDir, file.tmpFileName);
+    const destinationPath = this.safeJoinFilePath(this.storageDir, file.name);
 
     await fse.ensureDir(this.storageDir);
     await fse.move(sourcePath, destinationPath, {
@@ -49,7 +54,7 @@ export class DiskStorage implements Storage {
     return fse.readdir(this.storageDir);
   }
 
-  stream(file: StorageFile) {
+  async openReadStream(file: StorageFile) {
     const filePath = this.safeJoinFilePath(this.storageDir, file.name);
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -59,5 +64,12 @@ export class DiskStorage implements Storage {
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     return fse.createReadStream(filePath);
+  }
+
+  async createDownloadUrl(
+    _file: StorageFile,
+    _options?: StorageDownloadUrlOptions,
+  ): Promise<string | null> {
+    return null;
   }
 }

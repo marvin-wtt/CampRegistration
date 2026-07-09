@@ -1,6 +1,40 @@
 import { env } from '#config/enviroment';
 import { appPath } from '#utils/paths';
 
+const normalizeStorageLocation = (
+  location: 'disk' | 'local' | 's3' | 'static',
+): 'disk' | 's3' | 'static' => {
+  return location === 'local' ? 'disk' : location;
+};
+
+const storageLocation = normalizeStorageLocation(env.STORAGE_LOCATION);
+
+const storageS3Config =
+  storageLocation === 's3'
+    ? {
+        endpoint: env.S3_ENDPOINT,
+        region: env.S3_REGION,
+        bucket: env.S3_BUCKET,
+        accessKeyId: env.S3_ACCESS_KEY_ID,
+        secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+        forcePathStyle: env.S3_FORCE_PATH_STYLE,
+        objectPrefix: env.S3_OBJECT_PREFIX,
+        presignedDownloadLifetimeSeconds:
+          env.S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS,
+      }
+    : undefined;
+
+if (
+  storageLocation === 's3' &&
+  (!storageS3Config?.endpoint ||
+    !storageS3Config.region ||
+    !storageS3Config.bucket)
+) {
+  throw new Error(
+    'S3_ENDPOINT, S3_REGION and S3_BUCKET must be configured when STORAGE_LOCATION is set to "s3".',
+  );
+}
+
 const config = {
   env: env.NODE_ENV,
   appName: env.APP_NAME,
@@ -33,11 +67,12 @@ const config = {
     },
   },
   storage: {
-    location: env.STORAGE_LOCATION,
+    location: storageLocation,
     tmpDir: appPath(env.TMP_DIR),
     uploadDir: appPath(env.UPLOAD_DIR),
     staticDir: appPath(env.STATIC_DIR),
     maxFileSize: env.MAX_FILE_SIZE,
+    s3: storageS3Config,
   },
   csrf: {
     secret: env.CSRF_SECRET,
