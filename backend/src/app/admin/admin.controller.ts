@@ -7,6 +7,7 @@ import { QueueService } from '#app/queue/queue.service';
 import { LegalService } from '#app/legal/legal.service';
 import { RegistrationService } from '#app/registration/registration.service';
 import { AdminOverviewResource } from './admin.resource.js';
+import { FileService } from '#app/file/file.service';
 
 @injectable()
 export class AdminController extends BaseController {
@@ -15,6 +16,7 @@ export class AdminController extends BaseController {
     @inject(CampService) private readonly campService: CampService,
     @inject(QueueService) private readonly queueService: QueueService,
     @inject(LegalService) private readonly legalService: LegalService,
+    @inject(FileService) private readonly fileService: FileService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
   ) {
@@ -22,13 +24,15 @@ export class AdminController extends BaseController {
   }
 
   async overview(_req: Request, res: Response) {
-    const [users, camps, failedJobs, legal, registrations] = await Promise.all([
-      this.userService.getOverviewCounts(),
-      this.campService.getOverviewCounts(),
-      this.queueService.countFailedJobs(),
-      this.legalService.getOverviewCounts(),
-      this.registrationService.getOverviewCounts(),
-    ]);
+    const [users, camps, failedJobs, legal, files, registrations] =
+      await Promise.all([
+        this.userService.getOverviewCounts(),
+        this.campService.getOverviewCounts(),
+        this.queueService.countFailedJobs(),
+        this.legalService.getOverviewCounts(),
+        this.fileService.getOverviewCounts(),
+        this.registrationService.getOverviewCounts(),
+      ]);
 
     res.resource(
       new AdminOverviewResource({
@@ -36,6 +40,7 @@ export class AdminController extends BaseController {
         camps,
         queues: { failedJobs },
         legal,
+        files,
         registrations,
       }),
     );

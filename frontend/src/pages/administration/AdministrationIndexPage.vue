@@ -156,6 +156,13 @@ const platformStats = computed<StatTile[]>(() => {
       label: t('stat.failedJobs'),
       to: { name: 'administration.queues' },
     },
+    {
+      key: 'files',
+      icon: 'folder',
+      color: 'secondary',
+      value: data.files.total,
+      label: t('stat.files'),
+    },
   ];
 });
 
@@ -308,6 +315,7 @@ stat:
   platformTitle: 'Platform'
   campsTitle: 'Camps'
   users: 'Users'
+  files: 'Files'
   camps: 'Camps'
   registrations: 'Registrations'
   campsOpen: 'Registration open'
@@ -350,6 +358,7 @@ stat:
   platformTitle: 'Plattform'
   campsTitle: 'Camps'
   users: 'Benutzer'
+  files: 'Dateien'
   camps: 'Camps'
   registrations: 'Anmeldungen'
   campsOpen: 'Anmeldung offen'
@@ -392,6 +401,7 @@ stat:
   platformTitle: 'Plateforme'
   campsTitle: 'Camps'
   users: 'Utilisateurs'
+  files: 'Fichiers'
   camps: 'Camps'
   registrations: 'Inscriptions'
   campsOpen: 'Inscriptions ouvertes'
@@ -434,6 +444,7 @@ stat:
   platformTitle: 'Platforma'
   campsTitle: 'Obozy'
   users: 'Użytkownicy'
+  files: 'Pliki'
   camps: 'Obozy'
   registrations: 'Rejestracje'
   campsOpen: 'Rejestracja otwarta'
@@ -476,6 +487,7 @@ stat:
   platformTitle: 'Platforma'
   campsTitle: 'Tábory'
   users: 'Uživatelé'
+  files: 'Pliki'
   camps: 'Tábory'
   registrations: 'Přihlášky'
   campsOpen: 'Registrace otevřená'
