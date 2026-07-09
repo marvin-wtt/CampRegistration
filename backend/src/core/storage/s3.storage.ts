@@ -127,7 +127,10 @@ export class S3Storage implements Storage {
 
     if (error instanceof S3ServiceException) {
       if (S3_NOT_FOUND_ERROR_NAMES.has(error.name)) {
-        return new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
+        return new ApiError(
+          httpStatus.NOT_FOUND,
+          'File is missing in storage.',
+        );
       }
 
       if (S3_AUTH_ERROR_NAMES.has(error.name)) {
@@ -177,7 +180,11 @@ export class S3Storage implements Storage {
   }
 
   async moveToStorage(file: StorageMoveFile): Promise<void> {
-    const sourcePath = this.safeJoinFilePath(this.options.tmpDir, file.tmpFileName);
+    const sourcePath = this.safeJoinFilePath(
+      this.options.tmpDir,
+      file.tmpFileName,
+    );
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const sourceFileStream = fse.createReadStream(sourcePath);
 
     try {
@@ -222,7 +229,9 @@ export class S3Storage implements Storage {
       };
 
       try {
-        const result = await this.client.send(new ListObjectsV2Command(listOptions));
+        const result = await this.client.send(
+          new ListObjectsV2Command(listOptions),
+        );
 
         for (const object of result.Contents ?? []) {
           const objectKey = object.Key;

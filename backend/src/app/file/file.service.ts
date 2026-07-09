@@ -19,8 +19,12 @@ import { selectFileByLocale } from '@camp-registration/common/form';
 type RequestFile = Express.Multer.File;
 
 interface FileUploadJobPayload {
-  fileId: string;
+  id: string;
+  name: string;
+  originalName: string;
+  type: string;
   tmpFileName: string;
+  storageLocation: string;
 }
 
 interface ModelData {
@@ -112,25 +116,13 @@ export class FileService extends BaseService {
     });
   }
 
-  private async uploadFile(job: FileUploadJobPayload) {
-    const file = await this.prisma.file.findUniqueOrThrow({
-      where: { id: job.fileId },
-      select: {
-        id: true,
-        name: true,
-        originalName: true,
-        storageLocation: true,
-        type: true,
-      },
-    });
-
-    await this.storageRegistry.getStorage(file.storageLocation).moveToStorage({
-      ...file,
-      tmpFileName: job.tmpFileName,
-    });
+  private async uploadFile(payload: FileUploadJobPayload) {
+    await this.storageRegistry
+      .getStorage(payload.storageLocation)
+      .moveToStorage(payload);
 
     await this.prisma.file.update({
-      where: { id: file.id },
+      where: { id: payload.id },
       data: { uploadStatus: 'READY' },
     });
   }
@@ -325,7 +317,11 @@ export class FileService extends BaseService {
     });
 
     await this.queue.add('upload', {
-      fileId: created.id,
+      id: created.id,
+      name: created.name,
+      originalName: created.originalName,
+      type: created.type,
+      storageLocation: created.storageLocation,
       tmpFileName: file.filename,
     });
 

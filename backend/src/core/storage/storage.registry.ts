@@ -2,7 +2,7 @@ import type { Storage } from '#core/storage/storage';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StaticStorage } from '#core/storage/static.storage';
 import { S3Storage } from '#core/storage/s3.storage';
-import type { StorageConfig } from '#config/index';
+import type { StorageConfig } from '#config';
 
 export class StorageRegistry {
   private storageCache: Map<string, Storage>;
@@ -13,6 +13,7 @@ export class StorageRegistry {
 
   getStorage(identifier?: string): Storage {
     identifier ??= this.options.location;
+    // Backwards compatibility
     identifier = identifier === 'local' ? 'disk' : identifier;
 
     if (!this.storageCache.has(identifier)) {

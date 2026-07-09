@@ -1,38 +1,49 @@
 import { env } from '#config/enviroment';
 import { appPath } from '#utils/paths';
 
-const normalizeStorageLocation = (
-  location: 'disk' | 'local' | 's3' | 'static',
-): 'disk' | 's3' | 'static' => {
-  return location === 'local' ? 'disk' : location;
-};
+interface S3Config {
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+  objectPrefix?: string;
+  presignedDownloadLifetimeSeconds: number;
+}
 
-const storageLocation = normalizeStorageLocation(env.STORAGE_LOCATION);
+function hasS3Config(
+  value: typeof env,
+): value is typeof env &
+  Required<
+    Pick<
+      typeof env,
+      | 'S3_ENDPOINT'
+      | 'S3_REGION'
+      | 'S3_BUCKET'
+      | 'S3_ACCESS_KEY_ID'
+      | 'S3_SECRET_ACCESS_KEY'
+    >
+  > {
+  return value.S3_ENDPOINT !== undefined;
+}
 
-const storageS3Config =
-  storageLocation === 's3'
-    ? {
-        endpoint: env.S3_ENDPOINT,
-        region: env.S3_REGION,
-        bucket: env.S3_BUCKET,
-        accessKeyId: env.S3_ACCESS_KEY_ID,
-        secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-        forcePathStyle: env.S3_FORCE_PATH_STYLE,
-        objectPrefix: env.S3_OBJECT_PREFIX,
-        presignedDownloadLifetimeSeconds:
-          env.S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS,
-      }
-    : undefined;
+function s3Config(): S3Config | undefined {
+  if (!hasS3Config(env)) {
+    return undefined;
+  }
 
-if (
-  storageLocation === 's3' &&
-  (!storageS3Config?.endpoint ||
-    !storageS3Config.region ||
-    !storageS3Config.bucket)
-) {
-  throw new Error(
-    'S3_ENDPOINT, S3_REGION and S3_BUCKET must be configured when STORAGE_LOCATION is set to "s3".',
-  );
+  return {
+    endpoint: env.S3_ENDPOINT,
+    region: env.S3_REGION,
+    bucket: env.S3_BUCKET,
+    accessKeyId: env.S3_ACCESS_KEY_ID,
+    secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+    forcePathStyle: env.S3_FORCE_PATH_STYLE ?? true,
+    objectPrefix: env.S3_OBJECT_PREFIX,
+    presignedDownloadLifetimeSeconds:
+      env.S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS ?? 60,
+  };
 }
 
 const config = {
@@ -67,12 +78,12 @@ const config = {
     },
   },
   storage: {
-    location: storageLocation,
+    location: env.STORAGE_LOCATION,
     tmpDir: appPath(env.TMP_DIR),
     uploadDir: appPath(env.UPLOAD_DIR),
     staticDir: appPath(env.STATIC_DIR),
     maxFileSize: env.MAX_FILE_SIZE,
-    s3: storageS3Config,
+    s3: s3Config(),
   },
   csrf: {
     secret: env.CSRF_SECRET,
