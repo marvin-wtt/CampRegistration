@@ -23,6 +23,7 @@ export const useTaskStore = defineStore('task', () => {
     invalidate,
     withProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Task[]>('task');
@@ -39,20 +40,16 @@ export const useTaskStore = defineStore('task', () => {
   useRealtimeCollection<Task>('task', {
     data,
     invalidate,
-    reload: async () => {
-      invalidate();
-      await fetchData();
-    },
+    reload: () => fetchData(undefined, { background: true }),
     fetchOne: (campId, id) => api.fetchTask(campId, id),
   });
 
-  async function fetchData(campId?: string) {
+  async function fetchData(campId?: string, opts?: { background?: boolean }) {
     campId ??= route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
-      return await api.fetchTasks(cid);
-    });
+    const fetcher = () => api.fetchTasks(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createData(newData: TaskCreateData) {

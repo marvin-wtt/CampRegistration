@@ -23,6 +23,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     invalidate,
     withErrorNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
   } = useServiceHandler<ProgramEvent[]>('programPlanner');
 
@@ -38,10 +39,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   useRealtimeCollection<ProgramEvent>('program_event', {
     data,
     invalidate,
-    reload: async () => {
-      invalidate();
-      await fetchData();
-    },
+    reload: () => fetchData(undefined, { background: true }),
     fetchOne: (campId, id) => apiService.fetchProgramEvent(campId, id),
   });
 
@@ -53,11 +51,15 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       : [...list, event];
   }
 
-  async function fetchData(campId?: string): Promise<void> {
+  async function fetchData(
+    campId?: string,
+    opts?: { background?: boolean },
+  ): Promise<void> {
     const cid = checkNotNullWithError(
       campId ?? (route.params.campId as string),
     );
-    await lazyFetch(async () => await apiService.fetchProgramEvents(cid));
+    const fetcher = () => apiService.fetchProgramEvents(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createEntry(event: ProgramEventCreateData) {

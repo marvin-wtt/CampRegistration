@@ -77,6 +77,20 @@ export function useServiceHandler<T>(storeName?: string) {
     await forceFetch(fn);
   }
 
+  async function backgroundFetch(
+    fn: () => Promise<T> | Promise<undefined>,
+  ): Promise<void> {
+    await asyncUpdate(async () => {
+      try {
+        data.value = await fn();
+        error.value = null;
+        needsUpdate.value = false;
+      } catch {
+        needsUpdate.value = true;
+      }
+    });
+  }
+
   function checkNotNullWithError(
     param: string | undefined | null,
   ): string | never {
@@ -119,6 +133,7 @@ export function useServiceHandler<T>(storeName?: string) {
     errorOnFailure,
     forceFetch,
     lazyFetch,
+    backgroundFetch,
     asyncUpdate,
     checkNotNullWithError,
     queryParam,

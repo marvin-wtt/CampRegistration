@@ -26,6 +26,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     invalidate,
     withProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Registration[]>('registration');
@@ -44,20 +45,19 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   useRealtimeCollection<Registration>('registration', {
     data,
     invalidate,
-    reload: () => fetchAfterInvalidate(),
+    reload: () => fetchData(undefined, { background: true }),
     fetchOne: (campId, id) => apiService.fetchRegistration(campId, id),
     onCreate: (registration) => bus.emit('create', registration),
     onUpdate: (registration) => bus.emit('update', registration),
     onDelete: (id) => bus.emit('delete', id),
   });
 
-  async function fetchData(campId?: string) {
+  async function fetchData(campId?: string, opts?: { background?: boolean }) {
     const cid: string = campId ?? (route.params.campId as string);
     checkNotNullWithError(cid);
 
-    await lazyFetch(async () => {
-      return await apiService.fetchRegistrations(cid);
-    });
+    const fetcher = () => apiService.fetchRegistrations(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function storeData(
@@ -113,12 +113,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
 
       bus.emit('delete', rid);
     });
-  }
-
-  // Force a fresh list fetch (used after a (re)connect to catch missed events).
-  async function fetchAfterInvalidate() {
-    invalidate();
-    await fetchData();
   }
 
   return {

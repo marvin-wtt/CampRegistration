@@ -31,6 +31,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     checkNotNullWithNotification,
     queryParam,
     lazyFetch,
+    backgroundFetch,
   } = useServiceHandler<ServiceFile[]>('campFiles');
 
   authBus.on('logout', () => {
@@ -48,10 +49,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
   useRealtimeCollection<ServiceFile>('file', {
     data,
     invalidate,
-    reload: async () => {
-      invalidate();
-      await fetchData();
-    },
+    reload: () => fetchData({ background: true }),
   });
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.
@@ -125,12 +123,11 @@ export const useCampFilesStore = defineStore('campFiles', () => {
       ),
   );
 
-  async function fetchData() {
+  async function fetchData(opts?: { background?: boolean }) {
     const campId = queryParam('campId');
 
-    await lazyFetch(async () => {
-      return await apiService.fetchCampFiles(campId);
-    });
+    const fetcher = () => apiService.fetchCampFiles(campId);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createEntry(
