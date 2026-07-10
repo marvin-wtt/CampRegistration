@@ -349,5 +349,10 @@ submit:
     font-weight: bold;
     font-style: oblique;
   }
+
+  .sv-save-data_root {
+    bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+    z-index: 2100;
+  }
 }
 </style>
