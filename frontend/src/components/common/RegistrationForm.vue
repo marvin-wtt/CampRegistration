@@ -11,6 +11,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { createMarkdownConverter } from '@/utils/markdown';
 import { onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
@@ -27,6 +28,7 @@ import { useErrorExtractor } from '@/composables/serviceHandler';
 const mdConverter = createMarkdownConverter();
 
 const { locale, t } = useI18n();
+const router = useRouter();
 const api = useAPIService();
 const { extractErrorText } = useErrorExtractor();
 
@@ -87,6 +89,14 @@ function createModerationForm(form: object) {
 function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
+
+  // survey.completedHtml always falls back to survey-core's built-in
+  // "Thank you for completing the survey" text, so it can't be used to
+  // detect whether the form itself defines one — check the raw JSON instead.
+  if (!hasCustomCompletedHtml(form)) {
+    survey.completedHtml = createDefaultCompletedHtml(campId);
+  }
+
   let completedHtmlBeforeSubmit: string | undefined;
   let completedHtmlOnConditionBeforeSubmit:
     SurveyModel['completedHtmlOnCondition'] | undefined;
@@ -206,6 +216,39 @@ function createModel(campId: string, form: object): SurveyModel {
   return survey;
 }
 
+function hasCustomCompletedHtml(form: object): boolean {
+  return Boolean((form as { completedHtml?: unknown }).completedHtml);
+}
+
+function createDefaultCompletedHtml(campId: string): string {
+  const registerAgainHref = router.resolve({
+    name: 'camp',
+    params: { campId },
+  }).href;
+  const exploreCampsHref = router.resolve({ name: 'camps' }).href;
+
+  return [
+    `<h3>${escapeHtml(t('complete.title'))}</h3>`,
+    `<p style="font-size: 18px">${escapeHtml(t('complete.text'))}</p>`,
+    '<div class="registration-complete-actions">',
+    '<a',
+    ' class="registration-complete-actions__btn registration-complete-actions__btn--primary rounded-full elevation-1"',
+    ` href="${escapeHtml(registerAgainHref)}"`,
+    '>',
+    '<i class="notranslate material-icons" aria-hidden="true">person_add</i>',
+    escapeHtml(t('complete.registerAnother')),
+    '</a>',
+    '<a',
+    ' class="registration-complete-actions__btn registration-complete-actions__btn--secondary rounded-full"',
+    ` href="${escapeHtml(exploreCampsHref)}"`,
+    '>',
+    '<i class="notranslate material-icons" aria-hidden="true">explore</i>',
+    escapeHtml(t('complete.exploreCamps')),
+    '</a>',
+    '</div>',
+  ].join('');
+}
+
 function createSubmitStateHtml(title: string, text: string): string {
   return [
     `<h3>${escapeHtml(title)}</h3>`,
@@ -300,6 +343,11 @@ submit:
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
+complete:
+  title: 'Registration complete!'
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at camp."
+  registerAnother: 'Register another person'
+  exploreCamps: 'Explore other camps'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -310,6 +358,11 @@ submit:
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
+complete:
+  title: 'Anmeldung abgeschlossen!'
+  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Camp zu begrüßen.'
+  registerAnother: 'Weitere Person anmelden'
+  exploreCamps: 'Weitere Camps entdecken'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -320,6 +373,11 @@ submit:
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
+complete:
+  title: 'Inscription terminée !'
+  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au camp."
+  registerAnother: 'Inscrire une autre personne'
+  exploreCamps: "Découvrir d'autres camps"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -330,6 +388,11 @@ submit:
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
+complete:
+  title: 'Rejestracja zakończona!'
+  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na obozie.'
+  registerAnother: 'Zarejestruj kolejną osobę'
+  exploreCamps: 'Odkryj inne obozy'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -340,6 +403,11 @@ submit:
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'
+complete:
+  title: 'Registrace dokončena!'
+  text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
+  registerAnother: 'Registrovat další osobu'
+  exploreCamps: 'Prozkoumat další tábory'
 </i18n>
 
 <style lang="scss">
@@ -353,6 +421,65 @@ submit:
   .sv-save-data_root {
     bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
     z-index: 2100;
+  }
+
+  .sd-completedpage {
+    // survey-core already applies generous top/bottom padding by default
+    // (and that's what visually centers the complete page); only the
+    // horizontal padding was missing.
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .registration-complete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .registration-complete-actions__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 24px;
+
+    font-size: 14px;
+    font-weight: 500;
+    font-style: normal;
+    text-decoration: none;
+    white-space: nowrap;
+
+    transition:
+      box-shadow 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+
+    .material-icons {
+      font-size: 18px;
+    }
+
+    &--primary {
+      background-color: var(--md3-primary);
+      color: var(--md3-on-primary);
+
+      &:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    &--secondary {
+      background-color: transparent;
+      color: var(--md3-primary);
+      border: 1px solid var(--md3-outline);
+
+      &:hover {
+        background-color: var(--md3-primary-container);
+        color: var(--md3-on-primary-container);
+      }
+    }
   }
 }
 </style>

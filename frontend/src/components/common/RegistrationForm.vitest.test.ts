@@ -5,6 +5,16 @@ import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { SurveyComponent } from 'survey-vue3-ui';
 import type { SurveyModel } from 'survey-core';
 
+// The completed-page markup builds action links via `router.resolve(...)`;
+// stub it out since routing itself is irrelevant to these tests.
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    resolve: (to: { name: string; params?: Record<string, string> }) => ({
+      href: `/${[to.name, ...Object.values(to.params ?? {})].join('/')}`,
+    }),
+  }),
+}));
+
 installQuasarPlugin();
 
 describe('RegistrationForm', () => {

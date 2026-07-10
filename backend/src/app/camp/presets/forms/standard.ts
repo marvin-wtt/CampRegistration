@@ -4,15 +4,6 @@ export default {
   description: '{camp.startAtDate} - {camp.endAtDate}',
   logoHeight: '80px',
   logoPosition: 'right',
-  completedHtml: {
-    en: '<h3>Thank you for your registration!</h3><p style="font-size: 18px">You should receive a confirmation email shortly.</p>',
-    de: '<h3>Vielen Dank für deine Anmeldung!</h3><p style="font-size: 18px">Du solltest in kurze eine Bestätigungsmail erhalten.</p>',
-    fr: '<h3>Merci de t\'inscrire!</h3><p style="font-size: 18px">Tu devrais recevoir un e-mail de confirmation dans les plus brefs délais.</p>',
-    pl: '<h3>Dziękujemy za rejestrację!</h3><p style="font-size: 18px">Wkrótce powinieneś/powinnaś otrzymać e-mail z potwierdzeniem.</p>',
-    cs: '<h3>Děkujeme za registraci!</h3><p style="font-size: 18px">Brzy by ti měl přijít potvrzovací e-mail.</p>',
-    default:
-      '<h3>Thank you for your registration!</h3><p style="font-size: 18px">You should receive a confirmation email shortly.</p>',
-  },
   pages: [
     {
       name: 'p_overview',
