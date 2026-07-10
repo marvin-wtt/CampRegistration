@@ -45,6 +45,7 @@ services:
       TMP_DIR: /data/tmp/
     volumes:
       - storage:/data
+      - logs:/app/backend/logs
     expose:
       - "3000"
     restart: unless-stopped
@@ -55,3 +56,4 @@ services:
 
 volumes:
   storage:
+  logs:

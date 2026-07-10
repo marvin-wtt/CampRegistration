@@ -308,19 +308,32 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
     const message = this.payload.message;
     const messageDeliveryService = resolve(MessageDeliveryService);
-    await messageDeliveryService.createDelivery(
-      this.payload.registration,
-      { kind: message.kind, id: message.id, attachments: message.attachments },
-      {
-        subject: mail.subject,
-        body: mail.html ?? mail.text ?? '',
-        priority: mail.priority,
-        to: mail.to ? addressLikeToString(mail.to) : undefined,
-        cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
-        bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
-        replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
-      },
-    );
+    try {
+      await messageDeliveryService.createDelivery(
+        this.payload.registration,
+        {
+          kind: message.kind,
+          id: message.id,
+          attachments: message.attachments,
+        },
+        {
+          subject: mail.subject,
+          body: mail.html ?? mail.text ?? '',
+          priority: mail.priority,
+          to: mail.to ? addressLikeToString(mail.to) : undefined,
+          cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
+          bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
+          replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
+        },
+      );
+    } catch (err) {
+      // Recording the delivery is bookkeeping, not a precondition for
+      // sending. Never let a failure here (e.g. the Message was deleted
+      // in the meantime) block the actual mail send.
+      logger.warn(
+        `Failed to record message delivery for registration ${this.payload.registration.id} (message ${message.id}): ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
 
     return mail;
   }

@@ -185,9 +185,16 @@ interface ServiceFileFormData {
   file?: File | null;
 }
 
-const { initialField, initialLocale, fileToReplace, fileToEdit } = defineProps<{
+const {
+  initialField,
+  initialLocale,
+  initialAccessLevel,
+  fileToReplace,
+  fileToEdit,
+} = defineProps<{
   initialField?: string;
   initialLocale?: string | null;
+  initialAccessLevel?: string;
   fileToReplace?: ServiceFile;
   fileToEdit?: ServiceFile;
 }>();
@@ -205,7 +212,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const fileData = reactive<ServiceFileFormData>({
   accessLevel: normalizeAccessLevel(
-    fileToEdit?.accessLevel ?? fileToReplace?.accessLevel,
+    initialAccessLevel ?? fileToEdit?.accessLevel ?? fileToReplace?.accessLevel,
   ),
   field: fileToEdit?.field ?? fileToReplace?.field ?? initialField,
   locale: fileToEdit?.locale ?? fileToReplace?.locale ?? initialLocale ?? null,
