@@ -20,4 +20,7 @@ export interface AdminOverview {
     total: number;
     configured: number;
   };
+  files: {
+    total: number;
+  };
 }

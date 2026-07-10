@@ -4,6 +4,7 @@ import {
   UserFactory,
   CampFactory,
   RegistrationFactory,
+  FileFactory,
 } from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
@@ -68,6 +69,9 @@ describe('/api/v1/admin/overview', () => {
           total: expect.any(Number),
           configured: expect.any(Number),
         },
+        files: {
+          total: expect.any(Number),
+        },
       });
     });
 
@@ -113,6 +117,8 @@ describe('/api/v1/admin/overview', () => {
         registrationClosesAt: moment(now).add(2, 'days').toDate(),
       });
 
+      await FileFactory.create();
+
       const { body } = await request()
         .get('/api/v1/admin/overview')
         .auth(accessToken, { type: 'bearer' })
@@ -122,6 +128,7 @@ describe('/api/v1/admin/overview', () => {
       expect(body.data.camps.open).toBe(1);
       expect(body.data.camps.upcoming).toBe(1);
       expect(body.data.camps.closed).toBe(2);
+      expect(body.data.files.total).toBe(1);
     });
 
     it('should count total registrations, excluding soft-deleted ones', async () => {

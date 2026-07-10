@@ -397,6 +397,24 @@ const editor = useEditor({
     }),
     Typography,
   ],
+  editorProps: {
+    handlePaste: (view, event) => {
+      // If plainText is true, we want to paste only the plain text content
+      if (!plainText) {
+        return false;
+      }
+
+      const text = event.clipboardData?.getData('text/plain');
+
+      if (text == null) {
+        return false;
+      }
+
+      view.dispatch(view.state.tr.insertText(text));
+
+      return true;
+    },
+  },
   content: wrapTemplateVariables(model.value),
   onUpdate: ({ editor }) => {
     model.value = unwrapTemplateVariables(getEditorValue(editor));

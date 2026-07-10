@@ -43,7 +43,11 @@
             dense
           >
             <template
-              v-if="suggestedReplyTo && suggestedReplyTo !== replyTo"
+              v-if="
+                suggestedReplyTo &&
+                suggestedReplyTo !== replyTo &&
+                to.length > 0
+              "
               #append
             >
               <q-btn
@@ -63,7 +67,62 @@
             </template>
           </q-input>
 
+          <q-btn
+            v-if="quasar.screen.lt.sm"
+            :icon="priorityIcon"
+            :color="priorityColor"
+            :aria-label="priorityMenuLabel"
+            :disable="sendInProgress"
+            size="sm"
+            round
+            outline
+            class="priority-menu-button"
+          >
+            <q-tooltip>
+              {{ priorityMenuLabel }}
+            </q-tooltip>
+
+            <q-menu
+              anchor="bottom right"
+              self="top right"
+              auto-close
+            >
+              <q-list
+                dense
+                class="priority-menu"
+              >
+                <q-item
+                  v-for="option in priorityOptions"
+                  :key="option.value"
+                  clickable
+                  :active="option.value === priority"
+                  @click="setPriority(option.value)"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      :name="priorityOptionIcon(option.value)"
+                      :color="priorityOptionColor(option.value)"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ option.label }}
+                  </q-item-section>
+                  <q-item-section
+                    v-if="option.value === priority"
+                    side
+                  >
+                    <q-icon
+                      name="check"
+                      size="xs"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+
           <q-select
+            v-if="!quasar.screen.lt.sm"
             v-model="priority"
             :label="t('input.priority')"
             :options="priorityOptions"
@@ -277,7 +336,8 @@ function onToBlur() {
 
 const subject = ref<string>('');
 const attachments = ref<FileInputModel[]>([]);
-const priority = ref<'high' | 'normal' | 'low'>('normal');
+type MessagePriority = 'high' | 'normal' | 'low';
+const priority = ref<MessagePriority>('normal');
 const text = ref<string>('');
 const sendInProgress = ref<boolean>(false);
 
@@ -296,6 +356,16 @@ const priorityOptions = computed<QSelectOption[]>(() => [
   },
 ]);
 
+function isMessagePriority(value: unknown): value is MessagePriority {
+  return value === 'high' || value === 'normal' || value === 'low';
+}
+
+function setPriority(value: unknown) {
+  if (isMessagePriority(value)) {
+    priority.value = value;
+  }
+}
+
 function recipientIds(contacts: Contact[]): Set<string> {
   const ids = new Set<string>();
   contacts.forEach((contact) => {
@@ -310,8 +380,8 @@ function recipientIds(contacts: Contact[]): Set<string> {
 
 const recipientCount = computed<number>(() => recipientIds(to.value).size);
 
-const priorityIcon = computed<string>(() => {
-  switch (priority.value) {
+function priorityOptionIcon(value: unknown): string {
+  switch (value) {
     case 'high':
       return 'keyboard_double_arrow_up';
     case 'low':
@@ -319,10 +389,10 @@ const priorityIcon = computed<string>(() => {
     default:
       return 'remove';
   }
-});
+}
 
-const priorityColor = computed<string | undefined>(() => {
-  switch (priority.value) {
+function priorityOptionColor(value: unknown): string | undefined {
+  switch (value) {
     case 'high':
       return 'negative';
     case 'low':
@@ -330,6 +400,23 @@ const priorityColor = computed<string | undefined>(() => {
     default:
       return undefined;
   }
+}
+
+const priorityIcon = computed<string>(() => priorityOptionIcon(priority.value));
+
+const priorityColor = computed<string | undefined>(() => {
+  return priorityOptionColor(priority.value);
+});
+
+const priorityMenuLabel = computed<string>(() => {
+  const option = priorityOptions.value.find(
+    (item) => item.value === priority.value,
+  );
+
+  const label =
+    typeof option?.label === 'string' ? option.label : t('priority.normal');
+
+  return `${t('input.priority')}: ${label}`;
 });
 
 const sendLabel = computed<string>(() => {
@@ -528,6 +615,16 @@ defineExpose({ dirty });
   min-width: 0;
 }
 
+.priority-menu-button {
+  width: 40px;
+  height: 40px;
+  align-self: start;
+}
+
+.priority-menu {
+  min-width: 160px;
+}
+
 .composer-message {
   display: flex;
   min-height: 0;
@@ -561,7 +658,7 @@ defineExpose({ dirty });
 
 @media (max-width: 599px) {
   .contact-form--standalone {
-    padding: 16px;
+    padding: 0 16px 16px;
   }
 
   .composer-fields {
@@ -569,7 +666,8 @@ defineExpose({ dirty });
   }
 
   .composer-meta {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 40px;
+    align-items: start;
   }
 
   .composer-message {

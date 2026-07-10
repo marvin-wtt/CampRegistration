@@ -597,10 +597,12 @@ function showLeaveDialog(manager: CampManager) {
   }
 
   .member-meta {
+    padding-top: 10px;
     order: 5;
     flex: 0 0 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
     padding-left: 56px;
+    flex-direction: row-reverse;
   }
 }
 </style>

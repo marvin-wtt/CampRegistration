@@ -565,6 +565,12 @@ export class FileService extends BaseService {
     );
   }
 
+  public async getOverviewCounts() {
+    const total = await this.prisma.file.count();
+
+    return { total };
+  }
+
   public async close() {
     await this.queue.close();
   }
