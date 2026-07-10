@@ -27,6 +27,7 @@ import FormEditor from '@/components/campManagement/settings/form/FormEditor.vue
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import type { ITheme } from 'survey-core';
 import EditorRestrictedAccessDialog from '@/components/campManagement/settings/form/EditorRestrictedAccessDialog.vue';
+import { toRelativeUrl } from '@/utils/url';
 
 const quasar = useQuasar();
 const campDetailsStore = useCampDetailsStore();
@@ -113,7 +114,7 @@ async function saveFile(file: File): Promise<string> {
 
   // When file is selected via custom picker, then the file is already present on the server
   if ('id' in file && typeof file.id === 'string') {
-    return campFileStore.getUrl(file.id);
+    return toRelativeUrl(campFileStore.getUrl(file.id));
   }
 
   const newFile = await campFileStore.createEntry({
