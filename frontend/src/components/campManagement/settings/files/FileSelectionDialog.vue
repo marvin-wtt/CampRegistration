@@ -126,10 +126,11 @@ onMounted(async () => {
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { multiple, accept, accessLevel } = defineProps<{
+const { multiple, accept, accessLevel, field } = defineProps<{
   multiple?: boolean;
   accept?: string;
   accessLevel?: string;
+  field?: string;
 }>();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -150,7 +151,12 @@ const acceptedTypes = computed<string[]>(() => {
 });
 
 const files = computed<ServiceFile[]>(() => {
-  return data.value?.filter(filterAccessLevel).filter(filterFileType) ?? [];
+  return (
+    data.value
+      ?.filter(filterAccessLevel)
+      .filter(filterFileType)
+      .filter(filterField) ?? []
+  );
 });
 
 function onOKClick() {
@@ -163,6 +169,10 @@ function onCancelClick() {
 
 function filterAccessLevel(file: ServiceFile): boolean {
   return !accessLevel || file.accessLevel === accessLevel;
+}
+
+function filterField(file: ServiceFile): boolean {
+  return !field || file.field === field;
 }
 
 function filterFileType(file: ServiceFile): boolean {
@@ -206,6 +216,10 @@ function upload() {
   quasar
     .dialog({
       component: FileUploadDialog,
+      componentProps: {
+        initialField: field,
+        accessLevel,
+      },
     })
     .onOk((file: ServiceFile) => {
       if (multiple) {

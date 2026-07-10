@@ -38,8 +38,6 @@
             {{ title }}
           </q-toolbar-title>
         </slot>
-        <q-space />
-
         <profile-menu />
       </m-toolbar>
     </q-header>

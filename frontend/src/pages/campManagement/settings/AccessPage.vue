@@ -265,6 +265,7 @@ import CampManagerUpdateDialog from '@/components/campManagement/settings/access
 import RolePermissionsDialog from '@/components/campManagement/settings/access/RolePermissionsDialog.vue';
 import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { useRouter } from 'vue-router';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
@@ -272,6 +273,7 @@ const campManagerStore = useCampManagerStore();
 const profileStore = useProfileStore();
 const campDetailsStore = useCampDetailsStore();
 const { can } = usePermissions();
+const router = useRouter();
 
 onMounted(async () => {
   await Promise.allSettled([
@@ -447,8 +449,14 @@ function showLeaveDialog(manager: CampManager) {
       },
     })
     .onOk(() => {
-      void campManagerStore.deleteData(manager.id);
+      void leaveCamp(manager);
     });
+}
+
+async function leaveCamp(manager: CampManager) {
+  await campManagerStore.deleteData(manager.id);
+  await profileStore.fetchProfile();
+  await router.push({ name: 'management.camps' });
 }
 </script>
 
@@ -597,10 +605,12 @@ function showLeaveDialog(manager: CampManager) {
   }
 
   .member-meta {
+    padding-top: 10px;
     order: 5;
     flex: 0 0 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
     padding-left: 56px;
+    flex-direction: row-reverse;
   }
 }
 </style>

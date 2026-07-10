@@ -292,16 +292,20 @@ creator.onUploadFile.add((_, options) => {
 });
 
 creator.onOpenFileChooser.add((_, options) => {
+  const field =
+    options.elementType.toString() + '_' + options.propertyName.toString();
+
   quasar
     .dialog({
       component: FileSelectionDialog,
       componentProps: {
         accept: 'image/*',
         accessLevel: 'public',
+        field,
       },
     })
-    .onOk((files) => {
-      options.callback(files);
+    .onOk((files: ServiceFile[]) => {
+      options.callback(files as unknown as File[]);
     })
     .onCancel(() => {
       options.callback([]);

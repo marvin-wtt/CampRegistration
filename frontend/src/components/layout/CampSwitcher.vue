@@ -45,6 +45,9 @@
 
     <div class="camp-switcher-rail__name ellipsis">
       {{ switcherLabel }}
+      <q-tooltip>
+        {{ switcherLabel }}
+      </q-tooltip>
     </div>
   </div>
 
