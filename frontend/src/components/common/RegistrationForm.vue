@@ -22,11 +22,13 @@ import {
 } from '@/composables/survey';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
+import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const mdConverter = createMarkdownConverter();
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const api = useAPIService();
+const { extractErrorText } = useErrorExtractor();
 
 interface Props {
   data?: object;
@@ -85,6 +87,10 @@ function createModerationForm(form: object) {
 function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
+  let completedHtmlBeforeSubmit: string | undefined;
+  let completedHtmlOnConditionBeforeSubmit:
+    SurveyModel['completedHtmlOnCondition'] | undefined;
+  let showCompletePageBeforeSubmit: boolean | undefined;
 
   if (props.moderation) {
     const hideComplete = () => {
@@ -155,10 +161,18 @@ function createModel(campId: string, form: object): SurveyModel {
 
   // Send data to server
   survey.onComplete.add(async (sender, options) => {
-    options.showSaveInProgress();
+    completedHtmlBeforeSubmit ??= sender.completedHtml;
+    completedHtmlOnConditionBeforeSubmit ??= sender.completedHtmlOnCondition;
+    showCompletePageBeforeSubmit ??= sender.showCompletePage;
 
-    const showCompletePage = sender.showCompletePage;
-    sender.showCompletePage = false;
+    sender.completedHtmlOnCondition = [];
+    sender.completedHtml = createSubmitStateHtml(
+      t('submit.saving.title'),
+      t('submit.saving.text'),
+    );
+    sender.showCompletePage = true;
+
+    options.showSaveInProgress();
 
     mapFileQuestionValues(sender);
 
@@ -166,15 +180,46 @@ function createModel(campId: string, form: object): SurveyModel {
 
     try {
       await props.submitFn(campId, registration, sender.locale);
+      sender.completedHtml = completedHtmlBeforeSubmit ?? '';
+      sender.completedHtmlOnCondition =
+        completedHtmlOnConditionBeforeSubmit ?? [];
+      sender.showCompletePage = showCompletePageBeforeSubmit ?? true;
+      sender.render();
+
+      completedHtmlBeforeSubmit = undefined;
+      completedHtmlOnConditionBeforeSubmit = undefined;
+      showCompletePageBeforeSubmit = undefined;
+
       options.showSaveSuccess();
-      sender.showCompletePage = showCompletePage;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e: unknown) {
-      options.showSaveError('Error');
+      sender.completedHtml = createSubmitStateHtml(
+        t('submit.error.title'),
+        t('submit.error.text'),
+      );
+      sender.showCompletePage = true;
+      sender.render();
+
+      options.showSaveError(extractErrorText(e));
     }
   });
 
   return survey;
+}
+
+function createSubmitStateHtml(title: string, text: string): string {
+  return [
+    `<h3>${escapeHtml(title)}</h3>`,
+    `<p style="font-size: 18px">${escapeHtml(text)}</p>`,
+  ].join('');
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function readFile(file: File) {
@@ -246,6 +291,56 @@ defineExpose({
   submit: () => model.doComplete(),
 });
 </script>
+
+<i18n lang="yaml" locale="en">
+submit:
+  saving:
+    title: 'Submitting registration'
+    text: 'Please wait while your registration is being saved.'
+  error:
+    title: 'Registration failed'
+    text: 'Your registration could not be saved. Please try again.'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+submit:
+  saving:
+    title: 'Anmeldung wird gesendet'
+    text: 'Bitte warte, während deine Anmeldung gespeichert wird.'
+  error:
+    title: 'Anmeldung fehlgeschlagen'
+    text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+submit:
+  saving:
+    title: "Envoi de l'inscription"
+    text: "Veuillez patienter pendant l'enregistrement de votre inscription."
+  error:
+    title: "Échec de l'inscription"
+    text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+submit:
+  saving:
+    title: 'Wysyłanie rejestracji'
+    text: 'Poczekaj, trwa zapisywanie rejestracji.'
+  error:
+    title: 'Rejestracja nie powiodła się'
+    text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+submit:
+  saving:
+    title: 'Odesílání registrace'
+    text: 'Počkej prosím, než bude registrace uložena.'
+  error:
+    title: 'Registrace se nezdařila'
+    text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'
+</i18n>
 
 <style lang="scss">
 #survey {
