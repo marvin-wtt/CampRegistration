@@ -1,11 +1,8 @@
 import type { Camp, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
-import { replaceUrlsInObject } from '#utils/replaceUrls';
 import type { OptionalByKeys } from '#types/utils';
-import type { AppConfig } from '#config';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
-import { Config } from '#core/ioc/decorators';
 import { FileService } from '#app/file/file.service.js';
 
 export interface CampWithFreePlaces extends Camp {
@@ -44,10 +41,7 @@ interface CampQueryArgs {
 
 @injectable()
 export class CampService extends BaseService {
-  constructor(
-    @Config() private readonly config: AppConfig,
-    @inject(FileService) private readonly fileService: FileService,
-  ) {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
     super();
   }
 
@@ -306,37 +300,23 @@ export class CampService extends BaseService {
 
   private replaceFormFileUrls(
     form: Record<string, unknown>,
-    fileIds: string[],
+    fileIds: readonly string[],
     fileIdMap: Map<string, string>,
   ): Record<string, unknown> {
-    return replaceUrlsInObject(form, (url) => {
-      const urlObj = new URL(url);
+    let formStr = JSON.stringify(form);
 
-      // Only replace app urls
-      if (urlObj.origin !== this.config.origin) {
-        return url;
+    for (const fileId of new Set(fileIds)) {
+      if (!formStr.includes(fileId)) {
+        continue;
       }
 
-      const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+      const replacementId = fileIdMap.get(fileId) ?? ulid();
 
-      // Replace all url params
-      for (const fileId of fileIds) {
-        const index = pathSegments.indexOf(fileId);
-        if (index === -1) {
-          continue;
-        }
+      fileIdMap.set(fileId, replacementId);
+      formStr = formStr.replaceAll(fileId, replacementId);
+    }
 
-        // Replace the id with the new one
-        const id = fileIdMap.get(fileId) ?? ulid();
-        pathSegments[index] = id;
-        fileIdMap.set(fileId, id);
-      }
-
-      // Reconstruct the URL with the updated path
-      urlObj.pathname = pathSegments.join('/');
-
-      return urlObj.toString();
-    });
+    return JSON.parse(formStr) as Record<string, unknown>;
   }
 
   async updateCamp(camp: Camp, data: Omit<Prisma.CampUpdateInput, 'id'>) {
