@@ -10,6 +10,9 @@
 # prisma engines, esbuild) have the files they need.
 FROM node:22-bookworm-slim AS build
 
+# Openssl required by prisma
+RUN apt-get update && apt-get install -y openssl
+
 WORKDIR /app
 
 ENV CYPRESS_INSTALL_BINARY=0
@@ -32,6 +35,11 @@ RUN mkdir -p /data/uploads /data/tmp && chown -R node:node /data
 # Ship the whole pruned tree: preserves the workspace layout/symlinks and the
 # Prisma client + engine without enumerating files.
 COPY --from=build --chown=node:node /app /app
+
+# Pre-create the logs dir owned by node so a fresh `logs` named volume inherits
+# node ownership on first mount (same trick as /data above); otherwise Docker
+# creates the mount point root-owned and the node process hits EACCES.
+RUN mkdir -p /app/backend/logs && chown node:node /app/backend/logs
 
 USER node
 
