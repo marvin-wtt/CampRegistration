@@ -4,7 +4,7 @@
     persistent
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
+    <q-card class="q-dialog-plugin q-pb-none camp-create-dialog-card">
       <q-btn
         icon="close"
         class="absolute-top-right z-top"
@@ -22,7 +22,6 @@
         animated
         flat
         header-nav
-        class="column col-xs-12 col-sm-7 col-md-5 col-lg-4 col-xl-3"
       >
         <!-- Template -->
         <camp-edit-step
@@ -42,6 +41,11 @@
             emit-value
             map-options
           >
+            <template #selected-item="scope">
+              <span class="ellipsis">
+                {{ scope.opt.label }}
+              </span>
+            </template>
           </q-select>
 
           <!-- Template -->
@@ -62,6 +66,11 @@
           >
             <template #before>
               <q-icon name="content_copy" />
+            </template>
+            <template #selected-item="scope">
+              <span class="ellipsis">
+                {{ scope.opt.label }}
+              </span>
             </template>
           </q-select>
         </camp-edit-step>
@@ -514,7 +523,11 @@ function clearReferenceCamp() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.camp-create-dialog-card {
+  width: 500px;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 step:
