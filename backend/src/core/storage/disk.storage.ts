@@ -40,7 +40,10 @@ export class DiskStorage implements Storage {
   }
 
   async moveToStorage(file: StorageMoveFile) {
-    const sourcePath = this.safeJoinFilePath(config.storage.tmpDir, file.tmpFileName);
+    const sourcePath = this.safeJoinFilePath(
+      config.storage.tmpDir,
+      file.tmpFileName,
+    );
     const destinationPath = this.safeJoinFilePath(this.storageDir, file.name);
 
     await fse.ensureDir(this.storageDir);
@@ -66,10 +69,10 @@ export class DiskStorage implements Storage {
     return fse.createReadStream(filePath);
   }
 
-  async createDownloadUrl(
+  createDownloadUrl(
     _file: StorageFile,
     _options?: StorageDownloadUrlOptions,
   ): Promise<string | null> {
-    return null;
+    return Promise.resolve(null);
   }
 }

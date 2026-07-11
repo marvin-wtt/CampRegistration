@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:reset": "npx prisma db push --force-reset --accept-data-loss",
     "db:truncate": "tsx prisma/scripts/truncate.ts",
+    "storage:transfer": "tsx prisma/scripts/transfer-storage.ts",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",

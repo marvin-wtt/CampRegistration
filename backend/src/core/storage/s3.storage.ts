@@ -185,6 +185,8 @@ export class S3Storage implements Storage {
       file.tmpFileName,
     );
     // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const { size } = await fse.stat(sourcePath);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const sourceFileStream = fse.createReadStream(sourcePath);
 
     try {
@@ -193,6 +195,10 @@ export class S3Storage implements Storage {
           Bucket: this.options.bucket,
           Key: this.withPrefix(file.name),
           ContentType: file.type,
+          // Pass a known length so the SDK can stream directly instead of
+          // buffering the file to compute it — and so S3-compatible providers
+          // that reject `aws-chunked` uploads still accept the request.
+          ContentLength: size,
           Body: sourceFileStream,
           IfNoneMatch: '*',
         }),
