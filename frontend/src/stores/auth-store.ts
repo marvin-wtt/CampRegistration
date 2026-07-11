@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
     return {
       name: 'login',
       query: {
-        origin: encodeURIComponent(route.path),
+        origin: encodeURIComponent(route.fullPath),
       },
     };
   }

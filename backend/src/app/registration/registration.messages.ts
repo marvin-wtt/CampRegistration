@@ -122,7 +122,9 @@ export class RegistrationNotifyMessage extends MailBase<{
     const camp = this.payload.camp;
     const registration = this.payload.registration;
 
-    const url = generateUrl(['management', 'camps', camp.id]);
+    const url = generateUrl(['management', 'camps', camp.id, 'participants'], {
+      registrationId: registration.id,
+    });
 
     return {
       template: 'registration-manager-notification',
