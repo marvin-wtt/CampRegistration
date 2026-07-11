@@ -57,7 +57,7 @@ export class DiskStorage implements Storage {
     return fse.readdir(this.storageDir);
   }
 
-  async openReadStream(file: StorageFile) {
+  openReadStream(file: StorageFile) {
     const filePath = this.safeJoinFilePath(this.storageDir, file.name);
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -66,7 +66,7 @@ export class DiskStorage implements Storage {
     }
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    return fse.createReadStream(filePath);
+    return Promise.resolve(fse.createReadStream(filePath));
   }
 
   createDownloadUrl(
