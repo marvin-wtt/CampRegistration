@@ -21,6 +21,7 @@ import {
   verifyToken,
 } from './utils/token.js';
 import { request } from '../utils/request.js';
+import { hashRecoveryCode } from './utils/recoveryCode.js';
 import { randomUUID } from 'node:crypto';
 import { fetchCsrf } from '../utils/csrf.js';
 import * as OTPAuth from 'otpauth';
@@ -726,7 +727,7 @@ describe('/api/v1/auth', async () => {
       const recoveryCode = await prisma.twoFactorRecoveryCode.create({
         data: {
           userId: user.id,
-          code: bcrypt.hashSync('ABCDE12345', 8),
+          code: hashRecoveryCode('ABCDE12345'),
         },
       });
 
@@ -752,7 +753,7 @@ describe('/api/v1/auth', async () => {
       await prisma.twoFactorRecoveryCode.create({
         data: {
           userId: user.id,
-          code: bcrypt.hashSync('ABCDE12345', 8),
+          code: hashRecoveryCode('ABCDE12345'),
           usedAt: new Date(),
         },
       });

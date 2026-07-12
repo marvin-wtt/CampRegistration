@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import * as OTPAuth from 'otpauth';
-import bcrypt from 'bcryptjs';
 import { UserFactory } from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
 import { generateAccessToken } from './utils/token.js';
+import { hashRecoveryCode } from './utils/recoveryCode.js';
 import prisma from '../utils/prisma.js';
 
 describe('/api/v1/totp/', () => {
@@ -235,7 +235,7 @@ describe('/api/v1/totp/', () => {
       await prisma.twoFactorRecoveryCode.create({
         data: {
           userId: user.id,
-          code: bcrypt.hashSync('ABCDE12345', 8),
+          code: hashRecoveryCode('ABCDE12345'),
         },
       });
       const accessToken = generateAccessToken(user);

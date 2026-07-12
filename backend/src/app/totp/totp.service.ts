@@ -1,13 +1,12 @@
 import type { User, UserTwoFactor } from '#generated/prisma/client.js';
 import * as OTPAuth from 'otpauth';
-import { randomInt } from 'node:crypto';
+import { createHmac, randomInt } from 'node:crypto';
 import { type AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators.js';
-import { encryptPassword, isPasswordMatch } from '#core/encryption';
 
 const RECOVERY_CODE_COUNT = 10;
 const RECOVERY_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -106,12 +105,13 @@ export class TotpService extends BaseService {
    * returned once and cannot be recovered afterwards.
    */
   async generateRecoveryCodes(userId: string): Promise<string[]> {
-    const codes = Array.from({ length: RECOVERY_CODE_COUNT }, () =>
-      generateRecoveryCode(),
+    const codes = Array.from(
+      { length: RECOVERY_CODE_COUNT },
+      generateRecoveryCode,
     );
 
-    const hashed = await Promise.all(
-      codes.map((code) => encryptPassword(normalizeRecoveryCode(code))),
+    const hashed = codes.map((code) =>
+      this.hashRecoveryCode(normalizeRecoveryCode(code)),
     );
 
     await this.prisma.$transaction([
@@ -218,23 +218,26 @@ export class TotpService extends BaseService {
     userId: string,
     code: string,
   ): Promise<boolean> {
-    const normalized = normalizeRecoveryCode(code);
+    const hashed = this.hashRecoveryCode(normalizeRecoveryCode(code));
 
-    const candidates = await this.prisma.twoFactorRecoveryCode.findMany({
-      where: { userId, usedAt: null },
+    // Single conditional update so a code cannot be consumed twice, even by
+    // concurrent requests.
+    const { count } = await this.prisma.twoFactorRecoveryCode.updateMany({
+      where: { userId, code: hashed, usedAt: null },
+      data: { usedAt: new Date() },
     });
 
-    for (const candidate of candidates) {
-      if (await isPasswordMatch(normalized, candidate.code)) {
-        await this.prisma.twoFactorRecoveryCode.update({
-          where: { id: candidate.id },
-          data: { usedAt: new Date() },
-        });
-        return true;
-      }
-    }
+    return count > 0;
+  }
 
-    return false;
+  // Recovery codes are random 50-bit values, not user-chosen passwords, so a
+  // fast keyed hash is sufficient and allows direct lookup by digest. The
+  // HMAC key lives outside the database, so a leaked table alone cannot be
+  // brute-forced.
+  private hashRecoveryCode(code: string): string {
+    return createHmac('sha256', this.config.totp.recoveryCodeSecret)
+      .update(code)
+      .digest('hex');
   }
 }
 

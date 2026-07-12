@@ -42,6 +42,9 @@ const config = {
   csrf: {
     secret: env.CSRF_SECRET,
   },
+  totp: {
+    recoveryCodeSecret: env.TOTP_RECOVERY_CODE_SECRET,
+  },
   redis: {
     host: env.REDIS_HOST,
     port: env.REDIS_PORT,
