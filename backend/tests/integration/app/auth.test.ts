@@ -21,6 +21,7 @@ import {
   verifyToken,
 } from './utils/token.js';
 import { request } from '../utils/request.js';
+import { hashRecoveryCode } from './utils/recoveryCode.js';
 import { randomUUID } from 'node:crypto';
 import { fetchCsrf } from '../utils/csrf.js';
 import * as OTPAuth from 'otpauth';
@@ -456,7 +457,12 @@ describe('/api/v1/auth', async () => {
       await UserFactory.create({
         email: 'test@email.net',
         password: 'password',
-        twoFactorEnabled: true,
+        twoFactor: {
+          create: {
+            secret: new OTPAuth.Secret().base32,
+            confirmedAt: new Date(),
+          },
+        },
       });
 
       const { body, headers } = await request()
@@ -566,20 +572,24 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('POST /api/v1/auth/verify-otp', () => {
-    const createUser = async () => {
-      const secret = new OTPAuth.Secret();
+    const TOTP_SECRET = new OTPAuth.Secret().base32;
 
+    const createUser = async () => {
       return UserFactory.create({
         email: 'test@email.net',
         password: 'password',
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
+        twoFactor: {
+          create: {
+            secret: TOTP_SECRET,
+            confirmedAt: new Date(),
+          },
+        },
       });
     };
 
-    const generateTOTP = (user: User) => {
+    const generateTOTP = () => {
       const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(user.totpSecret!),
+        secret: OTPAuth.Secret.fromBase32(TOTP_SECRET),
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -590,7 +600,7 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `200` status code when totp is correct', async () => {
       const user = await createUser();
-      const totp = generateTOTP(user);
+      const totp = generateTOTP();
       const token = generateOTPToken(user);
 
       await request()
@@ -605,7 +615,7 @@ describe('/api/v1/auth', async () => {
     describe('response', () => {
       it('should respond with access token', async () => {
         const user = await createUser();
-        const totp = generateTOTP(user);
+        const totp = generateTOTP();
         const token = generateOTPToken(user);
 
         const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
@@ -638,7 +648,7 @@ describe('/api/v1/auth', async () => {
 
       it('should respond with refresh token when remember is set', async () => {
         const user = await createUser();
-        const totp = generateTOTP(user);
+        const totp = generateTOTP();
         const token = generateOTPToken(user);
 
         const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
@@ -696,7 +706,7 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `400` status code when token is invalid', async () => {
       const user = await createUser();
-      const totp = generateTOTP(user);
+      const totp = generateTOTP();
 
       const token = generateAccessToken(user);
 
@@ -707,6 +717,148 @@ describe('/api/v1/auth', async () => {
           token,
         })
         .expect(400);
+    });
+
+    it('should accept a valid recovery code and consume it', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      // Stored hashes use the normalized (dash-stripped, upper-cased) form.
+      const recoveryCode = await prisma.twoFactorRecoveryCode.create({
+        data: {
+          userId: user.id,
+          code: hashRecoveryCode('ABCDE12345'),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          // Client sends the formatted code; the server normalizes it.
+          otp: 'ABCDE-12345',
+          token,
+        })
+        .expect(200);
+
+      const dbCode = await prisma.twoFactorRecoveryCode.findUnique({
+        where: { id: recoveryCode.id },
+      });
+      expect(dbCode?.usedAt).not.toBeNull();
+    });
+
+    it('should reject an already used recovery code', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await prisma.twoFactorRecoveryCode.create({
+        data: {
+          userId: user.id,
+          code: hashRecoveryCode('ABCDE12345'),
+          usedAt: new Date(),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: 'ABCDE-12345',
+          token,
+        })
+        .expect(400);
+    });
+
+    it('should reject an unknown recovery code', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: 'ZZZZZ-99999',
+          token,
+        })
+        .expect(400);
+    });
+
+    it('should lock the second factor after too many failed attempts', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      for (let i = 0; i < 5; i++) {
+        await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: 'ZZZZZ-99999',
+            token,
+          })
+          .expect(400);
+      }
+
+      // Even a correct code is rejected while locked
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(),
+          token,
+        })
+        .expect(429);
+
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.lockedUntil).not.toBeNull();
+      expect(dbTwoFactor?.failedAttempts).toBe(0);
+    });
+
+    it('should reset the failed attempt counter on success', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      for (let i = 0; i < 4; i++) {
+        await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: 'ZZZZZ-99999',
+            token,
+          })
+          .expect(400);
+      }
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(),
+          token,
+        })
+        .expect(200);
+
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.failedAttempts).toBe(0);
+    });
+
+    it('should accept a correct code after the lock has expired', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await prisma.userTwoFactor.update({
+        where: { userId: user.id },
+        data: { lockedUntil: new Date(Date.now() - 1000) },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(),
+          token,
+        })
+        .expect(200);
+
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.lockedUntil).toBeNull();
     });
   });
 

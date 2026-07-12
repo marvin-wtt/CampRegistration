@@ -31,6 +31,7 @@ export class UserService extends BaseService {
         role: data.role,
         locale: data.locale,
       },
+      include: { twoFactor: { select: { confirmedAt: true } } },
     });
   }
 
@@ -100,6 +101,7 @@ export class UserService extends BaseService {
         email: true,
         locale: true,
         emailVerified: true,
+        twoFactor: { select: { confirmedAt: true } },
         role: true,
         locked: true,
         lastSeen: true,
@@ -130,13 +132,17 @@ export class UserService extends BaseService {
   async getUserByIdWithCampRoles(id: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: { campRoles: true },
+      include: {
+        campRoles: true,
+        twoFactor: { select: { confirmedAt: true } },
+      },
     });
   }
 
-  async getUserById(id: string): Promise<User | null> {
+  async getUserById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      include: { twoFactor: { select: { confirmedAt: true } } },
     });
   }
 
@@ -161,7 +167,10 @@ export class UserService extends BaseService {
       data: {
         lastSeen: new Date(),
       },
-      include: { campRoles: true },
+      include: {
+        campRoles: true,
+        twoFactor: { select: { confirmedAt: true } },
+      },
     });
 
     const camps = await this.campService.getCampsByUserId(userId);
@@ -201,11 +210,24 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
-      include: { campRoles: true },
+      include: {
+        campRoles: true,
+        twoFactor: { select: { confirmedAt: true } },
+      },
     });
   }
 
   async deleteUserById(userId: string) {
     await this.prisma.user.delete({ where: { id: userId } });
+  }
+
+  async resetTwoFactorById(userId: string) {
+    // Recovery codes are removed by the cascade
+    await this.prisma.userTwoFactor.deleteMany({ where: { userId } });
+
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { twoFactor: { select: { confirmedAt: true } } },
+    });
   }
 }

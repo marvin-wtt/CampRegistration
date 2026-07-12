@@ -74,7 +74,7 @@ export class AuthController extends BaseController {
     const user = await this.authService.loginWithEmailPassword(email, password);
 
     // Check if totp is required
-    if (user.twoFactorEnabled) {
+    if (await this.totpService.isTwoFactorEnabled(user.id)) {
       const token = this.tokenService.generateTotpToken(user);
       // Set auth header
       res.setHeader(
@@ -103,8 +103,8 @@ export class AuthController extends BaseController {
     } = await req.validate(validator.verifyOTP);
 
     const { userId } = this.tokenService.verifyTotpToken(token);
-    const user = await this.userService.getUserByIdOrFail(userId);
-    this.totpService.verifyTOTP(user, otp);
+    await this.userService.getUserByIdOrFail(userId);
+    await this.totpService.verifyTwoFactor(userId, otp);
 
     await this.sendAuthResponse(req, res, userId, remember);
   }

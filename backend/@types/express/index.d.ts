@@ -25,7 +25,9 @@ import type { JsonResource } from '#core/resource/JsonResource';
 declare global {
   namespace Express {
     interface Models {
-      user?: UserModel;
+      user?: UserModel & {
+        twoFactor: { confirmedAt: Date | null } | null;
+      };
       camp?: Camp & { freePlaces: number | Record<string, number> };
       registration?: Registration;
       tableTemplate?: TableTemplate;

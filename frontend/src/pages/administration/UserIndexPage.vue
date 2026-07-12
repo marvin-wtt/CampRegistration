@@ -110,6 +110,22 @@
           </q-td>
         </template>
 
+        <template #body-cell-twoFactor="props">
+          <q-td :props="props">
+            <q-icon
+              :name="props.value ? 'verified_user' : 'gpp_bad'"
+              :color="props.value ? 'positive' : 'grey-5'"
+              size="sm"
+            >
+              <q-tooltip>
+                {{
+                  props.value ? t('twoFactor.enabled') : t('twoFactor.disabled')
+                }}
+              </q-tooltip>
+            </q-icon>
+          </q-td>
+        </template>
+
         <template #body-cell-lastSeen="props">
           <q-td :props="props">
             {{
@@ -248,6 +264,12 @@ const columns = computed<QTableColumn<User>[]>(() => [
     align: 'left',
   },
   {
+    name: 'twoFactor',
+    label: t('column.twoFactor'),
+    field: 'twoFactorEnabled',
+    align: 'center',
+  },
+  {
     name: 'lastSeen',
     label: t('column.lastSeen'),
     field: 'lastSeen',
@@ -290,6 +312,16 @@ function rowActionsFn(user: User): RowAction[] {
       icon: 'edit',
       handler: () => onEditUser(user),
     },
+    ...(user.twoFactorEnabled
+      ? [
+          {
+            key: 'reset-2fa',
+            label: t('action.resetTwoFactor'),
+            icon: 'lock_reset',
+            handler: () => onResetTwoFactor(user),
+          },
+        ]
+      : []),
     {
       key: 'delete',
       label: t('action.delete'),
@@ -423,6 +455,33 @@ function onUnlockUser(user: User) {
     });
 }
 
+function onResetTwoFactor(user: User) {
+  quasar
+    .dialog({
+      title: t('dialog.resetTwoFactor.title'),
+      message: t('dialog.resetTwoFactor.message', { name: user.name }),
+      cancel: {
+        label: t('dialog.resetTwoFactor.cancel'),
+        color: 'primary',
+        rounded: true,
+        outline: true,
+      },
+      ok: {
+        label: t('dialog.resetTwoFactor.ok'),
+        color: 'warning',
+        rounded: true,
+      },
+    })
+    .onOk(() => {
+      void resetTwoFactor(user.id);
+    });
+}
+
+async function resetTwoFactor(id: string) {
+  await withProgressNotification('update', () => api.resetUserTwoFactor(id));
+  reload();
+}
+
 async function createUser(data: UserCreateData) {
   await withProgressNotification('update', () => api.createUser(data));
   reload();
@@ -478,6 +537,7 @@ action:
   edit: 'Edit'
   lock: 'Lock'
   unlock: 'Unlock'
+  resetTwoFactor: 'Reset 2FA'
 
 column:
   action: 'Action'
@@ -487,6 +547,11 @@ column:
   name: 'Name'
   role: 'Role'
   status: 'Status'
+  twoFactor: '2FA'
+
+twoFactor:
+  enabled: 'Two-factor authentication enabled'
+  disabled: 'Two-factor authentication not enabled'
 
 dialog:
   delete:
@@ -502,6 +567,11 @@ dialog:
     title: 'Unlock account'
     message: 'Are you sure you want to unlock { name }?'
     ok: 'Unlock'
+    cancel: 'Cancel'
+  resetTwoFactor:
+    title: 'Reset two-factor authentication'
+    message: 'This will remove two-factor authentication and all recovery codes for { name }. They will be able to sign in with only their password. Continue?'
+    ok: 'Reset 2FA'
     cancel: 'Cancel'
 
 header:
@@ -524,6 +594,7 @@ action:
   edit: 'Bearbeiten'
   lock: 'Sperren'
   unlock: 'Entsperren'
+  resetTwoFactor: '2FA zurücksetzen'
 
 column:
   action: 'Aktion'
@@ -533,6 +604,11 @@ column:
   name: 'Name'
   role: 'Rolle'
   status: 'Status'
+  twoFactor: '2FA'
+
+twoFactor:
+  enabled: 'Zwei-Faktor-Authentifizierung aktiviert'
+  disabled: 'Zwei-Faktor-Authentifizierung nicht aktiviert'
 
 dialog:
   delete:
@@ -548,6 +624,11 @@ dialog:
     title: 'Konto entsperren'
     message: 'Bist du sicher, dass du { name } entsperren möchtest?'
     ok: 'Entsperren'
+    cancel: 'Abbrechen'
+  resetTwoFactor:
+    title: 'Zwei-Faktor-Authentifizierung zurücksetzen'
+    message: 'Dadurch werden die Zwei-Faktor-Authentifizierung und alle Wiederherstellungscodes für { name } entfernt. Die Anmeldung ist dann nur mit dem Passwort möglich. Fortfahren?'
+    ok: '2FA zurücksetzen'
     cancel: 'Abbrechen'
 
 header:
@@ -570,6 +651,7 @@ action:
   edit: 'Modifier'
   lock: 'Verrouiller'
   unlock: 'Déverrouiller'
+  resetTwoFactor: 'Réinitialiser 2FA'
 
 column:
   action: 'Action'
@@ -579,6 +661,11 @@ column:
   name: 'Nom'
   role: 'Rôle'
   status: 'Statut'
+  twoFactor: '2FA'
+
+twoFactor:
+  enabled: 'Authentification à deux facteurs activée'
+  disabled: 'Authentification à deux facteurs non activée'
 
 dialog:
   delete:
@@ -594,6 +681,11 @@ dialog:
     title: 'Déverrouiller le compte'
     message: 'Es-tu sûr de vouloir déverrouiller { name } ?'
     ok: 'Déverrouiller'
+    cancel: 'Annuler'
+  resetTwoFactor:
+    title: "Réinitialiser l'authentification à deux facteurs"
+    message: "Cela supprimera l'authentification à deux facteurs et tous les codes de récupération de { name }. La connexion ne sera possible qu'avec le mot de passe. Continuer ?"
+    ok: 'Réinitialiser 2FA'
     cancel: 'Annuler'
 
 header:
@@ -616,6 +708,7 @@ action:
   edit: 'Edytuj'
   lock: 'Zablokuj'
   unlock: 'Odblokuj'
+  resetTwoFactor: 'Zresetuj 2FA'
 
 column:
   action: 'Akcja'
@@ -625,6 +718,11 @@ column:
   name: 'Nazwa'
   role: 'Rola'
   status: 'Status'
+  twoFactor: '2FA'
+
+twoFactor:
+  enabled: 'Uwierzytelnianie dwuskładnikowe włączone'
+  disabled: 'Uwierzytelnianie dwuskładnikowe wyłączone'
 
 dialog:
   delete:
@@ -640,6 +738,11 @@ dialog:
     title: 'Odblokuj konto'
     message: 'Czy na pewno chcesz odblokować { name }?'
     ok: 'Odblokuj'
+    cancel: 'Anuluj'
+  resetTwoFactor:
+    title: 'Zresetuj uwierzytelnianie dwuskładnikowe'
+    message: 'Spowoduje to usunięcie uwierzytelniania dwuskładnikowego i wszystkich kodów odzyskiwania dla { name }. Logowanie będzie możliwe tylko za pomocą hasła. Kontynuować?'
+    ok: 'Zresetuj 2FA'
     cancel: 'Anuluj'
 
 header:
@@ -662,6 +765,7 @@ action:
   edit: 'Upravit'
   lock: 'Zamknout'
   unlock: 'Odemknout'
+  resetTwoFactor: 'Resetovat 2FA'
 
 column:
   action: 'Akce'
@@ -671,6 +775,11 @@ column:
   name: 'Jméno'
   role: 'Role'
   status: 'Stav'
+  twoFactor: '2FA'
+
+twoFactor:
+  enabled: 'Dvoufázové ověřování zapnuto'
+  disabled: 'Dvoufázové ověřování vypnuto'
 
 dialog:
   delete:
@@ -686,6 +795,11 @@ dialog:
     title: 'Odemknout účet'
     message: 'Opravdu chcete odemknout { name }?'
     ok: 'Odemknout'
+    cancel: 'Zrušit'
+  resetTwoFactor:
+    title: 'Resetovat dvoufázové ověřování'
+    message: 'Tímto se pro { name } odstraní dvoufázové ověřování a všechny kódy pro obnovení. Přihlášení bude možné pouze pomocí hesla. Pokračovat?'
+    ok: 'Resetovat 2FA'
     cancel: 'Zrušit'
 
 header:

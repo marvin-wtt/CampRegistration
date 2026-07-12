@@ -3,6 +3,7 @@ import { useAPIService } from '@/services/APIService';
 import type {
   AuthTokens,
   Authentication,
+  Profile,
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus } from '@/composables/bus';
@@ -10,6 +11,10 @@ import { useServiceHandler } from '@/composables/serviceHandler';
 import { useProfileStore } from '@/stores/profile-store';
 import { createInitialAdmin } from '@/services/SetupService';
 import { isCustomAxiosError } from '@/services/AuthService';
+import { Dialog } from 'quasar';
+import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
+
+const TWO_FACTOR_SUGGESTION_DISMISSED_KEY = 'two-factor-suggestion-dismissed';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -170,6 +175,30 @@ export const useAuthStore = defineStore('auth', () => {
         : { name: 'management.camps' };
 
     await router.push(destination);
+
+    maybeSuggestTwoFactor(auth.profile);
+  }
+
+  function maybeSuggestTwoFactor(profile: Profile) {
+    if (profile.twoFactorEnabled) {
+      return;
+    }
+
+    if (localStorage.getItem(TWO_FACTOR_SUGGESTION_DISMISSED_KEY) === 'true') {
+      return;
+    }
+
+    Dialog.create({
+      component: TwoFactorSuggestionDialog,
+    }).onOk((result: { enable: boolean; dontRemind: boolean }) => {
+      if (result.dontRemind) {
+        localStorage.setItem(TWO_FACTOR_SUGGESTION_DISMISSED_KEY, 'true');
+      }
+
+      if (result.enable) {
+        void router.push({ name: 'settings.security' });
+      }
+    });
   }
 
   async function refreshTokens(): Promise<boolean> {
