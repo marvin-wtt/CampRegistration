@@ -17,7 +17,8 @@ export type RealtimeResource =
   | 'manager'
   | 'message'
   | 'file'
-  | 'table_template';
+  | 'table_template'
+  | 'setting';
 
 /**
  * `created` / `updated` / `deleted` target a single entity (`id` set).
@@ -72,4 +73,5 @@ export const RESOURCE_VIEW_PERMISSION: Record<RealtimeResource, Permission> = {
   message: 'camp.messages.view',
   file: 'camp.files.view',
   table_template: 'camp.table_templates.view',
+  setting: 'camp.view',
 };

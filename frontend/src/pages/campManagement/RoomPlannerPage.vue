@@ -289,7 +289,8 @@ import { useServiceHandler } from '@/composables/serviceHandler';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
-import { useCampStorage } from '@/composables/campStorage';
+import { useCampSettings } from '@/composables/campSetting';
+import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { useAPIService } from '@/services/APIService';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -310,10 +311,13 @@ interface PlannerSettings {
   skipRoleFilter: boolean;
 }
 
-const settings = useCampStorage<PlannerSettings>('room-planner-settings', {
-  skipGenderFilter: false,
-  skipRoleFilter: false,
-});
+const { settings } = useCampSettings<PlannerSettings>(
+  SETTING_KEYS.ROOM_PLANNER,
+  {
+    skipGenderFilter: false,
+    skipRoleFilter: false,
+  },
+);
 
 const {
   data,
