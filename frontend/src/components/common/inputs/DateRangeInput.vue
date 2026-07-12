@@ -1,11 +1,12 @@
 <template>
   <q-input
-    v-model="inputValue"
+    :model-value="displayValue"
     hide-bottom-space
     outlined
     rounded
-    v-bind="$attrs"
-    @focus="($refs.popup as QPopupProxy).show()"
+    readonly
+    v-bind="attrs"
+    @focus="popup?.show()"
   >
     <template #append>
       <q-icon
@@ -25,14 +26,15 @@
           >
             <div class="row items-center justify-between">
               <q-toggle
-                v-model="singleDay"
+                :model-value="singleDay"
                 :label="t('field.singleDay')"
+                @update:model-value="onSingleDayToggle"
               />
               <q-btn
                 v-close-popup
+                :label="t('actions.ok')"
                 color="primary"
                 flat
-                :label="t('actions.ok')"
               />
             </div>
           </q-date>
@@ -55,125 +57,103 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useAttrs, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { QInputSlots, QPopupProxy } from 'quasar';
+import { date as dateUtil, type QInputSlots, type QPopupProxy } from 'quasar';
 
 const { t } = useI18n();
+const attrs = useAttrs();
 
-type RangeDate = { from?: string | undefined; to?: string | undefined };
+type DateRange = { from?: string | undefined; to?: string | undefined };
 
-const { defaultStartHour = 9, defaultEndHour = 18 } = defineProps<{
-  defaultStartHour?: number | undefined;
-  defaultEndHour?: number | undefined;
+const { defaultStartTime = '09:00', defaultEndTime = '18:00' } = defineProps<{
+  // Time of day (HH:mm, local) applied when a date is set without an
+  // existing time to preserve
+  defaultStartTime?: string | undefined;
+  defaultEndTime?: string | undefined;
 }>();
 
-const model = defineModel<RangeDate | string | undefined>({
-  get: () => {
-    if (singleDay.value) {
-      return isoToDate(from.value) ?? isoToDate(to.value);
-    }
-    return {
-      from: isoToDate(from.value),
-      to: isoToDate(to.value),
-    };
-  },
-  set: (val) => {
-    // QDate emits a plain date string instead of {from, to} when a range
-    // selection starts and ends on the same day.
-    const range = typeof val === 'string' ? { from: val, to: val } : val;
-    applyRange(range);
+// QDate rejects a plain date string in range mode and a {from, to} object in
+// single mode, so the model shape must follow the singleDay toggle.
+const model = defineModel<DateRange | string | undefined>({
+  get: () =>
+    singleDay.value
+      ? (toDay(from.value) ?? toDay(to.value))
+      : { from: toDay(from.value), to: toDay(to.value) },
+  set: (value) => {
+    // QDate emits a plain date string in single-day mode, and also in range
+    // mode when the selection starts and ends on the same day.
+    applyRange(typeof value === 'string' ? { from: value, to: value } : value);
   },
 });
 
 const from = defineModel<string | undefined>('from');
 const to = defineModel<string | undefined>('to');
 
-// Range-mode QDate can't visually highlight/label a same-day selection
-// (its internal rangeModel only recognizes from.dateHash < to.dateHash), so
-// single-day dates are picked with QDate's range mode turned off instead.
-const singleDay = ref(false);
-let singleDayInitialized = false;
-watch(
-  [from, to],
-  ([f, t]) => {
-    if (singleDayInitialized || !f || !t) {
-      return;
-    }
-    singleDay.value = isoToDate(f) === isoToDate(t);
-    singleDayInitialized = true;
-  },
-  { immediate: true },
-);
+const popup = useTemplateRef<QPopupProxy>('popup');
 
-function applyRange(range?: RangeDate): void {
-  to.value = combineDateWithTime(range?.to, to.value, defaultEndHour);
-  from.value = combineDateWithTime(range?.from, from.value, defaultStartHour);
-}
+const singleDay = ref<boolean>(isSingleDay());
 
-const inputValue = computed<string | undefined>({
-  get: () => {
-    if (!from.value || !to.value) {
-      return undefined;
-    }
-
-    const fromDate = isoToDate(from.value);
-    const toDate = isoToDate(to.value);
-
-    return fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`;
-  },
-  set: (val) => {
-    const dates = val?.split('-');
-    if (!dates || dates.length !== 2) {
-      return;
-    }
-
-    applyRange({ from: dates[0]!, to: dates[1]! });
-  },
+watch([from, to], () => {
+  singleDay.value = isSingleDay();
 });
 
-function isoToDate(utcString?: string): string | undefined {
-  if (!utcString) {
+const displayValue = computed<string | undefined>(() => {
+  const fromDay = toDay(from.value);
+  const toDayStr = toDay(to.value);
+
+  if (!fromDay || !toDayStr) {
     return undefined;
   }
 
-  const date = new Date(utcString);
+  return fromDay === toDayStr ? fromDay : `${fromDay} - ${toDayStr}`;
+});
 
-  const year = date.getFullYear().toString();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
+function isSingleDay(): boolean {
+  return !!from.value && toDay(from.value) === toDay(to.value);
 }
 
-function combineDateWithTime(
-  date?: string,
-  time?: string,
-  defaultHours = 0,
+function onSingleDayToggle(value: boolean): void {
+  singleDay.value = value;
+
+  if (value) {
+    const day = toDay(from.value) ?? toDay(to.value);
+    if (day) {
+      applyRange({ from: day, to: day });
+    }
+  }
+}
+
+function applyRange(range?: DateRange): void {
+  from.value = toIso(range?.from, from.value, defaultStartTime);
+  to.value = toIso(range?.to, to.value, defaultEndTime);
+}
+
+function toDay(iso?: string): string | undefined {
+  return iso ? dateUtil.formatDate(new Date(iso), 'YYYY-MM-DD') : undefined;
+}
+
+function toIso(
+  day: string | undefined,
+  currentIso: string | undefined,
+  defaultTime: string,
 ): string | undefined {
-  if (!date) {
+  if (!day) {
     return undefined;
   }
 
-  const combinedDateTime = new Date();
-  if (time) {
-    const timeDate = new Date(time);
-    combinedDateTime.setUTCHours(
-      timeDate.getUTCHours(),
-      timeDate.getUTCMinutes(),
-      0,
-      0,
-    );
-  } else {
-    combinedDateTime.setHours(defaultHours, 0, 0, 0);
+  const [year = 0, month = 1, dayOfMonth = 1] = day.split('-').map(Number);
+
+  // Keep the existing time of day; fall back to the default time when the
+  // date is set for the first time.
+  if (currentIso) {
+    const result = new Date(currentIso);
+    result.setFullYear(year, month - 1, dayOfMonth);
+    return result.toISOString();
   }
 
-  const dateParts = date.split('-');
-  combinedDateTime.setFullYear(parseInt(dateParts[0] ?? ''));
-  combinedDateTime.setMonth(parseInt(dateParts[1] ?? '') - 1);
-  combinedDateTime.setDate(parseInt(dateParts[2] ?? ''));
-
-  return combinedDateTime.toISOString();
+  const [hours = 0, minutes = 0] = defaultTime.split(':').map(Number);
+  return new Date(year, month - 1, dayOfMonth, hours, minutes).toISOString();
 }
 </script>
 
