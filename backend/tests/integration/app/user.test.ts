@@ -361,4 +361,73 @@ describe('/api/v1/users/', () => {
         .expect(404);
     });
   });
+
+  describe('POST /api/v1/users/:userId/reset-two-factor', () => {
+    const createUserWith2fa = async () => {
+      const user = await UserFactory.create({
+        twoFactorEnabled: true,
+        totpSecret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+      });
+      await prisma.twoFactorRecoveryCode.createMany({
+        data: [
+          { userId: user.id, code: 'hash-1' },
+          { userId: user.id, code: 'hash-2' },
+        ],
+      });
+      return user;
+    };
+
+    it('should reset two-factor when user is admin', async () => {
+      const { accessToken } = await createAdminWithToken();
+      const user = await createUserWith2fa();
+
+      await request()
+        .post(`/api/v1/users/${user.id}/reset-two-factor`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser?.twoFactorEnabled).toBe(false);
+      expect(dbUser?.totpSecret).toBeNull();
+
+      const codes = await prisma.twoFactorRecoveryCode.findMany({
+        where: { userId: user.id },
+      });
+      expect(codes).toHaveLength(0);
+    });
+
+    it('should respond with `403` status code when user is not admin', async () => {
+      const { accessToken } = await createUserWithToken();
+      const user = await createUserWith2fa();
+
+      await request()
+        .post(`/api/v1/users/${user.id}/reset-two-factor`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser?.twoFactorEnabled).toBe(true);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const user = await createUserWith2fa();
+
+      await request()
+        .post(`/api/v1/users/${user.id}/reset-two-factor`)
+        .send()
+        .expect(401);
+    });
+
+    it('should respond with `404` status code when the user does not exist', async () => {
+      const { accessToken } = await createAdminWithToken();
+
+      await request()
+        .post(`/api/v1/users/${ulid()}/reset-two-factor`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+  });
 });

@@ -302,6 +302,7 @@ describe('/api/v1/totp/', () => {
         .auth(accessToken, { type: 'bearer' })
         .send({
           password: 'password',
+          otp: generateTOTP(user),
         })
         .expect(200);
 
@@ -328,13 +329,13 @@ describe('/api/v1/totp/', () => {
       const first = await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'password' })
+        .send({ password: 'password', otp: generateTOTP(user) })
         .expect(200);
 
       const second = await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'password' })
+        .send({ password: 'password', otp: generateTOTP(user) })
         .expect(200);
 
       expect(second.body.data.codes).not.toEqual(first.body.data.codes);
@@ -357,8 +358,29 @@ describe('/api/v1/totp/', () => {
       await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'invalid' })
+        .send({ password: 'invalid', otp: generateTOTP(user) })
         .expect(400);
+    });
+
+    it('should respond with a `400` status code when the otp is invalid', async () => {
+      const secret = new OTPAuth.Secret();
+      const user = await UserFactory.create({
+        twoFactorEnabled: true,
+        totpSecret: secret.base32,
+        password: 'password',
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .post('/api/v1/totp/recovery-codes')
+        .auth(accessToken, { type: 'bearer' })
+        .send({ password: 'password', otp: '123456' })
+        .expect(400);
+
+      const stored = await prisma.twoFactorRecoveryCode.findMany({
+        where: { userId: user.id },
+      });
+      expect(stored).toHaveLength(0);
     });
 
     it('should respond with a `400` status code when 2fa is not enabled', async () => {
@@ -371,14 +393,14 @@ describe('/api/v1/totp/', () => {
       await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'password' })
+        .send({ password: 'password', otp: '123456' })
         .expect(400);
     });
 
     it('should respond with a `401` status code when unauthenticated', async () => {
       await request()
         .post('/api/v1/totp/recovery-codes')
-        .send({ password: 'password' })
+        .send({ password: 'password', otp: '123456' })
         .expect(401);
     });
   });
