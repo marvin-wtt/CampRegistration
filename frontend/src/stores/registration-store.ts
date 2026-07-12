@@ -14,7 +14,6 @@ import { useAuthBus, useCampBus, useRegistrationBus } from '@/composables/bus';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { formatPersonName } from '@/utils/formatters';
-import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
