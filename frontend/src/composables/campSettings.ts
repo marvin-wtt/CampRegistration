@@ -1,4 +1,5 @@
 import { nextTick, reactive, ref, watch, type Ref } from 'vue';
+import type { SettingKey } from '@camp-registration/common/settings';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { useAPIService } from '@/services/APIService';
@@ -13,7 +14,7 @@ import { useAPIService } from '@/services/APIService';
  * rather than trusting pushed data.
  */
 export function useCampSettings<T extends object>(
-  key: string,
+  key: SettingKey,
   defaults: T,
 ): { settings: T; isLoading: Ref<boolean> } {
   const campDetailsStore = useCampDetailsStore();

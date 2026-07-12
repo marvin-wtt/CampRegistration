@@ -1,4 +1,5 @@
 import type { Permission } from '@camp-registration/common/permissions';
+import type { SettingKey } from '@camp-registration/common/settings';
 import type { ZodType } from 'zod';
 import { injectable } from 'inversify';
 import ApiError from '#utils/ApiError';
@@ -17,9 +18,9 @@ export interface SettingDefinition<T = unknown> {
  */
 @injectable()
 export class SettingsRegistry {
-  private definitions = new Map<string, SettingDefinition>();
+  private definitions = new Map<SettingKey, SettingDefinition>();
 
-  register<T>(key: string, definition: SettingDefinition<T>): void {
+  register<T>(key: SettingKey, definition: SettingDefinition<T>): void {
     if (this.definitions.has(key)) {
       throw new Error(`Duplicate setting key: "${key}"`);
     }
@@ -28,11 +29,16 @@ export class SettingsRegistry {
   }
 
   getOrFail(key: string): SettingDefinition {
-    const definition = this.definitions.get(key);
+    const definition = this.definitions.get(key as SettingKey);
     if (!definition) {
       throw new ApiError(httpStatus.NOT_FOUND, `Unknown setting key: "${key}"`);
     }
 
     return definition;
+  }
+
+  keyOrFail(key: string): SettingKey {
+    this.getOrFail(key);
+    return key as SettingKey;
   }
 }
