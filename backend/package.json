@@ -65,6 +65,7 @@
     "@prisma/adapter-mariadb": "^7.8.0",
     "@prisma/client": "^7.6.0",
     "@sentry/node": "^10.57.0",
+    "argon2": "^0.44.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.78.1",
     "compression": "^1.8.1",

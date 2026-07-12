@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import prisma from '../utils/prisma.js';
 import { UserFactory } from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
@@ -70,7 +70,7 @@ describe('/api/v1/setup', () => {
       });
 
       expect(user.password).not.toBe(validData.password);
-      expect(bcrypt.compareSync(validData.password, user.password)).toBe(true);
+      expect(await argon2.verify(user.password, validData.password)).toBe(true);
     });
 
     it('should store the preferred locale of the request', async () => {
