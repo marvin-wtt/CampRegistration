@@ -220,7 +220,7 @@
                   :rules="[
                     (val?: number) => !!val || t('validation.maxAge.empty'),
                     (val: number) =>
-                      (camp.minAge && val >= camp.minAge) ||
+                      (camp?.minAge && val >= camp.minAge) ||
                       t('validation.maxAge.min'),
                     (val: number) => val < 100 || t('validation.minAge.max'),
                   ]"
@@ -304,6 +304,11 @@
                   :label="t('field.endTime')"
                   :rules="[
                     (val?: string) => !!val || t('validation.endAt.empty'),
+                    () =>
+                      !camp?.startAt ||
+                      !camp?.endAt ||
+                      new Date(camp?.endAt) > new Date(camp?.startAt) ||
+                      t('validation.endAt.min'),
                   ]"
                   class="col"
                   hide-bottom-space
@@ -346,7 +351,7 @@
                 :rules="[
                   (val?: string | null) =>
                     !val ||
-                    !camp.registrationClosesAt ||
+                    !camp?.registrationClosesAt ||
                     new Date(val) < new Date(camp.registrationClosesAt) ||
                     t('validation.registrationOpensAt.before_close'),
                 ]"
@@ -368,7 +373,7 @@
                 :rules="[
                   (val?: string | null) =>
                     !val ||
-                    !camp.registrationOpensAt ||
+                    !camp?.registrationOpensAt ||
                     new Date(val) > new Date(camp.registrationOpensAt) ||
                     t('validation.registrationClosesAt.after_open'),
                 ]"
@@ -661,6 +666,7 @@ validation:
     empty: 'Please select a start time'
   endAt:
     empty: 'Please select an end time'
+    min: 'End time must be after the start time'
   minAge:
     empty: 'Please enter a minimum age'
     positive: 'Minimum age must be a positive number'
@@ -742,6 +748,7 @@ validation:
     empty: 'Bitte wählen Sie eine Startzeit aus'
   endAt:
     empty: 'Bitte wählen Sie eine Endzeit aus'
+    min: 'Die Endzeit muss nach der Startzeit liegen'
   minAge:
     empty: 'Bitte geben Sie ein Mindestalter ein'
     positive: 'Das Mindestalter muss eine positive Zahl sein'
@@ -823,6 +830,7 @@ validation:
     empty: 'Veuillez sélectionner une heure de début'
   endAt:
     empty: 'Veuillez sélectionner une heure de fin'
+    min: "L'heure de fin doit être postérieure à l'heure de début"
   minAge:
     empty: 'Veuillez entrer un âge minimum'
     positive: "L'âge minimum doit être un nombre positif"
@@ -904,6 +912,7 @@ validation:
     empty: 'Wybierz godzinę rozpoczęcia'
   endAt:
     empty: 'Wybierz godzinę zakończenia'
+    min: 'Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia'
   minAge:
     empty: 'Podaj minimalny wiek'
     positive: 'Minimalny wiek musi być liczbą dodatnią'
@@ -985,6 +994,7 @@ validation:
     empty: 'Vyberte čas začátku'
   endAt:
     empty: 'Vyberte čas konce'
+    min: 'Čas konce musí být pozdější než čas začátku'
   minAge:
     empty: 'Zadejte minimální věk'
     positive: 'Minimální věk musí být kladné číslo'

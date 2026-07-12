@@ -65,8 +65,8 @@ const campKey = computed<string | undefined>(() => {
   return Array.isArray(campId) ? campId[0] : campId;
 });
 
-const title = computed(() => {
-  return campName.value ?? t('app_name');
+const title = computed<string>(() => {
+  return campName.value ?? t('title');
 });
 
 const campName = computed<string | undefined>(() => {
@@ -179,6 +179,7 @@ settings: 'Settings'
 statistics: 'Statistics'
 switch_camp: 'Switch camp'
 tasks: 'Tasks'
+title: 'Camp Management'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -192,6 +193,7 @@ settings: 'Einstellungen'
 statistics: 'Statistiken'
 switch_camp: 'Camp wechseln'
 tasks: 'Aufgaben'
+title: 'Camp-Verwaltung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -205,6 +207,7 @@ settings: 'Paramètres'
 statistics: 'Statistiques'
 switch_camp: 'Changer de camp'
 tasks: 'Tâches'
+title: 'Gestion du camp'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -218,6 +221,7 @@ settings: 'Ustawienia'
 statistics: 'Statystyki'
 switch_camp: 'Zmień obóz'
 tasks: 'Zadania'
+title: 'Zarządzanie obozem'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -231,6 +235,7 @@ settings: 'Nastavení'
 statistics: 'Statistiky'
 switch_camp: 'Změnit tábor'
 tasks: 'Úkoly'
+title: 'Správa tábora'
 </i18n>
 
 <style>

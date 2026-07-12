@@ -33,7 +33,12 @@ export const useAuthStore = defineStore('auth', () => {
   let ongoingRefresh: Promise<boolean> | null = null;
 
   router.beforeEach((to) => {
-    if (!to.meta.auth || profileStore.loading || profileStore.user) {
+    if (
+      !to.meta.auth ||
+      isLoading.value ||
+      profileStore.loading ||
+      profileStore.user
+    ) {
       return;
     }
 
@@ -57,8 +62,9 @@ export const useAuthStore = defineStore('auth', () => {
     return {
       name: 'login',
       query: {
-        origin: encodeURIComponent(route.path),
+        origin: encodeURIComponent(route.fullPath),
       },
+      replace: false,
     };
   }
 
