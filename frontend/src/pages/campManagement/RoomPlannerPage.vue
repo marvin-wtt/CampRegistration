@@ -289,8 +289,9 @@ import { useServiceHandler } from '@/composables/serviceHandler';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
-import { useCampSettings } from '@/composables/campSetting';
+import { useCampSettings } from '@/composables/campSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
+import type { RoomPlannerSettings } from '@camp-registration/common/settings';
 import { useAPIService } from '@/services/APIService';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -306,12 +307,7 @@ const addLoading = ref(false);
 
 const isMobile = computed<boolean>(() => quasar.screen.lt.sm);
 
-interface PlannerSettings {
-  skipGenderFilter: boolean;
-  skipRoleFilter: boolean;
-}
-
-const { settings } = useCampSettings<PlannerSettings>(
+const { settings } = useCampSettings<RoomPlannerSettings>(
   SETTING_KEYS.ROOM_PLANNER,
   {
     skipGenderFilter: false,

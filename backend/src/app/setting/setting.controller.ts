@@ -1,5 +1,4 @@
 import httpStatus from 'http-status';
-import { z } from 'zod';
 import { type Request, type Response } from 'express';
 import { inject, injectable } from 'inversify';
 import ApiError from '#utils/ApiError';
@@ -8,13 +7,7 @@ import { RealtimeService } from '#core/realtime/RealtimeService';
 import { SettingService } from '#app/setting/setting.service';
 import { SettingsRegistry } from '#app/setting/setting.registry';
 import { SettingResource } from '#app/setting/setting.resource';
-
-const paramsSchema = z.object({
-  params: z.object({
-    campId: z.ulid(),
-    key: z.string(),
-  }),
-});
+import validator, { validateBody } from './setting.validation.js';
 
 @injectable()
 export class SettingController extends BaseController {
@@ -31,7 +24,7 @@ export class SettingController extends BaseController {
 
   async show(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
-    const { params } = await req.validate(paramsSchema);
+    const { params } = await req.validate(validator.show);
     this.settingsRegistry.getOrFail(params.key);
 
     const setting = await this.settingService.getSetting(camp.id, params.key);
@@ -50,13 +43,14 @@ export class SettingController extends BaseController {
     // The key (and thus the body schema) is only known once params are read,
     // so validation happens in two passes: params first, then params+body
     // against a schema built from the key's registered definition.
-    const { params: keyParams } = await req.validate(paramsSchema);
-    const definition = this.settingsRegistry.getOrFail(keyParams.key);
+    const {
+      params: { key },
+    } = await req.validate(validator.update);
+    const definition = this.settingsRegistry.getOrFail(key);
 
-    const updateSchema = paramsSchema.extend({
-      body: z.object({ data: definition.schema }),
-    });
-    const { params, body } = await req.validate(updateSchema);
+    const { params, body } = await req.validate(
+      validateBody(definition.schema),
+    );
 
     const setting = await this.settingService.upsertSetting(
       camp.id,
