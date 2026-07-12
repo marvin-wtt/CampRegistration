@@ -19,11 +19,15 @@
           cover
         >
           <q-date
-            v-model="modelValue"
+            v-model="model"
             mask="YYYY-MM-DD"
-            range
+            :range="!singleDay"
           >
-            <div class="row items-center justify-end">
+            <div class="row items-center justify-between">
+              <q-toggle
+                v-model="singleDay"
+                :label="t('field.singleDay')"
+              />
               <q-btn
                 v-close-popup
                 color="primary"
@@ -51,51 +55,61 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { QInputSlots, QPopupProxy } from 'quasar';
 
 const { t } = useI18n();
 
-type RangeDate = { from?: string; to?: string };
+type RangeDate = { from?: string | undefined; to?: string | undefined };
 
-interface Props {
-  modelValue?: RangeDate;
-  from?: string;
-  to?: string;
-  rangeFrom?: string;
-  rangeTo?: string;
-}
-
-const props = defineProps<Props>();
-
-const from = computed<string | undefined>(() => {
-  return props.modelValue?.from ?? props.from;
-});
-
-const to = computed<string | undefined>(() => {
-  return props.modelValue?.to ?? props.to;
-});
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value?: RangeDate): void;
-  (e: 'update:to', value?: string): void;
-  (e: 'update:from', value?: string): void;
+const { defaultStartHour = 9, defaultEndHour = 18 } = defineProps<{
+  defaultStartHour?: number | undefined;
+  defaultEndHour?: number | undefined;
 }>();
 
-const modelValue = computed<RangeDate | undefined>({
+const model = defineModel<RangeDate | string | undefined>({
   get: () => {
+    if (singleDay.value) {
+      return isoToDate(from.value) ?? isoToDate(to.value);
+    }
     return {
-      from: isoToDate(props.from),
-      to: isoToDate(props.to),
+      from: isoToDate(from.value),
+      to: isoToDate(to.value),
     };
   },
   set: (val) => {
-    emit('update:modelValue', val);
-    emit('update:to', combineDateWithTime(val?.to, to.value));
-    emit('update:from', combineDateWithTime(val?.from, from.value));
+    // QDate emits a plain date string instead of {from, to} when a range
+    // selection starts and ends on the same day.
+    const range = typeof val === 'string' ? { from: val, to: val } : val;
+    applyRange(range);
   },
 });
+
+const from = defineModel<string | undefined>('from');
+const to = defineModel<string | undefined>('to');
+
+// Range-mode QDate can't visually highlight/label a same-day selection
+// (its internal rangeModel only recognizes from.dateHash < to.dateHash), so
+// single-day dates are picked with QDate's range mode turned off instead.
+const singleDay = ref(false);
+let singleDayInitialized = false;
+watch(
+  [from, to],
+  ([f, t]) => {
+    if (singleDayInitialized || !f || !t) {
+      return;
+    }
+    singleDay.value = isoToDate(f) === isoToDate(t);
+    singleDayInitialized = true;
+  },
+  { immediate: true },
+);
+
+function applyRange(range?: RangeDate): void {
+  to.value = combineDateWithTime(range?.to, to.value, defaultEndHour);
+  from.value = combineDateWithTime(range?.from, from.value, defaultStartHour);
+}
 
 const inputValue = computed<string | undefined>({
   get: () => {
@@ -103,7 +117,10 @@ const inputValue = computed<string | undefined>({
       return undefined;
     }
 
-    return `${isoToDate(from.value)} - ${isoToDate(to.value)}`;
+    const fromDate = isoToDate(from.value);
+    const toDate = isoToDate(to.value);
+
+    return fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`;
   },
   set: (val) => {
     const dates = val?.split('-');
@@ -111,10 +128,7 @@ const inputValue = computed<string | undefined>({
       return;
     }
 
-    if (modelValue.value) {
-      modelValue.value.from = dates[0]!;
-      modelValue.value.to = dates[1]!;
-    }
+    applyRange({ from: dates[0]!, to: dates[1]! });
   },
 });
 
@@ -132,7 +146,11 @@ function isoToDate(utcString?: string): string | undefined {
   return `${year}-${month}-${day}`;
 }
 
-function combineDateWithTime(date?: string, time?: string): string | undefined {
+function combineDateWithTime(
+  date?: string,
+  time?: string,
+  defaultHours = 0,
+): string | undefined {
   if (!date) {
     return undefined;
   }
@@ -147,7 +165,7 @@ function combineDateWithTime(date?: string, time?: string): string | undefined {
       0,
     );
   } else {
-    combinedDateTime.setHours(0, 0, 0, 0);
+    combinedDateTime.setHours(defaultHours, 0, 0, 0);
   }
 
   const dateParts = date.split('-');
@@ -164,24 +182,34 @@ function combineDateWithTime(date?: string, time?: string): string | undefined {
 <i18n lang="yaml" locale="en">
 actions:
   ok: 'Ok'
+field:
+  singleDay: 'Single day'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 actions:
   ok: 'Ok'
+field:
+  singleDay: 'Eintägig'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 actions:
   ok: 'Ok'
+field:
+  singleDay: 'Un seul jour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 actions:
   ok: 'Ok'
+field:
+  singleDay: 'Jeden dzień'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 actions:
   ok: 'Ok'
+field:
+  singleDay: 'Jeden den'
 </i18n>
