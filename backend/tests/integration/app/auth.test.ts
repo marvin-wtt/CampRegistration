@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import prisma from '../utils/prisma.js';
 import { TokenType, User } from '#generated/prisma/client.js';
 import {
@@ -197,7 +198,7 @@ describe('/api/v1/auth', async () => {
       });
 
       expect(user).toBeDefined();
-      expect(bcrypt.compareSync(data.password, user.password)).toBeTruthy();
+      expect(await argon2.verify(user.password, data.password)).toBeTruthy();
     });
 
     it('should set USER role as default', async () => {
@@ -548,6 +549,54 @@ describe('/api/v1/auth', async () => {
         .expect(400);
 
       expect(body).not.toHaveProperty('token');
+    });
+
+    it('should rehash the password to argon2 when logging in with a legacy bcrypt hash', async () => {
+      const { id } = await createUser();
+
+      const userBefore = await prisma.user.findUniqueOrThrow({
+        where: { id },
+      });
+      expect(userBefore.password.startsWith('$2')).toBe(true);
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const userAfter = await prisma.user.findUniqueOrThrow({
+        where: { id },
+      });
+
+      expect(userAfter.password.startsWith('$argon2')).toBe(true);
+      expect(await argon2.verify(userAfter.password, 'password')).toBeTruthy();
+    });
+
+    it('should not rehash the password when it is already argon2', async () => {
+      const { id } = await createUser();
+      const argon2Hash = await argon2.hash('password');
+
+      await prisma.user.update({
+        where: { id },
+        data: { password: argon2Hash },
+      });
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const userAfter = await prisma.user.findUniqueOrThrow({
+        where: { id },
+      });
+
+      expect(userAfter.password).toBe(argon2Hash);
     });
 
     // TODO Rate limiter must not be mocked for this test
